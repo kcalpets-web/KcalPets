@@ -15,14 +15,17 @@
 <meta name="apple-mobile-web-app-title" content="Kcal Pet">
 <style>[hidden]{display:none!important}html,body{margin:0}</style>
 
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
 <style>
+/* KPD Num: original pixel digits drawn for this game (clear 5/8/0) */
+@font-face{font-family:"KPD Num";src:url(data:font/ttf;base64,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) format("truetype");unicode-range:U+0030-0039,U+002B-002F;font-display:block}
 /* Layout: one-screen handheld — crystal-dungeon room on top, chunky pixel controls below */
 :root{
   --bg:#0e0a1c; --panel:#1c1535; --panel2:#272049; --line:#43387a; --edge:#0a0714;
   --fg:#f1ecff; --muted:#a99fd2; --kcal:#ffb547; --kcal-dk:#b86a12; --good:#7fe08c; --pink:#ff8fb6; --crys:#8fd6ff;
-  --f-px:"Pixelify Sans","Mitr",system-ui,sans-serif;
+  --f-px:"KPD Num","Pixelify Sans","Mitr",system-ui,sans-serif;
   --f-th:"Mitr",system-ui,sans-serif;
   color-scheme:dark;
 }
@@ -55,22 +58,44 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 @keyframes up{to{transform:translateY(-60px);opacity:0}}
 .float{position:absolute;font-family:var(--f-px);font-size:16px;color:var(--good);pointer-events:none;animation:up 1.3s ease-out forwards;text-shadow:0 2px 0 #123}
 /* actions */
-.actions{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:6px;padding-block:8px 4px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.actions{display:grid;grid-template-columns:1fr;gap:6px;padding-block:8px 4px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 .btn{background:var(--panel2);border:2px solid var(--line);border-radius:7px;box-shadow:inset 0 -4px 0 var(--edge);padding:10px 6px 12px;font-weight:500;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.15;min-height:48px}
 .btn:active{transform:translateY(2px);box-shadow:inset 0 -2px 0 var(--edge)}
 .btn.kcal{background:var(--kcal);color:#3a1f00;border-color:#ffd38a;box-shadow:inset 0 -4px 0 var(--kcal-dk)}
 .btn.go{background:#3f8f6a;border-color:#7fe0ac;box-shadow:inset 0 -4px 0 #1f5a3e}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.sm{min-height:38px;padding:6px 8px 8px;font-size:13px}
-/* dock */
-.dockbar{display:flex;justify-content:center;padding-block:2px 6px}
-.docktog{background:none;border:0;color:var(--muted);font-size:13px;padding:4px 18px;display:flex;align-items:center;gap:6px}
-.docktog .num{color:var(--fg)}
-#dock{position:absolute;left:6px;right:6px;bottom:0;background:var(--panel);border:2px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;padding:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;z-index:2000;box-shadow:0 -6px 0 rgba(0,0,0,.35)}
-.di{background:var(--panel2);border:2px solid var(--line);border-radius:7px;box-shadow:inset 0 -3px 0 var(--edge);padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;line-height:1.15;position:relative}
-.di span:first-child{font-size:20px}
+/* corner menu */
+#menuBtn{position:absolute;top:8px;right:8px;z-index:2100;width:46px;height:46px;padding:0;border-radius:12px;background:var(--panel2);border:2px solid var(--line);box-shadow:inset 0 -4px 0 var(--edge),0 3px 0 rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+#menuBtn:active{transform:translateY(2px)}
+#menuBtn i{display:block;width:20px;height:3px;background:var(--fg);border-radius:1px;transition:transform .2s,opacity .2s}
+#menuBtn[aria-expanded="true"]{border-color:var(--kcal)}
+#menuBtn[aria-expanded="true"] i:nth-child(1){transform:translateY(8px) rotate(45deg)}
+#menuBtn[aria-expanded="true"] i:nth-child(2){opacity:0}
+#menuBtn[aria-expanded="true"] i:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+#menuBtn .dot{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:50%;background:var(--pink);border:2px solid var(--edge)}
+#menuBack{position:absolute;inset:0;z-index:1990;background:rgba(6,4,14,.6)}
+#dock{position:absolute;top:62px;right:4px;z-index:2000;display:grid;grid-template-columns:repeat(2,76px);gap:8px 4px;justify-items:center}
+.di{width:76px;background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;line-height:1.15;color:var(--fg);position:relative}
+.di .lb{background:rgba(14,10,28,.92);border:1px solid var(--line);border-radius:6px;padding:1px 6px 2px;white-space:nowrap}
+.di .ic{width:52px;height:52px;border-radius:50%;background:var(--panel2);border:2px solid var(--line);box-shadow:inset 0 -4px 0 var(--edge),0 3px 0 rgba(0,0,0,.45);display:grid;place-items:center;font-size:24px;text-shadow:none}
+.di:active .ic{transform:translateY(2px);box-shadow:inset 0 -2px 0 var(--edge)}
 .di.lock{opacity:.5}
-.di.lock:after{content:"เร็วๆ นี้";position:absolute;top:-6px;right:-4px;font-size:9px;background:var(--line);padding:1px 4px;border-radius:4px}
+.fhub{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fh{background:var(--panel2);border:2px solid var(--line);border-radius:10px;box-shadow:inset 0 -4px 0 var(--edge);padding:10px 8px 12px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left}
+.fh:active{transform:translateY(2px)}
+.fh .ic{grid-row:span 2;font-size:28px}
+.fh b{font-size:15px;font-weight:500}
+.fh small{font-size:11.5px;color:var(--muted)}
+.pm{display:flex;gap:12px;align-items:center}
+.pm>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.di.hot .ic{border-color:var(--kcal);box-shadow:inset 0 -4px 0 var(--edge),0 0 0 3px rgba(255,181,71,.35),0 3px 0 rgba(0,0,0,.45)}
+.di.hot .lb{border-color:var(--kcal);color:var(--kcal)}
+.di .bd{position:absolute;top:-2px;right:4px;width:13px;height:13px;border-radius:50%;background:var(--pink);border:2px solid var(--edge)}
+#dock:not([hidden]) .di{animation:mpop .34s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--k)*30ms)}
+@keyframes mpop{from{opacity:0;transform:translate(24px,-46px) scale(.2)}}
+@media (max-height:700px){#dock{grid-template-columns:repeat(3,76px);top:60px;gap:6px 2px}.di .ic{width:46px;height:46px;font-size:21px}}
+@media (prefers-reduced-motion:reduce){#dock:not([hidden]) .di{animation:none}#menuBtn i{transition:none}}
 /* sheets */
 .ov{position:fixed;inset:0;background:rgba(6,4,14,.72);display:flex;align-items:flex-end;justify-content:center;z-index:27}
 .sheet{width:100%;max-width:480px;max-height:92%;background:var(--panel);border:3px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 0 rgba(0,0,0,.4)}
@@ -211,6 +236,22 @@ textarea{font-family:ui-monospace,monospace;font-size:11px;min-height:90px;resiz
 .petc{position:absolute;image-rendering:pixelated;cursor:pointer;transform-origin:50% 100%;touch-action:manipulation}
 .pshadow{position:absolute;background:rgba(5,3,14,.45);border-radius:50%}
 .bubble{z-index:1500}
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.food{position:relative;background:var(--panel2);border:2px solid var(--line);border-radius:9px;box-shadow:inset 0 -3px 0 var(--edge);padding:6px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
+.food:active{transform:translateY(2px)}
+.food .fe{font-size:26px;line-height:1.2}
+.food .fn{font-size:11.5px}
+.food .fp{font-size:12px;color:var(--kcal);display:flex;align-items:center;gap:2px}
+.food.in{border-color:var(--kcal);background:#3a2a14}
+.food.off{opacity:.38}
+.food.in.off{opacity:.75}
+.food .fq{position:absolute;top:-6px;right:-4px;background:var(--kcal);color:#3a1f00;font-style:normal;font-size:11px;font-weight:700;border-radius:8px;padding:0 5px;border:2px solid var(--edge)}
+.plate .pl{display:flex;flex-wrap:wrap;gap:6px}
+.pli{background:var(--edge);border:2px solid var(--line);border-radius:20px;padding:3px 10px 3px 6px;font-size:20px;display:flex;align-items:center;gap:3px}
+.pli span{font-size:13px;color:var(--muted)}
+.pxe{width:1.15em;height:1.15em;vertical-align:-.22em;image-rendering:pixelated;image-rendering:crisp-edges}
+.pxi{image-rendering:pixelated;image-rendering:crisp-edges;vertical-align:middle;flex-shrink:0}
+.btn .pxi{margin:-4px 0}
 .fsel{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
 .fsel button{flex:0 0 auto;background:var(--edge);border:2px solid var(--line);border-radius:8px;padding:3px 6px;display:flex;flex-direction:column;align-items:center;font-size:10px;min-width:58px}
 .fsel button.on{border-color:var(--kcal);background:#3a2a14}
@@ -227,7 +268,7 @@ textarea{font-family:ui-monospace,monospace;font-size:11px;min-height:90px;resiz
 .dxhold.on i{width:100%;transition:width 3s linear}
 .dxhold span{position:relative}
 .fsel button span{white-space:nowrap}
-#goal{position:absolute;left:8px;right:8px;top:8px;z-index:1400;display:flex;align-items:center;gap:8px;background:rgba(18,12,38,.88);border:2px solid var(--kcal);border-radius:10px;padding:7px 10px;text-align:left;font-size:13px;line-height:1.3;box-shadow:0 3px 0 rgba(0,0,0,.4)}
+#goal{position:absolute;left:8px;right:62px;top:8px;z-index:1400;display:flex;align-items:center;gap:8px;background:rgba(18,12,38,.88);border:2px solid var(--kcal);border-radius:10px;padding:7px 10px;text-align:left;font-size:13px;line-height:1.3;box-shadow:0 3px 0 rgba(0,0,0,.4)}
 #goal .gi{font-size:20px}
 #goal .gt{flex:1;min-width:0}
 #goal .ga{font-family:var(--f-px);font-size:20px;color:var(--kcal)}
@@ -263,14 +304,13 @@ textarea{font-family:ui-monospace,monospace;font-size:11px;min-height:90px;resiz
     <div id="roam"></div>
     <button id="goal" hidden></button>
     <div class="bubble" id="bubble" style="opacity:0"></div>
+    <button id="menuBtn" aria-label="เมนู" aria-expanded="false" aria-controls="dock"><i></i><i></i><i></i></button>
+    <div id="menuBack" hidden></div>
     <div id="dock" hidden></div>
   </div>
   <div class="actions">
-    <button class="btn kcal" id="aEx">🏃 ออกกำลังกาย</button>
-    <button class="btn" id="aFeed">🍖 ป้อนพลัง</button>
-    <button class="btn" id="aAdv">🗺️ ผจญภัย</button>
+    <button class="btn go" id="aAdv">🗺️ ผจญภัย</button>
   </div>
-  <div class="dockbar"><button class="docktog" id="dockTog" aria-expanded="false"><span id="dockArrow" class="num">▲</span> เมนู</button></div>
 </div>
 <div id="cover">
   <canvas class="bgc" id="coverBg"></canvas>
@@ -285,8 +325,8 @@ textarea{font-family:ui-monospace,monospace;font-size:11px;min-height:90px;resiz
 <script>
 (function(){
 'use strict';
-const VER='0.62';
-const CHANGES=[{v:'0.62',items:['ทุกระบบรายวันรีเซ็ตพร้อมกันเวลา 22:00 ทั้งภารกิจ โควตาป้อนพลัง ลูบหัว EXP ชนะซ้ำ และ EXP พักจอ']},{v:'0.61',items:['ภารกิจรายวันรีเซ็ตเวลา 22:00 แทนเที่ยงคืน เล่นต่อหลังเลิกงานได้ก่อนพักผ่อน','หน้าภารกิจบอกเวลาที่เหลือก่อนรอบใหม่']},{v:'0.6',items:[
+const VER='0.66';
+const CHANGES=[{v:'0.66',items:['ไอคอนทั้งเกมเปลี่ยนเป็นภาพพิกเซล เข้าชุดกับน้องและดันเจี้ยน: เมนู ฟาร์ม อาหาร ภารกิจ ป้ายเป้าหมาย และหน้าวิธีเล่น','ตัวเลขใช้ฟอนต์พิกเซลชุดใหม่ที่วาดเองสำหรับเกมนี้ อ่านง่ายขึ้น เลข 5 กับ 8 ไม่สับสนอีก','ไอคอนออกกำลังกายเป็นบาร์เบล','อีโมจิที่เหลือทั้งเกมเปลี่ยนเป็นไอคอนพิกเซลทั้งหมด (ประเภทการออกกำลังกาย ธาตุ ปุ่มต่อสู้ รางวัล ข้อความ)']},{v:'0.65',items:['ป้อนพลังแบบใหม่: เลือกอาหารจากเมนูให้น้อง 8 อย่าง ตั้งแต่ 🍎 แอปเปิล 50 Kcal ถึง 🎂 เค้กฉลอง 2,000 Kcal','ใส่อาหารลงจานได้หลายอย่าง แตะในจานเพื่อเอาออก มีปุ่มจัดจานให้อัตโนมัติ']},{v:'0.64',items:['เมนูกระชับขึ้น: ป้อนพลัง น้อง กาชา และพักจอ ย้ายเข้าไปอยู่ใน 🏡 ฟาร์มและทีม','ในฟาร์ม แตะรูปน้องแล้วเลือก 🍖 ป้อนพลัง หรือ 📋 ดูรายละเอียด ได้เลย','ด้านบนของฟาร์มมีปุ่ม 🥚 กาชา และ 🌙 พักจอ']},{v:'0.63',items:['ย้ายเมนูไปไว้มุมขวาบนของจอ กดแล้วไอคอนฟังก์ชันเด้งออกมาให้เลือก','ด้านล่างเหลือปุ่มผจญภัยปุ่มเดียว ออกกำลังกายและป้อนพลังย้ายเข้าเมนู (ไอคอนที่ควรกดต่อจะมีกรอบส้ม)','จุดชมพูบนปุ่มเมนูบอกว่ามีรางวัลภารกิจรอรับ','พื้นที่ฉากน้องกว้างขึ้น เพราะเอาแถบเมนูด้านล่างออก']},{v:'0.62',items:['ทุกระบบรายวันรีเซ็ตพร้อมกันเวลา 22:00 ทั้งภารกิจ โควตาป้อนพลัง ลูบหัว EXP ชนะซ้ำ และ EXP พักจอ']},{v:'0.61',items:['ภารกิจรายวันรีเซ็ตเวลา 22:00 แทนเที่ยงคืน เล่นต่อหลังเลิกงานได้ก่อนพักผ่อน','หน้าภารกิจบอกเวลาที่เหลือก่อนรอบใหม่']},{v:'0.6',items:[
  'มีเสียงแล้ว! เสียงประกอบ 8-bit ทุกจังหวะ ทั้งลูบหัว ป้อนพลัง เลเวลอัป ต่อสู้ และเปิดไข่',
  'เพลงพื้นหลังหน้าแรกและฉากต่อสู้ (เริ่มแบบปิดไว้ เปิดได้ที่ตั้งค่า)',
  'ตั้งค่าเสียง: เพิ่ม/ลดเสียงรวม เพลง และเสียงประกอบแยกกัน หรือกดปิดเสียงทั้งหมด']},{v:'0.5',items:[
@@ -341,7 +381,7 @@ const formIdx=lv=>lv>=12?4:lv>=9?3:lv>=6?2:lv>=3?1:0;
 const PRESETS={bal:{n:'สมดุล',i:'⚖️',d:[3,3,2,2]},atk:{n:'สายบุก',i:'⚔️',d:[2,5,2,1]},tank:{n:'สายถึก',i:'🛡️',d:[5,1,4,0]},skill:{n:'สายสกิล',i:'⚡',d:[2,2,1,5]}};
 const SK=['hp','atk','df','en'], SKN={hp:'HP',atk:'ATK',df:'DEF',en:'ฟื้นพลัง'}, SKT={hp:'พลังชีวิต',atk:'โจมตี',df:'ป้องกัน',en:'Energy ต่อตา'};
 const SKILLS=[{lv:1,n:'จู่โจม',e:20,d:'แรง ×1.4 เป้าเดียว'},{lv:3,n:'ท่าธาตุ',e:40,d:'แรง ×1.9 ใช้ธาตุของน้อง'},{lv:6,n:'โล่พิทักษ์',e:60,d:'ฟื้น HP 30% · ดาเมจที่รับลดลงครึ่งหนึ่ง 2 ตา'},{lv:9,n:'พายุ',e:80,d:'แรง ×1.6 โดนศัตรูทุกตัว'},{lv:12,n:'ไม้ตาย',e:100,d:'แรง ×3.5 เป้าเดียว'}];
-const ACTS=[{k:'walk',n:'เดิน',i:'🚶',e:150},{k:'run',n:'วิ่ง',i:'🏃',e:300},{k:'bike',n:'ปั่นจักรยาน',i:'🚴',e:250},{k:'swim',n:'ว่ายน้ำ',i:'🏊',e:250},{k:'gym',n:'เวท',i:'🏋️',e:120},{k:'etc',n:'อื่นๆ',i:'✨',e:100}];
+const ACTS=[{k:'walk',n:'เดิน',i:'🚶',e:150},{k:'run',n:'วิ่ง',i:'👟',e:300},{k:'bike',n:'ปั่นจักรยาน',i:'🚴',e:250},{k:'swim',n:'ว่ายน้ำ',i:'🏊',e:250},{k:'gym',n:'เวท',i:'🏋️',e:120},{k:'etc',n:'อื่นๆ',i:'✨',e:100}];
 const MAXLV=12, CAP_MIN=1000, CAP_MAX=2500, CAP_START=1500, PET_CD=120000, PET_MAX=10;
 const need=lv=>lv*320;
 const stats=p=>{const n=p.lv-1,q=p.pts,sr=SPECIES[p.sp]&&SPECIES[p.sp].r,m=(1+(sr?RAR[sr].b:0))*(1+.08*((p.star||1)-1));return{hp:(60+18*n+4*q.hp)*m,atk:(10+2.2*n+0.6*q.atk)*m,df:(5+1.5*n+0.5*q.df)*m,en:15+1*n+0.4*q.en}};
@@ -670,7 +710,7 @@ function openSheet(html,onMount,opts){opts=opts||{};const ov=document.createElem
   ov.innerHTML='<div class="sheet" role="dialog" aria-modal="true"><div class="sh-body">'+html+'</div>'+(opts.noClose?'':'<div class="sh-foot"><button class="close" data-close>'+(opts.closeText||'ปิด')+'</button></div>')+'</div>';
   ov.addEventListener('click',e=>{if(e.target===ov&&!opts.noClose)closeSheet(ov);const b=e.target.closest('[data-close]');if(b)closeSheet(ov)});
   $('ovRoot').appendChild(ov);sheetStack.push({ov,opts});if(onMount)onMount(ov.querySelector('.sh-body'),ov);return ov}
-function closeSheet(ov){const i=sheetStack.findIndex(s=>s.ov===ov);if(i<0)return;const s=sheetStack[i];sheetStack.splice(i,1);ov.remove();if(s.opts.onClose)s.opts.onClose();setTimeout(nextPopup,60)}
+function closeSheet(ov){const i=sheetStack.findIndex(s=>s.ov===ov);if(i<0)return;const s=sheetStack[i];sheetStack.splice(i,1);ov.remove();if(s.opts.onClose)s.opts.onClose();const top=sheetStack[sheetStack.length-1];if(top&&top.ov._redraw){try{top.ov._redraw()}catch(e){}}setTimeout(nextPopup,60)}
 function closeAll(){while(sheetStack.length){const s=sheetStack.pop();s.ov.remove()}}
 const popupQ=[];function queuePopup(fn){popupQ.push(fn);if(!sheetStack.length)setTimeout(nextPopup,30)}
 function nextPopup(){if(sheetStack.length||!popupQ.length||!$('cover').hidden)return;popupQ.shift()()}
@@ -797,13 +837,15 @@ function exerciseSheet(){
   })}
 
 /* ---------- feed sheet ---------- */
+const FOODS=[{i:'🍎',n:'แอปเปิล',k:50},{i:'🍙',n:'ข้าวปั้น',k:100},{i:'🥗',n:'สลัดผัก',k:200},{i:'🍗',n:'ไก่ย่าง',k:300},{i:'🍣',n:'ซูชิ',k:500},{i:'🍱',n:'เบนโตะ',k:800},{i:'🍲',n:'หม้อไฟ',k:1200},{i:'🎂',n:'เค้กฉลอง',k:2000}];
+function fillPlate(target){const pl=FOODS.map(()=>0);let r=target;for(let i=FOODS.length-1;i>=0;i--){while(FOODS[i].k<=r){pl[i]++;r-=FOODS[i].k}}return pl}
 function feedSheet(id){
-  let p=(id&&S.pets.find(x=>x.id===id))||mainPet();let amt=0;
+  let p=(id&&S.pets.find(x=>x.id===id))||mainPet();let amt=0,plate=FOODS.map(()=>0);
   openSheet('<h2 id="fdT"></h2>'+(S.pets.length>1?'<div class="fsel" id="fSel"></div>':'')+'<div id="fd"></div>',(b)=>{
     const sel=()=>{b.querySelector('#fdT').textContent='ป้อนพลังให้ '+p.name;const fs=b.querySelector('#fSel');if(!fs)return;
       fs.innerHTML=S.pets.slice().sort((a,c)=>(c.id===S.main)-(a.id===S.main)||c.lv-a.lv).map(x=>'<button data-pid="'+x.id+'" class="'+(x===p?'on':'')+'">'+sprImg(x.sp,formIdx(x.lv),40)+'<span class="num">Lv'+x.lv+'</span></button>').join('');
-      fs.querySelectorAll('[data-pid]').forEach(x=>x.onclick=()=>{p=S.pets.find(z=>z.id===x.dataset.pid);amt=0;sel();draw()})};
-    const draw=()=>{const al=allowanceLeft(),mx=Math.min(S.wallet,al,toMax(p));if(amt>mx)amt=mx;
+      fs.querySelectorAll('[data-pid]').forEach(x=>x.onclick=()=>{p=S.pets.find(z=>z.id===x.dataset.pid);plate=FOODS.map(()=>0);sel();draw()})};
+    const draw=()=>{const al=allowanceLeft(),mx=Math.min(S.wallet,al,toMax(p));amt=plate.reduce((a,c,i)=>a+c*FOODS[i].k,0);if(amt>mx){plate=FOODS.map(()=>0);amt=0}
       const q=previewFeed(p,amt);const nl=need(p.lv)-p.exp;
       let h='<div class="row" style="gap:12px;flex-wrap:nowrap">'+sprImg(p.sp,formIdx(p.lv),96)+'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><div class="row sp"><span>Lv <b class="num">'+p.lv+'</b></span><span class="mut num">'+(p.lv>=MAXLV?'MAX':fmt(p.exp)+' / '+fmt(need(p.lv))+' EXP')+'</span></div><div class="bar"><i style="width:'+(p.lv>=MAXLV?100:p.exp/need(p.lv)*100)+'%"></i></div>'+
         '<div class="row sp mut"><span>Kcal ในกระเป๋า</span><b class="num" style="color:var(--kcal)">'+fmt(S.wallet)+'</b></div><div class="row sp mut"><span>วันนี้ย่อยได้อีก</span><b class="num" style="color:var(--good)">'+fmt(al)+' / '+fmt(S.cap)+'</b></div></div></div>';
@@ -811,18 +853,25 @@ function feedSheet(id){
       if(p.lv>=MAXLV)h+='<div class="card center"><p>'+esc(p.name)+' โตเต็มที่แล้ว! 🎉</p></div>';
       else if(al<=0)h+='<div class="card center"><p>วันนี้น้องอิ่มแล้ว 😴 พรุ่งนี้ป้อนต่อได้นะ</p><p class="mut">Kcal ที่เหลือยังอยู่ในกระเป๋าครบ</p></div>';
       else if(S.wallet<=0)h+='<div class="card center"><p>ยังไม่มี Kcal ในกระเป๋า</p><p class="mut">ไปออกกำลังกายแล้วกดบันทึกก่อนนะ</p><button class="btn kcal" id="toEx">🏃 บันทึกออกกำลังกาย</button></div>';
-      else{h+='<div class="card"><div class="row sp"><h3>จะป้อนเท่าไหร่</h3><button class="x" id="clr">ล้าง</button></div><div class="big center" style="text-align:center">'+fmt(amt)+' <span style="font-size:15px;color:var(--muted)">Kcal</span></div>'+
-          '<div class="chips"><button class="chip" data-f="50">+50</button><button class="chip" data-f="100">+100</button><button class="chip" data-f="500">+500</button><button class="chip" data-f="next">ถึงเลเวลถัดไป ('+fmt(nl)+')</button><button class="chip" data-f="max">ให้เต็มที่วันนี้</button></div>';
-        if(amt>0)h+='<p>ป้อนแล้ว → <b>Lv '+q.lv+'</b> <span class="mut num">('+(q.lv>=MAXLV?'MAX':fmt(q.exp)+' / '+fmt(need(q.lv)))+')</span>'+(formIdx(q.lv)!==formIdx(p.lv)?' <span class="tag">✨ เปลี่ยนร่าง!</span>':'')+'</p>';
+      else{const left=mx-amt;
+        h+='<div class="card"><div class="row sp"><h3>เมนูอาหาร · ราคาเป็น Kcal</h3><span class="mut num" style="font-size:12px">ซื้อได้อีก '+fmt(left)+'</span></div><div class="fgrid">'+
+          FOODS.map((f,i)=>{const off=f.k>left;return'<button class="food'+(off?' off':'')+(plate[i]?' in':'')+'" data-food="'+i+'"'+(off?' aria-disabled="true"':'')+'><span class="fe">'+pxi(f.i,34)+'</span><span class="fn">'+f.n+'</span><span class="fp num">'+pxi('🔥',12)+fmt(f.k)+'</span>'+(plate[i]?'<i class="fq num">×'+plate[i]+'</i>':'')+'</button>'}).join('')+'</div>'+
+          '<div class="chips"><button class="chip" data-f="next">จัดให้ถึงเลเวลถัดไป</button><button class="chip" data-f="max">จัดให้อิ่มเต็มที่วันนี้</button></div></div>';
+        h+='<div class="card plate"><div class="row sp"><h3>จานของ '+esc(p.name)+'</h3>'+(amt>0?'<button class="x" id="clr">ล้างจาน</button>':'')+'</div>'+
+          (amt>0?'<div class="pl">'+FOODS.map((f,i)=>plate[i]?'<button class="pli" data-rm="'+i+'" aria-label="เอา'+f.n+'ออก 1 ชิ้น">'+pxi(f.i,24)+'<span class="num">×'+plate[i]+'</span></button>':'').join('')+'</div><p class="mut" style="font-size:11.5px">แตะอาหารในจานเพื่อเอาออกทีละชิ้น</p>':'<p class="mut center" style="text-align:center;padding:6px 0">จานยังว่าง แตะเมนูด้านบนเพื่อเลือกอาหาร</p>')+
+          '<div class="row sp"><span>รวม</span><b class="num" style="font-size:20px;color:var(--kcal)">'+fmt(amt)+' Kcal</b></div>';
+        if(amt>0)h+='<p>กินแล้ว → <b>Lv '+q.lv+'</b> <span class="mut num">('+(q.lv>=MAXLV?'MAX':fmt(q.exp)+' / '+fmt(need(q.lv)))+')</span>'+(formIdx(q.lv)!==formIdx(p.lv)?' <span class="tag">✨ เปลี่ยนร่าง!</span>':'')+'</p>';
         if(S.wallet<nl&&nl<=al){const miss=nl-S.wallet;h+='<p class="note">อยากถึงเลเวลถัดไป ต้องการอีก <b class="num">'+fmt(miss)+'</b> Kcal ≈ เดินเร็วประมาณ '+Math.max(5,Math.round(miss/5/5)*5)+' นาที</p>'}
-        h+='<button class="btn go" id="feedGo" '+(amt>0?'':'disabled')+'>🍖 ป้อนพลัง '+fmt(amt)+' Kcal</button></div>'}
+        h+='<button class="btn go" id="feedGo" '+(amt>0?'':'disabled')+'>'+pxi('🍖',22)+' ให้น้องกิน · จ่าย '+fmt(amt)+' Kcal</button></div>'}
       b.querySelector('#fd').innerHTML=h;
       const te=b.querySelector('#toEx');if(te)te.onclick=()=>{closeSheet(b.closest('.ov'));exerciseSheet()};
-      const cl=b.querySelector('#clr');if(cl)cl.onclick=()=>{amt=0;draw()};
-      b.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{const v=x.dataset.f;amt=v==='next'?nl:v==='max'?mx:amt+(+v);draw()});
+      const cl=b.querySelector('#clr');if(cl)cl.onclick=()=>{plate=FOODS.map(()=>0);draw()};
+      b.querySelectorAll('[data-food]').forEach(x=>x.onclick=()=>{const i=+x.dataset.food,f=FOODS[i];if(amt+f.k>mx){toast(amt+f.k>S.wallet?'Kcal ในกระเป๋าไม่พอ':amt+f.k>al?'วันนี้น้องอิ่มเกินแล้ว ลองเมนูเล็กลง':'เกินที่น้องต้องการจนเลเวลเต็ม');return}plate[i]++;draw()});
+      b.querySelectorAll('[data-rm]').forEach(x=>x.onclick=()=>{const i=+x.dataset.rm;if(plate[i])plate[i]--;draw()});
+      b.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{const v=x.dataset.f;let t=v==='next'?Math.min(mx,Math.ceil(nl/50)*50):mx;if(t>mx)t=mx;plate=fillPlate(t);if(!plate.some(c=>c))toast('ยังซื้ออาหารจานเล็กสุดไม่ได้ (50 Kcal)');draw()});
       const sn=b.querySelector('#snack');if(sn)sn.onclick=()=>{if(S.snacks<1)return;SND.play('snack');S.snacks--;const ups=addExp(p,40,'snack');save();renderTop();sel();draw();happy(p.id,1800);say((p.id===S.main?'':p.name+': ')+'ขนมอร่อยมาก! 🍪');if(ups.length){closeSheet(b.closest('.ov'));showLevelUps(p,ups)}else toast('+40 EXP')};
-      const go=b.querySelector('#feedGo');if(go)go.onclick=()=>{if(amt<=0)return;SND.play('feed');const a=amt;S.wallet-=a;S.fed.amt+=a;const ups=addExp(p,a,'kcal');amt=0;save();renderTop();draw();
-        sel();happy(p.id,1800);say((p.id===S.main?'':p.name+': ')+'อร่อยจัง! ขอบคุณน้า 💕');if(ups.length){closeSheet(b.closest('.ov'));showLevelUps(p,ups)}else toast('ป้อนพลัง '+fmt(a)+' Kcal แล้ว')}};
+      const go=b.querySelector('#feedGo');if(go)go.onclick=()=>{if(amt<=0)return;SND.play('feed');const a=amt,ate=FOODS.filter((f,i)=>plate[i]).map(f=>f.n).join(' ');S.wallet-=a;S.fed.amt+=a;const ups=addExp(p,a,'kcal');plate=FOODS.map(()=>0);save();renderTop();draw();
+        sel();happy(p.id,1800);say((p.id===S.main?'':p.name+': ')+'อร่อยจัง '+ate+' ขอบคุณน้า 💕');if(ups.length){closeSheet(b.closest('.ov'));showLevelUps(p,ups)}else toast('น้องกินหมดจาน · +'+fmt(a)+' EXP')}};
     sel();draw()})}
 
 /* ---------- pet sheet ---------- */
@@ -1192,7 +1241,8 @@ function gachaSheet(){
 /* ---------- farm & team ---------- */
 const teamPets=()=>S.team.map(id=>S.pets.find(p=>p.id===id)).filter(Boolean).slice(0,S.slots);
 function farmSheet(){
-  openSheet('<div class="row sp"><h2>ฟาร์มและทีม</h2><span class="mut num" id="fCap"></span></div><div id="fB"></div>',(b,ov)=>{let exp=false;
+  openSheet('<div class="row sp"><h2>ฟาร์มและทีม</h2><span class="mut num" id="fCap"></span></div><div class="fhub"><button class="fh" id="fhG"><span class="ic">'+pxi('🥚',34)+'</span><b>กาชา</b><small>สุ่มน้องใหม่</small></button><button class="fh" id="fhD"><span class="ic">'+pxi('🌙',34)+'</span><b>พักจอ</b><small>ฟื้น Energy</small></button></div><div id="fB"></div>',(b,ov)=>{let exp=false;
+    b.querySelector('#fhG').onclick=()=>gachaSheet();b.querySelector('#fhD').onclick=()=>detoxStart();ov._redraw=()=>draw();
     const draw=()=>{b.querySelector('#fCap').textContent=S.pets.length+' / '+S.farmCap+' ช่อง';const tp=teamPets();
       let h='<div class="card"><div class="row sp"><h3>ทีมลุยดันเจี้ยน</h3><span class="mut" style="font-size:12px">'+tp.length+' / '+S.slots+' ตัว</span></div><div class="tslots">';
       for(let i=0;i<3;i++){const p=tp[i];if(i>=S.slots)h+='<div class="ts lock">🔒<span>ผ่านบอสเฟส '+i+'</span></div>';
@@ -1202,7 +1252,7 @@ function farmSheet(){
       h+='<div class="card"><h3>น้องทั้งหมด</h3><div class="list">'+S.pets.slice().sort((a,b)=>b.lv-a.lv).map(p=>{const s=SPECIES[p.sp],inT=S.team.includes(p.id)&&tp.includes(p),main=p.id===S.main;
         return'<div class="frow"><button class="fpic" data-see="'+p.id+'">'+sprImg(p.sp,formIdx(p.lv),52)+'</button><div class="finfo"><b>'+esc(p.name)+'</b>'+(main?' <span class="tag">🏠 ตัวหลัก</span>':'')+'<br><span class="mut" style="font-size:12px">'+ELEM[s.el].i+' '+s.name+' · <span class="num">Lv '+p.lv+'</span></span> '+starStr(p.star)+' '+rarTag(s.r)+enBar(p,'90%')+'</div><div class="fbtn">'+
           (inT?'<span class="tag" style="color:var(--good)">✓ ในทีม</span>':tp.length<S.slots?'<button class="btn sm" data-in="'+p.id+'">+ ใส่ทีม</button>':'<button class="btn sm" data-swap="'+p.id+'" title="แทนตัวสุดท้ายในทีม">⇄ สลับ</button>')+
-          (main?'':'<button class="x" data-main="'+p.id+'">🏠</button>')+'</div></div>'}).join('')+'</div><p class="mut" style="font-size:11px">🏠 = ตั้งเป็นตัวหลักบนหน้าแรก · แตะรูปเพื่อดูรายละเอียด</p></div>';
+          (main?'':'<button class="x" data-main="'+p.id+'">🏠</button>')+'</div></div>'}).join('')+'</div><p class="mut" style="font-size:11px">🏠 = ตั้งเป็นตัวหลักบนหน้าแรก · แตะรูปน้องเพื่อป้อนพลังหรือดูรายละเอียด</p></div>';
       h+='<div class="card"><div class="row sp"><h3>ขยายฟาร์ม</h3><span class="num mut">'+S.farmCap+' / 30</span></div>'+(S.farmCap>=30?'<p class="mut">ฟาร์มใหญ่สุดแล้ว เก็บน้องได้ครบทุกสายพันธุ์</p>':
         exp?'<p>ขยาย +5 ช่อง ใช้ <b class="num" style="color:var(--kcal)">400</b> Kcal?</p><div class="row"><button class="btn go sm" id="xY" style="flex:1" '+(S.wallet<400?'disabled':'')+'>ยืนยัน</button><button class="btn sm" id="xN" style="flex:1">ยกเลิก</button></div>'+(S.wallet<400?'<p class="warn" style="font-size:12px">Kcal ไม่พอ</p>':''):
         '<button class="btn sm" id="xGo">+5 ช่อง · 400 Kcal</button>')+'</div>';
@@ -1211,10 +1261,278 @@ function farmSheet(){
       b.querySelectorAll('[data-in]').forEach(x=>x.onclick=()=>{S.team=teamPets().map(p=>p.id).concat(x.dataset.in);save();syncRoamers();draw();toast('ใส่ทีมแล้ว')});
       b.querySelectorAll('[data-swap]').forEach(x=>x.onclick=()=>{const t=teamPets().map(p=>p.id);t[t.length-1]=x.dataset.swap;S.team=t;save();syncRoamers();draw();toast('สลับเข้าทีมแล้ว')});
       b.querySelectorAll('[data-main]').forEach(x=>x.onclick=()=>{S.main=x.dataset.main;save();syncRoamers();renderTop();draw();toast('ตั้งเป็นตัวหลักแล้ว')});
-      b.querySelectorAll('[data-see]').forEach(x=>x.onclick=()=>{closeSheet(ov);petSheet(x.dataset.see)});
+      b.querySelectorAll('[data-see]').forEach(x=>x.onclick=()=>petMenu(x.dataset.see));
       if(q('#xGo'))q('#xGo').onclick=()=>{exp=true;draw()};if(q('#xN'))q('#xN').onclick=()=>{exp=false;draw()};
       if(q('#xY'))q('#xY').onclick=()=>{if(S.wallet<400||S.farmCap>=30)return;S.wallet-=400;S.farmCap=Math.min(30,S.farmCap+5);exp=false;save();renderTop();draw();toast('ฟาร์มใหญ่ขึ้นแล้ว!')}};
     draw()})}
+function petMenu(id){const p=S.pets.find(x=>x.id===id);if(!p)return;const s=SPECIES[p.sp],full=p.lv>=MAXLV;
+  openSheet('<div class="pm">'+sprImg(p.sp,formIdx(p.lv),96)+'<div><h2>'+esc(p.name)+'</h2><p class="mut" style="font-size:13px">'+ELEM[s.el].i+' '+s.name+' · <span class="num">Lv '+p.lv+'</span> '+starStr(p.star)+'</p>'+enBar(p,'100%')+'</div></div>'+
+   '<button class="btn kcal" id="pmF"'+(full?' disabled':'')+'>'+pxi('🍖',24)+' ป้อนพลัง'+(full?' (เลเวลเต็มแล้ว)':'')+'</button><button class="btn" id="pmD">'+pxi('📋',24)+' ดูรายละเอียด</button>',(b,ov)=>{
+    b.querySelector('#pmF').onclick=()=>{closeSheet(ov);feedSheet(id)};
+    b.querySelector('#pmD').onclick=()=>{closeSheet(ov);petSheet(id)}})}
+/* ---------- pixel icons (original 14px art, auto-shaded + outlined) ---------- */
+const PXPAL={r:'#e8434f',R:'#a82838',o:'#ff9a3c',y:'#ffd23f',g:'#5ccf5c',G:'#2f8f4a',b:'#a8643a',B:'#6a3a22',w:'#f4f0ff',k:'#2e2a40',s:'#ffe7b0',t:'#e0b070',p:'#ff8fb6',u:'#4f9cff',c:'#8fd6ff',v:'#8a6bff',n:'#9a98b8',m:'#ffe27a',l:'#d6d3ea',d:'#55507a'};
+const PXI={
+shoe:[
+'..............',
+'..............',
+'....uuuu......',
+'....uwwu......',
+'....uuuuu.....',
+'....uwuuuu....',
+'...uuuwuuuu...',
+'...uuuuuwuuuu.',
+'..uuuuuuuuuuu.',
+'..uuuuuuuuuuuu',
+'..wwwwwwwwwwww',
+'..dddddddddddd'],
+house:[
+'......rr......',
+'.....rrrr.....',
+'....rrrrrr....',
+'...rrrrrrrr...',
+'..rrrrrrrrrr..',
+'.rrrrrrrrrrrr.',
+'..ssssssssss..',
+'..sccssssbbs..',
+'..sccssssbbs..',
+'..ssssssbbbs..',
+'..ssssssbbbs..',
+'..ssssssbbbs..',
+'gggggggggggggg'],
+scroll:[
+'.bbbbbbbbbbbb.',
+'.BsssssssssB..',
+'..ssssssssss..',
+'..sddddddds...',
+'..ssssssssss..',
+'..sdddddds....',
+'..ssssssssss..',
+'..sddddddds...',
+'..ssssssssss..',
+'..sdddds......',
+'..ssssssssss..',
+'.BsssssssssB..',
+'.bbbbbbbbbbbb.'],
+chart:[
+'..........rr..',
+'..........rr..',
+'......uu..rr..',
+'......uu..rr..',
+'......uu..rr..',
+'..gg..uu..rr..',
+'..gg..uu..rr..',
+'..gg..uu..rr..',
+'..gg..uu..rr..',
+'..gg..uu..rr..',
+'.llllllllllll.'],
+help:['....vvvvvv....','..vvvvvvvvvv..','.vvvwwwwwwvvv.','.vvwwvvvvwwvv.','vvvvvvvvvwwvvv','vvvvvvvvwwvvvv','vvvvvvwwwvvvvv','vvvvvvwwvvvvvv','vvvvvvwwvvvvvv','.vvvvvvvvvvvv.','..vvvvwwvvvv..','....vvvvvv....'],
+gear:[
+'......nn......',
+'..nn..nn..nn..',
+'..nnnnnnnnnn..',
+'...nnnnnnnn...',
+'.nnnnnddnnnnn.',
+'nnnnnd..dnnnnn',
+'..nnd....dnn..',
+'..nnd....dnn..',
+'nnnnnd..dnnnnn',
+'.nnnnnddnnnnn.',
+'...nnnnnnnn...',
+'..nnnnnnnnnn..',
+'..nn..nn..nn..',
+'......nn......'],
+door:[
+'..dddddddddd..',
+'..dbbbbbbbbd..',
+'..dbBBbbBBbd..',
+'..dbBBbbBBbd..',
+'..dbbbbbbbbd..',
+'..dbbbbbbbbd..',
+'..dbbbbbbyyd..',
+'..dbbbbbbbbd..',
+'..dbBBbbBBbd..',
+'..dbBBbbBBbd..',
+'..dbbbbbbbbd..',
+'..dbbbbbbbbd..',
+'llllllllllllll'],
+egg:[
+'.....ssss.....',
+'....ssssss....',
+'...sssppsss...',
+'...ssppppss...',
+'..ssssppssss..',
+'..ssssssssss..',
+'..spssssssss..',
+'..pppsssssps..',
+'..sppssssppp..',
+'..ssssssssps..',
+'...ssssssss...',
+'....ssssss....'],
+moon:[
+'....mmmm......',
+'..mmmmm.....y.',
+'.mmmm......yyy',
+'.mmm........y.',
+'mmmm..........',
+'mmm...........',
+'mmm.......y...',
+'mmmm.........',
+'.mmmm.........',
+'.mmmmm......m.',
+'..mmmmmm..mm..',
+'...mmmmmmmm...',
+'.....mmmm.....'],
+map:['.tttttttttttt.','.tsssssssssst.','.tsssssssrsrt.','.tssssssssrst.','.tsssssssrsrt.','.tssssssdssst.','.tsssssdsssst.','.tssssdssssst.','.tsggdsssssst.','.tgggssssuust.','.tgggsssuuust.','.tsssssssssst.','.tttttttttttt.'],
+apple:[
+'.......b......',
+'.......b.gg...',
+'......bggg....',
+'...rrrbrrr....',
+'..rrrrrrrrrr..',
+'.rrrrrrrrrrrr.',
+'.rrrrrrrrrrrr.',
+'.rrrrrrrrrrrr.',
+'.rrrrrrrrrrrr.',
+'..rrrrrrrrrr..',
+'..rrrrrrrrrr..',
+'...rrr..rrr...'],
+onigiri:[
+'......ww......',
+'.....wwww.....',
+'....wwwwww....',
+'....wwwwww....',
+'...wwwwwwww...',
+'...wwwwwwww...',
+'..wwwwwwwwww..',
+'..wwwkkkkwww..',
+'.wwwkkkkkkwww.',
+'.wwwkkkkkkwww.',
+'.wwwkkkkkkwww.'],
+salad:[
+'.....g..g.....',
+'...gGgggrgg...',
+'..gGggrrggGg..',
+'.ggGgggrgGggg.',
+'.gggGggggggGg.',
+'wwwwwwwwwwwwww',
+'.wwwwwwwwwwww.',
+'.wccwwwwwwccw.',
+'..wwwwwwwwww..',
+'...wwwwwwww...',
+'.....wwww.....'],
+leg:[
+'...oooo.......',
+'..oooooo......',
+'.oooooooo.....',
+'.ooooooooo....',
+'.oooooooooo...',
+'..ooooooooo...',
+'...oooooooo...',
+'....ooooooo...',
+'......oooo....',
+'........ww....',
+'.........ww...',
+'........wwww..',
+'.........wwww.',
+'..........ww..'],
+sushi:[
+'..............',
+'...oooooooo...',
+'..ooposopsoo..',
+'..oooooooooo..',
+'..wwwwwwwwww..',
+'..wwwwwwwwww..',
+'..wwwwwwwwww..',
+'..wwwwwwwwww..',
+'..............'],
+bento:[
+'.RRRRRRRRRRRR.',
+'.RwwwwwRggggR.',
+'.RwwwwwRggggR.',
+'.RwwrwwRggggR.',
+'.RwwwwwRRRRRR.',
+'.RwwwwwRyyppR.',
+'.RwwwwwRyyppR.',
+'.RRRRRRRRRRRR.'],
+pot:[
+'...l...l...l..',
+'....l...l...l.',
+'...l...l...l..',
+'..............',
+'..oyogoyogoo..',
+'dddddddddddddd',
+'.dnnnnnnnnnnd.',
+'.dnnnnnnnnnnd.',
+'..dnnnnnnnnd..',
+'...dddddddd...'],
+cake:[
+'.......y......',
+'.......o......',
+'.......p......',
+'..rr...p..rr..',
+'.wwwwwwwwwwww.',
+'.pppppppppppp.',
+'.wwwwwwwwwwww.',
+'.ssssssssssss.',
+'.pppppppppppp.',
+'.ssssssssssss.'],
+paw:['...pp....pp...','..pppp..pppp..','..pppp..pppp..','...pp....pp...','pp..........pp','pp...pppp...pp','....pppppp....','...pppppppp...','...pppppppp...','....pp..pp....'],
+sword:['...........ll.','..........lll.','.........lll..','........lll...','.......lll....','......lll.....','..y..lll......','..yylll.......','...yyl........','...byy........','..bb.yy.......','.bb...........'],
+star:['......yy......','......yy......','.....yyyy.....','yyyyyyyyyyyyyy','.yyyyyyyyyyyy.','...yyyyyyyy...','...yyyyyyyy...','..yyyyyyyyyy..','..yyyy..yyyy..','.yyy......yyy.'],
+target:['....rrrrrr....','..rrrrrrrrrr..','.rrwwwwwwwwrr.','.rrwwrrrrwwrr.','rrwwrrrrrrwwrr','rrwwrrwwrrwwrr','rrwwrrwwrrwwrr','rrwwrrrrrrwwrr','.rrwwrrrrwwrr.','.rrwwwwwwwwrr.','..rrrrrrrrrr..','....rrrrrr....'],
+trophy:['.yyyyyyyyyyyy.','yyyyyyyyyyyyyy','y.yyyyyyyyyy.y','y.yyyyyyyyyy.y','.yyyyyyyyyyyy.','...yyyyyyyy...','....yyyyyy....','......yy......','......yy......','....yyyyyy....','...bbbbbbbb...','...bbbbbbbb...'],
+heart:['..pppp..pppp..','.pppppppppppp.','pppppppppppppp','pppppppppppppp','pppppppppppppp','.pppppppppppp.','..pppppppppp..','...pppppppp...','....pppppp....','.....pppp.....','......pp......'],
+barbell:['..rr......rr..','.urr......rru.','.urr......rru.','nurrnnnnnnrrun','nurrnnnnnnrrun','.urr......rru.','.urr......rru.','..rr......rr..'],
+bolt:['........yyyy..','.......yyyy...','......yyyy....','.....yyyy.....','....yyyyyyyy..','.......yyyy...','......yyyy....','.....yyy......','....yy........','...y..........'],
+sparkle:['....y.........','....y.........','...yyy........','yyyyyyyy......','...yyy....c...','....y.....c...','....y...ccccc.','..........c...','..........c...','..............','......c.......','.....ccc......','......c.......'],
+party:['..........r..y','.....y..p.....','..u.....r.y...','.......pp.....','....u.oooo..r.','......ooo.....','.....ooo..u...','....oooy......','...oooy..y....','..oooy........','.ooy..........'],
+lock:['....nnnnnn....','...nn....nn...','...n......n...','...n......n...','..yyyyyyyyyy..','..yyyyyyyyyy..','..yyyykkyyyy..','..yyyykkyyyy..','..yyyyykyyyy..','..yyyyyyyyyy..','..yyyyyyyyyy..'],
+gamepad:['..vvvvvvvvvv..','.vvvvvvvvvvvv.','vvkvvvvvvvvrvv','vkkkvvvvvvuvrv','vvkvvvvvvvvuvv','vvvvvvvvvvvvvv','vvvv......vvvv','.vv........vv.'],
+shield:['.uuuuuuuuuuuu.','.uuuuuuwuuuuu.','.uuuuuwwwuuuu.','.uuuuuuwuuuuu.','.uuuuuuuuuuuu.','..uuuuuuuuuu..','..uuuuuuuuuu..','...uuuuuuuu...','....uuuuuu....','.....uuuu.....','......uu......'],
+crown:['.y....y....y..','.yy..yyy..yy..','.yyy.yyy.yyy..','.yyyyyyyyyyy..','.yyyyyyyyyyy..','.yryyyuyyyry..','.yyyyyyyyyyy..'],
+robot:['......r.......','......n.......','..nnnnnnnnnn..','..nccnnnnccn..','..nccnnnnccn..','..nnnnnnnnnn..','..nnkkkkkknn..','..nnnnnnnnnn..','....nnnnnn....','.nnnnnnnnnnnn.'],
+leaf:['..........GG..','.......gggGG..','.....ggggGgg..','....gggGgggg..','...gggGggggg..','...ggGggggg...','..ggGggggg....','..gGggggg.....','..Gggggg......','.G............'],
+drop:['......u.......','.....uu.......','.....uuu......','....uuuuu.....','...uuuuuuu....','..uuwuuuuuu...','..uwuuuuuuu...','..uwuuuuuuu...','..uuuuuuuuu...','...uuuuuuu....','....uuuuu.....'],
+orb:['....llllll....','..llllllllll..','.llwwllllllll.','.lwwlllllllll.','.llllllllllll.','.llllllllllll.','.llllllllllll.','..llllllllll..','....llllll....'],
+scale:['......y.......','.yyyyyyyyyyy..','.y....y....y..','y.y...y...y.y.','yyy...y...yyy.','......y.......','......y.......','....yyyyy.....'],
+bike:['.......kk.....','.....rrrr.....','....r..r......','..nnn.r.rnnn..','.n...nr.n...n.','.n...n..n...n.','.n...n..n...n.','..nnn....nnn..'],
+swim:['...u.....u....','..u.u...u.u...','.u...u.u...u..','u.....u.....u.','..............','...c.....c....','..c.c...c.c...','.c...c.c...c..','c.....c.....c.'],
+pencil:['...........kk.','..........yyk.','.........yyy..','........yyy...','.......yyy....','......yyy.....','.....yyy......','....yyy.......','...pyy........','...pp.........','..s...........'],
+bulb:['....yyyyyy....','...yyyyyyyy...','..yyywyyyyyy..','..yywyyyyyyy..','..yyyyyyyyyy..','...yyyyyyyy...','....yyyyyy....','....nnnnnn....','....nnnnnn....','.....nnnn.....'],
+check:['gggggggggggggg','gggggggggggwwg','ggggggggggwwgg','gggggggggwwggg','gwwggggggwgggg','ggwwggggwwgggg','gggwwggwwggggg','ggggwwwwgggggg','gggggwwggggggg','gggggggggggggg'],
+box:['llllllllllllll','l............l','l............l','l............l','l............l','l............l','l............l','l............l','l............l','llllllllllllll'],
+warn:['......yy......','.....yyyy.....','.....ykky.....','....yykkyy....','....yykkyy....','...yyykkyyy...','...yyykkyyy...','..yyyyyyyyyy..','..yyyyykkyyyy.','.yyyyyykkyyyyy','yyyyyyyyyyyyyy'],
+ffwd:['y.....y.......','yy....yy......','yyy...yyy.....','yyyy..yyyy....','yyyyy.yyyyy...','yyyy..yyyy....','yyy...yyy.....','yy....yy......','y.....y.......'],
+boom:['...o....o.....','....o..oo..o..','.o..oooooooo..','..ooyyyyyoo...','..oyyywyyyoo.o','ooyyywwyyyoo..','..oyyyyyyyo...','.ooyyyyyyoo...','...ooooooo.o..','..o..o..o.....'],
+speaker:['.....n........','....nn....c...','...nnn.....c..','nnnnnn..c...c.','nnnnnn...c..c.','nnnnnn...c..c.','nnnnnn..c...c.','...nnn.....c..','....nn....c...','.....n........'],
+mute:['.....n........','....nn........','...nnn.r...r..','nnnnnn..r.r...','nnnnnn...r....','nnnnnn..r.r...','...nnn.r...r..','....nn........','.....n........'],
+key:['..yyyy........','.yyyyyy.......','yyy..yyy......','yyy..yyyyyyyyy','.yyyyyy...y.yy','..yyyy....y.y.'],
+zzz:['.......cccccc.','..........cc.','.........cc...','........cc....','.......cccccc.','..vvvv........','....v.........','...v..........','..vvvv........'],
+flame:['.....o........','....oo........','....ooo..o....','...oooo.oo....','...ooooooo....','..ooooyoooo...','..oooyyyoooo..','.ooooyyyyooo..','.oooyyyyyyoo..','.ooyyywwyyoo..','..oyyywwyyo...','...oyyyyyo....','.....ooo......'],
+runshoe:['..............','......oooo....','......owwo....','c.....ooooo...','......owoooo..','cc...oooowooo.','.....oooooowoo','ccc.ooooooooo.','....oooooooooo','....wwwwwwwwww','....dddddddddd'],
+cookie:['....tttttt....','..tttttttttt..','.ttBttttttBtt.','.tttttttttttt.','tttttBtttttttt','ttttttttttBttt','ttBttttttttttt','tttttttBtttttt','.tttttttttttt.','.ttttBttttBtt.','..tttttttttt..','....tttttt....'],
+};
+function pxShade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=f>0?255:0,a=Math.abs(f);r=Math.round(r+(t-r)*a);g=Math.round(g+(t-g)*a);b=Math.round(b+(t-b)*a);return'rgb('+r+','+g+','+b+')'}
+function pxCanvas(name){const rows=PXI[name];const w=Math.max(...rows.map(r=>r.length)),h=rows.length,S=Math.max(w,h)+2;
+  const ox=Math.floor((S-w)/2),oy=Math.floor((S-h)/2);const G=[];for(let y=0;y<S;y++){G.push([]);for(let x=0;x<S;x++){const r=rows[y-oy];const ch=r&&r[x-ox];G[y].push(ch&&ch!=='.'?ch:null)}}
+  const cv=document.createElement('canvas');cv.width=cv.height=S;const c=cv.getContext('2d');const at=(x,y)=>(G[y]&&G[y][x])||null;
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){const ch=at(x,y);if(ch){const base=PXPAL[ch];let f=0;if(at(x,y-1)!==ch)f=.32;else if(at(x,y+1)!==ch||at(x+1,y)!==ch)f=-.28;c.fillStyle=f?pxShade(base,f):base;c.fillRect(x,y,1,1)}
+    else if(at(x-1,y)||at(x+1,y)||at(x,y-1)||at(x,y+1)){c.fillStyle='#1a1230';c.fillRect(x,y,1,1)}}
+  return cv}
+const pxCache={};function pxURL(k){return pxCache[k]||(pxCache[k]=pxCanvas(k).toDataURL())}
+const EMO2PX={'🏃':'barbell','🏡':'house','📜':'scroll','📊':'chart','❓':'help','⚙️':'gear','🚪':'door','🥚':'egg','🌙':'moon','🗺️':'map','🍖':'leg','🍎':'apple','🍙':'onigiri','🥗':'salad','🍗':'leg','🍣':'sushi','🍱':'bento','🍲':'pot','🎂':'cake','📋':'paw','🐾':'paw','⚔️':'sword','⭐':'star','🎯':'target','🏆':'trophy','🤗':'heart','🍪':'cookie','🔥':'flame','🍽️':'bento','⚡':'bolt','✨':'sparkle','🎉':'party','🏠':'house','🔒':'lock','💕':'heart','🎮':'gamepad','🛡️':'shield','👑':'crown','🤖':'robot','🍃':'leaf','💧':'drop','⚪':'orb','⚖️':'scale','🚶':'shoe','👟':'runshoe','🚴':'bike','🏊':'swim','🏋️':'barbell','💪':'barbell','😴':'zzz','✏️':'pencil','✋':'pencil','💡':'bulb','✅':'check','⬜':'box','⚠️':'warn','⏩':'ffwd','💥':'boom','🔇':'mute','🔊':'speaker','🔑':'key'};
+const EMO_RE=new RegExp('('+Object.keys(EMO2PX).sort((a,b)=>b.length-a.length).map(e=>e.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\uFE0F?','g');
+function pxText(root){if(!root)return;const skip=/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|TITLE)$/;const L=[];
+  if(root.nodeType===3){L.push(root)}else{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(w.nextNode())L.push(w.currentNode)}
+  for(const n of L){const t=n.nodeValue,par=n.parentNode;if(!par||skip.test(par.nodeName))continue;EMO_RE.lastIndex=0;if(!EMO_RE.test(t))continue;
+    const f=document.createDocumentFragment();let last=0,m;EMO_RE.lastIndex=0;
+    while((m=EMO_RE.exec(t))){if(m.index>last)f.append(t.slice(last,m.index));const im=document.createElement('img');im.className='pxe';im.alt='';im.src=pxURL(EMO2PX[m[1]]);f.append(im);last=m.index+m[0].length}
+    if(last<t.length)f.append(t.slice(last));n.replaceWith(f)}}
+let pxOn=false;function pxWatch(){if(pxOn)return;pxOn=true;pxText(document.body);new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData')pxText(m.target);else m.addedNodes.forEach(a=>pxText(a))}}).observe(document.body,{childList:true,subtree:true,characterData:true})}
+pxWatch();
+
+function pxi(e,sz){const k=EMO2PX[e]||(PXI[e]?e:null);return k?'<img class="pxi" src="'+pxURL(k)+'" width="'+sz+'" height="'+sz+'" alt="">':e}
 /* ---------- next goal banner ---------- */
 function curStage(){let ph=0;for(let q=0;q<10;q++)if(phaseOpen(q))ph=q;const P=PHASES[ph];let i=P.stages.findIndex((x,k)=>!isClear(ph,k));if(i<0)i=9;return{ph,i,st:P.stages[i],all:isClear(9,9)}}
 function goalInfo(){if(!S||!mainPet())return null;const tp=teamPets().length?teamPets():[mainPet()],al=allowanceLeft();const q=questState(),qd=QUESTS.filter(x=>q.claimed[x.k]).length,qr=QUESTS.some(x=>q.done[x.k]&&!q.claimed[x.k]);
@@ -1231,8 +1549,8 @@ function goalInfo(){if(!S||!mainPet())return null;const tp=teamPets().length?tea
   const slotsMax=Math.min(S.slots,c.ph===0?1:3);if(tp.length<slotsMax&&S.pets.length>tp.length)return{i:'🏡',t:'ใส่น้องเข้าทีมให้ครบ '+slotsMax+' ตัว จะสู้ง่ายขึ้น',fn:farmSheet};
   if(tp.some(x=>penergy(x)<60))return{i:'🌙',t:'Energy น้องเหลือน้อย พักจอเติมพลังก่อนลุยด่าน '+n,fn:detoxStart};
   return{i:'⚔️',t:'พร้อมลุยด่าน '+n+' แล้ว!'+(qd<3?' · ภารกิจวันนี้ '+qd+'/3':''),fn:()=>adventureSheet(c.ph,c.i),hot:'aAdv'}}
-function renderGoal(){const g=goalInfo(),el=$('goal');if(!el)return;if(!g){el.hidden=true;return}el.hidden=false;el.innerHTML='<span class="gi">'+g.i+'</span><span class="gt">'+esc(g.t)+'</span><span class="ga">›</span>';el._fn=g.fn;
-  ['aEx','aFeed','aAdv'].forEach(id=>$(id).classList.toggle('hot',g.hot===id&&S.totalKcal<1500))}
+function renderGoal(){try{markDock()}catch(e){}const g=goalInfo(),el=$('goal');if(!el)return;if(!g){el.hidden=true;return}el.hidden=false;el.innerHTML='<span class="gi">'+pxi(g.i,26)+'</span><span class="gt">'+esc(g.t)+'</span><span class="ga">›</span>';el._fn=g.fn;
+  $('aAdv').classList.toggle('hot',g.hot==='aAdv'&&S.totalKcal<1500)}
 
 /* ---------- daily quests + stamp card ---------- */
 const QUESTS=[{k:'ex',i:'🏃',n:'บันทึกการออกกำลังกาย 1 ครั้ง',r:'🍪 ขนม 1 ชิ้น (+40 EXP)'},{k:'pet',i:'🤗',n:'ลูบหัวน้อง 3 ครั้ง',r:'⭐ ดาวเศษ 1'},{k:'fight',i:'⚔️',n:'ลุยด่านใดก็ได้ 1 ครั้ง (แพ้ก็นับ)',r:'⭐ ดาวเศษ 1'}];
@@ -1244,7 +1562,7 @@ function questState(){const d=questDay();if(!S.quest||S.quest.qd!==d)S.quest={qd
 function questSheet(){
   openSheet('<h2>ภารกิจรายวัน</h2><p class="mut" id="qT"></p><div id="qB"></div>',(b)=>{
     const draw=()=>{const q=questState();const all=QUESTS.every(x=>q.claimed[x.k]);b.querySelector('#qT').textContent='ระบบรายวันทั้งหมดรีเซ็ตเวลา 22:00 · รอบใหม่ในอีก '+questLeft()+' · ทำไม่ครบก็ไม่เสียอะไร';
-      let h='<div class="list">'+QUESTS.map(x=>{const dn=q.done[x.k],cl=q.claimed[x.k];return'<div class="li" style="align-items:center"><span style="font-size:22px">'+x.i+'</span><span style="flex:1;min-width:0">'+x.n+'<br><span class="mut" style="font-size:12px">รางวัล: '+x.r+'</span></span>'+
+      let h='<div class="list">'+QUESTS.map(x=>{const dn=q.done[x.k],cl=q.claimed[x.k];return'<div class="li" style="align-items:center"><span style="font-size:22px">'+pxi(x.i,28)+'</span><span style="flex:1;min-width:0">'+x.n+'<br><span class="mut" style="font-size:12px">รางวัล: '+x.r+'</span></span>'+
         (cl?'<span class="tag" style="color:var(--good)">✓ รับแล้ว</span>':dn?'<button class="btn go sm" data-q="'+x.k+'">รับ</button>':'<span class="tag">ยังไม่ทำ</span>')+'</div>'}).join('')+'</div>';
       h+='<div class="card"><div class="row sp"><h3>ตราประทับ</h3><span class="num mut">'+S.stamps+' / 7</span></div><div class="stamps">'+Array.from({length:7},(_,k)=>'<span class="'+(k<S.stamps?'on':'')+'">'+(k<S.stamps?'🐾':'')+'</span>').join('')+'</div><p class="mut" style="font-size:12px">ทำครบ 3 ข้อในวันเดียว ได้ 1 ดวง (ไม่ต้องติดกัน) · ครบ 7 ดวง ได้ 🥚 ไข่ฟรี 1 ใบ + ⭐ 5</p>'+(all?'<p style="color:var(--good)">วันนี้ครบแล้ว เก่งมาก! 🎉</p>':'')+'</div>';
       h+='<p class="mut" style="font-size:12px">🍪 ขนมที่มี: <b class="num">'+S.snacks+'</b> ชิ้น · ใช้ได้ในหน้าป้อนพลัง</p>';
@@ -1258,14 +1576,14 @@ function questSheet(){
 /* ---------- how to play ---------- */
 const TUT=[
  {h:'ยินดีต้อนรับ!',sp:1,t:'Kcal Pet Dungeon คือเกมเลี้ยงน้องที่โตจากการออกกำลังกาย<b>จริง</b> ยิ่งขยับ น้องยิ่งเก่ง'},
- {h:'1 · ออกกำลังกาย แล้วบันทึก',i:'🏃',t:'ไปเดิน วิ่ง ปั่น หรือเล่นเวท แล้วกดปุ่ม <b>🏃 ออกกำลังกาย</b> ใส่ Kcal ที่เผาผลาญได้ (ไม่รู้ตัวเลข กดค่าประมาณ 30 นาทีได้) Kcal ทั้งหมดเข้ากระเป๋า ไม่มีหาย'},
- {h:'2 · ป้อนพลังให้น้องโต',i:'🍖',t:'กด <b>🍖 ป้อนพลัง</b> เอา Kcal ให้น้อง 1 Kcal = 1 EXP · น้องโตถึง Lv 12 มี 5 ร่าง ไข่จะฟักที่ Lv 3 · ป้อนได้ไม่เกินวันละเท่าที่น้องย่อยได้ (ตัวเลขสีเขียวด้านบน) ส่วนที่เหลือรอในกระเป๋า ป้อนพรุ่งนี้ได้'},
- {h:'3 · ผจญภัยในหอคอย',i:'🗺️',t:'กด <b>🗺️ ผจญภัย</b> ไต่หอคอย 100 ด่าน ทุกด่านบอกเลเวลแนะนำ ถ้าน้องยังอ่อน เกมบอกว่าต้องออกกำลังอีกเท่าไหร่ · แพ้ไม่เสียอะไร · ต้นเดือนหอคอยรีเซ็ต แต่น้องเก่งขึ้นเรื่อยๆ'},
- {h:'4 · Energy และพักจอ',i:'🌙',t:'น้องใช้ Energy ตอนออกสกิล ถ้าพลังเหลือน้อยจะสู้ยาก · เข้า <b>🌙 พักจอ</b> เลือกน้องแล้ววางมือถือ น้องฟื้น 0→100 ใน 10 นาที ได้พักสายตาด้วย'},
- {h:'5 · ทุกวันมีอะไรให้ทำ',i:'📜',t:'ดู<b>แถบเป้าหมาย</b>ด้านบนจอ ว่าตอนนี้ควรทำอะไรต่อ · ทำ<b>ภารกิจรายวัน</b> 3 ข้อรับขนมกับดาวเศษ · เปิดไข่ที่<b>กาชา</b> ได้น้องใหม่มาร่วมทีม · ใช้ดาวเศษอัป<b>ดาว ★</b> ให้น้องเก่งขึ้น'}];
+ {h:'1 · ออกกำลังกาย แล้วบันทึก',i:'🏃',t:'ไปเดิน วิ่ง ปั่น หรือเล่นเวท แล้วเปิดเมนู <b>☰</b> มุมขวาบน กด <b>🏃 ออกกำลังกาย</b> ใส่ Kcal ที่เผาผลาญได้ (ไม่รู้ตัวเลข กดค่าประมาณ 30 นาทีได้) Kcal ทั้งหมดเข้ากระเป๋า ไม่มีหาย'},
+ {h:'2 · ป้อนพลังให้น้องโต',i:'🍖',t:'เข้า <b>🏡 ฟาร์มและทีม</b> แตะรูปน้อง แล้วกด <b>🍖 ป้อนพลัง</b> เอา Kcal ให้น้อง 1 Kcal = 1 EXP · น้องโตถึง Lv 12 มี 5 ร่าง ไข่จะฟักที่ Lv 3 · ป้อนได้ไม่เกินวันละเท่าที่น้องย่อยได้ (ตัวเลขสีเขียวด้านบน) ส่วนที่เหลือรอในกระเป๋า ป้อนพรุ่งนี้ได้'},
+ {h:'3 · ผจญภัยในหอคอย',i:'🗺️',t:'กดปุ่ม <b>🗺️ ผจญภัย</b> ด้านล่าง ไต่หอคอย 100 ด่าน ทุกด่านบอกเลเวลแนะนำ ถ้าน้องยังอ่อน เกมบอกว่าต้องออกกำลังอีกเท่าไหร่ · แพ้ไม่เสียอะไร · ต้นเดือนหอคอยรีเซ็ต แต่น้องเก่งขึ้นเรื่อยๆ'},
+ {h:'4 · Energy และพักจอ',i:'🌙',t:'น้องใช้ Energy ตอนออกสกิล ถ้าพลังเหลือน้อยจะสู้ยาก · ใน <b>🏡 ฟาร์มและทีม</b> กด <b>🌙 พักจอ</b> เลือกน้องแล้ววางมือถือ น้องฟื้น 0→100 ใน 10 นาที ได้พักสายตาด้วย'},
+ {h:'5 · ทุกวันมีอะไรให้ทำ',i:'📜',t:'ดู<b>แถบเป้าหมาย</b>ด้านบนจอ ว่าตอนนี้ควรทำอะไรต่อ · ทำ<b>ภารกิจรายวัน</b> 3 ข้อรับขนมกับดาวเศษ · เปิดไข่ที่<b>🥚 กาชา</b> ในฟาร์ม ได้น้องใหม่มาร่วมทีม · ใช้ดาวเศษอัป<b>ดาว ★</b> ให้น้องเก่งขึ้น'}];
 function tutorial(onDone){let k=0;
   openSheet('<div id="tuB" style="display:flex;flex-direction:column;gap:12px;text-align:center;min-height:300px"></div>',(b,ov)=>{
-    const draw=()=>{const x=TUT[k],p=mainPet();b.querySelector('#tuB').innerHTML='<p class="mut num">'+(k+1)+' / '+TUT.length+'</p><h2>'+x.h+'</h2>'+(x.sp&&p?sprImg(p.sp,Math.max(1,formIdx(p.lv)),120):'<div style="font-size:64px;line-height:1.2">'+x.i+'</div>')+'<p style="text-align:left">'+x.t+'</p>'+
+    const draw=()=>{const x=TUT[k],p=mainPet();b.querySelector('#tuB').innerHTML='<p class="mut num">'+(k+1)+' / '+TUT.length+'</p><h2>'+x.h+'</h2>'+(x.sp&&p?sprImg(p.sp,Math.max(1,formIdx(p.lv)),120):'<div style="font-size:64px;line-height:1.2">'+pxi(x.i,80)+'</div>')+'<p style="text-align:left">'+x.t+'</p>'+
       '<div class="row" style="margin-top:auto">'+(k>0?'<button class="btn" id="tuP" style="flex:1">◀ ก่อนหน้า</button>':'')+'<button class="btn kcal" id="tuN" style="flex:2">'+(k<TUT.length-1?'ต่อไป ▶':'เริ่มเล่นเลย!')+'</button></div>';
       const pv=b.querySelector('#tuP');if(pv)pv.onclick=()=>{k--;draw()};
       b.querySelector('#tuN').onclick=()=>{if(k<TUT.length-1){k++;draw()}else{S.tutSeen=1;save();closeSheet(ov);if(onDone)onDone()}}};
@@ -1334,10 +1652,16 @@ function bindSound(b){const P=SND.P,re=()=>{b.querySelector('#sndC').outerHTML=s
   ['vol','music','sfx'].forEach(k=>{const r=b.querySelector('#v_'+k);r.onchange=()=>setv(k,r.value/100);r.oninput=()=>{r.nextElementSibling.nextElementSibling.textContent=r.value+'%'};
     b.querySelector('[data-dn="'+k+'"]').onclick=()=>setv(k,P[k]-.1);b.querySelector('[data-up="'+k+'"]').onclick=()=>setv(k,P[k]+.1)})}
 /* ---------- dock ---------- */
-const DOCK=[{i:'🐾',n:'น้อง',fn:petSheet},{i:'🗺️',n:'ผจญภัย',fn:()=>adventureSheet()},{i:'🥚',n:'กาชา',fn:gachaSheet},{i:'🏡',n:'ฟาร์มและทีม',fn:farmSheet},{i:'📜',n:'ภารกิจ',fn:questSheet},{i:'🌙',n:'พักจอ',fn:detoxStart},{i:'📊',n:'สถิติ',fn:statsSheet},{i:'❓',n:'วิธีเล่น',fn:()=>tutorial()},{i:'⚙️',n:'ตั้งค่า',fn:settingsSheet},{i:'🚪',n:'ออกจากเกม',fn:exitSheet}];
-function buildDock(){const d=$('dock');d.innerHTML=DOCK.map((x,i)=>'<button class="di'+(x.lock?' lock':'')+'" data-d="'+i+'"><span>'+x.i+'</span><span>'+x.n+'</span></button>').join('');
+const DOCK=[{i:'🏃',n:'ออกกำลังกาย',fn:exerciseSheet,h:'aEx'},{i:'🏡',n:'ฟาร์มและทีม',fn:farmSheet,h:'aFeed'},{i:'📜',n:'ภารกิจ',fn:questSheet},{i:'📊',n:'สถิติ',fn:statsSheet},{i:'❓',n:'วิธีเล่น',fn:()=>tutorial()},{i:'⚙️',n:'ตั้งค่า',fn:settingsSheet},{i:'🚪',n:'ออกจากเกม',fn:exitSheet}];
+function buildDock(){const d=$('dock');d.innerHTML=DOCK.map((x,i)=>'<button class="di'+(x.lock?' lock':'')+'" data-d="'+i+'" style="--k:'+i+'"><span class="ic">'+pxi(x.i,30)+'</span><span class="lb">'+x.n+'</span></button>').join('');
   d.onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;const x=DOCK[+b.dataset.d];if(x.lock){toast(x.n+' จะเปิดในรอบถัดไปนะ');return}toggleDock(false);x.fn()}}
-function toggleDock(v){const d=$('dock');const open=v==null?d.hidden:v;d.hidden=!open;$('dockArrow').textContent=open?'▼':'▲';$('dockTog').setAttribute('aria-expanded',open)}
+function toggleDock(v){const d=$('dock');const open=v==null?d.hidden:v;if(open===!d.hidden)return;d.hidden=!open;$('menuBack').hidden=!open;$('menuBtn').setAttribute('aria-expanded',open);if(open){markDock();const bb=$('bubble');if(bb)bb.style.opacity=0}}
+function questPending(){if(!S||!S.pets||!S.pets.length)return false;const q=questState();return QUESTS.some(x=>q.done[x.k]&&!q.claimed[x.k])}
+function markDock(){const qi=DOCK.findIndex(x=>x.fn===questSheet),pend=questPending();
+  document.querySelectorAll('#dock .di .bd').forEach(e=>e.remove());let gh=null;try{const g=goalInfo();gh=g&&g.hot}catch(e){}
+  DOCK.forEach((x,i)=>{const b=document.querySelector('#dock [data-d="'+i+'"]');if(b)b.classList.toggle('hot',!!x.h&&x.h===gh)});
+  if(pend&&qi>=0){const b=document.querySelector('#dock [data-d="'+qi+'"]');if(b)b.insertAdjacentHTML('beforeend','<i class="bd"></i>')}
+  const m=$('menuBtn');let d=m.querySelector('.dot');if(pend&&!d)m.insertAdjacentHTML('beforeend','<span class="dot"></span>');else if(!pend&&d)d.remove()}
 function exitSheet(){openSheet('<h2>ออกจากเกม?</h2><p>ข้อมูลบันทึกอัตโนมัติแล้ว กลับมาเมื่อไหร่ '+esc(mainPet().name)+' ก็รออยู่นะ 💕</p><p class="note">ถ้าเปลี่ยนเครื่องบ่อย คัดลอกรหัสสำรองไว้ในหน้าตั้งค่าด้วย</p><button class="btn" id="toSet">⚙️ ไปคัดลอกรหัสสำรอง</button><button class="btn go" id="bye">กลับหน้าปก</button>',(b,ov)=>{
   b.querySelector('#toSet').onclick=()=>{closeSheet(ov);settingsSheet()};b.querySelector('#bye').onclick=()=>{save();closeAll();showCover()}},{closeText:'เล่นต่อ'})}
 
@@ -1361,7 +1685,7 @@ function eggScene(){
         S=fresh();const p={id:'p1',sp,name:nm,lv:1,exp:0,preset:'bal',pts:{hp:0,atk:0,df:0,en:0},free:0,resetUsed:false,born:Date.now()};S.pets.push(p);S.main=p.id;S.team=[p.id];S.book[sp]=1;S.weekStart=null;capWeek();save();
         closeSheet(ov);startGame(true)}}},{noClose:true})}
 function startGame(first){
-  migrate();capWeek();checkSeason();tickEnergy();if(S.detox)setTimeout(detoxScreen,50);buildDock();layout();renderTop();
+  migrate();capWeek();checkSeason();tickEnergy();if(S.detox)setTimeout(detoxScreen,50);buildDock();$('aAdv').innerHTML=pxi('🗺️',26)+' ผจญภัย';layout();renderTop();
   if(first||!S.tutSeen){queuePopup(()=>tutorial(()=>say('สวัสดี! ดูแถบเป้าหมายด้านบนนะ ว่าต้องทำอะไรต่อ ✨',6000)))}
   else setTimeout(()=>say(idleLine(),4000),600);
   if(S.seenVer!==VER){const cur=CHANGES[0];queuePopup(()=>openSheet('<h2>มีอะไรใหม่ใน v'+cur.v+'</h2><ul style="margin:0;padding-left:18px;line-height:1.7">'+cur.items.map(i=>'<li>'+i+'</li>').join('')+'</ul>',null,{closeText:'โอเค!'}));S.seenVer=VER;save()}
@@ -1376,8 +1700,8 @@ function enter(){SND.unlock();SND.play('open');const c=$('cover');if(c.hidden)re
 /* ---------- wire ---------- */
 $('cVer').textContent=VER;
 $('cover').addEventListener('click',enter);
-$('aEx').onclick=exerciseSheet;$('aFeed').onclick=feedSheet;$('aAdv').onclick=()=>adventureSheet();$('whoBtn').onclick=petSheet;$('kcBtn').onclick=statsSheet;$('alBtn').onclick=()=>feedSheet();
-$('dockTog').onclick=()=>toggleDock();
+$('aAdv').onclick=()=>adventureSheet();$('whoBtn').onclick=petSheet;$('kcBtn').onclick=statsSheet;$('alBtn').onclick=()=>feedSheet();
+$('menuBtn').onclick=e=>{e.stopPropagation();toggleDock()};$('menuBack').onclick=()=>toggleDock(false);
 $('goal').onclick=()=>{const f=$('goal')._fn;toggleDock(false);if(f)f()};
 $('stage').addEventListener('click',e=>{if(e.target.id==='room'){toggleDock(false);say(idleLine())}});
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(S&&mainPet())layout()},150)});
