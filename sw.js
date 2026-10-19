@@ -16,7 +16,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Game page: network first (fresh updates), cache fallback (offline).
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', cp)); return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', cp)); return r; })
       .catch(() => caches.match('./index.html')));
     return;
   }
