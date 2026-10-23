@@ -1,6 +1,6 @@
 {
-  "name": "Kcal Pet Dungeon",
-  "short_name": "Kcal Pet",
+  "name": "Kcal Pets: Endless Night",
+  "short_name": "Kcal Pets",
   "description": "เกมสัตว์เลี้ยงพิกเซลที่โตจากแคลอรี่ออกกำลังกายจริง",
   "lang": "th",
   "start_url": "./",
@@ -10,8 +10,21 @@
   "background_color": "#0e0a1c",
   "theme_color": "#0e0a1c",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

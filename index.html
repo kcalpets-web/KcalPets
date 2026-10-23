@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Kcal Pets: Endless Night</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kcal Pets">
+<meta name="theme-color" content="#0e0a1c">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap">
@@ -289,7 +296,7 @@ textarea{font-family:ui-monospace,monospace;font-size:11px;min-height:90px;resiz
 #cover .copy{text-shadow:0 1px 0 #000}
 .logo{filter:drop-shadow(0 0 18px rgba(0,0,0,.8))}
 .logo{position:relative;font-family:var(--f-px);font-weight:700;font-size:clamp(34px,11vw,52px);line-height:.95;text-align:center;color:var(--kcal);text-shadow:0 4px 0 var(--kcal-dk),0 8px 0 #2a1608}
-.logo .ep{display:block;font-size:.4em;color:#cdbdff;letter-spacing:.16em;text-shadow:0 3px 0 #2b1d5a,0 0 14px rgba(180,150,255,.55);margin-top:12px}
+.logo #logoCv{display:block;margin:0 auto;width:min(86vw,380px);height:auto;image-rendering:pixelated}.logo .ep{display:block;font-size:.4em;color:#cdbdff;letter-spacing:.16em;text-shadow:0 3px 0 #2b1d5a,0 0 14px rgba(180,150,255,.55);margin-top:12px}
 .logo small{display:block;font-size:.5em;color:var(--crys);text-shadow:0 3px 0 #1e3c66;margin-top:8px;letter-spacing:.06em}
 .tap{position:relative;font-family:var(--f-px);font-size:18px;animation:blink 1.1s steps(2) infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -556,7 +563,7 @@ img.spr.miss{filter:brightness(0) invert(.8);opacity:.28}
 </div>
 <div id="cover">
   <canvas class="bgc" id="coverBg"></canvas>
-  <div class="logo">KCAL PETS<span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
+  <div class="logo"><canvas id="logoCv" aria-label="Kcal Pets"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
   <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
   <div class="tap">แตะเพื่อเริ่ม</div>
   <div class="copy">© 2026 Kcal Pets · ต้นแบบ v<span id="cVer"></span></div>
@@ -567,6 +574,16 @@ img.spr.miss{filter:brightness(0) invert(.8);opacity:.28}
 <script>
 (function(){
 'use strict';
+
+
+/* pixel wordmark for the cover: hand-made glyphs so C never reads as O (v1.01c) */
+(function logoDraw(){const cv=document.getElementById('logoCv');if(!cv)return;const G={"K": ["1...1", "1..1.", "1.1..", "11...", "1.1..", "1..1.", "1...1"], "C": [".1111", "1....", "1....", "1....", "1....", "1....", ".1111"], "A": [".111.", "1...1", "1...1", "11111", "1...1", "1...1", "1...1"], "L": ["1....", "1....", "1....", "1....", "1....", "1....", "11111"], "P": ["1111.", "1...1", "1...1", "1111.", "1....", "1....", "1...."], "E": ["11111", "1....", "1....", "1111.", "1....", "1....", "11111"], "T": ["11111", "..1..", "..1..", "..1..", "..1..", "..1..", "..1.."], "S": [".1111", "1....", "1....", ".111.", "....1", "....1", "1111."]},txt='KCAL PETS',U=6,cols=[];
+  for(const ch of txt){if(ch===' '){cols.push(null,null,null);continue}const g=G[ch];for(let x=0;x<5;x++)cols.push(g.map(r=>r[x]==='1'));cols.push(null)}cols.pop();
+  const W=cols.length+2,H=7+2+1.5;cv.width=W*U;cv.height=H*U;const c=cv.getContext('2d');const on=(x,y)=>x>=0&&x<cols.length&&y>=0&&y<7&&cols[x]&&cols[x][y];
+  const fill=(dx,dy,col)=>{c.fillStyle=col;for(let x=0;x<cols.length;x++)for(let y=0;y<7;y++)if(on(x,y))c.fillRect((x+1+dx)*U,(y+1+dy)*U,U,U)};
+  const out=(dy,col)=>{c.fillStyle=col;for(let x=-1;x<=cols.length;x++)for(let y=-1;y<=7;y++){if(on(x,y))continue;if(on(x-1,y)||on(x+1,y)||on(x,y-1)||on(x,y+1)||on(x-1,y-1)||on(x+1,y+1)||on(x-1,y+1)||on(x+1,y-1))c.fillRect((x+1)*U,(y+1+dy)*U,U,U)}};
+  const o=U/3;fill(0,1.25,'#2a1608');[[-o,0],[o,0],[0,-o],[0,o],[-o,-o],[o,o],[-o,o],[o,-o]].forEach(([ax,ay])=>{c.save();c.translate(ax,ay+U*.9);fill(0,0,'#2a1608');c.restore()});fill(0,.9,'#8a4a14');[[-o,0],[o,0],[0,-o],[0,o],[-o,-o],[o,o],[-o,o],[o,-o]].forEach(([ax,ay])=>{c.save();c.translate(ax,ay);fill(0,0,'#2a1608');c.restore()});
+  const R=['#fff1c2','#ffe08a','#ffd05a','#ffc23a','#f5ab2a','#e8962a','#d9821f'];for(let x=0;x<cols.length;x++)for(let y=0;y<7;y++)if(on(x,y)){c.fillStyle=R[y];c.fillRect((x+1)*U,(y+1)*U,U,U);if(!on(x,y-1)){c.fillStyle='rgba(255,255,255,.55)';c.fillRect((x+1)*U,(y+1)*U,U,U/3)}}})();
 
 /* ---------- language (TH / EN) ---------- */
 const LANG=(()=>{try{const v=localStorage.getItem('kpd_lang');if(v==='th'||v==='en')return v}catch(e){}return /^th/i.test(navigator.language||'')?'th':'en'})();
