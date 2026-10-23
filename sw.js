@@ -1,5 +1,5 @@
 // Offline support. Bump VERSION whenever index.html changes so players get the update.
-const VERSION = 'kpd-v0.96b';
+const VERSION = 'kpd-v1.00v';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './maskable-512.png'];
 
