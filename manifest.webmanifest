@@ -1,7 +1,7 @@
 {
-  "name": "Kcal Pets: Endless Night",
-  "short_name": "Kcal Pets",
-  "description": "เกมสัตว์เลี้ยงพิกเซลที่โตจากแคลอรี่ออกกำลังกายจริง",
+  "name": "Lutonia: Endless Night",
+  "short_name": "Lutonia",
+  "description": "เกมสัตว์เลี้ยงพิกเซลที่โตจากการออกกำลังกายจริง · ปลดปล่อย 10 อาณาจักรจากหมอกดำ",
   "lang": "th",
   "start_url": "./",
   "scope": "./",
