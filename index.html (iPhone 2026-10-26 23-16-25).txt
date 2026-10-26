@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lutonia: Endless Night</title>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg-base: #060913;
+    --bg-card: rgba(13, 20, 38, 0.75);
+    --border-card: rgba(80, 120, 200, 0.2);
+    --primary: #4ade80;
+    --primary-glow: rgba(74, 222, 128, 0.3);
+    --danger: #f87171;
+    --danger-glow: rgba(248, 113, 113, 0.3);
+    --accent: #38bdf8;
+    --gold: #fbbf24;
+    --exp: #a78bfa;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  #game-container {
+    width: 100%;
+    max-width: 440px;
+    height: 100vh;
+    max-height: 920px;
+    background: radial-gradient(circle at 50% 20%, #111a33 0%, var(--bg-base) 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    border: 1px solid var(--border-card);
+  }
+  header {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(6, 9, 19, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-card);
+    z-index: 10;
+  }
+  .stage-badge {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+  }
+  .currency-panel { display: flex; gap: 12px; font-size: 0.85rem; font-weight: 600; }
+  .cur-item { display: flex; align-items: center; gap: 4px; }
+  .gold-txt { color: var(--gold); }
+  .exp-txt { color: var(--exp); }
+
+  #main-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #view-battle, #view-skills, #view-stats {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    display: none;
+    flex-direction: column;
+  }
+  #view-battle.active, #view-skills.active, #view-stats.active { display: flex; }
+
+  .arena-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    perspective: 800px;
+  }
+  #combat-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .unit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 12px;
+    backdrop-filter: blur(8px);
+    transition: transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    position: relative;
+    z-index: 2;
+  }
+  .unit-card.hit-shake { animation: shake 0.25s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(3px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+    40%, 60% { transform: translate3d(5px, 0, 0); }
+  }
+  .unit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .unit-name { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 6px; }
+  .unit-level { font-size: 0.75rem; color: var(--text-muted); background: #1e293b; padding: 2px 6px; border-radius: 4px; }
+  .avatar-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    position: relative;
+  }
+  .unit-sprite {
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.75rem;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    transition: transform 0.2s;
+  }
+  .hero-sprite { filter: drop-shadow(0 0 10px var(--primary-glow)); }
+  .enemy-sprite { filter: drop-shadow(0 0 10px var(--danger-glow)); }
+
+  .bar-container { margin-bottom: 6px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 2px; }
+  .bar-frame {
+    height: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.15s ease-out; }
+  .hp-fill { background: linear-gradient(90deg, #22c55e, var(--primary)); box-shadow: 0 0 8px var(--primary-glow); }
+  .en-fill { background: linear-gradient(90deg, #0ea5e9, var(--accent)); }
+  .atb-fill { background: linear-gradient(90deg, #eab308, var(--gold)); }
+
+  .log-console {
+    background: rgba(6, 9, 19, 0.6);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 8px;
+    height: 60px;
+    font-size: 0.75rem;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+    z-index: 2;
+  }
+  .log-entry { opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-entry.crit { color: var(--gold); font-weight: 700; }
+  .log-entry.skill { color: var(--accent); }
+
+  .panel-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .panel-header-text { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; color: var(--accent); }
+  .card-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-info { display: flex; flex-direction: column; gap: 2px; }
+  .card-title { font-size: 0.9rem; font-weight: 600; }
+  .card-sub { font-size: 0.75rem; color: var(--text-muted); }
+  .btn-action {
+    background: #1e293b;
+    border: 1px solid var(--border-card);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-action:active:not(:disabled) { transform: scale(0.95); background: #334155; }
+  .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-action.primary { background: linear-gradient(135deg, #15803d, #16a34a); border-color: #22c55e; }
+
+  footer {
+    height: 60px;
+    background: rgba(6, 9, 19, 0.95);
+    border-top: 1px solid var(--border-card);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    z-index: 10;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+  .float-num {
+    position: absolute;
+    pointer-events: none;
+    font-weight: 800;
+    font-size: 1rem;
+    animation: floatUp 0.8s ease-out forwards;
+    z-index: 20;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-20px) scale(1.2); opacity: 0.9; }
+    100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+  }
+
+  .boss-warning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 38, 38, 0.85);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 100;
+  }
+  .boss-warning.show { opacity: 1; }
+
+  #cover {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% 30%, #1e1b4b, #030712);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .game-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #e0e7ff, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .game-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 30px; line-height: 1.4; }
+  .btn-start {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: white;
+    border: 1px solid #38bdf8;
+    padding: 14px 40px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.4);
+    transition: transform 0.1s;
+  }
+  .btn-start:active { transform: scale(0.95); }
+  
+  /* Toast Notification */
+  #toast {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--accent);
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="toast"></div>
+
+  <!-- หน้าจอ Cover / Menu เริ่มต้น -->
+  <div id="cover">
+    <div class="game-title">LUTONIA</div>
+    <div class="game-sub">มหากาพย์การต่อสู้อัตโนมัติในความมืดนิรันดร์<br>อัปเกรดความสามารถ ค้นหาสกิล และพิชิตศัตรู</div>
+    
+    <!-- ปุ่ม Google Sign-In วางอยู่ตรงนี้อย่างถูกต้องในโครงสร้าง body -->
+    <div id="googleBtn" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+    
+    <button class="btn-start" id="btn-start">เข้าสู่สนามรบ</button>
+  </div>
+
+  <div id="boss-alert" class="boss-warning">BOSS ALERT!</div>
+
+  <header>
+    <div class="stage-badge" id="hud-stage">Stage 1-1</div>
+    <div class="currency-panel">
+      <div class="cur-item"><span class="gold-txt">G:</span> <span id="hud-gold">0</span></div>
+      <div class="cur-item"><span class="exp-txt">EXP:</span> <span id="hud-exp">0</span></div>
+    </div>
+  </header>
+
+  <div id="main-viewport">
+    <!-- View: การต่อสู้ -->
+    <div id="view-battle" class="active">
+      <div class="arena-wrapper">
+        <canvas id="combat-canvas"></canvas>
+
+        <!-- Unit: ศัตรู -->
+        <div class="unit-card" id="enemy-card">
+          <div class="unit-header">
+            <span class="unit-name" id="enemy-name"><span id="enemy-icon">👾</span> Goblin</span>
+            <span class="unit-level" id="enemy-lvl">Lv. 1</span>
+          </div>
+          <div class="avatar-stage">
+            <div class="unit-sprite enemy-sprite" id="enemy-sprite">👾</div>
+          </div>
+          <div class="bar-container">
+            <div class="bar-label"><span>HP</span><span id="enemy-hp-text">100/100</span></div>
+            <div class="bar-frame"><div class="bar-fill hp-fill" id="enemy-hp-bar" style="width: 100%;"></div></div>
+          </div>
+          <div class="bar-container">
+            <div class="bar-label"><span>ATB</span></div>
+            <div class="bar-frame"><div class="bar-fill atb-fill" id="enemy-atb-bar" style="width: 0%;"></div></div>
+          </div>
+        </div>
+
+        <!-- กล่อง Log การต่อสู้ -->
+        <div class="log-console" id="log-list">
+          <div class="log-entry">การต่อสู้เริ่มต้นขึ้น...</div>
+        </div>
+
+        <!-- Unit: ผู้เล่น -->
+        <div class="unit-card" id="hero-card">
+          <div class="unit-header">
+            <span class="unit-name"><span>🛡️</span> <span id="hero-player-name">Guardian</span></span>
+            <span class="unit-level" id="hero-lvl">Lv. 1</span>
+          </div>
+          <div class="avatar-stage">
+            <div class="unit-sprite hero-sprite">🛡️</div>
+          </div>
+          <div class="bar-container">
+            <div class="bar-label"><span>HP</span><span id="hero-hp-text">150/150</span></div>
+            <div class="bar-frame"><div class="bar-fill hp-fill" id="hero-hp-bar" style="width: 100%;"></div></div>
+          </div>
+          <div class="bar-container">
+            <div class="bar-label"><span>EN</span><span id="hero-en-text">50/50</span></div>
+            <div class="bar-frame"><div class="bar-fill en-fill" id="hero-en-bar" style="width: 100%;"></div></div>
+          </div>
+          <div class="bar-container">
+            <div class="bar-label"><span>ATB</span></div>
+            <div class="bar-frame"><div class="bar-fill atb-fill" id="hero-atb-bar" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View: อัปเกรดสถานะ -->
+    <div id="view-stats">
+      <div class="panel-scrollable">
+        <div class="panel-header-text">สถานะตัวละคร</div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">พลังโจมตี (ATK)</span>
+            <span class="card-sub" id="stat-atk-sub">ปัจจุบัน: 15</span>
+          </div>
+          <button class="btn-action" id="btn-up-atk">อัปเกรด (<span id="cost-atk">10</span> G)</button>
+        </div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">พลังชีวิตสูงสุด (Max HP)</span>
+            <span class="card-sub" id="stat-hp-sub">ปัจจุบัน: 150</span>
+          </div>
+          <button class="btn-action" id="btn-up-hp">อัปเกรด (<span id="cost-hp">10</span> G)</button>
+        </div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">ความเร็วโจมตี (SPD)</span>
+            <span class="card-sub" id="stat-spd-sub">ปัจจุบัน: 10</span>
+          </div>
+          <button class="btn-action" id="btn-up-spd">อัปเกรด (<span id="cost-spd">15</span> G)</button>
+        </div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">โอกาสคริติคอล (Crit %)</span>
+            <span class="card-sub" id="stat-crit-sub">ปัจจุบัน: 5%</span>
+          </div>
+          <button class="btn-action" id="btn-up-crit">อัปเกรด (<span id="cost-crit">25</span> G)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View: สกิล & ความสามารถ -->
+    <div id="view-skills">
+      <div class="panel-scrollable">
+        <div class="panel-header-text">สกิลติดตัวและการใช้งาน</div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">Double Slash</span>
+            <span class="card-sub">โจมตี 2 ครั้งต่อเนื่อง (ใช้ 15 EN)</span>
+            <span class="card-sub" id="skill-ds-lvl">ระดับ: 0/5</span>
+          </div>
+          <button class="btn-action" id="btn-up-ds">เรียนรู้ (<span id="cost-ds">100</span> EXP)</button>
+        </div>
+        <div class="card-item">
+          <div class="card-info">
+            <span class="card-title">Holy Light</span>
+            <span class="card-sub">ฟื้นฟู HP 30% เมื่อ HP ต่ำกว่า 40% (ใช้ 25 EN)</span>
+            <span class="card-sub" id="skill-hl-lvl">ระดับ: 0/5</span>
+          </div>
+          <button class="btn-action" id="btn-up-hl">เรียนรู้ (<span id="cost-hl">150</span> EXP)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="tab-btn active" id="tab-battle">
+      <svg viewBox="0 0 24 24"><path d="M14.5 13.5L13.5 14.5L16 17L14.5 18.5L12 16L10.5 17.5L9.5 16.5L12 14L10.5 12.5L9.5 13.5L7 11L8.5 9.5L11 12L12.5 10.5L11.5 9.5L14 7L15.5 8.5L13 11L14.5 12.5M19.5 3.5L18 2L15 5L16.5 6.5L19.5 3.5M4.5 20.5L3 19L6 16L7.5 17.5L4.5 20.5Z"/></svg>
+      <span>ต่อสู้</span>
+    </button>
+    <button class="tab-btn" id="tab-stats">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <span>อัปเกรด</span>
+    </button>
+    <button class="tab-btn" id="tab-skills">
+      <svg viewBox="0 0 24 24"><path d="M12 2.5l2.5 5.5l6 .8l-4.3 4.2l1 6l-5.2-2.8l-5.2 2.8l1-6l-4.3-4.2l6-.8l2.5-5.5z"/></svg>
+      <span>สกิล</span>
+    </button>
+  </footer>
+</div>
+
+<script>
+  // --- Google Identity Service Implementation ---
+  function showToast(text) {
+    const t = document.getElementById('toast');
+    t.innerText = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function handleCredentialResponse(response) {
+    try {
+      // Decode JWT Payload
+      const base64Url = response.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+
+      const user = JSON.parse(jsonPayload);
+      if (user && user.name) {
+        document.getElementById('hero-player-name').innerText = user.name;
+        showToast("ยินดีต้อนรับ: " + user.name);
+        localStorage.setItem("lutonia_user", JSON.stringify({ name: user.name, email: user.email }));
+      }
+    } catch (e) {
+      console.error("JWT Decode error", e);
+    }
+  }
+
+  window.addEventListener('load', () => {
+    // โหลดข้อมูลผู้เล่นเดิมหากเคยล็อกอิน
+    const savedUser = localStorage.getItem("lutonia_user");
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.name) document.getElementById('hero-player-name').innerText = parsed.name;
+      } catch(e) {}
+    }
+
+    // เริ่มต้นระบบ Google Auth
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.initialize({
+        client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // ป้อน Client ID ของคุณที่นี่
+        callback: handleCredentialResponse
+      });
+
+      const btnContainer = document.getElementById("googleBtn");
+      if (btnContainer) {
+        google.accounts.id.renderButton(btnContainer, {
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "pill"
+        });
+      }
+    }
+  });
+
+  // --- ระบบตรรกะเกม (Core Game Engine) ---
+  const GAME = {
+    gold: 0,
+    exp: 0,
+    stage: 1,
+    subStage: 1,
+    subStageLimit: 5,
+    running: false,
+
+    hero: {
+      name: "Guardian",
+      level: 1,
+      hp: 150,
+      maxHp: 150,
+      en: 50,
+      maxEn: 50,
+      atk: 15,
+      spd: 10,
+      crit: 0.05,
+      atb: 0,
+      skills: {
+        doubleSlash: 0,
+        holyLight: 0
+      }
+    },
+
+    enemy: {
+      name: "Goblin",
+      level: 1,
+      hp: 100,
+      maxHp: 100,
+      atk: 8,
+      spd: 8,
+      atb: 0,
+      sprite: "👾",
+      isBoss: false
+    },
+
+    costs: {
+      atk: 10,
+      hp: 10,
+      spd: 15,
+      crit: 25,
+      ds: 100,
+      hl: 150
+    }
+  };
+
+  const UI = {
+    stage: document.getElementById('hud-stage'),
+    gold: document.getElementById('hud-gold'),
+    exp: document.getElementById('hud-exp'),
+
+    heroHpText: document.getElementById('hero-hp-text'),
+    heroHpBar: document.getElementById('hero-hp-bar'),
+    heroEnText: document.getElementById('hero-en-text'),
+    heroEnBar: document.getElementById('hero-en-bar'),
+    heroAtbBar: document.getElementById('hero-atb-bar'),
+    heroLvl: document.getElementById('hero-lvl'),
+    heroCard: document.getElementById('hero-card'),
+
+    enemyName: document.getElementById('enemy-name'),
+    enemyHpText: document.getElementById('enemy-hp-text'),
+    enemyHpBar: document.getElementById('enemy-hp-bar'),
+    enemyAtbBar: document.getElementById('enemy-atb-bar'),
+    enemyLvl: document.getElementById('enemy-lvl'),
+    enemySprite: document.getElementById('enemy-sprite'),
+    enemyCard: document.getElementById('enemy-card'),
+
+    log: document.getElementById('log-list'),
+    bossAlert: document.getElementById('boss-alert'),
+    cover: document.getElementById('cover'),
+
+    statAtkSub: document.getElementById('stat-atk-sub'),
+    statHpSub: document.getElementById('stat-hp-sub'),
+    statSpdSub: document.getElementById('stat-spd-sub'),
+    statCritSub: document.getElementById('stat-crit-sub'),
+    costAtk: document.getElementById('cost-atk'),
+    costHp: document.getElementById('cost-hp'),
+    costSpd: document.getElementById('cost-spd'),
+    costCrit: document.getElementById('cost-crit'),
+
+    skillDsLvl: document.getElementById('skill-ds-lvl'),
+    skillHlLvl: document.getElementById('skill-hl-lvl'),
+    costDs: document.getElementById('cost-ds'),
+    costHl: document.getElementById('cost-hl'),
+
+    canvas: document.getElementById('combat-canvas')
+  };
+
+  const ctx = UI.canvas.getContext('2d');
+  function resizeCanvas() {
+    UI.canvas.width = UI.canvas.parentElement.clientWidth;
+    UI.canvas.height = UI.canvas.parentElement.clientHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function addLog(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `log-entry ${type}`;
+    el.innerText = msg;
+    UI.log.prepend(el);
+    if (UI.log.children.length > 20) UI.log.removeChild(UI.log.lastChild);
+  }
+
+  function spawnDamageText(text, targetCard, color = '#f8fafc') {
+    const rect = targetCard.getBoundingClientRect();
+    const parentRect = targetCard.parentElement.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'float-num';
+    el.style.color = color;
+    el.innerText = text;
+    el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 20}px`;
+    el.style.top = `${rect.top - parentRect.top + 20}px`;
+    targetCard.parentElement.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function generateEnemy() {
+    const isBoss = GAME.subStage === GAME.subStageLimit;
+    const baseLvl = (GAME.stage - 1) * 5 + GAME.subStage;
+    GAME.enemy.isBoss = isBoss;
+    GAME.enemy.level = baseLvl;
+    
+    if (isBoss) {
+      GAME.enemy.name = "Archdemon";
+      GAME.enemy.sprite = "👹";
+      GAME.enemy.maxHp = Math.floor(100 * Math.pow(1.3, baseLvl) * 2.5);
+      GAME.enemy.atk = Math.floor(8 * Math.pow(1.2, baseLvl) * 1.5);
+      GAME.enemy.spd = 9 + baseLvl * 0.2;
+      UI.bossAlert.classList.add('show');
+      setTimeout(() => UI.bossAlert.classList.remove('show'), 1500);
+    } else {
+      const types = [
+        { name: "Goblin", sprite: "👾" },
+        { name: "Skeleton", sprite: "💀" },
+        { name: "Bat", sprite: "🦇" },
+        { name: "Orc", sprite: "👺" }
+      ];
+      const pick = types[Math.floor(Math.random() * types.length)];
+      GAME.enemy.name = pick.name;
+      GAME.enemy.sprite = pick.sprite;
+      GAME.enemy.maxHp = Math.floor(80 * Math.pow(1.25, baseLvl));
+      GAME.enemy.atk = Math.floor(6 * Math.pow(1.18, baseLvl));
+      GAME.enemy.spd = 7 + baseLvl * 0.2;
+    }
+
+    GAME.enemy.hp = GAME.enemy.maxHp;
+    GAME.enemy.atb = 0;
+    renderEnemy();
+  }
+
+  function renderEnemy() {
+    UI.enemyName.innerText = `${GAME.enemy.sprite} ${GAME.enemy.name}`;
+    UI.enemyLvl.innerText = `Lv. ${GAME.enemy.level}`;
+    UI.enemySprite.innerText = GAME.enemy.sprite;
+    updateEnemyHUD();
+  }
+
+  function updateEnemyHUD() {
+    const pct = Math.max(0, (GAME.enemy.hp / GAME.enemy.maxHp) * 100);
+    UI.enemyHpBar.style.width = `${pct}%`;
+    UI.enemyHpText.innerText = `${Math.ceil(GAME.enemy.hp)}/${GAME.enemy.maxHp}`;
+    UI.enemyAtbBar.style.width = `${GAME.enemy.atb}%`;
+  }
+
+  function updateHeroHUD() {
+    const hpPct = Math.max(0, (GAME.hero.hp / GAME.hero.maxHp) * 100);
+    UI.heroHpBar.style.width = `${hpPct}%`;
+    UI.heroHpText.innerText = `${Math.ceil(GAME.hero.hp)}/${GAME.hero.maxHp}`;
+
+    const enPct = Math.max(0, (GAME.hero.en / GAME.hero.maxEn) * 100);
+    UI.heroEnBar.style.width = `${enPct}%`;
+    UI.heroEnText.innerText = `${Math.floor(GAME.hero.en)}/${GAME.hero.maxEn}`;
+    UI.heroAtbBar.style.width = `${GAME.hero.atb}%`;
+    UI.heroLvl.innerText = `Lv. ${GAME.hero.level}`;
+  }
+
+  function updateGlobalHUD() {
+    UI.stage.innerText = `Stage ${GAME.stage}-${GAME.subStage}`;
+    UI.gold.innerText = GAME.gold;
+    UI.exp.innerText = GAME.exp;
+  }
+
+  function triggerHit(cardElement) {
+    cardElement.classList.remove('hit-shake');
+    void cardElement.offsetWidth;
+    cardElement.classList.add('hit-shake');
+  }
+
+  function heroAttack() {
+    if (GAME.hero.skills.holyLight > 0 && GAME.hero.hp < GAME.hero.maxHp * 0.4 && GAME.hero.en >= 25) {
+      GAME.hero.en -= 25;
+      const heal = Math.floor(GAME.hero.maxHp * 0.3);
+      GAME.hero.hp = Math.min(GAME.hero.maxHp, GAME.hero.hp + heal);
+      addLog(`Guardian ใช้ Holy Light ฟื้นฟู HP +${heal}!`, 'skill');
+      spawnDamageText(`+${heal}`, UI.heroCard, '#4ade80');
+      updateHeroHUD();
+      return;
+    }
+
+    let strikes = 1;
+    let isSkill = false;
+    if (GAME.hero.skills.doubleSlash > 0 && GAME.hero.en >= 15) {
+      GAME.hero.en -= 15;
+      strikes = 2;
+      isSkill = true;
+      addLog(`Guardian ใช้ Double Slash!`, 'skill');
+    }
+
+    for (let i = 0; i < strikes; i++) {
+      let isCrit = Math.random() < GAME.hero.crit;
+      let dmg = GAME.hero.atk;
+      if (isCrit) dmg = Math.floor(dmg * 1.5);
+      dmg = Math.floor(dmg * (0.9 + Math.random() * 0.2));
+
+      GAME.enemy.hp -= dmg;
+      triggerHit(UI.enemyCard);
+      spawnDamageText(dmg + (isCrit ? "!" : ""), UI.enemyCard, isCrit ? '#fbbf24' : '#f87171');
+      addLog(`โจมตีสร้างความเสียหาย ${dmg} ${isCrit ? '(คริติคอล!)' : ''}`, isCrit ? 'crit' : '');
+    }
+
+    if (GAME.hero.en < GAME.hero.maxEn) {
+      GAME.hero.en = Math.min(GAME.hero.maxEn, GAME.hero.en + 5);
+    }
+
+    updateEnemyHUD();
+    updateHeroHUD();
+
+    if (GAME.enemy.hp <= 0) handleEnemyDeath();
+  }
+
+  function enemyAttack() {
+    let dmg = Math.floor(GAME.enemy.atk * (0.85 + Math.random() * 0.3));
+    GAME.hero.hp -= dmg;
+    triggerHit(UI.heroCard);
+    spawnDamageText(dmg, UI.heroCard, '#ef4444');
+    addLog(`${GAME.enemy.name} โจมตีคุณ รับความเสียหาย ${dmg}`);
+    updateHeroHUD();
+
+    if (GAME.hero.hp <= 0) handleHeroDeath();
+  }
+
+  function handleEnemyDeath() {
+    const gEarned = Math.floor(10 * Math.pow(1.15, GAME.enemy.level) * (GAME.enemy.isBoss ? 3 : 1));
+    const eEarned = Math.floor(15 * Math.pow(1.15, GAME.enemy.level) * (GAME.enemy.isBoss ? 2.5 : 1));
+
+    GAME.gold += gEarned;
+    GAME.exp += eEarned;
+    addLog(`กำจัด ${GAME.enemy.name} ได้รับ ${gEarned} G, ${eEarned} EXP!`, 'skill');
+
+    if (GAME.subStage >= GAME.subStageLimit) {
+      GAME.stage++;
+      GAME.subStage = 1;
+    } else {
+      GAME.subStage++;
+    }
+
+    updateGlobalHUD();
+    generateEnemy();
+  }
+
+  function handleHeroDeath() {
+    addLog(`คุณพ่ายแพ้! ถอยทัพกลับจุดเริ่มต้นของ Stage`, 'crit');
+    GAME.subStage = 1;
+    GAME.hero.hp = GAME.hero.maxHp;
+    GAME.hero.en = GAME.hero.maxEn;
+    GAME.hero.atb = 0;
+    updateGlobalHUD();
+    updateHeroHUD();
+    generateEnemy();
+  }
+
+  // Combat Loop
+  let lastTime = performance.now();
+  function gameLoop(time) {
+    if (!GAME.running) return;
+    const dt = (time - lastTime) / 1000;
+    lastTime = time;
+
+    GAME.hero.atb += GAME.hero.spd * 8 * dt;
+    GAME.enemy.atb += GAME.enemy.spd * 8 * dt;
+
+    if (GAME.hero.atb >= 100) {
+      GAME.hero.atb = 0;
+      heroAttack();
+    }
+    if (GAME.enemy.atb >= 100) {
+      GAME.enemy.atb = 0;
+      enemyAttack();
+    }
+
+    UI.heroAtbBar.style.width = `${Math.min(100, GAME.hero.atb)}%`;
+    UI.enemyAtbBar.style.width = `${Math.min(100, GAME.enemy.atb)}%`;
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Panels & Views Switcher
+  const views = {
+    battle: document.getElementById('view-battle'),
+    stats: document.getElementById('view-stats'),
+    skills: document.getElementById('view-skills')
+  };
+  const tabs = {
+    battle: document.getElementById('tab-battle'),
+    stats: document.getElementById('tab-stats'),
+    skills: document.getElementById('tab-skills')
+  };
+
+  function switchTab(name) {
+    Object.keys(views).forEach(k => {
+      views[k].classList.remove('active');
+      tabs[k].classList.remove('active');
+    });
+    views[name].classList.add('active');
+    tabs[name].classList.add('active');
+  }
+
+  tabs.battle.addEventListener('click', () => switchTab('battle'));
+  tabs.stats.addEventListener('click', () => { switchTab('stats'); updateStatsPanel(); });
+  tabs.skills.addEventListener('click', () => { switchTab('skills'); updateSkillsPanel(); });
+
+  // อัปเกรดสถานะ
+  function updateStatsPanel() {
+    UI.statAtkSub.innerText = `ปัจจุบัน: ${GAME.hero.atk}`;
+    UI.costAtk.innerText = GAME.costs.atk;
+    UI.statHpSub.innerText = `ปัจจุบัน: ${GAME.hero.maxHp}`;
+    UI.costHp.innerText = GAME.costs.hp;
+    UI.statSpdSub.innerText = `ปัจจุบัน: ${GAME.hero.spd}`;
+    UI.costSpd.innerText = GAME.costs.spd;
+    UI.statCritSub.innerText = `ปัจจุบัน: ${(GAME.hero.crit * 100).toFixed(0)}%`;
+    UI.costCrit.innerText = GAME.costs.crit;
+  }
+
+  document.getElementById('btn-up-atk').addEventListener('click', () => {
+    if (GAME.gold >= GAME.costs.atk) {
+      GAME.gold -= GAME.costs.atk;
+      GAME.hero.atk += 3;
+      GAME.costs.atk = Math.floor(GAME.costs.atk * 1.4);
+      updateStatsPanel();
+      updateGlobalHUD();
+    }
+  });
+  document.getElementById('btn-up-hp').addEventListener('click', () => {
+    if (GAME.gold >= GAME.costs.hp) {
+      GAME.gold -= GAME.costs.hp;
+      GAME.hero.maxHp += 25;
+      GAME.hero.hp += 25;
+      GAME.costs.hp = Math.floor(GAME.costs.hp * 1.4);
+      updateStatsPanel();
+      updateGlobalHUD();
+      updateHeroHUD();
+    }
+  });
+  document.getElementById('btn-up-spd').addEventListener('click', () => {
+    if (GAME.gold >= GAME.costs.spd) {
+      GAME.gold -= GAME.costs.spd;
+      GAME.hero.spd += 1;
+      GAME.costs.spd = Math.floor(GAME.costs.spd * 1.5);
+      updateStatsPanel();
+      updateGlobalHUD();
+    }
+  });
+  document.getElementById('btn-up-crit').addEventListener('click', () => {
+    if (GAME.gold >= GAME.costs.crit && GAME.hero.crit < 0.6) {
+      GAME.gold -= GAME.costs.crit;
+      GAME.hero.crit += 0.02;
+      GAME.costs.crit = Math.floor(GAME.costs.crit * 1.6);
+      updateStatsPanel();
+      updateGlobalHUD();
+    }
+  });
+
+  // อัปเกรดสกิล
+  function updateSkillsPanel() {
+    UI.skillDsLvl.innerText = `ระดับ: ${GAME.hero.skills.doubleSlash}/5`;
+    UI.costDs.innerText = GAME.costs.ds;
+    UI.skillHlLvl.innerText = `ระดับ: ${GAME.hero.skills.holyLight}/5`;
+    UI.costHl.innerText = GAME.costs.hl;
+  }
+
+  document.getElementById('btn-up-ds').addEventListener('click', () => {
+    if (GAME.exp >= GAME.costs.ds && GAME.hero.skills.doubleSlash < 5) {
+      GAME.exp -= GAME.costs.ds;
+      GAME.hero.skills.doubleSlash++;
+      GAME.costs.ds = Math.floor(GAME.costs.ds * 2);
+      updateSkillsPanel();
+      updateGlobalHUD();
+    }
+  });
+  document.getElementById('btn-up-hl').addEventListener('click', () => {
+    if (GAME.exp >= GAME.costs.hl && GAME.hero.skills.holyLight < 5) {
+      GAME.exp -= GAME.costs.hl;
+      GAME.hero.skills.holyLight++;
+      GAME.costs.hl = Math.floor(GAME.costs.hl * 2);
+      updateSkillsPanel();
+      updateGlobalHUD();
+    }
+  });
+
+  // เริ่มต้นเล่นเกม
+  document.getElementById('btn-start').addEventListener('click', () => {
+    UI.cover.style.display = 'none';
+    GAME.running = true;
+    generateEnemy();
+    updateGlobalHUD();
+    updateHeroHUD();
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+  });
+</script>
+</body>
+</html>
