@@ -1,5 +1,5 @@
 // Offline support. Bump VERSION whenever index.html changes so players get the update.
-const VERSION = 'kpd-v1.29';
+const VERSION = 'kpd-v1.30';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './maskable-512.png'];
 
@@ -16,8 +16,13 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Game page: network first (fresh updates), cache fallback (offline).
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', cp)); return r; })
-      .catch(() => caches.match('./index.html')));
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => {
+      if (r && r.status === 200) {
+        const cp = r.clone();
+        caches.open(VERSION).then(c => c.put('./index.html', cp));
+      }
+      return r;
+    }).catch(() => caches.match('./index.html')));
     return;
   }
   // Fonts and icons: cache first.
