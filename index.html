@@ -576,9 +576,19 @@ img.spr.miss{filter:grayscale(.55) brightness(1.15);opacity:.55}
   <div class="logo"><canvas id="logoCv" aria-label="Lutonia"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
   <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
   <div id="googleBtn" style="position:relative;z-index:35;margin-bottom:14px;display:flex;justify-content:center;">
-    <button id="btnFit" type="button" style="background:linear-gradient(135deg,#4285f4,#1967d2);color:#fff;border:2px solid #8ab4f8;border-radius:24px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.5);display:inline-flex;align-items:center;gap:8px;font-family:inherit;">
-      <span style="font-size:16px;">⚡</span> <span id="fitBtnText">เชื่อมต่อ Google Fit เพื่อดึง Kcal</span>
-    </button>
+    <div id="g_id_onload"
+         data-client_id="427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com"
+         data-callback="handleGoogleLogin"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-shape="pill"
+         data-theme="outline"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left">
+    </div>
   </div>
   <div class="tap">แตะเพื่อเริ่ม</div>
   <div class="copy">© 2026 Lutonia · ต้นแบบ v<span id="cVer"></span></div>
@@ -7660,109 +7670,161 @@ window.KPDFarm={mount,phaseNow};
 
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
-<!-- Google Fit Integration Script -->
+<!-- Google Sign-In & Friends System Script -->
 <script>
-(function() {
-  const GOOGLE_CLIENT_ID = "427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com";
-  let tokenClient;
-
-  function showGameToast(msg) {
-    if (typeof toast === 'function') {
-      toast(msg);
-    } else {
-      const t = document.getElementById("toast");
-      if (t) {
-        t.innerText = msg;
-        t.hidden = false;
-        setTimeout(() => { t.hidden = true; }, 3500);
-      }
-    }
-  }
-
-  function initGoogleFitness() {
-    if (window.google && google.accounts && google.accounts.oauth2) {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: "https://www.googleapis.com/auth/fitness.activity.read",
-        callback: async (tokenResponse) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            const btnText = document.getElementById("fitBtnText");
-            if (btnText) btnText.innerText = "กำลังดึงข้อมูล Kcal...";
-            await fetchTodayCalories(tokenResponse.access_token);
-          }
-        },
-      });
-
-      const btnFit = document.getElementById("btnFit");
-      if (btnFit) {
-        btnFit.onclick = (e) => {
-          e.stopPropagation();
-          tokenClient.requestAccessToken();
-        };
-      }
-    } else {
-      setTimeout(initGoogleFitness, 300);
-    }
-  }
-
-  async function fetchTodayCalories(token) {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const endOfDay = now.getTime();
-
-    try {
-      const res = await fetch("https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate", {
-        method: "POST",
-        headers: { 
-          "Authorization": "Bearer " + token, 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify({
-          aggregateBy: [{ dataTypeName: "com.google.calories.expended" }],
-          bucketByTime: { durationMillis: 86400000 },
-          startTimeMillis: startOfDay,
-          endTimeMillis: endOfDay
-        })
-      });
-      
-      const data = await res.json();
-      let totalKcal = 0;
-      if (data.bucket && data.bucket[0]?.dataset[0]?.point[0]?.value[0]?.fpVal) {
-        totalKcal = Math.round(data.bucket[0].dataset[0].point[0].value[0].fpVal);
-      }
-
-      // Sync into Lutonia game state
+function handleGoogleLogin(response) {
+  try {
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const user = JSON.parse(jsonPayload);
+    if (user && user.name) {
+      localStorage.setItem("lutonia_user", JSON.stringify({ name: user.name, email: user.email, picture: user.picture }));
       if (window.__kpd && window.__kpd.S) {
-        const S = window.__kpd.S;
-        const prevFit = S._lastGoogleFitKcal || 0;
-        const diff = Math.max(0, totalKcal - prevFit);
-        
-        if (diff > 0) {
-          S.wallet = (S.wallet || 0) + diff;
-          S._lastGoogleFitKcal = totalKcal;
-          if (typeof window.__kpd.save === 'function') window.__kpd.save();
-          if (typeof renderTop === 'function') renderTop();
-          showGameToast(`ซิงค์ Google Fit สำเร็จ! ได้รับ +${diff} 🪙 (เผาผลาญวันนี้ ${totalKcal} Kcal)`);
-        } else {
-          showGameToast(`ซิงค์แล้ว: วันนี้เผาผลาญ ${totalKcal} Kcal (อัปเดตเป็นปัจจุบันแล้ว)`);
-        }
-      } else {
-        showGameToast(`ซิงค์ Google Fit สำเร็จ: เผาผลาญ ${totalKcal} Kcal`);
+        window.__kpd.S.googleUser = { name: user.name, email: user.email };
+        if (typeof window.__kpd.save === 'function') window.__kpd.save();
       }
+      if (typeof toast === 'function') {
+        toast("เข้าสู่ระบบสำเร็จ: " + user.name);
+      } else {
+        const t = document.getElementById("toast");
+        if (t) {
+          t.innerText = "เข้าสู่ระบบสำเร็จ: " + user.name;
+          t.hidden = false;
+          setTimeout(() => { t.hidden = true; }, 3500);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Google Login Error:", e);
+  }
+}
 
-      const btnText = document.getElementById("fitBtnText");
-      if (btnText) btnText.innerText = `ซิงค์แล้ว (${totalKcal} Kcal)`;
-
-    } catch(err) {
-      console.error("Google Fit Error:", err);
-      showGameToast("เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Fit");
-      const btnText = document.getElementById("fitBtnText");
-      if (btnText) btnText.innerText = "เชื่อมต่อ Google Fit เพื่อดึง Kcal";
+/* ==== FRIENDS & FARM VISIT SYSTEM ==== */
+function ensureFriends() {
+  if (window.__kpd && window.__kpd.S) {
+    if (!window.__kpd.S.friends) {
+      window.__kpd.S.friends = [
+        {id: 'f1', name: 'น้องฟลุ๊ค (เพื่อนซี้)', lv: 8, petLv: 10, petName: 'มังกรน้อย', online: true, lastGift: 0},
+        {id: 'f2', name: 'น้องปูเป้', lv: 5, petLv: 6, petName: 'แมวเหมียว', online: false, lastGift: 0}
+      ];
     }
   }
+}
 
-  window.addEventListener("load", initGoogleFitness);
-})();
+window.friendsSheet = function() {
+  ensureFriends();
+  const S = window.__kpd ? window.__kpd.S : {};
+  const friends = S.friends || [];
+  const myCode = S.googleId ? S.googleId.slice(-6).toUpperCase() : 'LUTONIA' + Math.floor(1000 + Math.random()*9000);
+  
+  let html = '<h2>👥 ระบบเพื่อนและเยี่ยมชมฟาร์ม</h2>';
+  html += '<p class="mut">เพิ่มเพื่อนด้วยรหัสเพื่อน (Friend Code) เพื่อเยี่ยมชมฟาร์ม ส่งของขวัญ และรับเหรียญโบนัสทุกวัน!</p>';
+  html += '<div class="card" style="background:var(--edge);margin-bottom:8px;"><div class="row sp"><span>รหัสเพื่อนของคุณ: <b>#' + myCode + '</b></span><button class="btn sm" id="copyCode">คัดลอก</button></div></div>';
+  
+  html += '<div class="row" style="margin-bottom:10px;"><input type="text" id="friendCodeIn" placeholder="ใส่รหัสเพื่อน (เช่น #A1B2)" style="flex:1;font-size:14px;"><button class="btn kcal sm" id="addFriendBtn">➕ เพิ่มเพื่อน</button></div>';
+  
+  html += '<h3>รายชื่อเพื่อน (' + friends.length + ')</h3><div class="list">';
+  if(friends.length === 0) {
+    html += '<p class="mut center" style="padding:16px;">ยังไม่มีเพื่อน เพิ่มเพื่อนเพื่อเริ่มเยี่ยมชมฟาร์มกันเลย!</p>';
+  } else {
+    friends.forEach((f) => {
+      const giftReady = Date.now() - (f.lastGift || 0) > 86400000;
+      html += '<div class="li" style="background:var(--panel2);align-items:center;">';
+      html += '<div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:' + (f.online ? 'var(--good)' : 'var(--muted)') + ';display:inline-block;"></span>';
+      html += '<div><b>' + esc(f.name) + '</b><br><small class="mut">Lv.' + f.lv + ' · สัตว์เลี้ยง: ' + esc(f.petName) + ' (Lv.' + f.petLv + ')</small></div></div>';
+      html += '<div style="display:flex;gap:4px;">';
+      html += '<button class="btn sm" onclick="window.visitFriend('' + f.id + '')">🏠 เยี่ยมชม</button>';
+      html += '<button class="btn sm ' + (giftReady ? 'kcal' : '') + '" onclick="window.sendGift('' + f.id + '')" ' + (giftReady ? '' : 'disabled') + '>' + (giftReady ? '🎁 ส่งของ' : '✔️ ส่งแล้ว') + '</button>';
+      html += '</div></div>';
+    });
+  }
+  html += '</div>';
+
+  openSheet(html, (b, ov) => {
+    b.querySelector('#copyCode').onclick = () => {
+      navigator.clipboard.writeText(myCode).catch(()=>{});
+      toast('คัดลอกรหัสเพื่อน #' + myCode + ' แล้ว!');
+    };
+    b.querySelector('#addFriendBtn').onclick = () => {
+      const code = b.querySelector('#friendCodeIn').value.trim().toUpperCase().replace('#','');
+      if(!code) return;
+      if(code === myCode) {
+        alert('ไม่สามารถเพิ่มรหัสเพื่อนของตัวเองได้นะ');
+        return;
+      }
+      S.friends.push({
+        id: 'f_' + Date.now(),
+        name: 'เพื่อนใหม่ #' + code,
+        lv: Math.floor(Math.random()*12)+1,
+        petLv: Math.floor(Math.random()*10)+1,
+        petName: ['นกแก้ว', 'เต่า', 'แมว', 'กระต่าย', 'สุนัข'][Math.floor(Math.random()*5)],
+        online: true,
+        lastGift: 0
+      });
+      if(typeof save === 'function') save();
+      toast('เพิ่มเพื่อนสำเร็จ!');
+      closeSheet(ov);
+      window.friendsSheet();
+    };
+  });
+};
+
+window.visitFriend = function(id) {
+  ensureFriends();
+  const S = window.__kpd ? window.__kpd.S : {};
+  const f = (S.friends || []).find(x => x.id === id);
+  if(!f) return;
+  
+  let html = '<h2>🏠 ฟาร์มของ ' + esc(f.name) + '</h2>';
+  html += '<div class="card center" style="background:radial-gradient(circle,#272049,#171030);padding:20px;margin-bottom:12px;">';
+  html += '<div style="font-size:48px;margin-bottom:4px;">🐾</div>';
+  html += '<b style="font-size:18px;color:var(--kcal);">' + esc(f.petName) + ' (Lv.' + f.petLv + ')</b>';
+  html += '<p class="mut">น้องกำลังนอนหลับและรอย่อย Kcal อย่างมีความสุขในฟาร์มของ ' + esc(f.name) + '</p>';
+  html += '</div>';
+  html += '<div class="row"><button class="btn kcal" id="playPetBtn" style="flex:1;">✨ เล่นกับน้องเพื่อน (+🪙 50 เหรียญ)</button></div>';
+
+  openSheet(html, (b, ov) => {
+    b.querySelector('#playPetBtn').onclick = () => {
+      if(typeof SND !== 'undefined') SND.play('coin');
+      S.wallet = (S.wallet || 0) + 50;
+      if(typeof save === 'function') save();
+      if(typeof renderTop === 'function') renderTop();
+      toast('🪙 ได้รับ +50 เหรียญจากการเยี่ยมชมและเล่นกับสัตว์เลี้ยงของเพื่อน!');
+      closeSheet(ov);
+    };
+  });
+};
+
+window.sendGift = function(id) {
+  ensureFriends();
+  const S = window.__kpd ? window.__kpd.S : {};
+  const f = (S.friends || []).find(x => x.id === id);
+  if(!f) return;
+  f.lastGift = Date.now();
+  if(typeof SND !== 'undefined') SND.play('coin');
+  S.wallet = (S.wallet || 0) + 30;
+  if(typeof save === 'function') save();
+  if(typeof renderTop === 'function') renderTop();
+  toast('🎁 ส่งของขวัญให้ ' + esc(f.name) + ' สำเร็จ! ได้รับโบนัส 🪙 30 เหรียญ');
+  window.friendsSheet();
+};
+
+// Check online friends notification simulation on load
+setTimeout(() => {
+  ensureFriends();
+  const S = window.__kpd ? window.__kpd.S : {};
+  const onlineFriends = (S.friends || []).filter(x => x.online);
+  if(onlineFriends.length > 0) {
+    const f = onlineFriends[Math.floor(Math.random()*onlineFriends.length)];
+    const t = document.getElementById('toast');
+    if(t) {
+      t.innerText = '🟢 เพื่อนออนไลน์: ' + f.name + ' กำลังออนไลน์อยู่ในฟาร์ม!';
+      t.hidden = false;
+      setTimeout(() => { t.hidden = true; }, 4000);
+    }
+  }
+}, 5000);
 </script>
 
 
