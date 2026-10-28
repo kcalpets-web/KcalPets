@@ -575,7 +575,11 @@ img.spr.miss{filter:grayscale(.55) brightness(1.15);opacity:.55}
   <canvas class="bgc" id="coverBg"></canvas>
   <div class="logo"><canvas id="logoCv" aria-label="Lutonia"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
   <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
-  <div id="googleBtn" style="position:relative;z-index:35;margin-bottom:12px;display:flex;justify-content:center;"></div>
+  <div id="googleBtn" style="position:relative;z-index:35;margin-bottom:14px;display:flex;justify-content:center;">
+    <button id="btnFit" type="button" style="background:linear-gradient(135deg,#4285f4,#1967d2);color:#fff;border:2px solid #8ab4f8;border-radius:24px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.5);display:inline-flex;align-items:center;gap:8px;font-family:inherit;">
+      <span style="font-size:16px;">⚡</span> <span id="fitBtnText">เชื่อมต่อ Google Fit เพื่อดึง Kcal</span>
+    </button>
+  </div>
   <div class="tap">แตะเพื่อเริ่ม</div>
   <div class="copy">© 2026 Lutonia · ต้นแบบ v<span id="cVer"></span></div>
 </div>
@@ -7656,51 +7660,108 @@ window.KPDFarm={mount,phaseNow};
 
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+<!-- Google Fit Integration Script -->
 <script>
 (function() {
   const GOOGLE_CLIENT_ID = "427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com";
+  let tokenClient;
 
-  function handleCredentialResponse(response) {
-    try {
-      const base64Url = response.credential.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-      const user = JSON.parse(jsonPayload);
-      if (user && user.name) {
-        localStorage.setItem("lutonia_user", JSON.stringify({ name: user.name, email: user.email }));
-        const t = document.getElementById("toast");
-        if (t) {
-          t.innerText = "ยินดีต้อนรับ: " + user.name;
-          t.hidden = false;
-          setTimeout(() => { t.hidden = true; }, 3000);
-        }
+  function showGameToast(msg) {
+    if (typeof toast === 'function') {
+      toast(msg);
+    } else {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.innerText = msg;
+        t.hidden = false;
+        setTimeout(() => { t.hidden = true; }, 3500);
       }
-    } catch (e) {
-      console.error("Google Auth error:", e);
     }
   }
 
-  function initGoogleAuth() {
-    if (window.google && google.accounts && google.accounts.id) {
-      google.accounts.id.initialize({
+  function initGoogleFitness() {
+    if (window.google && google.accounts && google.accounts.oauth2) {
+      tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse
+        scope: "https://www.googleapis.com/auth/fitness.activity.read",
+        callback: async (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            const btnText = document.getElementById("fitBtnText");
+            if (btnText) btnText.innerText = "กำลังดึงข้อมูล Kcal...";
+            await fetchTodayCalories(tokenResponse.access_token);
+          }
+        },
       });
-      const btn = document.getElementById("googleBtn");
-      if (btn) {
-        google.accounts.id.renderButton(btn, {
-          theme: "outline",
-          size: "large",
-          text: "signin_with",
-          shape: "pill"
-        });
+
+      const btnFit = document.getElementById("btnFit");
+      if (btnFit) {
+        btnFit.onclick = (e) => {
+          e.stopPropagation();
+          tokenClient.requestAccessToken();
+        };
       }
     } else {
-      setTimeout(initGoogleAuth, 300);
+      setTimeout(initGoogleFitness, 300);
     }
   }
 
-  window.addEventListener("load", initGoogleAuth);
+  async function fetchTodayCalories(token) {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const endOfDay = now.getTime();
+
+    try {
+      const res = await fetch("https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate", {
+        method: "POST",
+        headers: { 
+          "Authorization": "Bearer " + token, 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({
+          aggregateBy: [{ dataTypeName: "com.google.calories.expended" }],
+          bucketByTime: { durationMillis: 86400000 },
+          startTimeMillis: startOfDay,
+          endTimeMillis: endOfDay
+        })
+      });
+      
+      const data = await res.json();
+      let totalKcal = 0;
+      if (data.bucket && data.bucket[0]?.dataset[0]?.point[0]?.value[0]?.fpVal) {
+        totalKcal = Math.round(data.bucket[0].dataset[0].point[0].value[0].fpVal);
+      }
+
+      // Sync into Lutonia game state
+      if (window.__kpd && window.__kpd.S) {
+        const S = window.__kpd.S;
+        const prevFit = S._lastGoogleFitKcal || 0;
+        const diff = Math.max(0, totalKcal - prevFit);
+        
+        if (diff > 0) {
+          S.wallet = (S.wallet || 0) + diff;
+          S._lastGoogleFitKcal = totalKcal;
+          if (typeof window.__kpd.save === 'function') window.__kpd.save();
+          if (typeof renderTop === 'function') renderTop();
+          showGameToast(`ซิงค์ Google Fit สำเร็จ! ได้รับ +${diff} 🪙 (เผาผลาญวันนี้ ${totalKcal} Kcal)`);
+        } else {
+          showGameToast(`ซิงค์แล้ว: วันนี้เผาผลาญ ${totalKcal} Kcal (อัปเดตเป็นปัจจุบันแล้ว)`);
+        }
+      } else {
+        showGameToast(`ซิงค์ Google Fit สำเร็จ: เผาผลาญ ${totalKcal} Kcal`);
+      }
+
+      const btnText = document.getElementById("fitBtnText");
+      if (btnText) btnText.innerText = `ซิงค์แล้ว (${totalKcal} Kcal)`;
+
+    } catch(err) {
+      console.error("Google Fit Error:", err);
+      showGameToast("เกิดข้อผิดพลาดในการดึงข้อมูลจาก Google Fit");
+      const btnText = document.getElementById("fitBtnText");
+      if (btnText) btnText.innerText = "เชื่อมต่อ Google Fit เพื่อดึง Kcal";
+    }
+  }
+
+  window.addEventListener("load", initGoogleFitness);
 })();
 </script>
 
