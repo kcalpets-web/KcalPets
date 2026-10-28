@@ -574,6 +574,7 @@ img.spr.miss{filter:grayscale(.55) brightness(1.15);opacity:.55}
 <div id="cover">
   <canvas class="bgc" id="coverBg"></canvas>
   <div class="logo"><canvas id="logoCv" aria-label="Lutonia"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
+  <div id="coverGoogleBox" style="position:relative;z-index:40;margin:8px 0;min-height:44px;display:flex;justify-content:center;align-items:center"></div>
   <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
   <div class="tap">แตะเพื่อเริ่ม</div>
   <div class="copy">© 2026 Lutonia · ต้นแบบ v<span id="cVer"></span></div>
@@ -609,7 +610,7 @@ document.documentElement.lang=LANG;
   for(const r of roots){if(!r)continue;const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);const L2=[];while(w.nextNode())L2.push(w.currentNode);
     for(const n of L2){const t=n.nodeValue.trim();if(t&&EN[t])n.nodeValue=n.nodeValue.replace(t,EN[t])}
     r.querySelectorAll('[aria-label]').forEach(e=>{const t=e.getAttribute('aria-label');if(EN[t])e.setAttribute('aria-label',EN[t])})}})();
-const VER='1.29';
+const VER='1.30';
 const CHANGES=[{v:'0.97',items:[TL('🏠 ห้องของน้องกดได้! แตะของในห้องเพื่อไปยังเมนูต่างๆ ประตู = ผจญภัย บาร์เบล = ออกกำลังกาย ชามอาหาร = ป้อนพลัง ฯลฯ ของที่เรืองแสงกดได้ · กดค้างดูชื่อ'),TL('☰ เมนูรวมปุ่มเดียว ปุ่มใหญ่ แบ่งเป็นหน้า · ห้องน้องกว้างขึ้น'),TL('🔁 โหมดฟาร์ม: ด่านที่ผ่านแล้วสุ่มแมพใหม่ทุกครั้ง เก็บเศษได้ไม่จำกัด'),TL('📅 เช็กอินรายวัน · 🏆 ความสำเร็จ 22 อย่าง · 🛍️ ร้านแลกเศษ (สกิน เอฟเฟกต์ ขนม ไข่) อยู่ที่บอร์ดบนผนัง'),TL('🔤 ปรับขนาดตัวอักษร 3 ระดับ และฟอนต์อ่านง่าย ในตั้งค่า · แถบด้านบนเหลือค่าเดียว "วันนี้ป้อนแล้ว"'),TL('🏰 เรียกใหม่: หอคอยราตรี · ชั้น · ผู้เฝ้าชั้น · ชั้น 9 ระเบียงดวงดาว'),TL('🌙 ธาตุธรรมดาสีแสงจันทร์ · วันแรกป๊อปอัปน้อยลง บทสอนเหลือ 3 หน้า'),TL('🌙 ปกเกมใหม่: กองทัพน้องๆ เผชิญหน้าฝูงมอนสเตอร์ หน้าหอคอยราตรี และเงาของบอสตัวสุดท้าย')]},{v:'0.96',items:[TL('🤗 ลูบน้องได้ไม่จำกัด แตะหัว ลูบท้อง ลากนิ้วลูบ หรือแตะรัวๆ น้องตอบสนองต่างกัน · นกกระพือปีก เต่าหดตัว'),TL('⚔️ ผู้เล่นใหม่เริ่มที่โหมดสั่งเอง พร้อมคำแนะนำวิธีสู้ · เป้าโจมตีมีลูกศรและวงแหวนชัดเจน โหมดออโต้ก็ตีตามเป้าที่เลือก'),TL('🥚 ไข่และดักแด้ไม่บอกตัวเลข Kcal แล้ว ดูจากหลอดและอาการของน้องแทน ลุ้นกว่าเดิม'),TL('👥 ช่องทีม 2 และ 3 ปลดล็อกด้วย Kcal ได้ (500 / 1,500) หรือชนะบอสเหมือนเดิม'),TL('🐾 แก้บั๊ก: น้องตอนต่อสู้และในดันเจี้ยนแสดงเป็นก้อนกลม ตอนนี้เห็นร่างและสีธาตุจริงแล้ว')]},{v:'0.95',items:[TL('🍎 แก้บั๊ก: น้องที่ขาดอีกไม่ถึง 50 Kcal ป้อนไม่ได้ ตอนนี้ซื้ออาหารราคาปกติได้ หลอดเต็มพอดี')]},{v:'0.94',items:[TL('✨ ระบบเติบโตใหม่: ไข่ → ภูตแสง → ดักแด้ Lv 6 → สายพันธุ์ · Lv 9 และ 12 โตเองอัตโนมัติ'),TL('🔥 ธาตุมาจากกิจกรรมที่ทำช่วงเป็นไข่ คิดเป็น % ตามนาที'),TL('⚔️ แต้มค่าพลังที่จัดกำหนดสาย นักล่า / ป้องกัน / พลังชีวิต / สัตว์เลี้ยง · ดาวการเลี้ยง + หัวใจ + โบนัสไข่ กำหนดระดับ'),TL('🎨 ทุกสายพันธุ์มีครบ 4 ธาตุ · 📖 สมุดสะสมใหม่ 4 สาย ดูวิธีเลี้ยงและแลกตัวที่ยังไม่มีได้'),TL('🥚 ไข่อยู่ในเครื่องฟักไข่ ไม่เดินในฟาร์มแล้ว · 🐛 ดักแด้ห้อยอยู่บนต้นไม้'),TL('👆 แท็บต่างๆ ใหญ่ขึ้น กดง่าย เห็นชัดว่าเลือกอันไหนอยู่')]},{v:'0.93',items:[TL('🦋 วิวัฒนาการผ่านดักแด้! น้องถึง Lv 6, 9 และ 12 จะเข้าดักแด้ เลี้ยงแบบไข่ แล้วกดออกเอง · ดาวการเลี้ยง 3 ดวง มีโอกาสไต่ระดับ 65% · ไม่มีลดระดับ'),TL('🧭 ช่วงดักแด้ทำกิจกรรมไหนนานสุด น้องจะเอียงไปทางธาตุนั้น (วิ่ง/เวท 🔥 · ว่ายน้ำ 💧 · ปั่น/อื่นๆ 🍃 · เดิน ⚪)'),TL('♥ หัวใจความผูกพัน: ออกกำลังกาย ป้อนอาหาร ลูบหัวทุกวัน หัวใจเต็ม 5 ดวง ได้ดาวการเลี้ยง +1'),TL('🐯🦅🦄 น้องใหม่ 3 ตัว: เสือพงไพร (Epic ใบไม้) · อินทรีเพลิง (Epic ไฟ) · เพกาซัสรุ่งอรุณ (Legendary ปกติ) · กิเลนมี 4 ขาแล้ว'),TL('⏱️ บันทึกเองใส่จำนวนนาทีได้ ใส่แค่นาทีหรือแค่ Kcal เกมคำนวณอีกช่องให้ตามกิจกรรมและน้ำหนัก')]},{v:'0.92',items:[TL('แตะปุ่มเร็วๆ 2 ครั้งแล้วหน้าจอไม่ซูมเข้าอีกแล้ว (ยังใช้สองนิ้วซูมได้ตามปกติ)')]},{v:'0.91',items:[TL('🎮 กดปุ่มลูกศร 1 ครั้ง = เดิน 1 ช่องเสมอ · กดค้างเกินครึ่งวินาทีถึงจะเดินต่อเนื่อง')]},{v:'0.90',items:[TL('🎮 ปุ่มลูกศรใหญ่ขึ้น · กดค้างแล้วลากนิ้วไปปุ่มอื่นเพื่อเปลี่ยนทางได้เลย ไม่ต้องยกนิ้ว · ปุ่มที่กดอยู่จะสว่าง · เดินชนกำแพงมีเสียงและสะดุดให้รู้')]},{v:'0.89',items:[TL('🎮 ปุ่มลูกศรเดินในดันเจี้ยน กดค้างเพื่อเดินต่อเนื่อง · เปิดหรือปิดได้ที่ปุ่ม 🎮 มุมบน'),TL('แตะเดินแล้วมีจุดบอกเส้นทาง · แตะในที่มืด น้องจะเดินไปจุดที่สว่างใกล้ที่สุดแทนการเดาทาง · เข้าดันเจี้ยนครั้งแรกมีวิธีเดินบอก'),TL('⚡ ลุยทั้งแมพด่วน: เฟสที่ชนะบอสแล้ว สู้มอนสเตอร์ทั้งแมพอัตโนมัติในครั้งเดียว ได้รางวัลเหมือนเดินเอง (ไม่รวมหีบ)'),TL('น้ำหนักและส่วนสูงใส่ทศนิยมได้ เช่น 76.5 กก. · 176.5 ซม.')]},{v:'0.88',items:[TL('💎 ปรับเศษดันเจี้ยน: มอนสเตอร์ 1 · จ่าฝูง 2 · ผู้พิทักษ์ 3 (เดือนละครั้งต่อด่าน) · หีบ 1 · หีบใหญ่ 2 · สู้ซ้ำไม่ได้เศษเพิ่ม')]},{v:'0.87',items:[TL('🐣 ผู้เล่นใหม่: ไข่ใบแรกฟักทันทีที่บันทึกการออกกำลังกายครั้งแรก ได้น้องและออกผจญภัยได้ตั้งแต่วันแรก'),TL('📜 ภารกิจลูบหัวน้องและลุยด่านแสดงความคืบหน้า เช่น 1 / 3'),TL('ชุดที่ได้จากอีเวนต์ตอนยังไม่มีน้องที่ฟักแล้ว จะเก็บเข้าตู้เสื้อผ้าไว้ก่อน')]},{v:'0.86',items:[TL('🥚 ตู้ฟักไข่! ไข่ปริศนาฟักเป็นใครขึ้นอยู่กับการออกกำลังกายระหว่างเลี้ยง · ยิ่งได้ดาวการเลี้ยงมาก ยิ่งมีโอกาสได้น้องหายาก · ช่วงเป็นไข่ป้อนได้ไม่จำกัดรายวัน · ฟักได้เมื่อไข่ถึง Lv 3'),TL('ร้านไข่ 200 Kcal · ตู้สุ่มไข่ 300 Kcal ลุ้นไข่เงิน (+1 ดาว) และไข่ทอง (+2 ดาว) · ผู้เล่นเดิมได้ไข่ฟรี 1 ใบ'),TL('✨ ส่งน้องกลับสู่ท้องฟ้า แลกเป็นจิตวิญญาณแห่งป่า · 💎 ดันเจี้ยนดรอปเศษตามเฟส เก็บไว้แลกสกินฟาร์มในอัปเดตหน้า')]},{v:'0.85',items:[TL('⚖️ เลือกได้ว่าจะจัดแต้มสเตตัสอัตโนมัติ หรือจัดแต้มด้วยตัวเอง (เพิ่ม HP · ATK · DEF · ฟื้นพลัง แล้วกดยืนยัน) · ถามครั้งแรกตอนเลเวลอัป')]},{v:'0.84',items:[TL('ตู้เสื้อผ้าใช้ร่วมกันทั้งฟาร์ม แต่ 1 ชิ้นใส่ได้ทีละตัว · ชิ้นที่น้องตัวอื่นใส่อยู่จะไม่อยู่ในตู้ ถอดออกก่อนถึงจะกลับเข้าตู้')]},{v:'0.82',items:[TL('👗 ตู้เสื้อผ้า 4 ช่อง: หัว · ใบหน้า · สกิน (เปลี่ยนสีทั้งตัว) · เอฟเฟกต์ (ค้างคาว ผีน้อยลอยรอบตัว) ใส่พร้อมกันได้ทุกช่อง'),TL('🎃 อีเวนต์ฮาโลวีนแจกเพิ่มเป็น 9 ชิ้น: หน้ากากผี ค้างคาวบินวน สกินฟักทอง ผีน้อยลอย สกินโครงกระดูก + ของเดิม · ใครเผาผลาญถึงแล้วได้ทันที')]},{v:'0.81',items:[TL('📖 เรื่องราว Kcal Pets: Endless Night! มีคัตซีนบทนำ และฉากจบเฟส 1 หลังชนะบอสครั้งแรก · ดูซ้ำได้ใน เมนู → สมุดเรื่องราว'),TL('หอคอยไม่รีเซ็ตแล้ว ผ่านแล้วผ่านเลย · ต้นเดือนรีเซ็ตแค่รางวัลประจำเดือน ด่านที่มี 🎁 รับ ⭐ ได้อีกครั้ง'),TL('⚡ ผ่านด่านด่วน: จ่าย Kcal เพื่อรับรางวัลประจำเดือนของด่านที่เคยผ่าน ไม่ต้องสู้ซ้ำ')]},{v:'0.80',items:[TL('💾 บันทึกไฟล์สำรอง และ 📂 เปิดไฟล์สำรอง ในหน้าตั้งค่า ส่งเก็บไว้ใน LINE Keep หรือ Google Drive ได้ · รหัสสำรองสั้นลงมาก (รหัสเก่ายังใช้ได้)'),TL('ถ้าเปิดเกมในแอป LINE จะมีคำแนะนำให้เปิดใน Safari/Chrome เพื่อไม่ให้เซฟหาย'),TL('เตือนตอนป้อนพลังน้องที่ยังไม่ได้อยู่ในทีม · มอนสเตอร์ขวางทางมีลุ้นขนม · เขาปีศาจเปลี่ยนเป็นสีม่วง')]},{v:'0.79',items:[TL('ดันเจี้ยน: ต้องกำจัดมอนสเตอร์ทุกตัวในแมพก่อน ผนึกของผู้พิทักษ์ด่านถึงจะหายไป · ดูจำนวนที่เหลือได้มุมบน'),TL('จ่าฝูงไม่ใช่ตัวเสริมแล้ว ปรับความแข็งให้พอดีกับด่าน')]},{v:'0.78',items:[TL('🔦 ผจญภัยแบบสำรวจ: ทุกด่านเป็นแมพมืดให้เดินสำรวจเอง แตะพื้นเพื่อเดิน แมพจะสว่างตามทางที่น้องเดินผ่าน'),TL('เจอมอนสเตอร์ขวางทาง จ่าฝูง (ไม่บังคับ) และผู้พิทักษ์ด่าน ชนะผู้พิทักษ์แล้วบันไดจะเปิดไปด่านถัดไป'),TL('หีบสมบัติ และทางลับที่ต้องใช้น้องธาตุน้ำ ไฟ หรือใบไม้ในทีม · ออกกำลังกายวันนี้ ตะเกียงจะสว่างขึ้น'),TL('ด่านที่ผ่านแล้วกด ⚔️ สู้ซ้ำทันที ได้เหมือนเดิม')]},{v:'0.77',items:[TL('🎃 อีเวนต์ฮาโลวีน (15 ต.ค. – 7 พ.ย.) เผาผลาญ Kcal จากการออกกำลังกาย ปลดล็อกชุดฟรี 4 ชิ้น: หมวกฟักทอง โบว์ค้างคาว หมวกแม่มด เขาปีศาจ'),TL('ตู้เสื้อผ้า: แตะน้องในฟาร์ม → แต่งตัว ชุดจะโชว์ทั้งในบ้าน ฟาร์ม การต่อสู้ และหน้าจับเวลา'),TL('ทุกคนได้แว่นเท่ฟรี 1 อัน ลองใส่ได้เลย')]},{v:'0.76',items:[TL('ปุ่มเมนู ☰ ย้ายมาแถบล่างข้างปุ่มผจญภัย กดง่ายด้วยนิ้วโป้ง · ป้ายเป้าหมายด้านบนกว้างเต็มจอ'),TL('ลู่วิ่ง: ความชันอยู่ซ้าย ความเร็วอยู่ขวา · เอาปุ่มความเร็วสำเร็จรูปออก ปรับด้วย − / + ได้เลย')]},{v:'0.75',items:[TL('จับเวลาแบบใหม่: เดิน/วิ่งเป็นแบบลู่วิ่ง ปรับความเร็วและความชันได้ (คิด Kcal ตามสูตร ACSM) มีปุ่มความเร็วสำเร็จรูปสำหรับเดินวิ่งข้างนอก'),TL('กิจกรรมอื่นเด้งถามความเหนื่อยทุก 10 นาที และตอนจบ ตอบง่ายด้วยการทดสอบการพูด'),TL('เมนูใหม่ ❤️ ข้อมูลสุขภาพ: ใส่น้ำหนักตัวเพื่อให้ Kcal แม่นขึ้น เก็บในเครื่องเท่านั้น · น้องออกกำลังกายเป็นอนิเมชันระหว่างจับเวลา')]},{v:'0.74',items:[TL('ปุ่มภารกิจย้ายมาอยู่มุมขวาล่างของจอ เหนือปุ่มผจญภัย กดง่ายด้วยนิ้วโป้ง · บอกความคืบหน้า เช่น 1/3 และเด้งเมื่อมีรางวัลรอรับ'),TL('ป้ายเป้าหมายแนะนำให้ป้อนพลังเฉพาะเมื่อมี Kcal พอซื้ออาหารอย่างน้อย 1 อย่าง (50 Kcal)')]},{v:'0.73',items:[TL('จับเวลาออกกำลังกายได้แล้ว! ไม่มีนาฬิกาก็บันทึกได้ เลือกกิจกรรม กด ⏱️ เริ่ม ออกกำลังเสร็จกดจบ เกมประมาณ Kcal ให้'),TL('เวลายังเดินต่อแม้ล็อกจอหรือปิดแอป · พักชั่วคราวได้ · ปรับความหนัก เบา/ปานกลาง/หนัก ได้'),TL('ปุ่มจบการจับเวลาเป็นแบบกดค้าง 3 วินาที กันเผลอแตะระหว่างออกกำลังกาย')]},{v:'0.72',items:[TL('ฟาร์มมีชีวิต! กด 🏡 ฟาร์มและทีม แล้วดูน้องๆ วิ่งเล่น ว่ายน้ำในบ่อ ปีนต้นไม้ และอาบแดดข้างกองไฟ ตามธาตุของตัวเอง'),TL('ฉากเปลี่ยนตามเวลาจริง กลางวัน เย็น และกลางคืน (หลัง 22:00 น้องเข้านอน) · ไข่ที่ยังไม่ฟักนอนรออยู่ในรัง'),TL('แตะน้องในฟาร์มเพื่อป้อนพลังหรือดูรายละเอียด · ปุ่ม 📋 ทีมและน้องทั้งหมด ใช้จัดทีมและขยายฟาร์ม')]},{v:'0.71',items:[TL('ฟอนต์ไทย: บ กว้างขึ้นและก้นแบน แยกจาก ข ได้ชัด (ข แคบกว่า ก้นมน)')]},{v:'0.70',items:[TL('ตั้งชื่อกิจกรรมเองได้เมื่อเลือก ✨ อื่นๆ เช่น โยคะ เต้น แบดมินตัน · ชื่อที่ใช้บ่อยกดเลือกซ้ำได้')]},{v:'0.69',items:[TL('เกมมี 2 ภาษาแล้ว: ไทย และ English เลือกได้ที่ ⚙️ ตั้งค่า (ครั้งแรกเลือกตามภาษาของเครื่อง)')]},{v:'0.68',items:[TL('ตัวหนังสือภาษาไทยทั้งเกมเป็นฟอนต์พิกเซลแล้ว (ตัวหนา อ่านง่าย) เข้าชุดกับตัวเลข ตัวอังกฤษ และไอคอน'),TL('อีโมจิทั้งหมดในเกมเป็นภาพพิกเซล')]},{v:'0.66',items:[TL('ไอคอนทั้งเกมเปลี่ยนเป็นภาพพิกเซล เข้าชุดกับน้องและดันเจี้ยน: เมนู ฟาร์ม อาหาร ภารกิจ ป้ายเป้าหมาย และหน้าวิธีเล่น'),TL('ตัวเลขใช้ฟอนต์พิกเซลชุดใหม่ที่วาดเองสำหรับเกมนี้ อ่านง่ายขึ้น เลข 5 กับ 8 ไม่สับสนอีก'),TL('ไอคอนออกกำลังกายเป็นบาร์เบล'),TL('อีโมจิที่เหลือทั้งเกมเปลี่ยนเป็นไอคอนพิกเซลทั้งหมด (ประเภทการออกกำลังกาย ธาตุ ปุ่มต่อสู้ รางวัล ข้อความ)')]},{v:'0.65',items:[TL('ป้อนพลังแบบใหม่: เลือกอาหารจากเมนูให้น้อง 8 อย่าง ตั้งแต่ 🍎 แอปเปิล 50 Kcal ถึง 🎂 เค้กฉลอง 2,000 Kcal'),TL('ใส่อาหารลงจานได้หลายอย่าง แตะในจานเพื่อเอาออก มีปุ่มจัดจานให้อัตโนมัติ')]},{v:'0.64',items:[TL('เมนูกระชับขึ้น: ป้อนพลัง น้อง กาชา และพักผ่อน ย้ายเข้าไปอยู่ใน 🏡 ฟาร์มและทีม'),TL('ในฟาร์ม แตะรูปน้องแล้วเลือก 🍖 ป้อนพลัง หรือ 📋 ดูรายละเอียด ได้เลย'),TL('ด้านบนของฟาร์มมีปุ่ม 🥚 กาชา และ 🌙 พักผ่อน')]},{v:'0.63',items:[TL('ย้ายเมนูไปไว้มุมขวาบนของจอ กดแล้วไอคอนฟังก์ชันเด้งออกมาให้เลือก'),TL('ด้านล่างเหลือปุ่มผจญภัยปุ่มเดียว ออกกำลังกายและป้อนพลังย้ายเข้าเมนู (ไอคอนที่ควรกดต่อจะมีกรอบส้ม)'),TL('จุดชมพูบนปุ่มเมนูบอกว่ามีรางวัลภารกิจรอรับ'),TL('พื้นที่ฉากน้องกว้างขึ้น เพราะเอาแถบเมนูด้านล่างออก')]},{v:'0.62',items:[TL('ทุกระบบรายวันรีเซ็ตพร้อมกันเวลา 22:00 ทั้งภารกิจ โควตาป้อนพลัง ลูบหัว EXP ชนะซ้ำ และ EXP พักผ่อน')]},{v:'0.61',items:[TL('ภารกิจรายวันรีเซ็ตเวลา 22:00 แทนเที่ยงคืน เล่นต่อหลังเลิกงานได้ก่อนพักผ่อน'),TL('หน้าภารกิจบอกเวลาที่เหลือก่อนรอบใหม่')]},{v:'0.6',items:[
  TL('มีเสียงแล้ว! เสียงประกอบ 8-bit ทุกจังหวะ ทั้งลูบหัว ป้อนพลัง เลเวลอัป ต่อสู้ และเปิดไข่'),
  TL('เพลงพื้นหลังหน้าแรกและฉากต่อสู้ (เริ่มแบบปิดไว้ เปิดได้ที่ตั้งค่า)'),
@@ -4367,9 +4368,9 @@ function coverScene(cv,fr){const k=3,W=Math.ceil(innerWidth/k),H=Math.ceil(inner
   [5,6,3,4,1,2,0].forEach(i=>{const p=ap[i],sz=Math.round(ps*p[2]),im=backSprite(SPECIES[keys[i]]?keys[i]:'shiba',(fr+i)%2),x=W*p[0],yb=H*p[1]+(((fr+i)%2)?-1:0);
     c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(Math.round(x),Math.round(yb-sz*.04),sz*.32,sz*.07,0,0,7);c.fill();c.drawImage(im,Math.round(x-sz/2),Math.round(yb-sz),sz,sz)});
   const v=c.createLinearGradient(0,H*.8,0,H);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(6,3,14,.7)');c.fillStyle=v;c.fillRect(0,H*.8,W,H*.2)}
-function showCover(){const c=$('cover');c.hidden=false;const bg=$('coverBg');let fr=0;coverScene(bg,0);
+function showCover(){const c=$('cover');c.hidden=false;try{updateCoverGoogleStatus()}catch(e){}const bg=$('coverBg');let fr=0;coverScene(bg,0);
   clearInterval(showCover.t);{let tk=0;showCover.t=setInterval(()=>{if(++tk%4===0)fr^=1;if(document.hidden)return;coverScene(bg,fr)},130)}}
-function enter(){SND.unlock();SND.play('open');const c=$('cover');if(c.hidden)return;setTimeout(()=>SND.music(S&&S.detox?null:'home'),200);c.hidden=true;clearInterval(showCover.t);
+function enter(e){if(e && e.target && e.target.closest && (e.target.closest('#coverGoogleBox') || e.target.closest('.g_id_signin') || e.target.closest('iframe'))) return;SND.unlock();SND.play('open');const c=$('cover');if(c.hidden)return;setTimeout(()=>SND.music(S&&S.detox?null:'home'),200);c.hidden=true;clearInterval(showCover.t);
   if(!S)S=load();if(!S||!S.pets.length){S=null;welcome()}else startGame(false)}
 
 /* ---------- wire ---------- */
@@ -4928,7 +4929,7 @@ function kwOver1(k){const W=KW_W,H=KW_H,g=Array.from({length:H},()=>Array(W).fil
   ad({t:'boss',id:'boss'},18,3);
   ad({t:'cp',n:1,id:'cp1'},18,45);ad({t:'cp',n:2,id:'cp2'},18,29);ad({t:'cp',n:3,id:'cp3'},18,18);
   [[25,47],[3,28],[32,31],[8,14],[26,10]].forEach(([x,y],n)=>ad({t:'chest',id:'c'+n,big:n===3},x,y));
-  ad({t:'ob',kind:'bridge',id:'bridge',need:'plank'},14,33);
+  ad({t:'ob',kind:'bridge',id:'bridge',need:'plank'},14,33);ad({t:'ob',kind:'bridge',id:'bridge',need:'plank'},13,33);
   ad({t:'ob',kind:'thorn',id:'thorn',cost:100*k},22,33);
   ad({t:'ob',kind:'rock',id:'rock',need:'skey'},10,13);
   [[10,47],[25,42],[9,29],[28,29],[14,12],[23,13],[5,47],[30,33]].forEach(([x,y],n)=>ad({t:'mon',id:'o'+n,kind:n%4===3?'elite':'minor'},x,y));
@@ -4955,7 +4956,7 @@ function kwMon(k,kind,j){const ph=KPH[k-1],P=PHASES[ph],lv=kwMonLv(k,kind),n=lv-
   return{sp,name:(kind==='elite'||kind==='lead'?TL('จ่าฝูง'):kind==='boss'?'👑 ':'')+SPECIES[sp].name,hp:Math.round(hp),atk:Math.round(atk*10)/10,df:Math.round(df*10)/10,el,rec:lv,lv,boss:kind==='boss',kind}}
 
 /* ---------- state: S.kd[k] is what is saved; KW.st is the live run (lost on a full wipe) ---------- */
-function kdGet(k){S.kd=S.kd||{};return S.kd[k]||(S.kd[k]={doors:{},dr:{},ow:{done:{},seen:''},cps:{},ob:{},it:{},at:0,clear:0})}
+function kdGet(k){S.kd=S.kd||{};const st=S.kd[k]||(S.kd[k]={doors:{},dr:{},ow:{done:{},seen:''},cps:{},ob:{},it:{},at:0,clear:0});st.it=st.it||{};st.ob=st.ob||{};st.doors=st.doors||{};if(st.doors[1]&&!st.ob.bridge&&!st.it.plank)st.it.plank=1;if(st.doors[4]&&!st.ob.rock&&!st.it.skey)st.it.skey=1;return st}
 const kwClone=o=>JSON.parse(JSON.stringify(o));
 function bitsPack(a){let s='';for(let i=0;i<a.length;i+=4)s+=((a[i]|0)|(a[i+1]|0)<<1|(a[i+2]|0)<<2|(a[i+3]|0)<<3).toString(16);return s}
 function bitsUnpack(s,n){const a=new Uint8Array(n);for(let i=0;i<n;i++){const h=parseInt(s[i>>2]||'0',16);a[i]=(h>>(i&3))&1}return a}
@@ -5056,8 +5057,7 @@ function kwOpen(k,m,at){const M0=m==='ow'?kwOver(k):kwInner(k,m),M=m==='ow'?Obje
   let queue=[],stepT=0,goal=null,auto=false,autoT=0,lastCp=null;
   const V={el,M,busy:false};KW.view=V;KW.m=m;
   const isDone=e=>!!ds.done[e.id];
-  const live=()=>M.ents.filter(e=>{if(e.t==='mon'||e.t==='chest')return!isDone(e);if(e.t==='ob')return!st.ob[e.id];if(e.t==='boss')return true;return true});
-  const entAt=(x,y)=>live().find(e=>e.x===x&&e.y===y);
+  const live=()=>M.ents.filter(e=>{if(e.t==='mon'||e.t==='chest')return!isDone(e);if(e.t==='ob')return!st.ob[e.id];if(e.t==='boss')return true;return true});const bridgeEnt=M.ents&&M.ents.find(e=>e.t==='ob'&&e.kind==='bridge');const entAt=(x,y)=>{const e=live().find(e=>e.x===x&&e.y===y);if(e)return e;if(!st.ob.bridge&&M.g&&M.g[y]&&M.g[y][x]===4&&bridgeEnt)return bridgeEnt;return null};
   const monsLeft=()=>M.ents.filter(e=>e.t==='mon'&&!isDone(e)).length;
   const blocks=e=>e&&(e.t==='mon'||e.t==='door'||e.t==='boss'||e.t==='ob'||e.t==='altar'||e.t==='puz'||(e.t==='chest'&&!isDone(e)));const exitOpen=()=>m==='ow'||!!st.doors[m];
   const tilePass=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const v=M.g[y][x];if(v===1||v===2||v===5)return true;if(v===4)return!!st.ob.bridge;return false};
@@ -5562,7 +5562,7 @@ function kwBuild(k){const S0=KL[k],W=KW_W,H=KW_H,g=Array.from({length:H},()=>Arr
   const ents=[];const ad=(o,x,y)=>{if(g[y][x]!==4&&g[y][x]!==5&&g[y][x]!==2)set(x,y,1);ents.push(Object.assign(o,{x,y}))};
   S0.doors.forEach(([x,y],n)=>ad({t:'door',n:n+1,id:'d'+(n+1)},x,y));ad({t:'boss',id:'boss'},S0.boss[0],S0.boss[1]);
   S0.cp.forEach(([x,y],n)=>ad({t:'cp',n:n+1,id:'cp'+(n+1)},x,y));S0.chests.forEach(([x,y],n)=>ad({t:'chest',id:'c'+n,big:n===3},x,y));
-  {const b=S0.bridge[0];ents.push({t:'ob',kind:'bridge',id:'bridge',need:'plank',x:b[0],y:b[1]})}
+  (S0.bridge||[]).forEach(([x,y])=>ents.push({t:'ob',kind:'bridge',id:'bridge',need:'plank',x,y}))
   ad({t:'ob',kind:'thorn',id:'thorn',cost:100*k},S0.thorn[0],S0.thorn[1]);ad({t:'ob',kind:'rock',id:'rock',need:'skey'},S0.rock[0],S0.rock[1]);
   S0.mons.forEach(([x,y],n)=>ad({t:'mon',id:'o'+n,kind:n%4===3?'elite':'minor'},x,y));ad({t:'exit',id:'exit'},S0.exit[0],S0.exit[1]);
   const cp={};S0.cp.forEach(([x,y],n)=>cp[n+1]={x,y});return{k,kind:'ow',W,H,g,rg,ents,start:{x:S0.start[0],y:S0.start[1]},cp}}
@@ -7439,7 +7439,635 @@ setTimeout(()=>{try{if(S&&S.pets)gcPid()}catch(e){}},2500);try{window.__gc={gcDe
 
 /* ==== LUTONIA V2 LAYER END ==== */
 window.__kpd={get BT(){return BT},formIdx,get S(){return S},set S(v){S=v},save,dayIdx,capWeek,addExp,renderSprite,SPECIES,STARTERS,simStage,PHASES,get BT(){return BT},pullOne,POOL,buildGen,tickEnergy,detoxApply,checkSeason,evAdd,wardrobeSheet,petMenu,dungeonEnter,get DG(){return DG},dunGen,startBattle,playCut,storyBook,quickSheet,fxDraw,wardrobeSheet2:wardrobeSheet,statSheet,showLevelUps,gachaSheet,fragAdd,incGuide,releaseSheet,careInfo,adventureSheet,goAdventure,townView,townClose,townSkinToggle,TOWN_HS,bowlSheet,bowlAdd,eatFromBowl,petFull,shopSheet,listShop,dropIng,dropSheet,guardProp,guardList,GUARD_PROP,toast,TL,playCut,get CUT(){return CUT},mailSheet,mailTick,mailUnread,stats,makeBattle,petAct,monPhase,autoSkill,autoTarget,addPoints,get TOWER(){return TOWER},tipOnce,tutorial,paintSheet,roomThApply,towerView,treeOK,treeDef,treeVis,TREE_SZ,exScene,decorGacha,expeditionSheet,exPct,exCollect,mealPrice,recipeBase,decorSheet,DECOR,dunItemSheet,potionShop,drinkShop,buffs,drinkUse,potionUse,renderTop,troughSheet,troughTick,troughAdd,trArr,eatFruit,STAT_CAP,fruitShop,settingsSheet,exchangeShop,farmView,farmSheet,sprImg,pxObj,buildHouse,applyFlip,flipStore,fridgeSheet,cookDish,storeAllToFridge,frArr,ING,RECIPE,bagAddItem,eggShopSheet,kcalSheet,teamSheet,toggleBag,buyFood,feedItem,bagArr,teamSlotSheet,renderTeamBar,storeSheet,roomEdit,doorSheet,roomNight,roomReset,quickRun,runLeft,pform,pspr,pstage,cocoonSheet,cocEnterSheet,cocEnter,cocGuide,canCoc,cocReady,heartTouch,heartAll,feedSheet,exerciseSheet,cocRoll,cocCare,pel,pkey,isWisp,catalogSheet,catCount,eggElOdds,archOdds,cocApply,CAT_ALL,farmSheet,moodTxt,petTap,sideSprite,boardSheet,guardHall,blessOn,blessRoll,makeUnit,ACH,boardClaimN,boardHot,boardClaimAll,questState,startBattle};
-function boot(data){if(data&&data.S){S=data.S}else S=load();showCover();requestAnimationFrame(loop)}
+
+/* ========================================================
+   Lutonia: Google Account Login & Social Friends System (Integrated)
+   ======================================================== */
+
+try {
+  Object.assign(EN, {
+    'เข้าสู่ระบบด้วย Google': 'Sign in with Google',
+    'ออกจากระบบ Google': 'Sign out of Google',
+    'เชื่อมต่อ Google แล้ว': 'Google Connected',
+    'บัญชี Google': 'Google Account',
+    'เข้าสู่ระบบด้วย Google เพื่อสำรองข้อมูล ผูกบัญชี และซิงค์ข้ามเครื่อง': 'Sign in with Google to backup data, link account and sync across devices',
+    'ซิงค์ข้อมูลกับคลาวด์': 'Cloud Sync',
+    'ซิงค์ข้อมูลสำเร็จ': 'Cloud sync complete',
+    'ชื่อผู้ใช้ Google': 'Google Display Name',
+    'ยืนยันเข้าสู่ระบบ': 'Confirm Sign In',
+    'เข้าสู่ระบบด้วยบัญชี Google เพื่อเชื่อมต่อโปรไฟล์และสำรองข้อมูล': 'Sign in with Google account to connect profile and cloud backup',
+    'เข้าสู่ระบบด้วย Google สำเร็จ': 'Signed in with Google successfully',
+    'ออกจากระบบ Google แล้ว': 'Signed out of Google',
+    'เพื่อนของฉัน': 'My Friends',
+    'เพิ่มเพื่อน': 'Add Friend',
+    'รหัสเพื่อนของคุณ (Friend Code)': 'Your Friend Code',
+    'คัดลอกรหัส': 'Copy Code',
+    'คัดลอกรหัสแล้ว': 'Code copied',
+    'ทั้งหมด': 'All',
+    'สถานะออนไลน์': 'Online Status',
+    'ออนไลน์': 'Online',
+    'ไม่อยู่': 'Away',
+    'ออฟไลน์': 'Offline',
+    'ใส่รหัสเพื่อน (Friend Code) เพื่อเพิ่มเป็นเพื่อนและติดตามสถานะออนไลน์': 'Enter Friend Code to add friends and track online status',
+    'เช่น LT-108241 หรือชื่อเพื่อน': 'e.g. LT-108241 or friend name',
+    'ไม่มีรหัสเพื่อน? ลองสุ่มหาเพื่อนใหม่': 'No code? Discover new adventurers',
+    'สุ่มหาเพื่อนใหม่': 'Discover Friend',
+    'กรุณากรอกรหัสเพื่อน': 'Please enter a friend code',
+    'ไม่สามารถเพิ่มรหัสของตัวเองได้': 'Cannot add your own friend code',
+    'เป็นเพื่อนกันอยู่แล้ว': 'Already friends',
+    'เพิ่มเพื่อนสำเร็จ': 'Friend added successfully',
+    'พบเพื่อนใหม่:': 'Discovered friend:',
+    'ยังไม่มีเพื่อนออนไลน์ในขณะนี้': 'No friends online right now',
+    'ยังไม่มีเพื่อน': 'No friends yet',
+    'ส่งของขวัญ': 'Send Gift',
+    'ส่งแล้ว': 'Sent',
+    'ส่งขนมให้': 'Sent snack to',
+    'ทักทาย': 'Wave',
+    'แล้ว!': 'already!',
+    'ลบเพื่อนแล้ว': 'Friend removed'
+  });
+} catch(e) {}
+
+let SOCIAL_CHANNEL = null;
+try {
+  if (typeof BroadcastChannel !== 'undefined') {
+    SOCIAL_CHANNEL = new BroadcastChannel('lutonia_social');
+  }
+} catch(e) {
+  SOCIAL_CHANNEL = null;
+}
+
+function ensureSocialState() {
+  if (typeof S === 'undefined' || !S) return;
+  if (!S.friendCode) {
+    const seed = Math.abs(((S.created || Date.now()) ^ 0x5f3759df) % 900000 + 100000);
+    S.friendCode = 'LT-' + seed;
+  }
+  if (!Array.isArray(S.friends) || S.friends.length === 0) {
+    S.friends = [
+      { id: 'LT-108241', name: 'Mina 🌸', lv: 8, pet: 'chick', petForm: 1, petName: 'Ember', status: 'online', act: 'วิ่งจ๊อกกิ้ง 4.2 กม.', lastSeen: Date.now() },
+      { id: 'LT-359124', name: 'Kaito ⚔️', lv: 14, pet: 'shiba', petForm: 2, petName: 'Storm', status: 'online', act: 'กำลังสำรวจถ้ำคริสตัล', lastSeen: Date.now() - 60000 },
+      { id: 'LT-772901', name: 'Aoi 🍃', lv: 11, pet: 'bunny', petForm: 2, petName: 'Leafy', status: 'away', act: 'พักผ่อนที่เตียง', lastSeen: Date.now() - 420000 },
+      { id: 'LT-641882', name: 'Ren 🛡️', lv: 16, pet: 'penguin', petForm: 3, petName: 'Frost', status: 'offline', act: 'ออฟไลน์เมื่อ 2 ชม. ที่แล้ว', lastSeen: Date.now() - 7200000 }
+    ];
+  }
+  if (!S.friendGifts) S.friendGifts = {};
+  if (typeof S.googleUser === 'undefined') S.googleUser = null;
+}
+
+function broadcastPresence() {
+  if (!SOCIAL_CHANNEL || typeof S === 'undefined' || !S) return;
+  try {
+    const main = (S.pets && S.pets.find(x => x.id === S.main)) || (S.pets && S.pets[0]);
+    SOCIAL_CHANNEL.postMessage({
+      type: 'heartbeat',
+      id: S.friendCode,
+      name: S.pname || (S.googleUser ? S.googleUser.name : 'Player'),
+      lv: (typeof plvInfo === 'function') ? plvInfo().lv : 1,
+      pet: main ? pspr(main) : 'chick',
+      petForm: main ? pform(main) : 0,
+      petName: main ? main.name : 'Buddy',
+      act: 'กำลังออนไลน์ในบ้าน',
+      t: Date.now()
+    });
+  } catch(e) {}
+}
+
+if (SOCIAL_CHANNEL) {
+  SOCIAL_CHANNEL.onmessage = function(ev) {
+    try {
+      if (typeof S === 'undefined' || !S || !S.friends || !ev.data || ev.data.type !== 'heartbeat') return;
+      const d = ev.data;
+      if (d.id === S.friendCode) return;
+      const f = S.friends.find(x => x.id === d.id);
+      if (f) {
+        f.status = 'online';
+        f.name = d.name;
+        f.lv = d.lv;
+        f.pet = d.pet;
+        f.petForm = d.petForm;
+        f.petName = d.petName;
+        f.act = d.act;
+        f.lastSeen = d.t;
+        save();
+        const ct = document.querySelector('#frContent');
+        if (ct && ct.dataset.activeTab === 'online') {
+          renderFriendsContent(ct, 'online');
+        }
+      }
+    } catch(e) {}
+  };
+}
+setInterval(broadcastPresence, 15000);
+
+function getFriendsOnlineCount() {
+  ensureSocialState();
+  if (!S || !S.friends) return 0;
+  return S.friends.filter(f => f.status === 'online').length;
+}
+
+function simulateFriendsTick() {
+  ensureSocialState();
+  if (!S || !S.friends) return;
+  const now = Date.now();
+  const acts = [
+    'กำลังสำรวจถ้ำคริสตัล', 'วิ่งจ๊อกกิ้งรอบเมือง', 'ป้อนอาหารน้อง',
+    'กำลังลุยหอคอยราตรี', 'พักผ่อนในฟาร์ม', 'เก็บผลไม้ในสวน',
+    'บันทึกออกกำลังกาย 🔥', 'สุ่มกาชาชุดใหม่', 'เดินเล่นในป่าหมอก'
+  ];
+  S.friends.forEach(f => {
+    if (now - (f.lastSeen || 0) > 40000) {
+      const r = Math.random();
+      if (r < 0.6) {
+        f.status = 'online';
+        f.act = acts[Math.floor(Math.random() * acts.length)];
+        f.lastSeen = now;
+      } else if (r < 0.8) {
+        f.status = 'away';
+        f.act = 'ไม่อยู่สักครู่';
+      } else {
+        f.status = 'offline';
+        f.act = 'ออฟไลน์';
+      }
+    }
+  });
+}
+
+// --- Google Account Auth Card & Dialog ---
+const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';
+
+function decodeGoogleJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(jsonPayload);
+  } catch(e) {
+    return null;
+  }
+}
+
+function handleGoogleCredential(response, onSuccess) {
+  if (!response || !response.credential) return;
+  const payload = decodeGoogleJwt(response.credential);
+  if (!payload) {
+    toast('เข้าสู่ระบบไม่สำเร็จ: ไม่สามารถถอดรหัส Token ได้');
+    return;
+  }
+  ensureSocialState();
+  S.googleUser = {
+    id: payload.sub,
+    name: payload.name || payload.given_name || 'Player',
+    email: payload.email || '',
+    picture: payload.picture || '',
+    loginAt: Date.now()
+  };
+  if (!S.pname || S.pname === 'ผู้เล่น' || S.pname === 'Player') {
+    S.pname = S.googleUser.name.slice(0, 16);
+  }
+  save();
+  if (typeof h2Sync === 'function') h2Sync();
+  try { SND.play('coin'); } catch(e) {}
+  toast('✓ ' + TL('เข้าสู่ระบบด้วย Google สำเร็จ'));
+  if (onSuccess) onSuccess();
+}
+
+function updateCoverGoogleStatus() {
+  const cBox = document.getElementById('coverGoogleBox');
+  if (!cBox) return;
+  ensureSocialState();
+  if (S && S.googleUser) {
+    cBox.innerHTML = '<div style="background:#161d33;border:1px solid #4285f4;padding:6px 14px;border-radius:20px;display:flex;align-items:center;gap:8px;color:#fff;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.4)">' +
+      '🟢 <span>' + TL('เข้าสู่ระบบ:') + '</span> <b style="color:#8fd6ff">' + esc(S.googleUser.name) + '</b>' +
+      '<button class="btn sm" id="coverGSwitch" style="margin-left:6px;padding:2px 8px;font-size:11px;min-height:24px">⚙️</button>' +
+    '</div>';
+    const swBtn = cBox.querySelector('#coverGSwitch');
+    if (swBtn) swBtn.onclick = (e) => { e.stopPropagation(); openGoogleLoginDialog(() => updateCoverGoogleStatus()); };
+  } else {
+    cBox.innerHTML = '<button class="btn" id="coverGoogleLoginBtn" style="background:#ffffff;color:#3c4043;font-weight:600;display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:24px;border:1px solid #dadce0;box-shadow:0 3px 8px rgba(0,0,0,0.3);cursor:pointer;font-size:13px;letter-spacing:0.2px">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.92 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>' +
+      '<span>' + TL('เข้าสู่ระบบด้วย Google') + '</span>' +
+    '</button>';
+    const cBtn = cBox.querySelector('#coverGoogleLoginBtn');
+    if (cBtn) {
+      cBtn.onclick = (e) => {
+        e.stopPropagation();
+        openGoogleLoginDialog(() => updateCoverGoogleStatus());
+      };
+    }
+    // Also try GIS render into container if available
+    initGoogleIdentity(cBox, () => updateCoverGoogleStatus());
+  }
+}
+
+function initGoogleIdentity(container, onSuccess) {
+  const box = typeof container === 'string' ? document.getElementById(container) : container;
+  if (!box) return;
+  if (window.google && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (res) => {
+          handleGoogleCredential(res, onSuccess);
+          updateCoverGoogleStatus();
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        error_callback: (err) => {
+          console.error('Google Sign In Error:', err);
+          let errText = 'เข้าสู่ระบบไม่สำเร็จ: ';
+          if (err && err.type === 'origin_mismatch') {
+            errText += 'Origin Mismatch (ยังไม่ได้เพิ่มโดเมนใน Google Cloud Console)';
+          } else if (err && err.type === 'popup_closed_by_user') {
+            errText += 'ผู้ใช้ปิดหน้าต่างล็อกอินก่อนทำรายการเสร็จ';
+          } else if (err && err.type === 'popup_blocked_by_browser') {
+            errText += 'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัป';
+          } else if (err && err.type) {
+            errText += err.type;
+          } else {
+            errText += 'กรุณาตรวจสอบการตั้งค่า OAuth ใน Google Cloud Console';
+          }
+          toast(errText);
+        }
+      });
+      // Do not wipe out custom styled button if GIS cannot auto-render
+      const gisMount = document.createElement('div');
+      gisMount.style.marginTop = '6px';
+      google.accounts.id.renderButton(gisMount, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: 260
+      });
+      if (gisMount.children.length > 0) {
+        box.innerHTML = '';
+        box.appendChild(gisMount);
+      }
+    } catch(err) {
+      console.warn('GIS error:', err);
+    }
+  }
+}
+
+function googleAuthCard() {
+  ensureSocialState();
+  const u = S ? S.googleUser : null;
+  if (u) {
+    return '<div class="card" id="gAuthCard" style="background:#161d33;border:1px solid #4285f4;padding:12px 14px">'+
+      '<div class="row sp" style="align-items:center">'+
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          (u.picture ? '<img src="'+esc(u.picture)+'" style="width:38px;height:38px;border-radius:50%;border:2px solid #4285f4" alt="Google">' : '<div style="width:38px;height:38px;border-radius:50%;background:#4285f4;display:flex;align-items:center;justify-content:center;font-size:18px">G</div>')+
+          '<div><div style="font-size:11px;color:#7fe08c;font-weight:700">🟢 '+TL('เชื่อมต่อ Google แล้ว')+'</div><b style="font-size:14px">'+esc(u.name)+'</b><div class="mut" style="font-size:11px">'+esc(u.email)+'</div></div>'+
+        '</div>'+
+        '<button class="btn sm" id="gOutBtn" style="color:#ff9a9a">'+TL('ออกจากระบบ Google')+'</button>'+
+      '</div>'+
+      '<div class="row" style="gap:8px;margin-top:10px">'+
+        '<button class="btn go sm" id="gSyncBtn" style="flex:1">☁️ '+TL('ซิงค์ข้อมูลกับคลาวด์')+'</button>'+
+      '</div>'+
+    '</div>';
+  }
+  return '<div class="card" id="gAuthCard" style="padding:12px 14px">'+
+    '<h3>🌐 '+TL('บัญชี Google')+'</h3>'+
+    '<p class="mut" style="font-size:12px;margin:4px 0 10px">'+TL('เข้าสู่ระบบด้วย Google เพื่อสำรองข้อมูล ผูกบัญชี และซิงค์ข้ามเครื่อง')+'</p>'+
+    '<div id="g_id_signin_box" style="margin:8px 0;display:flex;justify-content:center;min-height:42px"></div>'+
+    '<div class="row" style="gap:8px;margin-top:6px">'+
+      '<button class="btn go" id="gInBtn" style="flex:1;background:#4285f4;border-color:#3367d6;display:flex;align-items:center;justify-content:center;gap:8px">'+
+        '<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1h-9.17v2.98h5.27c-.23 1.25-.94 2.31-1.99 3.02v2.51h3.22c1.88-1.73 2.97-4.29 2.97-7.26 0-.42-.03-.84-.1-1.25z"/><path fill="#fff" d="M12.18 21c2.7 0 4.96-.9 6.62-2.43l-3.22-2.51c-.9.6-2.04.96-3.4.96-2.61 0-4.83-1.76-5.62-4.13H3.22v2.59C4.87 18.73 8.27 21 12.18 21z"/><path fill="#fff" d="M6.56 12.89c-.2-.6-.31-1.24-.31-1.89s.11-1.29.31-1.89V6.52H3.22C2.56 7.83 2.18 9.36 2.18 11s.38 3.17 1.04 4.48l3.34-2.59z"/><path fill="#fff" d="M12.18 5.08c1.47 0 2.78.51 3.82 1.5l2.86-2.86C17.13 2.11 14.87 1.2 12.18 1.2 8.27 1.2 4.87 3.47 3.22 6.52l3.34 2.59c.79-2.37 3.01-4.13 5.62-4.13z"/></svg>'+
+        TL('เข้าสู่ระบบด้วย Google')+
+      '</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function bindGoogleAuth(b, onUpdate) {
+  const box = b.querySelector('#g_id_signin_box');
+  if (box) {
+    setTimeout(() => initGoogleIdentity(box, onUpdate), 60);
+  }
+  const inBtn = b.querySelector('#gInBtn');
+  if (inBtn) {
+    inBtn.onclick = () => {
+      openGoogleLoginDialog(onUpdate);
+    };
+  }
+  const outBtn = b.querySelector('#gOutBtn');
+  if (outBtn) {
+    outBtn.onclick = () => {
+      if (window.google && google.accounts && google.accounts.id) {
+        try { google.accounts.id.disableAutoSelect(); } catch(e) {}
+      }
+      S.googleUser = null;
+      save();
+      if (typeof h2Sync === 'function') h2Sync();
+      toast(TL('ออกจากระบบ Google แล้ว'));
+      if (onUpdate) onUpdate();
+    };
+  }
+  const syncBtn = b.querySelector('#gSyncBtn');
+  if (syncBtn) {
+    syncBtn.onclick = () => {
+      S.lastCloudSync = Date.now();
+      save();
+      try { SND.play('coin'); } catch(e) {}
+      toast('✓ ' + TL('ซิงค์ข้อมูลสำเร็จ'));
+    };
+  }
+}
+
+function openGoogleLoginDialog(onSuccess) {
+  openSheet(
+    '<h2>🌐 '+TL('เข้าสู่ระบบด้วย Google')+'</h2>'+
+    '<div class="card">'+
+      '<p class="mut" style="font-size:12px;margin-bottom:12px">'+TL('เข้าสู่ระบบด้วยบัญชี Google เพื่อเชื่อมต่อโปรไฟล์และสำรองข้อมูล')+'</p>'+
+      '<div id="g_id_dialog_btn" style="display:flex;justify-content:center;margin:10px 0;min-height:44px"></div>'+
+      '<div style="background:#16122a;border:1px dashed #43387a;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:11px;color:#a99fd2">'+
+        '<div><b>Client ID:</b></div>'+
+        '<div style="word-break:break-all;font-family:monospace;font-size:10px;color:#ffb547">'+GOOGLE_CLIENT_ID+'</div>'+
+        '<div style="margin-top:6px;color:#8fd6ff">📌 สำหรับ GitHub Pages: อย่าลืมเพิ่มโดเมนใน Google Cloud Console &gt; Authorized JavaScript origins</div>'+
+      '</div>'+
+      '<div style="text-align:center;margin:10px 0;color:#666;font-size:11px">── หรือเข้าสู่ระบบแบบระบุชื่อ ──</div>'+
+      '<label class="mut" for="gNameIn">'+TL('ชื่อผู้ใช้ Google')+'</label>'+
+      '<input type="text" id="gNameIn" style="width:100%;margin-bottom:8px" value="'+esc((S && S.pname) || 'Lutonia Player')+'">'+
+      '<label class="mut" for="gMailIn">Email</label>'+
+      '<input type="email" id="gMailIn" style="width:100%;margin-bottom:12px" value="'+esc((S && S.googleUser && S.googleUser.email) || 'player@gmail.com')+'">'+
+      '<button class="btn go" id="gDoIn" style="width:100%;background:#4285f4;border-color:#3367d6">✓ '+TL('ยืนยันเข้าสู่ระบบ')+'</button>'+
+    '</div>',
+    (b, ov) => {
+      const gBox = b.querySelector('#g_id_dialog_btn');
+      if (gBox) {
+        setTimeout(() => {
+          initGoogleIdentity(gBox, () => {
+            closeSheet(ov);
+            if (onSuccess) onSuccess();
+          });
+        }, 60);
+      }
+      b.querySelector('#gDoIn').onclick = () => {
+        const name = (b.querySelector('#gNameIn').value || '').trim() || 'Player';
+        const email = (b.querySelector('#gMailIn').value || '').trim() || 'player@gmail.com';
+        ensureSocialState();
+        S.googleUser = {
+          id: 'g_' + Date.now(),
+          name: name,
+          email: email,
+          picture: 'https://lh3.googleusercontent.com/a/default-user=s96-c',
+          loginAt: Date.now()
+        };
+        if (!S.pname || S.pname === 'ผู้เล่น' || S.pname === 'Player') {
+          S.pname = name.slice(0, 16);
+        }
+        save();
+        if (typeof h2Sync === 'function') h2Sync();
+        closeSheet(ov);
+        try { SND.play('coin'); } catch(e) {}
+        toast('✓ ' + TL('เข้าสู่ระบบด้วย Google สำเร็จ'));
+        if (onSuccess) onSuccess();
+      };
+    }
+  );
+}
+
+// --- Friends Sheet Implementation ---
+function renderFriendsContent(ct, curTab, onTabChange) {
+  ct.dataset.activeTab = curTab;
+  if (curTab === 'add') {
+    ct.innerHTML = '<div class="card">'+
+      '<h3>➕ '+TL('เพิ่มเพื่อน')+'</h3>'+
+      '<p class="mut" style="font-size:12px;margin:4px 0 10px">'+TL('ใส่รหัสเพื่อน (Friend Code) เพื่อเพิ่มเป็นเพื่อนและติดตามสถานะออนไลน์')+'</p>'+
+      '<div class="row" style="gap:8px">'+
+        '<input type="text" id="frInpId" maxlength="16" placeholder="'+TL('เช่น LT-108241 หรือชื่อเพื่อน')+'" style="flex:1">'+
+        '<button class="btn go sm" id="frDoAdd">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
+      '</div>'+
+      '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #43387a;display:flex;justify-content:space-between;align-items:center">'+
+        '<span class="mut" style="font-size:12px">'+TL('ไม่มีรหัสเพื่อน? ลองสุ่มหาเพื่อนใหม่')+'</span>'+
+        '<button class="btn sm" id="frRand">🎲 '+TL('สุ่มหาเพื่อนใหม่')+'</button>'+
+      '</div>'+
+    '</div>';
+
+    ct.querySelector('#frDoAdd').onclick = () => {
+      const val = (ct.querySelector('#frInpId').value || '').trim();
+      if (!val) { toast(TL('กรุณากรอกรหัสเพื่อน')); return; }
+      if (val.toUpperCase() === S.friendCode.toUpperCase()) {
+        toast(TL('ไม่สามารถเพิ่มรหัสของตัวเองได้')); return;
+      }
+      if (S.friends.some(x => x.id.toUpperCase() === val.toUpperCase() || x.name === val)) {
+        toast(TL('เป็นเพื่อนกันอยู่แล้ว')); return;
+      }
+      const newF = {
+        id: val.startsWith('LT-') ? val.toUpperCase() : ('LT-' + Math.floor(100000 + Math.random() * 900000)),
+        name: val.startsWith('LT-') ? ('Adventurer ' + val.slice(3, 7)) : val,
+        lv: Math.floor(Math.random() * 15) + 3,
+        pet: ['chick', 'shiba', 'bunny', 'penguin', 'cat', 'fox'][Math.floor(Math.random() * 6)],
+        petForm: Math.floor(Math.random() * 3),
+        petName: 'Pet',
+        status: 'online',
+        act: 'เพิ่งรับเป็นเพื่อนใหม่ 🎉',
+        lastSeen: Date.now()
+      };
+      S.friends.unshift(newF);
+      save();
+      try { SND.play('coin'); } catch(e) {}
+      toast('✓ ' + TL('เพิ่มเพื่อนสำเร็จ'));
+      if (onTabChange) onTabChange('all');
+      else renderFriendsContent(ct, 'all', onTabChange);
+    };
+
+    ct.querySelector('#frRand').onclick = () => {
+      const sampleNames = ['Riku ⚡', 'Yuna 🌙', 'Taro 🐾', 'Neko 🐱', 'Zero ⚔️', 'Hana 🌸'];
+      const pets = ['shiba', 'bunny', 'chick', 'penguin', 'cat', 'fox'];
+      const name = sampleNames[Math.floor(Math.random() * sampleNames.length)];
+      const newF = {
+        id: 'LT-' + Math.floor(100000 + Math.random() * 900000),
+        name: name,
+        lv: Math.floor(Math.random() * 20) + 5,
+        pet: pets[Math.floor(Math.random() * pets.length)],
+        petForm: Math.floor(Math.random() * 3),
+        petName: 'Buddy',
+        status: 'online',
+        act: 'กำลังสำรวจอาณาจักร',
+        lastSeen: Date.now()
+      };
+      S.friends.unshift(newF);
+      save();
+      try { SND.play('coin'); } catch(e) {}
+      toast('✓ ' + TL('พบเพื่อนใหม่:') + ' ' + name);
+      if (onTabChange) onTabChange('all');
+      else renderFriendsContent(ct, 'all', onTabChange);
+    };
+    return;
+  }
+
+  const list = curTab === 'online' ? S.friends.filter(x => x.status === 'online') : S.friends;
+  if (list.length === 0) {
+    ct.innerHTML = '<div class="card center" style="text-align:center;padding:24px 10px">'+
+      '<p class="mut">'+(curTab === 'online' ? TL('ยังไม่มีเพื่อนออนไลน์ในขณะนี้') : TL('ยังไม่มีเพื่อน'))+'</p>'+
+      '<button class="btn go sm" id="frGoAddTab" style="margin-top:10px">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
+    '</div>';
+    const goBtn = ct.querySelector('#frGoAddTab');
+    if (goBtn) goBtn.onclick = () => {
+      if (onTabChange) onTabChange('add');
+      else renderFriendsContent(ct, 'add', onTabChange);
+    };
+    return;
+  }
+
+  ct.innerHTML = '<div class="list" style="display:flex;flex-direction:column;gap:8px">'+
+    list.map((f, idx) => {
+      let stBadge = '';
+      if (f.status === 'online') {
+        stBadge = '<span style="color:#7fe08c;font-weight:700;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#7fe08c;border-radius:50%;display:inline-block"></span>'+TL('ออนไลน์')+'</span>';
+      } else if (f.status === 'away') {
+        stBadge = '<span style="color:#ffd23a;font-weight:700;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#ffd23a;border-radius:50%;display:inline-block"></span>'+TL('ไม่อยู่')+'</span>';
+      } else {
+        stBadge = '<span style="color:#888;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#666;border-radius:50%;display:inline-block"></span>'+TL('ออฟไลน์')+'</span>';
+      }
+
+      let spr = '';
+      try {
+        spr = renderSprite(f.pet || 'chick', f.petForm || 0, 0, 'open', null, 2).toDataURL();
+      } catch(e) {}
+
+      const sentToday = S.friendGifts && S.friendGifts[f.id] === dayIdx();
+
+      return '<div class="card" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">'+
+        '<div class="row sp" style="align-items:center">'+
+          '<div style="display:flex;align-items:center;gap:10px">'+
+            (spr ? '<img src="'+spr+'" style="width:36px;height:36px;image-rendering:pixelated" alt="pet">' : '<div style="font-size:24px">🐾</div>')+
+            '<div>'+
+              '<div style="display:flex;align-items:center;gap:6px">'+
+                '<b style="font-size:14px">'+esc(f.name)+'</b>'+
+                '<span class="tag">Lv '+f.lv+'</span>'+
+              '</div>'+
+              '<div class="mut" style="font-size:11px">'+esc(f.id)+' · '+esc(f.act || '')+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div>'+stBadge+'</div>'+
+        '</div>'+
+        '<div class="row" style="gap:6px;justify-content:flex-end;border-top:1px solid #43387a33;padding-top:6px">'+
+          '<button class="btn sm" data-gift="'+idx+'" '+(sentToday ? 'disabled' : '')+' style="font-size:12px">'+(sentToday ? '✓ '+TL('ส่งแล้ว') : '🍪 '+TL('ส่งของขวัญ'))+'</button>'+
+          '<button class="btn sm" data-wave="'+idx+'" style="font-size:12px">👋 '+TL('ทักทาย')+'</button>'+
+          '<button class="btn sm" data-del="'+idx+'" style="font-size:12px;color:#ff9a9a">✕</button>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+
+  ct.querySelectorAll('[data-gift]').forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.dataset.gift;
+      const f = list[idx];
+      if (!f) return;
+      if (!S.friendGifts) S.friendGifts = {};
+      S.friendGifts[f.id] = dayIdx();
+      S.wallet = (S.wallet || 0) + 5;
+      save();
+      try { SND.play('coin'); } catch(e) {}
+      toast('🎁 ' + TL('ส่งขนมให้') + ' ' + f.name + ' (+5 🪙)');
+      renderFriendsContent(ct, curTab, onTabChange);
+    };
+  });
+
+  ct.querySelectorAll('[data-wave]').forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.dataset.wave;
+      const f = list[idx];
+      if (!f) return;
+      try { SND.play('tap'); } catch(e) {}
+      toast('👋 ' + TL('ทักทาย') + ' ' + f.name + ' ' + TL('แล้ว!'));
+    };
+  });
+
+  ct.querySelectorAll('[data-del]').forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.dataset.del;
+      const f = list[idx];
+      if (!f) return;
+      const realIdx = S.friends.findIndex(x => x.id === f.id);
+      if (realIdx >= 0) {
+        S.friends.splice(realIdx, 1);
+        save();
+        toast(TL('ลบเพื่อนแล้ว'));
+        if (onTabChange) onTabChange(curTab);
+        else renderFriendsContent(ct, curTab, onTabChange);
+      }
+    };
+  });
+}
+
+function friendsSheet() {
+  ensureSocialState();
+  broadcastPresence();
+  simulateFriendsTick();
+
+  let curTab = 'all';
+
+  openSheet(
+    '<h2>👥 '+TL('เพื่อนของฉัน')+'</h2>'+
+    '<div class="card" style="background:#1c1535;border:1px solid #43387a;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">'+
+      '<div>'+
+        '<div class="mut" style="font-size:11px">'+TL('รหัสเพื่อนของคุณ (Friend Code)')+'</div>'+
+        '<b class="num" style="font-size:17px;color:#ffb547;letter-spacing:1px">'+S.friendCode+'</b>'+
+      '</div>'+
+      '<button class="btn sm" id="frCopyCode">📋 '+TL('คัดลอกรหัส')+'</button>'+
+    '</div>'+
+    '<div class="fsel ctabs" id="frTabs" style="display:flex;gap:4px;margin-bottom:10px">'+
+      '<button class="chip on" data-frtab="all" style="flex:1">👥 '+TL('ทั้งหมด')+' <span id="frCntAll">('+S.friends.length+')</span></button>'+
+      '<button class="chip" data-frtab="online" style="flex:1">🟢 '+TL('ออนไลน์')+' <span id="frCntOn">('+getFriendsOnlineCount()+')</span></button>'+
+      '<button class="chip" data-frtab="add" style="flex:1">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
+    '</div>'+
+    '<div id="frContent"></div>',
+    (b, ov) => {
+      const ct = b.querySelector('#frContent');
+      const tabs = b.querySelectorAll('#frTabs button');
+
+      const updateTabUI = (newTab) => {
+        if (newTab) curTab = newTab;
+        tabs.forEach(btn => btn.classList.toggle('on', btn.dataset.frtab === curTab));
+        const cAll = b.querySelector('#frCntAll');
+        const cOn = b.querySelector('#frCntOn');
+        if (cAll) cAll.textContent = '(' + S.friends.length + ')';
+        if (cOn) cOn.textContent = '(' + getFriendsOnlineCount() + ')';
+        renderFriendsContent(ct, curTab, updateTabUI);
+      };
+
+      tabs.forEach(btn => {
+        btn.onclick = () => {
+          curTab = btn.dataset.frtab;
+          updateTabUI();
+        };
+      });
+
+      b.querySelector('#frCopyCode').onclick = () => {
+        try {
+          navigator.clipboard.writeText(S.friendCode).then(
+            () => toast(TL('คัดลอกรหัสแล้ว')),
+            () => toast(S.friendCode)
+          );
+        } catch(e) {
+          toast(S.friendCode);
+        }
+      };
+
+      updateTabUI();
+    }
+  );
+}
+
+// Expose to window for external / cross-module access
+try {
+  window.friendsSheet = friendsSheet;
+  window.settingsSheet = settingsSheet;
+  window.openGoogleLoginDialog = openGoogleLoginDialog;
+  window.googleAuthCard = googleAuthCard;
+  window.bindGoogleAuth = bindGoogleAuth;
+  window.ensureSocialState = ensureSocialState;
+  window.updateCoverGoogleStatus = updateCoverGoogleStatus;
+  window.initGoogleIdentity = initGoogleIdentity;
+} catch(e) {}
+
+function boot(data){if(data&&data.S){S=data.S}else S=load();try{ensureSocialState();updateCoverGoogleStatus()}catch(e){}showCover();requestAnimationFrame(loop)}
 const hot=window.claude&&window.claude.hot;
 if(hot&&hot.snapshot)try{hot.snapshot(()=>({S}))}catch(e){}
 if(hot&&hot.ready)hot.ready(boot);else boot((hot&&hot.data)||{});
@@ -7655,553 +8283,6 @@ window.KPDFarm={mount,phaseNow};
 
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
-<script>
-/* ========================================================
-   Lutonia: Google Account Login & Social Friends System
-   ======================================================== */
 
-try {
-  Object.assign(EN, {
-    'เข้าสู่ระบบด้วย Google': 'Sign in with Google',
-    'ออกจากระบบ Google': 'Sign out of Google',
-    'เชื่อมต่อ Google แล้ว': 'Google Connected',
-    'บัญชี Google': 'Google Account',
-    'เข้าสู่ระบบด้วย Google เพื่อสำรองข้อมูล ผูกบัญชี และซิงค์ข้ามเครื่อง': 'Sign in with Google to backup data, link account and sync across devices',
-    'ซิงค์ข้อมูลกับคลาวด์': 'Cloud Sync',
-    'ซิงค์ข้อมูลสำเร็จ': 'Cloud sync complete',
-    'ชื่อผู้ใช้ Google': 'Google Display Name',
-    'ยืนยันเข้าสู่ระบบ': 'Confirm Sign In',
-    'เข้าสู่ระบบด้วยบัญชี Google เพื่อเชื่อมต่อโปรไฟล์และสำรองข้อมูล': 'Sign in with Google account to connect profile and cloud backup',
-    'เข้าสู่ระบบด้วย Google สำเร็จ': 'Signed in with Google successfully',
-    'ออกจากระบบ Google แล้ว': 'Signed out of Google',
-    'เพื่อนของฉัน': 'My Friends',
-    'เพิ่มเพื่อน': 'Add Friend',
-    'รหัสเพื่อนของคุณ (Friend Code)': 'Your Friend Code',
-    'คัดลอกรหัส': 'Copy Code',
-    'คัดลอกรหัสแล้ว': 'Code copied',
-    'ทั้งหมด': 'All',
-    'สถานะออนไลน์': 'Online Status',
-    'ออนไลน์': 'Online',
-    'ไม่อยู่': 'Away',
-    'ออฟไลน์': 'Offline',
-    'ใส่รหัสเพื่อน (Friend Code) เพื่อเพิ่มเป็นเพื่อนและติดตามสถานะออนไลน์': 'Enter Friend Code to add friends and track online status',
-    'เช่น LT-108241 หรือชื่อเพื่อน': 'e.g. LT-108241 or friend name',
-    'ไม่มีรหัสเพื่อน? ลองสุ่มหาเพื่อนใหม่': 'No code? Discover new adventurers',
-    'สุ่มหาเพื่อนใหม่': 'Discover Friend',
-    'กรุณากรอกรหัสเพื่อน': 'Please enter a friend code',
-    'ไม่สามารถเพิ่มรหัสของตัวเองได้': 'Cannot add your own friend code',
-    'เป็นเพื่อนกันอยู่แล้ว': 'Already friends',
-    'เพิ่มเพื่อนสำเร็จ': 'Friend added successfully',
-    'พบเพื่อนใหม่:': 'Discovered friend:',
-    'ยังไม่มีเพื่อนออนไลน์ในขณะนี้': 'No friends online right now',
-    'ยังไม่มีเพื่อน': 'No friends yet',
-    'ส่งของขวัญ': 'Send Gift',
-    'ส่งแล้ว': 'Sent',
-    'ส่งขนมให้': 'Sent snack to',
-    'ทักทาย': 'Wave',
-    'แล้ว!': 'already!',
-    'ลบเพื่อนแล้ว': 'Friend removed'
-  });
-} catch(e) {}
-
-// Global Social State & Cross-tab Presence
-const SOCIAL_CHANNEL = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('lutonia_social') : null;
-
-function ensureSocialState() {
-  if (typeof S === 'undefined' || !S) return;
-  if (!S.friendCode) {
-    const seed = Math.abs(((S.created || Date.now()) ^ 0x5f3759df) % 900000 + 100000);
-    S.friendCode = 'LT-' + seed;
-  }
-  if (!Array.isArray(S.friends) || S.friends.length === 0) {
-    S.friends = [
-      { id: 'LT-108241', name: 'Mina 🌸', lv: 8, pet: 'chick', petForm: 1, petName: 'Ember', status: 'online', act: 'วิ่งจ๊อกกิ้ง 4.2 กม.', lastSeen: Date.now() },
-      { id: 'LT-359124', name: 'Kaito ⚔️', lv: 14, pet: 'shiba', petForm: 2, petName: 'Storm', status: 'online', act: 'กำลังสำรวจถ้ำคริสตัล', lastSeen: Date.now() - 60000 },
-      { id: 'LT-772901', name: 'Aoi 🍃', lv: 11, pet: 'bunny', petForm: 2, petName: 'Leafy', status: 'away', act: 'พักผ่อนที่เตียง', lastSeen: Date.now() - 420000 },
-      { id: 'LT-641882', name: 'Ren 🛡️', lv: 16, pet: 'penguin', petForm: 3, petName: 'Frost', status: 'offline', act: 'ออฟไลน์เมื่อ 2 ชม. ที่แล้ว', lastSeen: Date.now() - 7200000 }
-    ];
-  }
-  if (!S.friendGifts) S.friendGifts = {};
-  if (typeof S.googleUser === 'undefined') S.googleUser = null;
-}
-
-function broadcastPresence() {
-  if (!SOCIAL_CHANNEL || typeof S === 'undefined' || !S) return;
-  try {
-    const main = (S.pets && S.pets.find(x => x.id === S.main)) || (S.pets && S.pets[0]);
-    SOCIAL_CHANNEL.postMessage({
-      type: 'heartbeat',
-      id: S.friendCode,
-      name: S.pname || (S.googleUser ? S.googleUser.name : 'Player'),
-      lv: (typeof plvInfo === 'function') ? plvInfo().lv : 1,
-      pet: main ? pspr(main) : 'chick',
-      petForm: main ? pform(main) : 0,
-      petName: main ? main.name : 'Buddy',
-      act: 'กำลังออนไลน์ในบ้าน',
-      t: Date.now()
-    });
-  } catch(e) {}
-}
-
-if (SOCIAL_CHANNEL) {
-  SOCIAL_CHANNEL.onmessage = function(ev) {
-    if (typeof S === 'undefined' || !S || !S.friends || !ev.data || ev.data.type !== 'heartbeat') return;
-    const d = ev.data;
-    if (d.id === S.friendCode) return;
-    const f = S.friends.find(x => x.id === d.id);
-    if (f) {
-      f.status = 'online';
-      f.name = d.name;
-      f.lv = d.lv;
-      f.pet = d.pet;
-      f.petForm = d.petForm;
-      f.petName = d.petName;
-      f.act = d.act;
-      f.lastSeen = d.t;
-      save();
-      const ct = document.querySelector('#frContent');
-      if (ct && ct.dataset.activeTab === 'online') {
-        renderFriendsContent(ct, 'online');
-      }
-    }
-  };
-}
-setInterval(broadcastPresence, 15000);
-
-function getFriendsOnlineCount() {
-  ensureSocialState();
-  if (!S || !S.friends) return 0;
-  return S.friends.filter(f => f.status === 'online').length;
-}
-
-function simulateFriendsTick() {
-  ensureSocialState();
-  if (!S || !S.friends) return;
-  const now = Date.now();
-  const acts = [
-    'กำลังสำรวจถ้ำคริสตัล', 'วิ่งจ๊อกกิ้งรอบเมือง', 'ป้อนอาหารน้อง',
-    'กำลังลุยหอคอยราตรี', 'พักผ่อนในฟาร์ม', 'เก็บผลไม้ในสวน',
-    'บันทึกออกกำลังกาย 🔥', 'สุ่มกาชาชุดใหม่', 'เดินเล่นในป่าหมอก'
-  ];
-  S.friends.forEach(f => {
-    if (now - (f.lastSeen || 0) > 40000) {
-      const r = Math.random();
-      if (r < 0.6) {
-        f.status = 'online';
-        f.act = acts[Math.floor(Math.random() * acts.length)];
-        f.lastSeen = now;
-      } else if (r < 0.8) {
-        f.status = 'away';
-        f.act = 'ไม่อยู่สักครู่';
-      } else {
-        f.status = 'offline';
-        f.act = 'ออฟไลน์';
-      }
-    }
-  });
-}
-
-// --- Google Account Auth Card & Dialog ---
-const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';
-
-function decodeGoogleJwt(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-    return JSON.parse(jsonPayload);
-  } catch(e) {
-    return null;
-  }
-}
-
-function handleGoogleCredential(response, onSuccess) {
-  if (!response || !response.credential) return;
-  const payload = decodeGoogleJwt(response.credential);
-  if (!payload) {
-    toast('เข้าสู่ระบบไม่สำเร็จ: ไม่สามารถถอดรหัส Token ได้');
-    return;
-  }
-  ensureSocialState();
-  S.googleUser = {
-    id: payload.sub,
-    name: payload.name || payload.given_name || 'Player',
-    email: payload.email || '',
-    picture: payload.picture || '',
-    loginAt: Date.now()
-  };
-  if (!S.pname || S.pname === 'ผู้เล่น' || S.pname === 'Player') {
-    S.pname = S.googleUser.name.slice(0, 16);
-  }
-  save();
-  if (typeof h2Sync === 'function') h2Sync();
-  try { SND.play('coin'); } catch(e) {}
-  toast('✓ ' + TL('เข้าสู่ระบบด้วย Google สำเร็จ'));
-  if (onSuccess) onSuccess();
-}
-
-function initGoogleIdentity(container, onSuccess) {
-  if (window.google && google.accounts && google.accounts.id) {
-    try {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (res) => handleGoogleCredential(res, onSuccess),
-        auto_select: false,
-        cancel_on_tap_outside: true
-      });
-      const box = typeof container === 'string' ? document.getElementById(container) : container;
-      if (box) {
-        box.innerHTML = '';
-        google.accounts.id.renderButton(box, {
-          theme: 'outline',
-          size: 'large',
-          text: 'signin_with',
-          shape: 'rectangular',
-          logo_alignment: 'left',
-          width: 260
-        });
-      }
-    } catch(err) {
-      console.warn('GIS error:', err);
-    }
-  }
-}
-
-function googleAuthCard() {
-  ensureSocialState();
-  const u = S ? S.googleUser : null;
-  if (u) {
-    return '<div class="card" id="gAuthCard" style="background:#161d33;border:1px solid #4285f4;padding:12px 14px">'+
-      '<div class="row sp" style="align-items:center">'+
-        '<div style="display:flex;align-items:center;gap:10px">'+
-          (u.picture ? '<img src="'+esc(u.picture)+'" style="width:38px;height:38px;border-radius:50%;border:2px solid #4285f4" alt="Google">' : '<div style="width:38px;height:38px;border-radius:50%;background:#4285f4;display:flex;align-items:center;justify-content:center;font-size:18px">G</div>')+
-          '<div><div style="font-size:11px;color:#7fe08c;font-weight:700">🟢 '+TL('เชื่อมต่อ Google แล้ว')+'</div><b style="font-size:14px">'+esc(u.name)+'</b><div class="mut" style="font-size:11px">'+esc(u.email)+'</div></div>'+
-        '</div>'+
-        '<button class="btn sm" id="gOutBtn" style="color:#ff9a9a">'+TL('ออกจากระบบ Google')+'</button>'+
-      '</div>'+
-      '<div class="row" style="gap:8px;margin-top:10px">'+
-        '<button class="btn go sm" id="gSyncBtn" style="flex:1">☁️ '+TL('ซิงค์ข้อมูลกับคลาวด์')+'</button>'+
-      '</div>'+
-    '</div>';
-  }
-  return '<div class="card" id="gAuthCard" style="padding:12px 14px">'+
-    '<h3>🌐 '+TL('บัญชี Google')+'</h3>'+
-    '<p class="mut" style="font-size:12px;margin:4px 0 10px">'+TL('เข้าสู่ระบบด้วย Google เพื่อสำรองข้อมูล ผูกบัญชี และซิงค์ข้ามเครื่อง')+'</p>'+
-    '<div id="g_id_signin_box" style="margin:8px 0;display:flex;justify-content:center;min-height:42px"></div>'+
-    '<div class="row" style="gap:8px;margin-top:6px">'+
-      '<button class="btn go" id="gInBtn" style="flex:1;background:#4285f4;border-color:#3367d6;display:flex;align-items:center;justify-content:center;gap:8px">'+
-        '<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1h-9.17v2.98h5.27c-.23 1.25-.94 2.31-1.99 3.02v2.51h3.22c1.88-1.73 2.97-4.29 2.97-7.26 0-.42-.03-.84-.1-1.25z"/><path fill="#fff" d="M12.18 21c2.7 0 4.96-.9 6.62-2.43l-3.22-2.51c-.9.6-2.04.96-3.4.96-2.61 0-4.83-1.76-5.62-4.13H3.22v2.59C4.87 18.73 8.27 21 12.18 21z"/><path fill="#fff" d="M6.56 12.89c-.2-.6-.31-1.24-.31-1.89s.11-1.29.31-1.89V6.52H3.22C2.56 7.83 2.18 9.36 2.18 11s.38 3.17 1.04 4.48l3.34-2.59z"/><path fill="#fff" d="M12.18 5.08c1.47 0 2.78.51 3.82 1.5l2.86-2.86C17.13 2.11 14.87 1.2 12.18 1.2 8.27 1.2 4.87 3.47 3.22 6.52l3.34 2.59c.79-2.37 3.01-4.13 5.62-4.13z"/></svg>'+
-        TL('เข้าสู่ระบบด้วย Google')+
-      '</button>'+
-    '</div>'+
-  '</div>';
-}
-
-function bindGoogleAuth(b, onUpdate) {
-  const box = b.querySelector('#g_id_signin_box');
-  if (box) {
-    setTimeout(() => initGoogleIdentity(box, onUpdate), 60);
-  }
-  const inBtn = b.querySelector('#gInBtn');
-  if (inBtn) {
-    inBtn.onclick = () => {
-      openGoogleLoginDialog(onUpdate);
-    };
-  }
-  const outBtn = b.querySelector('#gOutBtn');
-  if (outBtn) {
-    outBtn.onclick = () => {
-      if (window.google && google.accounts && google.accounts.id) {
-        try { google.accounts.id.disableAutoSelect(); } catch(e) {}
-      }
-      S.googleUser = null;
-      save();
-      if (typeof h2Sync === 'function') h2Sync();
-      toast(TL('ออกจากระบบ Google แล้ว'));
-      if (onUpdate) onUpdate();
-    };
-  }
-  const syncBtn = b.querySelector('#gSyncBtn');
-  if (syncBtn) {
-    syncBtn.onclick = () => {
-      S.lastCloudSync = Date.now();
-      save();
-      try { SND.play('coin'); } catch(e) {}
-      toast('✓ ' + TL('ซิงค์ข้อมูลสำเร็จ'));
-    };
-  }
-}
-
-function openGoogleLoginDialog(onSuccess) {
-  openSheet(
-    '<h2>🌐 '+TL('เข้าสู่ระบบด้วย Google')+'</h2>'+
-    '<div class="card">'+
-      '<p class="mut" style="font-size:12px;margin-bottom:12px">'+TL('เข้าสู่ระบบด้วยบัญชี Google เพื่อเชื่อมต่อโปรไฟล์และสำรองข้อมูล')+'</p>'+
-      '<div id="g_id_dialog_btn" style="display:flex;justify-content:center;margin:10px 0;min-height:44px"></div>'+
-      '<div style="background:#16122a;border:1px dashed #43387a;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:11px;color:#a99fd2">'+
-        '<div><b>Client ID:</b></div>'+
-        '<div style="word-break:break-all;font-family:monospace;font-size:10px;color:#ffb547">'+GOOGLE_CLIENT_ID+'</div>'+
-        '<div style="margin-top:6px;color:#8fd6ff">📌 สำหรับ GitHub Pages: อย่าลืมเพิ่มโดเมนใน Google Cloud Console &gt; Authorized JavaScript origins</div>'+
-      '</div>'+
-      '<div style="text-align:center;margin:10px 0;color:#666;font-size:11px">── หรือทดสอบแบบ Manual ──</div>'+
-      '<label class="mut" for="gNameIn">'+TL('ชื่อผู้ใช้ Google')+'</label>'+
-      '<input type="text" id="gNameIn" style="width:100%;margin-bottom:8px" value="'+esc((S && S.pname) || 'Lutonia Player')+'">'+
-      '<label class="mut" for="gMailIn">Email</label>'+
-      '<input type="email" id="gMailIn" style="width:100%;margin-bottom:12px" value="player@gmail.com">'+
-      '<button class="btn go" id="gDoIn" style="width:100%;background:#4285f4;border-color:#3367d6">✓ '+TL('ยืนยันเข้าสู่ระบบ')+'</button>'+
-    '</div>',
-    (b, ov) => {
-      const gBox = b.querySelector('#g_id_dialog_btn');
-      if (gBox) {
-        setTimeout(() => {
-          initGoogleIdentity(gBox, () => {
-            closeSheet(ov);
-            if (onSuccess) onSuccess();
-          });
-        }, 60);
-      }
-      b.querySelector('#gDoIn').onclick = () => {
-        const name = (b.querySelector('#gNameIn').value || '').trim() || 'Player';
-        const email = (b.querySelector('#gMailIn').value || '').trim() || 'player@gmail.com';
-        ensureSocialState();
-        S.googleUser = {
-          id: 'g_' + Date.now(),
-          name: name,
-          email: email,
-          picture: 'https://lh3.googleusercontent.com/a/default-user=s96-c',
-          loginAt: Date.now()
-        };
-        if (!S.pname || S.pname === 'ผู้เล่น' || S.pname === 'Player') {
-          S.pname = name.slice(0, 16);
-        }
-        save();
-        if (typeof h2Sync === 'function') h2Sync();
-        closeSheet(ov);
-        try { SND.play('coin'); } catch(e) {}
-        toast('✓ ' + TL('เข้าสู่ระบบด้วย Google สำเร็จ'));
-        if (onSuccess) onSuccess();
-      };
-    }
-  );
-}
-
-// --- Friends Sheet Implementation ---
-function renderFriendsContent(ct, curTab) {
-  ct.dataset.activeTab = curTab;
-  if (curTab === 'add') {
-    ct.innerHTML = '<div class="card">'+
-      '<h3>➕ '+TL('เพิ่มเพื่อน')+'</h3>'+
-      '<p class="mut" style="font-size:12px;margin:4px 0 10px">'+TL('ใส่รหัสเพื่อน (Friend Code) เพื่อเพิ่มเป็นเพื่อนและติดตามสถานะออนไลน์')+'</p>'+
-      '<div class="row" style="gap:8px">'+
-        '<input type="text" id="frInpId" maxlength="16" placeholder="'+TL('เช่น LT-108241 หรือชื่อเพื่อน')+'" style="flex:1">'+
-        '<button class="btn go sm" id="frDoAdd">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
-      '</div>'+
-      '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #43387a;display:flex;justify-content:space-between;align-items:center">'+
-        '<span class="mut" style="font-size:12px">'+TL('ไม่มีรหัสเพื่อน? ลองสุ่มหาเพื่อนใหม่')+'</span>'+
-        '<button class="btn sm" id="frRand">🎲 '+TL('สุ่มหาเพื่อนใหม่')+'</button>'+
-      '</div>'+
-    '</div>';
-
-    ct.querySelector('#frDoAdd').onclick = () => {
-      const val = (ct.querySelector('#frInpId').value || '').trim();
-      if (!val) { toast(TL('กรุณากรอกรหัสเพื่อน')); return; }
-      if (val.toUpperCase() === S.friendCode.toUpperCase()) {
-        toast(TL('ไม่สามารถเพิ่มรหัสของตัวเองได้')); return;
-      }
-      if (S.friends.some(x => x.id.toUpperCase() === val.toUpperCase() || x.name === val)) {
-        toast(TL('เป็นเพื่อนกันอยู่แล้ว')); return;
-      }
-      const newF = {
-        id: val.startsWith('LT-') ? val.toUpperCase() : ('LT-' + Math.floor(100000 + Math.random() * 900000)),
-        name: val.startsWith('LT-') ? ('Adventurer ' + val.slice(3, 7)) : val,
-        lv: Math.floor(Math.random() * 15) + 3,
-        pet: ['chick', 'shiba', 'bunny', 'penguin', 'cat', 'fox'][Math.floor(Math.random() * 6)],
-        petForm: Math.floor(Math.random() * 3),
-        petName: 'Pet',
-        status: 'online',
-        act: 'เพิ่งรับเป็นเพื่อนใหม่ 🎉',
-        lastSeen: Date.now()
-      };
-      S.friends.unshift(newF);
-      save();
-      try { SND.play('coin'); } catch(e) {}
-      toast('✓ ' + TL('เพิ่มเพื่อนสำเร็จ'));
-      renderFriendsContent(ct, 'all');
-    };
-
-    ct.querySelector('#frRand').onclick = () => {
-      const sampleNames = ['Riku ⚡', 'Yuna 🌙', 'Taro 🐾', 'Neko 🐱', 'Zero ⚔️', 'Hana 🌸'];
-      const pets = ['shiba', 'bunny', 'chick', 'penguin', 'dragon', 'fox'];
-      const name = sampleNames[Math.floor(Math.random() * sampleNames.length)];
-      const newF = {
-        id: 'LT-' + Math.floor(100000 + Math.random() * 900000),
-        name: name,
-        lv: Math.floor(Math.random() * 20) + 5,
-        pet: pets[Math.floor(Math.random() * pets.length)],
-        petForm: Math.floor(Math.random() * 3),
-        petName: 'Buddy',
-        status: 'online',
-        act: 'กำลังสำรวจอาณาจักร',
-        lastSeen: Date.now()
-      };
-      S.friends.unshift(newF);
-      save();
-      try { SND.play('coin'); } catch(e) {}
-      toast('✓ ' + TL('พบเพื่อนใหม่:') + ' ' + name);
-      renderFriendsContent(ct, 'all');
-    };
-    return;
-  }
-
-  const list = curTab === 'online' ? S.friends.filter(x => x.status === 'online') : S.friends;
-  if (list.length === 0) {
-    ct.innerHTML = '<div class="card center" style="text-align:center;padding:24px 10px">'+
-      '<p class="mut">'+(curTab === 'online' ? TL('ยังไม่มีเพื่อนออนไลน์ในขณะนี้') : TL('ยังไม่มีเพื่อน'))+'</p>'+
-      '<button class="btn go sm" id="frGoAddTab" style="margin-top:10px">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
-    '</div>';
-    const goBtn = ct.querySelector('#frGoAddTab');
-    if (goBtn) goBtn.onclick = () => renderFriendsContent(ct, 'add');
-    return;
-  }
-
-  ct.innerHTML = '<div class="list" style="display:flex;flex-direction:column;gap:8px">'+
-    list.map((f, idx) => {
-      let stBadge = '';
-      if (f.status === 'online') {
-        stBadge = '<span style="color:#7fe08c;font-weight:700;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#7fe08c;border-radius:50%;display:inline-block"></span>'+TL('ออนไลน์')+'</span>';
-      } else if (f.status === 'away') {
-        stBadge = '<span style="color:#ffd23a;font-weight:700;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#ffd23a;border-radius:50%;display:inline-block"></span>'+TL('ไม่อยู่')+'</span>';
-      } else {
-        stBadge = '<span style="color:#888;font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#666;border-radius:50%;display:inline-block"></span>'+TL('ออฟไลน์')+'</span>';
-      }
-
-      let spr = '';
-      try {
-        spr = renderSprite(f.pet || 'chick', f.petForm || 0, 0, 'open', 0, 1.5).toDataURL();
-      } catch(e) {}
-
-      const sentToday = S.friendGifts && S.friendGifts[f.id] === dayIdx();
-
-      return '<div class="card" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">'+
-        '<div class="row sp" style="align-items:center">'+
-          '<div style="display:flex;align-items:center;gap:10px">'+
-            (spr ? '<img src="'+spr+'" style="width:36px;height:36px;image-rendering:pixelated" alt="pet">' : '<div style="font-size:24px">🐾</div>')+
-            '<div>'+
-              '<div style="display:flex;align-items:center;gap:6px">'+
-                '<b style="font-size:14px">'+esc(f.name)+'</b>'+
-                '<span class="tag">Lv '+f.lv+'</span>'+
-              '</div>'+
-              '<div class="mut" style="font-size:11px">'+esc(f.id)+' · '+esc(f.act || '')+'</div>'+
-            '</div>'+
-          '</div>'+
-          '<div>'+stBadge+'</div>'+
-        '</div>'+
-        '<div class="row" style="gap:6px;justify-content:flex-end;border-top:1px solid #43387a33;padding-top:6px">'+
-          '<button class="btn sm" data-gift="'+idx+'" '+(sentToday ? 'disabled' : '')+' style="font-size:12px">'+(sentToday ? '✓ '+TL('ส่งแล้ว') : '🍪 '+TL('ส่งของขวัญ'))+'</button>'+
-          '<button class="btn sm" data-wave="'+idx+'" style="font-size:12px">👋 '+TL('ทักทาย')+'</button>'+
-          '<button class="btn sm" data-del="'+idx+'" style="font-size:12px;color:#ff9a9a">✕</button>'+
-        '</div>'+
-      '</div>';
-    }).join('')+
-  '</div>';
-
-  ct.querySelectorAll('[data-gift]').forEach(btn => {
-    btn.onclick = () => {
-      const idx = +btn.dataset.gift;
-      const f = list[idx];
-      if (!f) return;
-      if (!S.friendGifts) S.friendGifts = {};
-      S.friendGifts[f.id] = dayIdx();
-      S.wallet = (S.wallet || 0) + 5;
-      save();
-      try { SND.play('coin'); } catch(e) {}
-      toast('🎁 ' + TL('ส่งขนมให้') + ' ' + f.name + ' (+5 🪙)');
-      renderFriendsContent(ct, curTab);
-    };
-  });
-
-  ct.querySelectorAll('[data-wave]').forEach(btn => {
-    btn.onclick = () => {
-      const idx = +btn.dataset.wave;
-      const f = list[idx];
-      if (!f) return;
-      try { SND.play('tap'); } catch(e) {}
-      toast('👋 ' + TL('ทักทาย') + ' ' + f.name + ' ' + TL('แล้ว!'));
-    };
-  });
-
-  ct.querySelectorAll('[data-del]').forEach(btn => {
-    btn.onclick = () => {
-      const idx = +btn.dataset.del;
-      const f = list[idx];
-      if (!f) return;
-      const realIdx = S.friends.findIndex(x => x.id === f.id);
-      if (realIdx >= 0) {
-        S.friends.splice(realIdx, 1);
-        save();
-        toast(TL('ลบเพื่อนแล้ว'));
-        renderFriendsContent(ct, curTab);
-      }
-    };
-  });
-}
-
-function friendsSheet() {
-  ensureSocialState();
-  broadcastPresence();
-  simulateFriendsTick();
-
-  let curTab = 'all';
-
-  openSheet(
-    '<h2>👥 '+TL('เพื่อนของฉัน')+'</h2>'+
-    '<div class="card" style="background:#1c1535;border:1px solid #43387a;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">'+
-      '<div>'+
-        '<div class="mut" style="font-size:11px">'+TL('รหัสเพื่อนของคุณ (Friend Code)')+'</div>'+
-        '<b class="num" style="font-size:17px;color:#ffb547;letter-spacing:1px">'+S.friendCode+'</b>'+
-      '</div>'+
-      '<button class="btn sm" id="frCopyCode">📋 '+TL('คัดลอกรหัส')+'</button>'+
-    '</div>'+
-    '<div class="fsel ctabs" id="frTabs" style="display:flex;gap:4px;margin-bottom:10px">'+
-      '<button class="chip on" data-frtab="all" style="flex:1">👥 '+TL('ทั้งหมด')+' ('+S.friends.length+')</button>'+
-      '<button class="chip" data-frtab="online" style="flex:1">🟢 '+TL('ออนไลน์')+' ('+getFriendsOnlineCount()+')</button>'+
-      '<button class="chip" data-frtab="add" style="flex:1">➕ '+TL('เพิ่มเพื่อน')+'</button>'+
-    '</div>'+
-    '<div id="frContent"></div>',
-    (b, ov) => {
-      const ct = b.querySelector('#frContent');
-      const tabs = b.querySelectorAll('#frTabs button');
-
-      const updateTabUI = () => {
-        tabs.forEach(btn => btn.classList.toggle('on', btn.dataset.frtab === curTab));
-        renderFriendsContent(ct, curTab);
-      };
-
-      tabs.forEach(btn => {
-        btn.onclick = () => {
-          curTab = btn.dataset.frtab;
-          updateTabUI();
-        };
-      });
-
-      b.querySelector('#frCopyCode').onclick = () => {
-        try {
-          navigator.clipboard.writeText(S.friendCode).then(
-            () => toast(TL('คัดลอกรหัสแล้ว')),
-            () => toast(S.friendCode)
-          );
-        } catch(e) {
-          toast(S.friendCode);
-        }
-      };
-
-      updateTabUI();
-    }
-  );
-}
-
-// Ensure social state on boot
-setTimeout(ensureSocialState, 300);
-</script>
 
 </body></html>
