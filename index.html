@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="th">
 <head>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lutonia: Endless Night</title>
@@ -574,6 +575,7 @@ img.spr.miss{filter:grayscale(.55) brightness(1.15);opacity:.55}
   <canvas class="bgc" id="coverBg"></canvas>
   <div class="logo"><canvas id="logoCv" aria-label="Lutonia"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
   <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
+  <div id="googleBtn" style="position:relative;z-index:35;margin-bottom:12px;display:flex;justify-content:center;"></div>
   <div class="tap">แตะเพื่อเริ่ม</div>
   <div class="copy">© 2026 Lutonia · ต้นแบบ v<span id="cVer"></span></div>
 </div>
@@ -7653,4 +7655,53 @@ window.KPDFarm={mount,phaseNow};
 })();
 
 </script>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script></body></html>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+<script>
+(function() {
+  const GOOGLE_CLIENT_ID = "427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com";
+
+  function handleCredentialResponse(response) {
+    try {
+      const base64Url = response.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      const user = JSON.parse(jsonPayload);
+      if (user && user.name) {
+        localStorage.setItem("lutonia_user", JSON.stringify({ name: user.name, email: user.email }));
+        const t = document.getElementById("toast");
+        if (t) {
+          t.innerText = "ยินดีต้อนรับ: " + user.name;
+          t.hidden = false;
+          setTimeout(() => { t.hidden = true; }, 3000);
+        }
+      }
+    } catch (e) {
+      console.error("Google Auth error:", e);
+    }
+  }
+
+  function initGoogleAuth() {
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+      });
+      const btn = document.getElementById("googleBtn");
+      if (btn) {
+        google.accounts.id.renderButton(btn, {
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "pill"
+        });
+      }
+    } else {
+      setTimeout(initGoogleAuth, 300);
+    }
+  }
+
+  window.addEventListener("load", initGoogleAuth);
+})();
+</script>
+
+</body></html>
