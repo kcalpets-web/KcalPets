@@ -76,6 +76,9 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 #fishBar b{font-size:15px;text-align:center}
 #fBtn.bite{animation:pulse .35s infinite;background:#e63946}
 #zLabel{cursor:pointer}
+#roomBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:6px}
+#roomBar .btn{flex:1;padding:0 6px;font-size:15px}
+#roomTitle{position:absolute;left:8px;right:8px;top:8px;display:none;text-align:center;font-weight:700;color:#fff;background:#0004;border-radius:14px;padding:6px 10px}
 #zoneBar b{background:#ffffffd9;border-radius:14px;padding:6px 12px;font-size:15px}
 #zoneBar .btn{min-width:64px;background:#ffffffe6}
 #hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:13px;color:var(--sub)}
@@ -161,6 +164,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="zoneBar"><button class="btn ghost" id="zPrev" aria-label="ซูมออก">－</button><b id="zLabel"></b><button class="btn ghost" id="zNext" aria-label="ซูมเข้า">＋</button></div>
       <div id="fishBar"><b id="fInfo"></b><div class="row"><button class="btn" id="fBtn" style="flex:2;min-height:56px;font-size:20px">🎣 เหวี่ยงเบ็ด</button><button class="btn ghost" id="fCancel">เลิกตก</button></div></div>
       <div id="placeBar"><b id="pInfo"></b><div class="row"><button class="btn ghost" id="pRot">⟲ หมุน</button><button class="btn ok" id="pOk">✔ วาง</button><button class="btn ghost" id="pCancel">✕ ยกเลิก</button></div></div>
+      <div id="roomTitle"></div>
+      <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <div id="hint">แตะหญ้า/หิน/ต้นไม้เพื่อเก็บ (มีเวลารอ) • สร้างของที่ ร้านค้า › ฟาร์ม</div>
     </div>
   </div>
@@ -313,7 +318,7 @@ function login(u){
   if (S.lv > MAX_LV) S.lv = MAX_LV;
   if (S.q == null) S.q = 0;                                  // existing saves join the quest chain
   questMigrate();
-  S.stats = S.stats || {};
+  S.stats = S.stats || {}; S.furn = S.furn || {};
   route();
 }
 /* Resume player at the first unfinished onboarding step */
@@ -871,7 +876,7 @@ $('bPetOk').onclick = () => {
   const p = PETS.find(x => x.id===petSel);
   confirmDo(`รับ ${p.n} ${p.e} ชื่อ "${name}" มาเลี้ยง?`, () => {
     S.pet = { type:petSel, emoji:p.e, name, heart:50, born:todayKey(), lv:1, pexp:0 };
-    S.farm = { zones:[], cur:0 }; ensureZones(); S.q = 0; S.qDone = []; save(); openMain();
+    S.farm = { zones:[], cur:0 }; ensureZones(); S.q = 0; S.qDone = []; S.furn = {}; save(); openMain();
     reward(`ฟาร์มรกร้างพร้อมแล้ว!\nทำ 📜 เควสตามที่เป็นสุขบอกบนจอ เพื่อเรียนรู้วิธีเล่นทีละขั้นนะครับ 🐶`);
   });
 };
@@ -895,6 +900,7 @@ function goTab(id){
   document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('on', x.dataset.t===id));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id===id));
   if (id!=='tFarm' && placing) endPlacing();
+  if (id!=='tFarm' && paint) endPaint();
   if (id==='tFarm') resizeFarm();
   if (id==='tMission') renderMissions();
   if (id==='tShop') renderShop();
@@ -1116,6 +1122,7 @@ function resizeFarm(keepCenter){
   OX = cssW/2; OY = cssH*.5 - GRID*TH/2;
   invalidateAll();
   if (ctr) centerOn(ctr[0], ctr[1]);
+  if (typeof inRoom !== 'undefined' && inRoom) layoutRoom();
 }
 window.addEventListener('resize', () => resizeFarm(true));
 const P = (c,r,z) => [OX + camX + (c-r)*TW/2, OY + camY + (c+r)*TH/2 - (z||0)];
@@ -1197,6 +1204,7 @@ function paintChunk(z, c){
   // tiles
   for (let i=0;i<T.length;i++){
     const cc = i%GRID, rr = (i/GRID)|0, k = T[i].k;
+    if (k==='path'){ paintPathTile(g, lp, z, cc, rr, T[i], i); continue; }
     const col = shadeHex(GROUND_COL[k] || '#9fd06a', (hrnd(z.seed,i,1)-.5)*.12);
     quad(g, lp(cc,rr), lp(cc+1,rr), lp(cc+1,rr+1), lp(cc,rr+1), col);
     // soft light from top-left: lighter top half of each tile
@@ -1626,7 +1634,7 @@ function natureTick(){
 
 /* ---- pet (global tile coords) ---- */
 const pet = makePetAnim();
-function walkable(t){ return !!t && t.k==='clear'; }
+function walkable(t){ return !!t && (t.k==='clear' || t.k==='path' || (t.k==='water' && t.bridge)); }
 function walkAt(x, y){ return walkable(tileAt(Math.floor(x), Math.floor(y))); }
 function hasWalkable(){ for (const z of S.farm.zones) for (const t of z.tiles) if (walkable(t)) return true; return false; }
 function pathClear(x0,y0,x1,y1){
@@ -1675,6 +1683,7 @@ function frame(now){
   if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
   const time = now/1000, wall = Date.now();
   ctx.clearRect(0,0,cssW,cssH);
+  if (inRoom){ drawRoom(time, dt/1000); drawNight(); if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); } return; }   // inside a house
   drawSunMoon(time); drawClouds(time);
 
   // visible chunks, back → front
@@ -1707,6 +1716,7 @@ function frame(now){
       const gr = s - gc, t = tileAt(gc, gr); if (!t) continue;
       const z = hitZone, li = hitLi;
       if (RES[t.k]){ drawRes(t, gc, gr, time, z.seed, li); if (t.job) badges.push(0, gc, gr, z, li); }
+      else if (t.k==='water' && t.bridge) drawBridge(gc, gr);
       else if (t.k==='obj'){
         const o = objById(z, t.o), lc = li%GRID, lr = (li/GRID)|0;
         if (o && lc===o.c+o.w-1 && lr===o.r+o.h-1){ drawStruct(o, time, z.cx*GRID, z.cy*GRID);
@@ -1764,6 +1774,7 @@ function footprintZone(p){
    opts.move  → {z, o, ...} the object was lifted; cancel puts it back where it was */
 function startPlacing(type, opts){
   const it = FARM_ITEMS[type]; opts = opts || {};
+  if (inRoom) exitHome();
   placing = { type, w:opts.w||it.w, h:opts.h||it.h, gc:null, gr:null, valid:false, store:!!opts.store, move:opts.move||null };
   goTab('tFarm'); $('zoneBar').style.display = 'none'; $('placeBar').style.display = 'flex';
   if (placing.move){ placeAt(placing.move.gc, placing.move.gr); }
@@ -1771,7 +1782,7 @@ function startPlacing(type, opts){
 }
 function endPlacing(){
   if (placing && placing.move){                              // cancelled move → put it back untouched
-    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant;
+    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant; o.room = m.o.room;
   }
   placing = null; $('placeBar').style.display = 'none'; $('zoneBar').style.display = 'flex';
 }
@@ -1791,13 +1802,16 @@ function drawGhost(time){
   drawStruct({ type:placing.type, c:placing.gc, r:placing.gr, w:placing.w, h:placing.h, done:true, id:0, plant:0 }, time, 0, 0);
   ctx.globalAlpha = 1;
 }
-$('pRot').onclick = () => { const w = placing.w; placing.w = placing.h; placing.h = w; if (placing.gc != null) placeAt(placing.gc, placing.gr); else renderPlaceBar(); };
-$('pCancel').onclick = endPlacing;
+$('pRot').onclick = () => { if (roomPlace){ const w = roomPlace.w; roomPlace.w = roomPlace.h; roomPlace.h = w; if (roomPlace.c != null) roomPlaceAt(roomPlace.c, roomPlace.r); return; }
+  const w = placing.w; placing.w = placing.h; placing.h = w; if (placing.gc != null) placeAt(placing.gc, placing.gr); else renderPlaceBar(); };
+$('pCancel').onclick = () => roomPlace ? endRoomPlace() : endPlacing();
 $('pOk').onclick = () => {
+  if (paint) return endPaint();
+  if (roomPlace){ if (roomPlace.valid) commitRoomPlace(); return; }
   const it = FARM_ITEMS[placing.type], fz = footprintZone(placing); if (!fz) return;
   if (placing.move || placing.store){                        // move / place from storage: free & instant
     const m = placing.move, o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, true);
-    if (m) o.plant = m.o.plant; else S.store[placing.type]--;
+    if (m){ o.plant = m.o.plant; o.room = m.o.room; } else S.store[placing.type]--;
     placing.move = null; bump('moveStore'); endPlacing(); save(); renderShop();
     return;
   }
@@ -1898,7 +1912,7 @@ $('fBtn').onclick = fishPress;
 $('fCancel').onclick = endFishing;
 
 function startLoop(){ if (!raf){ lastT = 0; skyAcc = 1e9; ensureZones(); placePet(); goHome(); renderZoneBar(); raf = requestAnimationFrame(frame); } }
-function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); }
+function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); if (inRoom) exitHome(); if (paint) endPaint(); }
 
 /* --- bottom bar: zoom −/+ and 🏠 home; shows unlocked area count --- */
 function renderZoneBar(){
@@ -1921,6 +1935,7 @@ function pinchState(){
 }
 cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId); } catch(_){}
   ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (ptrs.size === 2 && inRoom){ if (drag){ clearTimeout(drag.timer); drag.moved = true; } return; }   // no zoom inside a room
   if (ptrs.size === 2){                                      // second finger → start pinch, cancel tap/long-press
     if (drag){ clearTimeout(drag.timer); drag.moved = true; }
     const p = pinchState(), [wc, wr] = screenToWorld(p.mx, p.my);
@@ -1930,7 +1945,9 @@ cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId
   drag = { x:e.clientX, y:e.clientY, cx:camX, cy:camY, moved:false, long:false };
   const d = drag;
   d.timer = setTimeout(() => { if (drag !== d || d.moved || placing || fishing) return;
-    const b = cv.getBoundingClientRect(), g = pick(d.x-b.left, d.y-b.top);
+    const b = cv.getBoundingClientRect();
+    if (inRoom){ if (!roomPlace && roomLongPress(d.x-b.left, d.y-b.top)) d.long = true; return; }
+    const g = pick(d.x-b.left, d.y-b.top);
     if (longPress(g.c, g.r)) d.long = true; }, LONG_MS); });
 cv.addEventListener('pointermove', e => {
   if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
@@ -1942,7 +1959,7 @@ cv.addEventListener('pointermove', e => {
   }
   if (!drag) return; const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
   if (!drag.moved && Math.hypot(dx,dy) > 8){ drag.moved = true; clearTimeout(drag.timer); }
-  if (drag.moved){ camX = drag.cx + dx; camY = drag.cy + dy; clampCam(); }
+  if (drag.moved && !inRoom){ camX = drag.cx + dx; camY = drag.cy + dy; clampCam(); }
 });
 function endPointer(e){
   ptrs.delete(e.pointerId);
@@ -1962,7 +1979,9 @@ cv.addEventListener('pointerup', e => {
   if (endPointer(e)) return;
   const d = drag; drag = null; if (!d) return; clearTimeout(d.timer); if (d.moved || d.long || ptrs.size) return;
   const b = cv.getBoundingClientRect(), sx = e.clientX-b.left, sy = e.clientY-b.top;
+  if (inRoom) return roomTap(sx, sy);
   const g = pick(sx, sy);
+  if (paint){ paintAt(g.c, g.r); return; }
   if (placing){ placeAt(g.c, g.r); return; }
   if (fishing) return;
   for (let k=0;k<fishBtns.length;k+=6)
@@ -2009,16 +2028,26 @@ function tapTile(gc, gr){
     });
   }
   if (t.k==='obj') return tapObj(z, objById(z, t.o));
+  if (t.k==='path') return sheet(`${PATHS[t.p].name}\nน้องเดินบนทางเดินได้ และหญ้าจะไม่งอกทับ\n💡 กดค้างเพื่อรื้อ (คืนเงิน)`, OK);
   if (t.k==='clear') return sheet('🌱 พื้นที่โล่ง\nเลือกสิ่งปลูกสร้างและของตกแต่งได้ที่ ร้านค้า › ฟาร์ม',
     [{label:'ไปที่ ร้านค้า › ฟาร์ม', cls:'ok', fn:() => openShop('farm')}, {label:'ปิด', cls:'ghost'}]);
 }
 /* long-press on a finished structure → ย้าย / เก็บเข้าคลัง */
 function longPress(gc, gr){
+  if (removePiece(gc, gr)) return true;                     // path / bridge → remove (refund)
   const t = tileAt(gc, gr); if (!t || t.k!=='obj') return false;
   const z = hitZone, o = objById(z, t.o); if (!o) return false;
   try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
   const it = FARM_ITEMS[o.type];
   if (!o.done){ sheet(`🔨 ${it.name} ยังสร้างไม่เสร็จ\nย้ายหรือเก็บได้หลังสร้างเสร็จแล้วครับ`, OK); return true; }
+  if (isHome(o.type)){                                       // someone lives here: move only, never store/demolish
+    sheet(`${it.name}\nบ้านเป็นที่อยู่อาศัย ย้ายได้แต่เก็บเข้าคลังไม่ได้`, [
+      { label:'🚪 เข้าบ้าน', cls:'ok', fn:() => enterHome(z, o) },
+      { label:'↔️ ย้ายตำแหน่ง', fn:() => { const lifted = { ...o }; removeObj(z, o);
+          startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } }); } },
+      { label:'ปิด', cls:'ghost' } ]);
+    return true;
+  }
   sheet(`${it.name}\nขนาด ${o.w}×${o.h} • จะทำอะไรดี?`, [
     { label:'↔️ ย้ายตำแหน่ง', cls:'ok', fn:() => {
         const lifted = { ...o }; removeObj(z, o);
@@ -2041,6 +2070,7 @@ function tapObj(z, o){
       reward(`✨ ${it.name} สร้างเสร็จ\n⭐ Exp +${EXP.build}`);
     });
   }
+  if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot'){
     if (!o.plant){
       if (!S.inv.seed) return sheet('ยังไม่มีเมล็ดพันธุ์\nซื้อได้ที่ร้านค้า หรือเก็บจากดอกไม้ป่า', OK);
@@ -2054,6 +2084,349 @@ function tapObj(z, o){
     {label:'รื้อถอน (ไม่คืนวัตถุดิบ)', cls:'ghost', fn:() => confirmDo(`รื้อถอน ${it.name}?\nจะไม่ได้เหรียญหรือวัตถุดิบคืน`, () => { removeObj(z, o); save(); })},
     {label:'ปิด', cls:'ghost'} ]);
 }
+
+/* =====================================================================
+   PATHS & BRIDGES — 1×1 floor pieces the player paints tile by tile
+   • Path tiles auto-connect: an edge border is drawn ONLY where the neighbour is
+     not path (checked across chunk borders), so adjacent tiles read as one walkway.
+   • Bridges sit on water tiles, make them walkable; plank direction follows the
+     land/bridge neighbours (along c if east/west is land, else along r).
+   • Paint mode: confirm price once, then every tap places one piece (charged per piece).
+     Long-press a piece → remove it (full refund, so redesigning is free).
+   ===================================================================== */
+const PATHS = {
+  stone: { name:'🪨 ทางเดินหิน',  price:2, cost:{},         base:'#d6cfbf', edge:'#9d9483', dot:'#bdb4a2' },
+  wood:  { name:'🪵 ทางเดินไม้',  price:3, cost:{},         base:'#c99a62', edge:'#8a5f32', dot:'#a97a45' },
+  brick: { name:'🧱 ทางเดินอิฐ',  price:4, cost:{},         base:'#c8735a', edge:'#91472f', dot:'#e0a089' }
+};
+const BRIDGE = { name:'🌉 สะพานไม้', price:20, cost:{wood:2} };
+let paint = null;                                            // {kind:'path'|'bridge', type}
+function markAround(gc, gr){                                 // a piece changes how its neighbours' edges look
+  for (const [dc,dr] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]){ const t = tileAt(gc+dc, gr+dr); if (t) markDirty(hitZone); }
+}
+function startPaint(kind, type){
+  const it = kind==='bridge' ? BRIDGE : PATHS[type];
+  confirmDo(`โหมดวาง${it.name}\n🪙 ${it.price} เหรียญ${Object.keys(it.cost).length ? ' + ' + Object.entries(it.cost).map(([k,v]) => MAT[k]+' '+v).join(', ') : ''} ต่อช่อง\n\nแตะ${kind==='bridge' ? 'ที่บ่อน้ำ' : 'ช่องว่าง'}ได้เรื่อย ๆ ทีละช่อง แล้วกด "✔ เสร็จ" เมื่อพอ\n(กดค้างที่${kind==='bridge' ? 'สะพาน' : 'ทางเดิน'}เพื่อรื้อ คืนเงินเต็ม)`, () => {
+    if (inRoom) exitHome();
+    paint = { kind, type }; goTab('tFarm');
+    $('zoneBar').style.display = 'none'; $('placeBar').style.display = 'flex';
+    $('pRot').style.display = 'none'; $('pCancel').style.display = 'none'; $('pOk').disabled = false; $('pOk').textContent = '✔ เสร็จ';
+    renderPaintBar();
+  });
+}
+function endPaint(){
+  paint = null; $('placeBar').style.display = 'none'; $('zoneBar').style.display = 'flex';
+  $('pRot').style.display = ''; $('pCancel').style.display = ''; $('pOk').textContent = '✔ วาง';
+}
+function renderPaintBar(msg){
+  const it = paint.kind==='bridge' ? BRIDGE : PATHS[paint.type];
+  $('pInfo').textContent = msg || `${it.name} • แตะ${paint.kind==='bridge' ? 'บ่อน้ำ' : 'ช่องว่าง'}เพื่อวาง (🪙 ${it.price}/ช่อง • มี ${S.coins})`;
+}
+function paintAt(gc, gr){
+  const t = tileAt(gc, gr), it = paint.kind==='bridge' ? BRIDGE : PATHS[paint.type];
+  if (!t) return renderPaintBar('นอกพื้นที่ฟาร์ม');
+  const ok = paint.kind==='bridge' ? (t.k==='water' && !t.bridge) : (t.k==='clear' || (t.k==='path' && t.p !== paint.type));
+  if (!ok) return renderPaintBar(paint.kind==='bridge' ? 'สะพานวางได้บนน้ำเท่านั้น' : 'วางได้บนช่องว่างเท่านั้น (เก็บหญ้า/หินก่อน)');
+  if (S.coins < it.price || !canPay(it.cost)) return renderPaintBar('เหรียญหรือวัตถุดิบไม่พอแล้ว');
+  if (t.k==='path'){ S.coins += PATHS[t.p].price; }          // swapping path type refunds the old piece
+  S.coins -= it.price; pay(it.cost);
+  if (paint.kind==='bridge'){ t.bridge = true; bump('bridgePlace'); }
+  else { t.k = 'path'; t.p = paint.type; bump('pathPlace'); }
+  markAround(gc, gr); save(); refreshHeader(); renderMats(); renderPaintBar();
+}
+function removePiece(gc, gr){
+  const t = tileAt(gc, gr); if (!t) return false;
+  if (t.k==='path'){
+    const it = PATHS[t.p];
+    sheet(`${it.name}\nจะรื้อออกไหม? (คืน 🪙 ${it.price})`, [ { label:'รื้อออก', cls:'ok', fn:() => {
+      S.coins += it.price; t.k = 'clear'; delete t.p; markAround(gc, gr); save(); refreshHeader(); } }, { label:'ปิด', cls:'ghost' } ]);
+    return true;
+  }
+  if (t.k==='water' && t.bridge){
+    sheet(`${BRIDGE.name}\nจะรื้อออกไหม? (คืน 🪙 ${BRIDGE.price} + ${MAT.wood} ${BRIDGE.cost.wood})`, [ { label:'รื้อออก', cls:'ok', fn:() => {
+      if (Math.floor(pet.x)===gc && Math.floor(pet.y)===gr) placePet();
+      S.coins += BRIDGE.price; S.inv.wood += BRIDGE.cost.wood; delete t.bridge; markAround(gc, gr); save(); refreshHeader(); renderMats(); } }, { label:'ปิด', cls:'ghost' } ]);
+    return true;
+  }
+  return false;
+}
+/* path tile painter (called from paintChunk with chunk-local projection lp) */
+function paintPathTile(g, lp, z, cc, rr, t, i){
+  const P0 = PATHS[t.p] || PATHS.stone, gc = z.cx*GRID+cc, gr = z.cy*GRID+rr;
+  const A = lp(cc,rr), B = lp(cc+1,rr), C = lp(cc+1,rr+1), D = lp(cc,rr+1);
+  quad(g, A, B, C, D, P0.base);
+  // texture
+  if (t.p==='wood'){ g.strokeStyle = P0.edge; g.lineWidth = 1;
+    for (let k=1;k<4;k++){ const a = lp(cc+k/4, rr), b = lp(cc+k/4, rr+1); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); } }
+  else if (t.p==='brick'){ g.strokeStyle = P0.dot; g.lineWidth = 1;
+    for (let k=1;k<3;k++){ let a = lp(cc+k/3, rr), b = lp(cc+k/3, rr+1); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke();
+      a = lp(cc, rr+k/3); b = lp(cc+1, rr+k/3); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); } }
+  else for (let k=0;k<7;k++){ const [x,y] = lp(cc+.15+hrnd(z.seed,i,200+k)*.7, rr+.15+hrnd(z.seed,i,220+k)*.7);
+      g.fillStyle = k%2 ? P0.dot : '#e8e2d4'; g.beginPath(); g.ellipse(x, y, TW*.07, TH*.07, 0, 0, Math.PI*2); g.fill(); }
+  // auto-connect: border only where the neighbour is NOT path (grass tufts overlap the border)
+  const isP = (c,r) => { const n = tileAt(c,r); return !!n && n.k==='path'; };
+  g.strokeStyle = P0.edge; g.lineWidth = Math.max(1.5, TW*.035); g.lineCap = 'round';
+  const e = .06, edges = [[!isP(gc,gr-1), A, B], [!isP(gc+1,gr), B, C], [!isP(gc,gr+1), C, D], [!isP(gc-1,gr), D, A]];
+  for (const [open, a, b] of edges) if (open){
+    g.beginPath(); g.moveTo(a[0]+(b[0]-a[0])*e, a[1]+(b[1]-a[1])*e); g.lineTo(b[0]-(b[0]-a[0])*e, b[1]-(b[1]-a[1])*e); g.stroke();
+    g.strokeStyle = 'rgba(110,170,70,.9)'; g.lineWidth = 1.2;                   // little grass tufts creeping over the edge
+    for (let k=1;k<4;k++){ const x = a[0]+(b[0]-a[0])*k/4, y = a[1]+(b[1]-a[1])*k/4; g.beginPath(); g.moveTo(x,y); g.lineTo(x+1.5, y-TH*.1); g.stroke(); }
+    g.strokeStyle = P0.edge; g.lineWidth = Math.max(1.5, TW*.035);
+  }
+}
+/* bridge on a water tile (Y-sorted pass) */
+function drawBridge(gc, gr){
+  const landOrBridge = (c,r) => { const n = tileAt(c,r); return !!n && (n.k!=='water' || n.bridge); };
+  const alongC = landOrBridge(gc-1,gr) || landOrBridge(gc+1,gr) || !(landOrBridge(gc,gr-1) || landOrBridge(gc,gr+1));
+  const z = TH*.18, w = .32;                                 // deck height & half-width
+  const c0 = alongC ? gc : gc+.5-w, c1 = alongC ? gc+1 : gc+.5+w, r0 = alongC ? gr+.5-w : gr, r1 = alongC ? gr+.5+w : gr+1;
+  box(c0, r0, c1, r1, z*.4, z, '#b9834b', '#8f5f30', '#7a4f26');
+  ctx.strokeStyle = 'rgba(70,40,15,.55)'; ctx.lineWidth = 1;    // plank seams
+  for (let k=1;k<5;k++){ const f = k/5;
+    const a = alongC ? P(gc+f, r0, z) : P(c0, gr+f, z), b = alongC ? P(gc+f, r1, z) : P(c1, gr+f, z);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+  ctx.strokeStyle = '#6b4220'; ctx.lineWidth = Math.max(1.5, TW*.03);                // rails + posts on both sides
+  for (const side of [0,1]){
+    const a = alongC ? P(gc, side ? r1 : r0, z) : P(side ? c1 : c0, gr, z), b = alongC ? P(gc+1, side ? r1 : r0, z) : P(side ? c1 : c0, gr+1, z);
+    const h = TH*.32;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]-h); ctx.lineTo(b[0], b[1]-h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(a[0], a[1]-h); ctx.moveTo(b[0], b[1]); ctx.lineTo(b[0], b[1]-h); ctx.stroke();
+  }
+}
+
+/* =====================================================================
+   HOUSE INTERIOR — tap a finished home (บ้านหลังแรก / บ้านไร่) to go inside
+   • Homes can be MOVED but never stored or demolished (someone lives there).
+   • Room = N×N iso floor + 2 back walls. Uses the same projection P() by swapping
+     camera/zoom to room values while inside and restoring them on exit.
+   • Furniture is bought in Shop › 🛋 ในบ้าน (coins) → S.furn inventory → placed in a room.
+     Long-press furniture → move / put back in inventory. The pet comes inside too.
+   ===================================================================== */
+const HOME_SIZE = { starter:6, house:8 };                    // room N×N per home type ⚠️
+const FURN = {
+  rug:      { name:'🟥 พรมผืนใหญ่',  w:2, h:2, price:20, flat:true },
+  bed:      { name:'🛏 เตียงนอน',     w:1, h:2, price:60 },
+  table:    { name:'🪵 โต๊ะไม้',       w:1, h:1, price:30 },
+  chair:    { name:'🪑 เก้าอี้',        w:1, h:1, price:15 },
+  sofa:     { name:'🛋 โซฟา',          w:2, h:1, price:50 },
+  shelf:    { name:'📚 ชั้นหนังสือ',    w:1, h:1, price:40 },
+  plant:    { name:'🪴 ต้นไม้ในกระถาง', w:1, h:1, price:15 },
+  lamp:     { name:'💡 โคมไฟตั้งพื้น',  w:1, h:1, price:20 },
+  petbed:   { name:'🐾 ที่นอนน้อง',     w:1, h:1, price:25, flat:true }
+};
+const WALLS  = [['ครีม','#f6e7c8','#e3d0aa'], ['ฟ้าพาสเทล','#d6ecf7','#b9d8ea'], ['ชมพูอ่อน','#f9dbe2','#ecbfca'], ['เขียวมิ้นต์','#d8f0e0','#b8dcc4']];
+const FLOORS = [['ไม้','#c99a62','#b48550'], ['กระเบื้อง','#e8e4dc','#d3cdc1'], ['พรมฟ้า','#9cc3e0','#88b2d2']];
+let inRoom = null;                                           // {z, o, N, saved:{camX,camY,zoom}}
+const roomPet = makePetAnim();
+let roomPlace = null;                                        // {type, w, h, c, r, valid, move}
+const isHome = type => !!HOME_SIZE[type];
+
+function enterHome(z, o){
+  o.room = o.room || { items:[], wall:0, floor:0, nextId:1 };
+  if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
+  const N = HOME_SIZE[o.type];
+  inRoom = { z, o, N, saved:{ camX, camY, zoom } };
+  layoutRoom();
+  roomPet.x = roomPet.tx = N/2 + .2; roomPet.y = roomPet.ty = N - .8; roomPet.state = 'idle'; roomPet.timer = 1;
+  $('zoneBar').style.display = 'none'; $('roomBar').style.display = 'flex'; $('roomTitle').textContent = `🏠 ${FARM_ITEMS[o.type].name.split(' ').slice(1).join(' ')} ของ ${S.profile.name}`;
+  $('roomTitle').style.display = 'block'; $('mats').style.display = 'none'; $('hint').style.display = 'none';
+  bump('enterHome'); save();
+}
+function layoutRoom(){                                       // fit the N×N room in the portrait canvas
+  const N = inRoom.N;
+  TW = Math.min(110, (cssW - 24) / N); TH = TW/2; zoom = TW / TWBASE;
+  OY = cssH*.5 - GRID*TH/2; centerOn(N/2, N/2); camY += TH*1.2;   // nudge down so the walls fit above
+}
+function exitHome(){
+  if (!inRoom) return;
+  if (roomPlace) endRoomPlace();
+  const s = inRoom.saved; inRoom = null;
+  zoom = s.zoom; TW = TWBASE*zoom; TH = TW/2; OY = cssH*.5 - GRID*TH/2; camX = s.camX; camY = s.camY;
+  $('roomBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; $('roomTitle').style.display = 'none';
+  $('mats').style.display = ''; $('hint').style.display = '';
+  renderZoneBar(); save();
+}
+function roomItemAt(c, r, solidOnly){                       // solid furniture wins over a rug under it
+  let flatHit = null;
+  for (const it of inRoom.o.room.items) if (c >= it.c && c < it.c+it.w && r >= it.r && r < it.r+it.h){
+    if (!FURN[it.type].flat) return it; flatHit = it; }
+  return solidOnly ? null : flatHit;
+}
+function roomWalk(x, y){
+  const N = inRoom.N; if (x < .2 || y < .2 || x > N-.2 || y > N-.2) return false;
+  return !roomItemAt(Math.floor(x), Math.floor(y), true);
+}
+function roomTarget(a){
+  for (let k=0;k<20;k++){
+    const tx = .5 + Math.random()*(inRoom.N-1), ty = .5 + Math.random()*(inRoom.N-1);
+    if (!roomWalk(tx,ty)) continue;
+    let ok = true; const n = Math.ceil(Math.hypot(tx-a.x, ty-a.y)/.2);
+    for (let s=1;s<=n;s++) if (!roomWalk(a.x+(tx-a.x)*s/n, a.y+(ty-a.y)*s/n)){ ok = false; break; }
+    if (ok){ a.tx = tx; a.ty = ty; return; }
+  }
+  a.tx = a.x; a.ty = a.y;
+}
+
+function drawRoom(time, dt){
+  const { N, o } = inRoom, R = o.room, wall = WALLS[R.wall] || WALLS[0], floor = FLOORS[R.floor] || FLOORS[0];
+  const g = ctx.createLinearGradient(0,0,0,cssH); g.addColorStop(0,'#3b2a1e'); g.addColorStop(1,'#5a4130');
+  ctx.fillStyle = g; ctx.fillRect(0,0,cssW,cssH);
+  const H = TH*3.2;
+  // back walls (c = 0 plane on the left, r = 0 plane on the right) + baseboard
+  quad(ctx, P(0,0,0), P(0,N,0), P(0,N,H), P(0,0,H), wall[2]);
+  quad(ctx, P(0,0,0), P(N,0,0), P(N,0,H), P(0,0,H), wall[1]);
+  quad(ctx, P(0,0,0), P(0,N,0), P(0,N,TH*.25), P(0,0,TH*.25), '#a8865f');
+  quad(ctx, P(0,0,0), P(N,0,0), P(N,0,TH*.25), P(0,0,TH*.25), '#b8966e');
+  // windows on the right wall: sky colour follows real time
+  const sky = NIGHT > .6 ? '#23365f' : NIGHT > .2 ? '#f2b47a' : '#9fd6f5';
+  for (const u of N > 6 ? [.2, .6] : [.35]){
+    const a = P(N*u, 0, H*.45), b = P(N*(u+.18), 0, H*.45), c = P(N*(u+.18), 0, H*.85), d = P(N*u, 0, H*.85);
+    quad(ctx, a, b, c, d, '#fff'); const m = .08;
+    quad(ctx, P(N*u+m,0,H*.48), P(N*(u+.18)-m,0,H*.48), P(N*(u+.18)-m,0,H*.82), P(N*u+m,0,H*.82), sky);
+    if (NIGHT > .6) addGlow((a[0]+c[0])/2, (a[1]+c[1])/2, TW*.6);
+  }
+  // door on the left wall (way back out)
+  quad(ctx, P(0,N*.62,0), P(0,N*.82,0), P(0,N*.82,H*.62), P(0,N*.62,H*.62), '#8a5a33');
+  // floor
+  for (let r=0;r<N;r++) for (let c=0;c<N;c++){
+    quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), (c+r)%2 ? floor[1] : floor[2]);
+    if (R.floor===0){ ctx.strokeStyle = 'rgba(90,55,25,.25)'; ctx.lineWidth = 1; const a = P(c+.5,r), b = P(c+.5,r+1); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+  }
+  // flat items first (rugs, pet bed), then Y-sorted furniture + pet
+  for (const it of R.items) if (FURN[it.type].flat) drawFurn(it, time);
+  roomPet.night = NIGHT > .6;
+  updatePetAnim(roomPet, dt, true, roomTarget);
+  const order = R.items.filter(it => !FURN[it.type].flat).sort((a,b) => (a.c+a.w+a.r+a.h) - (b.c+b.w+b.r+b.h));
+  let petDone = false; const pd = roomPet.x + roomPet.y;
+  for (const it of order){
+    if (!petDone && pd < it.c+it.w-1 + it.r+it.h-1 + 1.2){ drawRoomPet(); petDone = true; }
+    drawFurn(it, time);
+  }
+  if (!petDone) drawRoomPet();
+  if (roomPlace && roomPlace.c != null){
+    const col = roomPlace.valid ? 'rgba(76,175,106,.5)' : 'rgba(220,60,60,.5)';
+    for (let dr=0;dr<roomPlace.h;dr++) for (let dc=0;dc<roomPlace.w;dc++){ const c = roomPlace.c+dc, r = roomPlace.r+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); }
+    ctx.globalAlpha = .6; drawFurn({ type:roomPlace.type, c:roomPlace.c, r:roomPlace.r, w:roomPlace.w, h:roomPlace.h }, time); ctx.globalAlpha = 1;
+  }
+}
+function drawRoomPet(){ const [sx,sy] = P(roomPet.x, roomPet.y); drawPetModel(ctx, S.pet.type, roomPet, sx, sy, TW*.7*petStage(S.pet.lv).scale, petStage(S.pet.lv).form); }
+function drawFurn(it, time){
+  const m = .08, c0 = it.c+m, r0 = it.r+m, c1 = it.c+it.w-m, r1 = it.r+it.h-m, cm = (c0+c1)/2, rm = (r0+r1)/2, U = TH;
+  switch (it.type){
+    case 'rug':
+      quad(ctx, P(c0,r0,1), P(c1,r0,1), P(c1,r1,1), P(c0,r1,1), '#c0392b');
+      quad(ctx, P(c0+.15,r0+.15,1), P(c1-.15,r0+.15,1), P(c1-.15,r1-.15,1), P(c0+.15,r1-.15,1), '#e8b04b');
+      quad(ctx, P(c0+.3,r0+.3,1), P(c1-.3,r0+.3,1), P(c1-.3,r1-.3,1), P(c0+.3,r1-.3,1), '#c0392b'); break;
+    case 'petbed': { const [x,y] = P(cm,rm);
+      ctx.fillStyle = '#7b5ea7'; ctx.beginPath(); ctx.ellipse(x, y, TW*.36, TH*.36, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#b39ddb'; ctx.beginPath(); ctx.ellipse(x, y-2, TW*.26, TH*.24, 0, 0, Math.PI*2); ctx.fill(); break; }
+    case 'bed':
+      box(c0,r0,c1,r1,0,U*.35,null,'#8a5a33','#6e4524');
+      box(c0+.03,r0+.03,c1-.03,r1-.03,U*.35,U*.55,'#ffffff','#eceff4','#d9dee6');
+      box(c0+.03,r0+.6,c1-.03,r1-.03,U*.55,U*.6,'#5c8fd6','#4a7cc2','#3c69a8');
+      box(c0+.1,r0+.08,c1-.1,r0+.45,U*.55,U*.75,'#fffdf7','#efe9dc','#ded6c6');
+      box(c0,r0,c1,r0+.08,0,U*1.1,'#a26b3c','#8a5a33','#6e4524'); break;
+    case 'table':
+      for (const [lc,lr] of [[c0+.05,r0+.05],[c1-.13,r0+.05],[c0+.05,r1-.13],[c1-.13,r1-.13]]) box(lc,lr,lc+.08,lr+.08,0,U*.75,'#6e4524','#6e4524','#5a381d');
+      box(c0,r0,c1,r1,U*.75,U*.85,'#c99a62','#a87a45','#8f6334');
+      ball(ctx, ...P(cm,rm,U*.95), TW*.06, TW*.05, '#fff', '#f2c94c', '#c9a227'); break;
+    case 'chair':
+      for (const [lc,lr] of [[c0+.15,r0+.15],[c1-.22,r0+.15],[c0+.15,r1-.22],[c1-.22,r1-.22]]) box(lc,lr,lc+.07,lr+.07,0,U*.45,'#6e4524','#6e4524','#5a381d');
+      box(c0+.12,r0+.12,c1-.12,r1-.12,U*.45,U*.53,'#d9a066','#b9824a','#9c6d37');
+      box(c0+.12,r0+.12,c1-.12,r0+.2,U*.53,U*1.1,'#d9a066','#b9824a','#9c6d37'); break;
+    case 'sofa': {
+      const alongC = it.w >= it.h;
+      box(c0,r0,c1,r1,0,U*.45,'#e07a5f','#c8664c','#ad543c');
+      if (alongC){ box(c0,r0,c1,r0+.25,U*.45,U*.95,'#e8907a','#c8664c','#ad543c'); box(c0,r0,c0+.18,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); box(c1-.18,r0,c1,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); }
+      else { box(c0,r0,c0+.25,r1,U*.45,U*.95,'#e8907a','#c8664c','#ad543c'); box(c0,r0,c1,r0+.18,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); box(c0,r1-.18,c1,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); }
+      break; }
+    case 'shelf':
+      box(c0+.1,r0,c1-.1,r0+.35,0,U*2.2,'#a87a45','#8f6334','#7a5229');
+      for (let k=0;k<3;k++){ const z0 = U*(.3+k*.65);
+        for (let b=0;b<4;b++){ const u0 = .12+b*.19; faceQuad('L', c0+.1, r0, c1-.1, r0+.35, u0, u0+.14, z0, z0+U*.45, ['#e63946','#457b9d','#f4a261','#2a9d8f'][(b+k)%4]); } }
+      break;
+    case 'plant':
+      box(cm-.18,rm-.18,cm+.18,rm+.18,0,U*.45,'#c8735a','#b0604a','#93503d');
+      ball(ctx, ...P(cm-.08,rm,U*.85), TW*.14, TH*.3, '#a6e07f', '#4aa846', '#2b6f2e');
+      ball(ctx, ...P(cm+.08,rm,U*.95), TW*.14, TH*.3, '#a6e07f', '#4aa846', '#2b6f2e');
+      ball(ctx, ...P(cm,rm,U*1.2), TW*.15, TH*.32, '#b8ea92', '#58b552', '#2f7a33'); break;
+    case 'lamp': {
+      box(cm-.15,rm-.15,cm+.15,rm+.15,0,U*.08,'#555','#444','#333');
+      box(cm-.03,rm-.03,cm+.03,rm+.03,U*.08,U*1.6,'#666','#555','#444');
+      const [gx,gy] = P(cm,rm,U*1.8);
+      if (NIGHT > .3) addGlow(gx, gy, TW*.9);
+      ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.moveTo(gx-TW*.16, gy+TH*.2); ctx.lineTo(gx-TW*.09, gy-TH*.25); ctx.lineTo(gx+TW*.09, gy-TH*.25); ctx.lineTo(gx+TW*.16, gy+TH*.2); ctx.closePath(); ctx.fill();
+      break; }
+  }
+}
+
+/* room placement (reuses the place bar) */
+function startRoomPlace(type, move){
+  const f = FURN[type];
+  roomPlace = { type, w:move ? move.w : f.w, h:move ? move.h : f.h, c:null, r:null, valid:false, move:move||null };
+  $('roomBar').style.display = 'none'; $('placeBar').style.display = 'flex';
+  if (move) roomPlaceAt(move.c, move.r); else renderRoomPlaceBar();
+}
+function roomPlaceAt(c, r){
+  const p = roomPlace; p.c = c; p.r = r; const N = inRoom.N;
+  p.valid = c >= 0 && r >= 0 && c+p.w <= N && r+p.h <= N;
+  // a flat piece (rug, pet bed) may sit under / next to furniture; two solid or two flat pieces may not overlap
+  const flat = !!FURN[p.type].flat;
+  if (p.valid) for (const it of inRoom.o.room.items)
+    if (c < it.c+it.w && c+p.w > it.c && r < it.r+it.h && r+p.h > it.r && !!FURN[it.type].flat === flat){ p.valid = false; break; }
+  renderRoomPlaceBar();
+}
+function renderRoomPlaceBar(){
+  const f = FURN[roomPlace.type];
+  $('pInfo').textContent = roomPlace.c == null ? `แตะพื้นในบ้านเพื่อวาง ${f.name}` : roomPlace.valid ? `วาง ${f.name} ตรงนี้ได้ ✓` : 'วางไม่ได้ — ชนของชิ้นอื่นหรือออกนอกห้อง';
+  $('pOk').disabled = !roomPlace.valid;
+}
+function endRoomPlace(cancel){
+  if (cancel !== false && roomPlace && roomPlace.move) inRoom.o.room.items.push(roomPlace.move);   // cancelled move → put back
+  roomPlace = null; $('placeBar').style.display = 'none'; if (inRoom) $('roomBar').style.display = 'flex';
+}
+function commitRoomPlace(){
+  const p = roomPlace, R = inRoom.o.room;
+  if (p.move){ p.move.c = p.c; p.move.r = p.r; p.move.w = p.w; p.move.h = p.h; R.items.push(p.move); }
+  else { S.furn[p.type]--; R.items.push({ id:R.nextId++, type:p.type, c:p.c, r:p.r, w:p.w, h:p.h }); bump('decorPlace'); }
+  roomPlace.move = null; endRoomPlace(false); save();
+}
+function openFurnMenu(){
+  const have = Object.entries(S.furn||{}).filter(([,n]) => n > 0);
+  const opts = have.map(([k,n]) => ({ label:`${FURN[k].name} (มี ${n}) • วาง`, cls:'ok', fn:() => startRoomPlace(k) }));
+  opts.push({ label:'🛒 ซื้อของตกแต่งเพิ่ม', fn:() => { exitHome(); openShop('home'); } });
+  opts.push({ label:'ปิด', cls:'ghost' });
+  sheet(have.length ? '🛋 ของตกแต่งในกระเป๋า — เลือกชิ้นที่จะวาง\n💡 กดค้างที่ของในบ้านเพื่อย้ายหรือเก็บ' : 'ยังไม่มีของตกแต่ง\nซื้อได้ที่ ร้านค้า › 🛋 ในบ้าน', opts);
+}
+function openStyleMenu(){
+  const R = inRoom.o.room;
+  sheet('🎨 เลือกสีผนังและพื้น (ฟรี)', [
+    ...WALLS.map((w,i) => ({ label:`ผนัง: ${w[0]}${R.wall===i ? ' ✓' : ''}`, cls: R.wall===i ? 'ok' : 'ghost', fn:() => { R.wall = i; save(); } })),
+    ...FLOORS.map((f,i) => ({ label:`พื้น: ${f[0]}${R.floor===i ? ' ✓' : ''}`, cls: R.floor===i ? 'ok' : 'ghost', fn:() => { R.floor = i; save(); } })),
+    { label:'ปิด', cls:'ghost' } ]);
+}
+function roomTap(sx, sy){
+  const g = pick(sx, sy);
+  if (roomPlace) return roomPlaceAt(g.c, g.r);
+  const ps = TW*.7*petStage(S.pet.lv).scale, [px,py0] = P(roomPet.x, roomPet.y);
+  if (Math.hypot(sx-px, sy-(py0-ps*.55)) < Math.max(30, ps*.6)){ petHappy(roomPet); bump('petTap'); return; }
+  const it = roomItemAt(g.c, g.r);
+  if (it) sheet(`${FURN[it.type].name}\n💡 กดค้างเพื่อย้ายหรือเก็บ`, OK);
+}
+function roomLongPress(sx, sy){
+  const g = pick(sx, sy), it = roomItemAt(g.c, g.r); if (!it) return false;
+  try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
+  const R = inRoom.o.room;
+  sheet(`${FURN[it.type].name}\nจะทำอะไรดี?`, [
+    { label:'↔️ ย้ายตำแหน่ง', cls:'ok', fn:() => { R.items.splice(R.items.indexOf(it), 1); startRoomPlace(it.type, it); } },
+    { label:'🔄 หมุน', fn:() => { if (it.w === it.h) return; R.items.splice(R.items.indexOf(it), 1); const w = it.w; it.w = it.h; it.h = w; startRoomPlace(it.type, it); } },
+    { label:'🎒 เก็บกลับกระเป๋า', fn:() => { R.items.splice(R.items.indexOf(it), 1); S.furn[it.type] = (S.furn[it.type]||0) + 1; save(); } },
+    { label:'ปิด', cls:'ghost' } ]);
+  return true;
+}
+$('rFurn').onclick = openFurnMenu;
+$('rStyle').onclick = openStyleMenu;
+$('rExit').onclick = exitHome;
 
 function tapPet(){
   if (fishing) return;
@@ -2101,6 +2474,8 @@ const QUESTS = [
     text:'ไปที่ 🛒 ร้านค้า › ฟาร์ม › "บ้านหลังแรก" (ฟรี) → แตะพื้นที่โล่ง → ✔ วาง', reward:{coins:0} },
   { id:'houseOk', name:'รับบ้าน',                hl:'starter', need:1, goal:() => starterDone() ? 1 : 0,
     text:'สิ่งปลูกสร้างต้องใช้เวลาสร้าง รอ 30 วิ แล้วแตะ "✔ เก็บ" ที่บ้าน', reward:{coins:20} },
+  { id:'enterHome', name:'เข้าบ้าน',                hl:'starter', need:1, goal:() => st('enterHome'),
+    text:'แตะที่บ้านเพื่อเข้าไปข้างใน 🚪 — ในบ้านตกแต่งได้ เปลี่ยนสีผนัง/พื้นได้ และน้องจะตามเข้ามาด้วย กด "🚪 ออกจากบ้าน" เพื่อกลับ', reward:{coins:5} },
   { id:'mLog',    name:'บันทึกภารกิจสุขภาพ',       nav:'tMission', need:1, goal:() => st('missionLog'),
     text:'เปิด 🎯 ภารกิจ แล้วบันทึกสิ่งที่ทำวันนี้ (ก้าวเดิน/นาที/น้ำ) อย่างน้อย 1 ครั้ง', reward:{coins:5} },
   { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
@@ -2116,11 +2491,17 @@ const QUESTS = [
   { id:'plot',    name:'สร้างแปลงผัก',           nav:'tShop', shop:'farm', need:1, goal:() => plotsDone(),
     text:'ร้านค้า › ฟาร์ม › แปลงผัก → วาง → รอสร้างเสร็จแล้วแตะรับ', reward:{coins:5, seed:1} },
   { id:'move',    name:'ย้ายหรือเก็บสิ่งปลูกสร้าง',  hl:'plot',   need:1, goal:() => st('moveStore'),
-    text:'กดค้างที่แปลงผักหรือบ้าน ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม)', reward:{coins:5} },
+    text:'กดค้างที่แปลงผัก ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม) — บ้านย้ายได้แต่เก็บไม่ได้เพราะมีคนอยู่', reward:{coins:5} },
+  { id:'decor',   name:'ตกแต่งบ้าน',              nav:'tShop', shop:'home', need:1, goal:() => st('decorPlace'),
+    text:'ร้านค้า › 🛋 ในบ้าน ซื้อของตกแต่ง 1 ชิ้น → แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง → วาง (กดค้างที่ของเพื่อย้าย/หมุน/เก็บ)', reward:{coins:10} },
   { id:'harvest', name:'ปลูกและเก็บเกี่ยว',        hl:'plot',   need:1, goal:() => st('harvest'),
     text:'แตะแปลงผัก → ปลูกเมล็ด → รอ 2 นาที → เก็บเกี่ยว 🥕 (ขายหรือให้น้องกินได้)', reward:{coins:10} },
   { id:'large',   name:'ลงมือกับของชิ้นใหญ่',      hl:'large',  need:1, goal:() => st('start_large'),
     text:'เริ่มโค่นต้นไม้ใหญ่หรือสกัดหินใหญ่ (15–30 นาที) — เริ่มไว้แล้วไปทำอย่างอื่นได้เลย', reward:{coins:5} },
+  { id:'path',    name:'ทำทางเดิน',               nav:'tShop', shop:'farm', need:3, goal:() => st('pathPlace'),
+    text:'ร้านค้า › ฟาร์ม › ทางเดิน → แตะช่องว่างต่อกัน 3 ช่อง แล้วกด ✔ เสร็จ — ทางเดินเชื่อมกันเองอัตโนมัติ น้องเดินบนทางได้', reward:{coins:10} },
+  { id:'bridge',  name:'สร้างสะพาน',              hl:'water', need:1, goal:() => st('bridgePlace'),
+    text:'ร้านค้า › ฟาร์ม › 🌉 สะพานไม้ → แตะที่บ่อน้ำ — สะพานทำให้น้องเดินข้ามน้ำได้ (กดค้างเพื่อรื้อ คืนเงิน)', reward:{coins:10} },
   { id:'speed',   name:'เร่งเวลาด้วยเหรียญ',      need:1, goal:() => st('speed'),
     text:'แตะของที่กำลังเก็บ/กำลังสร้าง/กำลังโต แล้วกด ⚡ เร่ง — ใช้ 1 เหรียญต่อเวลาที่เหลือ 1 นาที', reward:{coins:5} },
   { id:'zone2',   name:'ขยายฟาร์ม',              need:1, goal:() => S.farm.zones.length >= 2 ? 1 : 0,
@@ -2214,9 +2595,23 @@ function openShop(tab){ shopTab = tab; goTab('tShop'); }
 function renderShop(){
   const L = $('shopList'); L.innerHTML = '';
   const tabs = document.createElement('div'); tabs.className = 'chips';
-  [['farm','🏡 ฟาร์ม'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
+  [['farm','🏡 ฟาร์ม'],['home','🛋 ในบ้าน'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
     b.className = 'chip' + (shopTab===k ? ' sel' : ''); b.textContent = n; b.onclick = () => { shopTab = k; renderShop(); }; tabs.appendChild(b); });
   L.appendChild(tabs);
+  if (shopTab === 'home'){
+    const info = document.createElement('div'); info.className = 'muted';
+    info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วเก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง';
+    L.appendChild(info);
+    Object.entries(FURN).forEach(([id,f]) => {
+      const c = document.createElement('div'); c.className = 'card mrow' + ((curQuest()||{}).id==='decor' ? ' tutGlow' : '');
+      c.innerHTML = `<div><b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} • มีในกระเป๋า ${(S.furn||{})[id]||0}</div></div>`;
+      const b = document.createElement('button'); b.className = 'btn'; b.textContent = `🪙 ${f.price}`; b.disabled = S.coins < f.price;
+      b.onclick = () => confirmDo(`ซื้อ ${f.name} ราคา ${f.price} เหรียญ?`, () => { S.coins -= f.price; S.furn[id] = (S.furn[id]||0) + 1; save(); refreshHeader(); renderShop();
+        reward(`${f.name} +1\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง`); });
+      c.appendChild(b); L.appendChild(c);
+    });
+    return;
+  }
   if (shopTab === 'farm'){
     const info = document.createElement('div'); info.className = 'muted';
     info.textContent = 'สิ่งปลูกสร้างและของตกแต่งบ้าน/ฟาร์ม • จ่ายเหรียญ + วัตถุดิบ • เวลาสร้างขึ้นกับขนาดและราคา';
@@ -2230,6 +2625,15 @@ function renderShop(){
         c.appendChild(b); L.appendChild(c); });
       const h2 = document.createElement('b'); h2.textContent = '🛠 สร้างใหม่'; L.appendChild(h2);
     }
+    const hp = document.createElement('b'); hp.textContent = '🛤 ทางเดิน & สะพาน (วางทีละช่อง เชื่อมกันเอง)'; L.appendChild(hp);
+    [...Object.entries(PATHS).map(([k,pp]) => ['path', k, pp]), ['bridge', null, BRIDGE]].forEach(([kind, k, it]) => {
+      const q = (curQuest()||{}).id, glow = (q==='path' && kind==='path') || (q==='bridge' && kind==='bridge');
+      const c = document.createElement('div'); c.className = 'card mrow' + (glow ? ' tutGlow' : '');
+      c.innerHTML = `<div><b>${it.name}</b><div class="muted">🪙 ${it.price}${Object.keys(it.cost).length ? ' + ' + Object.entries(it.cost).map(([m,v]) => MAT[m]+' '+v).join(', ') : ''} ต่อช่อง${kind==='bridge' ? ' • วางบนน้ำ ข้ามบ่อได้' : ''}</div></div>`;
+      const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'วาง'; b.onclick = () => startPaint(kind, k);
+      c.appendChild(b); L.appendChild(c);
+    });
+    const h3 = document.createElement('b'); h3.textContent = '🏗 สิ่งปลูกสร้าง'; L.appendChild(h3);
     Object.entries(FARM_ITEMS).forEach(([id,it]) => {
       if (it.once && starterOwned()) return;                 // starter house: only one
       const okCoin = S.coins >= it.price, okMat = canPay(it.cost);
