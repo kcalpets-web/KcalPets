@@ -1,5 +1,5 @@
 // Offline support. Bump VERSION whenever index.html changes so players get the update.
-const VERSION = 'kpd-v1.32';
+const VERSION = 'kpd-v1.33';
 const CORE = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './maskable-512.png'];
 
@@ -14,6 +14,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Other games hosted in sub-folders (e.g. /pensuk.html, /pensuk/) manage themselves — never cache them as this game's page.
+  if (url.pathname.includes('pensuk')) return;
   // Game page: network first (fresh updates), cache fallback (offline).
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', cp)); return r; })

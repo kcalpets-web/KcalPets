@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>เป็นสุข — Prototype v0.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff7ea;--card:#ffffff;--ink:#3b2a1a;--sub:#8a7560;--pri:#e0892f;--pri2:#c96f17;--ok:#4caf6a;--line:#f0e0c8;--gold:#f2b705}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Mali',system-ui,sans-serif;overflow:hidden}
+#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+h1{margin:0;font-size:28px}
+.btn{min-height:48px;border:0;border-radius:14px;background:var(--pri);color:#fff;font:600 17px 'Mali';padding:0 18px;cursor:pointer}
+.btn:active{background:var(--pri2)}
+.btn.ghost{background:#fff;color:var(--pri2);border:2px solid var(--pri)}
+.btn.ok{background:var(--ok)}
+.btn:disabled{opacity:.45}
+input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radius:12px;padding:0 12px;font:16px 'Mali';background:#fff;color:var(--ink)}
+.pad{padding:16px}
+.center{flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:24px}
+.muted{color:var(--sub);font-size:14px}
+.err{color:#c0392b;font-size:14px;min-height:18px}
+/* ---------- chat ---------- */
+#chatLog{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:10px 14px;border-radius:16px;line-height:1.45;font-size:16px;white-space:pre-line}
+.bot{background:#fff;border:2px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.me{background:var(--pri);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.botrow{display:flex;gap:6px;align-items:flex-end}
+.ava{width:36px;height:36px;flex:none}
+#chatIn{padding:10px;border:2px solid var(--pri);border-radius:16px;background:#fff;display:flex;flex-direction:column;gap:8px;margin:2px 0 6px 42px;box-shadow:0 3px 10px #e0892f22}
+#chatIn:empty{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 16px;border-radius:22px;border:2px solid var(--pri);background:#fff;color:var(--pri2);font:600 16px 'Mali'}
+.chip.sel{background:var(--pri);color:#fff}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+/* ---------- header ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
+.coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
+.coin i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe680,var(--gold) 60%,#b88600);display:inline-block}
+/* ---------- cards ---------- */
+.scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bar{height:12px;background:#f3e6d3;border-radius:6px;overflow:hidden;margin:8px 0}
+.bar b{display:block;height:100%;background:var(--ok);width:0}
+input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
+/* ---------- pets ---------- */
+.petgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.petc{background:#fff;border:3px solid var(--line);border-radius:16px;min-height:120px;font-size:44px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.petc span{font-size:14px;color:var(--ink)}
+.petc canvas{width:96px;height:84px}
+.petc.sel{border-color:var(--pri);background:#fff1df}
+/* ---------- farm / nav ---------- */
+#farmWrap{flex:1;position:relative;min-height:0}
+#farm{position:absolute;inset:0;width:100%;height:100%;touch-action:none;background:linear-gradient(#9fd8f7,#cfeefc 35%,#e6f6d6 75%)}
+#mats{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap}
+#mats div{background:#ffffffd9;border-radius:12px;padding:2px 10px;font-size:14px;font-weight:600}
+#zoneBar{position:absolute;left:8px;right:8px;bottom:30px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+#placeBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;flex-direction:column;gap:8px;background:#ffffffee;border-radius:16px;padding:10px;box-shadow:0 4px 16px #0002}
+#placeBar b{font-size:14px;text-align:center}
+#fishBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;flex-direction:column;gap:8px;background:#ffffffee;border-radius:16px;padding:10px;box-shadow:0 4px 16px #0002}
+#fishBar b{font-size:15px;text-align:center}
+#fBtn.bite{animation:pulse .35s infinite;background:#e63946}
+#zLabel{cursor:pointer}
+#zoneBar b{background:#ffffffd9;border-radius:14px;padding:6px 12px;font-size:15px}
+#zoneBar .btn{min-width:64px;background:#ffffffe6}
+#hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:13px;color:var(--sub)}
+nav{display:flex;background:#fff;border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;min-height:60px;border:0;background:none;font:600 13px 'Mali';color:var(--sub);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav button b{font-size:22px}
+nav button.on{color:var(--pri2)}
+#tut{position:absolute;left:8px;right:8px;top:44px;display:none;gap:8px;align-items:center;background:#fffdf7f0;border:2px solid var(--pri);border-radius:16px;padding:8px 10px;box-shadow:0 4px 14px #0002}
+#tut svg{width:44px;height:44px;flex:none}
+#tut{cursor:pointer} #tut.done{border-color:var(--ok);background:#f1fbf3f2;animation:glow 1.2s infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 #4caf6a66}50%{box-shadow:0 0 0 8px #4caf6a22}}
+#tut.mini #tutText{display:none} #tut.mini svg{width:30px;height:30px}
+#tutStep{font-size:13px;color:var(--pri2)} #tutText{font-size:15px;line-height:1.35}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri2)}
+.tutGlow{border-color:var(--pri)!important;box-shadow:0 0 0 4px #e0892f44}
+.tab{display:none;flex:1;flex-direction:column;min-height:0}
+.tab.on{display:flex}
+/* ---------- modal ---------- */
+#modal{position:fixed;inset:0;background:#0006;display:none;align-items:flex-end;justify-content:center;z-index:9}
+#modal.on{display:flex}
+#mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+#mbody{font-size:17px;line-height:1.5;white-space:pre-line}
+.mbtns{display:flex;flex-direction:column;gap:8px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== 1. LOGIN / REGISTER ===== -->
+<section class="screen on" id="sLogin">
+  <div class="center">
+    <div style="text-align:center"><svg class="ava" style="width:110px;height:110px" viewBox="0 0 64 64" id="bigBeagle"></svg></div>
+    <h1 style="text-align:center">เป็นสุข</h1>
+    <div class="muted" style="text-align:center">ดูแลสุขภาพไปพร้อมกับเพื่อนสี่ขา</div>
+    <input id="lUser" placeholder="ชื่อผู้ใช้" autocomplete="username">
+    <input id="lPass" type="password" placeholder="รหัสผ่าน (อย่างน้อย 4 ตัว)" autocomplete="current-password">
+    <div class="err" id="lErr"></div>
+    <button class="btn" id="bLogin">เข้าสู่เกม</button>
+    <button class="btn ghost" id="bReg">สมัครสมาชิกใหม่</button>
+    <div class="muted" style="text-align:center">เดโม: ข้อมูลบัญชีเก็บไว้ในเครื่องนี้เท่านั้น (ยังไม่มีเซิร์ฟเวอร์)</div>
+  </div>
+</section>
+
+<!-- ===== 2. CHAT WITH เป็นสุข ===== -->
+<section class="screen" id="sChat">
+  <div class="top"><b>💬 คุยกับเป็นสุข</b><span class="muted" id="chatStep"></span></div>
+  <div id="chatLog"></div>
+  <div id="chatIn"></div>
+</section>
+
+<!-- ===== 2-3. GOAL REVIEW (±20%) ===== -->
+<section class="screen" id="sGoal">
+  <div class="top"><b>🎯 เป้าหมายรายวันของคุณ</b></div>
+  <div class="scroll" id="goalList"></div>
+  <div class="pad"><button class="btn ok" style="width:100%" id="bGoalOk">ยืนยันเป้าหมาย</button></div>
+</section>
+
+<!-- ===== 5. PET SELECT ===== -->
+<section class="screen" id="sPet">
+  <div class="top"><b>🐾 เลือกน้องที่จะดูแล</b></div>
+  <div class="scroll">
+    <div class="petgrid" id="petGrid"></div>
+    <button class="btn ghost" id="bRand">🎲 สุ่มให้หน่อย</button>
+    <input id="petName" maxlength="12" placeholder="ตั้งชื่อน้อง (ไม่เกิน 12 ตัวอักษร)">
+    <div class="err" id="petErr"></div>
+  </div>
+  <div class="pad"><button class="btn ok" style="width:100%" id="bPetOk">รับน้องมาเลี้ยง</button></div>
+</section>
+
+<!-- ===== MAIN (farm / missions / shop / bag) ===== -->
+<section class="screen" id="sMain">
+  <div class="top">
+    <div><b id="hName"></b><div class="muted" id="hPet"></div></div>
+    <div class="coin"><i></i><span id="hCoin">0</span></div>
+  </div>
+
+  <div class="tab on" id="tFarm">
+    <div id="farmWrap">
+      <canvas id="farm"></canvas>
+      <div id="mats"></div>
+      <div id="tut"><svg viewBox="0 0 64 64" id="tutAva"></svg><div style="flex:1"><b id="tutStep"></b><div id="tutText"></div><div class="bar" style="height:6px;margin:5px 0 0"><b id="tutProg"></b></div></div></div>
+      <div id="zoneBar"><button class="btn ghost" id="zPrev" aria-label="ซูมออก">－</button><b id="zLabel"></b><button class="btn ghost" id="zNext" aria-label="ซูมเข้า">＋</button></div>
+      <div id="fishBar"><b id="fInfo"></b><div class="row"><button class="btn" id="fBtn" style="flex:2;min-height:56px;font-size:20px">🎣 เหวี่ยงเบ็ด</button><button class="btn ghost" id="fCancel">เลิกตก</button></div></div>
+      <div id="placeBar"><b id="pInfo"></b><div class="row"><button class="btn ghost" id="pRot">⟲ หมุน</button><button class="btn ok" id="pOk">✔ วาง</button><button class="btn ghost" id="pCancel">✕ ยกเลิก</button></div></div>
+      <div id="hint">แตะหญ้า/หิน/ต้นไม้เพื่อเก็บ (มีเวลารอ) • สร้างของที่ ร้านค้า › ฟาร์ม</div>
+    </div>
+  </div>
+  <div class="tab" id="tMission"><div class="scroll" id="missionList"></div></div>
+  <div class="tab" id="tShop"><div class="scroll" id="shopList"></div></div>
+  <div class="tab" id="tQuest"><div class="scroll" id="questList"></div></div>
+  <div class="tab" id="tBag"><div class="scroll" id="bagList"></div></div>
+
+  <nav id="nav">
+    <button data-t="tFarm" class="on"><b>🏡</b>ฟาร์ม</button>
+    <button data-t="tMission"><b>🎯</b>ภารกิจ</button>
+    <button data-t="tShop"><b>🛒</b>ร้านค้า</button>
+    <button data-t="tQuest"><b>📜</b>เควส</button>
+    <button data-t="tBag"><b>🎒</b>กระเป๋า</button>
+  </nav>
+</section>
+</div>
+
+<!-- shared confirm / reward sheet -->
+<div id="modal"><div id="mbox"><div id="mbody"></div><div class="mbtns" id="mbtns"></div></div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   เป็นสุข — Prototype v0.1
+   Flow: Login → Chat (onboarding) → Goal (±20%) → Pet → Farm/Missions/Shop
+   ===================================================================== */
+
+/* ---------------- Safe storage (sandbox may block localStorage) ---------------- */
+const mem = {};
+const store = {
+  get(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : (mem[k] ?? null); }catch(e){ return mem[k] ?? null; } },
+  set(k,v){ mem[k] = v; try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const $ = id => document.getElementById(id);
+const todayKey = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+
+/* Demo-only password hash (NOT secure; real build must use server auth) */
+function hash(s){ let h = 5381; for (let i=0;i<s.length;i++) h = ((h<<5)+h+s.charCodeAt(i))|0; return (h>>>0).toString(36); }
+
+/* ---------------- Global state ---------------- */
+let USER = null;   // logged-in username
+let S = null;      // per-user save
+function newSave(){
+  return { v:1, profile:null, missions:null, missionDate:null, coins:0, lv:1, exp:0,
+           pet:null, inv:{stone:0,grass:0,wood:0,seed:0,veg:0,food:0,fence:0,flower:0},
+           farm:null };
+}
+function save(){ if (USER) store.set('pensuk_save_'+USER, S); }
+
+/* =====================================================================
+   PLAYER LEVEL  — Exp from actions, Lv N needs N×50 Exp (bar resets), max Lv20
+   FARM ZONES    — each zone is a full 5×5 farm; Lv N unlocks zone N (max MAX_ZONES)
+   PET GROWTH    — pet Exp from feeding/missions, Lv N needs N×30, max Lv20
+                   stage changes every 5 Lv (size scales up)
+   ===================================================================== */
+const MAX_LV = 50, MAX_PET_LV = 20;
+const EXP = { build:10, harvest:5, mission:20, feed:3 };   // clearing Exp depends on size (SIZE_EXP)
+const MAX_ZONES = 50;                                        // Lv N → N zones, up to Lv.50
+const PET_STAGES = [ {lv:1, name:'ร่างที่ 1 · วัยเบบี๋',   scale:.78, form:0},     // 3 evolution forms
+                     {lv:8, name:'ร่างที่ 2 · วัยรุ่น',    scale:.98, form:1},
+                     {lv:15,name:'ร่างที่ 3 · โตเต็มวัย',  scale:1.15,form:2} ];
+const needExp = lv => lv*50, needPetExp = lv => lv*30;
+const zonesFor = lv => Math.min(MAX_ZONES, lv);
+const petStage = lv => PET_STAGES.reduce((s,u) => lv>=u.lv ? u : s, PET_STAGES[0]);
+
+function gainExp(n){
+  if (S.lv >= MAX_LV) return;
+  S.exp += n; const msgs = [];
+  while (S.lv < MAX_LV && S.exp >= needExp(S.lv)){
+    S.exp -= needExp(S.lv); const before = zonesFor(S.lv); S.lv++;
+    msgs.push(`⭐ เลื่อนเป็น Lv.${S.lv}`);
+    if (zonesFor(S.lv) > before){ msgs.push(`🔓 ปลดล็อกฟาร์มแปลงที่ ${zonesFor(S.lv)} (5×5) แล้ว!`); if (S.farm) ensureZones(); }
+  }
+  if (S.lv >= MAX_LV) S.exp = 0;
+  if (msgs.length) queueReward(msgs.join('\n'));
+}
+function gainPetExp(n){
+  const p = S.pet; if (p.lv >= MAX_PET_LV) return;
+  p.pexp += n; const msgs = [];
+  while (p.lv < MAX_PET_LV && p.pexp >= needPetExp(p.lv)){
+    p.pexp -= needPetExp(p.lv); const st = petStage(p.lv).name; p.lv++;
+    msgs.push(`${p.emoji} ${p.name} เลื่อนเป็น Lv.${p.lv}`);
+    if (petStage(p.lv).name !== st){ msgs.push(`✨ ${p.name} พัฒนาร่างเป็น "${petStage(p.lv).name}" แล้ว!`); pet.evolve = 2.5; }
+  }
+  if (p.lv >= MAX_PET_LV) p.pexp = 0;
+  if (msgs.length) queueReward(msgs.join('\n'));
+}
+/* Level-up popups wait until the current sheet closes */
+const rewardQ = [];
+function queueReward(t){ rewardQ.push(t); }
+function flushRewards(){ if (rewardQ.length && !$('modal').classList.contains('on')) reward(rewardQ.shift()); }
+
+/* ---------------- Modal (confirm before every action) ---------------- */
+function sheet(text, buttons){
+  $('mbody').textContent = text;
+  const box = $('mbtns'); box.innerHTML = '';
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'btn ' + (b.cls||''); el.textContent = b.label;
+    el.onclick = () => { $('modal').classList.remove('on'); b.fn && b.fn(); setTimeout(flushRewards, 150); };
+    box.appendChild(el);
+  });
+  $('modal').classList.add('on');
+}
+const confirmDo = (text, fn) => sheet(text, [{label:'ยืนยัน',cls:'ok',fn},{label:'ยกเลิก',cls:'ghost'}]);
+const reward = text => sheet('🎁 ได้รับรางวัล\n\n'+text, [{label:'ตกลง',cls:'ok'}]);
+
+/* ---------------- Screen router ---------------- */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }
+
+/* ---------------- Beagle avatar (original simple SVG) ---------------- */
+const BEAGLE = `<circle cx="32" cy="34" r="20" fill="#f6e3c4"/>
+<path d="M14 22c-6 4-6 20 0 24 4-2 6-14 6-20z" fill="#8a4b20"/>
+<path d="M50 22c6 4 6 20 0 24-4-2-6-14-6-20z" fill="#8a4b20"/>
+<path d="M20 20c4-8 20-8 24 0-2 6-6 8-12 8s-10-2-12-8z" fill="#b86a2c"/>
+<rect x="29" y="18" width="6" height="22" rx="3" fill="#fff"/>
+<circle cx="25" cy="32" r="2.6" fill="#2b1a0e"/><circle cx="39" cy="32" r="2.6" fill="#2b1a0e"/>
+<ellipse cx="32" cy="42" rx="4.5" ry="3.2" fill="#2b1a0e"/>
+<path d="M28 47q4 4 8 0" stroke="#2b1a0e" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+$('bigBeagle').innerHTML = BEAGLE;
+
+/* =====================================================================
+   1) LOGIN / REGISTER
+   ===================================================================== */
+function users(){ return store.get('pensuk_users') || {}; }
+$('bReg').onclick = () => {
+  const u = $('lUser').value.trim(), p = $('lPass').value;
+  if (u.length < 3) return $('lErr').textContent = 'ชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร';
+  if (p.length < 4) return $('lErr').textContent = 'รหัสผ่านอย่างน้อย 4 ตัว';
+  const all = users();
+  if (all[u]) return $('lErr').textContent = 'ชื่อนี้มีคนใช้แล้ว';
+  all[u] = { pw: hash(p) }; store.set('pensuk_users', all);
+  store.set('pensuk_save_'+u, newSave());
+  login(u);
+};
+$('bLogin').onclick = () => {
+  const u = $('lUser').value.trim(), p = $('lPass').value, all = users();
+  if (!all[u] || all[u].pw !== hash(p)) return $('lErr').textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+  login(u);
+};
+function login(u){
+  USER = u; S = store.get('pensuk_save_'+u) || newSave();
+  if (S.lv == null){ S.lv = 1; S.exp = 0; }                       // migrate older saves
+  if (S.pet && S.pet.lv == null){ S.pet.lv = 1; S.pet.pexp = 0; }
+  if (S.farm && !S.farm.zones){                                   // v0.1 single-grid save → zones
+    S.farm = { zones:[ S.farm.tiles && S.farm.tiles.length===GRID*GRID ? { tiles:S.farm.tiles } : genZone(0) ], cur:0 };
+  }
+  if (S.farm){ migrateFarm(); ensureZones(); }
+  if (S.lv > MAX_LV) S.lv = MAX_LV;
+  if (S.q == null) S.q = 0;                                  // existing saves join the quest chain
+  questMigrate();
+  S.stats = S.stats || {};
+  route();
+}
+/* Resume player at the first unfinished onboarding step */
+function route(){
+  if (!S.profile) return startChat();
+  if (!S.missions) return openGoal();
+  if (!S.pet) return openPet();
+  openMain();
+}
+
+/* =====================================================================
+   PET MODEL — procedural pseudo-3D chibi pets (no image assets)
+   • Volume: every body part is a radial-gradient sphere (key light top-left,
+     rim-dark bottom-right) + soft contact shadow → reads as 3D on a flat canvas
+   • Rig (local units, s = pet size, origin = feet, +x = facing direction):
+       far legs → tail → body → near legs → far ear → head → near ear → face
+   • Motion: trot gait (diagonal leg pairs), phase advanced by distance walked
+     (no foot sliding), body bob ×2 step freq, squash & stretch on landing,
+     ease-in/ease-out speed, breathing, blink, tail wag, head look, sniff, sit,
+     sleep at night, happy hop with heart particles
+   ===================================================================== */
+const SPECIES = {
+  dog:     { body:'#f4e6cf', head:'#c98a45', patch:'#7a4a24', ear:'floppy', earCol:'#7a4320', muzzle:'#fffaf2', nose:'#2b1a0e',
+             tail:'wag', tailCol:'#c98a45', legLen:.30, bodyR:[.42,.27], headR:.31, legs:4, legCol:'#f4e6cf' },
+  cat:     { body:'#f3a85c', head:'#f3a85c', patch:'#d9772e', ear:'tri', earCol:'#f3a85c', earIn:'#ffc2c8', muzzle:'#fff3e3', nose:'#f07d8a',
+             tail:'long', tailCol:'#f3a85c', legLen:.29, bodyR:[.40,.25], headR:.31, legs:4, legCol:'#f3a85c', stripes:true },
+  rabbit:  { body:'#f6f2ee', head:'#f6f2ee', patch:null, ear:'long', earCol:'#f6f2ee', earIn:'#ffc6d0', muzzle:'#ffffff', nose:'#f39aa8',
+             tail:'puff', tailCol:'#ffffff', legLen:.20, bodyR:[.38,.30], headR:.32, legs:4, legCol:'#f6f2ee', hopper:true },
+  hamster: { body:'#eab06b', head:'#eab06b', patch:null, ear:'round', earCol:'#d9934c', earIn:'#ffc6c0', muzzle:'#fff6e8', nose:'#f39aa8',
+             tail:'none', tailCol:'#eab06b', legLen:.11, bodyR:[.40,.34], headR:.30, legs:4, legCol:'#f2c590', belly:'#fff6e8' },
+  chick:   { body:'#ffd84d', head:'#ffd84d', patch:null, ear:'tuft', earCol:'#ffcc1f', muzzle:null, nose:null,
+             tail:'feather', tailCol:'#ffcc1f', legLen:.20, bodyR:[.32,.30], headR:.27, legs:2, legCol:'#f28c1b', beak:'#f28c1b' },
+  pig:     { body:'#f8b8c4', head:'#f8b8c4', patch:null, ear:'tri', earCol:'#f4a2b2', earIn:'#e9879b', muzzle:null, nose:null,
+             tail:'curl', tailCol:'#f4a2b2', legLen:.20, bodyR:[.44,.30], headR:.31, legs:4, legCol:'#f4a2b2', snout:'#f39aae' }
+};
+
+/* hex colour shade: amt −1..1 (pre-computed once per species → no per-frame string work) */
+function shadeHex(hex, amt){
+  const n = parseInt(hex.slice(1),16); let r=n>>16, g=(n>>8)&255, b=n&255;
+  const t = amt<0 ? 0 : 255, p = Math.abs(amt);
+  r = Math.round((t-r)*p+r); g = Math.round((t-g)*p+g); b = Math.round((t-b)*p+b);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+for (const k in SPECIES){ const sp = SPECIES[k];
+  sp.bodyHi = shadeHex(sp.body,.45); sp.bodyLo = shadeHex(sp.body,-.28);
+  sp.headHi = shadeHex(sp.head,.45); sp.headLo = shadeHex(sp.head,-.25);
+  sp.legFar = shadeHex(sp.legCol,-.22); sp.earLo = shadeHex(sp.earCol,-.25);
+}
+
+/* Sphere with volumetric shading (cx,cy centre; rx,ry radii) */
+function ball(g, cx, cy, rx, ry, hi, base, lo){
+  const r = Math.max(rx,ry);
+  const gr = g.createRadialGradient(cx-rx*.35, cy-ry*.45, r*.08, cx, cy, r*1.05);
+  gr.addColorStop(0, hi); gr.addColorStop(.55, base); gr.addColorStop(1, lo);
+  g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2); g.fill();
+}
+/* Leg as a rounded capsule rotated from the hip, with a paw */
+function leg(g, hx, hy, len, ang, w, col){
+  g.save(); g.translate(hx,hy); g.rotate(ang);
+  g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(0,0); g.lineTo(0,len); g.stroke();
+  g.fillStyle = col; g.beginPath(); g.ellipse(w*.18, len, w*.62, w*.45, 0, 0, Math.PI*2); g.fill();
+  g.restore();
+}
+
+/* Creates an independent animation state (farm pet & each selection card own one) */
+function makePetAnim(){
+  return { x:0.5, y:0.5, tx:0.5, ty:0.5, speed:0, face:1, phase:0, walk:0,
+           state:'idle', timer:1.5, blinkT:2, blink:0, wag:0, look:0, lookT:0,
+           hopH:0, hopV:0, lookTo:0, night:false, nightT:0, evolve:0, drinkNext:false, faceTo:0, squash:0, breathe:0, sitK:0, sniffK:0, sleepK:0, hearts:[
+             {a:0,x:0,y:0},{a:0,x:0,y:0},{a:0,x:0,y:0},{a:0,x:0,y:0},{a:0,x:0,y:0}] };   // pooled particles
+}
+
+/* Behaviour + physics step. dt in seconds. pickTarget(a) sets a.tx/a.ty. */
+function updatePetAnim(a, dt, canWalk, pickTarget){
+  if ((a.nightT = (a.nightT||0) - dt) <= 0){ const h = new Date().getHours(); a.night = h>=22 || h<6; a.nightT = 5; }  // check clock every 5 s
+  const night = a.night;
+  a.breathe += dt * (a.state==='sleep' ? 1.6 : 3.2);
+  a.wag += dt * (a.state==='walk' ? 10 : a.state==='sleep' ? 0 : 14);
+
+  // blink every 2–5 s (double-blink sometimes)
+  if ((a.blinkT -= dt) <= 0){ a.blink = 0.16; a.blinkT = Math.random()<.2 ? .25 : 2+Math.random()*3; }
+  a.blink = Math.max(0, a.blink - dt);
+
+  // head look-around while idle
+  if ((a.lookT -= dt) <= 0){ a.lookT = 1+Math.random()*2.5; a.lookTo = (Math.random()-.5)*0.5; }
+  a.look += ((a.lookTo||0) - a.look) * Math.min(1, dt*4);
+
+  // vertical hop physics (gravity in s-units/s²)
+  if (a.hopH > 0 || a.hopV > 0){ a.hopV -= 9*dt; a.hopH += a.hopV*dt; if (a.hopH <= 0){ a.hopH = 0; a.hopV = 0; a.squash = .25; } }
+  a.squash = Math.max(0, a.squash - dt*1.8);
+
+  // state machine
+  // naps: rare & short by day, frequent & long at night (22:00–06:00); a tap wakes the pet
+
+  if (a.state==='walk'){
+    const dx = a.tx-a.x, dy = a.ty-a.y, d = Math.hypot(dx,dy);
+    const want = Math.min(SPEED_MAX, d*2.2);                      // arrive: slow down near target
+    a.speed += (want - a.speed) * Math.min(1, dt*5);              // accelerate / decelerate smoothly
+    if (d > 0.01){
+      const step = Math.min(d, a.speed*dt);
+      a.x += dx/d*step; a.y += dy/d*step;
+      a.phase += step * 26;                                       // gait locked to distance → no foot sliding
+      const screenDx = dx - dy;                                   // iso screen-x direction = c − r
+      if (Math.abs(screenDx) > 0.05) a.face = screenDx > 0 ? 1 : -1;
+    }
+    a.walk = Math.min(1, a.speed/SPEED_MAX*1.6);
+    if (d < 0.03 && a.speed < 0.15){
+      const r = Math.random(), napP = night ? .45 : .08;
+      if (a.drinkNext){ a.drinkNext = false; a.state = 'sniff'; a.timer = 3+Math.random()*2; if (a.faceTo) a.face = a.faceTo; }   // drinking at the pond
+      else if (r < napP){ a.state = 'sleep'; a.timer = night ? 20+Math.random()*25 : 8+Math.random()*7; }
+      else { const q = Math.random(); a.state = q<.5 ? 'idle' : q<.8 ? 'sit' : 'sniff';
+             a.timer = a.state==='sit' ? 3+Math.random()*4 : 1.5+Math.random()*2.5; }
+    }
+  } else {
+    a.speed = 0; a.walk += (0 - a.walk)*Math.min(1, dt*6);
+    if (!a.holdSit && (a.timer -= dt) <= 0){
+      if (canWalk){ pickTarget(a); a.state='walk'; } else { a.timer = 2; }
+    }
+  }
+  // blend weights for poses (smooth transitions, no snapping)
+  const k = Math.min(1, dt*5);
+  a.sitK   += ((a.state==='sit')  -a.sitK)*k;
+  a.sniffK += ((a.state==='sniff')-a.sniffK)*k;
+  a.sleepK += ((a.state==='sleep')-a.sleepK)*k;
+
+  if (a.evolve > 0) a.evolve -= dt;
+  // hearts float up and fade
+  for (const h of a.hearts){ if (h.a>0){ h.a -= dt*.7; h.y -= dt*.9; h.x += Math.sin(h.a*9)*dt*.2; } }
+}
+const SPEED_MAX = 0.9;   // tiles per second
+/* 3 evolution forms: proportions change (big-head baby → longer-legged adult) + accessory */
+const FORMS = [ {head:1.18, leg:.72, bx:.9,  by:.95},     // ร่าง 1: chibi
+                {head:1.0,  leg:1.0, bx:1.0, by:1.0 },    // ร่าง 2: + collar & bell
+                {head:.92,  leg:1.15,bx:1.1, by:1.03} ];  // ร่าง 3: + scarf, crown, sparkles
+
+function petHappy(a){
+  if (a.hopH===0) a.hopV = 2.6;
+  if (a.holdSit) return;
+  a.state = 'idle'; a.timer = 1.5;                           // also wakes a napping pet
+  let n = 0; for (const h of a.hearts){ if (h.a<=0 && n<3){ h.a = 1+n*.15; h.x = (n-1)*.25; h.y = -1.1; n++; } }
+}
+
+/* Draw the pet with feet at (sx,sy). s = size in px. */
+function drawPetModel(g, type, a, sx, sy, s, form){
+  const sp = SPECIES[type] || SPECIES.dog, F = FORMS[form||0];
+  // evolution glow (expanding light burst behind the pet)
+  if (a.evolve > 0){
+    const k = a.evolve/2.5, rr = s*(1.6-k*.8), gg = g.createRadialGradient(sx, sy-s*.5, 1, sx, sy-s*.5, rr);
+    gg.addColorStop(0, `rgba(255,250,210,${.9*k})`); gg.addColorStop(1,'rgba(255,230,140,0)');
+    g.fillStyle = gg; g.beginPath(); g.arc(sx, sy-s*.5, rr, 0, Math.PI*2); g.fill();
+  }
+  const sit = a.sitK, sniff = a.sniffK, sleep = a.sleepK, walk = a.walk;
+  const step = Math.sin(a.phase), bob = Math.abs(Math.cos(a.phase))*walk*.05;
+  const breath = Math.sin(a.breathe)*.012;
+  const hopUp = a.hopH;                                  // s-units
+
+  // ---- contact shadow (stays on ground, shrinks while airborne) ----
+  const sh = 1/(1+hopUp*1.5);
+  g.fillStyle = 'rgba(40,30,20,'+(.28*sh)+')';
+  g.beginPath(); g.ellipse(sx, sy, s*.5*sh, s*.16*sh, 0, 0, Math.PI*2); g.fill();
+
+  g.save();
+  g.translate(sx, sy - hopUp*s);
+  g.scale(a.face, 1);
+  // squash & stretch (landing / breathing)
+  const sq = a.squash*Math.sin(a.squash*12);
+  g.scale(1+sq*.25, 1-sq*.25+breath);
+
+  const brx = sp.bodyR[0]*F.bx, bry = sp.bodyR[1]*F.by;
+  const legLen = sp.legLen*F.leg*s, legW = s*(sp.legs===2 ? .055 : .11);
+  const lower = (sit*.12 + sleep*.22)*s + bob*s*-1;        // body drops when sitting/sleeping
+  const bodyY = -(legLen + bry*s*.7) + lower + (sp.hopper ? -Math.abs(step)*walk*.12*s : 0);
+  const tilt = -sit*.32 + sniff*.12;                        // sit leans back, sniff leans forward
+
+  // ---------- far legs (darker, slightly up = behind) ----------
+  const hipY = bodyY + bry*s*.45;
+  const swing = .55*walk;
+  if (sp.legs===4){
+    if (sleep < .5){
+      leg(g, -brx*s*.55, hipY-1, legLen*(1-sit*.6), sit>.05 ? .9*sit : step*swing, legW, sp.legFar);       // back far
+      leg(g,  brx*s*.5,  hipY-1, legLen, -step*swing*(sp.hopper?-1:1), legW, sp.legFar);                // front far
+    }
+  } else {
+    leg(g, -brx*s*.1, hipY, legLen*(1-sleep), -step*swing, legW, shadeHex(sp.legCol,-.15));
+  }
+
+  // ---------- tail (behind body) ----------
+  g.save(); g.translate(-brx*s*.92, bodyY - bry*s*.2); g.rotate(tilt);
+  const wag = Math.sin(a.wag)*(.45 - sleep*.4);
+  g.lineCap = 'round';
+  switch (sp.tail){
+    case 'wag':     g.rotate(-.9 + wag); g.strokeStyle = sp.tailCol; g.lineWidth = s*.09;
+                    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-s*.12,-s*.15,-s*.06,-s*.32); g.stroke();
+                    g.fillStyle = '#fff'; g.beginPath(); g.arc(-s*.06,-s*.32,s*.055,0,Math.PI*2); g.fill(); break;   // beagle white tip
+    case 'long':    g.rotate(-.5 + wag*.5); g.strokeStyle = sp.tailCol; g.lineWidth = s*.08;
+                    g.beginPath(); g.moveTo(0,0); g.bezierCurveTo(-s*.3,-s*.05,-s*.15,-s*.45,-s*.32,-s*.5); g.stroke(); break;
+    case 'puff':    ball(g, -s*.02, 0, s*.12, s*.12, '#ffffff', '#f6f2ee', '#d9d2cb'); break;
+    case 'curl':    g.rotate(wag*.4); g.strokeStyle = sp.tailCol; g.lineWidth = s*.045;
+                    g.beginPath(); g.arc(-s*.06, -s*.02, s*.06, 0, Math.PI*1.7); g.stroke(); break;
+    case 'feather': g.rotate(-.6 + wag*.3); g.fillStyle = sp.tailCol;
+                    for (let i=0;i<3;i++){ g.beginPath(); g.ellipse(-s*.06, -s*.04*i, s*.1, s*.04, -.3*i, 0, Math.PI*2); g.fill(); } break;
+  }
+  g.restore();
+
+  // ---------- body ----------
+  g.save(); g.translate(0, bodyY); g.rotate(tilt);
+  ball(g, 0, 0, brx*s, bry*s, sp.bodyHi, sp.body, sp.bodyLo);
+  g.save(); g.beginPath(); g.ellipse(0, 0, brx*s, bry*s, 0, 0, Math.PI*2); g.clip();
+  if (sp.patch && !sp.stripes){                              // beagle saddle
+    g.fillStyle = sp.patch; g.beginPath(); g.ellipse(-brx*s*.15, -bry*s*.55, brx*s*.7, bry*s*.6, 0, 0, Math.PI*2); g.fill(); }
+  if (sp.stripes){ g.strokeStyle = sp.patch; g.lineWidth = s*.05;
+    for (let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(i*s*.15, -bry*s); g.quadraticCurveTo(i*s*.15+s*.04, -bry*s*.4, i*s*.15, -bry*s*.1); g.stroke(); } }
+  if (sp.belly){ g.fillStyle = sp.belly; g.beginPath(); g.ellipse(brx*s*.15, bry*s*.55, brx*s*.6, bry*s*.5, 0, 0, Math.PI*2); g.fill(); }
+  // soft top highlight sits over patterns to keep the volume read
+  const hl = g.createLinearGradient(0,-bry*s,0,bry*s); hl.addColorStop(0,'rgba(255,255,255,.25)'); hl.addColorStop(.5,'rgba(255,255,255,0)'); hl.addColorStop(1,'rgba(0,0,0,.12)');
+  g.fillStyle = hl; g.fillRect(-brx*s, -bry*s, brx*s*2, bry*s*2);
+  g.restore();
+  if (sp.legs===2){                                          // chick wing
+    g.fillStyle = shadeHex(sp.body,-.08); g.beginPath();
+    g.ellipse(-s*.02, -s*.02, s*.17, s*.11, -.4 + Math.sin(a.wag*.8)*.15*walk, 0, Math.PI*2); g.fill(); }
+  g.restore();
+
+  // ---------- near legs ----------
+  if (sp.legs===4){
+    if (sleep < .5){
+      if (sit > .3){ ball(g, -brx*s*.45, hipY + legLen*.35, s*.17, s*.13, sp.bodyHi, sp.body, sp.bodyLo); }   // folded haunch
+      else leg(g, -brx*s*.4, hipY, legLen, -step*swing, legW, sp.legCol);                                        // back near
+      leg(g, brx*s*.62, hipY, legLen, (sp.hopper ? -step : step)*swing + sit*.15, legW, sp.legCol);               // front near
+    }
+  } else {
+    leg(g, s*.08, hipY, legLen*(1-sleep), step*swing, legW, sp.legCol);
+  }
+
+  // ---------- head ----------
+  const hr = sp.headR*F.head*s;
+  const hx = brx*s*.78 + sniff*s*.08 - sleep*s*.05;
+  const hy = bodyY - bry*s*.55 - hr*.55 - sit*s*.1 + sniff*s*.32 + sleep*s*.28 + Math.sin(a.phase*2)*walk*s*.02
+             + (sniff ? Math.sin(a.breathe*4)*sniff*s*.03 : 0);
+  g.save(); g.translate(hx, hy); g.rotate(a.look*.4*(1-sleep) + sleep*.25);
+
+  // scarf tail (form 3) flutters behind the neck
+  if (form===2){ const fl = Math.sin(a.wag*.7)*hr*.15 + walk*hr*.2;
+    g.fillStyle = '#3d7fd9'; g.beginPath(); g.moveTo(-hr*.3, hr*.75); g.quadraticCurveTo(-hr*.9, hr*.7+fl, -hr*1.25, hr*.95+fl);
+    g.lineTo(-hr*1.1, hr*1.15+fl); g.quadraticCurveTo(-hr*.7, hr*1.0, -hr*.2, hr*1.0); g.closePath(); g.fill(); }
+  // far ear (behind head)
+  drawEar(g, sp, hr, -1, a, sleep);
+  ball(g, 0, 0, hr, hr*.93, sp.headHi, sp.head, sp.headLo);
+  // collar (form 2: red + bell) / scarf band (form 3: blue)
+  if (form>=1){ g.strokeStyle = form===1 ? '#d93a3a' : '#3d7fd9'; g.lineWidth = hr*(form===1 ? .14 : .22); g.lineCap = 'round';
+    g.beginPath(); g.ellipse(-hr*.05, hr*.72, hr*.55, hr*.2, 0, .1, Math.PI-.1); g.stroke();
+    if (form===1) ball(g, hr*.25, hr*.98, hr*.12, hr*.12, '#fff6b0', '#f2c230', '#a87d0b');
+    else { g.fillStyle = '#2f68b8'; g.beginPath(); g.arc(hr*.28, hr*.92, hr*.12, 0, Math.PI*2); g.fill(); } }
+  if (sp.patch && type==='dog'){                             // white blaze
+    g.fillStyle = sp.muzzle; g.beginPath(); g.ellipse(hr*.25, -hr*.15, hr*.13, hr*.6, .2, 0, Math.PI*2); g.fill(); }
+  if (sp.stripes){ g.strokeStyle = sp.patch; g.lineWidth = s*.035;
+    for (let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(i*hr*.25, -hr*.95); g.lineTo(i*hr*.22, -hr*.6); g.stroke(); } }
+
+  // muzzle / snout / beak (3/4 view: shifted toward facing side)
+  if (sp.muzzle){ ball(g, hr*.48, hr*.32, hr*.42, hr*.3, '#ffffff', sp.muzzle, shadeHex(sp.muzzle,-.12)); }
+  if (sp.snout){ ball(g, hr*.62, hr*.25, hr*.32, hr*.24, shadeHex(sp.snout,.3), sp.snout, shadeHex(sp.snout,-.2));
+    g.fillStyle = '#b8586c'; g.beginPath(); g.ellipse(hr*.52, hr*.25, hr*.05, hr*.08, 0, 0, Math.PI*2); g.ellipse(hr*.74, hr*.25, hr*.05, hr*.08, 0, 0, Math.PI*2); g.fill(); }
+  if (sp.beak){ g.fillStyle = sp.beak; g.beginPath(); g.moveTo(hr*.7, hr*.02); g.lineTo(hr*1.12, hr*.18); g.lineTo(hr*.7, hr*.34); g.closePath(); g.fill(); }
+  if (sp.nose){ g.fillStyle = sp.nose; g.beginPath(); g.ellipse(hr*.82, hr*.18, hr*.1, hr*.075, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(hr*.79, hr*.15, hr*.03, 0, Math.PI*2); g.fill(); }
+
+  // eyes: big glossy, near eye larger (3/4 perspective)
+  const closed = a.blink > 0 || sleep > .5;
+  drawEye(g, hr*.05, -hr*.08, hr*.14, closed);
+  drawEye(g, hr*.5,  -hr*.06, hr*.17, closed);
+  // blush
+  g.fillStyle = 'rgba(255,120,140,.35)';
+  g.beginPath(); g.ellipse(hr*.42, hr*.35, hr*.13, hr*.08, 0, 0, Math.PI*2); g.fill();
+  // mouth (small "w" smile), opens a bit when happy/hopping
+  if (!sp.beak && !sp.snout){
+    g.strokeStyle = '#4a2b18'; g.lineWidth = Math.max(1, s*.018); g.lineCap='round';
+    g.beginPath(); g.moveTo(hr*.62, hr*.42); g.quadraticCurveTo(hr*.7, hr*.52, hr*.78, hr*.42); g.stroke();
+    if (a.hopH > 0.05){ g.fillStyle = '#ff7a8a'; g.beginPath(); g.ellipse(hr*.7, hr*.52, hr*.06, hr*.07, 0, 0, Math.PI*2); g.fill(); }
+  }
+  // near ear (in front)
+  drawEar(g, sp, hr, 1, a, sleep);
+  if (form===2){ g.font = Math.round(hr*.9)+'px serif'; g.textAlign='center'; g.textBaseline='bottom'; g.fillText('👑', 0, -hr*.75); }
+  g.restore();
+  g.restore();
+
+  // ---------- form-3 sparkles ----------
+  if (form===2 && sleep < .5){ g.fillStyle = '#ffd84d';
+    for (let k=0;k<3;k++){ const t = (a.breathe*.18 + k/3) % 1, ang = k*2.1 + a.breathe*.2;
+      g.globalAlpha = Math.sin(t*Math.PI); g.font = Math.round(s*.16)+'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('✦', sx + Math.cos(ang)*s*.6, sy - s*(.3 + t*.9) - hopUp*s); }
+    g.globalAlpha = 1; }
+  // ---------- Zzz & hearts (not mirrored) ----------
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (sleep > .5){
+    const t = (a.breathe*.25)%1;
+    g.globalAlpha = 1-t; g.fillStyle = '#5b6b8a'; g.font = '600 '+Math.round(s*.25)+'px Mali, sans-serif';
+    g.fillText('z', sx + a.face*s*(.5+t*.2), sy - s*(1+t*.5)); g.globalAlpha = 1;
+  }
+  for (const h of a.hearts){ if (h.a > 0){
+    g.globalAlpha = Math.min(1, h.a); g.font = Math.round(s*.28)+'px serif';
+    g.fillText('❤️', sx + h.x*s, sy + h.y*s - hopUp*s); g.globalAlpha = 1; } }
+}
+function drawEye(g, x, y, r, closed){
+  if (closed){ g.strokeStyle = '#2b1a0e'; g.lineWidth = r*.35; g.lineCap='round';
+    g.beginPath(); g.arc(x, y, r*.8, .15*Math.PI, .85*Math.PI); g.stroke(); return; }
+  g.fillStyle = '#20140c'; g.beginPath(); g.ellipse(x, y, r*.85, r, 0, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x+r*.25, y-r*.35, r*.32, 0, Math.PI*2); g.fill();     // key glint
+  g.beginPath(); g.arc(x-r*.25, y+r*.35, r*.13, 0, Math.PI*2); g.fill();                              // fill glint
+}
+function drawEar(g, sp, hr, side, a, sleep){
+  // side −1 = far ear (back, darker), +1 = near ear
+  const far = side < 0, col = far ? sp.earLo : sp.earCol, ox = far ? -hr*.45 : hr*.05;
+  const flop = Math.sin(a.wag*.5)*.12 + a.hopV*.06;
+  g.save();
+  switch (sp.ear){
+    case 'floppy':
+      if (far) break;   // beagle: both drop ears visible at sides
+      for (const ex of [-hr*.72, hr*.32]){
+        g.save(); g.translate(ex, -hr*.35); g.rotate(.15 + flop - sleep*.1);
+        ball(g, 0, hr*.42, hr*.27, hr*.52, shadeHex(sp.earCol,.2), sp.earCol, shadeHex(sp.earCol,-.3)); g.restore(); }
+      break;
+    case 'tri':
+      g.translate(ox, -hr*.7); g.rotate(far ? -.3 : .15 + flop*.3);
+      g.fillStyle = col; g.beginPath(); g.moveTo(-hr*.28, hr*.15); g.lineTo(0, -hr*.42); g.lineTo(hr*.28, hr*.15); g.closePath(); g.fill();
+      if (!far && sp.earIn){ g.fillStyle = sp.earIn; g.beginPath(); g.moveTo(-hr*.15, hr*.1); g.lineTo(0, -hr*.25); g.lineTo(hr*.15, hr*.1); g.closePath(); g.fill(); }
+      break;
+    case 'long':
+      g.translate(ox+hr*.1, -hr*.75); g.rotate((far ? -.35 : .1) + flop - sleep*.9*(far?-1:1));
+      ball(g, 0, -hr*.55, hr*.2, hr*.62, shadeHex(col,.3), col, shadeHex(col,-.2));
+      if (!far){ g.fillStyle = sp.earIn; g.beginPath(); g.ellipse(0, -hr*.5, hr*.09, hr*.45, 0, 0, Math.PI*2); g.fill(); }
+      break;
+    case 'round':
+      g.translate(ox, -hr*.78);
+      ball(g, 0, 0, hr*.22, hr*.2, shadeHex(col,.3), col, shadeHex(col,-.2));
+      if (!far){ g.fillStyle = sp.earIn; g.beginPath(); g.arc(0, 0, hr*.11, 0, Math.PI*2); g.fill(); }
+      break;
+    case 'tuft':
+      if (far) break;
+      g.translate(-hr*.05, -hr*.88); g.strokeStyle = col; g.lineWidth = hr*.1; g.lineCap = 'round';
+      for (let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(i*hr*.15, -hr*.2, i*hr*.2 + flop*hr*.3, -hr*.28); g.stroke(); }
+      break;
+  }
+  g.restore();
+}
+
+/* =====================================================================
+   2) CHAT ONBOARDING — เป็นสุข asks 7 questions
+   ===================================================================== */
+const ACT = { 'เบา':1.375, 'ปานกลาง':1.55, 'หนัก':1.725 };       // TDEE multipliers
+const INTERESTS = ['เดิน','วิ่ง','ออกกำลังกาย'];
+let draft = {}, qIdx = 0;
+
+const QUESTIONS = [
+  { key:'name', ask:'สวัสดีครับ! ผมชื่อ "เป็นสุข" เป็นน้องบีเกิ้ล 🐶\nอยากให้ผมเรียกคุณว่าอะไรดีครับ?', type:'text',
+    check:v => v.length>=1 && v.length<=16 ? null : 'ชื่อยาว 1–16 ตัวอักษรนะครับ' },
+  { key:'sex', ask:'ยินดีที่ได้รู้จักครับ คุณ{name}!\nขอทราบเพศหน่อยครับ (ใช้คำนวณพลังงานพื้นฐาน)', type:'chips', opts:['ชาย','หญิง'] },
+  { key:'dob', ask:'วัน เดือน ปีเกิดของคุณคือวันไหนครับ?', type:'date',
+    check:v => { const a = ageOf(v); return a>=7 && a<=100 ? null : 'อายุควรอยู่ระหว่าง 7–100 ปีครับ'; } },
+  { key:'h', ask:'ส่วนสูงเท่าไหร่ครับ? (ซม.)', type:'num', min:100, max:230, unit:'ซม.' },
+  { key:'w', ask:'น้ำหนักเท่าไหร่ครับ? (กก.)', type:'num', min:20, max:250, unit:'กก.' },
+  { key:'act', ask:'ปกติในแต่ละวันคุณมีกิจกรรมแบบไหนครับ?\n• เบา — นั่งทำงานเป็นส่วนใหญ่\n• ปานกลาง — เดินบ่อย ออกกำลัง 3–5 วัน/สัปดาห์\n• หนัก — ใช้แรงมาก/ออกกำลังเกือบทุกวัน', type:'chips', opts:['เบา','ปานกลาง','หนัก'] },
+  { key:'interests', ask:'สุดท้ายครับ! สนใจกิจกรรมแบบไหนบ้าง? (เลือกได้มากกว่า 1 ข้อ)', type:'multi', opts:INTERESTS }
+];
+
+function ageOf(dob){
+  const d = new Date(dob), n = new Date();
+  if (isNaN(d)) return -1;
+  let a = n.getFullYear() - d.getFullYear();
+  if (n.getMonth() < d.getMonth() || (n.getMonth()===d.getMonth() && n.getDate() < d.getDate())) a--;
+  return a;
+}
+function bubble(text, who){
+  const log = $('chatLog');
+  if (who === 'bot'){
+    const r = document.createElement('div'); r.className = 'botrow';
+    r.innerHTML = `<svg class="ava" viewBox="0 0 64 64">${BEAGLE}</svg>`;
+    const m = document.createElement('div'); m.className = 'msg bot'; m.textContent = text; r.appendChild(m);
+    log.insertBefore(r, $('chatIn').parentNode===log ? $('chatIn') : null);
+  } else {
+    const m = document.createElement('div'); m.className = 'msg me'; m.textContent = text; log.insertBefore(m, $('chatIn').parentNode===log ? $('chatIn') : null);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+function startChat(){
+  show('sChat'); const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box); draft = {}; qIdx = 0; askNext();
+}
+/* Answer box lives INSIDE the chat log, directly under the latest question (eye line), not docked at the bottom */
+function dockInput(){ const log = $('chatLog'), box = $('chatIn'); log.appendChild(box);
+  requestAnimationFrame(() => box.scrollIntoView({ block:'nearest', behavior:'smooth' })); }
+function askNext(){
+  const q = QUESTIONS[qIdx];
+  $('chatStep').textContent = (qIdx+1)+'/'+QUESTIONS.length;
+  setTimeout(() => { bubble(q.ask.replace('{name}', draft.name||''), 'bot'); renderInput(q); dockInput(); }, 250);
+}
+function renderInput(q){
+  const box = $('chatIn'); box.innerHTML = '';
+  const err = document.createElement('div'); err.className = 'err';
+  if (q.type==='chips'){
+    const c = document.createElement('div'); c.className = 'chips';
+    q.opts.forEach(o => { const b = document.createElement('button'); b.className='chip'; b.textContent=o; b.onclick=()=>answer(q,o,o); c.appendChild(b); });
+    box.appendChild(c);
+  } else if (q.type==='multi'){
+    const sel = new Set(), c = document.createElement('div'); c.className = 'chips';
+    q.opts.forEach(o => { const b = document.createElement('button'); b.className='chip'; b.textContent=o;
+      b.onclick=()=>{ sel.has(o)?sel.delete(o):sel.add(o); b.classList.toggle('sel'); }; c.appendChild(b); });
+    const ok = document.createElement('button'); ok.className='btn'; ok.textContent='ส่ง';
+    ok.onclick=()=>{ if(!sel.size) return err.textContent='เลือกอย่างน้อย 1 ข้อครับ'; const v=[...sel]; answer(q,v,v.join(', ')); };
+    box.append(c, err, ok);
+  } else {
+    const row = document.createElement('div'); row.className='row';
+    const inp = document.createElement('input');
+    inp.type = q.type==='num' ? 'number' : q.type==='date' ? 'date' : 'text';
+    if (q.type==='num'){ inp.inputMode='decimal'; inp.placeholder=q.unit; }
+    const ok = document.createElement('button'); ok.className='btn'; ok.textContent='ส่ง'; ok.style.flex='0 0 80px';
+    const go = () => {
+      let v = inp.value.trim(), shown = v;
+      if (q.type==='num'){ v = parseFloat(v);
+        if (isNaN(v) || v<q.min || v>q.max) return err.textContent = `กรอก ${q.min}–${q.max} ${q.unit} นะครับ`;
+        shown = v+' '+q.unit; }
+      if (q.type==='date' && v){ const d=new Date(v); shown = d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}); }
+      if (!v && v!==0) return err.textContent = 'ยังไม่ได้กรอกเลยครับ';
+      const e = q.check && q.check(v); if (e) return err.textContent = e;
+      answer(q, v, shown);
+    };
+    ok.onclick = go; inp.onkeydown = e => { if (e.key==='Enter') go(); };
+    row.append(inp, ok); box.append(row, err); setTimeout(()=>inp.focus(), 300);
+  }
+}
+function answer(q, v, shown){
+  draft[q.key] = v; bubble(shown, 'me'); $('chatIn').innerHTML = '';
+  qIdx++;
+  if (qIdx < QUESTIONS.length) return askNext();
+  // All 7 answers collected → summary + confirm
+  setTimeout(() => {
+    bubble(`ขอบคุณครับ! สรุปข้อมูลของคุณ{name}:\nเพศ ${draft.sex} • อายุ ${ageOf(draft.dob)} ปี\nสูง ${draft.h} ซม. • หนัก ${draft.w} กก.\nกิจกรรม: ${draft.act}\nสนใจ: ${draft.interests.join(', ')}`.replace('{name}',draft.name), 'bot');
+    const box = $('chatIn');
+    const ok = document.createElement('button'); ok.className='btn ok'; ok.textContent='ถูกต้อง ให้เป็นสุขวิเคราะห์เลย';
+    const re = document.createElement('button'); re.className='btn ghost'; re.textContent='เริ่มกรอกใหม่';
+    ok.onclick = () => { S.profile = {...draft}; buildMissions(); save(); openGoal(); };
+    re.onclick = startChat;
+    box.append(ok, re); dockInput();
+  }, 300);
+}
+
+/* =====================================================================
+   2-3) ANALYSIS → 3 DAILY MISSIONS
+   BMR  (Mifflin-St Jeor):  10·kg + 6.25·cm − 5·age + (♂ +5 | ♀ −161)
+   TDEE = BMR × activity factor   (เบา 1.375 / ปานกลาง 1.55 / หนัก 1.725)
+   Active burn budget = (TDEE − BMR) × 0.35  → used for the exercise mission
+   ===================================================================== */
+const round = (v, step) => Math.max(step, Math.round(v/step)*step);
+function analyse(p){
+  const age = ageOf(p.dob);
+  const bmr = 10*p.w + 6.25*p.h - 5*age + (p.sex==='ชาย' ? 5 : -161);
+  const tdee = bmr * ACT[p.act];
+  const bmi = p.w / Math.pow(p.h/100, 2);
+  return { age, bmr:Math.round(bmr), tdee:Math.round(tdee), bmi:+bmi.toFixed(1) };
+}
+function missionTemplates(p, a){
+  const lvl = p.act==='เบา'?0 : p.act==='ปานกลาง'?1 : 2;
+  const older = a.age>=60 ? 0.8 : 1;          // gentler targets for 60+
+  const heavy = a.bmi>=30 ? 0.7 : 1;          // protect joints when BMI ≥ 30
+  return {
+    'เดิน':        { icon:'🚶', label:'เดินให้ครบ', unit:'ก้าว', step:500, base: round([6000,8000,10000][lvl]*older, 500) },
+    'วิ่ง':        { icon:'🏃', label:'วิ่ง/วิ่งเหยาะ', unit:'นาที', step:5,  base: round([15,20,30][lvl]*older*heavy, 5) },
+    'ออกกำลังกาย': { icon:'💪', label:'ออกกำลังกายเผาผลาญ', unit:'kcal', step:10,
+                     base: Math.min(600, Math.max(150, round((a.tdee-a.bmr)*0.35, 10))) },
+    // Fillers when fewer than 3 interests are chosen
+    'ดื่มน้ำ':     { icon:'💧', label:'ดื่มน้ำ', unit:'มล.', step:100, base: round(p.w*33, 100) },
+    'ยืดเหยียด':   { icon:'🧘', label:'ยืดเหยียดร่างกาย', unit:'นาที', step:5, base: 10 }
+  };
+}
+function buildMissions(){
+  const p = S.profile, a = analyse(p), T = missionTemplates(p, a);
+  const keys = [...p.interests];
+  ['ดื่มน้ำ','ยืดเหยียด'].forEach(k => { if (keys.length < 3) keys.push(k); });
+  S.analysis = a;
+  S.missions = keys.slice(0,3).map(k => ({ key:k, ...T[k], target:T[k].base, progress:0, claimed:false }));
+  S.goalLocked = false;
+  S.missionDate = todayKey();
+}
+
+/* Goal screen: each target adjustable within base × [0.8, 1.2] */
+function openGoal(){
+  show('sGoal');
+  const a = S.analysis || analyse(S.profile), L = $('goalList'); L.innerHTML = '';
+  const info = document.createElement('div'); info.className='card';
+  info.innerHTML = `<b>🐶 เป็นสุขวิเคราะห์ให้แล้ว</b><div class="muted" style="margin-top:6px">
+    พลังงานพื้นฐาน (BMR) ${a.bmr.toLocaleString()} kcal • ใช้ต่อวัน (TDEE) ${a.tdee.toLocaleString()} kcal • BMI ${a.bmi}<br>
+    ปรับเป้าหมายได้ลดลงหรือเพิ่มขึ้นไม่เกิน 20%</div>`;
+  L.appendChild(info);
+  S.missions.forEach(m => {
+    const lo = round(m.base*0.8, m.step) < m.base*0.8 ? round(m.base*0.8,m.step)+m.step : round(m.base*0.8,m.step);
+    const hi = round(m.base*1.2, m.step) > m.base*1.2 ? round(m.base*1.2,m.step)-m.step : round(m.base*1.2,m.step);
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<div class="mrow"><b>${m.icon} ${m.label}</b><b class="val">${m.target.toLocaleString()} ${m.unit}</b></div>
+      <input type="range" min="${lo}" max="${hi}" step="${m.step}" value="${m.target}">
+      <div class="mrow muted"><span>−20%: ${lo.toLocaleString()}</span><span>แนะนำ ${m.base.toLocaleString()}</span><span>+20%: ${hi.toLocaleString()}</span></div>`;
+    const r = c.querySelector('input'), val = c.querySelector('.val');
+    r.oninput = () => { m.target = +r.value; val.textContent = m.target.toLocaleString()+' '+m.unit; };
+    L.appendChild(c);
+  });
+}
+$('bGoalOk').onclick = () => confirmDo('ยืนยันเป้าหมายรายวันทั้ง 3 ภารกิจ?\n(ปรับได้อีกครั้งในหน้าภารกิจก่อนเริ่มทำ)', () => {
+  S.goalLocked = true; save(); S.pet ? openMain() : openPet();
+});
+
+/* =====================================================================
+   5) PET SELECT + RANDOM + NAMING
+   ===================================================================== */
+const PETS = [
+  {id:'dog',e:'🐕',n:'น้องหมา'},{id:'cat',e:'🐈',n:'น้องแมว'},{id:'rabbit',e:'🐇',n:'น้องกระต่าย'},
+  {id:'hamster',e:'🐹',n:'น้องแฮมสเตอร์'},{id:'chick',e:'🐥',n:'น้องเจี๊ยบ'},{id:'pig',e:'🐖',n:'น้องหมู'}
+];
+let petSel = null;
+function openPet(){
+  show('sPet'); const g = $('petGrid'); g.innerHTML = '';
+  previews.length = 0;
+  PETS.forEach(p => { const b = document.createElement('button'); b.className='petc'; b.dataset.id=p.id;
+    const c = document.createElement('canvas'); const dpr = Math.min(2, devicePixelRatio||1);
+    c.width = 96*dpr; c.height = 84*dpr; const g2 = c.getContext('2d'); g2.setTransform(dpr,0,0,dpr,0,0);
+    const a = makePetAnim(); a.timer = Math.random()*2;
+    previews.push({ id:p.id, g:g2, a });
+    b.appendChild(c); const sp = document.createElement('span'); sp.textContent = p.n; b.appendChild(sp);
+    b.onclick = () => { pickPet(p.id); petHappy(a); }; g.appendChild(b); });
+  if (!prevRaf){ prevLast = 0; prevRaf = requestAnimationFrame(previewLoop); }
+}
+/* Selection cards: each pet idles in place (sit / sniff / look / blink), turning to face left & right */
+const previews = []; let prevRaf = 0, prevLast = 0;
+function previewLoop(now){
+  if (!$('sPet').classList.contains('on')){ prevRaf = 0; return; }   // stop when leaving the screen
+  prevRaf = requestAnimationFrame(previewLoop);
+  if (now - prevLast < 33) return; const dt = prevLast ? (now-prevLast)/1000 : 0.033; prevLast = now;
+  for (const v of previews){
+    updatePetAnim(v.a, dt, false, null);
+    if (v.a.state!=='sleep' && (v.a.mood = (v.a.mood||2) - dt) <= 0){        // rotate idle poses every 2–4 s
+      v.a.mood = 2 + Math.random()*2; const r = Math.random();
+      v.a.state = r<.4 ? 'idle' : r<.7 ? 'sit' : 'sniff'; v.a.timer = 99;
+      if (Math.random() < .5) v.a.face *= -1;
+    }
+    v.g.clearRect(0,0,96,84);
+    drawPetModel(v.g, v.id, v.a, 48, 76, 56, 0);
+  }
+}
+function pickPet(id){ petSel = id; document.querySelectorAll('.petc').forEach(b => b.classList.toggle('sel', b.dataset.id===id)); }
+$('bRand').onclick = () => {
+  // short shuffle animation then land on a random pet
+  let n = 0; const t = setInterval(() => { pickPet(PETS[n++ % PETS.length].id);
+    if (n > 10){ clearInterval(t); pickPet(PETS[Math.floor(Math.random()*PETS.length)].id); } }, 90);
+};
+$('bPetOk').onclick = () => {
+  const name = $('petName').value.trim();
+  if (!petSel) return $('petErr').textContent = 'เลือกน้องก่อนนะครับ';
+  if (!name) return $('petErr').textContent = 'ตั้งชื่อน้องก่อนนะครับ';
+  const p = PETS.find(x => x.id===petSel);
+  confirmDo(`รับ ${p.n} ${p.e} ชื่อ "${name}" มาเลี้ยง?`, () => {
+    S.pet = { type:petSel, emoji:p.e, name, heart:50, born:todayKey(), lv:1, pexp:0 };
+    S.farm = { zones:[], cur:0 }; ensureZones(); S.q = 0; S.qDone = []; save(); openMain();
+    reward(`ฟาร์มรกร้างพร้อมแล้ว!\nทำ 📜 เควสตามที่เป็นสุขบอกบนจอ เพื่อเรียนรู้วิธีเล่นทีละขั้นนะครับ 🐶`);
+  });
+};
+
+/* =====================================================================
+   MAIN shell: header, tabs, daily reset
+   ===================================================================== */
+function openMain(){
+  show('sMain'); dailyReset();
+  refreshHeader(); renderMats(); renderMissions(); renderShop(); renderBag();
+  resizeFarm(); startLoop();
+}
+function refreshHeader(){
+  const pct = S.lv>=MAX_LV ? 100 : Math.floor(S.exp/needExp(S.lv)*100);
+  const pp = S.pet.lv>=MAX_PET_LV ? 100 : Math.floor(S.pet.pexp/needPetExp(S.pet.lv)*100);
+  $('hName').textContent = `${S.profile.name} • Lv.${S.lv} (${pct}%)`;
+  $('hCoin').textContent = S.coins.toLocaleString();
+  $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petStage(S.pet.lv).name} (${pp}%) • ❤️ ${S.pet.heart}`;
+}
+function goTab(id){
+  document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('on', x.dataset.t===id));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id===id));
+  if (id!=='tFarm' && placing) endPlacing();
+  if (id==='tFarm') resizeFarm();
+  if (id==='tMission') renderMissions();
+  if (id==='tShop') renderShop();
+  if (id==='tBag') renderBag();
+  if (id==='tQuest') renderQuests();
+}
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => goTab(b.dataset.t));
+/* New day → missions reset (targets kept, progress cleared) */
+function dailyReset(){
+  if (S.missionDate !== todayKey()){
+    S.missions.forEach(m => { m.progress = 0; m.claimed = false; });
+    S.missionDate = todayKey(); S.bonusClaimed = false; save();
+  }
+}
+
+/* =====================================================================
+   3-4) MISSIONS — 3/day, reward = gold coins
+   ===================================================================== */
+const COIN_PER_MISSION = 10, COIN_ALL_BONUS = 15;
+function renderMissions(){
+  const L = $('missionList'); L.innerHTML = '';
+  const head = document.createElement('div'); head.className='card';
+  const done = S.missions.filter(m=>m.claimed).length;
+  head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div>
+    <div class="bar"><b style="width:${done/3*100}%"></b></div>
+    <div class="muted">ภารกิจละ ${COIN_PER_MISSION} เหรียญ • ครบ 3 ภารกิจ รับโบนัสอีก ${COIN_ALL_BONUS} เหรียญ</div>`;
+  L.appendChild(head);
+  S.missions.forEach((m,i) => {
+    const pct = Math.min(100, Math.round(m.progress/m.target*100));
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<div class="mrow"><b>${m.icon} ${m.label}</b><span>${pct}%</span></div>
+      <div class="bar"><b style="width:${pct}%"></b></div>
+      <div class="mrow muted"><span>${m.progress.toLocaleString()} / ${m.target.toLocaleString()} ${m.unit}</span></div>`;
+    const row = document.createElement('div'); row.className='row'; row.style.marginTop='8px';
+    if (m.claimed){
+      row.innerHTML = '<button class="btn" disabled>✅ รับแล้ว</button>';
+    } else if (m.progress >= m.target){
+      const b = document.createElement('button'); b.className='btn ok'; b.textContent=`รับ ${COIN_PER_MISSION} เหรียญ`;
+      b.onclick = () => confirmDo(`รับรางวัลภารกิจ "${m.label}"?`, () => claim(i)); row.appendChild(b);
+    } else {
+      // Demo input: manual logging until Apple Health / Google Fit is connected
+      const inp = document.createElement('input'); inp.type='number'; inp.inputMode='numeric'; inp.placeholder='บันทึก '+m.unit;
+      const b = document.createElement('button'); b.className='btn'; b.textContent='บันทึก'; b.style.flex='0 0 90px';
+      b.onclick = () => { const v = parseFloat(inp.value); if (!(v>0)) return;
+        confirmDo(`บันทึก ${v.toLocaleString()} ${m.unit} ใน "${m.label}"?`, () => { m.progress += v; bump('missionLog'); save(); renderMissions(); }); };
+      row.append(inp, b);
+    }
+    c.appendChild(row); L.appendChild(c);
+  });
+  if (S.missions.every(m=>m.claimed) && !S.bonusClaimed){
+    const b = document.createElement('button'); b.className='btn ok'; b.textContent=`🎉 รับโบนัสครบ 3 ภารกิจ (+${COIN_ALL_BONUS})`;
+    b.onclick = () => confirmDo('รับโบนัสครบ 3 ภารกิจ?', () => { S.bonusClaimed = true; S.coins += COIN_ALL_BONUS; save(); refreshHeader(); renderMissions(); reward(`🪙 ${COIN_ALL_BONUS} เหรียญทอง`); });
+    L.appendChild(b);
+  }
+  const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='แก้ไขข้อมูลส่วนตัว / วิเคราะห์ใหม่';
+  edit.onclick = () => confirmDo('เริ่มคุยกับเป็นสุขใหม่เพื่ออัปเดตข้อมูล?\n(ความคืบหน้าภารกิจวันนี้จะถูกรีเซ็ต)', () => { stopLoop(); startChat(); });
+  L.appendChild(edit);
+}
+function claim(i){
+  S.missions[i].claimed = true; S.coins += COIN_PER_MISSION; bump('missionClaim');
+  gainExp(EXP.mission); gainPetExp(10);            // health missions also grow the pet
+  save(); refreshHeader(); renderMissions();
+  reward(`🪙 ${COIN_PER_MISSION} เหรียญทอง\n⭐ Exp +${EXP.mission} • ${S.pet.emoji} Exp +10`);
+}
+
+/* =====================================================================
+   6) FARM WORLD — one contiguous isometric map made of 5×5 chunks.
+   Chunk n (unlocked at player Lv n, max 50) sits at SPIRAL[n] so every new chunk
+   touches an existing one. Global tile (gc,gr) = (cx·5 + c, cy·5 + r).
+
+   Grid→Screen:  P(gc,gr,z) = ( OX + camX + (gc − gr)·TW/2 ,  OY + camY + (gc + gr)·TH/2 − z )
+   Screen→Grid:  u = (sx−OX−camX)/(TW/2), v = (sy−OY−camY)/(TH/2)
+                 gc = floor((u+v)/2),  gr = floor((v−u)/2)
+   Depth (Y-sort): global diagonal s = gc + gr ascending across ALL visible chunks.
+                   Multi-tile structures draw once at their front tile (c+w−1, r+h−1).
+   Ground: one offscreen cache per chunk (LRU ≤ 12), painted back→front (cx+cy ascending);
+           island side walls only on edges with no neighbour chunk.
+   ===================================================================== */
+const GRID = 5;
+const MAT = { stone:'🪨 หิน', grass:'🌿 หญ้า', wood:'🪵 ไม้', seed:'🌱 เมล็ด', veg:'🥕 แครอท', food:'🦴 อาหารสัตว์',
+              tilapia:'🐟 ปลานิล', carp:'🐡 ปลาตะเพียน', shrimp:'🦐 กุ้ง', goldfish:'🐠 ปลาทอง', boot:'👢 รองเท้าเก่า' };
+
+/* ---- natural resources: size class decides the collect cooldown ---- */
+const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // seconds (random in range)
+const SIZE_EXP  = { small:3, medium:6, large:15 };
+const SIZE_TH   = { small:'เล็ก', medium:'กลาง', large:'ใหญ่' };
+const RES = {
+  grass:   { name:'พงหญ้า',     verb:'ถอนหญ้า',      tool:'✂️', size:'small',  h:.7,  yield:{grass:[2,3]} },
+  wild:    { name:'ดอกไม้ป่า',   verb:'เก็บดอกไม้ป่า',  tool:'✂️', size:'small',  h:.8,  yield:{grass:[1,2], seed:[0,1]} },
+  sapling: { name:'ต้นกล้า',     verb:'ถอนต้นกล้า',    tool:'✂️', size:'small',  h:.7,  yield:{wood:[1,1], seed:[0,1]} },
+  pebble:  { name:'หินก้อนเล็ก', verb:'เก็บหินเล็ก',    tool:'⛏️', size:'small',  h:.5,  yield:{stone:[1,2]} },
+  rock:    { name:'ก้อนหิน',     verb:'ทุบหิน',        tool:'⛏️', size:'medium', h:.9,  yield:{stone:[3,4]} },
+  bush:    { name:'พุ่มไม้',      verb:'ตัดพุ่มไม้',     tool:'🪓', size:'medium', h:1.1, yield:{wood:[1,2], grass:[1,2]} },
+  tree:    { name:'ต้นไม้ใหญ่',   verb:'โค่นต้นไม้',     tool:'🪓', size:'large',  h:2.6, yield:{wood:[5,7]} },
+  boulder: { name:'หินก้อนใหญ่', verb:'สกัดหินใหญ่',    tool:'⛏️', size:'large',  h:1.5, yield:{stone:[6,8]} }
+};
+
+/* ---- farm structures (Shop › ฟาร์ม). Build time = 15 s × tiles + 2 s × price ---- */
+const FARM_ITEMS = {
+  starter:   { name:'🏠 บ้านหลังแรก',  w:2, h:2, price:0,   cost:{grass:3, stone:1},          H:2.2, desc:'บ้านหลังแรกของคุณ สร้างฟรีได้ 1 หลัง (บทเรียน)', once:true, fixedSec:30 },
+  plot:      { name:'🥕 แปลงผัก',     w:1, h:1, price:15,  cost:{grass:3, stone:1},          H:.4,  desc:'ปลูกผักไว้ขายหรือให้น้องกิน' },
+  flowerbed: { name:'🌷 กระบะดอกไม้',  w:1, h:1, price:20,  cost:{grass:2, wood:1},           H:.7,  desc:'ดอกไม้หลากสี ผีเสื้อชอบมาเกาะ' },
+  lamp:      { name:'🏮 โคมไฟสวน',    w:1, h:1, price:30,  cost:{stone:2, wood:1},           H:1.9, desc:'ส่องสว่างตอนกลางคืน' },
+  bench:     { name:'🪑 ม้านั่งไม้',   w:2, h:1, price:40,  cost:{wood:4},                    H:1,   desc:'มุมนั่งพักในฟาร์ม' },
+  fence:     { name:'🪵 รั้วไม้',      w:2, h:1, price:25,  cost:{wood:3},                    H:.9,  desc:'รั้วแบ่งพื้นที่' },
+  doghouse:  { name:'🛖 บ้านน้อง',     w:2, h:2, price:120, cost:{wood:8, grass:4},           H:2,   desc:'บ้านหลังเล็กของสัตว์เลี้ยง' },
+  fountain:  { name:'⛲ น้ำพุ',        w:2, h:2, price:180, cost:{stone:12},                  H:1.6, desc:'น้ำพุหินกลางสวน' },
+  gazebo:    { name:'🏯 ศาลาพักผ่อน',  w:2, h:3, price:300, cost:{wood:12, stone:8},          H:2.6, desc:'ศาลาไม้หลังคาเขียว' },
+  barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:350, cost:{wood:16, stone:6, grass:6}, H:3,   desc:'โรงเก็บผลผลิตสีแดง' },
+  house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:600, cost:{wood:20, stone:16, grass:8},H:3.2, desc:'บ้านหลังใหญ่ประจำฟาร์ม' }
+};
+const buildSec = it => it.fixedSec || (15*it.w*it.h + 2*it.price);   // starter house: fixed 30 s for the tutorial
+const starterOwned = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter')) || ((S.store||{}).starter > 0);
+const GROW_MS = 2*60*1000;      // demo: carrot ready in 2 minutes
+
+
+const speedCost = sec => Math.max(1, Math.ceil(sec/60));      // ⚡ speed-up: 1 coin per remaining minute
+function fmt(sec){
+  sec = Math.max(0, Math.ceil(sec));
+  if (sec < 60) return sec+' วิ';
+  const m = Math.floor(sec/60), s = sec%60;
+  return s ? `${m} นาที ${s} วิ` : `${m} นาที`;
+}
+function fmtShort(sec){ sec = Math.max(0, Math.ceil(sec)); const m = Math.floor(sec/60), s = sec%60; return m ? `${m}:${String(s).padStart(2,'0')}` : `${s}s`; }
+
+/* ---- chunk layout: square spiral around (0,0) → each new chunk touches the island ---- */
+const SPIRAL = (() => {
+  const out = [[0,0]];
+  for (let ring=1; out.length < MAX_ZONES; ring++){
+    let x = ring, y = -ring+1;
+    for (; y<=ring; y++) out.push([x,y]);         y = ring;
+    for (x=ring-1; x>=-ring; x--) out.push([x,y]); x = -ring;
+    for (y=ring-1; y>=-ring; y--) out.push([x,y]); y = -ring;
+    for (x=-ring+1; x<=ring; x++) out.push([x,y]);
+  }
+  return out.slice(0, MAX_ZONES);
+})();
+const ck = (cx,cy) => (cx+128)*512 + (cy+128);              // numeric map key (no string allocation)
+const chunkMap = new Map();
+function rebuildChunkMap(){
+  chunkMap.clear();
+  S.farm.zones.forEach((z,i) => { if (z.cx == null){ z.cx = SPIRAL[i][0]; z.cy = SPIRAL[i][1]; } chunkMap.set(ck(z.cx,z.cy), z); });
+  for (const z of S.farm.zones) markDirty(z);                // neighbours change → side walls change
+}
+let hitZone = null, hitLi = -1;
+function tileAt(gc, gr){                                     // integer global coords → tile (sets hitZone/hitLi)
+  const cx = Math.floor(gc/GRID), cy = Math.floor(gr/GRID), z = chunkMap.get(ck(cx,cy));
+  if (!z){ hitZone = null; return null; }
+  hitZone = z; hitLi = (gr - cy*GRID)*GRID + (gc - cx*GRID); return z.tiles[hitLi];
+}
+
+/* ---- zone generation ---- */
+function genZone(idx){
+  const t = [];
+  for (let i=0;i<GRID*GRID;i++){
+    const x = Math.random();
+    t.push({ k: x<.26?'grass' : x<.38?'wild' : x<.48?'pebble' : x<.64?'rock' : x<.77?'bush' : x<.91?'tree' : 'boulder' });
+  }
+  const pc = 2+Math.floor(Math.random()*2), pr = 2+Math.floor(Math.random()*2);
+  t[pr*GRID+pc].k = 'water';
+  const nb = [[1,0],[0,1],[-1,0],[0,-1]].sort(() => Math.random()-.5);
+  let extra = 1 + Math.floor(Math.random()*2);
+  for (const [dc,dr] of nb){ if (!extra) break; const c = pc+dc, r = pr+dr;
+    if (c>0 && r>0 && c<GRID && r<GRID){ t[r*GRID+c].k = 'water'; extra--; } }
+  if (idx === 0){                                            // tutorial corner + pet ground
+    t[0].k = 'grass'; t[1].k = 'wild'; t[GRID].k = 'pebble'; t[GRID+1].k = 'grass';
+    t[2].k = 'clear'; t[GRID+2].k = 'clear';
+  } else { t[0].k = 'clear'; }
+  const [cx,cy] = SPIRAL[idx];
+  return { tiles:t, objs:[], seed:(Math.random()*1e9)|0, nextId:1, cx, cy };
+}
+function ensureZones(){
+  let grew = false;
+  while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
+  if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
+}
+function migrateFarm(){
+  S.farm.zones = S.farm.zones.map(z => Array.isArray(z) ? { tiles:z } : z);
+  S.farm.zones.forEach(z => {
+    if (!z.objs){ z.objs = []; z.seed = (Math.random()*1e9)|0; z.nextId = 1; }
+    z.tiles.forEach((t,i) => {
+      if (['plot','flower','house','fence'].includes(t.k)){
+        const type = t.k==='plot' ? 'plot' : t.k==='flower' ? 'flowerbed' : null, plant = t.plant||0;
+        t.k = 'clear'; delete t.plant;
+        if (type) addObj(z, type, i%GRID, (i/GRID)|0, 1, 1, true).plant = plant;
+      }
+    });
+  });
+  rebuildChunkMap();
+}
+function addObj(z, type, c, r, w, h, done){
+  const o = { id:z.nextId++, type, c, r, w, h, done, end:0, plant:0 };
+  z.objs.push(o);
+  for (let dr=0;dr<h;dr++) for (let dc=0;dc<w;dc++){ const t = z.tiles[(r+dr)*GRID+c+dc]; t.k = 'obj'; t.o = o.id; delete t.job; }
+  markDirty(z); return o;
+}
+function removeObj(z, o){
+  for (let dr=0;dr<o.h;dr++) for (let dc=0;dc<o.w;dc++){ const t = z.tiles[(o.r+dr)*GRID+o.c+dc]; t.k = 'clear'; delete t.o; }
+  z.objs.splice(z.objs.indexOf(o), 1); markDirty(z);
+}
+const objById = (z,id) => { for (const o of z.objs) if (o.id===id) return o; return null; };
+function hrnd(seed, i, k){ let x = (seed ^ Math.imul(i+1, 374761393) ^ Math.imul(k+7, 668265263))|0;
+  x = Math.imul(x ^ (x>>>13), 1274126177); return ((x ^ (x>>>16))>>>0) / 4294967296; }
+
+/* ---- canvas, camera, zoom ---- */
+const cv = $('farm'), ctx = cv.getContext('2d');
+/* continuous zoom: pinch (2 fingers), ctrl/trackpad wheel, or −/＋ buttons (×1.3 steps) */
+const ZMIN = .4, ZMAX = 1.4;
+let zoom = .72, pinching = false, TWBASE = 64, TW = 64, TH = 32, OX = 0, OY = 0, DPR = 1, cssW = 0, cssH = 0, camX = 0, camY = 0;
+function resizeFarm(keepCenter){
+  const r = cv.getBoundingClientRect(); if (!r.width) return;
+  const ctr = keepCenter && cssW ? screenToWorld(cssW/2, cssH/2) : null;
+  DPR = Math.min(2, window.devicePixelRatio||1);             // cap DPR → saves GPU memory on phones
+  cssW = r.width; cssH = r.height;
+  cv.width = Math.round(cssW*DPR); cv.height = Math.round(cssH*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  TWBASE = Math.min(96, Math.floor((cssW-16)/GRID));        // portrait: one chunk fills the width at zoom 1
+  TW = TWBASE*zoom; TH = TW/2;
+  OX = cssW/2; OY = cssH*.5 - GRID*TH/2;
+  invalidateAll();
+  if (ctr) centerOn(ctr[0], ctr[1]);
+}
+window.addEventListener('resize', () => resizeFarm(true));
+const P = (c,r,z) => [OX + camX + (c-r)*TW/2, OY + camY + (c+r)*TH/2 - (z||0)];
+const iso = (c,r) => P(c,r,0);
+function screenToWorld(sx, sy){ const u = (sx-OX-camX)/(TW/2), v = (sy-OY-camY)/(TH/2); return [(u+v)/2, (v-u)/2]; }
+function pick(sx, sy){ const [c,r] = screenToWorld(sx, sy); return { c:Math.floor(c), r:Math.floor(r) }; }
+function centerOn(gc, gr){ camX = -(gc-gr)*TW/2; camY = -((gc+gr)*TH/2 - GRID*TH/2); }
+function clampCam(){                                          // keep the view near the island
+  let [c,r] = screenToWorld(cssW/2, cssH/2), mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
+  for (const z of S.farm.zones){ mnx = Math.min(mnx, z.cx*GRID); mxx = Math.max(mxx, z.cx*GRID+GRID); mny = Math.min(mny, z.cy*GRID); mxy = Math.max(mxy, z.cy*GRID+GRID); }
+  const nc = Math.max(mnx-2, Math.min(mxx+2, c)), nr = Math.max(mny-2, Math.min(mxy+2, r));
+  if (nc !== c || nr !== r) centerOn(nc, nr);
+}
+/* Zoom about a screen anchor: the world point under (ax, ay) stays under the finger.
+   TW changes continuously; chunk caches are only repainted when the gesture ends
+   (during the pinch the old caches are drawn scaled by TW / cache.tw). */
+function zoomAt(z, ax, ay){
+  z = Math.max(ZMIN, Math.min(ZMAX, z));
+  const [wc, wr] = screenToWorld(ax, ay);
+  zoom = z; TW = TWBASE*zoom; TH = TW/2; OY = cssH*.5 - GRID*TH/2;
+  camX = ax - OX - (wc-wr)*TW/2; camY = ay - OY - (wc+wr)*TH/2;
+  clampCam(); renderZoneBar();
+}
+function setZoom(d){ zoomAt(zoom * (d > 0 ? 1/1.3 : 1.3), cssW/2, cssH/2); }   // d>0 → zoom out
+const goHome = () => { centerOn(2.5, 2.5); };
+
+/* ---- per-chunk ground cache (LRU) ---- */
+const chunkCache = new Map();                               // zone → { cv, dirty, used }
+const CACHE_MAX = 12;
+function markDirty(z){ const e = chunkCache.get(z); if (e) e.dirty = true; }
+function invalidateAll(){ for (const e of chunkCache.values()) e.dirty = true; }
+let frameNo = 0;
+function chunkCanvas(z){
+  let e = chunkCache.get(z);
+  if (!e){
+    if (chunkCache.size >= CACHE_MAX){                       // evict least-recently used
+      let old = null, ou = 1e18; for (const [k,v] of chunkCache) if (v.used < ou){ ou = v.used; old = k; }
+      chunkCache.delete(old);
+    }
+    e = { cv:document.createElement('canvas'), dirty:true, used:0 }; chunkCache.set(z, e);
+  }
+  e.used = frameNo;
+  if (e.dirty || (!pinching && e.tw !== TW)){ paintChunk(z, e.cv); e.dirty = false; e.tw = TW; }
+  return e;
+}
+const GROUND_COL = { clear:'#9fd06a', obj:'#9fd06a', water:'#e2cf98', grass:'#86bd4e', wild:'#8cc255', pebble:'#8fbf58', rock:'#88b752', bush:'#80b44c', tree:'#7cb049', boulder:'#82b14e' };
+const SIDE_D = () => TH*0.95;
+function paintChunk(z, c){
+  const D = SIDE_D(), W = GRID*TW + 6, H = GRID*TH + D + TH*.4 + 6;
+  c.width = Math.ceil(W*DPR); c.height = Math.ceil(H*DPR);
+  const g = c.getContext('2d'); g.setTransform(DPR,0,0,DPR,0,0); g.clearRect(0,0,W,H);
+  const lp = (cc,rr) => [W/2 + (cc-rr)*TW/2, 3 + (cc+rr)*TH/2];   // chunk-local projection
+  const T = z.tiles;
+  const openL = !chunkMap.get(ck(z.cx, z.cy+1)), openR = !chunkMap.get(ck(z.cx+1, z.cy));
+  const L = lp(0,GRID), B = lp(GRID,GRID), Rr = lp(GRID,0);
+  // island walls (only where the island ends)
+  if (openL){
+    const gr = g.createLinearGradient(0, L[1], 0, B[1]+D); gr.addColorStop(0,'#8d643c'); gr.addColorStop(1,'#5b3c22');
+    quad(g, L, B, [B[0],B[1]+D], [L[0],L[1]+D], gr);
+  }
+  if (openR){
+    const gr = g.createLinearGradient(0, Rr[1], 0, B[1]+D); gr.addColorStop(0,'#77522f'); gr.addColorStop(1,'#4a301b');
+    quad(g, B, Rr, [Rr[0],Rr[1]+D], [B[0],B[1]+D], gr);
+  }
+  g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1.5;
+  for (let k=1;k<=2;k++){ const dz = D*k/3;
+    if (openL){ g.beginPath(); g.moveTo(L[0],L[1]+dz); g.lineTo(B[0],B[1]+dz); g.stroke(); }
+    if (openR){ g.beginPath(); g.moveTo(B[0],B[1]+dz); g.lineTo(Rr[0],Rr[1]+dz); g.stroke(); } }
+  for (let k=0;k<10;k++){                                    // pebbles in the soil + dangling roots
+    const u = hrnd(z.seed,k,90), v = hrnd(z.seed,k,91), left = u<.5;
+    if ((left && !openL) || (!left && !openR)) continue;
+    const uu = left ? u*2 : (u-.5)*2, a = left ? L : B, b = left ? B : Rr, x = a[0]+(b[0]-a[0])*uu, y = a[1]+(b[1]-a[1])*uu;
+    g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.ellipse(x, y + D*(.3+v*.55), TW*.05, TH*.06, 0, 0, Math.PI*2); g.fill();
+    if (k%3===0){ g.strokeStyle = 'rgba(70,45,20,.55)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x+4, y+2); g.quadraticCurveTo(x+7, y+D*.6, x+3, y+D*(1+v*.3)); g.stroke(); }
+  }
+  g.strokeStyle = '#69a63a'; g.lineWidth = TH*0.22; g.lineJoin = 'round'; g.lineCap = 'round';
+  if (openL){ g.beginPath(); g.moveTo(L[0],L[1]+TH*.06); g.lineTo(B[0],B[1]+TH*.06); g.stroke(); }
+  if (openR){ g.beginPath(); g.moveTo(B[0],B[1]+TH*.06); g.lineTo(Rr[0],Rr[1]+TH*.06); g.stroke(); }
+  // tiles
+  for (let i=0;i<T.length;i++){
+    const cc = i%GRID, rr = (i/GRID)|0, k = T[i].k;
+    const col = shadeHex(GROUND_COL[k] || '#9fd06a', (hrnd(z.seed,i,1)-.5)*.12);
+    quad(g, lp(cc,rr), lp(cc+1,rr), lp(cc+1,rr+1), lp(cc,rr+1), col);
+    // soft light from top-left: lighter top half of each tile
+    g.fillStyle = 'rgba(255,255,255,.05)'; g.beginPath(); const a = lp(cc,rr), b = lp(cc+1,rr), d = lp(cc,rr+1);
+    g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.lineTo(d[0],d[1]); g.closePath(); g.fill();
+    g.lineWidth = 1;
+    for (let bl=0;bl<9;bl++){
+      const [x,y] = lp(cc+.1+hrnd(z.seed,i,10+bl)*.8, rr+.1+hrnd(z.seed,i,30+bl)*.8);
+      g.strokeStyle = k==='water' ? 'rgba(160,130,80,.25)' : (bl%2 ? 'rgba(40,90,30,.25)' : 'rgba(210,240,160,.35)');
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+1, y-TH*.12); g.stroke();
+    }
+    if (k==='clear' || k==='obj') for (let f=0;f<3;f++){
+      if (hrnd(z.seed,i,50+f) > .55) continue;
+      const [x,y] = lp(cc+.15+hrnd(z.seed,i,60+f)*.7, rr+.15+hrnd(z.seed,i,70+f)*.7);
+      g.fillStyle = ['#ffffff','#ffe066','#ffb3c7'][f]; g.beginPath(); g.arc(x, y, Math.max(1.2,TW*.022), 0, Math.PI*2); g.fill();
+    }
+  }
+  g.strokeStyle = 'rgba(0,0,0,.045)'; g.lineWidth = 1;
+  for (let i=0;i<=GRID;i++){ let a = lp(i,0), b = lp(i,GRID); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke();
+    a = lp(0,i); b = lp(GRID,i); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+}
+function chunkOnScreen(z){
+  const gc = z.cx*GRID, gr = z.cy*GRID, top = P(gc,gr), bot = P(gc+GRID,gr+GRID), lft = P(gc,gr+GRID), rgt = P(gc+GRID,gr);
+  return rgt[0] > -20 && lft[0] < cssW+20 && bot[1] + SIDE_D() > -20 && top[1] - TH*4 < cssH+20;
+}
+
+/* ---- primitive painters ---- */
+function quad(g, a, b, c, d, fill){
+  g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.lineTo(c[0],c[1]); g.lineTo(d[0],d[1]); g.closePath();
+  g.fillStyle = fill; g.fill();
+}
+function tri(g, a, b, c, fill){ g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.lineTo(c[0],c[1]); g.closePath(); g.fillStyle = fill; g.fill(); }
+/* iso prism over grid rect [c0,c1]×[r0,r1] from height z0 to z1 (px). Visible: front-left (r=r1), front-right (c=c1), top */
+function box(c0,r0,c1,r1,z0,z1,top,left,right){
+  quad(ctx, P(c0,r1,z0), P(c1,r1,z0), P(c1,r1,z1), P(c0,r1,z1), left);
+  quad(ctx, P(c1,r0,z0), P(c1,r1,z0), P(c1,r1,z1), P(c1,r0,z1), right);
+  if (top) quad(ctx, P(c0,r0,z1), P(c1,r0,z1), P(c1,r1,z1), P(c0,r1,z1), top);
+}
+/* hip roof with ridge along the longer axis */
+function roof(c0,r0,c1,r1,z0,h,front,side,back){
+  if ((c1-c0) >= (r1-r0)){
+    const rm = (r0+r1)/2, d = Math.min((r1-r0)/2, (c1-c0)/2), A = P(c0+d,rm,z0+h), B = P(c1-d,rm,z0+h);
+    quad(ctx, P(c0,r0,z0), P(c1,r0,z0), B, A, back);
+    tri(ctx, P(c0,r0,z0), P(c0,r1,z0), A, back);
+    quad(ctx, P(c0,r1,z0), P(c1,r1,z0), B, A, front);
+    tri(ctx, P(c1,r0,z0), P(c1,r1,z0), B, side);
+  } else {
+    const cm = (c0+c1)/2, d = Math.min((c1-c0)/2, (r1-r0)/2), A = P(cm,r0+d,z0+h), B = P(cm,r1-d,z0+h);
+    quad(ctx, P(c0,r0,z0), P(c0,r1,z0), B, A, back);
+    tri(ctx, P(c0,r0,z0), P(c1,r0,z0), A, back);
+    quad(ctx, P(c1,r0,z0), P(c1,r1,z0), B, A, side);
+    tri(ctx, P(c0,r1,z0), P(c1,r1,z0), B, front);
+  }
+}
+/* rectangle painted on a wall face: 'L' = face r=r1, 'R' = face c=c1; u = 0..1 along the wall */
+function faceQuad(f, c0,r0,c1,r1, u0,u1, z0,z1, col){
+  if (f==='L'){ const a = c0+(c1-c0)*u0, b = c0+(c1-c0)*u1; quad(ctx, P(a,r1,z0), P(b,r1,z0), P(b,r1,z1), P(a,r1,z1), col); }
+  else        { const a = r0+(r1-r0)*u0, b = r0+(r1-r0)*u1; quad(ctx, P(c1,a,z0), P(c1,b,z0), P(c1,b,z1), P(c1,a,z1), col); }
+}
+
+
+const FLOWER_COLS = ['#ff6b8b','#ffd23f','#ffffff','#c77dff','#ff9f43'];
+function drawRes(t, c, r, time, seed, i){
+  let [x,y] = P(c+.5, r+.5);
+  if (t.job && Date.now() < t.job.end) x += Math.sin(time*40)*1.2;     // being worked on → jitter
+  const sway = k => Math.sin(time*1.6 + c*.9 + r*.7 + k)*TW*.025;
+  switch (t.k){
+    case 'grass': case 'wild': {
+      const n = t.k==='grass' ? 8 : 5, cols = ['#4f9a3a','#3f8a30','#6cb24a'];
+      ctx.lineWidth = Math.max(2, TW/26); ctx.lineCap = 'round';
+      for (let k=0;k<n;k++){
+        const bx = x + (k-(n-1)/2)*TW*.05 + (hrnd(seed,i,k)-.5)*TW*.04, h = TH*(.45 + hrnd(seed,i,20+k)*.35), by = y + TH*.15 - hrnd(seed,i,40+k)*TH*.2;
+        ctx.strokeStyle = cols[k%3]; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx, by-h*.6, bx+sway(k), by-h); ctx.stroke();
+      }
+      if (t.k==='wild') for (let k=0;k<3;k++){
+        const fx = x + (k-1)*TW*.13 + sway(k)*.6, fy = y - TH*(.35 + hrnd(seed,i,60+k)*.25), col = FLOWER_COLS[(hrnd(seed,i,70+k)*5)|0];
+        ctx.strokeStyle = '#3f8a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(fx-sway(k)*.6, y+TH*.1); ctx.lineTo(fx, fy); ctx.stroke();
+        ctx.fillStyle = col; for (let p=0;p<5;p++){ const a = p*1.2566 + time*.2; ctx.beginPath(); ctx.arc(fx+Math.cos(a)*TW*.03, fy+Math.sin(a)*TW*.022, TW*.025, 0, Math.PI*2); ctx.fill(); }
+        ctx.fillStyle = '#ffcc33'; ctx.beginPath(); ctx.arc(fx, fy, TW*.018, 0, Math.PI*2); ctx.fill();
+      }
+      break; }
+    case 'sapling':
+      ctx.save(); ctx.translate(x, y+TH*.1); ctx.rotate(Math.sin(time*1.4 + c + r)*.05);
+      ctx.fillStyle = '#7a4a22'; ctx.fillRect(-TW*.015, -TH*.6, TW*.03, TH*.6);
+      ball(ctx, -TW*.06, -TH*.6, TW*.07, TH*.14, '#a6e07f', '#4aa846', '#2b6f2e');
+      ball(ctx,  TW*.06, -TH*.68, TW*.07, TH*.14, '#a6e07f', '#4aa846', '#2b6f2e');
+      ball(ctx,  0,      -TH*.8,  TW*.07, TH*.14, '#b8ea92', '#58b552', '#2f7a33');
+      ctx.restore(); break;
+    case 'pebble':
+      for (let k=0;k<3;k++){ const px = x + (k-1)*TW*.12, py = y + (k===1 ? -TH*.12 : TH*.05), s = TW*(.07+hrnd(seed,i,k)*.04);
+        ball(ctx, px, py, s, s*.75, '#d6d6d0', '#a3a39c', '#6e6e68'); }
+      break;
+    case 'rock':
+      ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(x, y+TH*.12, TW*.3, TH*.22, 0, 0, Math.PI*2); ctx.fill();
+      ball(ctx, x-TW*.07, y-TH*.12, TW*.2, TH*.38, '#d2d4d0', '#9b9e98', '#62655f');
+      ball(ctx, x+TW*.12, y+TH*.02, TW*.13, TH*.26, '#dadcd7', '#a8aaa4', '#6d706a');
+      ctx.strokeStyle = 'rgba(40,40,40,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x-TW*.12, y-TH*.3); ctx.lineTo(x-TW*.06, y-TH*.18); ctx.lineTo(x-TW*.1, y-TH*.05); ctx.stroke();
+      break;
+    case 'boulder':
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x, y+TH*.12, TW*.4, TH*.28, 0, 0, Math.PI*2); ctx.fill();
+      ball(ctx, x, y-TH*.38, TW*.34, TH*.66, '#c9cbc6', '#8a8d87', '#4f524c');
+      ctx.fillStyle = 'rgba(92,150,60,.75)'; ctx.beginPath(); ctx.ellipse(x-TW*.1, y-TH*.85, TW*.16, TH*.16, -.3, 0, Math.PI*2); ctx.fill();
+      ball(ctx, x+TW*.24, y+TH*.05, TW*.09, TH*.15, '#d2d4d0', '#9b9e98', '#62655f');
+      break;
+    case 'bush':
+      ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(x, y+TH*.1, TW*.32, TH*.22, 0, 0, Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(time*1.2+c+r)*.02);
+      ball(ctx, -TW*.14, -TH*.25, TW*.17, TH*.36, '#8fd16a', '#4f9e3c', '#2c6626');
+      ball(ctx,  TW*.14, -TH*.22, TW*.16, TH*.34, '#8fd16a', '#4f9e3c', '#2c6626');
+      ball(ctx,  0,      -TH*.5,  TW*.19, TH*.4,  '#a0dc78', '#5aaa45', '#336f2b');
+      ctx.fillStyle = '#e63946'; for (let k=0;k<4;k++){ ctx.beginPath(); ctx.arc((hrnd(seed,i,k)-.5)*TW*.36, -TH*(.25+hrnd(seed,i,9+k)*.5), TW*.022, 0, Math.PI*2); ctx.fill(); }
+      ctx.restore(); break;
+    case 'tree': {
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x+TW*.06, y+TH*.1, TW*.36, TH*.26, 0, 0, Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(x, y+TH*.05); ctx.rotate(Math.sin(time*.9 + c + r)*.025);
+      const tg = ctx.createLinearGradient(-TW*.06, 0, TW*.06, 0); tg.addColorStop(0,'#8b5a2b'); tg.addColorStop(1,'#5a3818');
+      ctx.fillStyle = tg; ctx.beginPath(); ctx.moveTo(-TW*.07, 0); ctx.lineTo(-TW*.04, -TH*1.4); ctx.lineTo(TW*.04, -TH*1.4); ctx.lineTo(TW*.07, 0); ctx.closePath(); ctx.fill();
+      const kind = hrnd(seed, i, 77);                 // 0–.45 round • .45–.75 pine • .75–1 fruit tree
+      if (kind > .45 && kind < .75){
+        for (let k=0;k<4;k++){ const w = TW*(.34 - k*.07), y0 = -TH*(.7 + k*.55);
+          const g2 = ctx.createLinearGradient(-w, 0, w, 0); g2.addColorStop(0,'#5fae55'); g2.addColorStop(.5,'#2f7d3a'); g2.addColorStop(1,'#1d5a2a');
+          ctx.fillStyle = g2; ctx.beginPath(); ctx.moveTo(-w, y0); ctx.lineTo(0, y0 - TH*.95); ctx.lineTo(w, y0); ctx.quadraticCurveTo(0, y0 + TH*.18, -w, y0); ctx.fill(); }
+      } else {
+        ball(ctx, -TW*.17, -TH*1.45, TW*.2,  TH*.42, '#8fd16a', '#3f9a3e', '#25642a');
+        ball(ctx,  TW*.17, -TH*1.5,  TW*.2,  TH*.42, '#8fd16a', '#3f9a3e', '#25642a');
+        ball(ctx,  0,      -TH*1.95, TW*.24, TH*.5,  '#a6e07f', '#4aa846', '#2b6f2e');
+        ball(ctx,  0,      -TH*1.35, TW*.21, TH*.4,  '#93d36e', '#43a041', '#276a2c');
+        if (kind >= .75) for (let k=0;k<6;k++){ const fx = (hrnd(seed,i,80+k)-.5)*TW*.45, fy = -TH*(1.25 + hrnd(seed,i,90+k)*.8);
+          ball(ctx, fx, fy, TW*.035, TW*.035, '#ffd28a', '#f28c1b', '#b45f0c'); }
+      }
+      ctx.restore(); break; }
+  }
+}
+
+
+/* ---- structures ---- */
+function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in global tiles
+  const gc = (ox||0)+o.c, gr = (oy||0)+o.r;
+  const m = .08, c0 = gc+m, r0 = gr+m, c1 = gc+o.w-m, r1 = gr+o.h-m, U = TH;
+  const cm = (c0+c1)/2, rm = (r0+r1)/2, night = NIGHT > .35;
+  if (!o.done){                                   // construction site
+    box(c0,r0,c1,r1,0,U*.12,'#d9c7a5','#bba380','#a38b67');
+    const H = FARM_ITEMS[o.type].H*U*.8, p = 1 - Math.max(0,(o.end-Date.now()))/(buildSec(FARM_ITEMS[o.type])*1000);
+    ctx.globalAlpha = .25; box(c0+.05,r0+.05,c1-.05,r1-.05,U*.12,U*.12+H*p,'#e8d3ad','#d8b98a','#c09d6c'); ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = Math.max(2,TW/24);
+    for (const [pc,pr] of [[c0,r0],[c1,r0],[c1,r1],[c0,r1]]){ const a = P(pc,pr,U*.12), b = P(pc,pr,U*.12+H); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+    ctx.lineWidth = Math.max(1.5,TW/36);
+    for (const z of [H*.5, H]){ const a = P(c0,r1,U*.12+z), b = P(c1,r1,U*.12+z), c = P(c1,r0,U*.12+z); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.stroke(); }
+    const a = P(c0,r1,U*.12), b = P(c1,r1,U*.12+H); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    return;
+  }
+  switch (o.type){
+    case 'plot': {
+      box(c0,r0,c1,r1,0,U*.18,'#6e4122','#5a3519','#4a2b14');
+      ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2;
+      for (let k=1;k<=3;k++){ const a = P(c0+.06, r0+(r1-r0)*k/4, U*.18), b = P(c1-.06, r0+(r1-r0)*k/4, U*.18); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+      if (o.plant){
+        const ready = Date.now()-o.plant >= GROW_MS, s = ready ? 1 : .45 + .55*(Date.now()-o.plant)/GROW_MS, [x,y] = P(cm,rm,U*.18);
+        ctx.font = `${Math.round(TW*.34*s)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(ready ? '🥕' : '🌱', x, y + Math.sin(time*2)*1);
+      } break; }
+    case 'flowerbed': {
+      box(c0,r0,c1,r1,0,U*.24,'#5d3a1e','#a87443','#8c5e33');
+      quad(ctx, P(c0+.08,r0+.08,U*.24), P(c1-.08,r0+.08,U*.24), P(c1-.08,r1-.08,U*.24), P(c0+.08,r1-.08,U*.24), '#6e4122');
+      for (let k=0;k<6;k++){
+        const fc = c0+.18+((k%3)/2)*(c1-c0-.36), fr = r0+.25+((k/3)|0)*(r1-r0-.5), [x,y] = P(fc,fr,U*.24), sw = Math.sin(time*1.8+k)*1.5;
+        ctx.strokeStyle = '#3f8a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+sw, y-TH*.3); ctx.stroke();
+        ball(ctx, x+sw, y-TH*.33, TW*.045, TW*.04, '#ffffff', FLOWER_COLS[(k+o.id)%5], shadeHex(FLOWER_COLS[(k+o.id)%5],-.3));
+        ctx.fillStyle = '#ffcc33'; ctx.beginPath(); ctx.arc(x+sw, y-TH*.34, TW*.015, 0, Math.PI*2); ctx.fill();
+      } break; }
+    case 'lamp': {
+      box(cm-.16,rm-.16,cm+.16,rm+.16,0,U*.12,'#9a9a9a','#7d7d7d','#666');
+      box(cm-.05,rm-.05,cm+.05,rm+.05,U*.12,U*1.4,'#444','#3a3a3a','#2c2c2c');
+      const glow = night ? .6 : .18, [gx,gy] = P(cm,rm,U*1.6); if (night) addGlow(gx, gy, TW*.9);
+      const gg = ctx.createRadialGradient(gx,gy,1,gx,gy,TW*.6); gg.addColorStop(0,`rgba(255,220,120,${glow})`); gg.addColorStop(1,'rgba(255,220,120,0)');
+      ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(gx,gy,TW*.6,0,Math.PI*2); ctx.fill();
+      box(cm-.11,rm-.11,cm+.11,rm+.11,U*1.4,U*1.8,'#fff3c4','#ffd66b','#f2b93b');
+      roof(cm-.15,rm-.15,cm+.15,rm+.15,U*1.8,U*.25,'#3a3a3a','#2c2c2c','#444');
+      break; }
+    case 'bench': {
+      const alongC = o.w >= o.h;
+      for (const [lc,lr] of alongC ? [[c0+.15,rm-.15],[c1-.2,rm-.15],[c0+.15,rm+.1],[c1-.2,rm+.1]] : [[cm-.15,r0+.15],[cm-.15,r1-.2],[cm+.1,r0+.15],[cm+.1,r1-.2]])
+        box(lc,lr,lc+.06,lr+.06,0,U*.4,'#5a3818','#5a3818','#4a2d12');
+      if (alongC){ box(c0+.05,rm-.25,c1-.05,rm+.2,U*.4,U*.5,'#c88a4c','#a8703a','#8c5b2e'); box(c0+.05,rm-.3,c1-.05,rm-.22,U*.5,U*1.0,'#c88a4c','#a8703a','#8c5b2e'); }
+      else       { box(cm-.25,r0+.05,cm+.2,r1-.05,U*.4,U*.5,'#c88a4c','#a8703a','#8c5b2e'); box(cm-.3,r0+.05,cm-.22,r1-.05,U*.5,U*1.0,'#c88a4c','#a8703a','#8c5b2e'); }
+      break; }
+    case 'fence': {
+      const alongC = o.w >= o.h, n = Math.max(o.w,o.h)*2+1;
+      for (let k=0;k<n;k++){ const f = k/(n-1), pc = alongC ? c0+(c1-c0)*f : cm, pr = alongC ? rm : r0+(r1-r0)*f;
+        box(pc-.04,pr-.04,pc+.04,pr+.04,0,U*.8,'#e0b27a','#b98549','#9c6d37'); }
+      for (const z of [U*.3, U*.6]) alongC ? box(c0,rm-.02,c1,rm+.02,z,z+U*.1,'#d6a46b','#b07a40','#946330')
+                                          : box(cm-.02,r0,cm+.02,r1,z,z+U*.1,'#d6a46b','#b07a40','#946330');
+      break; }
+    case 'starter': {
+      const a0 = c0+.08, b0 = r0+.08, a1 = c1-.08, b1 = r1-.08;
+      box(a0,b0,a1,b1,0,U*.15,null,'#b8a07e','#9d8667');
+      box(a0,b0,a1,b1,U*.15,U*1.25,null,'#fbeed2','#e3d0aa');
+      faceQuad('L', a0,b0,a1,b1, .38,.62, U*.15, U*.95, '#9a6234');
+      faceQuad('L', a0,b0,a1,b1, .08,.3, U*.55, U*1.0, '#ffffff'); faceQuad('L', a0,b0,a1,b1, .1,.28, U*.58, U*.97, night ? '#ffe08a' : '#9fd3f0');
+      faceQuad('R', a0,b0,a1,b1, .35,.65, U*.55, U*1.0, '#ffffff'); faceQuad('R', a0,b0,a1,b1, .37,.63, U*.58, U*.97, night ? '#ffe08a' : '#8cc6e6');
+      roof(a0-.1,b0-.1,a1+.1,b1+.1,U*1.25,U*1.0,'#e8813a','#c96a28','#ad5a20');
+      if (night){ const w1 = P(a0+(a1-a0)*.19, b1, U*.78); addGlow(w1[0], w1[1], TW*.45); }
+      break; }
+    case 'doghouse': {
+      const a0 = c0+.15, b0 = r0+.15, a1 = c1-.15, b1 = r1-.15;
+      box(a0,b0,a1,b1,0,U*1.05,null,'#d9a066','#b9824a');
+      faceQuad('L', a0,b0,a1,b1, .35,.65, 0, U*.65, '#3b2414');
+      const [dx,dy] = P((a0+a1)/2, b1, U*.65); ctx.fillStyle = '#3b2414'; ctx.beginPath(); ctx.ellipse(dx, dy, (a1-a0)*.15*TW/2*1.4, TH*.18, 0, Math.PI, 0); ctx.fill();
+      roof(a0-.1,b0-.1,a1+.1,b1+.1,U*1.05,U*.9,'#d64933','#b43a27','#9c2f1e');
+      const [nx,ny] = P((a0+a1)/2, b1, U*.88); ctx.fillStyle = '#fff3d6'; ctx.fillRect(nx-TW*.1, ny-TH*.09, TW*.2, TH*.15);
+      ctx.fillStyle = '#7a4a24'; ctx.font = `600 ${Math.round(TH*.13)}px Mali, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(S.pet.name.slice(0,6), nx, ny-TH*.015);
+      break; }
+    case 'fountain': {
+      box(c0+.1,r0+.1,c1-.1,r1-.1,0,U*.4,'#d5d8dd','#b2b6be','#979ba4');
+      const A = P(c0+.22,r0+.22,U*.4), B = P(c1-.22,r0+.22,U*.4), C = P(c1-.22,r1-.22,U*.4), D = P(c0+.22,r1-.22,U*.4);
+      const wg = ctx.createLinearGradient(A[0],A[1],C[0],C[1]); wg.addColorStop(0,'#5fb7e6'); wg.addColorStop(1,'#2f86c4');
+      ctx.save(); quad(ctx, A,B,C,D, wg); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.2; const [fx,fy] = P(cm,rm,U*.4);
+      for (let k=0;k<3;k++){ const t = (time*.5 + k/3)%1; ctx.globalAlpha = 1-t; ctx.beginPath(); ctx.ellipse(fx,fy,TW*.1+TW*.5*t,TH*.1+TH*.5*t,0,0,Math.PI*2); ctx.stroke(); }
+      ctx.restore(); ctx.globalAlpha = 1;
+      box(cm-.12,rm-.12,cm+.12,rm+.12,U*.4,U*1.0,'#e2e4e8','#c3c7ce','#a7abb3');
+      box(cm-.3,rm-.3,cm+.3,rm+.3,U*1.0,U*1.12,'#e2e4e8','#c3c7ce','#a7abb3');
+      ctx.fillStyle = '#bfe6ff';                                     // water spray (parabolic droplets)
+      for (let k=0;k<10;k++){ const t = (time*.7 + k/10)%1, ang = k*0.628, d = .1 + t*.32;
+        const [x,y] = P(cm+Math.cos(ang)*d, rm+Math.sin(ang)*d, U*1.12 + Math.sin(t*Math.PI)*U*.7 - t*U*.5);
+        ctx.globalAlpha = .9-t*.5; ctx.beginPath(); ctx.arc(x,y,Math.max(1.5,TW*.025),0,Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha = 1; break; }
+    case 'gazebo': {
+      box(c0,r0,c1,r1,0,U*.18,'#e3cfae','#c1a57f','#a68b66');
+      for (const [pc,pr] of [[c0+.12,r0+.12],[c1-.2,r0+.12],[c0+.12,r1-.2],[c1-.2,r1-.2]]) box(pc,pr,pc+.08,pr+.08,U*.18,U*1.6,'#fdf6e8','#efe3c9','#d8c8a8');
+      box(c0+.2,r1-.25,c1-.2,r1-.18,U*.18,U*.55,'#fdf6e8','#efe3c9','#d8c8a8');                  // railing
+      roof(c0-.08,r0-.08,c1+.08,r1+.08,U*1.6,U*1.0,'#3a9a7f','#2e7d68','#246653');
+      break; }
+    case 'barn': {
+      box(c0+.05,r0+.05,c1-.05,r1-.05,0,U*1.6,null,'#c0392b','#9b2c20');
+      faceQuad('L', c0+.05,r0+.05,c1-.05,r1-.05, .28,.72, 0, U*1.15, '#f4ece0');
+      faceQuad('L', c0+.05,r0+.05,c1-.05,r1-.05, .31,.69, 0, U*1.08, '#8e261b');
+      ctx.strokeStyle = '#f4ece0'; ctx.lineWidth = 2; { const a = P(c0+.05+(c1-c0-.1)*.31, r1-.05, 0), b = P(c0+.05+(c1-c0-.1)*.69, r1-.05, U*1.08), c = P(c0+.05+(c1-c0-.1)*.69, r1-.05, 0), d = P(c0+.05+(c1-c0-.1)*.31, r1-.05, U*1.08);
+        ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.moveTo(c[0],c[1]); ctx.lineTo(d[0],d[1]); ctx.stroke(); }
+      faceQuad('R', c0+.05,r0+.05,c1-.05,r1-.05, .4,.6, U*1.0, U*1.35, '#f4ece0');
+      roof(c0-.05,r0-.05,c1+.05,r1+.05,U*1.6,U*1.3,'#6b737c','#565d65','#474d54');
+      break; }
+    case 'house': {
+      const a0 = c0+.05, b0 = r0+.05, a1 = c1-.05, b1 = r1-.05;
+      box(a0+.3,b0+.3,a0+.55,b0+.55,U*1.6,U*3.1,'#a35d45','#9a5b45','#7f4836');     // chimney
+      box(a0,b0,a1,b1,0,U*1.7,null,'#f6e7c8','#dccaa4');
+      box(a0,b0,a1,b1,0,U*.18,null,'#b8a07e','#9d8667');                            // stone footing
+      faceQuad('L', a0,b0,a1,b1, .4,.6, 0, U*1.15, '#8a5a33');                       // door
+      faceQuad('L', a0,b0,a1,b1, .1,.3, U*.6, U*1.2, '#ffffff'); faceQuad('L', a0,b0,a1,b1, .12,.28, U*.65, U*1.15, night ? '#ffe08a' : '#9fd3f0');
+      faceQuad('L', a0,b0,a1,b1, .7,.9, U*.6, U*1.2, '#ffffff'); faceQuad('L', a0,b0,a1,b1, .72,.88, U*.65, U*1.15, night ? '#ffe08a' : '#9fd3f0');
+      for (const u of [.15,.6]){ faceQuad('R', a0,b0,a1,b1, u, u+.2, U*.6, U*1.2, '#ffffff'); faceQuad('R', a0,b0,a1,b1, u+.02, u+.18, U*.65, U*1.15, night ? '#ffe08a' : '#8cc6e6'); }
+      roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.7,U*1.3,'#4277b5','#36639a','#2c5281');
+      if (night){ const w1 = P(a0+(a1-a0)*.2, b1, U*.9), w2 = P(a0+(a1-a0)*.8, b1, U*.9); addGlow(w1[0], w1[1], TW*.5); addGlow(w2[0], w2[1], TW*.5); }
+      break; }
+  }
+}
+
+
+/* ---- animated water: tiles merge into one pond (also across chunks); sandy bank + foam only toward land ---- */
+function isWater(gc, gr){ const t = tileAt(gc, gr); return !!t && t.k==='water'; }
+function drawWater(gc, gr, time, seed, i){
+  const e = .12, wl = isWater(gc-1,gr), wr = isWater(gc+1,gr), wt = isWater(gc,gr-1), wb = isWater(gc,gr+1);
+  const c0 = gc + (wl?0:e), c1 = gc+1-(wr?0:e), r0 = gr + (wt?0:e), r1 = gr+1-(wb?0:e);
+  const A = P(c0,r0), B = P(c1,r0), C = P(c1,r1), D = P(c0,r1);
+  const g = ctx.createLinearGradient(A[0], A[1], C[0], C[1]);
+  g.addColorStop(0,'#3d9bd6'); g.addColorStop(.6,'#5fb7e6'); g.addColorStop(1,'#2f86c4');
+  ctx.save(); quad(ctx, A, B, C, D, g); ctx.clip();
+  ctx.fillStyle = 'rgba(10,60,110,.18)';                      // depth: darker toward the middle
+  const [mx,my] = P(gc+.5, gr+.5); ctx.beginPath(); ctx.ellipse(mx, my, TW*.3, TH*.3, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.2;
+  for (let k=0;k<2;k++){
+    const t = (time*.35 + k*.5 + hrnd(seed,i,5)) % 1, [x,y] = P(gc+.3+hrnd(seed,i,6+k)*.4, gr+.3+hrnd(seed,i,8+k)*.4);
+    ctx.globalAlpha = 1-t; ctx.beginPath(); ctx.ellipse(x, y, TW*.05+TW*.18*t, TH*.05+TH*.18*t, 0, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const sh = Math.sin(time*1.3 + gc + gr)*TW*.08;
+  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.ellipse(mx+sh, my-TH*.08, TW*.18, TH*.05, -.45, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  // foam lapping at the shore
+  ctx.strokeStyle = 'rgba(255,255,255,' + (.45 + Math.sin(time*2 + gc)*.2) + ')'; ctx.lineWidth = 1.6; ctx.setLineDash([3,4]);
+  ctx.lineDashOffset = -time*6; ctx.beginPath();
+  if (!wt){ ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); }
+  if (!wr){ ctx.moveTo(B[0],B[1]); ctx.lineTo(C[0],C[1]); }
+  if (!wb){ ctx.moveTo(C[0],C[1]); ctx.lineTo(D[0],D[1]); }
+  if (!wl){ ctx.moveTo(D[0],D[1]); ctx.lineTo(A[0],A[1]); }
+  ctx.stroke(); ctx.setLineDash([]);
+  if (hrnd(seed,i,12) < .6){ const [lx,ly] = P(gc+.3+hrnd(seed,i,13)*.4, gr+.3+hrnd(seed,i,14)*.4), bob = Math.sin(time*1.5+i)*1;
+    ctx.fillStyle = '#4c9a3a'; ctx.beginPath(); ctx.ellipse(lx, ly+bob, TW*.08, TH*.09, 0, .3, Math.PI*2-.1); ctx.lineTo(lx, ly+bob); ctx.fill();
+    if (hrnd(seed,i,15) < .5){ ctx.fillStyle = '#ffb3d1'; ctx.beginPath(); ctx.arc(lx+TW*.02, ly+bob-TH*.04, TW*.025, 0, Math.PI*2); ctx.fill(); } }
+}
+
+/* ---- sky: time of day, sun / moon, night tint, night glows ---- */
+let NIGHT = 0, skyKey = '';
+function updateSky(){
+  const d = new Date(), h = d.getHours() + d.getMinutes()/60;
+  // 0 = full day, 1 = full night; dusk 17–19, dawn 5–7
+  NIGHT = h < 5 || h >= 19.5 ? 1 : h < 7 ? 1-(h-5)/2 : h >= 17.5 ? (h-17.5)/2 : 0;
+  const key = Math.round(NIGHT*10) + (h>=17 && h<20 ? 'd' : '');
+  if (key === skyKey) return; skyKey = key;
+  cv.style.background = NIGHT > .8 ? 'linear-gradient(#0d1b3d,#1d3466 50%,#2b4a6e)'
+    : (h >= 16.5 && h < 20) ? 'linear-gradient(#f6b26b,#f9d29d 40%,#e9f2d0 80%)'
+    : (h >= 5 && h < 7.5) ? 'linear-gradient(#f7c6a3,#cfe6f5 50%,#e6f6d6)'
+    : 'linear-gradient(#8fd0f5,#cfeefc 40%,#e6f6d6 80%)';
+}
+function drawSunMoon(time){
+  const x = cssW - 56, y = 74;
+  if (NIGHT > .5){
+    ctx.fillStyle = 'rgba(255,255,230,.15)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff6d0'; ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(13,27,61,.9)'; ctx.beginPath(); ctx.arc(x+7, y-4, 13, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; for (let k=0;k<14;k++){ const sx = (k*97.3)%cssW, sy = 20 + (k*53.1)%140;
+      ctx.globalAlpha = .4 + Math.sin(time*2 + k)*.3; ctx.fillRect(sx, sy, 1.6, 1.6); } ctx.globalAlpha = 1;
+  } else {
+    const g = ctx.createRadialGradient(x, y, 4, x, y, 46); g.addColorStop(0,'rgba(255,240,170,.9)'); g.addColorStop(1,'rgba(255,240,170,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffe680'; ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.fill();
+  }
+}
+const glows = [];                                            // reused each frame: [x, y, r, x, y, r, …]
+function addGlow(x, y, r){ glows.push(x, y, r); }
+function drawNight(){
+  if (NIGHT <= 0.02){ glows.length = 0; return; }
+  ctx.fillStyle = `rgba(16,24,64,${.42*NIGHT})`; ctx.fillRect(0,0,cssW,cssH);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let k=0;k<glows.length;k+=3){
+    const g = ctx.createRadialGradient(glows[k], glows[k+1], 1, glows[k], glows[k+1], glows[k+2]);
+    g.addColorStop(0, `rgba(255,200,90,${.55*NIGHT})`); g.addColorStop(1,'rgba(255,200,90,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(glows[k], glows[k+1], glows[k+2], 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over'; glows.length = 0;
+}
+function drawClouds(time){
+  ctx.fillStyle = NIGHT > .5 ? 'rgba(200,210,255,.18)' : 'rgba(255,255,255,.8)';
+  for (let k=0;k<3;k++){
+    const span = cssW + 200, x = ((time*(6+k*3) + k*190) % span) - 100, y = 26 + k*30, s = 1 - k*.15;
+    ctx.beginPath(); ctx.ellipse(x, y, 34*s, 12*s, 0, 0, Math.PI*2); ctx.ellipse(x-20*s, y+4*s, 20*s, 10*s, 0, 0, Math.PI*2);
+    ctx.ellipse(x+22*s, y+3*s, 22*s, 10*s, 0, 0, Math.PI*2); ctx.ellipse(x+4*s, y-8*s, 18*s, 12*s, 0, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ---- butterflies in WORLD space (stay put while panning); fireflies at night ---- */
+const flies = [0,1,2,3,4].map(k => ({ gx:0, gy:0, h:1, tx:0, ty:0, th:1, ph:k*1.7, col:['#ff8fb1','#ffd166','#8ecae6','#cdb4db','#b5e48c'][k], dir:1, rest:0, init:false }));
+function flyTarget(f){
+  let c = pet.x + (Math.random()-.5)*7, r = pet.y + (Math.random()-.5)*7;
+  for (let k=0;k<6;k++){ const tc = Math.floor(pet.x + (Math.random()-.5)*8), tr = Math.floor(pet.y + (Math.random()-.5)*8), t = tileAt(tc,tr);
+    if (t && (t.k==='wild' || (t.k==='obj' && (objById(hitZone,t.o)||{}).type==='flowerbed'))){ c = tc+.5; r = tr+.5; break; } }
+  f.tx = c; f.ty = r; f.th = .6 + Math.random()*1.2;
+}
+function updateFlies(dt){
+  for (const f of flies){
+    if (!f.init){ f.gx = pet.x + (Math.random()-.5)*5; f.gy = pet.y + (Math.random()-.5)*5; f.init = true; flyTarget(f); }
+    if (f.rest > 0){ f.rest -= dt; continue; }
+    const dx = f.tx-f.gx, dy = f.ty-f.gy, d = Math.hypot(dx,dy), sp = .9*dt;
+    f.h += (f.th - f.h)*Math.min(1, dt*2);
+    if (d < .05){ f.rest = Math.random() < .5 ? 1+Math.random()*2 : 0; flyTarget(f); continue; }
+    f.gx += dx/d*Math.min(sp,d); f.gy += dy/d*Math.min(sp,d);
+    const sdx = dx - dy; if (Math.abs(sdx) > .02) f.dir = sdx > 0 ? 1 : -1;
+  }
+}
+function drawFlies(time){
+  for (const f of flies){
+    const [x0,y0] = P(f.gx, f.gy, TH*f.h);
+    if (x0 < -20 || x0 > cssW+20 || y0 < -20 || y0 > cssH+20) continue;
+    if (NIGHT > .6){                                          // fireflies
+      const a = .5 + Math.sin(time*3 + f.ph)*.5; ctx.fillStyle = `rgba(230,255,120,${a})`;
+      ctx.beginPath(); ctx.arc(x0, y0, 2.4, 0, Math.PI*2); ctx.fill(); addGlow(x0, y0, 12); continue;
+    }
+    const flap = f.rest > 0 ? .35 + Math.abs(Math.sin(time*3+f.ph))*.3 : Math.abs(Math.sin(time*18 + f.ph));
+    const bob = f.rest > 0 ? 0 : Math.sin(time*4+f.ph)*3, s = TW*.07;
+    ctx.save(); ctx.translate(x0, y0+bob); ctx.scale(f.dir, 1);
+    ctx.fillStyle = f.col;
+    ctx.beginPath(); ctx.ellipse(-s*.5*flap, -s*.4, s*.6*flap+.5, s*.55, -.4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-s*.4*flap, s*.25, s*.45*flap+.5, s*.38, .4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = shadeHex(f.col,-.25);
+    ctx.beginPath(); ctx.ellipse( s*.35*flap, -s*.35, s*.45*flap+.5, s*.45, .4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#3b2a1a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0,-s*.6); ctx.lineTo(0, s*.5); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* =====================================================================
+   NATURE — things grow back like a real field (real time, also while the app is closed)
+   • Regrow:  every SPAWN_MS each area may sprout 1 small item on a free tile
+              (not next to buildings, not under the pet; stops at NATURE_CAP items per area)
+   • Grow up: untouched items (no job running) grow into the next size after GROW_UP[k].ms
+   ===================================================================== */
+const SPAWN_MS = 5*60*1000;                                  // ⚠️ one regrowth roll per area every 5 min
+const NATURE_CAP = 15;                                       // ⚠️ max natural items per 5×5 area
+const SPAWN_TABLE = [['grass',.4],['wild',.25],['pebble',.2],['sapling',.15]];
+const GROW_UP = { grass:{to:'bush', ms:30*60e3}, sapling:{to:'tree', ms:60*60e3}, pebble:{to:'rock', ms:45*60e3}, rock:{to:'boulder', ms:3*3600e3} };
+function nearObj(z, i){                                      // keep 1 tile of space around buildings
+  const c = i%GRID, r = (i/GRID)|0;
+  for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++){ const t = tileAt(z.cx*GRID+c+dc, z.cy*GRID+r+dr); if (t && t.k==='obj') return true; }
+  return false;
+}
+function natureTick(){
+  const now = Date.now(); let changed = false, firstGrow = false;
+  S.farm.natureAt = S.farm.natureAt || now;
+  const rolls = Math.min(24, Math.floor((now - S.farm.natureAt)/SPAWN_MS));   // catch up after being away (cap 2 h)
+  if (rolls > 0) S.farm.natureAt += rolls*SPAWN_MS;
+  for (const z of S.farm.zones){
+    let natural = 0;
+    for (let i=0;i<z.tiles.length;i++){
+      const t = z.tiles[i];
+      if (!RES[t.k]) continue; natural++;
+      if (!t.born){ t.born = now; continue; }
+      const g = GROW_UP[t.k];
+      if (g && !t.job && now - t.born >= g.ms){ t.k = g.to; t.born = now; markDirty(z); changed = true; firstGrow = true; }
+    }
+    for (let k=0;k<rolls && natural < NATURE_CAP;k++){
+      if (Math.random() > .5) continue;
+      const free = [];
+      for (let i=0;i<z.tiles.length;i++){
+        const gc = z.cx*GRID + i%GRID, gr = z.cy*GRID + ((i/GRID)|0);
+        if (z.tiles[i].k==='clear' && !nearObj(z,i) && !(Math.floor(pet.x)===gc && Math.floor(pet.y)===gr)) free.push(i);
+      }
+      if (!free.length) break;
+      let r = Math.random(), kind = 'grass'; for (const [k2,w] of SPAWN_TABLE){ if ((r -= w) < 0){ kind = k2; break; } }
+      const t = z.tiles[free[(Math.random()*free.length)|0]]; t.k = kind; t.born = now; natural++;
+      markDirty(z); changed = true; firstGrow = true;
+    }
+  }
+  if (changed){ save(); if (firstGrow && !st('natureSeen')){ bump('natureSeen');
+    queueReward('🌱 ธรรมชาติเติบโต!\nพื้นที่ว่างจะมีหญ้า ดอกไม้ หินเล็ก และต้นกล้างอกใหม่เรื่อย ๆ\nถ้าไม่เก็บ มันจะโตขึ้น: หญ้า→พุ่มไม้, ต้นกล้า→ต้นไม้ใหญ่, หินเล็ก→ก้อนหิน→หินใหญ่\n(พื้นที่รอบสิ่งปลูกสร้าง 1 ช่องจะไม่มีอะไรงอก)'); flushRewards(); } }
+}
+
+/* ---- pet (global tile coords) ---- */
+const pet = makePetAnim();
+function walkable(t){ return !!t && t.k==='clear'; }
+function walkAt(x, y){ return walkable(tileAt(Math.floor(x), Math.floor(y))); }
+function hasWalkable(){ for (const z of S.farm.zones) for (const t of z.tiles) if (walkable(t)) return true; return false; }
+function pathClear(x0,y0,x1,y1){
+  const n = Math.max(1, Math.ceil(Math.hypot(x1-x0,y1-y0)/0.2));
+  for (let k=1;k<=n;k++) if (!walkAt(x0+(x1-x0)*k/n, y0+(y1-y0)*k/n)) return false;
+  return true;
+}
+function pickPetTarget(a){
+  if (a.holdSit) return;
+  if (Math.random() < .3){                                   // stroll to the pond for a drink
+    for (let tries=0; tries<12; tries++){
+      const wc = Math.floor(a.x + (Math.random()-.5)*8), wr = Math.floor(a.y + (Math.random()-.5)*8);
+      if (!isWater(wc,wr)) continue;
+      const [dc,dr] = [[1,0],[-1,0],[0,1],[0,-1]][(Math.random()*4)|0], nc = wc+dc, nr = wr+dr;
+      if (!walkable(tileAt(nc,nr))) continue;
+      const tx = nc+.5 - dc*.3, ty = nr+.5 - dr*.3;
+      if (!pathClear(a.x,a.y,tx,ty)) continue;
+      a.tx = tx; a.ty = ty; a.drinkNext = true; a.faceTo = ((wc-wr)-(nc-nr)) >= 0 ? 1 : -1; return;
+    }
+  }
+  for (let tries=0; tries<20; tries++){
+    const tc = Math.floor(a.x + (Math.random()-.5)*8), tr = Math.floor(a.y + (Math.random()-.5)*8);
+    if (!walkable(tileAt(tc,tr))) continue;
+    const tx = tc+.25+Math.random()*.5, ty = tr+.25+Math.random()*.5;
+    if (pathClear(a.x,a.y,tx,ty)){ a.tx = tx; a.ty = ty; a.drinkNext = false; return; }
+  }
+  a.tx = a.x; a.ty = a.y;
+}
+function placePet(){
+  for (const z of S.farm.zones) for (let i=0;i<z.tiles.length;i++) if (walkable(z.tiles[i])){
+    pet.x = pet.tx = z.cx*GRID + (i%GRID) + .5; pet.y = pet.ty = z.cy*GRID + ((i/GRID)|0) + .5;
+    pet.state = 'idle'; pet.timer = 1; return; }
+}
+const petSize = () => TW*0.62*petStage(S.pet.lv).scale;
+function drawPet(){ const [sx,sy] = P(pet.x, pet.y); drawPetModel(ctx, S.pet.type, pet, sx, sy, petSize(), petStage(S.pet.lv).form); }
+
+/* ---- main render loop ---- */
+let raf = 0, lastT = 0, tutAcc = 0, skyAcc = 1e9, natAcc = 9000;
+const badges = [];                                           // reused: [kind, gc, gr, zoneIdx, li/objId, …]
+const visZones = [];
+function frame(now){
+  raf = requestAnimationFrame(frame);
+  if (now - lastT < 33) return;                              // ~30fps cap: plenty for a farm, saves battery
+  const dt = Math.min(100, now - lastT); lastT = now; frameNo++;
+  if (!cssW) resizeFarm();
+  if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
+  const time = now/1000, wall = Date.now();
+  ctx.clearRect(0,0,cssW,cssH);
+  drawSunMoon(time); drawClouds(time);
+
+  // visible chunks, back → front
+  visZones.length = 0;
+  for (const z of S.farm.zones) if (chunkOnScreen(z)) visZones.push(z);
+  visZones.sort((a,b) => (a.cx+a.cy) - (b.cx+b.cy));
+  const D = SIDE_D();
+  for (const z of visZones){
+    const e = chunkCanvas(z), c = e.cv, k = TW / e.tw, [tx,ty] = P(z.cx*GRID, z.cy*GRID);   // k ≠ 1 only mid-pinch
+    ctx.drawImage(c, tx - (GRID*e.tw+6)/2*k, ty - 3*k, c.width/DPR*k, c.height/DPR*k);
+  }
+  let gcMin = 1e9, gcMax = -1e9, grMin = 1e9, grMax = -1e9;
+  for (const z of visZones){ gcMin = Math.min(gcMin, z.cx*GRID); gcMax = Math.max(gcMax, z.cx*GRID+GRID-1); grMin = Math.min(grMin, z.cy*GRID); grMax = Math.max(grMax, z.cy*GRID+GRID-1); }
+  for (const z of visZones) for (let i=0;i<z.tiles.length;i++) if (z.tiles[i].k==='water') drawWater(z.cx*GRID+i%GRID, z.cy*GRID+((i/GRID)|0), time, z.seed, i);
+  drawTutHighlight(time);
+  if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); }
+  if ((natAcc += dt) > 10000){ natAcc = 0; natureTick(); }  // nature check every 10 s
+
+  if (!walkAt(pet.x, pet.y) && !pet.holdSit) placePet();
+  updatePetAnim(pet, dt/1000, hasWalkable(), pickPetTarget);
+  updateFlies(dt/1000);
+  updateFishing(wall);
+
+  // Y-sorted pass over global diagonals
+  badges.length = 0;
+  const petDepth = pet.x + pet.y; let petDrawn = false;
+  for (let s = gcMin+grMin; s <= gcMax+grMax; s++){
+    const c0 = Math.max(gcMin, s-grMax), c1 = Math.min(gcMax, s-grMin);
+    for (let gc=c0; gc<=c1; gc++){
+      const gr = s - gc, t = tileAt(gc, gr); if (!t) continue;
+      const z = hitZone, li = hitLi;
+      if (RES[t.k]){ drawRes(t, gc, gr, time, z.seed, li); if (t.job) badges.push(0, gc, gr, z, li); }
+      else if (t.k==='obj'){
+        const o = objById(z, t.o), lc = li%GRID, lr = (li/GRID)|0;
+        if (o && lc===o.c+o.w-1 && lr===o.r+o.h-1){ drawStruct(o, time, z.cx*GRID, z.cy*GRID);
+          if (!o.done || (o.type==='plot' && o.plant)) badges.push(1, gc, gr, z, o.id); }
+      }
+    }
+    if (!petDrawn && petDepth < s+1.5){ drawPet(); drawFishLine(time); petDrawn = true; }
+  }
+  if (!petDrawn){ drawPet(); drawFishLine(time); }
+  if (placing) drawGhost(time);
+  for (let k=0;k<badges.length;k+=5){
+    if (badges[k]===0) jobBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2], time, wall);
+    else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
+  }
+  drawFlies(time);
+  drawNight();
+  drawFishButtons(time);                                    // UI on top of everything (not tinted at night)
+}
+
+
+/* ---- progress badges ---- */
+function pill(x, y, w, h, fill){ ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x-w/2, y-h/2, w, h, h/2) : ctx.rect(x-w/2,y-h/2,w,h); ctx.fill(); }
+function badge(x, y, p, left, ready, time, tool){
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (ready){ const by = y + Math.sin(time*5)*3;
+    pill(x, by, 58, 24, '#4caf6a'); ctx.fillStyle = '#fff'; ctx.font = '700 13px Mali, sans-serif'; ctx.fillText('✔ เก็บ!', x, by+1); return; }
+  pill(x, y, 72, 22, 'rgba(255,255,255,.92)');
+  ctx.fillStyle = '#eadbc4'; ctx.fillRect(x-24, y+5, 48, 4);
+  ctx.fillStyle = '#4caf6a'; ctx.fillRect(x-24, y+5, 48*p, 4);
+  ctx.fillStyle = '#3b2a1a'; ctx.font = '600 11px Mali, sans-serif'; ctx.fillText(fmtShort(left), x+6, y-3);
+  if (tool){ ctx.save(); ctx.translate(x-24, y-3); ctx.rotate(Math.sin(time*10)*.5); ctx.font = '13px serif'; ctx.fillText(tool, 0, 0); ctx.restore(); }
+}
+function jobBadge(t, gc, gr, time, wall){
+  const R = RES[t.k]; if (!R) return; const [x,y] = P(gc+.5, gr+.5, TH*R.h + 14), left = (t.job.end-wall)/1000;
+  badge(x, y, 1 - Math.max(0,left)/t.job.dur, left, left <= 0, time, R.tool);
+}
+function buildBadge(o, z, time, wall){
+  if (!o) return;
+  const it = FARM_ITEMS[o.type], [x,y] = P(z.cx*GRID+o.c+o.w/2, z.cy*GRID+o.r+o.h/2, TH*it.H + 16);
+  if (!o.done){ const left = (o.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/buildSec(it), left, left <= 0, time, '🔨'); }
+  else { const left = (o.plant + GROW_MS - wall)/1000; badge(x, y, 1 - Math.max(0,left)/(GROW_MS/1000), left, left <= 0, time, '🌱'); }
+}
+
+/* ---- placement mode (Shop › ฟาร์ม). Footprint must sit inside ONE chunk, all tiles clear ---- */
+let placing = null;                                          // {type, w, h, gc, gr, valid}
+function footprintZone(p){
+  if (p.gc == null) return null;
+  const cx = Math.floor(p.gc/GRID), cy = Math.floor(p.gr/GRID), z = chunkMap.get(ck(cx,cy)); if (!z) return null;
+  const lc = p.gc - cx*GRID, lr = p.gr - cy*GRID;
+  if (lc + p.w > GRID || lr + p.h > GRID) return null;
+  for (let dr=0;dr<p.h;dr++) for (let dc=0;dc<p.w;dc++) if (z.tiles[(lr+dr)*GRID+lc+dc].k!=='clear') return null;
+  return { z, lc, lr };
+}
+/* opts.store → placed from 📦 storage (free, already built)
+   opts.move  → {z, o, ...} the object was lifted; cancel puts it back where it was */
+function startPlacing(type, opts){
+  const it = FARM_ITEMS[type]; opts = opts || {};
+  placing = { type, w:opts.w||it.w, h:opts.h||it.h, gc:null, gr:null, valid:false, store:!!opts.store, move:opts.move||null };
+  goTab('tFarm'); $('zoneBar').style.display = 'none'; $('placeBar').style.display = 'flex';
+  if (placing.move){ placeAt(placing.move.gc, placing.move.gr); }
+  else if (it.once && !placing.store && footprintZone({gc:0,gr:0,w:2,h:2})){ placeAt(0,0); centerOn(1,1); } else renderPlaceBar();
+}
+function endPlacing(){
+  if (placing && placing.move){                              // cancelled move → put it back untouched
+    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant;
+  }
+  placing = null; $('placeBar').style.display = 'none'; $('zoneBar').style.display = 'flex';
+}
+function placeAt(gc, gr){ placing.gc = gc; placing.gr = gr; placing.valid = !!footprintZone(placing); renderPlaceBar(); }
+function renderPlaceBar(){
+  const it = FARM_ITEMS[placing.type], verb = placing.move ? 'ย้าย' : 'วาง';
+  $('pInfo').textContent = placing.gc == null ? `แตะพื้นที่โล่งเพื่อ${verb} ${it.name} (${placing.w}×${placing.h})`
+    : placing.valid ? `${verb} ${it.name} มาตรงนี้ได้ ✓` : 'วางไม่ได้ — ทุกช่องต้องโล่งและอยู่ในพื้นที่ 5×5 เดียวกัน';
+  $('pOk').disabled = !placing.valid;
+}
+function drawGhost(time){
+  if (placing.gc == null) return;
+  const col = placing.valid ? 'rgba(76,175,106,.5)' : 'rgba(220,60,60,.5)';
+  for (let dr=0;dr<placing.h;dr++) for (let dc=0;dc<placing.w;dc++){
+    const c = placing.gc+dc, r = placing.gr+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); }
+  ctx.globalAlpha = .55 + Math.sin(time*4)*.1;
+  drawStruct({ type:placing.type, c:placing.gc, r:placing.gr, w:placing.w, h:placing.h, done:true, id:0, plant:0 }, time, 0, 0);
+  ctx.globalAlpha = 1;
+}
+$('pRot').onclick = () => { const w = placing.w; placing.w = placing.h; placing.h = w; if (placing.gc != null) placeAt(placing.gc, placing.gr); else renderPlaceBar(); };
+$('pCancel').onclick = endPlacing;
+$('pOk').onclick = () => {
+  const it = FARM_ITEMS[placing.type], fz = footprintZone(placing); if (!fz) return;
+  if (placing.move || placing.store){                        // move / place from storage: free & instant
+    const m = placing.move, o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, true);
+    if (m) o.plant = m.o.plant; else S.store[placing.type]--;
+    placing.move = null; bump('moveStore'); endPlacing(); save(); renderShop();
+    return;
+  }
+  if (it.once && starterOwned()) return sheet('สร้างบ้านหลังแรกไปแล้วครับ', OK);
+  if (S.coins < it.price || !canPay(it.cost)) return sheet('เหรียญหรือวัตถุดิบไม่พอแล้ว', OK);
+  confirmDo(`สร้าง ${it.name} ที่นี่?\n🪙 ${it.price || 'ฟรี'} ${it.price ? 'เหรียญ' : ''}\n${costText(it.cost)}\n⏱ ใช้เวลาสร้าง ${fmt(buildSec(it))}`, () => {
+    S.coins -= it.price; pay(it.cost);
+    const o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, false);
+    o.end = Date.now() + buildSec(it)*1000;
+    endPlacing(); save(); refreshHeader(); renderMats(); renderShop();
+  });
+};
+
+/* =====================================================================
+   FISHING — tap a pond → 🎣 cast → wait for the bobber to dip → ❗ pull in time
+   Phases: ready → cast (0.6 s arc) → wait (2–6 s) → bite (window 0.6–0.9 s) → result
+   Pulling during "wait" scares the fish; missing the window lets it escape.
+   ===================================================================== */
+const CATCH = [ {k:'tilapia', w:48, win:900, exp:4}, {k:'carp', w:24, win:800, exp:5}, {k:'shrimp', w:12, win:800, exp:4},
+                {k:'goldfish', w:5, win:600, exp:12}, {k:'boot', w:11, win:900, exp:1} ];
+let fishing = null;                                          // {gc, gr, phase, t0, biteAt, winEnd, pick}
+function startFishing(gc, gr){
+  fishPrompt = null;
+  fishing = { gc, gr, phase:'ready', t0:0, biteAt:0, winEnd:0, pick:null, cool:0 };
+  goTab('tFarm'); $('zoneBar').style.display = 'none'; $('fishBar').style.display = 'flex';
+  centerOn(gc+.5, gr+.5); renderFishBar();
+}
+function endFishing(){ fishing = null; $('fishBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; }
+function renderFishBar(){
+  if (!fishing) return;
+  const f = fishing, b = $('fBtn');
+  const txt = { ready:'แตะ "เหวี่ยงเบ็ด" แล้วรอทุ่นจม', cast:'กำลังเหวี่ยงเบ็ด…', wait:'รอปลากินเบ็ด… ยังไม่ต้องดึงนะ 🤫', bite:'❗ ปลากินเบ็ดแล้ว! ดึงเลย!!' };
+  $('fInfo').textContent = txt[f.phase];
+  b.textContent = f.phase==='ready' ? '🎣 เหวี่ยงเบ็ด' : f.phase==='bite' ? '❗ ดึง!' : '🎣 ดึงเบ็ด';
+  b.className = 'btn ' + (f.phase==='bite' ? 'ok bite' : f.phase==='ready' ? '' : 'ghost');
+  b.disabled = f.phase==='cast' || Date.now() < f.cool;
+}
+function fishPress(){
+  const f = fishing; if (!f) return; const now = Date.now();
+  if (f.phase==='ready'){ f.phase = 'cast'; f.t0 = now; renderFishBar(); return; }
+  if (f.phase==='wait'){ f.phase = 'ready'; f.cool = now + 800; renderFishBar(); return sheet('ดึงเร็วไป! ปลาตกใจหนีไปแล้ว 😅\nรอให้ทุ่นจมก่อนแล้วค่อยดึงนะครับ', OK); }
+  if (f.phase==='bite'){
+    const c = f.pick; f.phase = 'ready'; f.cool = now + 1200;
+    S.inv[c.k] = (S.inv[c.k]||0) + 1; bump('fish'); gainExp(c.exp); petHappy(pet);
+    save(); refreshHeader(); renderMats(); renderFishBar();
+    reward(`${c.k==='boot' ? 'อ้าว… ได้' : 'ได้ปลา!'} ${MAT[c.k]}${c.k==='goldfish' ? ' ✨ หายาก!' : ''}\n⭐ Exp +${c.exp}`);
+  }
+}
+function updateFishing(now){
+  const f = fishing; if (!f) return;
+  if (f.phase==='cast' && now - f.t0 > 600){ f.phase = 'wait'; f.biteAt = now + 2000 + Math.random()*4000; renderFishBar(); }
+  else if (f.phase==='wait' && now >= f.biteAt){
+    let r = Math.random()*CATCH.reduce((s,c) => s+c.w, 0); f.pick = CATCH.find(c => (r -= c.w) < 0) || CATCH[0];
+    f.phase = 'bite'; f.winEnd = now + f.pick.win; renderFishBar();
+    try { navigator.vibrate && navigator.vibrate(120); } catch(e){}
+  }
+  else if (f.phase==='bite' && now > f.winEnd){ f.phase = 'ready'; f.cool = now + 600; renderFishBar(); sheet('ช้าไปนิด! ปลาหลุดไปแล้ว 🐟💨\nเมื่อทุ่นจมให้กด "ดึง!" ทันที', OK); }
+  else if (f.phase==='ready' && f.cool && now >= f.cool){ f.cool = 0; renderFishBar(); }
+}
+/* bobber only (no rod): drops onto the pond, bobs while waiting, dips + ❗ on a bite */
+function drawFishLine(time){
+  const f = fishing; if (!f || f.phase==='ready') return;
+  let [bx,by] = P(f.gc+.5, f.gr+.5);
+  if (f.phase==='cast'){ const t = Math.min(1, (Date.now()-f.t0)/600); by -= (1-t)*TH*1.6; }   // drops in from above
+  else if (f.phase==='wait') by += Math.sin(time*3)*1.5;
+  else if (f.phase==='bite'){ by += 5 + Math.sin(time*40)*2.5; bx += Math.sin(time*31)*1.5; }
+  if (f.phase!=='cast'){
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.2; const t = (time*(f.phase==='bite' ? 2.5 : .8)) % 1;
+    ctx.globalAlpha = 1-t; ctx.beginPath(); ctx.ellipse(bx, by+3, 4+TW*.2*t, 2+TH*.2*t, 0, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = '#e63946'; ctx.beginPath(); ctx.arc(bx, by-2, 5, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bx, by-2, 5, 0, Math.PI); ctx.fill();
+  if (f.phase==='bite'){ ctx.font = '700 22px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#e63946'; ctx.fillText('❗', bx, by - 20 + Math.sin(time*12)*2); }
+}
+/* "🎣 ตกปลา" button appears ONLY when needed:
+   • after tapping a pond (shown above that spot for 5 s), or
+   • during the fishing tutorial quest (on the nearest pond to the pet). Hit rects saved for tap testing. */
+const fishBtns = [];                                         // reused: [x, y, w, h, gc, gr]
+let fishPrompt = null;                                       // {gc, gr, until}
+function drawFishButtons(time){
+  fishBtns.length = 0; if (fishing || placing) return;
+  let gc = null, gr = null;
+  if (fishPrompt && Date.now() < fishPrompt.until){ gc = fishPrompt.gc; gr = fishPrompt.gr; }
+  else if ((curQuest()||{}).id === 'fish'){                  // tutorial: point at the closest pond
+    let best = 1e9;
+    for (const z of visZones) for (let i=0;i<z.tiles.length;i++) if (z.tiles[i].k==='water'){
+      const c = z.cx*GRID + i%GRID, r = z.cy*GRID + ((i/GRID)|0), d = Math.abs(c-pet.x) + Math.abs(r-pet.y);
+      if (d < best){ best = d; gc = c; gr = r; } }
+  }
+  if (gc == null) return;
+  const [x,y0] = P(gc+.5, gr+.5), y = y0 - 18 + Math.sin(time*2.5)*2, w = 88, h = 32;
+  pill(x, y+3, w, h, 'rgba(0,0,0,.15)'); pill(x, y, w, h, '#2f86c4');
+  ctx.fillStyle = '#fff'; ctx.font = '700 14px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🎣 ตกปลา', x, y+1);
+  fishBtns.push(x - w/2 - 6, y - h/2 - 6, w + 12, h + 12, gc, gr);   // +6 px finger margin each side
+}
+$('fBtn').onclick = fishPress;
+$('fCancel').onclick = endFishing;
+
+function startLoop(){ if (!raf){ lastT = 0; skyAcc = 1e9; ensureZones(); placePet(); goHome(); renderZoneBar(); raf = requestAnimationFrame(frame); } }
+function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); }
+
+/* --- bottom bar: zoom −/+ and 🏠 home; shows unlocked area count --- */
+function renderZoneBar(){
+  $('zLabel').textContent = `🏠 พื้นที่ ${S.farm.zones.length}/${MAX_ZONES}`;
+  $('zPrev').disabled = zoom <= ZMIN + .001; $('zNext').disabled = zoom >= ZMAX - .001;
+}
+$('zPrev').onclick = () => setZoom(1);                       // − zoom out
+$('zNext').onclick = () => setZoom(-1);                      // + zoom in
+$('zLabel').onclick = goHome;
+
+/* --- touch: drag to pan (threshold 8 px), tap = act. Placement → pet → tile --- */
+let drag = null;
+const LONG_MS = 500;                                         // long-press threshold
+/* pinch: track active pointers; 2 fingers → zoom about their midpoint and pan with it */
+const ptrs = new Map();                                      // pointerId → {x, y}
+let pinch = null;                                            // {d0, z0, wc, wr}
+function pinchState(){
+  const [a, b] = [...ptrs.values()], br = cv.getBoundingClientRect();
+  return { d: Math.hypot(a.x-b.x, a.y-b.y) || 1, mx: (a.x+b.x)/2 - br.left, my: (a.y+b.y)/2 - br.top };
+}
+cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId); } catch(_){}
+  ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (ptrs.size === 2){                                      // second finger → start pinch, cancel tap/long-press
+    if (drag){ clearTimeout(drag.timer); drag.moved = true; }
+    const p = pinchState(), [wc, wr] = screenToWorld(p.mx, p.my);
+    pinch = { d0:p.d, z0:zoom, wc, wr }; pinching = true; return;
+  }
+  if (ptrs.size > 2) return;
+  drag = { x:e.clientX, y:e.clientY, cx:camX, cy:camY, moved:false, long:false };
+  const d = drag;
+  d.timer = setTimeout(() => { if (drag !== d || d.moved || placing || fishing) return;
+    const b = cv.getBoundingClientRect(), g = pick(d.x-b.left, d.y-b.top);
+    if (longPress(g.c, g.r)) d.long = true; }, LONG_MS); });
+cv.addEventListener('pointermove', e => {
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (pinch && ptrs.size >= 2){
+    const p = pinchState();
+    zoom = Math.max(ZMIN, Math.min(ZMAX, pinch.z0 * p.d / pinch.d0)); TW = TWBASE*zoom; TH = TW/2; OY = cssH*.5 - GRID*TH/2;
+    camX = p.mx - OX - (pinch.wc-pinch.wr)*TW/2; camY = p.my - OY - (pinch.wc+pinch.wr)*TH/2;   // world anchor follows the fingers
+    clampCam(); return;
+  }
+  if (!drag) return; const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+  if (!drag.moved && Math.hypot(dx,dy) > 8){ drag.moved = true; clearTimeout(drag.timer); }
+  if (drag.moved){ camX = drag.cx + dx; camY = drag.cy + dy; clampCam(); }
+});
+function endPointer(e){
+  ptrs.delete(e.pointerId);
+  if (pinch && ptrs.size < 2){                               // pinch finished → repaint ground at the final zoom
+    pinch = null; pinching = false; renderZoneBar();
+    if (drag){ clearTimeout(drag.timer); drag = null; }       // the remaining finger must not trigger a tap
+    return true;
+  }
+  return false;
+}
+cv.addEventListener('pointercancel', e => { endPointer(e); if (drag) clearTimeout(drag.timer); drag = null; });
+cv.addEventListener('wheel', e => {                          // desktop / trackpad pinch
+  e.preventDefault(); const b = cv.getBoundingClientRect();
+  zoomAt(zoom * Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)), e.clientX-b.left, e.clientY-b.top);
+}, { passive:false });
+cv.addEventListener('pointerup', e => {
+  if (endPointer(e)) return;
+  const d = drag; drag = null; if (!d) return; clearTimeout(d.timer); if (d.moved || d.long || ptrs.size) return;
+  const b = cv.getBoundingClientRect(), sx = e.clientX-b.left, sy = e.clientY-b.top;
+  const g = pick(sx, sy);
+  if (placing){ placeAt(g.c, g.r); return; }
+  if (fishing) return;
+  for (let k=0;k<fishBtns.length;k+=6)
+    if (sx >= fishBtns[k] && sx <= fishBtns[k]+fishBtns[k+2] && sy >= fishBtns[k+1] && sy <= fishBtns[k+1]+fishBtns[k+3]) return startFishing(fishBtns[k+4], fishBtns[k+5]);
+  const ps = petSize(), [px,py0] = P(pet.x, pet.y), py = py0 - ps*0.55 - pet.hopH*ps;
+  if (Math.hypot(sx-px, sy-py) < Math.max(30, ps*0.6)) return tapPet();
+  tapTile(g.c, g.r);
+});
+function rnd([a,b]){ return a + Math.floor(Math.random()*(b-a+1)); }
+function costText(cost){ return Object.entries(cost).map(([k,v]) => `${MAT[k]} ${v} (มี ${S.inv[k]})`).join('\n'); }
+function canPay(cost){ return Object.entries(cost).every(([k,v]) => S.inv[k] >= v); }
+function pay(cost){ Object.entries(cost).forEach(([k,v]) => S.inv[k] -= v); }
+const yieldText = y => Object.entries(y).map(([k,[a,b]]) => `${MAT[k]} ${a===b?a:a+'–'+b}`).join(', ');
+const OK = [{label:'ตกลง',cls:'ghost'}];
+
+/* ⚡ speed-up button for any running timer (job / build / crop) */
+function speedBtn(leftSec, onDone){
+  const cost = speedCost(leftSec);
+  return { label:`⚡ เร่งให้เสร็จทันที (🪙 ${cost})`, cls:'ok', fn:() => {
+    if (S.coins < cost) return sheet(`เหรียญไม่พอ (ต้องใช้ ${cost} มี ${S.coins})\nทำภารกิจสุขภาพเพื่อรับเหรียญเพิ่มนะครับ`, OK);
+    confirmDo(`ใช้ 🪙 ${cost} เหรียญ เร่งให้เสร็จทันที?\n(1 เหรียญ ต่อเวลาที่เหลือ 1 นาที)`, () => { S.coins -= cost; onDone(); bump('speed'); save(); refreshHeader(); });
+  }};
+}
+function tapTile(gc, gr){
+  const t = tileAt(gc, gr); if (!t) return;
+  const z = hitZone, li = hitLi;
+  if (t.k==='water'){ fishPrompt = { gc, gr, until: Date.now() + 5000 }; return; }   // pop the 🎣 button here
+  if (RES[t.k]){
+    const R = RES[t.k];
+    if (t.job){
+      const left = (t.job.end - Date.now())/1000;
+      if (left > 0) return sheet(`${R.tool} กำลัง${R.verb}…\n${R.name} (ชิ้น${SIZE_TH[R.size]})\nเหลืออีก ${fmt(left)}`,
+        [ speedBtn(left, () => { t.job.end = Date.now(); }), {label:'ปิด', cls:'ghost'} ]);
+      return confirmDo(`เก็บ${R.name}?`, () => {
+        const got = []; Object.entries(R.yield).forEach(([m,rg]) => { const n = rnd(rg); if (n){ S.inv[m] += n; got.push(`${MAT[m]} +${n}`); } });
+        t.k = 'clear'; delete t.job; markDirty(z); bump('collect_'+R.size);
+        gainExp(SIZE_EXP[R.size]); save(); refreshHeader(); renderMats();
+        reward(got.join('\n') + `\n⭐ Exp +${SIZE_EXP[R.size]}`);
+      });
+    }
+    const [a,b] = SIZE_TIME[R.size];
+    return confirmDo(`${R.verb}?\n${R.name} • ชิ้น${SIZE_TH[R.size]}\n⏱ ใช้เวลา ${fmt(a)} – ${fmt(b)}\nจะได้: ${yieldText(R.yield)}`, () => {
+      const d = rnd([a,b]); t.job = { end: Date.now() + d*1000, dur: d }; if (R.size==='large') bump('start_large'); save();
+    });
+  }
+  if (t.k==='obj') return tapObj(z, objById(z, t.o));
+  if (t.k==='clear') return sheet('🌱 พื้นที่โล่ง\nเลือกสิ่งปลูกสร้างและของตกแต่งได้ที่ ร้านค้า › ฟาร์ม',
+    [{label:'ไปที่ ร้านค้า › ฟาร์ม', cls:'ok', fn:() => openShop('farm')}, {label:'ปิด', cls:'ghost'}]);
+}
+/* long-press on a finished structure → ย้าย / เก็บเข้าคลัง */
+function longPress(gc, gr){
+  const t = tileAt(gc, gr); if (!t || t.k!=='obj') return false;
+  const z = hitZone, o = objById(z, t.o); if (!o) return false;
+  try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
+  const it = FARM_ITEMS[o.type];
+  if (!o.done){ sheet(`🔨 ${it.name} ยังสร้างไม่เสร็จ\nย้ายหรือเก็บได้หลังสร้างเสร็จแล้วครับ`, OK); return true; }
+  sheet(`${it.name}\nขนาด ${o.w}×${o.h} • จะทำอะไรดี?`, [
+    { label:'↔️ ย้ายตำแหน่ง', cls:'ok', fn:() => {
+        const lifted = { ...o }; removeObj(z, o);
+        startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } }); } },
+    { label:'📦 เก็บเข้าคลัง', fn:() => confirmDo(`เก็บ ${it.name} เข้าคลัง?\nนำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน` +
+        (o.plant ? '\n(ผักที่ปลูกอยู่จะหายไป)' : ''), () => {
+        S.store = S.store || {}; S.store[o.type] = (S.store[o.type]||0) + 1; removeObj(z, o); bump('moveStore'); save(); renderShop();
+        reward(`📦 เก็บ ${it.name} เข้าคลังแล้ว`); }) },
+    { label:'ปิด', cls:'ghost' } ]);
+  return true;
+}
+function tapObj(z, o){
+  if (!o) return;
+  const it = FARM_ITEMS[o.type];
+  if (!o.done){
+    const left = (o.end - Date.now())/1000;
+    if (left > 0) return sheet(`🔨 กำลังสร้าง ${it.name}\nเหลืออีก ${fmt(left)}`, [ speedBtn(left, () => { o.end = Date.now(); }), {label:'ปิด', cls:'ghost'} ]);
+    return confirmDo(`${it.name} สร้างเสร็จแล้ว! รับเลยไหม?`, () => {
+      o.done = true; gainExp(EXP.build); save(); refreshHeader();
+      reward(`✨ ${it.name} สร้างเสร็จ\n⭐ Exp +${EXP.build}`);
+    });
+  }
+  if (o.type==='plot'){
+    if (!o.plant){
+      if (!S.inv.seed) return sheet('ยังไม่มีเมล็ดพันธุ์\nซื้อได้ที่ร้านค้า หรือเก็บจากดอกไม้ป่า', OK);
+      return confirmDo(`ปลูกเมล็ดแครอท? (มี ${S.inv.seed})\nโตเต็มที่ใน 2 นาที (เดโม)`, () => { S.inv.seed--; o.plant = Date.now(); save(); renderMats(); });
+    }
+    const left = (GROW_MS - (Date.now()-o.plant))/1000;
+    if (left > 0) return sheet(`🌱 กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - GROW_MS; }), {label:'ปิด', cls:'ghost'} ]);
+    return confirmDo('เก็บเกี่ยวแครอท?', () => { const n = rnd([1,2]); S.inv.veg += n; o.plant = 0; bump('harvest'); gainExp(EXP.harvest); save(); refreshHeader(); renderMats(); reward(`${MAT.veg} +${n}\n⭐ Exp +${EXP.harvest}`); });
+  }
+  sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้างที่สิ่งปลูกสร้างเพื่อย้ายหรือเก็บเข้าคลัง`, [
+    {label:'รื้อถอน (ไม่คืนวัตถุดิบ)', cls:'ghost', fn:() => confirmDo(`รื้อถอน ${it.name}?\nจะไม่ได้เหรียญหรือวัตถุดิบคืน`, () => { removeObj(z, o); save(); })},
+    {label:'ปิด', cls:'ghost'} ]);
+}
+
+function tapPet(){
+  if (fishing) return;
+  petHappy(pet); bump('petTap');                             // hop + hearts on every tap
+  const opts = [];
+  if (S.inv.food) opts.push({label:`🦴 ให้อาหาร (มี ${S.inv.food}) Exp+20`, cls:'ok', fn:() => confirmDo('ให้อาหารน้อง?', () => feed('food',10,20))});
+  if (S.inv.veg)  opts.push({label:`🥕 ให้แครอท (มี ${S.inv.veg}) Exp+10`, fn:() => confirmDo('ให้แครอทน้อง?', () => feed('veg',5,10))});
+  for (const [k,h,x] of [['tilapia',6,12],['carp',8,15],['shrimp',6,12],['goldfish',15,40]])
+    if (S.inv[k]) opts.push({label:`${MAT[k]} (มี ${S.inv[k]}) Exp+${x}`, fn:() => confirmDo(`ให้${MAT[k].split(' ')[1]}น้อง?`, () => feed(k,h,x))});
+  opts.push({label:'ปิด', cls:'ghost'});
+  const p = S.pet, nx = PET_STAGES.find(s => s.lv > p.lv);
+  sheet(`${p.emoji} ${p.name} — Lv.${p.lv}\n${petStage(p.lv).name}\nExp ${p.pexp}/${needPetExp(p.lv)}\n❤️ ความผูกพัน ${p.heart}/100\nเกิดวันที่ ${p.born}` +
+        (nx ? `\nพัฒนาเป็น "${nx.name}" ที่ Lv.${nx.lv}` : '\nพัฒนาครบทุกร่างแล้ว 👑'), opts);
+}
+function feed(item, hearts, pexp){
+  S.inv[item]--; S.pet.heart = Math.min(100, S.pet.heart + hearts); petHappy(pet); bump('feed');
+  gainPetExp(pexp); gainExp(EXP.feed); save(); refreshHeader(); renderMats();
+  reward(`${S.pet.name} มีความสุข! ❤️ +${hearts}\n${S.pet.emoji} Exp +${pexp} • ⭐ Exp +${EXP.feed}`);
+}
+/* =====================================================================
+   QUESTS — sequential tutorial chain that teaches every core system.
+   Each quest: goal() returns progress (compared to need), optional
+   hl (what to highlight on the farm) & nav (which bottom tab to pulse).
+   Progress is read from cumulative counters in S.stats (bumped at event points),
+   so actions done early still count. Reward = coins (+Exp / items).
+   ===================================================================== */
+const st = k => (S.stats && S.stats[k]) || 0;
+function bump(k, n){ S.stats = S.stats || {}; S.stats[k] = (S.stats[k]||0) + (n||1); questDirty = true; }
+const starterDone = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter' && o.done));
+const plotsDone   = () => S.farm.zones.reduce((n,z) => n + z.objs.filter(o => o.type==='plot' && o.done).length, 0);
+function has2x2Clear(){
+  const T = S.farm.zones[0].tiles;
+  for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++)
+    if ([0,1,GRID,GRID+1].every(d => T[r*GRID+c+d].k==='clear' || T[r*GRID+c+d].k==='obj')) return true;
+  return false;
+}
+const QUESTS = [
+  { id:'hello',   name:'ทักทายน้อง',            hl:'pet',    need:1, goal:() => st('petTap'),
+    text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:5} },
+  { id:'small',   name:'เก็บของชิ้นเล็ก',         hl:'small',  need:1, goal:() => st('collect_small'),
+    text:'แตะหญ้า ดอกไม้ป่า หรือหินเล็กที่กระพริบ → ยืนยัน → รอ 15–30 วิ → แตะ "✔ เก็บ"', reward:{coins:5} },
+  { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
+    text:'เก็บของในกรอบสีเหลืองให้หมด เพื่อเตรียมที่สร้างบ้าน (เก็บหลายช่องพร้อมกันได้)', reward:{coins:5} },
+  { id:'house',   name:'สร้างบ้านหลังแรก',        nav:'tShop', shop:'farm', need:1, goal:() => starterOwned() ? 1 : 0,
+    text:'ไปที่ 🛒 ร้านค้า › ฟาร์ม › "บ้านหลังแรก" (ฟรี) → แตะพื้นที่โล่ง → ✔ วาง', reward:{coins:0} },
+  { id:'houseOk', name:'รับบ้าน',                hl:'starter', need:1, goal:() => starterDone() ? 1 : 0,
+    text:'สิ่งปลูกสร้างต้องใช้เวลาสร้าง รอ 30 วิ แล้วแตะ "✔ เก็บ" ที่บ้าน', reward:{coins:20} },
+  { id:'mLog',    name:'บันทึกภารกิจสุขภาพ',       nav:'tMission', need:1, goal:() => st('missionLog'),
+    text:'เปิด 🎯 ภารกิจ แล้วบันทึกสิ่งที่ทำวันนี้ (ก้าวเดิน/นาที/น้ำ) อย่างน้อย 1 ครั้ง', reward:{coins:5} },
+  { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
+    text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับเหรียญ" — ภารกิจสุขภาพคือรายได้หลักของฟาร์ม', reward:{coins:10} },
+  { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
+    text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:5} },
+  { id:'feed',    name:'ให้อาหารน้อง',            hl:'pet',    need:1, goal:() => st('feed'),
+    text:'แตะ {pet} → ให้อาหาร — น้องได้ Exp และพัฒนาร่างที่ Lv.8 และ Lv.15', reward:{coins:5, food:1} },
+  { id:'fish',    name:'ตกปลา',                 hl:'water',  need:3, goal:() => st('fish'),
+    text:'แตะที่บ่อน้ำ แล้วกดปุ่ม "🎣 ตกปลา" ที่โผล่ขึ้นมา → เหวี่ยงเบ็ด → รอทุ่นจม ❗ → กด "ดึง!" ให้ทัน (ดึงเร็วไปปลาหนี) — ตกให้ได้ 3 ครั้ง ปลาขายได้หรือให้น้องกินได้', reward:{coins:10} },
+  { id:'medium',  name:'เก็บของชิ้นกลาง',         hl:'medium', need:1, goal:() => st('collect_medium'),
+    text:'ทุบก้อนหินหรือตัดพุ่มไม้ (รอ 1–2 นาที) — ได้หินและไม้มากกว่าของชิ้นเล็ก', reward:{coins:5} },
+  { id:'plot',    name:'สร้างแปลงผัก',           nav:'tShop', shop:'farm', need:1, goal:() => plotsDone(),
+    text:'ร้านค้า › ฟาร์ม › แปลงผัก → วาง → รอสร้างเสร็จแล้วแตะรับ', reward:{coins:5, seed:1} },
+  { id:'move',    name:'ย้ายหรือเก็บสิ่งปลูกสร้าง',  hl:'plot',   need:1, goal:() => st('moveStore'),
+    text:'กดค้างที่แปลงผักหรือบ้าน ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม)', reward:{coins:5} },
+  { id:'harvest', name:'ปลูกและเก็บเกี่ยว',        hl:'plot',   need:1, goal:() => st('harvest'),
+    text:'แตะแปลงผัก → ปลูกเมล็ด → รอ 2 นาที → เก็บเกี่ยว 🥕 (ขายหรือให้น้องกินได้)', reward:{coins:10} },
+  { id:'large',   name:'ลงมือกับของชิ้นใหญ่',      hl:'large',  need:1, goal:() => st('start_large'),
+    text:'เริ่มโค่นต้นไม้ใหญ่หรือสกัดหินใหญ่ (15–30 นาที) — เริ่มไว้แล้วไปทำอย่างอื่นได้เลย', reward:{coins:5} },
+  { id:'speed',   name:'เร่งเวลาด้วยเหรียญ',      need:1, goal:() => st('speed'),
+    text:'แตะของที่กำลังเก็บ/กำลังสร้าง/กำลังโต แล้วกด ⚡ เร่ง — ใช้ 1 เหรียญต่อเวลาที่เหลือ 1 นาที', reward:{coins:5} },
+  { id:'zone2',   name:'ขยายฟาร์ม',              need:1, goal:() => S.farm.zones.length >= 2 ? 1 : 0,
+    text:'ถึง Lv.2 → พื้นที่ 5×5 ใหม่จะต่อกับฟาร์มเดิม ใช้นิ้วลากจอเพื่อดู, ＋/－ ซูม, 🏠 กลับบ้าน (ถึง Lv.50)', reward:{coins:20} }
+];
+const SIZE_OF = k => RES[k] ? RES[k].size : null;
+let questDirty = true, questShown = '', questCollapsed = false;
+/* progress is stored as the list of finished quest ids (S.qDone) so the chain can be re-ordered safely */
+const QUEST_V1 = ['hello','small','corner','house','houseOk','mLog','mClaim','buyFood','feed','medium','plot','harvest','large','zone2','fish','speed'];
+function questMigrate(){
+  if (!S.qDone){ S.qDone = QUEST_V1.slice(0, S.q || 0); }
+}
+const qIndex = () => QUESTS.findIndex(q => !S.qDone.includes(q.id));
+const curQuest = () => { if (!S || !S.qDone) return null; const i = qIndex(); return i < 0 ? null : QUESTS[i]; };
+const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
+
+function questTick(){
+  const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
+  if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); return; }
+  const prog = Math.min(q.need, q.goal()), done = prog >= q.need;
+  const key = q.id + prog + questCollapsed;
+  if (key === questShown && !questDirty) return;            // re-render only on change
+  questShown = key; questDirty = false;
+  $('tut').style.display = 'flex'; $('tut').classList.toggle('done', done); $('tut').classList.toggle('mini', questCollapsed && !done);
+  $('tutStep').textContent = `📜 เควส ${S.qDone.length+1}/${QUESTS.length} · ${q.name}` + (q.need > 1 ? ` (${prog}/${q.need})` : '') + (done ? ' ✔' : '');
+  $('tutText').textContent = done ? 'สำเร็จแล้ว! แตะเพื่อรับรางวัล 🎁' : fillPet(q.text);
+  $('tutProg').style.width = (prog/q.need*100) + '%';
+  navShop.classList.toggle('pulse', !done && q.nav==='tShop');
+  navMis.classList.toggle('pulse', !done && q.nav==='tMission');
+  if (q.shop) shopTab = q.shop;
+}
+function rewardText(r){ return [r.coins ? `🪙 ${r.coins} เหรียญทอง` : '', r.food ? `${MAT.food} +${r.food}` : '', r.seed ? `${MAT.seed} +${r.seed}` : ''].filter(Boolean).join('\n'); }
+function claimQuest(){
+  const q = curQuest(); if (!q || q.goal() < q.need) return;
+  S.coins += q.reward.coins||0; if (q.reward.food) S.inv.food += q.reward.food; if (q.reward.seed) S.inv.seed += q.reward.seed;
+  gainExp(10); S.qDone.push(q.id); save(); refreshHeader(); renderMats(); questDirty = true; questTick();
+  const next = curQuest();
+  reward(`📜 เควส "${q.name}" สำเร็จ!\n${rewardText(q.reward)}\n⭐ Exp +10` + (next ? `\n\nเควสถัดไป: ${next.name}` : '\n\n🎉 จบเควสสอนเล่นทั้งหมดแล้ว!'));
+}
+$('tut').onclick = () => { const q = curQuest(); if (!q) return;
+  if (q.goal() >= q.need) return claimQuest();
+  questCollapsed = !questCollapsed; questDirty = true; questTick(); };
+
+/* Quest log tab */
+function renderQuests(){
+  const L = $('questList'); L.innerHTML = '<b>📜 เควสสอนเล่น</b><div class="muted">ทำตามลำดับเพื่อเรียนรู้ทุกระบบของเกม • แตะกล่องเควสบนฟาร์มเพื่อย่อ/ขยาย</div>';
+  QUESTS.forEach((q,i) => {
+    const state = S.qDone.includes(q.id) ? 'done' : i === qIndex() ? 'now' : 'lock';
+    const c = document.createElement('div'); c.className = 'card' + (state==='now' ? ' tutGlow' : '');
+    c.style.opacity = state==='lock' ? .55 : 1;
+    c.innerHTML = `<div class="mrow"><b>${state==='done'?'✅':state==='now'?'▶️':'🔒'} ${i+1}. ${q.name}</b><span class="muted">${rewardText(q.reward).replace(/\n/g,' • ') || '—'}</span></div>
+      <div class="muted" style="margin-top:4px">${state==='lock' ? 'ทำเควสก่อนหน้าให้สำเร็จก่อน' : fillPet(q.text)}</div>`;
+    if (state==='now' && q.goal() >= q.need){ const b = document.createElement('button'); b.className = 'btn ok'; b.style.cssText = 'width:100%;margin-top:8px';
+      b.textContent = 'รับรางวัล'; b.onclick = claimQuest; c.appendChild(b); }
+    L.appendChild(c);
+  });
+}
+
+/* Farm highlight for the current quest (drawn under objects, pulsing) */
+function drawTutHighlight(time){
+  const q = curQuest(); if (!q || !q.hl || q.goal() >= q.need) return;
+  ctx.globalAlpha = .3 + Math.sin(time*5)*.18;
+  if (q.hl==='pet'){
+    const [sx,sy] = P(pet.x, pet.y); ctx.fillStyle = '#ffd84d';
+    ctx.beginPath(); ctx.ellipse(sx, sy, TW*.45, TH*.45, 0, 0, Math.PI*2); ctx.fill();
+  } else if (q.hl==='corner'){
+    quad(ctx, P(0,0), P(2,0), P(2,2), P(0,2), '#ffd84d');
+  } else {
+    for (const z of visZones) for (let i=0;i<z.tiles.length;i++){
+      const t = z.tiles[i]; let on = false;
+      if (q.hl==='small' || q.hl==='medium' || q.hl==='large') on = SIZE_OF(t.k)===q.hl;
+      else if (q.hl==='water') on = t.k==='water';
+      else if (t.k==='obj'){ const o = objById(z, t.o); on = !!o && ((q.hl==='plot' && o.type==='plot') || (q.hl==='starter' && o.type==='starter')); }
+      if (on){ const c = z.cx*GRID + i%GRID, r = z.cy*GRID + ((i/GRID)|0); quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), '#ffd84d'); }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+$('tutAva').innerHTML = BEAGLE;
+function renderMats(){
+  $('mats').innerHTML = ['stone','grass','wood','seed','veg'].map(k => `<div>${MAT[k].split(' ')[0]} ${S.inv[k]}</div>`).join('');
+}
+
+/* =====================================================================
+   7) SHOP — tab "ฟาร์ม" (structures w/ size, materials, build time) + tab "ทั่วไป"
+   ===================================================================== */
+const SHOP_BUY  = [ {k:'seed',p:5}, {k:'food',p:10}, {k:'stone',p:4}, {k:'wood',p:5}, {k:'grass',p:2} ];
+const SHOP_SELL = [ {k:'veg',p:8}, {k:'tilapia',p:6}, {k:'carp',p:10}, {k:'shrimp',p:8}, {k:'goldfish',p:40}, {k:'boot',p:1}, {k:'stone',p:1}, {k:'grass',p:1}, {k:'wood',p:2} ];
+let shopTab = 'farm';
+function openShop(tab){ shopTab = tab; goTab('tShop'); }
+function renderShop(){
+  const L = $('shopList'); L.innerHTML = '';
+  const tabs = document.createElement('div'); tabs.className = 'chips';
+  [['farm','🏡 ฟาร์ม'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
+    b.className = 'chip' + (shopTab===k ? ' sel' : ''); b.textContent = n; b.onclick = () => { shopTab = k; renderShop(); }; tabs.appendChild(b); });
+  L.appendChild(tabs);
+  if (shopTab === 'farm'){
+    const info = document.createElement('div'); info.className = 'muted';
+    info.textContent = 'สิ่งปลูกสร้างและของตกแต่งบ้าน/ฟาร์ม • จ่ายเหรียญ + วัตถุดิบ • เวลาสร้างขึ้นกับขนาดและราคา';
+    L.appendChild(info);
+    const stored = Object.entries(S.store||{}).filter(([,n]) => n > 0);
+    if (stored.length){
+      const h = document.createElement('b'); h.textContent = '📦 คลังของฉัน (วางได้ฟรี ไม่ต้องรอสร้าง)'; L.appendChild(h);
+      stored.forEach(([id,n]) => { const it = FARM_ITEMS[id], c = document.createElement('div'); c.className = 'card mrow';
+        c.innerHTML = `<div><b>${it.name}</b><div class="muted">📐 ${it.w}×${it.h} • มี ${n} ชิ้น</div></div>`;
+        const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = 'นำออกมาวาง'; b.onclick = () => startPlacing(id, { store:true });
+        c.appendChild(b); L.appendChild(c); });
+      const h2 = document.createElement('b'); h2.textContent = '🛠 สร้างใหม่'; L.appendChild(h2);
+    }
+    Object.entries(FARM_ITEMS).forEach(([id,it]) => {
+      if (it.once && starterOwned()) return;                 // starter house: only one
+      const okCoin = S.coins >= it.price, okMat = canPay(it.cost);
+      const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='house' && it.once || (curQuest()||{}).id==='plot' && id==='plot' ? ' tutGlow' : '');
+      c.innerHTML = `<div class="mrow"><b>${it.name}</b><span class="coin" style="padding:2px 10px"><i></i>${it.price || 'ฟรี'}</span></div>
+        <div class="muted">${it.desc}</div>
+        <div class="muted" style="margin-top:6px">📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง) • ⏱ ${fmt(buildSec(it))}</div>
+        <div style="margin-top:4px;font-size:14px">${Object.entries(it.cost).map(([k,v]) =>
+          `<span style="color:${S.inv[k]>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${S.inv[k]}/${v}</span>`).join(' • ')}</div>`;
+      const b = document.createElement('button'); b.className = 'btn' + (okCoin && okMat ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
+      b.textContent = okCoin && okMat ? 'เลือกตำแหน่งสร้าง' : (okCoin ? 'วัตถุดิบไม่พอ' : 'เหรียญไม่พอ');
+      b.disabled = !(okCoin && okMat); b.onclick = () => startPlacing(id);
+      c.appendChild(b); L.appendChild(c);
+    });
+    return;
+  }
+  const h1 = document.createElement('b'); h1.textContent = '🛒 ซื้อของ'; L.appendChild(h1);
+  SHOP_BUY.forEach(it => L.appendChild(shopRow(it, 'ซื้อ', () => {
+    if (S.coins < it.p) return sheet('เหรียญทองไม่พอ\nทำภารกิจเพื่อรับเหรียญเพิ่มนะครับ', OK);
+    confirmDo(`ซื้อ ${MAT[it.k]} 1 ชิ้น ราคา ${it.p} เหรียญ?`, () => { S.coins -= it.p; S.inv[it.k]++; if (it.k==='food') bump('buyFood'); save(); refreshHeader(); renderMats(); renderShop(); });
+  })));
+  const h = document.createElement('b'); h.textContent = '💰 ขายของ'; h.style.marginTop = '8px'; L.appendChild(h);
+  SHOP_SELL.forEach(it => L.appendChild(shopRow(it, 'ขาย', () => {
+    if (!S.inv[it.k]) return;
+    confirmDo(`ขาย ${MAT[it.k]} 1 ชิ้น ได้ ${it.p} เหรียญ? (มี ${S.inv[it.k]})`, () => { S.inv[it.k]--; S.coins += it.p; save(); refreshHeader(); renderMats(); renderShop(); });
+  }, true)));
+}
+function shopRow(it, verb, fn, sell){
+  const c = document.createElement('div'); c.className='card mrow';
+  c.innerHTML = `<div><b>${MAT[it.k]}</b><div class="muted">${sell ? 'มี '+(S.inv[it.k]||0)+' • ' : ''}${it.p} เหรียญ</div></div>`;
+  const b = document.createElement('button'); b.className = 'btn' + (sell?' ghost':''); b.textContent = verb; b.onclick = fn;
+  if (sell && !S.inv[it.k]) b.disabled = true;
+  c.appendChild(b); return c;
+}
+function renderBag(){
+  const L = $('bagList');
+  L.innerHTML = '<b>🎒 กระเป๋า</b>' + Object.keys(MAT).filter(k => S.inv[k] || ['stone','grass','wood','seed','veg','food'].includes(k)).map(k => `<div class="card mrow"><span>${MAT[k]}</span><b>${S.inv[k]||0}</b></div>`).join('') +
+    `<div class="card"><b>ระดับผู้เล่น Lv.${S.lv}/${MAX_LV}</b><div class="muted">Exp ${S.exp}/${needExp(S.lv)} • ฟาร์ม ${S.farm.zones.length}/${MAX_ZONES} พื้นที่ (พื้นที่ละ 5×5 ต่อกันเป็นผืนเดียว)<br>` +
+    `ทุก Lv. ปลดล็อกพื้นที่ใหม่ติดกับฟาร์มเดิม จนถึง Lv.${MAX_ZONES}<br>Exp: เก็บชิ้นเล็ก +3 • กลาง +6 • ใหญ่ +15 • สร้างเสร็จ +10 • เก็บเกี่ยว +5 • ภารกิจ +20 • ให้อาหาร +3</div></div>` +
+    `<div class="card"><b>ข้อมูลของคุณ</b><div class="muted">BMR ${S.analysis.bmr} • TDEE ${S.analysis.tdee} kcal • BMI ${S.analysis.bmi}</div></div>`;
+  const out = document.createElement('button'); out.className='btn ghost'; out.textContent='ออกจากระบบ';
+  out.onclick = () => confirmDo('ออกจากระบบ?', () => { stopLoop(); endPlacingSafe(); USER=null; S=null; $('lPass').value=''; $('lErr').textContent=''; show('sLogin'); });
+  L.appendChild(out);
+}
+function endPlacingSafe(){ if (placing) endPlacing(); }
+</script>
+</body>
+</html>
