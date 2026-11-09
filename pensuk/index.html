@@ -377,7 +377,16 @@ $('bImport').onclick = () => {
      app goes to background.
    • Firestore rule (owner only):  match /users/{uid} { allow read, write: if request.auth.uid == uid; }
    ===================================================================== */
-const FIREBASE_CONFIG = null;   // ← paste { apiKey, authDomain, projectId, appId } from Firebase console
+// Firebase web config (project hello-54c01). These values are public identifiers, not secrets —
+// access is protected by Firestore rules (users/{uid} readable/writable only by that uid).
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBsjffP1ediLyuocwhV1dN3OEPiZ7DK9yA",
+  authDomain: "hello-54c01.firebaseapp.com",
+  projectId: "hello-54c01",
+  storageBucket: "hello-54c01.firebasestorage.app",
+  messagingSenderId: "621382470544",
+  appId: "1:621382470544:web:83d81c3f2d08b875878115"
+};
 const FB_VER = '10.12.2';
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
