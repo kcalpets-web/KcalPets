@@ -26,7 +26,8 @@ export function start(){
   const host = document.getElementById('farmWrap');
   const can = document.createElement('canvas'); can.id = 'farm3d';
   host.insertBefore(can, host.firstChild);
-  const renderer = new THREE.WebGLRenderer({ canvas:can, antialias:true });
+  const renderer = new THREE.WebGLRenderer({ canvas:can, antialias:true, alpha:true });   // transparent: real-time CSS sky gradient shows through
+  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
@@ -52,23 +53,32 @@ export function start(){
   /* ---------- scene ---------- */
   const scene = new THREE.Scene();
   const DAY = new THREE.Color('#cfe6f3'), NIGHTC = new THREE.Color('#1d2948');
-  scene.background = DAY.clone(); scene.fog = new THREE.Fog(DAY.clone(), 60, 160);
   const hemi = new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1dc, 2.3); sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0006; sun.shadow.normalBias = .04; scene.add(sun, sun.target);
   const camera = new THREE.PerspectiveCamera(35, 1, .5, 600);
-  const tableTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
-    g.fillStyle = '#e2c69c'; g.fillRect(0,0,512,512);
-    for (let i=0;i<60;i++){ g.strokeStyle = `rgba(160,120,70,${.08+Math.random()*.12})`; g.lineWidth = 1+Math.random()*2.5; const y = Math.random()*512;
-      g.beginPath(); g.moveTo(0,y); for (let x=0;x<=512;x+=32) g.lineTo(x, y+Math.sin(x*.02+i)*5); g.stroke(); }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 10); t.anisotropy = 4; return t; })();
-  const table = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ map:tableTex, roughness:.8 }));
-  table.rotation.x = -Math.PI/2; table.position.y = -2.4; table.receiveShadow = true; scene.add(table);
-
+  /* clay clouds drifting around the floating island (some above, some below the ground line) */
+  const clouds = [];
+  for (let k=0;k<9;k++){
+    const g = new THREE.Group(), n = 4 + (k%3);
+    for (let b=0;b<n;b++){ const r = .9 + Math.random()*.9, m = new THREE.Mesh(SPH, new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, emissive:0x30343a }));
+      m.scale.set(r*1.3, r, r); m.position.set((b - n/2)*1.3, Math.random()*.6, (Math.random()-.5)*1.4); g.add(m); }
+    g.userData = { side:(Math.random()-.5)*100, back: 22 + Math.random()*30, y: k%3 === 0 ? -9 - Math.random()*4 : 4 + Math.random()*8, sp:.4 + Math.random()*.5 };
+    clouds.push(g); scene.add(g);
+  }
   /* ---------- palette (Modern Clay) ---------- */
   const C = { grass:'#8cc97a', grassD:'#6eab5f', soil:'#a87b55', base:'#f4ecdc', oak:'#d6b07f', water:'#86c8ea', sand:'#efe2c4',
               stone:'#e4dccd', rock:'#b9b3aa', leaf:'#6dbb5d', leaf2:'#58a24c', pine:'#4d9a63', trunk:'#9a6a45', white:'#fbf8f2' };
   const FLOWER = ['#ff8fa3','#ffd166','#ffffff','#b892ff','#ff9f5a'];
+  /** clay flower: stem, a leaf, 5 petals in a ring around a yellow centre (head tilted up a little); returns the group */
+  function flower(g, x, z, col, s){
+    const f = new THREE.Group(); f.position.set(x, 0, z); f.scale.setScalar(s || 1); g.add(f);
+    CY(f, .035, .55, '#4f9a45', 0, 0, 0); BALL(f, .12, .04, .07, '#5fae52', .1, .22, 0).rotation.z = .5;
+    const head = new THREE.Group(); head.position.y = .6; head.rotation.x = -.35; f.add(head);
+    for (let k=0;k<5;k++){ const a = k/5*Math.PI*2; BALL(head, .12, .05, .08, col, Math.cos(a)*.13, 0, Math.sin(a)*.13).rotation.y = -a; }
+    BALL(head, .07, .06, .07, col === '#ffd166' ? '#f08a3c' : '#ffd23f', 0, .03, 0);
+    return f;
+  }
 
   /* ---------- zone building ---------- */
   const zones = new Map();                                     // zone object → { g, dirty }
@@ -80,7 +90,7 @@ export function start(){
     switch (k){
       case 'grass': for (let n=0;n<6;n++) CO(g, .07, .45+h(n)*.35, n%2 ? C.grassD : '#7dbb69', (h(n+10)-.5)*1.1, 0, (h(n+20)-.5)*1.1); break;
       case 'wild':  for (let n=0;n<4;n++) CO(g, .06, .4+h(n)*.3, C.grassD, (h(n+10)-.5)*.9, 0, (h(n+20)-.5)*.9);
-                    for (let n=0;n<3;n++) BALL(g, .13,.13,.13, FLOWER[(n+i)%5], (h(n+30)-.5)*.9, .6+h(n)*.2, (h(n+40)-.5)*.9); break;
+                    for (let n=0;n<3;n++) flower(g, (h(n+30)-.5)*1.1, (h(n+40)-.5)*1.1, FLOWER[(n+i)%5], 1 + h(n+50)*.3); break;
       case 'sapling': CY(g, .05, .5, C.trunk, 0, 0, 0); CO(g, .35, .8, C.leaf, 0, .4, 0, true); break;
       case 'pebble': for (let n=0;n<3;n++) BALL(g, .22, .14, .2, C.rock, (h(n)-.5)*.9, .08, (h(n+5)-.5)*.9); break;
       case 'rock':  BALL(g, .7, .5, .65, C.rock, -.1, .35, 0, true); BALL(g, .35, .26, .35, '#c9c3ba', .55, .2, .35, true); break;
@@ -122,7 +132,7 @@ export function start(){
             CO(g, .14+.1*p, .3+.5*p, '#6dbb5d', x, .3, z);
             if (p >= 1) BALL(g, .2, o.crop==='corn' ? .32 : .2, .2, col, x+.12, .55, z+.08); } }
         break; }
-      case 'flowerbed': RB(g, W-.3, .5, D-.3, .08, '#b98a5c', 0, 0, 0); for (let k=0;k<6;k++) BALL(g, .16,.16,.16, FLOWER[(k+o.id)%5], ((k%3)-1)*.5, .7, (k<3?-.3:.3)); break;
+      case 'flowerbed': RB(g, W-.3, .5, D-.3, .08, '#b98a5c', 0, 0, 0); RB(g, W-.5, .06, D-.5, .04, '#6a4630', 0, .5, 0); for (let k=0;k<6;k++) flower(g, ((k%3)-1)*.5, (k<3?-.3:.3), FLOWER[(k+o.id)%5], .9).position.y = .5; break;
       case 'lamp': CY(g, .06, 2.2, '#5b5f66', 0, 0, 0, true); add(g, SPH, mat('#fff3c4', NIGHT > .35 ? 0xffd27a : 0x2a2416), 0, 2.35, 0, .28, .28, .28); break;
       case 'bench': { const along = W >= D, L = (along ? W : D) - .5;
         const s = new THREE.Group(); if (!along) s.rotation.y = Math.PI/2; g.add(s);
@@ -159,7 +169,7 @@ export function start(){
     } else if (t.k === 'path'){
       RB(g, 1.5, .08, 1.5, .25, ({ stone:C.stone, wood:'#d8b48a', brick:'#d9917a' })[t.p] || C.stone, (hrnd(zseed,i,6)-.5)*.2, 0, (hrnd(zseed,i,7)-.5)*.2);
     } else if ((t.k === 'clear') && hrnd(zseed, i, 8) < .3){
-      for (let n=0;n<2;n++) BALL(g, .08,.08,.08, FLOWER[(i+n)%5], (hrnd(zseed,i,9+n)-.5)*1.4, .06, (hrnd(zseed,i,12+n)-.5)*1.4);
+      for (let n=0;n<2;n++) flower(g, (hrnd(zseed,i,9+n)-.5)*1.4, (hrnd(zseed,i,12+n)-.5)*1.4, FLOWER[(i+n)%5], .75);
     }
     return g;
   }
@@ -168,9 +178,10 @@ export function start(){
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
     const S2 = GRID*2, ctr = S2/2;
     RB(g, S2, .5, S2, .1, C.grass, ctr, -.5, ctr);              // model block: grass → soil → cream base → oak band
-    RB(g, S2-.04, .8, S2-.04, .05, C.soil, ctr, -1.3, ctr);
-    RB(g, S2, .7, S2, .08, C.base, ctr, -2.0, ctr);
-    RB(g, S2+.02, .12, S2+.02, .04, C.oak, ctr, -2.05, ctr);
+    RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
+    RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
+    BALL(g, S2*.42, 1.6, S2*.42, '#8d7f70', ctr, -2.3, ctr);
+    BALL(g, S2*.22, 1.4, S2*.2, '#7d6f62', ctr + hrnd(z.seed,1,1)*2-1, -3.3, ctr + hrnd(z.seed,1,2)*2-1);
     for (let i=0;i<z.tiles.length;i++){
       const t = z.tiles[i], c = i%GRID, r = (i/GRID)|0, x = c*2+1, zz = r*2+1, gc = z.cx*GRID+c, gr = z.cy*GRID+r;
       let m = null;
@@ -241,7 +252,6 @@ export function start(){
     sun.position.set(target.x + 14, 26, target.z + 8); sun.target.position.copy(target);
     const half = Math.min(60, Math.max(14, dist*.55));
     if (Math.abs(half - lastHalf) > 1){ lastHalf = half; Object.assign(sun.shadow.camera, { left:-half, right:half, top:half, bottom:-half, near:1, far:120 }); sun.shadow.camera.updateProjectionMatrix(); }
-    scene.fog.near = dist*1.2; scene.fog.far = dist*3;
   }
   let lastW = 0, lastH = 0;
   function resize(){
@@ -266,7 +276,10 @@ export function start(){
       for (const e of zones.values()) e.g.traverse(o => { if (o.userData.spin) o.rotation.z = time*1.2; });
       updatePet(time);
       const k = NIGHT || 0;                                     // day ↔ night from the real clock (same NIGHT as 2D)
-      scene.background.copy(DAY).lerp(NIGHTC, k); scene.fog.color.copy(scene.background);
+      /* clouds live only BEHIND the island (away from the camera, which sits toward +x+z):
+         pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */
+      for (const c of clouds){ const u = c.userData; u.side += dt*u.sp; if (u.side > 50) u.side = -50;
+        c.position.set(target.x - u.back*.707 + u.side*.707, u.y, target.z - u.back*.707 - u.side*.707); for (const m of c.children) m.material.emissive.setScalar(.19*(1-k)); }
       sun.intensity = 2.3*(1 - .8*k); hemi.intensity = 1.15*(1 - .55*k); sun.color.setHSL(.09, .6, .92 - .25*k);
       renderer.render(scene, camera);
     },

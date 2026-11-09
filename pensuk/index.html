@@ -418,7 +418,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.11.0';
+const APP_VER = '0.11.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1722,13 +1722,17 @@ function updateSky(){
   NIGHT = h < 5 || h >= 19.5 ? 1 : h < 7 ? 1-(h-5)/2 : h >= 17.5 ? (h-17.5)/2 : 0;
   const key = Math.round(NIGHT*10) + (h>=17 && h<20 ? 'd' : '');
   if (key === skyKey) return; skyKey = key;
-  cv.style.background = NIGHT > .8 ? 'linear-gradient(#0d1b3d,#1d3466 50%,#2b4a6e)'
+  cv.style.background = $('farmWrap').style.background = NIGHT > .8 ? 'linear-gradient(#0d1b3d,#1d3466 50%,#2b4a6e)'
     : (h >= 16.5 && h < 20) ? 'linear-gradient(#f6b26b,#f9d29d 40%,#e9f2d0 80%)'
     : (h >= 5 && h < 7.5) ? 'linear-gradient(#f7c6a3,#cfe6f5 50%,#e6f6d6)'
     : 'linear-gradient(#8fd0f5,#cfeefc 40%,#e6f6d6 80%)';
 }
 function drawSunMoon(time){
-  const x = cssW - 56, y = 74;
+  /* real-time arc: sun 06:00→18:00, moon 18:00→06:00.  t ∈ [0,1] along the arc:
+     x = 34 + t·(cssW − 68),   y = 150 − sin(t·π)·105   (rises left, peaks centre-top, sets right) */
+  const d = new Date(), hh = d.getHours() + d.getMinutes()/60, night = NIGHT > .5;
+  const t = night ? (((hh - 18) + 24) % 24)/12 : Math.min(1, Math.max(0, (hh - 6)/12));
+  const x = 34 + t*(cssW - 68), y = 150 - Math.sin(t*Math.PI)*105;
   if (NIGHT > .5){
     ctx.fillStyle = 'rgba(255,255,230,.15)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#fff6d0'; ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI*2); ctx.fill();
@@ -1909,6 +1913,8 @@ function frame(now){
     updatePetAnim(pet, dt/1000, hasWalkable(), pickPetTarget);
     updateFishing(wall);
     R3D.render(time, dt/1000);
+    if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
+    drawSunMoon(time);                                      // HUD layer: real-time sun / moon / stars
     drawTutHighlight(time);
     badges.length = 0;
     for (const z of S.farm.zones){
@@ -2792,7 +2798,7 @@ const QUESTS = [
   { id:'decor',   name:'ตกแต่งบ้าน',              nav:'tShop', shop:'home', need:1, goal:() => st('decorPlace'),
     text:'ร้านค้า › 🛋 ในบ้าน ซื้อของตกแต่ง 1 ชิ้น → แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง → วาง (กดค้างที่ของเพื่อย้าย/หมุน/เก็บ)', reward:{coins:200} },
   { id:'harvest', name:'ปลูกและเก็บเกี่ยว',        hl:'plot',   need:1, goal:() => st('harvest'),
-    text:'แตะแปลงผัก → เลือกเมล็ด → รอผักโต (แครอท 5 นาที) → เก็บเกี่ยว — ผักขายได้ ส่งออเดอร์ได้ หรือแปรรูปได้', reward:{coins:200} },
+    text:'แตะแปลงผัก → เลือกเมล็ด → รอผักโต (แครอท 5 นาที) → แตะเก็บเกี่ยว หรือ 🧰 › 🌾 เคียว ลากผ่านหลายแปลงทีเดียว — ผักขายได้ ส่งออเดอร์ได้ หรือแปรรูปได้', reward:{coins:200} },
   { id:'order',   name:'ส่งคำสั่งซื้อ',            nav:'tShop', shop:'order', need:1, goal:() => st('order'),
     text:'ร้านค้า › 📋 คำสั่งซื้อ → ส่งของให้ครบ 1 ออเดอร์ — จ่ายแพงกว่าขายร้าน ได้ Exp ด้วย ออเดอร์ใหม่มาทุก 10 นาที', reward:{coins:300} },
   { id:'large',   name:'โค่นต้นไม้/สกัดหินใหญ่',     hl:'large',  tool:1, need:1, goal:() => st('collect_large'),
@@ -3176,7 +3182,8 @@ function renderOrders(L){
    Two fingers still pan / pinch-zoom while a tool is active.
    ===================================================================== */
 const TOOLS = {
-  sickle: { e:'✂️', name:'กรรไกรตัดหญ้า', fits:['grass','wild','sapling'],      snd:'snip',  col:['#7cc94f','#4f9a2f','#ffd23f'] },
+  sickle: { e:'✂️', name:'กรรไกร', fits:['grass','wild','sapling'],      snd:'snip',  col:['#7cc94f','#4f9a2f','#ffd23f'] },
+  reap:   { e:'🌾', name:'เคียว', fits:[], harvest:true,                 snd:'snip',  col:['#f2cf4a','#6dbb5d','#f08a3c'] },
   axe:    { e:'🪓', name:'ขวาน',          fits:['bush','tree'],                snd:'chop',  col:['#b07a40','#8a5a2b','#6fae3b'] },
   hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] }
 };
@@ -3197,7 +3204,8 @@ function pickTool(id){
   const t = TOOLS[id];
   const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
   if (S.toolOk && S.toolOk[id]) return go();                 // confirm once per tool (like path mode)
-  confirmDo(`ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
+  confirmDo(t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
+    : `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
 }
 function setHint(){
@@ -3221,7 +3229,15 @@ function toolHit(gc, gr){
   const key = gc*100003 + gr;
   if (toolDrag && toolDrag.last === key) return;              // one hit per tile entry (re-enter to hit again)
   if (toolDrag) toolDrag.last = key;
-  const t = tileAt(gc, gr); if (!t || !RES[t.k]) return;
+  const t = tileAt(gc, gr); if (!t) return;
+  if (TOOLS[tool].harvest){                                   // 🌾 sickle: harvest every ripe plot the finger passes
+    if (t.k !== 'obj') return; const z = hitZone, o = objById(z, t.o);
+    if (!o || o.type !== 'plot' || !o.done || !o.plant || cropLeft(o) > 0) return;
+    const c = cropOf(o), n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop;
+    bump('harvest'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.reap.col, 8); sfx('snip'); buzz(15);
+    floatText(gc, gr, `+${n}${c.e}`, '#2e7d32'); markDirty(z); saveSoon(); return;
+  }
+  if (!RES[t.k]) return;
   const z = hitZone, R = RES[t.k], T = TOOLS[tool];
   if (!T.fits.includes(t.k)){
     if (Date.now() - toolMsgAt > 2500){ toolMsgAt = Date.now(); const need = TOOLS[toolFor(t.k)]; floatText(gc, gr, `ใช้ ${need.e}`, '#c0392b'); }
