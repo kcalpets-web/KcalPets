@@ -114,6 +114,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
 .mbtns{display:flex;flex-direction:column;gap:8px}
 #mbox{max-height:88vh;overflow-y:auto}
+#nav button.brk::after{content:'🔔';position:absolute;top:2px;right:18%;font-size:14px;animation:pulse 1s infinite}
+#nav button{position:relative}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
 #toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
@@ -418,7 +420,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.11.1';
+const APP_VER = '0.11.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -2783,6 +2785,8 @@ const QUESTS = [
     text:'เปิด 🎯 ภารกิจ แล้วกด "▶ เริ่ม" ที่ข้อไหนก็ได้ — 📵 พักจอ, 🏋️ ลุกนั่ง หรือ 🙆 บริหารคอ', reward:{coins:100} },
   { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
     text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 🪙 200" — ภารกิจสุขภาพคือรายได้หลัก ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
+  { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
+    text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 50 เหรียญ (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
     text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:100} },
   { id:'feed',    name:'ให้อาหารน้อง',            hl:'pet',    need:1, goal:() => st('feed'),
@@ -2832,6 +2836,7 @@ const curQuest = () => { if (!S || !S.qDone) return null; const i = qIndex(); re
 const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
 
 function questTick(){
+  brkTick();
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
   if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
   const prog = Math.min(q.need, q.goal()), done = prog >= q.need;
@@ -3016,6 +3021,7 @@ function renderBag(){
   const v3 = document.createElement('button'); v3.className = 'btn ghost';
   v3.textContent = want3D() ? '🧊 กราฟิก 3D: เปิดอยู่ (แตะเพื่อใช้ 2D)' : '🧊 กราฟิก 2D: เปิดอยู่ (แตะเพื่อใช้ 3D)';
   v3.onclick = () => confirmDo(want3D() ? 'เปลี่ยนเป็นกราฟิก 2D?\n(เบากว่า เหมาะกับเครื่องรุ่นเก่า)' : 'เปลี่ยนเป็นกราฟิก 3D?', () => set3D(!want3D()));
+  renderBrkSettings(L);
   L.append(v3, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
@@ -3369,6 +3375,7 @@ function claimBonus(){
 
 function renderMissions(){
   const L = $('missionList'); L.innerHTML = '';
+  renderBrkCard(L);
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
   head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div><div class="bar"><b style="width:${done/3*100}%"></b></div>
@@ -3427,10 +3434,11 @@ function openAct(m){
   closeAct(); stopLoop();
   const box = $('act'); box.className = ''; box.style.display = 'flex'; box.innerHTML = '';
   act = { kind:m.key, m, stops:[] };
-  if (m.key === 'rest') actRest(box, m); else if (m.key === 'squat') actSquat(box, m); else actNeck(box, m);
+  if (m.key === 'rest') actRest(box, m); else if (m.key === 'squat') actSquat(box, m); else if (m.key === 'breath') actBreath(box, m); else actNeck(box, m);
 }
 function closeAct(){
-  if (!act) return; act.stops.forEach(f => { try { f(); } catch(e){} }); act = null;
+  if (!act) return; act.stops.forEach(f => { try { f(); } catch(e){} }); const fin = act.m; act = null;
+  if (fin.brk && fin.progress >= fin.target) setTimeout(() => brkDone(fin.brk), 50);   // 🔔 break finished → reward
   $('act').style.display = 'none'; $('act').innerHTML = '';
   if (S && $('sMain').classList.contains('on')){ startLoop(); renderMissions(); flushRewards(); }
 }
@@ -3652,6 +3660,102 @@ function v09Migrate(){
   }
   if (S.profile && S.missions && !S.missions.some(m => m.key === 'rest')) buildMissions();   // old walk/run missions → new set
   if (S.profile){ delete S.profile.act; delete S.profile.interests; }
+}
+
+/* =====================================================================
+   🔔 MOVE BREAKS ("ขยับตัวหน่อย!") — v0.11.2
+   Every `every` minutes of REAL time a short activity becomes available (max 2 waiting).
+   If the game is open & idle on the main screen a popup + sound announces it; otherwise it
+   waits for the player. Reward 50 coins + ❤️2, up to 6 per day ⚠️. Quiet hours 22:00–07:00.
+   No server needed (lock-screen push would need Firebase Blaze + Cloud Functions).
+   ===================================================================== */
+const BRK = {
+  squat:  { icon:'🏋️', label:'ลุกนั่ง 5 ครั้ง',      key:'squat',  unit:'ครั้ง', target:5 },
+  neck:   { icon:'🙆', label:'บริหารคอ 1 รอบ',       key:'neck',   unit:'รอบ',  target:1 },
+  rest:   { icon:'📵', label:'พักสายตา 2 นาที',       key:'rest',   unit:'นาที', target:2 },
+  breath: { icon:'🫁', label:'หายใจลึก ๆ 1 นาที',     key:'breath', unit:'นาที', target:1 },
+  water:  { icon:'💧', label:'ดื่มน้ำ 1 แก้ว',         key:'water',  unit:'แก้ว', target:1 }
+};
+const BRK_COIN = 50, BRK_MAX = 6;
+const brkCfg = () => (S.brkCfg = S.brkCfg || { on:true, every:60, quiet:true });
+function brkState(){
+  const b = S.brk = S.brk || { next: Date.now() + brkCfg().every*60000, pending:[], date:todayKey(), count:0 };
+  if (b.date !== todayKey()){ b.date = todayKey(); b.count = 0; }
+  return b;
+}
+const quietNow = () => { const h = new Date().getHours(); return brkCfg().quiet && (h >= 22 || h < 7); };
+function brkNew(){ const ks = Object.keys(BRK), b = brkState(); let k;
+  do { k = ks[(Math.random()*ks.length)|0]; } while (b.pending.includes(k) && b.pending.length < ks.length); return k; }
+function brkTick(){
+  if (!S || !S.pet || !S.farm) return;
+  const b = brkState(), cfg = brkCfg(), now = Date.now();
+  if ((curQuest()||{}).id === 'brk' && !b.pending.length) b.pending.push('squat');   // tutorial: first one right away
+  if (!cfg.on || b.count + b.pending.length >= BRK_MAX){ if (now >= b.next) b.next = now + cfg.every*60000; return; }
+  if (now < b.next) return;
+  b.next = now + cfg.every*60000;                             // catches up after the app was closed (one per check)
+  if (quietNow() || b.pending.length >= 2) return;
+  b.pending.push(brkNew()); save(); markBrkNav();
+  const idle = $('sMain').classList.contains('on') && !$('modal').classList.contains('on') && !act && document.visibilityState === 'visible';
+  if (idle) brkPrompt(b.pending[b.pending.length-1]);
+}
+function markBrkNav(){ const n = document.querySelector('[data-t=tMission]'); if (n) n.classList.toggle('brk', !!(S.brk && S.brk.pending.length)); }
+function brkPrompt(k){
+  const d = BRK[k]; sfx('bark'); buzz([80,60,80]);
+  sheet(`🔔 ขยับตัวหน่อย!\n${S.pet.name} ชวนทำ ${d.icon} ${d.label}\nได้ 🪙 ${BRK_COIN} + ❤️ 2`, [
+    { label:'▶ ทำเลย', cls:'ok', fn:() => brkStart(k) },
+    { label:'ไว้ทีหลัง (รออยู่ในหน้าภารกิจ)', cls:'ghost' } ]);
+}
+function brkStart(k){
+  const d = BRK[k];
+  if (k === 'water') return confirmDo('💧 ดื่มน้ำ 1 แก้วแล้วใช่ไหม?', () => brkDone(k));
+  openAct({ ...d, brk:k, progress:0, sec:0 });
+}
+function brkDone(k){
+  const b = brkState(), i = b.pending.indexOf(k); if (i < 0) return;
+  b.pending.splice(i, 1); b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); bump('brkDone');
+  sfx('coin'); save(); refreshHeader(); markBrkNav(); renderMissions();
+  reward(`👏 ขยับตัวแล้ว!\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)`);
+}
+function brkSkip(k){ const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1); save(); markBrkNav(); renderMissions(); }
+function renderBrkCard(L){
+  const b = brkState(), cfg = brkCfg(), c = document.createElement('div'); c.className = 'card';
+  const nextIn = Math.max(0, (b.next - Date.now())/1000);
+  c.innerHTML = `<div class="mrow"><b>🔔 ขยับตัวหน่อย!</b><span class="muted">วันนี้ ${b.count}/${BRK_MAX}</span></div>
+    <div class="muted">${!cfg.on ? 'ปิดการเตือนอยู่ (เปิดได้ในกระเป๋า)' : b.count >= BRK_MAX ? 'ครบโควตาวันนี้แล้ว เก่งมาก!' : quietNow() ? 'ช่วงเวลาพักผ่อน (22:00–07:00) ไม่เตือน' : b.pending.length ? `ทำได้เลย • ครั้งละ 🪙 ${BRK_COIN} + ❤️ 2` : `กิจกรรมถัดไปใน ${fmt(nextIn)}`}</div>`;
+  b.pending.forEach(k => { const d = BRK[k], r = document.createElement('div'); r.className = 'row'; r.style.marginTop = '8px';
+    const go = document.createElement('button'); go.className = 'btn ok'; go.textContent = `${d.icon} ${d.label}`; go.onclick = () => brkStart(k);
+    const sk = document.createElement('button'); sk.className = 'btn ghost'; sk.style.flex = '0 0 72px'; sk.textContent = 'ข้าม'; sk.onclick = () => confirmDo('ข้ามกิจกรรมนี้?\n(ไม่ได้รางวัล ไม่เสียอะไร)', () => brkSkip(k));
+    r.append(go, sk); c.appendChild(r);
+    if (k !== 'water'){ const m = document.createElement('button'); m.className = 'btn ghost'; m.style.cssText = 'width:100%;margin-top:6px;min-height:40px;font-size:13px';
+      m.textContent = '✍️ ทำแล้ว (เครื่องนับให้ไม่ได้)'; m.onclick = () => confirmDo(`ทำ ${d.label} แล้วใช่ไหม?`, () => brkDone(k)); c.appendChild(m); } });
+  L.appendChild(c);
+}
+function renderBrkSettings(L){
+  const cfg = brkCfg(), c = document.createElement('div'); c.className = 'card';
+  c.innerHTML = '<b>🔔 เตือนขยับตัว</b><div class="muted">เตือนให้ทำกิจกรรมสั้น ๆ ระหว่างวัน (ตอนเปิดเกม / รอไว้ตอนกลับมา)</div>';
+  const row = document.createElement('div'); row.className = 'row'; row.style.cssText = 'margin-top:8px;flex-wrap:wrap;gap:6px';
+  const chip = (txt, on, fn) => { const b = document.createElement('button'); b.className = 'chip' + (on ? ' on' : ''); b.textContent = txt; b.onclick = fn; row.appendChild(b); };
+  chip(cfg.on ? '✅ เปิด' : '⛔ ปิด', cfg.on, () => { cfg.on = !cfg.on; save(); renderBag(); });
+  for (const m of [30,60,90]) chip(`ทุก ${m} นาที`, cfg.every === m, () => { cfg.every = m; brkState().next = Date.now() + m*60000; save(); renderBag(); });
+  chip(cfg.quiet ? '🌙 ไม่เตือน 22–07 น.' : '🌙 เตือนตลอด', cfg.quiet, () => { cfg.quiet = !cfg.quiet; save(); renderBag(); });
+  c.appendChild(row); L.appendChild(c);
+}
+/* 🫁 breathing: circle grows 4 s (breathe in) / shrinks 4 s (breathe out); counts visible time only */
+function actBreath(box, m){
+  actHead(box, '🫁 หายใจลึก ๆ', true);
+  const c = document.createElement('div'); c.className = 'actc'; c.style.justifyContent = 'center';
+  c.innerHTML = `<div id="bCirc" style="width:120px;height:120px;border-radius:50%;background:radial-gradient(#bfe6ff,#6fb7e6);transition:transform 4s ease-in-out;box-shadow:0 0 40px #6fb7e688"></div>
+    <div id="bTxt" style="font-size:26px;font-weight:700;margin-top:30px">หายใจเข้า…</div><div id="bTime" class="muted">0 / 60 วินาที</div>`;
+  box.appendChild(c);
+  let inhale = true, last = performance.now();
+  const flip = () => { inhale = !inhale; $('bCirc').style.transform = inhale ? 'scale(1.9)' : 'scale(1)'; $('bTxt').textContent = inhale ? 'หายใจเข้า…' : 'หายใจออก…'; };
+  setTimeout(() => $('bCirc').style.transform = 'scale(1.9)', 50);
+  const br = setInterval(flip, 4000);
+  const tk = setInterval(() => { const now = performance.now(), d = Math.min(1.5, (now-last)/1000); last = now;
+    if (document.visibilityState !== 'visible') return;
+    m.sec += d; m.progress = m.sec/60; $('bTime').textContent = `${Math.min(60, Math.floor(m.sec))} / 60 วินาที`;
+    if (m.progress >= m.target){ sfx('done'); closeAct(); } }, 1000);
+  act.stops.push(() => { clearInterval(br); clearInterval(tk); });
 }
 
 /* ---- 🧊 3D renderer: on by default when WebGL works; per-device switch in the bag ---- */
