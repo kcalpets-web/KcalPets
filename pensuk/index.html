@@ -391,7 +391,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.8.3';
+const APP_VER = '0.8.4';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -465,6 +465,56 @@ function cloudFlush(){
     .catch(e => console.log('cloud write failed', e));
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudFlush(); });
+
+/* =====================================================================
+   LINK A USERNAME ACCOUNT TO GOOGLE (keep existing progress)
+   1. popup sign-in (must start inside the tap → called straight from the confirm button)
+   2. read users/{uid}:
+        • no cloud save / cloud save never finished onboarding → move this save up
+        • cloud already has progress → show both, player picks which one to keep (2nd confirm)
+   3. write chosen save as g_<uid> locally + to Firestore, switch the session to Google.
+   The old username account stays on this device (marked .linked) as a backup.
+   ===================================================================== */
+function saveSummary(x){
+  const t = x && x.savedAt ? new Date(x.savedAt).toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' }) : '-';
+  return `Lv.${x.lv||1} • 🪙 ${x.coins||0} • น้อง ${x.pet ? x.pet.name : '-'} • ฟาร์ม ${x.farm && x.farm.zones ? x.farm.zones.length : 1} พื้นที่\nเล่นล่าสุด ${t}`;
+}
+async function linkGoogle(){
+  const fromUser = USER;
+  if (!fb) return sheet('ตอนนี้ยังเชื่อม Google ไม่ได้\n(ต้องเปิดเกมจากลิงก์บนเว็บ และต่ออินเทอร์เน็ต)', [{label:'ตกลง',cls:'ok'}]);
+  const prov = new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({ prompt:'select_account' });
+  let u;
+  try { u = (await fb.auth.signInWithPopup(prov)).user; }
+  catch(e){
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+    return sheet('เชื่อม Google ไม่สำเร็จ\n' + (e.code||e.message), [{label:'ตกลง',cls:'ok'}]);
+  }
+  const cancel = () => { fb.auth.signOut(); };
+  if (USER !== fromUser) return cancel();
+  let cloud = null;
+  try { const d = await withTimeout(fb.db.collection('users').doc(u.uid).get(), 8000); cloud = d.exists ? d.data().save : null; }
+  catch(e){ cancel(); return sheet('อ่านข้อมูลบนคลาวด์ไม่สำเร็จ ลองใหม่อีกครั้ง', [{label:'ตกลง',cls:'ok'}]); }
+  save();
+  const mine = JSON.parse(JSON.stringify(S));
+  const finish = pick => {
+    const key = 'g_' + u.uid, keep = JSON.parse(JSON.stringify(pick));
+    keep.savedAt = Date.now();
+    const all = users(); if (all[fromUser]){ all[fromUser].linked = u.email || 'Google'; store.set('pensuk_users', all); }
+    stopLoopSafe(); endPlacingSafe();
+    store.set('pensuk_save_'+key, keep);
+    cloudSynced = true;                                            // we just read the cloud copy
+    login(key); cloudQueue(true);
+    sheet('🔗 เชื่อมกับ Google สำเร็จ!\n\n' + (u.email||'') + '\nครั้งต่อไปกด "เข้าสู่ระบบด้วย Google" ได้ทุกเครื่อง', [{label:'ตกลง',cls:'ok'}]);
+  };
+  const sure = (t, fn) => sheet(t, [{label:'ยืนยัน',cls:'ok',fn},{label:'ยกเลิก',cls:'ghost',fn:cancel}]);   // cancel → sign Google back out
+  if (!cloud || !cloud.profile) return finish(mine);               // Google account is empty → move progress up
+  sheet('บัญชี Google นี้มีเซฟอยู่แล้ว เลือกเซฟที่จะเก็บไว้\n\n👤 เซฟในเครื่องนี้ (' + fromUser + ')\n' + saveSummary(mine) +
+        '\n\n🔑 เซฟบน Google\n' + saveSummary(cloud) + '\n\n⚠️ เซฟที่ไม่ได้เลือกในบัญชี Google จะถูกแทนที่', [
+    { label:'เก็บเซฟในเครื่องนี้', cls:'ok', fn: () => sure('ใช้เซฟของ "' + fromUser + '" แทนเซฟบน Google?\n(เซฟบน Google เดิมจะหายไป)', () => finish(mine)) },
+    { label:'ใช้เซฟบน Google', cls:'ghost', fn: () => sure('ใช้เซฟบน Google?\n(เซฟของ "' + fromUser + '" ยังอยู่ในเครื่องนี้เป็นสำรอง)', () => finish(cloud)) },
+    { label:'ยกเลิก', cls:'ghost', fn: cancel }
+  ]);
+}
 
 /* auto sign-in: the last player on this device opens straight into the game */
 function autoLogin(){
@@ -2831,9 +2881,17 @@ function renderBag(){
   const mv = document.createElement('button'); mv.className = 'btn ghost'; mv.textContent = '📲 สร้างโค้ดย้ายเครื่อง';
   mv.onclick = exportSave;
   const acct = document.createElement('div'); acct.className = 'card';
-  acct.innerHTML = `<b>บัญชี</b><div class="muted">${USER.startsWith('g_') ? '🔑 Google: ' + ((fb && fb.auth.currentUser && fb.auth.currentUser.email) || 'เชื่อมต่อแล้ว') + ' • บันทึกบนคลาวด์อัตโนมัติ เล่นได้ทุกเครื่อง' : '👤 ' + USER + ' • บันทึกในเครื่องนี้'}</div>`;
-
-  L.append(acct, mv, out);
+  const isG = USER.startsWith('g_'), linked = !isG && (users()[USER]||{}).linked;
+  acct.innerHTML = `<b>บัญชี</b><div class="muted">${isG
+    ? '🔑 Google: ' + ((fb && fb.auth.currentUser && fb.auth.currentUser.email) || 'เชื่อมต่อแล้ว') + ' • บันทึกบนคลาวด์อัตโนมัติ เล่นได้ทุกเครื่อง'
+    : '👤 ' + USER + ' • บันทึกในเครื่องนี้' + (linked ? '<br>🔗 เคยเชื่อมกับ Google (' + linked + ') แล้ว — ความคืบหน้าล่าสุดอยู่ในบัญชี Google' : ' (ยังไม่เชื่อม Google)')}</div>`;
+  L.append(acct);
+  if (!isG){                                                     // username players can carry progress over to Google
+    const lk = document.createElement('button'); lk.className = 'btn'; lk.textContent = '🔗 เชื่อมกับ Google (เก็บความคืบหน้าเดิม)';
+    lk.onclick = () => confirmDo('เชื่อมบัญชีนี้กับ Google?\n\nความคืบหน้าทั้งหมดของ "' + USER + '" จะย้ายไปอยู่บัญชี Google ที่คุณเลือก\nจากนั้นเข้าเกมด้วยปุ่ม Google ได้ทุกเครื่อง\n(บัญชีชื่อผู้ใช้เดิมยังเก็บไว้ในเครื่องเป็นสำรอง)', linkGoogle);
+    L.append(lk);
+  }
+  L.append(mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
