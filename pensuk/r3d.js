@@ -69,6 +69,7 @@ export function start(){
   /* ---------- palette (Modern Clay) ---------- */
   const C = { grass:'#8cc97a', grassD:'#6eab5f', soil:'#a87b55', base:'#f4ecdc', oak:'#d6b07f', water:'#86c8ea', sand:'#efe2c4',
               stone:'#e4dccd', rock:'#b9b3aa', leaf:'#6dbb5d', leaf2:'#58a24c', pine:'#4d9a63', trunk:'#9a6a45', white:'#fbf8f2' };
+  let curSway = null;
   const FLOWER = ['#ff8fa3','#ffd166','#ffffff','#b892ff','#ff9f5a'];
   /** clay flower: stem, a leaf, 5 petals in a ring around a yellow centre (head tilted up a little); returns the group */
   function flower(g, x, z, col, s){
@@ -77,6 +78,7 @@ export function start(){
     const head = new THREE.Group(); head.position.y = .6; head.rotation.x = -.35; f.add(head);
     for (let k=0;k<5;k++){ const a = k/5*Math.PI*2; BALL(head, .12, .05, .08, col, Math.cos(a)*.13, 0, Math.sin(a)*.13).rotation.y = -a; }
     BALL(head, .07, .06, .07, col === '#ffd166' ? '#f08a3c' : '#ffd23f', 0, .03, 0);
+    if (curSway) curSway.push(f, Math.random()*6.28, .17, 1);
     return f;
   }
 
@@ -176,7 +178,23 @@ export function start(){
     }
     return g;
   }
-  function tileModel(t, zseed, i){                              // flat ground pieces: water / bridge / path stones / meadow flowers
+  /* 🌉 arched footbridge, built along local X then turned to span the water.
+     deck height  y(x) = 0.12 + 0.22·(1 − (x/1.05)²)   for x ∈ [−1.05, 1.05]  (ends touch both banks)
+     planks run across the path; stringers + rails follow the arch in 6 short tilted segments;
+     4 corner posts hold the rails. */
+  function bridgeModel(alongX){
+    const g = new THREE.Group(); if (!alongX) g.rotation.y = Math.PI/2;
+    const deck = x => .12 + .22*(1 - (x/1.05)**2), seg = (x0, x1, yoff, z, w, h, col) => {
+      const xa = x0, xb = x1, ya = deck(xa) + yoff, yb = deck(xb) + yoff, len = Math.hypot(xb-xa, yb-ya);
+      const m = RB(g, len + .02, h, w, .03, col, (xa+xb)/2, (ya+yb)/2 - h/2, z, true); m.rotation.z = Math.atan2(yb-ya, xb-xa); };
+    for (let k=0;k<6;k++){ const a = -1.05 + k*.35, b = a + .35;
+      for (const z of [-.78, .78]){ seg(a, b, -.1, z, .14, .14, '#7a4a26'); seg(a, b, .58, z, .08, .08, '#8a5a33'); } }   // stringers + rails
+    for (let k=0;k<8;k++){ const x = -.98 + k*.28; const p = RB(g, .24, .1, 1.72, .03, k%2 ? '#b98250' : '#a8703f', x, deck(x), 0, true);
+      p.rotation.z = Math.atan(-.44*x/1.1025); }                                                                    // planks across the path
+    for (const x of [-.95, .95]) for (const z of [-.78, .78]) CY(g, .06, .62, '#6e4524', x, deck(x) - .05, z, true);   // corner posts
+    return g;
+  }
+  function tileModel(t, zseed, i, alongX){                              // flat ground pieces: water / bridge / path stones / meadow flowers
     const g = new THREE.Group();
     if (t.k === 'water'){
       add(g, rb(2, .1, 2, .02), waterMat, 0, -.02, 0);
@@ -187,8 +205,7 @@ export function start(){
         f.userData.fish = [hrnd(zseed,i,32)*6.28, hrnd(zseed,i,33) < .5 ? 1 : -1]; fishes.push(f);
       }
       if (hrnd(zseed, i, 3) < .35) add(g, CYL, mat('#6fbf63'), (hrnd(zseed,i,4)-.5), .05, (hrnd(zseed,i,5)-.5), .3, .02, .3);
-      if (t.bridge){ for (let k=-3;k<=3;k++) RB(g, 1.9, .14, .24, .04, '#b07a4a', 0, .1, k*.27, true);
-        for (const z of [-.9,.9]) RB(g, 1.9, .12, .08, .03, '#8a5a33', 0, .6, z); }
+      if (t.bridge) g.add(bridgeModel(alongX));
     } else if (t.k === 'path'){
       RB(g, 1.5, .08, 1.5, .25, ({ stone:C.stone, wood:'#d8b48a', brick:'#d9917a' })[t.p] || C.stone, (hrnd(zseed,i,6)-.5)*.2, 0, (hrnd(zseed,i,7)-.5)*.2);
     } else if ((t.k === 'clear') && hrnd(zseed, i, 8) < .3){
@@ -200,6 +217,7 @@ export function start(){
     let e = zones.get(z); if (e){ scene.remove(e.g); }
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
     const S2 = GRID*2, ctr = S2/2, res = [], sway = [], rings = [];
+    curSway = sway;                                               // flower() registers itself while this zone is built
     fishes = [];
     RB(g, S2, .5, S2, .1, C.grass, ctr, -.5, ctr);              // model block: grass → soil → cream base → oak band
     RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
@@ -210,12 +228,19 @@ export function start(){
       const t = z.tiles[i], c = i%GRID, r = (i/GRID)|0, x = c*2+1, zz = r*2+1, gc = z.cx*GRID+c, gr = z.cy*GRID+r;
       let m = null;
       if (RES[t.k]) m = resModel(t.k, z.seed, i);
-      else if (t.k !== 'obj') m = tileModel(t, z.seed, i);
+      else if (t.k !== 'obj'){
+        const lob = (a, b) => { const n = tileAt(a, b); return !!n && (n.k !== 'water' || n.bridge); };          // land or bridge neighbour
+        const ax = lob(gc-1, gr) || lob(gc+1, gr), az = lob(gc, gr-1) || lob(gc, gr+1);
+        m = tileModel(t, z.seed, i, ax || !az); }
       if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
-        if (RES[t.k]){ res[i] = m; if (t.k === 'tree' || t.k === 'grass' || t.k === 'wild' || t.k === 'sapling' || t.k === 'bush') sway.push(m, hrnd(z.seed, i, 98)*6, t.k === 'tree' ? .025 : .06); }
+        if (RES[t.k]){ res[i] = m; const ph = (z.cx*GRID*2 + x + z.cy*GRID*2 + zz)*.35 + hrnd(z.seed, i, 98)*.6;   // phase from position → gusts roll across the farm
+          if (t.k === 'grass') sway.push(m, ph, .14, 0); else if (t.k === 'sapling') sway.push(m, ph, .1, 0);
+          else if (t.k === 'tree') sway.push(m, ph, .035, 0); else if (t.k === 'bush') sway.push(m, ph, .05, 2); }
         if (t.k === 'water'){ const ring = add(m, RING, ringMat, (hrnd(z.seed,i,20)-.5)*.8, .06, (hrnd(z.seed,i,21)-.5)*.8); ring.rotation.x = -Math.PI/2; ring.userData.ph = hrnd(z.seed, i, 22); rings.push(ring); } }
     }
+    curSway = sway;
     for (const o of z.objs){ const m = objModel(o); m.position.set((o.c + o.w/2)*2, 0, (o.r + o.h/2)*2); markTile(m, z.cx*GRID+o.c, z.cy*GRID+o.r); g.add(m); }
+    curSway = null;
     zones.set(z, { g, dirty:false, res, sway, rings, fish:fishes, live: z.objs.some(o => !o.done || (o.type==='plot' && o.plant)) });
   }
 
@@ -415,12 +440,18 @@ export function start(){
         if (!e || e.dirty || (e.live && liveAcc > 3)) buildZone(z); }
       if (liveAcc > 3) liveAcc = 0;
       for (const [z, e] of zones) if (!S.farm.zones.includes(z)){ scene.remove(e.g); zones.delete(z); }
+      const gust = .55 + .3*Math.sin(time*.35) + .2*Math.sin(time*1.1 + 1);
       for (const e of zones.values()){
         e.g.traverse(o => { if (o.userData.spin) o.rotation.z = time*1.2;
           if (o.userData.smoke != null){ const u = (time*.35 + o.userData.smoke/3) % 1; o.position.y = 2.6 + u*1.8; o.scale.setScalar(.15 + u*.3); } });
-        /* wind sway: small tilt around x/z, per-plant phase (no allocation, just rotation writes) */
-        for (let k=0;k<e.sway.length;k+=3){ const m = e.sway[k], ph = e.sway[k+1], a = e.sway[k+2];
-          m.rotation.x = Math.sin(time*1.6 + ph)*a; m.rotation.z = Math.cos(time*1.3 + ph)*a; }
+        /* wind: gust(t) = 0.55 + 0.3·sin(0.35t) + 0.2·sin(1.1t + 1)  (slow swell + flutter)
+           lean  = 0.5·gust·amp  (everything leans the same way)  + sway = sin(2.2t − phase)·amp·(0.5 + gust)
+           kind 0 = tilt (grass, saplings, trees) • 1 = flower (tilt + nod) • 2 = bush (breathe: scale ±amp) */
+        for (let k=0;k<e.sway.length;k+=4){ const m = e.sway[k], ph = e.sway[k+1], a = e.sway[k+2], kind = e.sway[k+3];
+          const w = Math.sin(time*2.2 - ph);
+          if (kind === 2){ const sc = 1 + w*a*gust; m.scale.set(sc, 1 + w*a*.6*gust, sc); continue; }
+          m.rotation.z = .5*gust*a + w*a*(.5 + gust);
+          m.rotation.x = Math.cos(time*1.7 - ph)*a*.35 + (kind === 1 ? Math.sin(time*3.1 + ph)*.06 : 0); }
         /* ripples: scale 0.6→2.2 and fade, period 2.6 s */
         for (const r of e.rings){ const u = (time/2.6 + r.userData.ph) % 1; r.scale.setScalar(.6 + u*1.6); }
         /* fish: x = 0.45·cos(a), z = 0.45·sin(a), a = ph + dir·0.9·t ; heading = tangent */
