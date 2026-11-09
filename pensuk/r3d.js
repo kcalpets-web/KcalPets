@@ -81,6 +81,8 @@ export function start(){
   }
 
   /* water ripple rings: one shared transparent material, each ring expands with its own phase */
+  const waterMat = new THREE.MeshStandardMaterial({ color:C.water, emissive:0x0d2633, transparent:true, opacity:.78, roughness:.25 });
+  let fishes = [];
   const RING = new THREE.RingGeometry(.25, .32, 24), ringMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.5, depthWrite:false });
   const hits = [];                                             // recently hit resources: [group, t0, …] → wobble 0.35 s
 
@@ -156,7 +158,8 @@ export function start(){
         for (const [x,z] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .1, 2, C.white, x*(W/2-.45), .18, z*(D/2-.45), true);
         add(g, CONE, mat('#86b48c'), 0, 2.6, 0, Math.max(W,D)*.6, 1.1, Math.max(W,D)*.6, true).rotation.y = Math.PI/4; break;
       case 'mill': { RB(g, W*.55, 3, D*.55, .15, '#efe9de', 0, 0, 0, true); CO(g, W*.42, 1, '#d9705a', 0, 3, 0, true);
-        const b = new THREE.Group(); b.position.set(0, 2.5, D*.3); b.userData.spin = 1; g.add(b);
+        const b = new THREE.Group(); b.position.set(0, 1.9, W*.42 + .15); b.userData.spin = 1; g.add(b);   // hub in front of the roof overhang (cone r = 0.42W) → blades never cut the roof
+        RB(g, .14, .14, W*.42 + .15 - D*.27, .05, '#8a5a33', 0, 1.83, (W*.42 + .15 + D*.27)/2);           // axle from the tower to the hub
         for (let k=0;k<4;k++){ const a = new THREE.Group(); a.rotation.z = k*Math.PI/2; b.add(a); RB(a, .25, 1.6, .05, .03, C.white, 0, .1, 0); } break; }
       case 'doghouse': walls('#f2c46d', '#e98b6d', 1.2, { door:'#3b2a20' }); CY(g, .22, .1, '#5f8fc9', W*.3, 0, D*.42); break;   // + water bowl
       case 'starter':  walls('#fbf3e4', '#e98b6d', 1.6, { chimney:true, shutters:'#8fb79a', box:true }); break;
@@ -176,7 +179,13 @@ export function start(){
   function tileModel(t, zseed, i){                              // flat ground pieces: water / bridge / path stones / meadow flowers
     const g = new THREE.Group();
     if (t.k === 'water'){
-      add(g, rb(2, .1, 2, .02), mat(C.water, 0x0d2633), 0, -.02, 0);
+      add(g, rb(2, .1, 2, .02), waterMat, 0, -.02, 0);
+      if (hrnd(zseed, i, 30) < .5){                             // 🐟 a small fish circling under the surface (r 0.45, own phase & direction)
+        const f = new THREE.Group(); f.position.y = .03; g.add(f);
+        add(f, SPH, mat(hrnd(zseed,i,31) < .5 ? '#f08a3c' : '#9aa7b3'), 0, 0, 0, .16, .06, .07);
+        add(f, CONE, mat('#f2a65a'), -.2, 0, 0, .06, .12, .03).rotation.z = Math.PI/2;
+        f.userData.fish = [hrnd(zseed,i,32)*6.28, hrnd(zseed,i,33) < .5 ? 1 : -1]; fishes.push(f);
+      }
       if (hrnd(zseed, i, 3) < .35) add(g, CYL, mat('#6fbf63'), (hrnd(zseed,i,4)-.5), .05, (hrnd(zseed,i,5)-.5), .3, .02, .3);
       if (t.bridge){ for (let k=-3;k<=3;k++) RB(g, 1.9, .14, .24, .04, '#b07a4a', 0, .1, k*.27, true);
         for (const z of [-.9,.9]) RB(g, 1.9, .12, .08, .03, '#8a5a33', 0, .6, z); }
@@ -191,6 +200,7 @@ export function start(){
     let e = zones.get(z); if (e){ scene.remove(e.g); }
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
     const S2 = GRID*2, ctr = S2/2, res = [], sway = [], rings = [];
+    fishes = [];
     RB(g, S2, .5, S2, .1, C.grass, ctr, -.5, ctr);              // model block: grass → soil → cream base → oak band
     RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
     RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
@@ -206,7 +216,7 @@ export function start(){
         if (t.k === 'water'){ const ring = add(m, RING, ringMat, (hrnd(z.seed,i,20)-.5)*.8, .06, (hrnd(z.seed,i,21)-.5)*.8); ring.rotation.x = -Math.PI/2; ring.userData.ph = hrnd(z.seed, i, 22); rings.push(ring); } }
     }
     for (const o of z.objs){ const m = objModel(o); m.position.set((o.c + o.w/2)*2, 0, (o.r + o.h/2)*2); markTile(m, z.cx*GRID+o.c, z.cy*GRID+o.r); g.add(m); }
-    zones.set(z, { g, dirty:false, res, sway, rings, live: z.objs.some(o => !o.done || (o.type==='plot' && o.plant)) });
+    zones.set(z, { g, dirty:false, res, sway, rings, fish:fishes, live: z.objs.some(o => !o.done || (o.type==='plot' && o.plant)) });
   }
 
   /* ---------- pet (clay, coloured from the 2D SPECIES table) ---------- */
@@ -413,6 +423,9 @@ export function start(){
           m.rotation.x = Math.sin(time*1.6 + ph)*a; m.rotation.z = Math.cos(time*1.3 + ph)*a; }
         /* ripples: scale 0.6→2.2 and fade, period 2.6 s */
         for (const r of e.rings){ const u = (time/2.6 + r.userData.ph) % 1; r.scale.setScalar(.6 + u*1.6); }
+        /* fish: x = 0.45·cos(a), z = 0.45·sin(a), a = ph + dir·0.9·t ; heading = tangent */
+        for (const f of e.fish){ const [ph, dir] = f.userData.fish, a = ph + dir*time*.9;
+          f.position.x = Math.cos(a)*.45; f.position.z = Math.sin(a)*.45; f.rotation.y = -a - dir*Math.PI/2; }
       }
       ringMat.opacity = .45;
       /* tool hit wobble: shake + squash for 0.35 s, decaying */

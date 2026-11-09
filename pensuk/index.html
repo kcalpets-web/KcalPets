@@ -114,6 +114,11 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
 .mbtns{display:flex;flex-direction:column;gap:8px}
 #mbox{max-height:88vh;overflow-y:auto}
+#dropBar{position:absolute;left:10px;right:10px;bottom:24px;display:none;justify-content:space-between;pointer-events:none;z-index:3}
+.dz{width:96px;height:84px;border-radius:22px;background:#ffffffee;box-shadow:0 4px 16px #0003;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:34px;border:3px dashed #e0892f;transition:transform .12s}
+.dz small{font:600 11px 'Mali';color:#7a5a3a;text-align:center;line-height:1.2}
+.dz.hot{transform:scale(1.18);background:#fff1df;border-style:solid} #dropTrash.hot{border-color:#e63946;background:#ffe9ea}
+.dz.off{opacity:.35;filter:grayscale(1)}
 #nav button.brk::after{content:'🔔';position:absolute;top:2px;right:18%;font-size:14px;animation:pulse 1s infinite}
 #nav button{position:relative}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
@@ -195,6 +200,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
       <div id="toolBar"></div>
+      <div id="dropBar"><div id="dropStore" class="dz">📦<small>เก็บเข้าคลัง</small></div><div id="dropTrash" class="dz">🗑️<small>ลบทิ้ง<br>คืนครึ่งหนึ่ง</small></div></div>
       <div id="hint">แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้</div>
     </div>
   </div>
@@ -420,7 +426,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.13.0';
+const APP_VER = '0.14.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1909,7 +1915,7 @@ function frame(now){
   cv.classList.toggle('see3d', !!use3D());
   if (inRoom && use3D()){                                     // inside a house — 3D room + HUD
     roomPet.night = NIGHT > .6; updatePetAnim(roomPet, dt/1000, true, roomTarget);
-    R3D.renderRoom(inRoom, roomPet, roomPlace, time);
+    R3D.renderRoom(inRoom, roomPet, roomPlace, time); drawHoldRing();
     if (roomPlace && roomPlace.c != null){ const col = roomPlace.valid ? 'rgba(76,175,106,.45)' : 'rgba(220,60,60,.45)';
       for (let dr=0;dr<roomPlace.h;dr++) for (let dc=0;dc<roomPlace.w;dc++){ const c = roomPlace.c+dc, r = roomPlace.r+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); } }
     if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); }
@@ -2187,7 +2193,7 @@ $('zLabel').onclick = goHome;
 
 /* --- touch: drag to pan (threshold 8 px), tap = act. Placement → pet → tile --- */
 let drag = null;
-const LONG_MS = 500;                                         // long-press threshold
+const LONG_MS = 1000;                                        // long-press threshold (v0.14: 1 s → lift & drag)
 /* pinch: track active pointers; 2 fingers → zoom about their midpoint and pan with it */
 const ptrs = new Map();                                      // pointerId → {x, y}
 let pinch = null;                                            // {d0, z0, wc, wr}
@@ -2210,13 +2216,13 @@ cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId
     drag = { tool:true, moved:true, x:e.clientX, y:e.clientY }; toolDrag = { x, y, last:null };
     toolStroke(x, y, x, y); return;
   }
-  drag = { x:e.clientX, y:e.clientY, cx:camX, cy:camY, moved:false, long:false };
+  drag = { x:e.clientX, y:e.clientY, cx:camX, cy:camY, moved:false, long:false, t0:performance.now() };
   const d = drag;
   d.timer = setTimeout(() => { if (drag !== d || d.moved || placing || fishing) return;
     const b = cv.getBoundingClientRect();
-    if (inRoom){ if (!roomPlace && roomLongPress(d.x-b.left, d.y-b.top)) d.long = true; return; }
+    if (inRoom){ if (!roomPlace && roomLongPress(d.x-b.left, d.y-b.top)){ d.long = true; if (lift) d.lift = true; } return; }
     const g = pick(d.x-b.left, d.y-b.top);
-    if (longPress(g.c, g.r)) d.long = true; }, LONG_MS); });
+    if (longPress(g.c, g.r)){ d.long = true; if (lift) d.lift = true; } }, LONG_MS); });
 cv.addEventListener('pointermove', e => {
   if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
   if (pinch && ptrs.size >= 2){
@@ -2228,6 +2234,7 @@ cv.addEventListener('pointermove', e => {
   if (!drag) return;
   if (drag.tool){ if (ptrs.size !== 1 || !toolDrag) return; const b = cv.getBoundingClientRect(), x = e.clientX-b.left, y = e.clientY-b.top;
     toolStroke(toolDrag.x, toolDrag.y, x, y); toolDrag.x = x; toolDrag.y = y; return; }
+  if (drag.lift){ liftMove(e); return; }                     // carrying a lifted object
   const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
   if (!drag.moved && Math.hypot(dx,dy) > 8){ drag.moved = true; clearTimeout(drag.timer); }
   if (drag.moved && !inRoom){ camX = drag.cx + dx; camY = drag.cy + dy; clampCam(); }
@@ -2242,14 +2249,16 @@ function endPointer(e){
   }
   return false;
 }
-cv.addEventListener('pointercancel', e => { endPointer(e); if (drag) clearTimeout(drag.timer); drag = null; });
+cv.addEventListener('pointercancel', e => { endPointer(e); if (drag){ clearTimeout(drag.timer); if (drag.lift && lift){ lift = null; showDrop(false); if (roomPlace) endRoomPlace(); else if (placing) endPlacing(); } } drag = null; });
 cv.addEventListener('wheel', e => {                          // desktop / trackpad pinch
   e.preventDefault(); const b = cv.getBoundingClientRect();
   zoomAt(zoom * Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)), e.clientX-b.left, e.clientY-b.top);
 }, { passive:false });
 cv.addEventListener('pointerup', e => {
   if (endPointer(e)) return;
-  const d = drag; drag = null; if (!d) return; clearTimeout(d.timer); if (d.moved || d.long || ptrs.size) return;
+  const d = drag; drag = null; if (!d) return; clearTimeout(d.timer);
+  if (d.lift && lift) return liftDrop();
+  if (d.moved || d.long || ptrs.size) return;
   const b = cv.getBoundingClientRect(), sx = e.clientX-b.left, sy = e.clientY-b.top;
   if (inRoom) return roomTap(sx, sy);
   const g = pick(sx, sy);
@@ -2311,24 +2320,7 @@ function longPress(gc, gr){
   try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
   const it = FARM_ITEMS[o.type];
   if (!o.done){ sheet(`🔨 ${it.name} ยังสร้างไม่เสร็จ\nย้ายหรือเก็บได้หลังสร้างเสร็จแล้วครับ`, OK); return true; }
-  if (isHome(o.type)){                                       // someone lives here: move only, never store/demolish
-    sheet(`${it.name}\nบ้านเป็นที่อยู่อาศัย ย้ายได้แต่เก็บเข้าคลังไม่ได้`, [
-      { label:'🚪 เข้าบ้าน', cls:'ok', fn:() => enterHome(z, o) },
-      { label:'↔️ ย้ายตำแหน่ง', fn:() => { const lifted = { ...o }; removeObj(z, o);
-          startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } }); } },
-      { label:'ปิด', cls:'ghost' } ]);
-    return true;
-  }
-  sheet(`${it.name}\nขนาด ${o.w}×${o.h} • จะทำอะไรดี?`, [
-    { label:'↔️ ย้ายตำแหน่ง', cls:'ok', fn:() => {
-        const lifted = { ...o }; removeObj(z, o);
-        startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } }); } },
-    { label:'📦 เก็บเข้าคลัง', fn:() => confirmDo(`เก็บ ${it.name} เข้าคลัง?\nนำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน` +
-        (o.plant ? '\n(ผักที่ปลูกอยู่จะหายไป)' : o.pj ? '\n(ของที่กำลังทำอยู่จะหายไป)' : ''), () => {
-        S.store = S.store || {}; S.store[o.type] = (S.store[o.type]||0) + 1; delete o.pj; removeObj(z, o); bump('moveStore'); save(); renderShop();
-        reward(`📦 เก็บ ${it.name} เข้าคลังแล้ว`); }) },
-    { label:'ปิด', cls:'ghost' } ]);
-  return true;
+  liftStartFarm(z, o); return true;                           // v0.14: no menu — the object follows the finger
 }
 function tapObj(z, o){
   if (!o) return;
@@ -2344,7 +2336,8 @@ function tapObj(z, o){
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
   if (PROC[o.type]) return procTap(z, o);
-  sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้างที่สิ่งปลูกสร้างเพื่อย้ายหรือเก็บเข้าคลัง`, [
+  sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้าง 1 วินาทีแล้วลากเพื่อย้าย • ลากไป 📦 เก็บเข้าคลัง • ลากไป 🗑️ ลบ`, [
+    ...(o.w !== o.h ? [{ label:'🔄 หมุน', fn:() => rotateObj(z, o) }] : []),
     {label:'รื้อถอน (ไม่คืนวัตถุดิบ)', cls:'ghost', fn:() => confirmDo(`รื้อถอน ${it.name}?\nจะไม่ได้เหรียญหรือวัตถุดิบคืน`, () => { removeObj(z, o); save(); })},
     {label:'ปิด', cls:'ghost'} ]);
 }
@@ -2723,6 +2716,8 @@ function openStyleMenu(){
 function roomTap(sx, sy){
   const g = pick(sx, sy);
   if (roomPlace) return roomPlaceAt(g.c, g.r);
+  { const it = roomItemAt(g.c, g.r, true) || roomItemAt(g.c, g.r); const ps0 = TW*.7*petStage(S.pet.lv).scale, [qx,qy] = P(roomPet.x, roomPet.y);
+    if (it && Math.hypot(sx-qx, sy-(qy-ps0*.55)) >= Math.max(30, ps0*.6)) return roomItemMenu(it); }
   const ps = TW*.7*petStage(S.pet.lv).scale, [px,py0] = P(roomPet.x, roomPet.y);
   if (Math.hypot(sx-px, sy-(py0-ps*.55)) < Math.max(30, ps*.6)){ petHappy(roomPet); bump('petTap'); return; }
   const it = roomItemAt(g.c, g.r);
@@ -2730,8 +2725,7 @@ function roomTap(sx, sy){
 }
 function roomLongPress(sx, sy){
   const g = pick(sx, sy), it = roomItemAt(g.c, g.r); if (!it) return false;
-  try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
-  const R = inRoom.o.room;
+  liftStartRoom(it); return true;
   sheet(`${FURN[it.type].name}\nจะทำอะไรดี?`, [
     { label:'↔️ ย้ายตำแหน่ง', cls:'ok', fn:() => { R.items.splice(R.items.indexOf(it), 1); startRoomPlace(it.type, it); } },
     { label:'🔄 หมุน', fn:() => { if (it.w === it.h) return; R.items.splice(R.items.indexOf(it), 1); const w = it.w; it.w = it.h; it.h = w; startRoomPlace(it.type, it); } },
@@ -2808,11 +2802,17 @@ const QUESTS = [
   { id:'plot',    name:'สร้างแปลงผัก',           nav:'tShop', shop:'farm', need:1, goal:() => plotsDone(),
     text:'ร้านค้า › ฟาร์ม › แปลงผัก → วาง → รอสร้างเสร็จแล้วแตะรับ', reward:{coins:100, seed:2} },
   { id:'move',    name:'ย้ายหรือเก็บสิ่งปลูกสร้าง',  hl:'plot',   need:1, goal:() => st('moveStore'),
-    text:'กดค้างที่แปลงผัก ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม) — บ้านย้ายได้แต่เก็บไม่ได้เพราะมีคนอยู่', reward:{coins:100} },
+    text:'กดค้างที่แปลงผัก 1 วินาที (มีวงแหวนนับ) → ลากนิ้วไปวางที่ใหม่แล้วปล่อย — ปล่อยตรงที่วางไม่ได้ของจะกลับที่เดิม', reward:{coins:100} },
+  { id:'dragStore', name:'ลากไปเก็บเข้าคลัง',      hl:'plot',   need:1, goal:() => st('dragStore'),
+    text:'กดค้างที่สิ่งปลูกสร้าง 1 วินาที → ลากไปปล่อยที่ 📦 มุมล่างซ้าย — นำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน (บ้านเก็บไม่ได้ เพราะมีคนอยู่)', reward:{coins:100} },
+  { id:'trash',   name:'ลองลบสิ่งของ',            nav:'tShop', shop:'farm', need:1, goal:() => st('trash'),
+    text:'ได้ 🌷 กระบะดอกไม้ฟรีในคลังแล้ว! ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง → กดค้าง 1 วินาที → ลากไปปล่อยที่ 🗑️ มุมล่างขวา (ลบแล้วได้วัตถุดิบคืนครึ่งหนึ่ง)', reward:{coins:100} },
   { id:'decor',   name:'ตกแต่งบ้าน',              nav:'tShop', shop:'home', need:1, goal:() => st('decorPlace'),
     text:'ร้านค้า › 🛋 ในบ้าน ซื้อของตกแต่ง 1 ชิ้น → แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง → วาง (กดค้างที่ของเพื่อย้าย/หมุน/เก็บ)', reward:{coins:200} },
   { id:'harvest', name:'ปลูกและเก็บเกี่ยว',        hl:'plot',   need:1, goal:() => st('harvest'),
     text:'แตะแปลงผัก → เลือกเมล็ด → รอผักโต (แครอท 5 นาที) → แตะเก็บเกี่ยว หรือ 🧰 › 🌾 เคียว ลากผ่านหลายแปลงทีเดียว — ผักขายได้ ส่งออเดอร์ได้ หรือแปรรูปได้', reward:{coins:200} },
+  { id:'reap',    name:'เก็บเกี่ยวด้วยเคียว',       hl:'plot',   tool:1, need:1, goal:() => st('reap'),
+    text:'ปลูกผักให้สุก แล้วแตะ 🧰 → 🌾 เคียว → ลากนิ้วผ่านแปลงที่สุก เก็บได้หลายแปลงในครั้งเดียว', reward:{coins:100} },
   { id:'order',   name:'ส่งคำสั่งซื้อ',            nav:'tShop', shop:'order', need:1, goal:() => st('order'),
     text:'ร้านค้า › 📋 คำสั่งซื้อ → ส่งของให้ครบ 1 ออเดอร์ — จ่ายแพงกว่าขายร้าน ได้ Exp ด้วย ออเดอร์ใหม่มาทุก 10 นาที', reward:{coins:300} },
   { id:'large',   name:'โค่นต้นไม้/สกัดหินใหญ่',     hl:'large',  tool:1, need:1, goal:() => st('collect_large'),
@@ -2821,6 +2821,10 @@ const QUESTS = [
     text:'ร้านค้า › ฟาร์ม › ทางเดิน → แตะช่องว่างต่อกัน 3 ช่อง แล้วกด ✔ เสร็จ — ทางเดินเชื่อมกันเองอัตโนมัติ น้องเดินบนทางได้', reward:{coins:200} },
   { id:'bridge',  name:'สร้างสะพาน',              hl:'water', need:1, goal:() => st('bridgePlace'),
     text:'ร้านค้า › ฟาร์ม › 🌉 สะพานไม้ → แตะที่บ่อน้ำ — สะพานทำให้น้องเดินข้ามน้ำได้ (กดค้างเพื่อรื้อ คืนเงิน)', reward:{coins:200} },
+  { id:'dig',     name:'ขุดบ่อน้ำ',               tool:1, need:1, goal:() => st('dig'),
+    text:'แตะ 🧰 → 🪏 พลั่ว → ลากนิ้วผ่านพื้นหญ้าว่าง 1 ช่อง — ช่องนั้นกลายเป็นบ่อน้ำ มีปลาตัวเล็กมาอยู่ และได้ 🟤 ดิน', reward:{coins:100, soil:1} },
+  { id:'fill',    name:'ถมบ่อน้ำ',                tool:1, hl:'water', need:1, goal:() => st('fill'),
+    text:'ใช้ 🪏 พลั่ว ลากผ่านบ่อน้ำ 1 ช่อง — ใช้ 🟤 ดิน 1 ก้อนถมให้เป็นพื้นหญ้า (ดินได้จากการขุด หรือซื้อที่ร้านค้า › ทั่วไป)', reward:{coins:100} },
   { id:'speed',   name:'เร่งเวลาด้วยเหรียญ',      need:1, goal:() => st('speed'),
     text:'แตะของที่กำลังสร้าง/ผักที่กำลังโต/ของที่กำลังแปรรูป แล้วกด ⚡ เร่ง — 20 เหรียญต่อเวลาที่เหลือ 1 นาที', reward:{coins:100} },
   { id:'zone2',   name:'ขยายฟาร์ม',              need:1, goal:() => S.farm.zones.length >= 2 ? 1 : 0,
@@ -2847,6 +2851,7 @@ const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
 
 function questTick(){
   brkTick();
+  if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
   if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
   const prog = Math.min(q.need, q.goal()), done = prog >= q.need;
@@ -3048,7 +3053,7 @@ Object.assign(MAT, {
   corn:'🌽 ข้าวโพด', tomato:'🍅 มะเขือเทศ', rice:'🌾 ข้าวเปลือก', pumpkin:'🎃 ฟักทอง', berry:'🍓 สตรอว์เบอร์รี',
   sd_corn:'🌱 เมล็ดข้าวโพด', sd_tomato:'🌱 เมล็ดมะเขือเทศ', sd_rice:'🌱 เมล็ดข้าว', sd_pumpkin:'🌱 เมล็ดฟักทอง', sd_berry:'🌱 เมล็ดสตรอว์เบอร์รี',
   plank:'🟫 ไม้กระดาน', beam:'📏 ไม้คาน', polish:'✨ ไม้ขัดเงา',
-  milled:'🍚 ข้าวสาร', soup:'🥣 ซุปผัก', friedrice:'🍛 ข้าวผัดปลา', jam:'🫙 แยมสตรอว์เบอร์รี', sauce:'🥫 ซอสมะเขือเทศ'
+  soil:'🟤 ดิน', milled:'🍚 ข้าวสาร', soup:'🥣 ซุปผัก', friedrice:'🍛 ข้าวผัดปลา', jam:'🫙 แยมสตรอว์เบอร์รี', sauce:'🥫 ซอสมะเขือเทศ'
 });
 const inv = k => S.inv[k] || 0;
 function invAdd(k, n){ S.inv[k] = (S.inv[k] || 0) + n; }
@@ -3068,9 +3073,9 @@ const cropLeft = o => (o.plant + cropOf(o).sec*1000 - Date.now()) / 1000;
 /* ---------- prices (already ×20) ⚠️ ---------- */
 const SELL = { veg:40, corn:100, tomato:160, rice:250, pumpkin:600, berry:400,
   tilapia:120, carp:200, shrimp:160, goldfish:800, boot:20,
-  stone:20, grass:20, wood:40, plank:160, beam:400, polish:450,
+  stone:20, grass:20, wood:40, soil:20, plank:160, beam:400, polish:450,
   milled:1200, soup:300, friedrice:2000, jam:2200, sauce:900 };
-const BUY = { food:200, stone:80, wood:100, grass:40,
+const BUY = { food:200, stone:80, wood:100, grass:40, soil:60,
   seed:10, sd_corn:25, sd_tomato:40, sd_rice:60, sd_pumpkin:150, sd_berry:100 };
 const seedCrop = k => Object.values(CROPS).find(c => c.seed === k);
 const ownsDone = type => S.farm.zones.some(z => z.objs.some(o => o.type === type && o.done));
@@ -3200,6 +3205,7 @@ function renderOrders(L){
 const TOOLS = {
   sickle: { e:'✂️', name:'กรรไกร', fits:['grass','wild','sapling'],      snd:'snip',  col:['#7cc94f','#4f9a2f','#ffd23f'] },
   reap:   { e:'🌾', name:'เคียว', fits:[], harvest:true,                 snd:'snip',  col:['#f2cf4a','#6dbb5d','#f08a3c'] },
+  shovel: { e:'🪏', name:'พลั่ว', fits:[], dig:true,                     snd:'chop',  col:['#a87b55','#7a5236','#86c8ea'] },
   axe:    { e:'🪓', name:'ขวาน',          fits:['bush','tree'],                snd:'chop',  col:['#b07a40','#8a5a2b','#6fae3b'] },
   hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] }
 };
@@ -3220,7 +3226,8 @@ function pickTool(id){
   const t = TOOLS[id];
   const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
   if (S.toolOk && S.toolOk[id]) return go();                 // confirm once per tool (like path mode)
-  confirmDo(t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
+  confirmDo(t.dig ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านพื้นหญ้าว่าง → ขุดเป็นบ่อน้ำ ได้ 🟤 ดิน +1\n• ลากผ่านบ่อน้ำ → ถมเป็นพื้นหญ้า ใช้ 🟤 ดิน 1\n(ลาก 1 ครั้งทำได้อย่างเดียว: ขุดหรือถม • เลื่อน/ซูมใช้ 2 นิ้ว)`
+    : t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
     : `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
 }
@@ -3246,11 +3253,27 @@ function toolHit(gc, gr){
   if (toolDrag && toolDrag.last === key) return;              // one hit per tile entry (re-enter to hit again)
   if (toolDrag) toolDrag.last = key;
   const t = tileAt(gc, gr); if (!t) return;
+  if (TOOLS[tool].dig){                                       // 🪏 shovel: dig grass → pond (+1 soil) • fill pond (−1 soil) → grass
+    const z = hitZone, mode = toolDrag && toolDrag.mode;      // one stroke = one action, so swiping back and forth can't undo itself
+    if (t.k === 'clear' && mode !== 'fill'){
+      if (toolDrag) toolDrag.mode = 'dig';
+      t.k = 'water'; invAdd('soil', 1); bump('dig'); burst(gc, gr, TOOLS.shovel.col, 8); sfx('chop'); buzz(15);
+      floatText(gc, gr, '+1🟤', '#7a5236'); markDirty(z); saveSoon(); return;
+    }
+    if (t.k === 'water' && mode !== 'dig'){
+      if (t.bridge){ floatText(gc, gr, 'รื้อสะพานก่อน', '#c0392b'); return; }
+      if (inv('soil') < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(gc, gr, 'ต้องใช้ 🟤 ดิน', '#c0392b'); } return; }
+      if (toolDrag) toolDrag.mode = 'fill';
+      S.inv.soil--; t.k = 'clear'; bump('fill'); burst(gc, gr, TOOLS.shovel.col, 8); sfx('chop'); buzz(15);
+      floatText(gc, gr, '−1🟤', '#7a5236'); markDirty(z); saveSoon(); return;
+    }
+    return;
+  }
   if (TOOLS[tool].harvest){                                   // 🌾 sickle: harvest every ripe plot the finger passes
     if (t.k !== 'obj') return; const z = hitZone, o = objById(z, t.o);
     if (!o || o.type !== 'plot' || !o.done || !o.plant || cropLeft(o) > 0) return;
     const c = cropOf(o), n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop;
-    bump('harvest'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.reap.col, 8); sfx('snip'); buzz(15);
+    bump('harvest'); bump('reap'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.reap.col, 8); sfx('snip'); buzz(15);
     floatText(gc, gr, `+${n}${c.e}`, '#2e7d32'); markDirty(z); saveSoon(); return;
   }
   if (!RES[t.k]) return;
@@ -3289,6 +3312,7 @@ function burst(gc, gr, cols, n){ const [x,y] = P(gc+.5, gr+.5, TH*.4);
   for (let i=0;i<n;i++){ const a = Math.random()*Math.PI*2, s = 40 + Math.random()*90; fxSpawn(x, y, Math.cos(a)*s, Math.sin(a)*s*.6 - 90, .55, cols[i%cols.length]); } }
 function floatText(gc, gr, txt, col){ if (!txt) return; const [x,y] = P(gc+.5, gr+.5, TH*1.2); fxSpawn(x, y, 0, -40, 1.3, col, txt); }
 function drawToolFx(time, dt){
+  drawHoldRing();
   for (const p of FX){ if (!p.on) continue;
     p.life -= dt; if (p.life <= 0){ p.on = false; continue; }
     p.x += p.vx*dt; p.y += p.vy*dt; if (!p.txt) p.vy += 320*dt;
@@ -3767,6 +3791,91 @@ function actBreath(box, m){
     m.sec += d; m.progress = m.sec/60; $('bTime').textContent = `${Math.min(60, Math.floor(m.sec))} / 60 วินาที`;
     if (m.progress >= m.target){ sfx('done'); closeAct(); } }, 1000);
   act.stops.push(() => { clearInterval(br); clearInterval(tk); });
+}
+
+/* =====================================================================
+   v0.14 — LONG-PRESS LIFT & DRAG (1 s). The held object becomes a translucent ghost that
+   follows the finger (lifted 40 px above it so the finger never hides the target tile).
+   Drop on the map → move there (invalid spot → snaps back). Drop zones appear while lifting:
+     📦 store (back to storage / furniture back to the bag)
+     🗑️ trash  (delete; refunds ⌊cost/2⌋ of each material — confirm first)
+   Homes can only be moved. Rotation: tap the object → 🔄 หมุน.
+   ===================================================================== */
+let lift = null;                                              // { room:bool, home:bool }
+function dzHot(el, x, y){ const r = el.getBoundingClientRect(); return x >= r.left-10 && x <= r.right+10 && y >= r.top-10 && y <= r.bottom+10; }
+function showDrop(on, opts){
+  const bar = $('dropBar'); bar.style.display = on ? 'flex' : 'none'; $('toolFab').style.visibility = on ? 'hidden' : '';   // 🧰 would cover the trash zone
+  if (!on) return;
+  $('dropStore').querySelector('small').textContent = opts.room ? 'เก็บกลับกระเป๋า' : 'เก็บเข้าคลัง';
+  $('dropTrash').style.display = opts.room ? 'none' : '';
+  $('dropStore').classList.toggle('off', !!opts.home); $('dropTrash').classList.toggle('off', !!opts.home);
+}
+function liftStartFarm(z, o){
+  const lifted = { ...o }; removeObj(z, o);
+  startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } });
+  $('placeBar').style.display = 'none'; lift = { room:false, home:isHome(o.type) }; showDrop(true, lift);
+  sfx('pop'); buzz(30);
+}
+function liftStartRoom(it){
+  const R = inRoom.o.room; R.items.splice(R.items.indexOf(it), 1); startRoomPlace(it.type, it);
+  $('placeBar').style.display = 'none'; lift = { room:true, home:false }; showDrop(true, lift);
+  sfx('pop'); buzz(30);
+}
+function liftMove(e){
+  const b = cv.getBoundingClientRect(), sx = e.clientX - b.left, sy = e.clientY - b.top - 40;
+  const hs = dzHot($('dropStore'), e.clientX, e.clientY) && !lift.home, ht = !lift.room && dzHot($('dropTrash'), e.clientX, e.clientY) && !lift.home;
+  $('dropStore').classList.toggle('hot', hs); $('dropTrash').classList.toggle('hot', ht);
+  if (hs || ht) return;
+  const g = pick(sx, sy);
+  if (lift.room){ const p = roomPlace; roomPlaceAt(g.c - ((p.w-1)>>1), g.r - ((p.h-1)>>1)); }
+  else { const p = placing; placeAt(g.c - ((p.w-1)>>1), g.r - ((p.h-1)>>1)); $('placeBar').style.display = 'none'; }
+}
+function liftDrop(){
+  const L = lift; lift = null;
+  const toStore = $('dropStore').classList.contains('hot'), toTrash = $('dropTrash').classList.contains('hot');
+  $('dropStore').classList.remove('hot'); $('dropTrash').classList.remove('hot'); showDrop(false);
+  if (L.room){
+    if (toStore){ const it = roomPlace.move; roomPlace.move = null; endRoomPlace(false); S.furn[it.type] = (S.furn[it.type]||0) + 1; sfx('pop'); save(); return; }
+    if (roomPlace.valid){ commitRoomPlace(); sfx('pop'); } else endRoomPlace();
+    return;
+  }
+  const type = placing.type, it = FARM_ITEMS[type];
+  if (toStore){
+    const m = placing.move; placing.move = null; endPlacing();
+    S.store = S.store || {}; S.store[type] = (S.store[type]||0) + 1; bump('moveStore'); bump('dragStore'); sfx('pop'); save(); renderShop();
+    return reward(`📦 เก็บ ${it.name} เข้าคลังแล้ว\nนำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน` + (m.o.plant ? '\n(ผักที่ปลูกอยู่หายไป)' : ''));
+  }
+  if (toTrash){
+    const back = Object.fromEntries(Object.entries(it.cost).map(([k,v]) => [k, Math.floor(v/2)]).filter(([,v]) => v > 0));
+    return sheet(`🗑️ ลบ ${it.name} ทิ้ง?\nลบแล้วย้อนกลับไม่ได้\nได้วัตถุดิบคืนครึ่งหนึ่ง: ${Object.keys(back).length ? Object.entries(back).map(([k,v]) => `${MAT[k]} ${v}`).join(', ') : '—'}`, [
+      { label:'🗑️ ลบทิ้ง', cls:'ok', fn:() => { placing.move = null; endPlacing(); Object.entries(back).forEach(([k,v]) => invAdd(k, v)); bump('trash'); sfx('chop'); save(); renderMats();
+          reward(`🗑️ ลบ ${it.name} แล้ว` + (Object.keys(back).length ? '\nได้คืน ' + Object.entries(back).map(([k,v]) => `${MAT[k]} +${v}`).join(', ') : '')); } },
+      { label:'ยกเลิก (วางกลับที่เดิม)', cls:'ghost', fn:() => endPlacing() } ]);
+  }
+  if (placing.valid){ bump('dragMove'); $('pOk').onclick(); sfx('pop'); } else endPlacing();   // invalid spot → back where it was
+}
+/* long-press progress ring under the finger (HUD, both 2D and 3D) */
+function drawHoldRing(){
+  if (!drag || drag.moved || drag.long || drag.tool || !drag.t0 || placing || fishing || paint) return;
+  const p = (performance.now() - drag.t0) / LONG_MS; if (p < .15 || p > 1) return;
+  const b = cv.getBoundingClientRect(), x = drag.x - b.left, y = drag.y - b.top - 46;
+  ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle = '#e0892f'; ctx.beginPath(); ctx.arc(x, y, 18, -Math.PI/2, -Math.PI/2 + p*Math.PI*2); ctx.stroke();
+}
+/* 🔄 rotate in place (tap menu) — keeps the same anchor; refuses if the turned footprint doesn't fit */
+function rotateObj(z, o){
+  const lifted = { ...o }; removeObj(z, o);
+  const p = { gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r, w:o.h, h:o.w }, fz = footprintZone(p);
+  const n = addObj(fz ? fz.z : z, o.type, fz ? fz.lc : lifted.c, fz ? fz.lr : lifted.r, fz ? p.w : lifted.w, fz ? p.h : lifted.h, true);
+  n.plant = lifted.plant; n.crop = lifted.crop; n.pj = lifted.pj; n.room = lifted.room; save();
+  if (!fz) sheet('หมุนตรงนี้ไม่ได้ — พื้นที่ไม่พอ ลองย้ายไปที่โล่งก่อนนะครับ', OK); else sfx('pop');
+}
+function roomItemMenu(it){
+  const R = inRoom.o.room;
+  sheet(`${FURN[it.type].name}\n💡 กดค้าง 1 วินาทีแล้วลากเพื่อย้าย หรือลากไป 📦 เพื่อเก็บกลับกระเป๋า`, [
+    ...(it.w !== it.h ? [{ label:'🔄 หมุน', cls:'ok', fn:() => { R.items.splice(R.items.indexOf(it), 1); const w = it.w; it.w = it.h; it.h = w;
+        startRoomPlace(it.type, it); if (roomPlace.valid) commitRoomPlace(); else { endRoomPlace(false); it.h = it.w; it.w = w; R.items.push(it); sheet('หมุนตรงนี้ไม่ได้ — ชนของชิ้นอื่นหรือออกนอกห้อง', OK); } } }] : []),
+    { label:'ปิด', cls:'ghost' } ]);
 }
 
 /* ---- 🧊 3D renderer: on by default when WebGL works; per-device switch in the bag ---- */
