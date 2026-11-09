@@ -420,7 +420,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.11.2';
+const APP_VER = '0.12.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1923,7 +1923,9 @@ function frame(now){
       for (let li=0; li<z.tiles.length; li++){ const t = z.tiles[li]; if (RES[t.k] && (t.job || t.hp != null)) badges.push(t.job ? 0 : 2, z.cx*GRID + li%GRID, z.cy*GRID + ((li/GRID)|0), z, li); }
       for (const o of z.objs) if (!o.done || (o.type==='plot' && o.plant) || o.pj) badges.push(1, 0, 0, z, o.id);
     }
-    if (placing) drawGhost(time);
+    R3D.ghost(placing, time);                                 // 3D placement ghost (translucent model)
+    if (placing && placing.gc != null){ const col = placing.valid ? 'rgba(76,175,106,.45)' : 'rgba(220,60,60,.45)';
+      for (let dr=0;dr<placing.h;dr++) for (let dc=0;dc<placing.w;dc++){ const c = placing.gc+dc, r = placing.gr+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); } }
     for (let k=0;k<badges.length;k+=5){
       if (badges[k]===0) jobBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2], time, wall);
       else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
@@ -3252,6 +3254,7 @@ function toolHit(gc, gr){
   if (t.job) delete t.job;                                    // v0.8 timed jobs finish instantly with tools
   t.hp = (t.hp == null ? HITS[R.size] : t.hp) - 1;
   burst(gc, gr, T.col, R.size === 'large' ? 10 : 6); sfx(T.snd); buzz(12);
+  if (use3D()) R3D.hit(z, (gr - z.cy*GRID)*GRID + (gc - z.cx*GRID));   // 3D: wobble the model that was hit
   if (t.hp > 0){ t.shake = performance.now(); return; }
   collectRes(t, z, R, gc, gr);
 }

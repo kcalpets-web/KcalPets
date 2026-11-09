@@ -80,6 +80,10 @@ export function start(){
     return f;
   }
 
+  /* water ripple rings: one shared transparent material, each ring expands with its own phase */
+  const RING = new THREE.RingGeometry(.25, .32, 24), ringMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.5, depthWrite:false });
+  const hits = [];                                             // recently hit resources: [group, t0, …] → wobble 0.35 s
+
   /* ---------- zone building ---------- */
   const zones = new Map();                                     // zone object → { g, dirty }
   const pickables = [];                                        // meshes/groups with userData.tile
@@ -113,13 +117,19 @@ export function start(){
       const gh = add(g, rb(W-.6, Math.max(.1, H*.85*p), D-.6, .1), new THREE.MeshStandardMaterial({ color:'#f3dfbd', transparent:true, opacity:.55, roughness:.9 }), 0, .15 + H*.85*p/2, 0);
       gh.castShadow = false; return g;
     }
-    const walls = (wc, rc, wh, opts) => {                       // modern gable house: walls + roof prism + door + windows
+    const walls = (wc, rc, wh, opts) => {                       // modern gable house: foundation, walls, roof prism, ridge, door, windows
       opts = opts || {}; const along = W >= D, ww = W*.82, dd = D*.82;
-      RB(g, ww, wh, dd, .12, wc, 0, 0, 0, true);
+      RB(g, ww+.2, .18, dd+.2, .06, '#d9d3c8', 0, 0, 0);                                   // stone foundation
+      RB(g, .9, .1, .45, .04, '#cfc8bb', -ww*.18, 0, dd/2+.25);                             // door step
+      add(g, rb(ww, wh, dd, .12), mat(wc), 0, .18 + wh/2 - .18, 0, null, null, null, true);
       const roof = add(g, gable(along ? dd+.3 : ww+.3, (along ? dd : ww)*.42, along ? ww+.3 : dd+.3), mat(rc), 0, wh, 0, null, null, null, true);
       if (along) roof.rotation.y = Math.PI/2;
+      const rl = (along ? ww : dd) + .45, rh = (along ? dd : ww)*.42 + .02;                // ridge cap along the top
+      const ridge = RB(g, along ? rl : .16, .12, along ? .16 : rl, .05, '#f7f3ea', 0, wh + rh, 0); ridge.castShadow = false;
       RB(g, .6, Math.min(1.1, wh*.6), .1, .05, opts.door || '#8a5a3a', -ww*.18, 0, dd/2);          // door on the camera side
-      for (const x of [ww*.22]) { RB(g, .55, .55, .08, .05, '#ffffff', x, wh*.45, dd/2+.01); RB(g, .42, .42, .06, .03, '#8ec6e6', x, wh*.45+.06, dd/2+.04); }
+      for (const x of [ww*.22]) { RB(g, .55, .55, .08, .05, '#ffffff', x, wh*.45, dd/2+.01); RB(g, .42, .42, .06, .03, '#8ec6e6', x, wh*.45+.06, dd/2+.04);
+        if (opts.shutters) for (const sx of [-.36,.36]) RB(g, .14, .55, .06, .03, opts.shutters, x+sx, wh*.45, dd/2+.03);
+        if (opts.box){ RB(g, .62, .14, .2, .04, '#b98a5c', x, wh*.45-.16, dd/2+.1); for (const fx of [-.2,0,.2]) BALL(g, .07,.07,.07, FLOWER[(fx*10+3|0)%5], x+fx, wh*.45, dd/2+.12); } }
       RB(g, .08, .55, .55, .05, '#ffffff', ww/2+.01, wh*.45, 0); RB(g, .06, .42, .42, .03, '#8ec6e6', ww/2+.04, wh*.45+.06, 0);
       if (opts.chimney) RB(g, .35, wh*.8, .35, .06, '#c98a6a', ww*.25, wh, -dd*.15, true);
     };
@@ -148,12 +158,16 @@ export function start(){
       case 'mill': { RB(g, W*.55, 3, D*.55, .15, '#efe9de', 0, 0, 0, true); CO(g, W*.42, 1, '#d9705a', 0, 3, 0, true);
         const b = new THREE.Group(); b.position.set(0, 2.5, D*.3); b.userData.spin = 1; g.add(b);
         for (let k=0;k<4;k++){ const a = new THREE.Group(); a.rotation.z = k*Math.PI/2; b.add(a); RB(a, .25, 1.6, .05, .03, C.white, 0, .1, 0); } break; }
-      case 'doghouse': walls('#f2c46d', '#e98b6d', 1.2, { door:'#3b2a20' }); break;
-      case 'starter':  walls('#fbf3e4', '#e98b6d', 1.6, { chimney:true }); break;
-      case 'house':    walls('#ffffff', '#6f8fa8', 2.2, { chimney:true }); break;
-      case 'barn':     walls('#d9604c', '#5f6670', 2.2, { door:'#fbf8f2' }); break;
-      case 'sawmill':  walls('#caa77d', '#7f9474', 1.5); add(g, CYL, mat('#cfd6dc'), W*.38, .9, D*.3, .45, .05, .45).rotation.x = Math.PI/2; break;
-      case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true }); break;
+      case 'doghouse': walls('#f2c46d', '#e98b6d', 1.2, { door:'#3b2a20' }); CY(g, .22, .1, '#5f8fc9', W*.3, 0, D*.42); break;   // + water bowl
+      case 'starter':  walls('#fbf3e4', '#e98b6d', 1.6, { chimney:true, shutters:'#8fb79a', box:true }); break;
+      case 'house':    walls('#ffffff', '#6f8fa8', 2.2, { chimney:true, shutters:'#6f8fa8', box:true });
+                       RB(g, W*.5, .1, .9, .05, '#d6b07f', -W*.12, .18, D*.41+.45); for (const x of [-W*.33, W*.08]) CY(g, .06, 1.3, '#ffffff', x, .18, D*.41+.85); break;   // porch
+      case 'barn':     walls('#d9604c', '#5f6670', 2.2, { door:'#fbf8f2' });
+                       for (const r of [.7,-.7]){ const b = RB(g, .08, 1.3, .05, .03, '#fbf8f2', -W*.82*.18, .2, D*.41+.08); b.rotation.z = r; } break;   // X brace on the door
+      case 'sawmill':  walls('#caa77d', '#7f9474', 1.5); add(g, CYL, mat('#cfd6dc'), W*.38, .9, D*.3, .45, .05, .45).rotation.x = Math.PI/2;
+                       for (let k=0;k<3;k++){ const l = CY(g, .2, 1.2, '#b07a4a', -W*.32 + k*.42, 0, -D*.32); l.rotation.z = Math.PI/2; l.position.y = .22 + (k===1 ? .32 : 0); } break;   // log pile
+      case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true, box:true });
+                       for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
       default: walls('#f1e7d6', '#9bb3c4', Math.max(1, H*.6));
     }
@@ -176,7 +190,7 @@ export function start(){
   function buildZone(z){
     let e = zones.get(z); if (e){ scene.remove(e.g); }
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
-    const S2 = GRID*2, ctr = S2/2;
+    const S2 = GRID*2, ctr = S2/2, res = [], sway = [], rings = [];
     RB(g, S2, .5, S2, .1, C.grass, ctr, -.5, ctr);              // model block: grass → soil → cream base → oak band
     RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
     RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
@@ -187,10 +201,12 @@ export function start(){
       let m = null;
       if (RES[t.k]) m = resModel(t.k, z.seed, i);
       else if (t.k !== 'obj') m = tileModel(t, z.seed, i);
-      if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m); }
+      if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
+        if (RES[t.k]){ res[i] = m; if (t.k === 'tree' || t.k === 'grass' || t.k === 'wild' || t.k === 'sapling' || t.k === 'bush') sway.push(m, hrnd(z.seed, i, 98)*6, t.k === 'tree' ? .025 : .06); }
+        if (t.k === 'water'){ const ring = add(m, RING, ringMat, (hrnd(z.seed,i,20)-.5)*.8, .06, (hrnd(z.seed,i,21)-.5)*.8); ring.rotation.x = -Math.PI/2; ring.userData.ph = hrnd(z.seed, i, 22); rings.push(ring); } }
     }
     for (const o of z.objs){ const m = objModel(o); m.position.set((o.c + o.w/2)*2, 0, (o.r + o.h/2)*2); markTile(m, z.cx*GRID+o.c, z.cy*GRID+o.r); g.add(m); }
-    zones.set(z, { g, dirty:false, live: z.objs.some(o => !o.done || (o.type==='plot' && o.plant)) });
+    zones.set(z, { g, dirty:false, res, sway, rings, live: z.objs.some(o => !o.done || (o.type==='plot' && o.plant)) });
   }
 
   /* ---------- pet (clay, coloured from the 2D SPECIES table) ---------- */
@@ -261,6 +277,8 @@ export function start(){
 
   /* ---------- public API used by index.html ---------- */
   const v = new THREE.Vector3(), ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  let ghostG = null, ghostKey = '';
+  const ghostMat = new THREE.MeshStandardMaterial({ color:0x4caf6a, transparent:true, opacity:.5, roughness:.9, depthWrite:false });
   let liveAcc = 0;
   const api = {
     on: true, canvas: can,
@@ -273,7 +291,20 @@ export function start(){
         if (!e || e.dirty || (e.live && liveAcc > 3)) buildZone(z); }
       if (liveAcc > 3) liveAcc = 0;
       for (const [z, e] of zones) if (!S.farm.zones.includes(z)){ scene.remove(e.g); zones.delete(z); }
-      for (const e of zones.values()) e.g.traverse(o => { if (o.userData.spin) o.rotation.z = time*1.2; });
+      for (const e of zones.values()){
+        e.g.traverse(o => { if (o.userData.spin) o.rotation.z = time*1.2;
+          if (o.userData.smoke != null){ const u = (time*.35 + o.userData.smoke/3) % 1; o.position.y = 2.6 + u*1.8; o.scale.setScalar(.15 + u*.3); } });
+        /* wind sway: small tilt around x/z, per-plant phase (no allocation, just rotation writes) */
+        for (let k=0;k<e.sway.length;k+=3){ const m = e.sway[k], ph = e.sway[k+1], a = e.sway[k+2];
+          m.rotation.x = Math.sin(time*1.6 + ph)*a; m.rotation.z = Math.cos(time*1.3 + ph)*a; }
+        /* ripples: scale 0.6→2.2 and fade, period 2.6 s */
+        for (const r of e.rings){ const u = (time/2.6 + r.userData.ph) % 1; r.scale.setScalar(.6 + u*1.6); }
+      }
+      ringMat.opacity = .45;
+      /* tool hit wobble: shake + squash for 0.35 s, decaying */
+      for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
+        if (u >= 1 || !m.parent){ m.scale.set(1,1,1); hits.splice(k, 2); continue; }
+        const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
       updatePet(time);
       const k = NIGHT || 0;                                     // day ↔ night from the real clock (same NIGHT as 2D)
       /* clouds live only BEHIND the island (away from the camera, which sits toward +x+z):
@@ -284,6 +315,18 @@ export function start(){
       renderer.render(scene, camera);
     },
     hide(){ can.style.display = 'none'; },
+    /** tool hit on tile (z, li) → wobble its model */
+    hit(z, li){ const e = zones.get(z); const m = e && e.res[li]; if (m){ hits.push(m, performance.now()); } },
+    /** 3D placement ghost: translucent green/red model following placing.gc/gr (null → hide) */
+    ghost(pl, time){
+      if (!pl || pl.gc == null){ if (ghostG) ghostG.visible = false; return; }
+      const key = pl.type + pl.w + 'x' + pl.h;
+      if (key !== ghostKey){ if (ghostG) scene.remove(ghostG); ghostKey = key;
+        ghostG = objModel({ type:pl.type, w:pl.w, h:pl.h, done:true, id:0, plant:0 });
+        ghostG.traverse(o => { if (o.isMesh){ o.material = ghostMat; o.castShadow = false; } }); scene.add(ghostG); }
+      ghostG.visible = true; ghostMat.color.set(pl.valid ? 0x4caf6a : 0xdc3c3c); ghostMat.opacity = .45 + Math.sin(time*4)*.12;
+      ghostG.position.set((pl.gc + pl.w/2)*2, .02 + Math.abs(Math.sin(time*3))*.12, (pl.gr + pl.h/2)*2);
+    },
     proj(c, r, zpx){ v.set(c*2, (zpx || 0)/TH, r*2).project(camera); return [(v.x+1)*.5*cssW, (1-v.y)*.5*cssH]; },
     pick(sx, sy){
       ndc.set(sx/cssW*2 - 1, -(sy/cssH)*2 + 1); ray.setFromCamera(ndc, camera);
