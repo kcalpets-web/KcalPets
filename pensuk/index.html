@@ -43,7 +43,7 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 #chatIn{padding:10px;border:2px solid var(--pri);border-radius:16px;background:#fff;display:flex;flex-direction:column;gap:8px;margin:2px 0 6px 42px;box-shadow:0 3px 10px #e0892f22}
 #chatIn:empty{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{min-height:44px;padding:0 16px;border-radius:22px;border:2px solid var(--pri);background:#fff;color:var(--pri2);font:600 16px 'Mali'}
+.chip{min-height:44px;padding:0 14px;border-radius:22px;border:2px solid var(--pri);background:#fff;color:var(--pri2);font:600 16px 'Mali'}
 .chip.sel{background:var(--pri);color:#fff}
 .row{display:flex;gap:8px}
 .row>*{flex:1}
@@ -103,6 +103,16 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
 .mbtns{display:flex;flex-direction:column;gap:8px}
+#mbox{max-height:88vh;overflow-y:auto}
+.mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
+#toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
+#toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
+#toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:6px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
+#toolBar .tb{flex:1;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fff;font:600 13px 'Mali';color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#toolBar .tb b{font-size:26px} #toolBar .tb.on{border-color:var(--pri);background:#fff1df;box-shadow:0 0 0 3px #e0892f55} #toolBar .tb.x{flex:.8;color:var(--sub)}
+#act{position:fixed;inset:0;z-index:8;display:none;flex-direction:column;background:var(--bg);max-width:480px;margin:0 auto}
+#act.dark{background:#0b0d12}
+.actc{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -157,7 +167,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 <section class="screen" id="sMain">
   <div class="top">
     <div><b id="hName"></b><div class="muted" id="hPet"></div></div>
-    <div class="coin"><i></i><span id="hCoin">0</span></div>
+    <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div class="coin">🪙 <span id="hCoin">0</span></div></div>
   </div>
 
   <div class="tab on" id="tFarm">
@@ -170,7 +180,9 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="placeBar"><b id="pInfo"></b><div class="row"><button class="btn ghost" id="pRot">⟲ หมุน</button><button class="btn ok" id="pOk">✔ วาง</button><button class="btn ghost" id="pCancel">✕ ยกเลิก</button></div></div>
       <div id="roomTitle"></div>
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
-      <div id="hint">แตะหญ้า/หิน/ต้นไม้เพื่อเก็บ (มีเวลารอ) • สร้างของที่ ร้านค้า › ฟาร์ม</div>
+      <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
+      <div id="toolBar"></div>
+      <div id="hint">แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้</div>
     </div>
   </div>
   <div class="tab" id="tMission"><div class="scroll" id="missionList"></div></div>
@@ -187,6 +199,9 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   </nav>
 </section>
 </div>
+
+<!-- full-screen mission activity (rest / squats / neck) -->
+<div id="act"></div>
 
 <!-- shared confirm / reward sheet -->
 <div id="modal"><div id="mbox"><div id="mbody"></div><div class="mbtns" id="mbtns"></div></div></div>
@@ -324,6 +339,7 @@ function login(u){
   if (S.q == null) S.q = 0;                                  // existing saves join the quest chain
   questMigrate();
   S.stats = S.stats || {}; S.furn = S.furn || {};
+  v09Migrate();
   route();
 }
 /* =====================================================================
@@ -391,7 +407,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.8.4';
+const APP_VER = '0.9.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -866,7 +882,7 @@ function drawEar(g, sp, hr, side, a, sleep){
 }
 
 /* =====================================================================
-   2) CHAT ONBOARDING — เป็นสุข asks 7 questions
+   2) CHAT ONBOARDING — เป็นสุข asks 5 questions (v0.9: activity level & interests removed)
    ===================================================================== */
 const ACT = { 'เบา':1.375, 'ปานกลาง':1.55, 'หนัก':1.725 };       // TDEE multipliers
 const INTERESTS = ['เดิน','วิ่ง','ออกกำลังกาย'];
@@ -880,8 +896,6 @@ const QUESTIONS = [
     check:v => { const a = ageOf(v); return a>=7 && a<=100 ? null : 'อายุควรอยู่ระหว่าง 7–100 ปีครับ'; } },
   { key:'h', ask:'ส่วนสูงเท่าไหร่ครับ? (ซม.)', type:'num', min:100, max:230, unit:'ซม.' },
   { key:'w', ask:'น้ำหนักเท่าไหร่ครับ? (กก.)', type:'num', min:20, max:250, unit:'กก.' },
-  { key:'act', ask:'ปกติในแต่ละวันคุณมีกิจกรรมแบบไหนครับ?\n• เบา — นั่งทำงานเป็นส่วนใหญ่\n• ปานกลาง — เดินบ่อย ออกกำลัง 3–5 วัน/สัปดาห์\n• หนัก — ใช้แรงมาก/ออกกำลังเกือบทุกวัน', type:'chips', opts:['เบา','ปานกลาง','หนัก'] },
-  { key:'interests', ask:'สุดท้ายครับ! สนใจกิจกรรมแบบไหนบ้าง? (เลือกได้มากกว่า 1 ข้อ)', type:'multi', opts:INTERESTS }
 ];
 
 function ageOf(dob){
@@ -954,7 +968,7 @@ function answer(q, v, shown){
   if (qIdx < QUESTIONS.length) return askNext();
   // All 7 answers collected → summary + confirm
   setTimeout(() => {
-    bubble(`ขอบคุณครับ! สรุปข้อมูลของคุณ{name}:\nเพศ ${draft.sex} • อายุ ${ageOf(draft.dob)} ปี\nสูง ${draft.h} ซม. • หนัก ${draft.w} กก.\nกิจกรรม: ${draft.act}\nสนใจ: ${draft.interests.join(', ')}`.replace('{name}',draft.name), 'bot');
+    bubble(`ขอบคุณครับ! สรุปข้อมูลของคุณ{name}:\nเพศ ${draft.sex} • อายุ ${ageOf(draft.dob)} ปี\nสูง ${draft.h} ซม. • หนัก ${draft.w} กก.`.replace('{name}',draft.name), 'bot');
     const box = $('chatIn');
     const ok = document.createElement('button'); ok.className='btn ok'; ok.textContent='ถูกต้อง ให้เป็นสุขวิเคราะห์เลย';
     const re = document.createElement('button'); re.className='btn ghost'; re.textContent='เริ่มกรอกใหม่';
@@ -974,40 +988,16 @@ const round = (v, step) => Math.max(step, Math.round(v/step)*step);
 function analyse(p){
   const age = ageOf(p.dob);
   const bmr = 10*p.w + 6.25*p.h - 5*age + (p.sex==='ชาย' ? 5 : -161);
-  const tdee = bmr * ACT[p.act];
+  const tdee = bmr * (ACT[p.act] || ACT['เบา']);            // v0.9: activity question removed → light
   const bmi = p.w / Math.pow(p.h/100, 2);
   return { age, bmr:Math.round(bmr), tdee:Math.round(tdee), bmi:+bmi.toFixed(1) };
 }
-function missionTemplates(p, a){
-  const lvl = p.act==='เบา'?0 : p.act==='ปานกลาง'?1 : 2;
-  const older = a.age>=60 ? 0.8 : 1;          // gentler targets for 60+
-  const heavy = a.bmi>=30 ? 0.7 : 1;          // protect joints when BMI ≥ 30
-  return {
-    'เดิน':        { icon:'🚶', label:'เดินให้ครบ', unit:'ก้าว', step:500, base: round([6000,8000,10000][lvl]*older, 500) },
-    'วิ่ง':        { icon:'🏃', label:'วิ่ง/วิ่งเหยาะ', unit:'นาที', step:5,  base: round([15,20,30][lvl]*older*heavy, 5) },
-    'ออกกำลังกาย': { icon:'💪', label:'ออกกำลังกายเผาผลาญ', unit:'kcal', step:10,
-                     base: Math.min(600, Math.max(150, round((a.tdee-a.bmr)*0.35, 10))) },
-    // Fillers when fewer than 3 interests are chosen
-    'ดื่มน้ำ':     { icon:'💧', label:'ดื่มน้ำ', unit:'มล.', step:100, base: round(p.w*33, 100) },
-    'ยืดเหยียด':   { icon:'🧘', label:'ยืดเหยียดร่างกาย', unit:'นาที', step:5, base: 10 }
-  };
-}
-function buildMissions(){
-  const p = S.profile, a = analyse(p), T = missionTemplates(p, a);
-  const keys = [...p.interests];
-  ['ดื่มน้ำ','ยืดเหยียด'].forEach(k => { if (keys.length < 3) keys.push(k); });
-  S.analysis = a;
-  S.missions = keys.slice(0,3).map(k => ({ key:k, ...T[k], target:T[k].base, progress:0, claimed:false }));
-  S.goalLocked = false;
-  S.missionDate = todayKey();
-}
-
 /* Goal screen: each target adjustable within base × [0.8, 1.2] */
 function openGoal(){
   show('sGoal');
   const a = S.analysis || analyse(S.profile), L = $('goalList'); L.innerHTML = '';
   const info = document.createElement('div'); info.className='card';
-  info.innerHTML = `<b>🐶 เป็นสุขวิเคราะห์ให้แล้ว</b><div class="muted" style="margin-top:6px">
+  info.innerHTML = `<b>🐶 เป้าหมายสุขภาพประจำวัน</b><div class="muted" style="margin-top:6px">📵 พักจอ • 🏋️ ลุกนั่ง • 🙆 บริหารต้นคอ — ทำในเกมได้เลย เป็นสุขช่วยนับให้</div><div class="muted" style="margin-top:6px">
     พลังงานพื้นฐาน (BMR) ${a.bmr.toLocaleString()} kcal • ใช้ต่อวัน (TDEE) ${a.tdee.toLocaleString()} kcal • BMI ${a.bmi}<br>
     ปรับเป้าหมายได้ลดลงหรือเพิ่มขึ้นไม่เกิน 20%</div>`;
   L.appendChild(info);
@@ -1088,7 +1078,7 @@ $('bPetOk').onclick = () => {
 function openMain(){
   show('sMain'); dailyReset();
   refreshHeader(); renderMats(); renderMissions(); renderShop(); renderBag();
-  resizeFarm(); startLoop();
+  resizeFarm(); startLoop(); setHint(); setTimeout(checkLogin, 700);
 }
 function refreshHeader(){
   const pct = S.lv>=MAX_LV ? 100 : Math.floor(S.exp/needExp(S.lv)*100);
@@ -1102,6 +1092,7 @@ function goTab(id){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id===id));
   if (id!=='tFarm' && placing) endPlacing();
   if (id!=='tFarm' && paint) endPaint();
+  if (id!=='tFarm' && tool) pickTool(null);
   if (id==='tFarm') resizeFarm();
   if (id==='tMission') renderMissions();
   if (id==='tShop') renderShop();
@@ -1112,60 +1103,17 @@ document.querySelectorAll('#nav button').forEach(b => b.onclick = () => goTab(b.
 /* New day → missions reset (targets kept, progress cleared) */
 function dailyReset(){
   if (S.missionDate !== todayKey()){
-    S.missions.forEach(m => { m.progress = 0; m.claimed = false; });
-    S.missionDate = todayKey(); S.bonusClaimed = false; save();
+    S.missions.forEach(m => { m.progress = 0; m.claimed = false; m.sec = 0; });
+    S.missionDate = todayKey(); S.bonusClaimed = false;
+    if (S.farm && ownsDone('doghouse')) S.pet.heart = Math.min(100, S.pet.heart + 5);   // 🛖 บ้านน้อง: ❤️ +5 a day
+    save();
   }
 }
 
 /* =====================================================================
    3-4) MISSIONS — 3/day, reward = gold coins
    ===================================================================== */
-const COIN_PER_MISSION = 10, COIN_ALL_BONUS = 15;
-function renderMissions(){
-  const L = $('missionList'); L.innerHTML = '';
-  const head = document.createElement('div'); head.className='card';
-  const done = S.missions.filter(m=>m.claimed).length;
-  head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div>
-    <div class="bar"><b style="width:${done/3*100}%"></b></div>
-    <div class="muted">ภารกิจละ ${COIN_PER_MISSION} เหรียญ • ครบ 3 ภารกิจ รับโบนัสอีก ${COIN_ALL_BONUS} เหรียญ</div>`;
-  L.appendChild(head);
-  S.missions.forEach((m,i) => {
-    const pct = Math.min(100, Math.round(m.progress/m.target*100));
-    const c = document.createElement('div'); c.className='card';
-    c.innerHTML = `<div class="mrow"><b>${m.icon} ${m.label}</b><span>${pct}%</span></div>
-      <div class="bar"><b style="width:${pct}%"></b></div>
-      <div class="mrow muted"><span>${m.progress.toLocaleString()} / ${m.target.toLocaleString()} ${m.unit}</span></div>`;
-    const row = document.createElement('div'); row.className='row'; row.style.marginTop='8px';
-    if (m.claimed){
-      row.innerHTML = '<button class="btn" disabled>✅ รับแล้ว</button>';
-    } else if (m.progress >= m.target){
-      const b = document.createElement('button'); b.className='btn ok'; b.textContent=`รับ ${COIN_PER_MISSION} เหรียญ`;
-      b.onclick = () => confirmDo(`รับรางวัลภารกิจ "${m.label}"?`, () => claim(i)); row.appendChild(b);
-    } else {
-      // Demo input: manual logging until Apple Health / Google Fit is connected
-      const inp = document.createElement('input'); inp.type='number'; inp.inputMode='numeric'; inp.placeholder='บันทึก '+m.unit;
-      const b = document.createElement('button'); b.className='btn'; b.textContent='บันทึก'; b.style.flex='0 0 90px';
-      b.onclick = () => { const v = parseFloat(inp.value); if (!(v>0)) return;
-        confirmDo(`บันทึก ${v.toLocaleString()} ${m.unit} ใน "${m.label}"?`, () => { m.progress += v; bump('missionLog'); save(); renderMissions(); }); };
-      row.append(inp, b);
-    }
-    c.appendChild(row); L.appendChild(c);
-  });
-  if (S.missions.every(m=>m.claimed) && !S.bonusClaimed){
-    const b = document.createElement('button'); b.className='btn ok'; b.textContent=`🎉 รับโบนัสครบ 3 ภารกิจ (+${COIN_ALL_BONUS})`;
-    b.onclick = () => confirmDo('รับโบนัสครบ 3 ภารกิจ?', () => { S.bonusClaimed = true; S.coins += COIN_ALL_BONUS; save(); refreshHeader(); renderMissions(); reward(`🪙 ${COIN_ALL_BONUS} เหรียญทอง`); });
-    L.appendChild(b);
-  }
-  const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='แก้ไขข้อมูลส่วนตัว / วิเคราะห์ใหม่';
-  edit.onclick = () => confirmDo('เริ่มคุยกับเป็นสุขใหม่เพื่ออัปเดตข้อมูล?\n(ความคืบหน้าภารกิจวันนี้จะถูกรีเซ็ต)', () => { stopLoop(); startChat(); });
-  L.appendChild(edit);
-}
-function claim(i){
-  S.missions[i].claimed = true; S.coins += COIN_PER_MISSION; bump('missionClaim');
-  gainExp(EXP.mission); gainPetExp(10);            // health missions also grow the pet
-  save(); refreshHeader(); renderMissions();
-  reward(`🪙 ${COIN_PER_MISSION} เหรียญทอง\n⭐ Exp +${EXP.mission} • ${S.pet.emoji} Exp +10`);
-}
+const COIN_PER_MISSION = 200, COIN_ALL_BONUS = 300;          // ⚠️ v0.9 economy ×20
 
 /* =====================================================================
    6) FARM WORLD — one contiguous isometric map made of 5×5 chunks.
@@ -1200,25 +1148,30 @@ const RES = {
 };
 
 /* ---- farm structures (Shop › ฟาร์ม). Build time = 15 s × tiles + 2 s × price ---- */
+const ECON = 20;                                             // v0.9: every coin price ×20 (missions pay 200)
 const FARM_ITEMS = {
-  starter:   { name:'🏠 บ้านหลังแรก',  w:2, h:2, price:0,   cost:{grass:3, stone:1},          H:2.2, desc:'บ้านหลังแรกของคุณ สร้างฟรีได้ 1 หลัง (บทเรียน)', once:true, fixedSec:30 },
-  plot:      { name:'🥕 แปลงผัก',     w:1, h:1, price:15,  cost:{grass:3, stone:1},          H:.4,  desc:'ปลูกผักไว้ขายหรือให้น้องกิน' },
-  flowerbed: { name:'🌷 กระบะดอกไม้',  w:1, h:1, price:20,  cost:{grass:2, wood:1},           H:.7,  desc:'ดอกไม้หลากสี ผีเสื้อชอบมาเกาะ' },
-  lamp:      { name:'🏮 โคมไฟสวน',    w:1, h:1, price:30,  cost:{stone:2, wood:1},           H:1.9, desc:'ส่องสว่างตอนกลางคืน' },
-  bench:     { name:'🪑 ม้านั่งไม้',   w:2, h:1, price:40,  cost:{wood:4},                    H:1,   desc:'มุมนั่งพักในฟาร์ม' },
-  fence:     { name:'🪵 รั้วไม้',      w:2, h:1, price:25,  cost:{wood:3},                    H:.9,  desc:'รั้วแบ่งพื้นที่' },
-  doghouse:  { name:'🛖 บ้านน้อง',     w:2, h:2, price:120, cost:{wood:8, grass:4},           H:2,   desc:'บ้านหลังเล็กของสัตว์เลี้ยง' },
-  fountain:  { name:'⛲ น้ำพุ',        w:2, h:2, price:180, cost:{stone:12},                  H:1.6, desc:'น้ำพุหินกลางสวน' },
-  gazebo:    { name:'🏯 ศาลาพักผ่อน',  w:2, h:3, price:300, cost:{wood:12, stone:8},          H:2.6, desc:'ศาลาไม้หลังคาเขียว' },
-  barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:350, cost:{wood:16, stone:6, grass:6}, H:3,   desc:'โรงเก็บผลผลิตสีแดง' },
-  house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:600, cost:{wood:20, stone:16, grass:8},H:3.2, desc:'บ้านหลังใหญ่ประจำฟาร์ม' }
+  starter:   { name:'🏠 บ้านหลังแรก',  w:2, h:2, price:0,     cost:{grass:3, stone:1},            H:2.2, desc:'บ้านหลังแรกของคุณ สร้างฟรีได้ 1 หลัง (บทเรียน)', once:true, fixedSec:30 },
+  plot:      { name:'🥕 แปลงผัก',     w:1, h:1, price:300,   cost:{grass:3, stone:1},            H:.4,  desc:'ปลูกผักหลายชนิดไว้ขาย ส่งออเดอร์ หรือแปรรูป' },
+  flowerbed: { name:'🌷 กระบะดอกไม้',  w:1, h:1, price:400,   cost:{grass:2, wood:1},             H:.7,  desc:'ความสวย +1 (ได้ทิปจากคนมาเที่ยว)' },
+  lamp:      { name:'🏮 โคมไฟสวน',    w:1, h:1, price:600,   cost:{stone:2, wood:1},             H:1.9, desc:'ส่องสว่างตอนกลางคืน • ความสวย +1' },
+  bench:     { name:'🪑 ม้านั่งไม้',   w:2, h:1, price:800,   cost:{wood:4},                      H:1,   desc:'มุมนั่งพัก • ความสวย +1' },
+  fence:     { name:'🪵 รั้วไม้',      w:2, h:1, price:500,   cost:{wood:3},                      H:.9,  desc:'รั้วแบ่งพื้นที่ • ความสวย +1' },
+  doghouse:  { name:'🛖 บ้านน้อง',     w:2, h:2, price:2400,  cost:{wood:8, grass:4},             H:2,   desc:'น้องได้ ❤️ +5 ทุกวัน' },
+  sawmill:   { name:'🪚 โรงเลื่อย',    w:2, h:2, price:1600,  cost:{wood:10, stone:4},            H:2,   lv:4,  desc:'แปรรูปไม้ → ไม้กระดาน/ไม้คาน/ไม้ขัดเงา และทำเฟอร์นิเจอร์ได้ถูกกว่าซื้อ' },
+  fountain:  { name:'⛲ น้ำพุ',        w:2, h:2, price:3600,  cost:{stone:12},                    H:1.6, desc:'น้ำพุหินกลางสวน • ความสวย +3' },
+  kitchen:   { name:'🍳 ครัวฟาร์ม',    w:2, h:2, price:3000,  cost:{plank:4, stone:6},            H:2,   lv:5,  desc:'ทำซุปผักและข้าวผัดปลา ขายได้ราคาดี หรือให้น้องกิน' },
+  gazebo:    { name:'🏯 ศาลาพักผ่อน',  w:2, h:3, price:6000,  cost:{plank:6, stone:8},            H:2.6, lv:4,  desc:'ศาลาไม้หลังคาเขียว • ความสวย +3' },
+  barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:7000,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
+  mill:      { name:'🏭 โรงสี',        w:2, h:2, price:2400,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
+  house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:12000, cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
+  jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:3600,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
 };
-const buildSec = it => it.fixedSec || (15*it.w*it.h + 2*it.price);   // starter house: fixed 30 s for the tutorial
+const buildSec = it => it.fixedSec || (15*it.w*it.h + 2*it.price/ECON);   // build time unchanged by the ×20 price scale; starter fixed 30 s
 const starterOwned = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter')) || ((S.store||{}).starter > 0);
 const GROW_MS = 2*60*1000;      // demo: carrot ready in 2 minutes
 
 
-const speedCost = sec => Math.max(1, Math.ceil(sec/60));      // ⚡ speed-up: 1 coin per remaining minute
+const speedCost = sec => Math.max(ECON, Math.ceil(sec/60)*ECON);   // ⚡ speed-up: 20 coins per remaining minute (v0.9)
 function fmt(sec){
   sec = Math.max(0, Math.ceil(sec));
   if (sec < 60) return sec+' วิ';
@@ -1563,9 +1516,9 @@ function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in globa
       ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 2;
       for (let k=1;k<=3;k++){ const a = P(c0+.06, r0+(r1-r0)*k/4, U*.18), b = P(c1-.06, r0+(r1-r0)*k/4, U*.18); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
       if (o.plant){
-        const ready = Date.now()-o.plant >= GROW_MS, s = ready ? 1 : .45 + .55*(Date.now()-o.plant)/GROW_MS, [x,y] = P(cm,rm,U*.18);
+        const cp = cropOf(o), gm = cp.sec*1000, ready = Date.now()-o.plant >= gm, s = ready ? 1 : .45 + .55*(Date.now()-o.plant)/gm, [x,y] = P(cm,rm,U*.18);
         ctx.font = `${Math.round(TW*.34*s)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-        ctx.fillText(ready ? '🥕' : '🌱', x, y + Math.sin(time*2)*1);
+        ctx.fillText(ready ? cp.e : '🌱', x, y + Math.sin(time*2)*1);
       } break; }
     case 'flowerbed': {
       box(c0,r0,c1,r1,0,U*.24,'#5d3a1e','#a87443','#8c5e33');
@@ -1660,6 +1613,43 @@ function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in globa
       for (const u of [.15,.6]){ faceQuad('R', a0,b0,a1,b1, u, u+.2, U*.6, U*1.2, '#ffffff'); faceQuad('R', a0,b0,a1,b1, u+.02, u+.18, U*.65, U*1.15, night ? '#ffe08a' : '#8cc6e6'); }
       roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.7,U*1.3,'#4277b5','#36639a','#2c5281');
       if (night){ const w1 = P(a0+(a1-a0)*.2, b1, U*.9), w2 = P(a0+(a1-a0)*.8, b1, U*.9); addGlow(w1[0], w1[1], TW*.5); addGlow(w2[0], w2[1], TW*.5); }
+      break; }
+    case 'sawmill': {                                            // open timber shed + log pile + saw blade
+      const a0 = c0+.1, b0 = r0+.1, a1 = c1-.1, b1 = r1-.1;
+      box(a0,b0,a1,b1,0,U*.15,'#b89a72','#9c7f5a','#86694a');
+      for (const [pc,pr] of [[a0+.05,b0+.05],[a1-.12,b0+.05],[a0+.05,b1-.12],[a1-.12,b1-.12]]) box(pc,pr,pc+.07,pr+.07,U*.15,U*1.3,'#8a5a33','#7a4d2a','#643f22');
+      for (let k=0;k<3;k++) box(a0+.25,b0+.35+k*.18,a1-.25,b0+.48+k*.18,U*.15,U*(.32+k*.02),'#c98d55','#a8703a','#8c5b2e');
+      const [sx,sy] = P((a0+a1)/2, b1-.15, U*.55); ctx.save(); ctx.translate(sx,sy); ctx.rotate(time*4); ctx.fillStyle = '#cfd6dc';
+      ctx.beginPath(); for (let k=0;k<16;k++){ const a = k*Math.PI/8, rr = k%2 ? TW*.09 : TW*.12; ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr*.6); } ctx.fill(); ctx.restore();
+      roof(a0-.1,b0-.1,a1+.1,b1+.1,U*1.3,U*.75,'#8d6e4c','#755a3d','#634b33');
+      break; }
+    case 'kitchen': {
+      const a0 = c0+.1, b0 = r0+.1, a1 = c1-.1, b1 = r1-.1;
+      box(a0,b0,a1,b1,0,U*1.25,null,'#f4e1c1','#dcc59f');
+      faceQuad('L', a0,b0,a1,b1, .38,.62, 0, U*.9, '#7a5634');
+      faceQuad('R', a0,b0,a1,b1, .3,.7, U*.5, U*.95, night ? '#ffe08a' : '#9fd3f0');
+      box(a1-.45,b0+.15,a1-.25,b0+.35,U*1.25,U*2.1,'#b05a3c','#9a4d33','#7f3f2a');      // chimney
+      roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.25,U*.9,'#e3a33b','#c98b2b','#ad7622');
+      for (let k=0;k<3;k++){ const t2 = (time*.4 + k/3)%1, [px,py] = P(a1-.35,b0+.25,U*2.1 + t2*U*1.2); ctx.globalAlpha = (1-t2)*.5; ctx.fillStyle = '#eee';
+        ctx.beginPath(); ctx.arc(px + Math.sin(time+k)*4, py, TW*(.04+t2*.06), 0, Math.PI*2); ctx.fill(); } ctx.globalAlpha = 1;
+      if (night){ const w = P((a0+a1)/2, b1, U*.7); addGlow(w[0], w[1], TW*.45); }
+      break; }
+    case 'mill': {                                               // stone tower + turning sails
+      const a0 = c0+.2, b0 = r0+.2, a1 = c1-.2, b1 = r1-.2;
+      box(a0,b0,a1,b1,0,U*1.9,null,'#e9e1d3','#cfc4b0');
+      faceQuad('L', a0,b0,a1,b1, .38,.62, 0, U*.8, '#7a5634');
+      roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.9,U*.8,'#b4553a','#984630','#7d3a28');
+      const [hx,hy] = P((a0+a1)/2, b1+.02, U*2.1); ctx.save(); ctx.translate(hx,hy); ctx.rotate(time*1.2);
+      for (let k=0;k<4;k++){ ctx.rotate(Math.PI/2); ctx.fillStyle = '#f7f0e2'; ctx.fillRect(TW*.02, -TW*.04, TW*.42, TW*.08); ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, -TW*.012, TW*.44, TW*.024); }
+      ctx.fillStyle = '#5a3818'; ctx.beginPath(); ctx.arc(0,0,TW*.03,0,Math.PI*2); ctx.fill(); ctx.restore();
+      break; }
+    case 'jamhouse': {
+      const a0 = c0+.12, b0 = r0+.12, a1 = c1-.12, b1 = r1-.12;
+      box(a0,b0,a1,b1,0,U*1.2,null,'#fde2e4','#f2c4ca');
+      faceQuad('L', a0,b0,a1,b1, .4,.6, 0, U*.85, '#a0525e');
+      faceQuad('R', a0,b0,a1,b1, .3,.7, U*.5, U*.95, night ? '#ffe08a' : '#ffd6dc');
+      roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.2,U*.85,'#d94f6a','#bd4058','#a13449');
+      const [jx,jy] = P(a0+.15, b1+.05, U*.15); ctx.font = `${Math.round(TW*.28)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('🫙', jx, jy);
       break; }
   }
 }
@@ -1916,12 +1906,12 @@ function frame(now){
     for (let gc=c0; gc<=c1; gc++){
       const gr = s - gc, t = tileAt(gc, gr); if (!t) continue;
       const z = hitZone, li = hitLi;
-      if (RES[t.k]){ drawRes(t, gc, gr, time, z.seed, li); if (t.job) badges.push(0, gc, gr, z, li); }
+      if (RES[t.k]){ drawRes(t, gc, gr, time, z.seed, li); if (t.job) badges.push(0, gc, gr, z, li); else if (t.hp != null) badges.push(2, gc, gr, z, li); }
       else if (t.k==='water' && t.bridge) drawBridge(gc, gr);
       else if (t.k==='obj'){
         const o = objById(z, t.o), lc = li%GRID, lr = (li/GRID)|0;
         if (o && lc===o.c+o.w-1 && lr===o.r+o.h-1){ drawStruct(o, time, z.cx*GRID, z.cy*GRID);
-          if (!o.done || (o.type==='plot' && o.plant)) badges.push(1, gc, gr, z, o.id); }
+          if (!o.done || (o.type==='plot' && o.plant) || o.pj) badges.push(1, gc, gr, z, o.id); }
       }
     }
     if (!petDrawn && petDepth < s+1.5){ drawPet(); drawFishLine(time); petDrawn = true; }
@@ -1930,11 +1920,13 @@ function frame(now){
   if (placing) drawGhost(time);
   for (let k=0;k<badges.length;k+=5){
     if (badges[k]===0) jobBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2], time, wall);
+    else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
     else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
   }
   drawFlies(time);
   drawNight();
   drawFishButtons(time);                                    // UI on top of everything (not tinted at night)
+  drawToolFx(time, dt/1000);                                // tool particles, floating +items, tool cursor
 }
 
 
@@ -1958,7 +1950,8 @@ function buildBadge(o, z, time, wall){
   if (!o) return;
   const it = FARM_ITEMS[o.type], [x,y] = P(z.cx*GRID+o.c+o.w/2, z.cy*GRID+o.r+o.h/2, TH*it.H + 16);
   if (!o.done){ const left = (o.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/buildSec(it), left, left <= 0, time, '🔨'); }
-  else { const left = (o.plant + GROW_MS - wall)/1000; badge(x, y, 1 - Math.max(0,left)/(GROW_MS/1000), left, left <= 0, time, '🌱'); }
+  else if (o.pj){ const r = PROC[o.type][o.pj.i], left = (o.pj.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/r.sec, left, left <= 0, time, r.furn ? '🛠' : MAT[r.out].split(' ')[0]); }
+  else { const c = cropOf(o), left = (o.plant + c.sec*1000 - wall)/1000; badge(x, y, 1 - Math.max(0,left)/c.sec, left, left <= 0, time, c.e); }
 }
 
 /* ---- placement mode (Shop › ฟาร์ม). Footprint must sit inside ONE chunk, all tiles clear ---- */
@@ -1983,7 +1976,7 @@ function startPlacing(type, opts){
 }
 function endPlacing(){
   if (placing && placing.move){                              // cancelled move → put it back untouched
-    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant; o.room = m.o.room;
+    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room;
   }
   placing = null; $('placeBar').style.display = 'none'; $('zoneBar').style.display = 'flex';
 }
@@ -2012,7 +2005,7 @@ $('pOk').onclick = () => {
   const it = FARM_ITEMS[placing.type], fz = footprintZone(placing); if (!fz) return;
   if (placing.move || placing.store){                        // move / place from storage: free & instant
     const m = placing.move, o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, true);
-    if (m){ o.plant = m.o.plant; o.room = m.o.room; } else S.store[placing.type]--;
+    if (m){ o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room; } else S.store[placing.type]--;
     placing.move = null; bump('moveStore'); endPlacing(); save(); renderShop();
     return;
   }
@@ -2113,7 +2106,7 @@ $('fBtn').onclick = fishPress;
 $('fCancel').onclick = endFishing;
 
 function startLoop(){ if (!raf){ lastT = 0; skyAcc = 1e9; ensureZones(); placePet(); goHome(); renderZoneBar(); raf = requestAnimationFrame(frame); } }
-function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); if (inRoom) exitHome(); if (paint) endPaint(); }
+function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); if (inRoom) exitHome(); if (paint) endPaint(); if (tool) pickTool(null); }
 
 /* --- bottom bar: zoom −/+ and 🏠 home; shows unlocked area count --- */
 function renderZoneBar(){
@@ -2139,10 +2132,16 @@ cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId
   if (ptrs.size === 2 && inRoom){ if (drag){ clearTimeout(drag.timer); drag.moved = true; } return; }   // no zoom inside a room
   if (ptrs.size === 2){                                      // second finger → start pinch, cancel tap/long-press
     if (drag){ clearTimeout(drag.timer); drag.moved = true; }
+    toolDrag = null;                                          // second finger cancels the tool swing → pan/zoom
     const p = pinchState(), [wc, wr] = screenToWorld(p.mx, p.my);
     pinch = { d0:p.d, z0:zoom, wc, wr }; pinching = true; return;
   }
   if (ptrs.size > 2) return;
+  if (tool && !inRoom && !placing && !paint && !fishing){       // ✂️ tool mode: one finger swings the tool
+    const b = cv.getBoundingClientRect(), x = e.clientX-b.left, y = e.clientY-b.top;
+    drag = { tool:true, moved:true, x:e.clientX, y:e.clientY }; toolDrag = { x, y, last:null };
+    toolStroke(x, y, x, y); return;
+  }
   drag = { x:e.clientX, y:e.clientY, cx:camX, cy:camY, moved:false, long:false };
   const d = drag;
   d.timer = setTimeout(() => { if (drag !== d || d.moved || placing || fishing) return;
@@ -2158,14 +2157,18 @@ cv.addEventListener('pointermove', e => {
     camX = p.mx - OX - (pinch.wc-pinch.wr)*TW/2; camY = p.my - OY - (pinch.wc+pinch.wr)*TH/2;   // world anchor follows the fingers
     clampCam(); return;
   }
-  if (!drag) return; const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+  if (!drag) return;
+  if (drag.tool){ if (ptrs.size !== 1 || !toolDrag) return; const b = cv.getBoundingClientRect(), x = e.clientX-b.left, y = e.clientY-b.top;
+    toolStroke(toolDrag.x, toolDrag.y, x, y); toolDrag.x = x; toolDrag.y = y; return; }
+  const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
   if (!drag.moved && Math.hypot(dx,dy) > 8){ drag.moved = true; clearTimeout(drag.timer); }
   if (drag.moved && !inRoom){ camX = drag.cx + dx; camY = drag.cy + dy; clampCam(); }
 });
 function endPointer(e){
   ptrs.delete(e.pointerId);
+  if (toolDrag && ptrs.size === 0){ toolDrag = null; saveSoon(); setTimeout(flushRewards, 200); }
   if (pinch && ptrs.size < 2){                               // pinch finished → repaint ground at the final zoom
-    pinch = null; pinching = false; renderZoneBar();
+    pinch = null; pinching = false; renderZoneBar(); toolDrag = null;
     if (drag){ clearTimeout(drag.timer); drag = null; }       // the remaining finger must not trigger a tap
     return true;
   }
@@ -2203,7 +2206,7 @@ function speedBtn(leftSec, onDone){
   const cost = speedCost(leftSec);
   return { label:`⚡ เร่งให้เสร็จทันที (🪙 ${cost})`, cls:'ok', fn:() => {
     if (S.coins < cost) return sheet(`เหรียญไม่พอ (ต้องใช้ ${cost} มี ${S.coins})\nทำภารกิจสุขภาพเพื่อรับเหรียญเพิ่มนะครับ`, OK);
-    confirmDo(`ใช้ 🪙 ${cost} เหรียญ เร่งให้เสร็จทันที?\n(1 เหรียญ ต่อเวลาที่เหลือ 1 นาที)`, () => { S.coins -= cost; onDone(); bump('speed'); save(); refreshHeader(); });
+    confirmDo(`ใช้ 🪙 ${cost} เหรียญ เร่งให้เสร็จทันที?\n(20 เหรียญ ต่อเวลาที่เหลือ 1 นาที)`, () => { S.coins -= cost; onDone(); bump('speed'); save(); refreshHeader(); });
   }};
 }
 function tapTile(gc, gr){
@@ -2223,10 +2226,9 @@ function tapTile(gc, gr){
         reward(got.join('\n') + `\n⭐ Exp +${SIZE_EXP[R.size]}`);
       });
     }
-    const [a,b] = SIZE_TIME[R.size];
-    return confirmDo(`${R.verb}?\n${R.name} • ชิ้น${SIZE_TH[R.size]}\n⏱ ใช้เวลา ${fmt(a)} – ${fmt(b)}\nจะได้: ${yieldText(R.yield)}`, () => {
-      const d = rnd([a,b]); t.job = { end: Date.now() + d*1000, dur: d }; if (R.size==='large') bump('start_large'); save();
-    });
+    const tid = toolFor(t.k), T = TOOLS[tid];
+    return sheet(`${R.name} (ชิ้น${SIZE_TH[R.size]})\nใช้ ${T.e} ${T.name} ลากผ่าน ${HITS[R.size]} ครั้ง\nจะได้: ${yieldText(R.yield).replace(/, 🌱 [^,]* 0–1/,'')}${R.size==='small'?' • มีโอกาสได้เมล็ด 30%':' • มีโอกาสได้เมล็ด 60%'}`,
+      [{ label:`ใช้ ${T.e} ${T.name}`, cls:'ok', fn:() => { $('toolBar').style.display = 'flex'; $('zoneBar').style.display = 'none'; pickTool(tid); } }, {label:'ปิด', cls:'ghost'}]);
   }
   if (t.k==='obj') return tapObj(z, objById(z, t.o));
   if (t.k==='path') return sheet(`${PATHS[t.p].name}\nน้องเดินบนทางเดินได้ และหญ้าจะไม่งอกทับ\n💡 กดค้างเพื่อรื้อ (คืนเงิน)`, OK);
@@ -2254,8 +2256,8 @@ function longPress(gc, gr){
         const lifted = { ...o }; removeObj(z, o);
         startPlacing(o.type, { w:o.w, h:o.h, move:{ z, o:lifted, gc:z.cx*GRID+o.c, gr:z.cy*GRID+o.r } }); } },
     { label:'📦 เก็บเข้าคลัง', fn:() => confirmDo(`เก็บ ${it.name} เข้าคลัง?\nนำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน` +
-        (o.plant ? '\n(ผักที่ปลูกอยู่จะหายไป)' : ''), () => {
-        S.store = S.store || {}; S.store[o.type] = (S.store[o.type]||0) + 1; removeObj(z, o); bump('moveStore'); save(); renderShop();
+        (o.plant ? '\n(ผักที่ปลูกอยู่จะหายไป)' : o.pj ? '\n(ของที่กำลังทำอยู่จะหายไป)' : ''), () => {
+        S.store = S.store || {}; S.store[o.type] = (S.store[o.type]||0) + 1; delete o.pj; removeObj(z, o); bump('moveStore'); save(); renderShop();
         reward(`📦 เก็บ ${it.name} เข้าคลังแล้ว`); }) },
     { label:'ปิด', cls:'ghost' } ]);
   return true;
@@ -2272,15 +2274,8 @@ function tapObj(z, o){
     });
   }
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
-  if (o.type==='plot'){
-    if (!o.plant){
-      if (!S.inv.seed) return sheet('ยังไม่มีเมล็ดพันธุ์\nซื้อได้ที่ร้านค้า หรือเก็บจากดอกไม้ป่า', OK);
-      return confirmDo(`ปลูกเมล็ดแครอท? (มี ${S.inv.seed})\nโตเต็มที่ใน 2 นาที (เดโม)`, () => { S.inv.seed--; o.plant = Date.now(); save(); renderMats(); });
-    }
-    const left = (GROW_MS - (Date.now()-o.plant))/1000;
-    if (left > 0) return sheet(`🌱 กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - GROW_MS; }), {label:'ปิด', cls:'ghost'} ]);
-    return confirmDo('เก็บเกี่ยวแครอท?', () => { const n = rnd([1,2]); S.inv.veg += n; o.plant = 0; bump('harvest'); gainExp(EXP.harvest); save(); refreshHeader(); renderMats(); reward(`${MAT.veg} +${n}\n⭐ Exp +${EXP.harvest}`); });
-  }
+  if (o.type==='plot') return plotTap(z, o);
+  if (PROC[o.type]) return procTap(z, o);
   sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้างที่สิ่งปลูกสร้างเพื่อย้ายหรือเก็บเข้าคลัง`, [
     {label:'รื้อถอน (ไม่คืนวัตถุดิบ)', cls:'ghost', fn:() => confirmDo(`รื้อถอน ${it.name}?\nจะไม่ได้เหรียญหรือวัตถุดิบคืน`, () => { removeObj(z, o); save(); })},
     {label:'ปิด', cls:'ghost'} ]);
@@ -2631,11 +2626,11 @@ $('rExit').onclick = exitHome;
 
 function tapPet(){
   if (fishing) return;
-  petHappy(pet); bump('petTap');                             // hop + hearts on every tap
+  petHappy(pet); bump('petTap'); sfx('bark');                // hop + hearts on every tap
   const opts = [];
   if (S.inv.food) opts.push({label:`🦴 ให้อาหาร (มี ${S.inv.food}) Exp+20`, cls:'ok', fn:() => confirmDo('ให้อาหารน้อง?', () => feed('food',10,20))});
   if (S.inv.veg)  opts.push({label:`🥕 ให้แครอท (มี ${S.inv.veg}) Exp+10`, fn:() => confirmDo('ให้แครอทน้อง?', () => feed('veg',5,10))});
-  for (const [k,h,x] of [['tilapia',6,12],['carp',8,15],['shrimp',6,12],['goldfish',15,40]])
+  for (const [k,h,x] of [['tilapia',6,12],['carp',8,15],['shrimp',6,12],['goldfish',15,40],['soup',10,30],['friedrice',20,60]])
     if (S.inv[k]) opts.push({label:`${MAT[k]} (มี ${S.inv[k]}) Exp+${x}`, fn:() => confirmDo(`ให้${MAT[k].split(' ')[1]}น้อง?`, () => feed(k,h,x))});
   opts.push({label:'ปิด', cls:'ghost'});
   const p = S.pet, nx = PET_STAGES.find(s => s.lv > p.lv);
@@ -2666,47 +2661,57 @@ function has2x2Clear(){
 }
 const QUESTS = [
   { id:'hello',   name:'ทักทายน้อง',            hl:'pet',    need:1, goal:() => st('petTap'),
-    text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:5} },
-  { id:'small',   name:'เก็บของชิ้นเล็ก',         hl:'small',  need:1, goal:() => st('collect_small'),
-    text:'แตะหญ้า ดอกไม้ป่า หรือหินเล็กที่กระพริบ → ยืนยัน → รอ 15–30 วิ → แตะ "✔ เก็บ"', reward:{coins:5} },
-  { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
-    text:'เก็บของในกรอบสีเหลืองให้หมด เพื่อเตรียมที่สร้างบ้าน (เก็บหลายช่องพร้อมกันได้)', reward:{coins:5} },
+    text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
+  { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
+    text:'แตะ 🧰 (มุมขวาล่าง) → ✂️ กรรไกร → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
+  { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
+    text:'ใช้ ✂️ กรรไกร และ ⛏️ ค้อน ลากผ่านของในกรอบสีเหลืองให้หมด เพื่อเตรียมที่สร้างบ้าน', reward:{coins:100} },
   { id:'house',   name:'สร้างบ้านหลังแรก',        nav:'tShop', shop:'farm', need:1, goal:() => starterOwned() ? 1 : 0,
     text:'ไปที่ 🛒 ร้านค้า › ฟาร์ม › "บ้านหลังแรก" (ฟรี) → แตะพื้นที่โล่ง → ✔ วาง', reward:{coins:0} },
   { id:'houseOk', name:'รับบ้าน',                hl:'starter', need:1, goal:() => starterDone() ? 1 : 0,
-    text:'สิ่งปลูกสร้างต้องใช้เวลาสร้าง รอ 30 วิ แล้วแตะ "✔ เก็บ" ที่บ้าน', reward:{coins:20} },
+    text:'สิ่งปลูกสร้างต้องใช้เวลาสร้าง รอ 30 วิ แล้วแตะ "✔ เก็บ" ที่บ้าน', reward:{coins:400} },
   { id:'enterHome', name:'เข้าบ้าน',                hl:'starter', need:1, goal:() => st('enterHome'),
-    text:'แตะที่บ้านเพื่อเข้าไปข้างใน 🚪 — ในบ้านตกแต่งได้ เปลี่ยนสีผนัง/พื้นได้ และน้องจะตามเข้ามาด้วย กด "🚪 ออกจากบ้าน" เพื่อกลับ', reward:{coins:5} },
-  { id:'mLog',    name:'บันทึกภารกิจสุขภาพ',       nav:'tMission', need:1, goal:() => st('missionLog'),
-    text:'เปิด 🎯 ภารกิจ แล้วบันทึกสิ่งที่ทำวันนี้ (ก้าวเดิน/นาที/น้ำ) อย่างน้อย 1 ครั้ง', reward:{coins:5} },
+    text:'แตะที่บ้านเพื่อเข้าไปข้างใน 🚪 — ในบ้านตกแต่งได้ เปลี่ยนสีผนัง/พื้นได้ และน้องจะตามเข้ามาด้วย กด "🚪 ออกจากบ้าน" เพื่อกลับ', reward:{coins:100} },
+  { id:'mLog',    name:'ลองทำภารกิจสุขภาพ',        nav:'tMission', need:1, goal:() => st('missionLog'),
+    text:'เปิด 🎯 ภารกิจ แล้วกด "▶ เริ่ม" ที่ข้อไหนก็ได้ — 📵 พักจอ, 🏋️ ลุกนั่ง หรือ 🙆 บริหารคอ', reward:{coins:100} },
   { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
-    text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับเหรียญ" — ภารกิจสุขภาพคือรายได้หลักของฟาร์ม', reward:{coins:10} },
+    text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 🪙 200" — ภารกิจสุขภาพคือรายได้หลัก ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
-    text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:5} },
+    text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:100} },
   { id:'feed',    name:'ให้อาหารน้อง',            hl:'pet',    need:1, goal:() => st('feed'),
-    text:'แตะ {pet} → ให้อาหาร — น้องได้ Exp และพัฒนาร่างที่ Lv.8 และ Lv.15', reward:{coins:5, food:1} },
+    text:'แตะ {pet} → ให้อาหาร — น้องได้ Exp และพัฒนาร่างที่ Lv.8 และ Lv.15', reward:{coins:100, food:1} },
   { id:'fish',    name:'ตกปลา',                 hl:'water',  need:3, goal:() => st('fish'),
-    text:'แตะที่บ่อน้ำ แล้วกดปุ่ม "🎣 ตกปลา" ที่โผล่ขึ้นมา → เหวี่ยงเบ็ด → รอทุ่นจม ❗ → กด "ดึง!" ให้ทัน (ดึงเร็วไปปลาหนี) — ตกให้ได้ 3 ครั้ง ปลาขายได้หรือให้น้องกินได้', reward:{coins:10} },
-  { id:'medium',  name:'เก็บของชิ้นกลาง',         hl:'medium', need:1, goal:() => st('collect_medium'),
-    text:'ทุบก้อนหินหรือตัดพุ่มไม้ (รอ 1–2 นาที) — ได้หินและไม้มากกว่าของชิ้นเล็ก', reward:{coins:5} },
+    text:'แตะที่บ่อน้ำ แล้วกดปุ่ม "🎣 ตกปลา" ที่โผล่ขึ้นมา → เหวี่ยงเบ็ด → รอทุ่นจม ❗ → กด "ดึง!" ให้ทัน — ตกให้ได้ 3 ครั้ง ปลาขายได้ ส่งออเดอร์ได้ หรือให้น้องกิน', reward:{coins:200} },
+  { id:'medium',  name:'ทุบหิน/ตัดพุ่มไม้',         hl:'medium', tool:1, need:1, goal:() => st('collect_medium'),
+    text:'ใช้ ⛏️ ค้อน กับก้อนหิน หรือ 🪓 ขวาน กับพุ่มไม้ — ของชิ้นกลางต้องลากผ่าน 3 ครั้ง (ดูจุดสีส้มที่เหลือ)', reward:{coins:100} },
   { id:'plot',    name:'สร้างแปลงผัก',           nav:'tShop', shop:'farm', need:1, goal:() => plotsDone(),
-    text:'ร้านค้า › ฟาร์ม › แปลงผัก → วาง → รอสร้างเสร็จแล้วแตะรับ', reward:{coins:5, seed:1} },
+    text:'ร้านค้า › ฟาร์ม › แปลงผัก → วาง → รอสร้างเสร็จแล้วแตะรับ', reward:{coins:100, seed:2} },
   { id:'move',    name:'ย้ายหรือเก็บสิ่งปลูกสร้าง',  hl:'plot',   need:1, goal:() => st('moveStore'),
-    text:'กดค้างที่แปลงผัก ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม) — บ้านย้ายได้แต่เก็บไม่ได้เพราะมีคนอยู่', reward:{coins:5} },
+    text:'กดค้างที่แปลงผัก ~0.5 วิ → เลือก "↔️ ย้ายตำแหน่ง" หรือ "📦 เก็บเข้าคลัง" (นำออกมาวางใหม่ได้ฟรีที่ร้านค้า › ฟาร์ม) — บ้านย้ายได้แต่เก็บไม่ได้เพราะมีคนอยู่', reward:{coins:100} },
   { id:'decor',   name:'ตกแต่งบ้าน',              nav:'tShop', shop:'home', need:1, goal:() => st('decorPlace'),
-    text:'ร้านค้า › 🛋 ในบ้าน ซื้อของตกแต่ง 1 ชิ้น → แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง → วาง (กดค้างที่ของเพื่อย้าย/หมุน/เก็บ)', reward:{coins:10} },
+    text:'ร้านค้า › 🛋 ในบ้าน ซื้อของตกแต่ง 1 ชิ้น → แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง → วาง (กดค้างที่ของเพื่อย้าย/หมุน/เก็บ)', reward:{coins:200} },
   { id:'harvest', name:'ปลูกและเก็บเกี่ยว',        hl:'plot',   need:1, goal:() => st('harvest'),
-    text:'แตะแปลงผัก → ปลูกเมล็ด → รอ 2 นาที → เก็บเกี่ยว 🥕 (ขายหรือให้น้องกินได้)', reward:{coins:10} },
-  { id:'large',   name:'ลงมือกับของชิ้นใหญ่',      hl:'large',  need:1, goal:() => st('start_large'),
-    text:'เริ่มโค่นต้นไม้ใหญ่หรือสกัดหินใหญ่ (15–30 นาที) — เริ่มไว้แล้วไปทำอย่างอื่นได้เลย', reward:{coins:5} },
+    text:'แตะแปลงผัก → เลือกเมล็ด → รอผักโต (แครอท 5 นาที) → เก็บเกี่ยว — ผักขายได้ ส่งออเดอร์ได้ หรือแปรรูปได้', reward:{coins:200} },
+  { id:'order',   name:'ส่งคำสั่งซื้อ',            nav:'tShop', shop:'order', need:1, goal:() => st('order'),
+    text:'ร้านค้า › 📋 คำสั่งซื้อ → ส่งของให้ครบ 1 ออเดอร์ — จ่ายแพงกว่าขายร้าน ได้ Exp ด้วย ออเดอร์ใหม่มาทุก 10 นาที', reward:{coins:300} },
+  { id:'large',   name:'โค่นต้นไม้/สกัดหินใหญ่',     hl:'large',  tool:1, need:1, goal:() => st('collect_large'),
+    text:'ใช้ 🪓 ขวาน กับต้นไม้ใหญ่ หรือ ⛏️ ค้อน กับหินใหญ่ — ลากผ่าน 6 ครั้ง ได้ไม้/หินเยอะ', reward:{coins:100} },
   { id:'path',    name:'ทำทางเดิน',               nav:'tShop', shop:'farm', need:3, goal:() => st('pathPlace'),
-    text:'ร้านค้า › ฟาร์ม › ทางเดิน → แตะช่องว่างต่อกัน 3 ช่อง แล้วกด ✔ เสร็จ — ทางเดินเชื่อมกันเองอัตโนมัติ น้องเดินบนทางได้', reward:{coins:10} },
+    text:'ร้านค้า › ฟาร์ม › ทางเดิน → แตะช่องว่างต่อกัน 3 ช่อง แล้วกด ✔ เสร็จ — ทางเดินเชื่อมกันเองอัตโนมัติ น้องเดินบนทางได้', reward:{coins:200} },
   { id:'bridge',  name:'สร้างสะพาน',              hl:'water', need:1, goal:() => st('bridgePlace'),
-    text:'ร้านค้า › ฟาร์ม › 🌉 สะพานไม้ → แตะที่บ่อน้ำ — สะพานทำให้น้องเดินข้ามน้ำได้ (กดค้างเพื่อรื้อ คืนเงิน)', reward:{coins:10} },
+    text:'ร้านค้า › ฟาร์ม › 🌉 สะพานไม้ → แตะที่บ่อน้ำ — สะพานทำให้น้องเดินข้ามน้ำได้ (กดค้างเพื่อรื้อ คืนเงิน)', reward:{coins:200} },
   { id:'speed',   name:'เร่งเวลาด้วยเหรียญ',      need:1, goal:() => st('speed'),
-    text:'แตะของที่กำลังเก็บ/กำลังสร้าง/กำลังโต แล้วกด ⚡ เร่ง — ใช้ 1 เหรียญต่อเวลาที่เหลือ 1 นาที', reward:{coins:5} },
+    text:'แตะของที่กำลังสร้าง/ผักที่กำลังโต/ของที่กำลังแปรรูป แล้วกด ⚡ เร่ง — 20 เหรียญต่อเวลาที่เหลือ 1 นาที', reward:{coins:100} },
   { id:'zone2',   name:'ขยายฟาร์ม',              need:1, goal:() => S.farm.zones.length >= 2 ? 1 : 0,
-    text:'ถึง Lv.2 → พื้นที่ 5×5 ใหม่จะต่อกับฟาร์มเดิม ใช้นิ้วลากจอเพื่อดู, ＋/－ ซูม, 🏠 กลับบ้าน (ถึง Lv.50)', reward:{coins:20} }
+    text:'ถึง Lv.2 → พื้นที่ 5×5 ใหม่จะต่อกับฟาร์มเดิม ใช้นิ้วลากจอเพื่อดู, ＋/－ ซูม, 🏠 กลับบ้าน (ถึง Lv.50)', reward:{coins:400} },
+  { id:'crop2',   name:'ปลูกผักชนิดใหม่',          hl:'plot',   need:1, goal:() => st('plant_other'),
+    text:'ปลูกผักที่ไม่ใช่แครอท 1 แปลง — เมล็ดได้ฟรีจากการเคลียร์ฟาร์ม หรือซื้อที่ร้านค้า › ทั่วไป (ข้าวโพดปลดล็อก Lv.3)', reward:{coins:200} },
+  { id:'sawmill', name:'สร้างโรงเลื่อย',           nav:'tShop', shop:'farm', need:1, goal:() => ownsDone('sawmill') ? 1 : 0,
+    text:'ถึง Lv.4 → ร้านค้า › ฟาร์ม › 🪚 โรงเลื่อย — โรงงานแปรรูปไม้ เปิดทางสู่อาคารใหญ่และเฟอร์นิเจอร์ราคาถูก', reward:{coins:300} },
+  { id:'plank',   name:'ทำไม้กระดาน',             need:1, goal:() => st('proc_plank'),
+    text:'แตะโรงเลื่อย → 🟫 ไม้กระดาน (ไม้ 3) → รอ 5 นาที → แตะรับ — ใช้สร้างครัว โรงสี ยุ้งฉาง บ้านไร่', reward:{coins:200} },
+  { id:'craft',   name:'ทำเก้าอี้ตัวแรก',           need:1, goal:() => st('craft'),
+    text:'แตะโรงเลื่อย → 🪑 เก้าอี้ (ไม้กระดาน 1) — ทำเฟอร์นิเจอร์เองถูกกว่าซื้อในร้าน แล้วเอาไปวางในบ้าน', reward:{coins:300} }
 ];
 const SIZE_OF = k => RES[k] ? RES[k].size : null;
 let questDirty = true, questShown = '', questCollapsed = false;
@@ -2721,7 +2726,7 @@ const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
 
 function questTick(){
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
-  if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); return; }
+  if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
   const prog = Math.min(q.need, q.goal()), done = prog >= q.need;
   const key = q.id + prog + questCollapsed;
   if (key === questShown && !questDirty) return;            // re-render only on change
@@ -2732,12 +2737,13 @@ function questTick(){
   $('tutProg').style.width = (prog/q.need*100) + '%';
   navShop.classList.toggle('pulse', !done && q.nav==='tShop');
   navMis.classList.toggle('pulse', !done && q.nav==='tMission');
+  $('toolFab').classList.toggle('pulse', !done && !!q.tool && !tool);
   if (q.shop) shopTab = q.shop;
 }
-function rewardText(r){ return [r.coins ? `🪙 ${r.coins} เหรียญทอง` : '', r.food ? `${MAT.food} +${r.food}` : '', r.seed ? `${MAT.seed} +${r.seed}` : ''].filter(Boolean).join('\n'); }
+function rewardText(r){ return Object.entries(r).filter(([,v]) => v).map(([k,v]) => k==='coins' ? `🪙 ${v.toLocaleString()} เหรียญทอง` : `${MAT[k]} +${v}`).join('\n'); }
 function claimQuest(){
   const q = curQuest(); if (!q || q.goal() < q.need) return;
-  S.coins += q.reward.coins||0; if (q.reward.food) S.inv.food += q.reward.food; if (q.reward.seed) S.inv.seed += q.reward.seed;
+  Object.entries(q.reward).forEach(([k,v]) => k==='coins' ? S.coins += v : invAdd(k, v)); sfx('coin');
   gainExp(10); S.qDone.push(q.id); save(); refreshHeader(); renderMats(); questDirty = true; questTick();
   const next = curQuest();
   reward(`📜 เควส "${q.name}" สำเร็จ!\n${rewardText(q.reward)}\n⭐ Exp +10` + (next ? `\n\nเควสถัดไป: ${next.name}` : '\n\n🎉 จบเควสสอนเล่นทั้งหมดแล้ว!'));
@@ -2783,30 +2789,30 @@ function drawTutHighlight(time){
 }
 $('tutAva').innerHTML = BEAGLE;
 function renderMats(){
-  $('mats').innerHTML = ['stone','grass','wood','seed','veg'].map(k => `<div>${MAT[k].split(' ')[0]} ${S.inv[k]}</div>`).join('');
+  const seeds = Object.values(CROPS).reduce((n,c) => n + inv(c.seed), 0);
+  $('mats').innerHTML = ['stone','grass','wood','plank'].filter(k => k!=='plank' || inv(k)).map(k => `<div>${MAT[k].split(' ')[0]} ${inv(k)}</div>`).join('') + `<div>🌱 ${seeds}</div>`;
 }
 
 /* =====================================================================
    7) SHOP — tab "ฟาร์ม" (structures w/ size, materials, build time) + tab "ทั่วไป"
    ===================================================================== */
-const SHOP_BUY  = [ {k:'seed',p:5}, {k:'food',p:10}, {k:'stone',p:4}, {k:'wood',p:5}, {k:'grass',p:2} ];
-const SHOP_SELL = [ {k:'veg',p:8}, {k:'tilapia',p:6}, {k:'carp',p:10}, {k:'shrimp',p:8}, {k:'goldfish',p:40}, {k:'boot',p:1}, {k:'stone',p:1}, {k:'grass',p:1}, {k:'wood',p:2} ];
 let shopTab = 'farm';
 function openShop(tab){ shopTab = tab; goTab('tShop'); }
 function renderShop(){
   const L = $('shopList'); L.innerHTML = '';
   const tabs = document.createElement('div'); tabs.className = 'chips';
-  [['farm','🏡 ฟาร์ม'],['home','🛋 ในบ้าน'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
+  [['farm','🏡 ฟาร์ม'],['order','📋 ออเดอร์'],['home','🛋 บ้าน'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
     b.className = 'chip' + (shopTab===k ? ' sel' : ''); b.textContent = n; b.onclick = () => { shopTab = k; renderShop(); }; tabs.appendChild(b); });
   L.appendChild(tabs);
+  if (shopTab === 'order') return renderOrders(L);
   if (shopTab === 'home'){
     const info = document.createElement('div'); info.className = 'muted';
-    info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วเก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง';
+    info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วเก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง • 💡 ทำเองที่ 🪚 โรงเลื่อยได้ถูกกว่า';
     L.appendChild(info);
     Object.entries(FURN).forEach(([id,f]) => {
       const c = document.createElement('div'); c.className = 'card mrow' + ((curQuest()||{}).id==='decor' ? ' tutGlow' : '');
       c.innerHTML = `<div><b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} • มีในกระเป๋า ${(S.furn||{})[id]||0}</div></div>`;
-      const b = document.createElement('button'); b.className = 'btn'; b.textContent = `🪙 ${f.price}`; b.disabled = S.coins < f.price;
+      const b = document.createElement('button'); b.className = 'btn'; b.textContent = `🪙 ${f.price.toLocaleString()}`; b.disabled = S.coins < f.price;
       b.onclick = () => confirmDo(`ซื้อ ${f.name} ราคา ${f.price} เหรียญ?`, () => { S.coins -= f.price; S.furn[id] = (S.furn[id]||0) + 1; save(); refreshHeader(); renderShop();
         reward(`${f.name} +1\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง`); });
       c.appendChild(b); L.appendChild(c);
@@ -2837,30 +2843,39 @@ function renderShop(){
     const h3 = document.createElement('b'); h3.textContent = '🏗 สิ่งปลูกสร้าง'; L.appendChild(h3);
     Object.entries(FARM_ITEMS).forEach(([id,it]) => {
       if (it.once && starterOwned()) return;                 // starter house: only one
-      const okCoin = S.coins >= it.price, okMat = canPay(it.cost);
-      const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='house' && it.once || (curQuest()||{}).id==='plot' && id==='plot' ? ' tutGlow' : '');
-      c.innerHTML = `<div class="mrow"><b>${it.name}</b><span class="coin" style="padding:2px 10px"><i></i>${it.price || 'ฟรี'}</span></div>
+      const okLv = S.lv >= (it.lv||1), okCoin = S.coins >= it.price, okMat = canPay(it.cost);
+      const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='house' && it.once || (curQuest()||{}).id==='plot' && id==='plot' || (curQuest()||{}).id==='sawmill' && id==='sawmill' ? ' tutGlow' : '');
+      c.innerHTML = `<div class="mrow"><b>${it.name}</b><span class="coin" style="padding:2px 10px">🪙 ${it.price ? it.price.toLocaleString() : 'ฟรี'}</span></div>
         <div class="muted">${it.desc}</div>
         <div class="muted" style="margin-top:6px">📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง) • ⏱ ${fmt(buildSec(it))}</div>
         <div style="margin-top:4px;font-size:14px">${Object.entries(it.cost).map(([k,v]) =>
-          `<span style="color:${S.inv[k]>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${S.inv[k]}/${v}</span>`).join(' • ')}</div>`;
+          `<span style="color:${inv(k)>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${inv(k)}/${v}</span>`).join(' • ')}</div>`;
       const b = document.createElement('button'); b.className = 'btn' + (okCoin && okMat ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
-      b.textContent = okCoin && okMat ? 'เลือกตำแหน่งสร้าง' : (okCoin ? 'วัตถุดิบไม่พอ' : 'เหรียญไม่พอ');
-      b.disabled = !(okCoin && okMat); b.onclick = () => startPlacing(id);
+      b.textContent = !okLv ? `🔒 ปลดล็อกที่ Lv.${it.lv}` : okCoin && okMat ? 'เลือกตำแหน่งสร้าง' : (okCoin ? 'วัตถุดิบไม่พอ' : 'เหรียญไม่พอ');
+      if (!okLv) c.style.opacity = .6;
+      b.disabled = !(okLv && okCoin && okMat); b.onclick = () => startPlacing(id);
       c.appendChild(b); L.appendChild(c);
     });
     return;
   }
   const h1 = document.createElement('b'); h1.textContent = '🛒 ซื้อของ'; L.appendChild(h1);
-  SHOP_BUY.forEach(it => L.appendChild(shopRow(it, 'ซื้อ', () => {
-    if (S.coins < it.p) return sheet('เหรียญทองไม่พอ\nทำภารกิจเพื่อรับเหรียญเพิ่มนะครับ', OK);
-    confirmDo(`ซื้อ ${MAT[it.k]} 1 ชิ้น ราคา ${it.p} เหรียญ?`, () => { S.coins -= it.p; S.inv[it.k]++; if (it.k==='food') bump('buyFood'); save(); refreshHeader(); renderMats(); renderShop(); });
-  })));
-  const h = document.createElement('b'); h.textContent = '💰 ขายของ'; h.style.marginTop = '8px'; L.appendChild(h);
-  SHOP_SELL.forEach(it => L.appendChild(shopRow(it, 'ขาย', () => {
-    if (!S.inv[it.k]) return;
-    confirmDo(`ขาย ${MAT[it.k]} 1 ชิ้น ได้ ${it.p} เหรียญ? (มี ${S.inv[it.k]})`, () => { S.inv[it.k]--; S.coins += it.p; save(); refreshHeader(); renderMats(); renderShop(); });
+  Object.keys(BUY).forEach(k => {
+    const sc = seedCrop(k); if (sc && S.lv < sc.lv) return;              // seeds unlock with player level
+    L.appendChild(shopRow({k, p:BUY[k]}, 'ซื้อ', () => {
+      if (S.coins < BUY[k]) return sheet('เหรียญทองไม่พอ\nทำภารกิจสุขภาพหรือส่งคำสั่งซื้อเพื่อรับเหรียญเพิ่มนะครับ', OK);
+      confirmDo(`ซื้อ ${MAT[k]} 1 ชิ้น ราคา ${BUY[k]} เหรียญ?`, () => { S.coins -= BUY[k]; invAdd(k, 1); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); });
+    }));
+  });
+  const h = document.createElement('b'); h.textContent = '🪙 ขายของ' + (ownsDone('barn') ? ' (🌾 ยุ้งฉาง +10%)' : ''); h.style.marginTop = '8px'; L.appendChild(h);
+  Object.keys(SELL).filter(k => inv(k) > 0).forEach(k => L.appendChild(shopRow({k, p:sellPrice(k)}, 'ขาย', () => {
+    if (!inv(k)) return;
+    const n = inv(k), p = sellPrice(k);
+    sheet(`ขาย ${MAT[k]} (มี ${n})\nชิ้นละ ${p} เหรียญ`, [
+      { label:`ขาย 1 ชิ้น (+${p})`, cls:'ok', fn:() => { S.inv[k]--; S.coins += p; sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); } },
+      ...(n > 1 ? [{ label:`ขายทั้งหมด ${n} ชิ้น (+${(p*n).toLocaleString()})`, fn:() => confirmDo(`ขาย ${MAT[k]} ทั้งหมด ${n} ชิ้น ได้ ${(p*n).toLocaleString()} เหรียญ?`, () => { S.inv[k] = 0; S.coins += p*n; sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); }) }] : []),
+      { label:'ยกเลิก', cls:'ghost' } ]);
   }, true)));
+  if (!Object.keys(SELL).some(k => inv(k) > 0)){ const e = document.createElement('div'); e.className = 'muted'; e.textContent = 'ยังไม่มีของให้ขาย'; L.appendChild(e); }
 }
 function shopRow(it, verb, fn, sell){
   const c = document.createElement('div'); c.className='card mrow';
@@ -2871,9 +2886,9 @@ function shopRow(it, verb, fn, sell){
 }
 function renderBag(){
   const L = $('bagList');
-  L.innerHTML = '<b>🎒 กระเป๋า</b>' + Object.keys(MAT).filter(k => S.inv[k] || ['stone','grass','wood','seed','veg','food'].includes(k)).map(k => `<div class="card mrow"><span>${MAT[k]}</span><b>${S.inv[k]||0}</b></div>`).join('') +
+  L.innerHTML = '<b>🎒 กระเป๋า</b>' + Object.keys(MAT).filter(k => inv(k) || ['stone','grass','wood','food'].includes(k)).map(k => `<div class="card mrow"><span>${MAT[k]}</span><b>${inv(k)}</b></div>`).join('') +
     `<div class="card"><b>ระดับผู้เล่น Lv.${S.lv}/${MAX_LV}</b><div class="muted">Exp ${S.exp}/${needExp(S.lv)} • ฟาร์ม ${S.farm.zones.length}/${MAX_ZONES} พื้นที่ (พื้นที่ละ 5×5 ต่อกันเป็นผืนเดียว)<br>` +
-    `ทุก Lv. ปลดล็อกพื้นที่ใหม่ติดกับฟาร์มเดิม จนถึง Lv.${MAX_ZONES}<br>Exp: เก็บชิ้นเล็ก +3 • กลาง +6 • ใหญ่ +15 • สร้างเสร็จ +10 • เก็บเกี่ยว +5 • ภารกิจ +20 • ให้อาหาร +3</div></div>` +
+    `ทุก Lv. ปลดล็อกพื้นที่ใหม่ติดกับฟาร์มเดิม จนถึง Lv.${MAX_ZONES}<br>Exp: เก็บชิ้นเล็ก +3 • กลาง +6 • ใหญ่ +15 • สร้างเสร็จ +10 • เก็บเกี่ยว +5 • แปรรูป +8 • ออเดอร์ +5–60 • ภารกิจ +20 • ให้อาหาร +3</div></div>` +
     `<div class="card"><b>ข้อมูลของคุณ</b><div class="muted">BMR ${S.analysis.bmr} • TDEE ${S.analysis.tdee} kcal • BMI ${S.analysis.bmi}</div></div>`;
   const out = document.createElement('button'); out.className='btn ghost'; out.textContent='ออกจากระบบ';
   out.onclick = () => confirmDo('ออกจากระบบ?\n(ครั้งหน้าต้องเข้าสู่ระบบใหม่)', () => { cloudFlush(); cloudSynced = false; clearTimeout(cloudRetry); stopLoop(); endPlacingSafe(); USER=null; S=null; store.set('pensuk_last', null);
@@ -2894,6 +2909,610 @@ function renderBag(){
   L.append(mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
+
+/* =====================================================================
+   v0.9 — ECONOMY ×20 • CROPS • PROCESSING • ORDERS • DRAG TOOLS
+          NEW DAILY MISSIONS (screen rest / squats / neck) • STREAK
+          DAILY LOGIN • SOUND
+   ===================================================================== */
+
+/* ---------- items ---------- */
+Object.assign(MAT, {
+  seed:'🌱 เมล็ดแครอท', veg:'🥕 แครอท',
+  corn:'🌽 ข้าวโพด', tomato:'🍅 มะเขือเทศ', rice:'🌾 ข้าวเปลือก', pumpkin:'🎃 ฟักทอง', berry:'🍓 สตรอว์เบอร์รี',
+  sd_corn:'🌱 เมล็ดข้าวโพด', sd_tomato:'🌱 เมล็ดมะเขือเทศ', sd_rice:'🌱 เมล็ดข้าว', sd_pumpkin:'🌱 เมล็ดฟักทอง', sd_berry:'🌱 เมล็ดสตรอว์เบอร์รี',
+  plank:'🟫 ไม้กระดาน', beam:'📏 ไม้คาน', polish:'✨ ไม้ขัดเงา',
+  milled:'🍚 ข้าวสาร', soup:'🥣 ซุปผัก', friedrice:'🍛 ข้าวผัดปลา', jam:'🫙 แยมสตรอว์เบอร์รี', sauce:'🥫 ซอสมะเขือเทศ'
+});
+const inv = k => S.inv[k] || 0;
+function invAdd(k, n){ S.inv[k] = (S.inv[k] || 0) + n; }
+
+/* ---------- crops: time & value grow with player level ⚠️ ---------- */
+const CROPS = {
+  carrot:  { name:'แครอท',        e:'🥕', prod:'veg',     seed:'seed',       lv:1,  sec:300,   sell:40,  yield:[1,2] },
+  corn:    { name:'ข้าวโพด',       e:'🌽', prod:'corn',    seed:'sd_corn',    lv:3,  sec:900,   sell:100, yield:[1,2] },
+  tomato:  { name:'มะเขือเทศ',     e:'🍅', prod:'tomato',  seed:'sd_tomato',  lv:5,  sec:1800,  sell:160, yield:[2,3] },
+  rice:    { name:'ข้าว',          e:'🌾', prod:'rice',    seed:'sd_rice',    lv:7,  sec:3600,  sell:250, yield:[2,3] },
+  pumpkin: { name:'ฟักทอง',        e:'🎃', prod:'pumpkin', seed:'sd_pumpkin', lv:10, sec:7200,  sell:600, yield:[1,1] },
+  berry:   { name:'สตรอว์เบอร์รี',  e:'🍓', prod:'berry',   seed:'sd_berry',   lv:14, sec:14400, sell:400, yield:[3,4] }
+};
+const cropOf = o => CROPS[o.crop || 'carrot'];
+const cropLeft = o => (o.plant + cropOf(o).sec*1000 - Date.now()) / 1000;
+
+/* ---------- prices (already ×20) ⚠️ ---------- */
+const SELL = { veg:40, corn:100, tomato:160, rice:250, pumpkin:600, berry:400,
+  tilapia:120, carp:200, shrimp:160, goldfish:800, boot:20,
+  stone:20, grass:20, wood:40, plank:160, beam:400, polish:450,
+  milled:1200, soup:300, friedrice:2000, jam:2200, sauce:900 };
+const BUY = { food:200, stone:80, wood:100, grass:40,
+  seed:10, sd_corn:25, sd_tomato:40, sd_rice:60, sd_pumpkin:150, sd_berry:100 };
+const seedCrop = k => Object.values(CROPS).find(c => c.seed === k);
+const ownsDone = type => S.farm.zones.some(z => z.objs.some(o => o.type === type && o.done));
+const sellPrice = k => Math.round(SELL[k] * (ownsDone('barn') ? 1.1 : 1));     // 🏚 ยุ้งฉาง: +10%
+for (const f of Object.values(FURN)) f.price *= ECON;
+for (const p of Object.values(PATHS)) p.price *= ECON;
+BRIDGE.price *= ECON;
+
+/* ---------- processing buildings: one job at a time per building ⚠️ ---------- */
+const PROC = {
+  sawmill:  [ {out:'plank', in:{wood:3}, sec:300}, {out:'beam', in:{plank:2}, sec:600}, {out:'polish', in:{plank:2, stone:1}, sec:900},
+              {furn:'chair', in:{plank:1}, sec:300}, {furn:'petbed', in:{plank:1, grass:3}, sec:300}, {furn:'table', in:{plank:2, beam:1}, sec:600},
+              {furn:'shelf', in:{plank:3}, sec:600}, {furn:'bed', in:{plank:4, polish:1}, sec:900}, {furn:'sofa', in:{plank:3, polish:1, grass:4}, sec:900} ],
+  mill:     [ {out:'milled', in:{rice:3}, sec:600} ],
+  kitchen:  [ {out:'soup', in:{corn:1, veg:1}, sec:900}, {out:'friedrice', in:{milled:1, tilapia:1}, sec:1200} ],
+  jamhouse: [ {out:'jam', in:{berry:3}, sec:1200}, {out:'sauce', in:{tomato:3}, sec:1200} ]
+};
+const recName = r => r.furn ? FURN[r.furn].name : MAT[r.out];
+const inText = o => Object.entries(o).map(([k,v]) => `${MAT[k].split(' ')[0]}${v}`).join(' + ');
+
+function procTap(z, o){
+  const it = FARM_ITEMS[o.type], list = PROC[o.type];
+  if (o.pj){
+    const r = list[o.pj.i], left = (o.pj.end - Date.now())/1000;
+    if (left > 0) return sheet(`${it.name}\nกำลังทำ ${recName(r)}…\nเหลืออีก ${fmt(left)}`, [ speedBtn(left, () => { o.pj.end = Date.now(); }), {label:'ปิด', cls:'ghost'} ]);
+    return confirmDo(`${recName(r)} เสร็จแล้ว! รับเลยไหม?`, () => {
+      if (r.furn){ S.furn[r.furn] = (S.furn[r.furn]||0) + 1; bump('craft'); }
+      else { invAdd(r.out, 1); bump('proc_'+r.out); }
+      bump('proc'); delete o.pj; gainExp(8); sfx('done'); save(); refreshHeader(); renderMats();
+      reward(`${recName(r)} +1` + (r.furn ? '\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง' : '') + '\n⭐ Exp +8');
+    });
+  }
+  const btns = list.map((r, i) => {
+    const ok = canPay(r.in);
+    return { label:`${ok ? '' : '🔒 '}${recName(r)} ← ${inText(r.in)} • ⏱${fmt(r.sec)}`, cls: ok ? '' : 'ghost', fn:() => {
+      if (!canPay(r.in)) return sheet(`วัตถุดิบไม่พอสำหรับ ${recName(r)}\n${costText(r.in)}`, OK);
+      confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
+        pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; save(); renderMats(); sfx('pop');
+      });
+    }};
+  });
+  btns.push({ label:'ปิด', cls:'ghost' });
+  sheet(`${it.name}\n${it.desc}\nเลือกสิ่งที่จะทำ (ทำได้ทีละอย่าง)`, btns);
+}
+
+/* ---------- vegetable plots: choose which seed to plant ---------- */
+function plotTap(z, o){
+  if (!o.plant){
+    const have = Object.entries(CROPS).filter(([,c]) => inv(c.seed) > 0);
+    if (!have.length) return sheet('ยังไม่มีเมล็ดพันธุ์\n• เคลียร์หญ้า/หิน/ต้นไม้ มีโอกาสได้เมล็ดฟรี\n• หรือซื้อที่ ร้านค้า › ทั่วไป',
+      [{label:'ไปที่ร้านค้า', cls:'ok', fn:() => openShop('general')}, {label:'ปิด', cls:'ghost'}]);
+    const btns = have.map(([id,c]) => ({ label:`${c.e} ปลูก${c.name} (มี ${inv(c.seed)}) • ⏱${fmt(c.sec)} • ขาย ${c.sell}/ชิ้น`, fn:() =>
+      confirmDo(`ปลูก${c.name}?\nโตเต็มที่ใน ${fmt(c.sec)}\nได้ ${c.yield[0]===c.yield[1] ? c.yield[0] : c.yield.join('–')} ชิ้น`, () => {
+        S.inv[c.seed]--; o.plant = Date.now(); o.crop = id; if (id !== 'carrot') bump('plant_other'); sfx('pop'); save(); renderMats(); }) }));
+    btns.push({label:'ปิด', cls:'ghost'});
+    return sheet('🌱 เลือกเมล็ดที่จะปลูก', btns);
+  }
+  const c = cropOf(o), left = cropLeft(o);
+  if (left > 0) return sheet(`${c.e} ${c.name} กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - c.sec*1000; }), {label:'ปิด', cls:'ghost'} ]);
+  return confirmDo(`เก็บเกี่ยว${c.name}?`, () => {
+    const n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; bump('harvest'); gainExp(EXP.harvest); sfx('coin');
+    save(); refreshHeader(); renderMats(); reward(`${MAT[c.prod]} +${n}\n⭐ Exp +${EXP.harvest}`);
+  });
+}
+
+/* ---------- 📋 orders: 3 slots, pay ~1.5× shop price, refill 10 min after delivery/skip ---------- */
+const ORDER_WAIT = 10*60*1000;
+function orderPool(){
+  const k = ['wood','stone','grass','tilapia','carp','shrimp'];
+  for (const c of Object.values(CROPS)) if (S.lv >= c.lv) k.push(c.prod);
+  if (ownsDone('sawmill')) k.push('plank');
+  if (ownsDone('mill')) k.push('milled');
+  if (ownsDone('kitchen')) k.push('soup');
+  if (ownsDone('jamhouse')) k.push('sauce', 'jam');
+  return k;
+}
+function newOrder(){
+  const pool = orderPool(), n = Math.min(pool.length, S.lv >= 5 ? rnd([1,3]) : rnd([1,2])), items = {};
+  while (Object.keys(items).length < n){
+    const k = pool[Math.floor(Math.random()*pool.length)];
+    items[k] = SELL[k] <= 200 ? rnd([2,5]) : SELL[k] <= 600 ? rnd([1,3]) : 1;
+  }
+  const value = Object.entries(items).reduce((s,[k,v]) => s + SELL[k]*v, 0);
+  return { items, coins: Math.round(value*1.5/10)*10, exp: Math.min(60, 5 + Math.floor(value/100)), wait:0 };
+}
+function ensureOrders(){
+  S.orders = S.orders || [];
+  while (S.orders.length < 3) S.orders.push(newOrder());
+  S.orders.forEach((o,i) => { if (o.wait && Date.now() >= o.wait) S.orders[i] = newOrder(); });
+}
+const BEAUTY = { flowerbed:1, lamp:1, bench:1, fence:1, fountain:3, gazebo:3 };
+const beautyScore = () => S.farm.zones.reduce((s,z) => s + z.objs.reduce((t,o) => t + (o.done ? BEAUTY[o.type]||0 : 0), 0), 0);
+function renderOrders(L){
+  ensureOrders();
+  const b = beautyScore(), tip = Math.min(600, b*30), got = S.tipDate === todayKey();
+  const tc = document.createElement('div'); tc.className = 'card';
+  tc.innerHTML = `<div class="mrow"><b>💐 ทิปจากคนมาเที่ยวฟาร์ม</b><span>✨ ความสวย ${b}</span></div>
+    <div class="muted">วางน้ำพุ ศาลา กระบะดอกไม้ โคมไฟ ม้านั่ง รั้ว เพิ่มความสวย • วันละครั้ง สูงสุด 600</div>`;
+  const tb = document.createElement('button'); tb.className = 'btn ok'; tb.style.cssText = 'width:100%;margin-top:8px';
+  tb.textContent = got ? '✅ รับทิปวันนี้แล้ว' : tip ? `รับทิป 🪙 ${tip}` : 'ยังไม่มีของตกแต่งในฟาร์ม'; tb.disabled = got || !tip;
+  tb.onclick = () => confirmDo(`รับทิป 🪙 ${tip}?`, () => { S.tipDate = todayKey(); S.coins += tip; sfx('coin'); save(); refreshHeader(); renderShop(); });
+  tc.appendChild(tb); L.appendChild(tc);
+  const h = document.createElement('b'); h.textContent = '📋 คำสั่งซื้อ (จ่ายแพงกว่าขายร้าน ~1.5 เท่า)'; L.appendChild(h);
+  S.orders.forEach((o, i) => {
+    const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='order' ? ' tutGlow' : '');
+    if (o.wait){ c.innerHTML = `<b>🚚 กำลังหาลูกค้าใหม่…</b><div class="muted">ออเดอร์ใหม่ใน ${fmt((o.wait-Date.now())/1000)}</div>`; L.appendChild(c); return; }
+    const ok = Object.entries(o.items).every(([k,v]) => inv(k) >= v);
+    c.innerHTML = `<div class="mrow"><b>ออเดอร์ ${i+1}</b><b>🪙 ${o.coins.toLocaleString()} • ⭐ ${o.exp}</b></div>
+      <div style="margin-top:6px;font-size:15px">${Object.entries(o.items).map(([k,v]) => `<div style="color:${inv(k)>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${inv(k)}/${v}</div>`).join('')}</div>`;
+    const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
+    const d = document.createElement('button'); d.className = 'btn ok'; d.textContent = 'ส่งของ'; d.disabled = !ok;
+    d.onclick = () => confirmDo(`ส่งออเดอร์ ${i+1}?\nได้ 🪙 ${o.coins.toLocaleString()} และ ⭐ Exp ${o.exp}`, () => {
+      Object.entries(o.items).forEach(([k,v]) => S.inv[k] -= v); S.coins += o.coins; gainExp(o.exp); bump('order');
+      S.orders[i] = { wait: Date.now() + ORDER_WAIT }; sfx('coin'); save(); refreshHeader(); renderMats(); renderShop();
+      reward(`📋 ส่งออเดอร์สำเร็จ!\n🪙 ${o.coins.toLocaleString()} เหรียญทอง\n⭐ Exp +${o.exp}`); });
+    const s = document.createElement('button'); s.className = 'btn ghost'; s.textContent = 'ข้าม'; s.style.flex = '0 0 80px';
+    s.onclick = () => confirmDo('ข้ามออเดอร์นี้?\nออเดอร์ใหม่จะมาใน 10 นาที', () => { S.orders[i] = { wait: Date.now() + ORDER_WAIT }; save(); renderShop(); });
+    row.append(d, s); c.appendChild(row); L.appendChild(c);
+  });
+}
+
+/* =====================================================================
+   ✂️ DRAG TOOLS — pick a tool, drag one finger across the farm.
+   Small items clear in 1 pass; medium need 3 hits, large 6 (no waiting) ⚠️.
+   Two fingers still pan / pinch-zoom while a tool is active.
+   ===================================================================== */
+const TOOLS = {
+  sickle: { e:'✂️', name:'กรรไกรตัดหญ้า', fits:['grass','wild','sapling'],      snd:'snip',  col:['#7cc94f','#4f9a2f','#ffd23f'] },
+  axe:    { e:'🪓', name:'ขวาน',          fits:['bush','tree'],                snd:'chop',  col:['#b07a40','#8a5a2b','#6fae3b'] },
+  hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] }
+};
+const HITS = { small:1, medium:3, large:6 };
+const toolFor = k => Object.keys(TOOLS).find(id => TOOLS[id].fits.includes(k));
+let tool = null, toolDrag = null, toolMsgAt = 0, saveTimer = 0;
+function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { save(); renderMats(); refreshHeader(); }, 700); }
+
+function renderToolBar(){
+  const bar = $('toolBar');
+  bar.innerHTML = Object.entries(TOOLS).map(([id,t]) => `<button class="tb${tool===id?' on':''}" data-t="${id}"><b>${t.e}</b>${t.name.replace('ตัดหญ้า','')}</button>`).join('') +
+    `<button class="tb x" data-t="">✕<br>เลิกใช้</button>`;
+  bar.querySelectorAll('button').forEach(b => b.onclick = () => pickTool(b.dataset.t || null));
+  $('toolFab').classList.toggle('on', !!tool);
+}
+function pickTool(id){
+  if (!id){ tool = null; $('toolBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; setHint(); renderToolBar(); return; }
+  const t = TOOLS[id];
+  const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
+  if (S.toolOk && S.toolOk[id]) return go();                 // confirm once per tool (like path mode)
+  confirmDo(`ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
+    S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
+}
+function setHint(){
+  $('hint').textContent = tool ? `${TOOLS[tool].e} ลากนิ้วเก็บของ • 2 นิ้วเลื่อน/ซูม`
+    : 'แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้';
+}
+$('toolFab').onclick = () => {
+  const open = $('toolBar').style.display === 'flex';
+  if (open){ pickTool(null); return; }
+  if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
+  $('toolBar').style.display = 'flex'; $('zoneBar').style.display = 'none'; renderToolBar();
+};
+$('bMute').onclick = () => { muted = !muted; store.set('pensuk_mute', muted); $('bMute').textContent = muted ? '🔇' : '🔊'; if (!muted) sfx('pop'); };
+
+/* apply the active tool along the finger path (sampled every ~¼ tile so fast swipes don't skip tiles) */
+function toolStroke(x0, y0, x1, y1){
+  const step = Math.max(6, TW/4), n = Math.max(1, Math.ceil(Math.hypot(x1-x0, y1-y0)/step));
+  for (let k=1;k<=n;k++){ const x = x0+(x1-x0)*k/n, y = y0+(y1-y0)*k/n, g = pick(x, y); toolHit(g.c, g.r); }
+}
+function toolHit(gc, gr){
+  const key = gc*100003 + gr;
+  if (toolDrag && toolDrag.last === key) return;              // one hit per tile entry (re-enter to hit again)
+  if (toolDrag) toolDrag.last = key;
+  const t = tileAt(gc, gr); if (!t || !RES[t.k]) return;
+  const z = hitZone, R = RES[t.k], T = TOOLS[tool];
+  if (!T.fits.includes(t.k)){
+    if (Date.now() - toolMsgAt > 2500){ toolMsgAt = Date.now(); const need = TOOLS[toolFor(t.k)]; floatText(gc, gr, `ใช้ ${need.e}`, '#c0392b'); }
+    return;
+  }
+  if (t.job) delete t.job;                                    // v0.8 timed jobs finish instantly with tools
+  t.hp = (t.hp == null ? HITS[R.size] : t.hp) - 1;
+  burst(gc, gr, T.col, R.size === 'large' ? 10 : 6); sfx(T.snd); buzz(12);
+  if (t.hp > 0){ t.shake = performance.now(); return; }
+  collectRes(t, z, R, gc, gr);
+}
+function collectRes(t, z, R, gc, gr){
+  const got = [];
+  Object.entries(R.yield).forEach(([m,rg]) => { if (m === 'seed') return; const n = rnd(rg); if (n){ invAdd(m, n); got.push(`+${n}${MAT[m].split(' ')[0]}`); } });
+  const sd = seedDrop(R.size); if (sd){ invAdd(sd, 1); got.push(`+1${CROPS_BY_SEED[sd].e}🌱`); }
+  t.k = 'clear'; delete t.hp; delete t.shake; markDirty(z);
+  bump('collect_'+R.size); bump('toolUse'); gainExp(SIZE_EXP[R.size]);
+  floatText(gc, gr, got.join(' '), '#2e7d32'); saveSoon();
+}
+const CROPS_BY_SEED = Object.fromEntries(Object.values(CROPS).map(c => [c.seed, c]));
+function seedDrop(size){                                       // ⚠️ small 30% • medium/large 60%, cheaper crops more likely
+  if (Math.random() > (size === 'small' ? .3 : .6)) return null;
+  const ok = Object.values(CROPS).filter(c => S.lv >= c.lv), w = ok.map((c,i) => ok.length - i), sum = w.reduce((a,b) => a+b, 0);
+  let r = Math.random()*sum; for (let i=0;i<ok.length;i++){ if ((r -= w[i]) <= 0) return ok[i].seed; }
+  return ok[0].seed;
+}
+
+/* ---- pooled particles + floating text (screen space, no allocation per frame) ---- */
+const FX = Array.from({length:80}, () => ({ on:false, x:0, y:0, vx:0, vy:0, life:0, col:'', txt:'' }));
+function fxSpawn(x, y, vx, vy, life, col, txt){ const p = FX.find(q => !q.on); if (!p) return; Object.assign(p, { on:true, x, y, vx, vy, life, max:life, col, txt:txt||'' }); }
+function burst(gc, gr, cols, n){ const [x,y] = P(gc+.5, gr+.5, TH*.4);
+  for (let i=0;i<n;i++){ const a = Math.random()*Math.PI*2, s = 40 + Math.random()*90; fxSpawn(x, y, Math.cos(a)*s, Math.sin(a)*s*.6 - 90, .55, cols[i%cols.length]); } }
+function floatText(gc, gr, txt, col){ if (!txt) return; const [x,y] = P(gc+.5, gr+.5, TH*1.2); fxSpawn(x, y, 0, -40, 1.3, col, txt); }
+function drawToolFx(time, dt){
+  for (const p of FX){ if (!p.on) continue;
+    p.life -= dt; if (p.life <= 0){ p.on = false; continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt; if (!p.txt) p.vy += 320*dt;
+    ctx.globalAlpha = Math.min(1, p.life/p.max*1.6);
+    if (p.txt){ ctx.font = '700 15px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(p.txt, p.x, p.y); ctx.fillStyle = p.col; ctx.fillText(p.txt, p.x, p.y); }
+    else { ctx.fillStyle = p.col; ctx.fillRect(p.x-2.5, p.y-2.5, 5, 5); }
+  }
+  ctx.globalAlpha = 1;
+  if (tool && toolDrag && toolDrag.x != null){                 // tool follows the finger, lifted above it so the finger never hides the tile
+    ctx.save(); ctx.translate(toolDrag.x + 18, toolDrag.y - 44); ctx.rotate(Math.sin(time*18)*.45 - .3);
+    ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(TOOLS[tool].e, 0, 0); ctx.restore();
+  }
+}
+/* remaining-hits pips over a medium/large item that has been hit */
+function hpBadge(t, gc, gr){
+  const R = RES[t.k]; if (!R || t.hp == null) return; const max = HITS[R.size], [x,y] = P(gc+.5, gr+.5, TH*R.h + 12);
+  pill(x, y, 10 + max*9, 14, 'rgba(255,255,255,.92)');
+  for (let k=0;k<max;k++){ ctx.fillStyle = k < t.hp ? '#e0892f' : '#e8dccb'; ctx.beginPath(); ctx.arc(x - (max-1)*4.5 + k*9, y, 3.2, 0, Math.PI*2); ctx.fill(); }
+}
+
+/* =====================================================================
+   🔊 SOUND — tiny WebAudio synth (no files). Mute is remembered per device.
+   ===================================================================== */
+let AC = null, muted = !!store.get('pensuk_mute');
+$('bMute').textContent = muted ? '🔇' : '🔊';
+function buzz(ms){ try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
+function tone(f0, f1, dur, type, vol, at){
+  const t0 = AC.currentTime + (at||0), o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t0); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t0+dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0+dur);
+  o.connect(g).connect(AC.destination); o.start(t0); o.stop(t0+dur+.02);
+}
+let noiseBuf = null;
+function noise(dur, freq, vol){
+  if (!noiseBuf){ noiseBuf = AC.createBuffer(1, AC.sampleRate*.3, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1; }
+  const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(), t0 = AC.currentTime;
+  s.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 1.2;
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0+dur);
+  s.connect(f).connect(g).connect(AC.destination); s.start(t0); s.stop(t0+dur);
+}
+function sfx(kind){
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
+    switch (kind){
+      case 'snip':  noise(.07, 5200, .35); tone(2400, 1800, .05, 'triangle', .05); break;
+      case 'chop':  noise(.08, 900, .5); tone(160, 70, .14, 'triangle', .25); break;
+      case 'clink': tone(1900, 1700, .1, 'triangle', .18); tone(2900, 0, .07, 'sine', .08, .02); noise(.04, 3000, .2); break;
+      case 'coin':  tone(988, 0, .09, 'square', .07); tone(1319, 0, .22, 'square', .07, .08); break;
+      case 'pop':   tone(520, 880, .09, 'sine', .2); break;
+      case 'done':  [523,659,784,1047].forEach((f,i) => tone(f, 0, .18, 'triangle', .14, i*.09)); break;
+      case 'bark':  tone(620, 320, .09, 'sawtooth', .06); tone(560, 300, .09, 'sawtooth', .05, .13); break;
+      case 'tick':  tone(1200, 0, .03, 'sine', .06); break;
+    }
+  } catch(e){}
+}
+
+/* =====================================================================
+   🎯 NEW DAILY MISSIONS — web-only, no health-data link needed
+   📵 rest: counts only while this screen is open & visible, hold 3 s to exit
+   🏋️ squats: DeviceMotion vertical acceleration (polarity-agnostic peak pattern)
+   🙆 neck: front camera + MediaPipe Face Landmarker (on-device, nothing uploaded)
+   ===================================================================== */
+function missionDefs(age){
+  const older = age >= 60 ? .8 : 1;
+  return {
+    rest:  { icon:'📵', label:'พักจอ (วางมือถือ พักสายตา)', unit:'นาที', step:5, base:30 },
+    squat: { icon:'🏋️', label:'ลุกนั่ง', unit:'ครั้ง', step:2, base: Math.max(10, Math.round(20*older/2)*2) },
+    neck:  { icon:'🙆', label:'บริหารต้นคอ (ซ้าย ขวา เงย ก้ม)', unit:'รอบ', step:1, base:3 }
+  };
+}
+function buildMissions(){
+  const a = analyse(S.profile), D = missionDefs(a.age);
+  S.analysis = a;
+  S.missions = Object.entries(D).map(([key,d]) => ({ key, ...d, target:d.base, progress:0, claimed:false }));
+  S.goalLocked = false; S.missionDate = todayKey();
+}
+const mFmt = (m, v) => m.key === 'rest' ? `${Math.floor(v)}` : `${Math.floor(v)}`;
+
+/* ---- streak + daily-bonus rewards ---- */
+function keyOf(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function yesterdayKey(){ const d = new Date(); d.setDate(d.getDate()-1); return keyOf(d); }
+const streakNow = () => (S.streakDate === todayKey() || S.streakDate === yesterdayKey()) ? (S.streak||0) : 0;
+function claimBonus(){
+  const s = S.streakDate === yesterdayKey() ? (S.streak||0) + 1 : S.streakDate === todayKey() ? (S.streak||1) : 1;
+  S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true;
+  const extra = Math.min(6, s-1)*50, chest = s % 7 === 0;
+  S.coins += COIN_ALL_BONUS + extra + (chest ? 1000 : 0);
+  if (chest){ invAdd('sd_pumpkin', 1); invAdd('sd_berry', 1); }
+  sfx('done'); save(); refreshHeader(); renderMissions();
+  reward(`🎉 ครบ 3 ภารกิจ!\n🪙 ${COIN_ALL_BONUS} โบนัส` + (extra ? `\n🔥 ต่อเนื่อง ${s} วัน +${extra}` : `\n🔥 เริ่มนับต่อเนื่องวันที่ 1`) +
+    (chest ? `\n🎁 กล่องพิเศษ 7 วัน: 🪙 1,000 + ${MAT.sd_pumpkin} + ${MAT.sd_berry}` : `\n(อีก ${7 - s%7} วันได้กล่องพิเศษ)`));
+}
+
+function renderMissions(){
+  const L = $('missionList'); L.innerHTML = '';
+  const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
+  const head = document.createElement('div'); head.className = 'card';
+  head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div><div class="bar"><b style="width:${done/3*100}%"></b></div>
+    <div class="muted">ภารกิจละ 🪙 ${COIN_PER_MISSION} • ครบ 3 ภารกิจ โบนัส 🪙 ${COIN_ALL_BONUS}</div>
+    <div style="margin-top:6px;font-weight:600">🔥 ทำครบต่อเนื่อง ${sk} วัน <span class="muted">• ครบ 7 วันได้กล่องพิเศษ</span></div>`;
+  L.appendChild(head);
+  S.missions.forEach((m, i) => {
+    const pct = Math.min(100, Math.round(m.progress/m.target*100));
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<div class="mrow"><b>${m.icon} ${m.label}</b><span>${pct}%</span></div><div class="bar"><b style="width:${pct}%"></b></div>
+      <div class="muted">${mFmt(m, m.progress)} / ${m.target} ${m.unit}</div>`;
+    const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
+    if (m.claimed) row.innerHTML = '<button class="btn" disabled>✅ รับแล้ว</button>';
+    else if (m.progress >= m.target){
+      const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = `รับ 🪙 ${COIN_PER_MISSION}`;
+      b.onclick = () => confirmDo(`รับรางวัลภารกิจ "${m.label}"?`, () => claim(i)); row.appendChild(b);
+    } else {
+      const go = document.createElement('button'); go.className = 'btn'; go.textContent = '▶ เริ่ม'; go.onclick = () => openAct(m);
+      const man = document.createElement('button'); man.className = 'btn ghost'; man.textContent = '✍️ บันทึก'; man.style.flex = '0 0 112px';
+      man.onclick = () => manualLog(m, c); row.append(go, man);
+    }
+    c.appendChild(row); L.appendChild(c);
+  });
+  if (S.missions.every(m => m.claimed) && !S.bonusClaimed){
+    const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = `🎉 รับโบนัสครบ 3 ภารกิจ (+${COIN_ALL_BONUS})`;
+    b.onclick = () => confirmDo('รับโบนัสครบ 3 ภารกิจ?', claimBonus); L.appendChild(b);
+  }
+  const edit = document.createElement('button'); edit.className = 'btn ghost'; edit.textContent = 'แก้ไขข้อมูลส่วนตัว / วิเคราะห์ใหม่';
+  edit.onclick = () => confirmDo('เริ่มคุยกับเป็นสุขใหม่เพื่ออัปเดตข้อมูล?\n(ความคืบหน้าภารกิจวันนี้จะถูกรีเซ็ต)', () => { stopLoop(); startChat(); });
+  L.appendChild(edit);
+}
+function manualLog(m, card){
+  if (card.querySelector('.man')) return;
+  const r = document.createElement('div'); r.className = 'row man'; r.style.marginTop = '8px';
+  const inp = document.createElement('input'); inp.type = 'number'; inp.inputMode = 'numeric'; inp.placeholder = 'บันทึก ' + m.unit;
+  const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'บันทึก'; b.style.flex = '0 0 90px';
+  b.onclick = () => { const v = parseFloat(inp.value); if (!(v > 0)) return;
+    confirmDo(`บันทึก ${v} ${m.unit} ใน "${m.label}"?\n(ใช้เมื่อเครื่องไม่รองรับการนับอัตโนมัติ)`, () => { addProgress(m, v); renderMissions(); }); };
+  r.append(inp, b); card.appendChild(r); inp.focus();
+}
+function addProgress(m, v){
+  const before = m.progress; m.progress = Math.min(m.target*5, m.progress + v); bump('missionLog');
+  if (before < m.target && m.progress >= m.target){ sfx('done'); }
+  save();
+}
+function claim(i){
+  S.missions[i].claimed = true; S.coins += COIN_PER_MISSION; bump('missionClaim');
+  gainExp(EXP.mission); gainPetExp(10); sfx('coin');
+  save(); refreshHeader(); renderMissions();
+  reward(`🪙 ${COIN_PER_MISSION} เหรียญทอง\n⭐ Exp +${EXP.mission} • ${S.pet.emoji} Exp +10`);
+}
+
+/* ---- activity overlay ---- */
+let act = null;                                               // {kind, m, stop()}
+function openAct(m){
+  closeAct(); stopLoop();
+  const box = $('act'); box.className = ''; box.style.display = 'flex'; box.innerHTML = '';
+  act = { kind:m.key, m, stops:[] };
+  if (m.key === 'rest') actRest(box, m); else if (m.key === 'squat') actSquat(box, m); else actNeck(box, m);
+}
+function closeAct(){
+  if (!act) return; act.stops.forEach(f => { try { f(); } catch(e){} }); act = null;
+  $('act').style.display = 'none'; $('act').innerHTML = '';
+  if (S && $('sMain').classList.contains('on')){ startLoop(); renderMissions(); flushRewards(); }
+}
+function actHead(box, title, closeBtn){
+  const h = document.createElement('div'); h.className = 'top'; h.innerHTML = `<b>${title}</b>`;
+  if (closeBtn){ const x = document.createElement('button'); x.className = 'btn ghost'; x.style.minHeight = '40px'; x.textContent = 'จบ'; x.onclick = closeAct; h.appendChild(x); }
+  box.appendChild(h);
+}
+const doneLine = m => m.progress >= m.target ? '✅ ครบเป้าแล้ว! กลับไปกดรับเหรียญได้เลย' : `เป้าหมาย ${m.target} ${m.unit}`;
+
+/* 📵 REST */
+function actRest(box, m){
+  box.className = 'dark';
+  box.innerHTML = `<div class="actc" style="justify-content:center">
+      <canvas id="aPet" width="320" height="220" style="width:160px;height:110px"></canvas>
+      <div id="aZz" class="muted" style="color:#9aa">💤 ${S.pet.name} หลับเป็นเพื่อน</div>
+      <div id="aTime" style="font-size:56px;font-weight:700;color:#cfd8dc;letter-spacing:2px">00:00</div>
+      <div id="aGoal" class="muted" style="color:#889"></div>
+      <div class="muted" style="color:#778;text-align:center;line-height:1.5;margin-top:10px">วางมือถือไว้ แล้วพักสายตา ยืดเส้นยืดสาย<br>ออกจากหน้านี้หรือปิดจอ เวลาจะหยุดนับ</div>
+      <svg id="aHold" viewBox="0 0 100 100" width="96" height="96" style="margin-top:18px"><circle cx="50" cy="50" r="44" fill="none" stroke="#334" stroke-width="7"/>
+        <circle id="aRing" cx="50" cy="50" r="44" fill="none" stroke="#e0892f" stroke-width="7" stroke-dasharray="276.5" stroke-dashoffset="276.5" transform="rotate(-90 50 50)"/>
+        <text x="50" y="56" text-anchor="middle" font-size="15" fill="#99a" font-family="Mali">กดค้าง</text></svg>
+      <div class="muted" style="color:#667">กดค้าง 3 วินาทีที่ใดก็ได้เพื่อออก</div></div>`;
+  m.sec = m.sec || Math.round(m.progress*60);
+  let last = performance.now(), saveAcc = 0, lock = null, hold = null, holdT0 = 0, raf2 = 0;
+  const show = () => { const s = Math.floor(m.sec), mm = Math.floor(s/60), ss = s%60;
+    $('aTime').textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; $('aGoal').textContent = doneLine(m); };
+  show();
+  const tick = setInterval(() => {
+    const now = performance.now(), d = Math.min(1.5, (now-last)/1000); last = now;
+    if (document.visibilityState !== 'visible') return;
+    const was = m.progress; m.sec += d; m.progress = m.sec/60;
+    if (was < m.target && m.progress >= m.target){ sfx('done'); buzz(200); }
+    if ((saveAcc += d) >= 15){ saveAcc = 0; save(); }
+    show();
+  }, 1000);
+  const vis = () => { last = performance.now(); if (document.visibilityState === 'visible') wake(); };
+  async function wake(){ try { if (navigator.wakeLock) lock = await navigator.wakeLock.request('screen'); } catch(e){} }
+  wake(); document.addEventListener('visibilitychange', vis);
+  // sleeping pet (same 3D model as the farm)
+  const g = $('aPet').getContext('2d'); g.setTransform(2,0,0,2,0,0); const a = makePetAnim(); a.state = 'sleep'; a.timer = 1e9;
+  let pl = 0; const petLoop = now => { raf2 = requestAnimationFrame(petLoop); if (now - pl < 100) return; const dt = pl ? (now-pl)/1000 : .1; pl = now;
+    a.state = 'sleep'; a.timer = 1e9; try { updatePetAnim(a, dt, false, null); g.clearRect(0,0,160,110); drawPetModel(g, S.pet.type, a, 80, 100, 64, petStage(S.pet.lv).form); } catch(e){} };
+  raf2 = requestAnimationFrame(petLoop);
+  // hold anywhere for 3 s to leave
+  const ring = $('aRing');
+  const down = () => { holdT0 = performance.now(); clearInterval(hold); hold = setInterval(() => {
+      const p = Math.min(1, (performance.now()-holdT0)/3000); ring.setAttribute('stroke-dashoffset', 276.5*(1-p));
+      if (p >= 1){ clearInterval(hold); m.progress = m.sec/60; if (m.sec >= 30) bump('missionLog'); save(); closeAct(); } }, 50); };
+  const up = () => { clearInterval(hold); ring.setAttribute('stroke-dashoffset', 276.5); };
+  box.addEventListener('pointerdown', down); box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up); box.addEventListener('pointerleave', up);
+  act.stops.push(() => { clearInterval(tick); clearInterval(hold); cancelAnimationFrame(raf2); document.removeEventListener('visibilitychange', vis);
+    box.removeEventListener('pointerdown', down); box.removeEventListener('pointerup', up); box.removeEventListener('pointercancel', up); box.removeEventListener('pointerleave', up);
+    try { lock && lock.release(); } catch(e){} m.progress = m.sec/60; save(); });
+}
+
+/* 🏋️ SQUATS — vertical linear acceleration v = dot(acc, ĝ).
+   One rep = peak beyond ±T, opposite peak, then same-sign peak again (works whatever the axis sign
+   convention of the browser), lasting ≥ 0.9 s, then a short calm period before the next rep. */
+function actSquat(box, m){
+  actHead(box, '🏋️ ลุกนั่ง', true);
+  const c = document.createElement('div'); c.className = 'actc';
+  c.innerHTML = `<div id="sBig" style="font-size:88px;font-weight:700;color:var(--pri2);line-height:1">${Math.floor(m.progress)}</div>
+    <div id="sGoal" class="muted">${doneLine(m)}</div>
+    <div id="sPet" style="font-size:64px;transition:transform .15s">${S.pet.emoji}</div>
+    <div class="card" style="text-align:left;line-height:1.6">1. ยืนตรง ถือมือถือแนบอกด้วยสองมือ (จอตั้ง)<br>2. ย่อตัวลงเหมือนนั่งเก้าอี้ แล้วลุกขึ้นช้า ๆ<br>3. เป็นสุขจะนับให้ทุกครั้งที่ลุกขึ้นครบ 1 รอบ<br>
+      <span class="muted">💡 ถ้าทรงตัวไม่ดี ลุกนั่งจากเก้าอี้ได้ • ห้ามเขย่ามือถือนะ!</span></div>
+    <div id="sMsg" class="muted"></div>
+    <button class="btn ok" id="sGo" style="width:100%;min-height:56px">▶ เริ่มนับ</button>`;
+  box.appendChild(c);
+  let on = false, gx = 0, gy = 0, gz = 0, v = 0, phase = 0, pol = 0, t1 = 0, calm = 0, gotEvt = false;
+  const T = 1.1, onMotion = e => {
+    gotEvt = true;
+    const ag = e.accelerationIncludingGravity, la = e.acceleration; if (!ag || ag.x == null) return;
+    gx = gx*.9 + ag.x*.1; gy = gy*.9 + ag.y*.1; gz = gz*.9 + ag.z*.1;           // low-pass → gravity direction
+    const gn = Math.hypot(gx,gy,gz) || 1;
+    const lx = la && la.x != null ? la.x : ag.x - gx, ly = la && la.y != null ? la.y : ag.y - gy, lz = la && la.z != null ? la.z : ag.z - gz;
+    v = v*.6 + ((lx*gx + ly*gy + lz*gz)/gn)*.4;                                 // smoothed vertical component
+    const now = performance.now();
+    if (phase && now - t1 > 6000){ phase = 0; }                                 // too slow → reset
+    if (phase === 0){ if (now < calm) return; if (Math.abs(v) > T){ pol = Math.sign(v); phase = 1; t1 = now; } }
+    else if (phase === 1){ if (v*pol < -T) phase = 2; }
+    else if (phase === 2){ if (v*pol > T){
+        if (now - t1 >= 900){ rep(); } phase = 0; calm = now + 450; } }
+  };
+  function rep(){
+    const was = m.progress; m.progress += 1; bump('missionLog'); bump('squat'); save();
+    $('sBig').textContent = Math.floor(m.progress); $('sGoal').textContent = doneLine(m);
+    const p = $('sPet'); p.style.transform = 'translateY(-26px) scale(1.15)'; setTimeout(() => p.style.transform = '', 160);
+    sfx(was < m.target && m.progress >= m.target ? 'done' : 'pop'); buzz(40);
+  }
+  $('sGo').onclick = async () => {
+    if (on) return;
+    try { if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission){
+        const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') throw new Error('denied'); } }
+    catch(e){ $('sMsg').textContent = 'ไม่ได้รับอนุญาตให้ใช้เซนเซอร์การเคลื่อนไหว — ใช้ "✍️ บันทึก" ในหน้าภารกิจแทนได้'; return; }
+    on = true; window.addEventListener('devicemotion', onMotion);
+    $('sGo').textContent = '⏺ กำลังนับ… (กด "จบ" ด้านบนเมื่อเสร็จ)'; $('sGo').disabled = true; $('sMsg').textContent = 'เริ่มลุกนั่งได้เลย!';
+    setTimeout(() => { if (act && !gotEvt) $('sMsg').textContent = 'เครื่องนี้ไม่ส่งข้อมูลการเคลื่อนไหว — ใช้ "✍️ บันทึก" แทนได้'; }, 3000);
+  };
+  act.stops.push(() => window.removeEventListener('devicemotion', onMotion));
+}
+
+/* 🙆 NECK — yaw = (nose.x − eyeMid.x) / eyeDist ; pitch = (nose.y − eyeMid.y)/(chin.y − eyeMid.y) − neutral.
+   Steps per round: one side → the other side → look up → look down, hold each 2 s. */
+const MP_VER = '0.10.14';
+let mpLandmarker = null;
+async function loadFaceLandmarker(){
+  if (mpLandmarker) return mpLandmarker;
+  const vision = await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/vision_bundle.mjs`);
+  const files = await vision.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/wasm`);
+  const opts = d => ({ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate:d }, runningMode:'VIDEO', numFaces:1 });
+  try { mpLandmarker = await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
+  catch(e){ mpLandmarker = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  return mpLandmarker;
+}
+function actNeck(box, m){
+  actHead(box, '🙆 บริหารต้นคอ', true);
+  const c = document.createElement('div'); c.className = 'actc';
+  c.innerHTML = `<div style="position:relative;width:260px;height:195px;border-radius:18px;overflow:hidden;background:#222">
+      <video id="nVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
+      <div id="nArrow" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;color:#fff;text-shadow:0 2px 8px #000"></div></div>
+    <svg viewBox="0 0 100 100" width="70" height="70"><circle cx="50" cy="50" r="42" fill="none" stroke="#f3e6d3" stroke-width="9"/>
+      <circle id="nRing" cx="50" cy="50" r="42" fill="none" stroke="#4caf6a" stroke-width="9" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/></svg>
+    <div id="nStep" style="font-size:22px;font-weight:700;text-align:center">มองตรงที่กล้อง</div>
+    <div id="nGoal" class="muted">รอบที่ทำแล้ววันนี้ ${Math.floor(m.progress)} / ${m.target} • ${m.progress >= m.target ? '✅ ครบเป้าแล้ว' : 'ค้างท่าละ 2 วินาที'}</div>
+    <div id="nMsg" class="muted" style="text-align:center"></div>
+    <div class="muted" style="text-align:center;font-size:12px">🔒 ภาพจากกล้องประมวลผลในเครื่องเท่านั้น ไม่ถูกส่งหรือบันทึกที่ไหน</div>
+    <button class="btn ok" id="nGo" style="width:100%;min-height:56px">📷 เปิดกล้องและเริ่ม</button>`;
+  box.appendChild(c);
+  let stream = null, raf3 = 0, lastDet = 0, base = null, calib = [], step = 0, holdT0 = 0, sideSign = 0;
+  const STEPS = ['side1','side2','up','down'], ARROW = { side1:'⬅️', side2:'➡️', up:'⬆️', down:'⬇️' };
+  const LABEL = { side1:'หันหน้าไปด้านข้าง (ซ้ายก่อน)', side2:'หันไปอีกด้าน', up:'เงยหน้าขึ้น', down:'ก้มหน้าลง' };
+  const setStep = () => { const s = STEPS[step]; $('nStep').textContent = LABEL[s]; $('nArrow').textContent = s==='side2' && sideSign ? (sideSign > 0 ? '⬅️' : '➡️') : ARROW[s]; holdT0 = 0; $('nRing').setAttribute('stroke-dashoffset', 264); };
+  function onFace(L){
+    const l = L[33], r = L[263], n = L[1], ch = L[152], mx = (l.x+r.x)/2, my = (l.y+r.y)/2, ed = Math.hypot(r.x-l.x, r.y-l.y) || .01;
+    const yaw = (n.x - mx)/ed, pr = (n.y - my)/Math.max(.01, ch.y - my);
+    if (!base){ calib.push([yaw, pr]); $('nStep').textContent = 'มองตรงที่กล้อง… กำลังจำท่าตรง';
+      if (calib.length >= 10){ base = calib.reduce((a,b) => [a[0]+b[0]/calib.length, a[1]+b[1]/calib.length], [0,0]); setStep(); } return; }
+    const dy = yaw - base[0], dp = pr - base[1], s = STEPS[step];
+    let hit = false;
+    if (s === 'side1'){ if (Math.abs(dy) > .25){ hit = true; if (!sideSign) sideSign = Math.sign(dy); } }
+    else if (s === 'side2') hit = dy*sideSign < -.25;
+    else if (s === 'up') hit = dp < -.06;
+    else hit = dp > .07;
+    const now = performance.now();
+    if (!hit){ holdT0 = 0; $('nRing').setAttribute('stroke-dashoffset', 264); return; }
+    if (!holdT0){ holdT0 = now; sfx('tick'); }
+    const p = Math.min(1, (now - holdT0)/2000); $('nRing').setAttribute('stroke-dashoffset', 264*(1-p));
+    if (p >= 1){
+      step++; sfx('pop'); buzz(30);
+      if (step >= STEPS.length){ step = 0; sideSign = 0; const was = m.progress; m.progress += 1; bump('missionLog'); save();
+        $('nGoal').textContent = `รอบที่ทำแล้ววันนี้ ${Math.floor(m.progress)} / ${m.target} • ${m.progress >= m.target ? '✅ ครบเป้าแล้ว' : 'ค้างท่าละ 2 วินาที'}`;
+        if (was < m.target && m.progress >= m.target) sfx('done'); $('nMsg').textContent = `ครบ 1 รอบ! 👏 เริ่มรอบถัดไป`; }
+      setStep();
+    }
+  }
+  $('nGo').onclick = async () => {
+    $('nGo').disabled = true; $('nMsg').textContent = 'กำลังขอใช้กล้อง…';
+    try { stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:320}, height:{ideal:240} }, audio:false }); }
+    catch(e){ $('nMsg').textContent = 'เปิดกล้องไม่ได้ (ไม่ได้รับอนุญาต) — ใช้ "✍️ บันทึก" ในหน้าภารกิจแทนได้'; $('nGo').disabled = false; return; }
+    const v = $('nVid'); v.srcObject = stream; try { await v.play(); } catch(e){}
+    $('nMsg').textContent = 'กำลังโหลดตัวจับใบหน้า… (ครั้งแรกประมาณ 5 MB)';
+    let lm; try { lm = await loadFaceLandmarker(); } catch(e){ $('nMsg').textContent = 'โหลดตัวจับใบหน้าไม่สำเร็จ (ตรวจอินเทอร์เน็ต) — ใช้ "✍️ บันทึก" แทนได้'; return; }
+    if (!act) return;
+    $('nMsg').textContent = ''; $('nGo').style.display = 'none';
+    const loop = now => { raf3 = requestAnimationFrame(loop); if (now - lastDet < 66 || v.readyState < 2) return; lastDet = now;
+      try { const res = lm.detectForVideo(v, now); if (res.faceLandmarks && res.faceLandmarks[0]){ $('nMsg').textContent = ''; onFace(res.faceLandmarks[0]); }
+            else { $('nMsg').textContent = '👀 ไม่เห็นใบหน้า — ถือมือถือให้หน้าอยู่ในกรอบ'; holdT0 = 0; } } catch(e){} };
+    raf3 = requestAnimationFrame(loop);
+  };
+  act.stops.push(() => { cancelAnimationFrame(raf3); if (stream) stream.getTracks().forEach(t => t.stop()); });
+}
+
+/* =====================================================================
+   📅 DAILY LOGIN CALENDAR (7-day cycle, counts days played — no reset on a missed day) ⚠️
+   ===================================================================== */
+const LOGIN_REW = [ {coins:100}, {seed:3}, {coins:200}, {food:2}, {wood:5}, {coins:300}, {coins:500, sd_pumpkin:1, sd_berry:1} ];
+const rewLine = r => Object.entries(r).map(([k,v]) => k === 'coins' ? `🪙 ${v}` : `${MAT[k]} ×${v}`).join(' + ');
+function checkLogin(){
+  if (!S || !S.pet || S.loginDate === todayKey()) return;
+  if ($('modal').classList.contains('on') || act) return setTimeout(checkLogin, 1500);
+  const day = (S.loginDay || 0) % 7, r = LOGIN_REW[day];
+  const cal = LOGIN_REW.map((x,i) => `${i < day ? '✅' : i === day ? '🎁' : '▫️'} วันที่ ${i+1}: ${rewLine(x)}`).join('\n');
+  sheet(`📅 รางวัลเข้าเกมรายวัน\n\n${cal}`, [{ label:`รับรางวัลวันที่ ${day+1}`, cls:'ok', fn:() => {
+    if (S.loginDate === todayKey()) return;
+    S.loginDate = todayKey(); S.loginDay = day + 1;
+    Object.entries(r).forEach(([k,v]) => k === 'coins' ? S.coins += v : invAdd(k, v));
+    sfx('coin'); save(); refreshHeader(); renderMats(); reward(rewLine(r).replace(/ \+ /g, '\n')); } }]);
+}
+
+/* =====================================================================
+   SAVE MIGRATION → v0.9
+   ===================================================================== */
+function v09Migrate(){
+  if ((S.econ || 1) < 2){                                     // prices ×20 → existing coins ×20 so nothing gets cheaper/dearer
+    S.coins = (S.coins || 0) * ECON; S.econ = 2;
+    if (S.farm) S.farm.zones.forEach(z => z.objs.forEach(o => { if (o.type === 'plot' && o.plant && !o.crop) o.crop = 'carrot'; }));
+  }
+  if (S.profile && S.missions && !S.missions.some(m => m.key === 'rest')) buildMissions();   // old walk/run missions → new set
+  if (S.profile){ delete S.profile.act; delete S.profile.interests; }
+}
 
 /* ---- boot ---- */
 autoLogin();
