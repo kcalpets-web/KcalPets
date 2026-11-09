@@ -123,6 +123,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <span style="font-weight:700;color:#4285f4">G</span>&nbsp; เข้าสู่ระบบด้วย Google</button>
     <button class="btn ghost" id="bImport">📲 มีโค้ดย้ายเครื่อง</button>
     <div class="muted" style="text-align:center" id="lNote">บัญชีแบบชื่อผู้ใช้เก็บไว้ในเครื่องนี้ • ย้ายเครื่องได้ด้วย "โค้ดย้ายเครื่อง" ในหน้ากระเป๋า</div>
+    <div class="muted" style="text-align:center;font-size:12px;opacity:.7;margin-top:6px" id="lVer"></div>
   </div>
 </section>
 
@@ -388,6 +389,10 @@ const FIREBASE_CONFIG = {
   appId: "1:621382470544:web:83d81c3f2d08b875878115"
 };
 const FB_VER = '10.12.2';
+/* Game build shown on the login screen so testers can see which update they are running.
+   Bump on every deploy (matches pensuk-design.md §12). */
+const APP_VER = '0.8.3';
+$('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
 async function initFirebase(){
@@ -402,31 +407,60 @@ async function initFirebase(){
     fb.auth.onAuthStateChanged(u => { if (u && !USER) googleLogin(u); });
   } catch(e){ console.log('firebase unavailable', e); }
 }
+/* Sign-in uses a popup on every platform. signInWithRedirect is NOT used by default:
+   on iPhone home-screen apps the redirect hop through <project>.firebaseapp.com loses the
+   auth result (cross-site storage partitioning) and the player lands back on the login screen.
+   Redirect is kept only as a fallback when the popup cannot open at all. */
+function gStatus(t, isErr){ $('lErr').textContent = isErr ? t : ''; if (!isErr) $('lNote').textContent = t; }
 $('bGoogle').onclick = async () => {
   if (!fb) return;
   const prov = new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({ prompt:'select_account' });
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  try { if (standalone) await fb.auth.signInWithRedirect(prov); else await fb.auth.signInWithPopup(prov); }
-  catch(e){ if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') fb.auth.signInWithRedirect(prov);
-            else $('lErr').textContent = 'เข้าสู่ระบบ Google ไม่สำเร็จ: ' + (e.code||e.message); }
+  gStatus('กำลังเปิดหน้าต่าง Google…');
+  try { await fb.auth.signInWithPopup(prov); gStatus('เข้าสู่ระบบแล้ว กำลังเข้าเกม…'); }
+  catch(e){
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment'){
+      gStatus('กำลังไปหน้า Google…'); fb.auth.signInWithRedirect(prov);
+    } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request'){
+      gStatus('ยกเลิกการเข้าสู่ระบบ');
+    } else gStatus('เข้าสู่ระบบ Google ไม่สำเร็จ: ' + (e.code||e.message), true);
+  }
 };
-async function googleLogin(u){
-  const key = 'g_' + u.uid, local = store.get('pensuk_save_'+key);
-  let cloud = null;
-  try { const d = await fb.db.collection('users').doc(u.uid).get(); if (d.exists) cloud = d.data().save; } catch(e){ console.log('cloud read failed', e); }
-  const pick = !cloud ? local : !local ? cloud : ((cloud.savedAt||0) >= (local.savedAt||0) ? cloud : local);
-  store.set('pensuk_save_'+key, pick || newSave());
+/* Google sign-in → play at once with this device's save, then reconcile with the cloud.
+   cloudSynced stays false until the cloud copy has been read, so a fresh/empty local save can
+   never overwrite a newer cloud save. Read times out after 6 s and is retried every 15 s. */
+let cloudSynced = false, cloudRetry = 0;
+function withTimeout(p, ms){ return Promise.race([p, new Promise((_, bad) => setTimeout(() => bad(new Error('timeout')), ms))]); }
+function googleLogin(u){
+  const key = 'g_' + u.uid;
+  if (!store.get('pensuk_save_'+key)) store.set('pensuk_save_'+key, newSave());
+  cloudSynced = false;
   login(key);
-  if (!S.profile && u.displayName){ /* chat will still ask; name is pre-filled there */ }
-  cloudQueue(true);
+  cloudSync(u.uid, key);
 }
+async function cloudSync(uid, key){
+  clearTimeout(cloudRetry);
+  if (!fb || USER !== key) return;
+  try {
+    const d = await withTimeout(fb.db.collection('users').doc(uid).get(), 6000);
+    if (USER !== key) return;                                       // player logged out meanwhile
+    const cloud = d.exists ? d.data().save : null;
+    cloudSynced = true;
+    if (cloud && (cloud.savedAt||0) > (S.savedAt||0)){              // cloud is newer → load it
+      stopLoopSafe(); store.set('pensuk_save_'+key, cloud); login(key);
+    } else cloudQueue(true);                                        // this device is newer → upload
+  } catch(e){
+    console.log('cloud read failed', e);
+    cloudRetry = setTimeout(() => cloudSync(uid, key), 15000);
+  }
+}
+function stopLoopSafe(){ try { if (typeof stopLoop === 'function') stopLoop(); } catch(e){} }
 function cloudQueue(now){
-  if (!fb || !USER || !USER.startsWith('g_') || !fb.auth.currentUser) return;
+  if (!fb || !USER || !USER.startsWith('g_') || !fb.auth.currentUser || !cloudSynced) return;
   clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudFlush, now ? 0 : 3000);
 }
 function cloudFlush(){
   clearTimeout(cloudTimer);
-  if (!fb || !USER || !USER.startsWith('g_') || !fb.auth.currentUser || !S) return;
+  if (!fb || !USER || !USER.startsWith('g_') || !fb.auth.currentUser || !S || !cloudSynced) return;
   fb.db.collection('users').doc(fb.auth.currentUser.uid).set({ save: JSON.parse(JSON.stringify(S)), savedAt: S.savedAt || Date.now() })
     .catch(e => console.log('cloud write failed', e));
 }
@@ -2792,7 +2826,7 @@ function renderBag(){
     `ทุก Lv. ปลดล็อกพื้นที่ใหม่ติดกับฟาร์มเดิม จนถึง Lv.${MAX_ZONES}<br>Exp: เก็บชิ้นเล็ก +3 • กลาง +6 • ใหญ่ +15 • สร้างเสร็จ +10 • เก็บเกี่ยว +5 • ภารกิจ +20 • ให้อาหาร +3</div></div>` +
     `<div class="card"><b>ข้อมูลของคุณ</b><div class="muted">BMR ${S.analysis.bmr} • TDEE ${S.analysis.tdee} kcal • BMI ${S.analysis.bmi}</div></div>`;
   const out = document.createElement('button'); out.className='btn ghost'; out.textContent='ออกจากระบบ';
-  out.onclick = () => confirmDo('ออกจากระบบ?\n(ครั้งหน้าต้องเข้าสู่ระบบใหม่)', () => { cloudFlush(); stopLoop(); endPlacingSafe(); USER=null; S=null; store.set('pensuk_last', null);
+  out.onclick = () => confirmDo('ออกจากระบบ?\n(ครั้งหน้าต้องเข้าสู่ระบบใหม่)', () => { cloudFlush(); cloudSynced = false; clearTimeout(cloudRetry); stopLoop(); endPlacingSafe(); USER=null; S=null; store.set('pensuk_last', null);
     if (fb && fb.auth.currentUser) fb.auth.signOut(); $('lPass').value=''; $('lErr').textContent=''; show('sLogin'); });
   const mv = document.createElement('button'); mv.className = 'btn ghost'; mv.textContent = '📲 สร้างโค้ดย้ายเครื่อง';
   mv.onclick = exportSave;
