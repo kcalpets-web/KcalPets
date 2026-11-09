@@ -14,6 +14,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
+<!-- three.js is self-hosted in ./lib (no CDN); the 3D renderer r3d.js is loaded on demand -->
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/" } }</script>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#fff7ea;--card:#ffffff;--ink:#3b2a1a;--sub:#8a7560;--pri:#e0892f;--pri2:#c96f17;--ok:#4caf6a;--line:#f0e0c8;--gold:#f2b705}
@@ -67,6 +69,8 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 .petc.sel{border-color:var(--pri);background:#fff1df}
 /* ---------- farm / nav ---------- */
 #farmWrap{flex:1;position:relative;min-height:0}
+#farm3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+#farm.see3d{background:transparent!important}
 #farm{position:absolute;inset:0;width:100%;height:100%;touch-action:none;background:linear-gradient(#9fd8f7,#cfeefc 35%,#e6f6d6 75%)}
 /* v0.10 tilt-shift: blur the top & bottom of the view (miniature photo look); pointer-events off */
 .ts{position:absolute;left:0;right:0;pointer-events:none;-webkit-backdrop-filter:blur(2.5px);backdrop-filter:blur(2.5px)}
@@ -414,7 +418,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.10.0';
+const APP_VER = '0.11.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1286,10 +1290,14 @@ function resizeFarm(keepCenter){
   if (typeof inRoom !== 'undefined' && inRoom) layoutRoom();
 }
 window.addEventListener('resize', () => resizeFarm(true));
-const P = (c,r,z) => [OX + camX + (c-r)*TW/2, OY + camY + (c+r)*TH/2 - (z||0)];
+/* 3D mode: the same P() call projects through the perspective camera (R3D.proj), so every HUD
+   overlay (badges, particles, fishing UI, quest highlight, placement ghost) keeps working. */
+let R3D = null;
+const use3D = () => R3D && R3D.on && !inRoom;
+const P = (c,r,z) => use3D() ? R3D.proj(c, r, z) : [OX + camX + (c-r)*TW/2, OY + camY + (c+r)*TH/2 - (z||0)];
 const iso = (c,r) => P(c,r,0);
 function screenToWorld(sx, sy){ const u = (sx-OX-camX)/(TW/2), v = (sy-OY-camY)/(TH/2); return [(u+v)/2, (v-u)/2]; }
-function pick(sx, sy){ const [c,r] = screenToWorld(sx, sy); return { c:Math.floor(c), r:Math.floor(r) }; }
+function pick(sx, sy){ if (use3D()) return R3D.pick(sx, sy); const [c,r] = screenToWorld(sx, sy); return { c:Math.floor(c), r:Math.floor(r) }; }
 function centerOn(gc, gr){ camX = -(gc-gr)*TW/2; camY = -((gc+gr)*TH/2 - GRID*TH/2); }
 function clampCam(){                                          // keep the view near the island
   let [c,r] = screenToWorld(cssW/2, cssH/2), mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
@@ -1313,8 +1321,8 @@ const goHome = () => { centerOn(2.5, 2.5); };
 /* ---- per-chunk ground cache (LRU) ---- */
 const chunkCache = new Map();                               // zone → { cv, dirty, used }
 const CACHE_MAX = 12;
-function markDirty(z){ const e = chunkCache.get(z); if (e) e.dirty = true; }
-function invalidateAll(){ for (const e of chunkCache.values()) e.dirty = true; }
+function markDirty(z){ const e = chunkCache.get(z); if (e) e.dirty = true; if (R3D) R3D.dirty(z); }
+function invalidateAll(){ for (const e of chunkCache.values()) e.dirty = true; if (R3D) R3D.dirtyAll(); }
 let frameNo = 0;
 function chunkCanvas(z){
   let e = chunkCache.get(z);
@@ -1892,7 +1900,31 @@ function frame(now){
   if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
   const time = now/1000, wall = Date.now();
   ctx.clearRect(0,0,cssW,cssH);
-  if (inRoom){ drawRoom(time, dt/1000); drawNight(); if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); } return; }   // inside a house
+  cv.classList.toggle('see3d', use3D());
+  if (inRoom){ if (R3D) R3D.hide(); drawRoom(time, dt/1000); drawNight(); if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); } return; }   // inside a house
+  if (use3D()){                                               // ---- 3D world (r3d.js) + 2D HUD on top ----
+    if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); }
+    if ((natAcc += dt) > 10000){ natAcc = 0; natureTick(); }
+    if (!walkAt(pet.x, pet.y) && !pet.holdSit) placePet();
+    updatePetAnim(pet, dt/1000, hasWalkable(), pickPetTarget);
+    updateFishing(wall);
+    R3D.render(time, dt/1000);
+    drawTutHighlight(time);
+    badges.length = 0;
+    for (const z of S.farm.zones){
+      for (let li=0; li<z.tiles.length; li++){ const t = z.tiles[li]; if (RES[t.k] && (t.job || t.hp != null)) badges.push(t.job ? 0 : 2, z.cx*GRID + li%GRID, z.cy*GRID + ((li/GRID)|0), z, li); }
+      for (const o of z.objs) if (!o.done || (o.type==='plot' && o.plant) || o.pj) badges.push(1, 0, 0, z, o.id);
+    }
+    if (placing) drawGhost(time);
+    for (let k=0;k<badges.length;k+=5){
+      if (badges[k]===0) jobBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2], time, wall);
+      else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
+      else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
+    }
+    drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
+    return;
+  }
+  if (R3D) R3D.hide();
   drawSunMoon(time); drawClouds(time);
 
   // visible chunks, back → front
@@ -2123,7 +2155,7 @@ function drawFishButtons(time){
 $('fBtn').onclick = fishPress;
 $('fCancel').onclick = endFishing;
 
-function startLoop(){ if (!raf){ lastT = 0; skyAcc = 1e9; ensureZones(); placePet(); goHome(); renderZoneBar(); raf = requestAnimationFrame(frame); } }
+function startLoop(){ load3D(); if (!raf){ lastT = 0; skyAcc = 1e9; ensureZones(); placePet(); goHome(); renderZoneBar(); raf = requestAnimationFrame(frame); } }
 function stopLoop(){ cancelAnimationFrame(raf); raf = 0; if (fishing) endFishing(); if (inRoom) exitHome(); if (paint) endPaint(); if (tool) pickTool(null); }
 
 /* --- bottom bar: zoom −/+ and 🏠 home; shows unlocked area count --- */
@@ -2975,7 +3007,10 @@ function renderBag(){
     lk.onclick = () => confirmDo('เชื่อมบัญชีนี้กับ Google?\n\nความคืบหน้าทั้งหมดของ "' + USER + '" จะย้ายไปอยู่บัญชี Google ที่คุณเลือก\nจากนั้นเข้าเกมด้วยปุ่ม Google ได้ทุกเครื่อง\n(บัญชีชื่อผู้ใช้เดิมยังเก็บไว้ในเครื่องเป็นสำรอง)', linkGoogle);
     L.append(lk);
   }
-  L.append(mv, out);
+  const v3 = document.createElement('button'); v3.className = 'btn ghost';
+  v3.textContent = want3D() ? '🧊 กราฟิก 3D: เปิดอยู่ (แตะเพื่อใช้ 2D)' : '🧊 กราฟิก 2D: เปิดอยู่ (แตะเพื่อใช้ 3D)';
+  v3.onclick = () => confirmDo(want3D() ? 'เปลี่ยนเป็นกราฟิก 2D?\n(เบากว่า เหมาะกับเครื่องรุ่นเก่า)' : 'เปลี่ยนเป็นกราฟิก 3D?', () => set3D(!want3D()));
+  L.append(v3, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -3601,6 +3636,22 @@ function v09Migrate(){
   }
   if (S.profile && S.missions && !S.missions.some(m => m.key === 'rest')) buildMissions();   // old walk/run missions → new set
   if (S.profile){ delete S.profile.act; delete S.profile.interests; }
+}
+
+/* ---- 🧊 3D renderer: on by default when WebGL works; per-device switch in the bag ---- */
+const want3D = () => store.get('pensuk_3d') !== false;
+let r3dLoading = false;
+function load3D(){
+  if (!want3D() || r3dLoading) { if (R3D) R3D.on = want3D(); return; }
+  if (R3D){ R3D.on = true; return; }
+  r3dLoading = true;
+  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = want3D(); invalidateAll(); })
+    .catch(e => { console.log('3D unavailable → 2D', e); r3dLoading = false; store.set('pensuk_3d', false); });
+}
+function set3D(on){
+  store.set('pensuk_3d', on);
+  if (on){ r3dLoading = false; load3D(); } else if (R3D){ R3D.on = false; R3D.hide(); invalidateAll(); }
+  renderBag();
 }
 
 /* ---- boot ---- */
