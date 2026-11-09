@@ -420,7 +420,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.12.0';
+const APP_VER = '0.13.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1295,7 +1295,7 @@ window.addEventListener('resize', () => resizeFarm(true));
 /* 3D mode: the same P() call projects through the perspective camera (R3D.proj), so every HUD
    overlay (badges, particles, fishing UI, quest highlight, placement ghost) keeps working. */
 let R3D = null;
-const use3D = () => R3D && R3D.on && !inRoom;
+const use3D = () => R3D && R3D.on;                                  // farm AND house interior (v0.13)
 const P = (c,r,z) => use3D() ? R3D.proj(c, r, z) : [OX + camX + (c-r)*TW/2, OY + camY + (c+r)*TH/2 - (z||0)];
 const iso = (c,r) => P(c,r,0);
 function screenToWorld(sx, sy){ const u = (sx-OX-camX)/(TW/2), v = (sy-OY-camY)/(TH/2); return [(u+v)/2, (v-u)/2]; }
@@ -1906,8 +1906,16 @@ function frame(now){
   if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
   const time = now/1000, wall = Date.now();
   ctx.clearRect(0,0,cssW,cssH);
-  cv.classList.toggle('see3d', use3D());
-  if (inRoom){ if (R3D) R3D.hide(); drawRoom(time, dt/1000); drawNight(); if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); } return; }   // inside a house
+  cv.classList.toggle('see3d', !!use3D());
+  if (inRoom && use3D()){                                     // inside a house — 3D room + HUD
+    roomPet.night = NIGHT > .6; updatePetAnim(roomPet, dt/1000, true, roomTarget);
+    R3D.renderRoom(inRoom, roomPet, roomPlace, time);
+    if (roomPlace && roomPlace.c != null){ const col = roomPlace.valid ? 'rgba(76,175,106,.45)' : 'rgba(220,60,60,.45)';
+      for (let dr=0;dr<roomPlace.h;dr++) for (let dc=0;dc<roomPlace.w;dc++){ const c = roomPlace.c+dc, r = roomPlace.r+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); } }
+    if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); }
+    return;
+  }
+  if (inRoom){ if (R3D) R3D.hide(); drawRoom(time, dt/1000); drawNight(); if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); } return; }   // inside a house (2D)
   if (use3D()){                                               // ---- 3D world (r3d.js) + 2D HUD on top ----
     if ((tutAcc += dt) > 400){ tutAcc = 0; questTick(); }
     if ((natAcc += dt) > 10000){ natAcc = 0; natureTick(); }
