@@ -68,6 +68,11 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 /* ---------- farm / nav ---------- */
 #farmWrap{flex:1;position:relative;min-height:0}
 #farm{position:absolute;inset:0;width:100%;height:100%;touch-action:none;background:linear-gradient(#9fd8f7,#cfeefc 35%,#e6f6d6 75%)}
+/* v0.10 tilt-shift: blur the top & bottom of the view (miniature photo look); pointer-events off */
+.ts{position:absolute;left:0;right:0;pointer-events:none;-webkit-backdrop-filter:blur(2.5px);backdrop-filter:blur(2.5px)}
+.tsT{top:0;height:24%;-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+.tsB{bottom:0;height:20%;-webkit-mask-image:linear-gradient(transparent,#000);mask-image:linear-gradient(transparent,#000)}
+.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(40,25,10,.22))}
 #mats{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap}
 #mats div{background:#ffffffd9;border-radius:12px;padding:2px 10px;font-size:14px;font-weight:600}
 #zoneBar{position:absolute;left:8px;right:8px;bottom:30px;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -174,6 +179,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   <div class="tab on" id="tFarm">
     <div id="farmWrap">
       <canvas id="farm"></canvas>
+      <div class="ts tsT"></div><div class="ts tsB"></div><div class="vig"></div>
       <div id="mats"></div>
       <div id="tut"><svg viewBox="0 0 64 64" id="tutAva"></svg><div style="flex:1"><b id="tutStep"></b><div id="tutText"></div><div class="bar" style="height:6px;margin:5px 0 0"><b id="tutProg"></b></div></div></div>
       <div id="zoneBar"><button class="btn ghost" id="zPrev" aria-label="ซูมออก">－</button><b id="zLabel"></b><button class="btn ghost" id="zNext" aria-label="ซูมเข้า">＋</button></div>
@@ -408,7 +414,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.9.1';
+const APP_VER = '0.10.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1324,38 +1330,49 @@ function chunkCanvas(z){
   return e;
 }
 const GROUND_COL = { clear:'#9fd06a', obj:'#9fd06a', water:'#e2cf98', grass:'#86bd4e', wild:'#8cc255', pebble:'#8fbf58', rock:'#88b752', bush:'#80b44c', tree:'#7cb049', boulder:'#82b14e' };
-const SIDE_D = () => TH*0.95;
+const SIDE_D = () => TH*1.9;                                  // v0.10 diorama: soil block 1.5·TH + wooden plinth 0.4·TH
+const PLINTH = () => TH*0.4;
+/* Diorama wall: cut-away soil strata (grass lip → topsoil → clay → stone) with wavy boundaries,
+   then a dark wooden display plinth, like a miniature model on its base.
+   A, B = top corners of the open edge (chunk-local px); shade < 0 darkens the right-facing wall. */
+const STRATA = [ [0,'#5f9a35'], [.12,'#7a5434'], [.42,'#a07650'], [.7,'#8c8378'], [1,null] ];
+function wallFace(g, A, B, seed, shade){
+  const D = SIDE_D() - PLINTH(), N = 10;
+  const yAt = (k, t) => { const f = STRATA[k][0]; if (f === 0 || f === 1) return f*D;
+    return f*D + Math.sin(t*Math.PI*(3+k) + seed%7 + k)*TH*.045 + (hrnd(seed, k, (t*N)|0)-.5)*TH*.03; };
+  for (let k=0;k<STRATA.length-1;k++){
+    g.beginPath();
+    for (let i=0;i<=N;i++){ const t = i/N; g.lineTo(A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t + yAt(k,t)); }
+    for (let i=N;i>=0;i--){ const t = i/N; g.lineTo(A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t + yAt(k+1,t)); }
+    g.closePath(); g.fillStyle = shadeHex(STRATA[k][1], shade); g.fill();
+  }
+  for (let k=0;k<14;k++){                                     // embedded pebbles in clay/stone layers
+    const t = hrnd(seed, k, 120), d = (.45 + hrnd(seed, k, 121)*.5)*D, x = A[0]+(B[0]-A[0])*t, y = A[1]+(B[1]-A[1])*t + d;
+    g.fillStyle = `rgba(255,255,255,${.1 + hrnd(seed,k,122)*.12})`; g.beginPath(); g.ellipse(x, y, TW*(.03+hrnd(seed,k,123)*.03), TH*.04, 0, 0, Math.PI*2); g.fill();
+  }
+  const P0 = [A[0], A[1]+D], P1 = [B[0], B[1]+D], PL = PLINTH();   // wooden plinth
+  quad(g, P0, P1, [P1[0], P1[1]+PL], [P0[0], P0[1]+PL], shadeHex('#5b3a22', shade));
+  g.strokeStyle = 'rgba(255,230,190,.35)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(P0[0],P0[1]+1); g.lineTo(P1[0],P1[1]+1); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 1;
+  for (let k=1;k<3;k++){ g.beginPath(); g.moveTo(P0[0], P0[1]+PL*k/3); g.lineTo(P1[0], P1[1]+PL*k/3); g.stroke(); }
+}
 function paintChunk(z, c){
-  const D = SIDE_D(), W = GRID*TW + 6, H = GRID*TH + D + TH*.4 + 6;
+  const D = SIDE_D(), W = GRID*TW + 6, H = GRID*TH + D + TH*.4 + 10;
   c.width = Math.ceil(W*DPR); c.height = Math.ceil(H*DPR);
   const g = c.getContext('2d'); g.setTransform(DPR,0,0,DPR,0,0); g.clearRect(0,0,W,H);
   const lp = (cc,rr) => [W/2 + (cc-rr)*TW/2, 3 + (cc+rr)*TH/2];   // chunk-local projection
   const T = z.tiles;
   const openL = !chunkMap.get(ck(z.cx, z.cy+1)), openR = !chunkMap.get(ck(z.cx+1, z.cy));
   const L = lp(0,GRID), B = lp(GRID,GRID), Rr = lp(GRID,0);
-  // island walls (only where the island ends)
-  if (openL){
-    const gr = g.createLinearGradient(0, L[1], 0, B[1]+D); gr.addColorStop(0,'#8d643c'); gr.addColorStop(1,'#5b3c22');
-    quad(g, L, B, [B[0],B[1]+D], [L[0],L[1]+D], gr);
-  }
-  if (openR){
-    const gr = g.createLinearGradient(0, Rr[1], 0, B[1]+D); gr.addColorStop(0,'#77522f'); gr.addColorStop(1,'#4a301b');
-    quad(g, B, Rr, [Rr[0],Rr[1]+D], [B[0],B[1]+D], gr);
-  }
-  g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1.5;
-  for (let k=1;k<=2;k++){ const dz = D*k/3;
-    if (openL){ g.beginPath(); g.moveTo(L[0],L[1]+dz); g.lineTo(B[0],B[1]+dz); g.stroke(); }
-    if (openR){ g.beginPath(); g.moveTo(B[0],B[1]+dz); g.lineTo(Rr[0],Rr[1]+dz); g.stroke(); } }
-  for (let k=0;k<10;k++){                                    // pebbles in the soil + dangling roots
-    const u = hrnd(z.seed,k,90), v = hrnd(z.seed,k,91), left = u<.5;
-    if ((left && !openL) || (!left && !openR)) continue;
-    const uu = left ? u*2 : (u-.5)*2, a = left ? L : B, b = left ? B : Rr, x = a[0]+(b[0]-a[0])*uu, y = a[1]+(b[1]-a[1])*uu;
-    g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.ellipse(x, y + D*(.3+v*.55), TW*.05, TH*.06, 0, 0, Math.PI*2); g.fill();
-    if (k%3===0){ g.strokeStyle = 'rgba(70,45,20,.55)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x+4, y+2); g.quadraticCurveTo(x+7, y+D*.6, x+3, y+D*(1+v*.3)); g.stroke(); }
-  }
-  g.strokeStyle = '#69a63a'; g.lineWidth = TH*0.22; g.lineJoin = 'round'; g.lineCap = 'round';
-  if (openL){ g.beginPath(); g.moveTo(L[0],L[1]+TH*.06); g.lineTo(B[0],B[1]+TH*.06); g.stroke(); }
-  if (openR){ g.beginPath(); g.moveTo(B[0],B[1]+TH*.06); g.lineTo(Rr[0],Rr[1]+TH*.06); g.stroke(); }
+  // diorama walls (only where the island ends): soil strata + plinth, right wall a bit darker (light from top-left)
+  if (openL) wallFace(g, L, B, z.seed, 0);
+  if (openR) wallFace(g, B, Rr, z.seed+13, -.18);
+  g.strokeStyle = '#6fb23e'; g.lineWidth = TH*0.2; g.lineJoin = 'round'; g.lineCap = 'round';   // rounded grass lip
+  if (openL){ g.beginPath(); g.moveTo(L[0],L[1]+TH*.05); g.lineTo(B[0],B[1]+TH*.05); g.stroke(); }
+  if (openR){ g.beginPath(); g.moveTo(B[0],B[1]+TH*.05); g.lineTo(Rr[0],Rr[1]+TH*.05); g.stroke(); }
+  g.strokeStyle = 'rgba(220,255,170,.45)'; g.lineWidth = 1.5;
+  if (openL){ g.beginPath(); g.moveTo(L[0],L[1]); g.lineTo(B[0],B[1]); g.stroke(); }
+  if (openR){ g.beginPath(); g.moveTo(B[0],B[1]); g.lineTo(Rr[0],Rr[1]); g.stroke(); }
   // tiles
   for (let i=0;i<T.length;i++){
     const cc = i%GRID, rr = (i/GRID)|0, k = T[i].k;
@@ -1377,7 +1394,7 @@ function paintChunk(z, c){
       g.fillStyle = ['#ffffff','#ffe066','#ffb3c7'][f]; g.beginPath(); g.arc(x, y, Math.max(1.2,TW*.022), 0, Math.PI*2); g.fill();
     }
   }
-  g.strokeStyle = 'rgba(0,0,0,.045)'; g.lineWidth = 1;
+  g.strokeStyle = 'rgba(0,0,0,.03)'; g.lineWidth = 1;
   for (let i=0;i<=GRID;i++){ let a = lp(i,0), b = lp(i,GRID); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke();
     a = lp(0,i); b = lp(GRID,i); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
 }
@@ -2418,7 +2435,7 @@ const roomPet = makePetAnim();
 let roomPlace = null;                                        // {type, w, h, c, r, valid, move}
 const isHome = type => !!HOME_SIZE[type];
 
-function enterHome(z, o){
+function enterHome(z, o){ $('toolFab').style.display = 'none'; if (typeof tool !== 'undefined' && tool) pickTool(null);
   o.room = o.room || { items:[], wall:0, floor:0, nextId:1 };
   if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
   const N = HOME_SIZE[o.type];
@@ -2434,7 +2451,7 @@ function layoutRoom(){                                       // fit the N×N roo
   TW = Math.min(110, (cssW - 24) / N); TH = TW/2; zoom = TW / TWBASE;
   OY = cssH*.5 - GRID*TH/2; centerOn(N/2, N/2); camY += TH*1.2;   // nudge down so the walls fit above
 }
-function exitHome(){
+function exitHome(){ $('toolFab').style.display = ''; if (typeof tool !== 'undefined' && tool) pickTool(null);
   if (!inRoom) return;
   if (roomPlace) endRoomPlace();
   const s = inRoom.saved; inRoom = null;
@@ -2507,52 +2524,103 @@ function drawRoom(time, dt){
   }
 }
 function drawRoomPet(){ const [sx,sy] = P(roomPet.x, roomPet.y); drawPetModel(ctx, S.pet.type, roomPet, sx, sy, TW*.7*petStage(S.pet.lv).scale, petStage(S.pet.lv).form); }
+/* v0.10 furniture — miniature-model look. Each piece is built from boxes in its OWN axes:
+   u = length (back → front along the long side), v = width, z = height (in TH units).
+   rbox() maps (u,v) rectangles onto grid (c,r) for either rotation, so rotated pieces stay correct.
+   Draw order inside a piece = back parts first (headboard/backrest), front parts last. */
 function drawFurn(it, time){
-  const m = .08, c0 = it.c+m, r0 = it.r+m, c1 = it.c+it.w-m, r1 = it.r+it.h-m, cm = (c0+c1)/2, rm = (r0+r1)/2, U = TH;
+  const m = .06, c0 = it.c+m, r0 = it.r+m, c1 = it.c+it.w-m, r1 = it.r+it.h-m, cm = (c0+c1)/2, rm = (r0+r1)/2, U = TH;
+  const alongR = it.h >= it.w;                                  // long axis runs along r (else along c)
+  const rbox = (u0,u1,v0,v1,z0,z1,top,l,r) => alongR
+    ? box(c0+(c1-c0)*v0, r0+(r1-r0)*u0, c0+(c1-c0)*v1, r0+(r1-r0)*u1, U*z0, U*z1, top, l, r)
+    : box(c0+(c1-c0)*u0, r0+(r1-r0)*v0, c0+(c1-c0)*u1, r0+(r1-r0)*v1, U*z0, U*z1, top, l, r);
+  const W = (hex) => [hex, shadeHex(hex,-.12), shadeHex(hex,-.25)];       // top / left / right shades of one colour
+  const wood = W('#c48a52'), dark = W('#7a4a26'), cloth = W('#fbf7ef');
   switch (it.type){
-    case 'rug':
-      quad(ctx, P(c0,r0,1), P(c1,r0,1), P(c1,r1,1), P(c0,r1,1), '#c0392b');
-      quad(ctx, P(c0+.15,r0+.15,1), P(c1-.15,r0+.15,1), P(c1-.15,r1-.15,1), P(c0+.15,r1-.15,1), '#e8b04b');
-      quad(ctx, P(c0+.3,r0+.3,1), P(c1-.3,r0+.3,1), P(c1-.3,r1-.3,1), P(c0+.3,r1-.3,1), '#c0392b'); break;
-    case 'petbed': { const [x,y] = P(cm,rm);
-      ctx.fillStyle = '#7b5ea7'; ctx.beginPath(); ctx.ellipse(x, y, TW*.36, TH*.36, 0, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#b39ddb'; ctx.beginPath(); ctx.ellipse(x, y-2, TW*.26, TH*.24, 0, 0, Math.PI*2); ctx.fill(); break; }
-    case 'bed':
-      box(c0,r0,c1,r1,0,U*.35,null,'#8a5a33','#6e4524');
-      box(c0+.03,r0+.03,c1-.03,r1-.03,U*.35,U*.55,'#ffffff','#eceff4','#d9dee6');
-      box(c0+.03,r0+.6,c1-.03,r1-.03,U*.55,U*.6,'#5c8fd6','#4a7cc2','#3c69a8');
-      box(c0+.1,r0+.08,c1-.1,r0+.45,U*.55,U*.75,'#fffdf7','#efe9dc','#ded6c6');
-      box(c0,r0,c1,r0+.08,0,U*1.1,'#a26b3c','#8a5a33','#6e4524'); break;
-    case 'table':
-      for (const [lc,lr] of [[c0+.05,r0+.05],[c1-.13,r0+.05],[c0+.05,r1-.13],[c1-.13,r1-.13]]) box(lc,lr,lc+.08,lr+.08,0,U*.75,'#6e4524','#6e4524','#5a381d');
-      box(c0,r0,c1,r1,U*.75,U*.85,'#c99a62','#a87a45','#8f6334');
-      ball(ctx, ...P(cm,rm,U*.95), TW*.06, TW*.05, '#fff', '#f2c94c', '#c9a227'); break;
-    case 'chair':
-      for (const [lc,lr] of [[c0+.15,r0+.15],[c1-.22,r0+.15],[c0+.15,r1-.22],[c1-.22,r1-.22]]) box(lc,lr,lc+.07,lr+.07,0,U*.45,'#6e4524','#6e4524','#5a381d');
-      box(c0+.12,r0+.12,c1-.12,r1-.12,U*.45,U*.53,'#d9a066','#b9824a','#9c6d37');
-      box(c0+.12,r0+.12,c1-.12,r0+.2,U*.53,U*1.1,'#d9a066','#b9824a','#9c6d37'); break;
-    case 'sofa': {
-      const alongC = it.w >= it.h;
-      box(c0,r0,c1,r1,0,U*.45,'#e07a5f','#c8664c','#ad543c');
-      if (alongC){ box(c0,r0,c1,r0+.25,U*.45,U*.95,'#e8907a','#c8664c','#ad543c'); box(c0,r0,c0+.18,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); box(c1-.18,r0,c1,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); }
-      else { box(c0,r0,c0+.25,r1,U*.45,U*.95,'#e8907a','#c8664c','#ad543c'); box(c0,r0,c1,r0+.18,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); box(c0,r1-.18,c1,r1,U*.45,U*.7,'#e8907a','#c8664c','#ad543c'); }
+    case 'rug': {                                                // woven rug: border, medallion, fringe
+      const P1 = (a,b) => P(c0+(c1-c0)*a, r0+(r1-r0)*b, 1);
+      quad(ctx, P1(0,0), P1(1,0), P1(1,1), P1(0,1), '#b8432f');
+      quad(ctx, P1(.08,.08), P1(.92,.08), P1(.92,.92), P1(.08,.92), '#e9c27a');
+      quad(ctx, P1(.16,.16), P1(.84,.16), P1(.84,.84), P1(.16,.84), '#c75a3f');
+      quad(ctx, P1(.5,.26), P1(.74,.5), P1(.5,.74), P1(.26,.5), '#f3dfae');
+      quad(ctx, P1(.5,.38), P1(.62,.5), P1(.5,.62), P1(.38,.5), '#2f6f8f');
+      ctx.strokeStyle = '#f3dfae'; ctx.lineWidth = 1.2;
+      for (let k=1;k<12;k++){ for (const b of [0,1]){ const a = P1(k/12, b), e = P1(k/12, b ? 1.05 : -.05); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(e[0],e[1]); ctx.stroke(); } }
       break; }
-    case 'shelf':
-      box(c0+.1,r0,c1-.1,r0+.35,0,U*2.2,'#a87a45','#8f6334','#7a5229');
-      for (let k=0;k<3;k++){ const z0 = U*(.3+k*.65);
-        for (let b=0;b<4;b++){ const u0 = .12+b*.19; faceQuad('L', c0+.1, r0, c1-.1, r0+.35, u0, u0+.14, z0, z0+U*.45, ['#e63946','#457b9d','#f4a261','#2a9d8f'][(b+k)%4]); } }
-      break;
-    case 'plant':
-      box(cm-.18,rm-.18,cm+.18,rm+.18,0,U*.45,'#c8735a','#b0604a','#93503d');
-      ball(ctx, ...P(cm-.08,rm,U*.85), TW*.14, TH*.3, '#a6e07f', '#4aa846', '#2b6f2e');
-      ball(ctx, ...P(cm+.08,rm,U*.95), TW*.14, TH*.3, '#a6e07f', '#4aa846', '#2b6f2e');
-      ball(ctx, ...P(cm,rm,U*1.2), TW*.15, TH*.32, '#b8ea92', '#58b552', '#2f7a33'); break;
+    case 'petbed': {                                             // round cushion bed + bone toy
+      const [x,y] = P(cm,rm,1);
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x, y+3, TW*.4, TH*.4, 0, 0, Math.PI*2); ctx.fill();
+      ball(ctx, x, y-TH*.06, TW*.38, TH*.34, '#c9b3ea', '#8e6cc4', '#5e4391');
+      ball(ctx, x, y-TH*.1, TW*.27, TH*.22, '#fff6ea', '#efe1cf', '#d7c4ab');
+      ctx.fillStyle = '#fff'; ctx.fillRect(x+TW*.04, y-TH*.14, TW*.12, TH*.04);
+      for (const s of [-1,1]) for (const t of [-1,1]){ ctx.beginPath(); ctx.arc(x+TW*.1+s*TW*.06, y-TH*.12+t*TH*.03, TH*.035, 0, Math.PI*2); ctx.fill(); }
+      break; }
+    case 'bed': {
+      for (const [u,v] of [[.02,.02],[.02,.9],[.92,.02],[.92,.9]]) rbox(u,u+.06,v,v+.08,0,.2,...dark);           // legs
+      rbox(0,.07,0,1,0,1.3,...W('#a8703f'));                                                                    // headboard
+      rbox(-.01,.08,-.02,1.02,1.3,1.38,...W('#8f5c30'));                                                      // headboard cap
+      rbox(.02,.98,.02,.98,.2,.4,...wood);                                                                     // frame
+      rbox(.06,.96,.05,.95,.4,.6,...cloth);                                                                    // mattress
+      rbox(.1,.32,.14,.86,.6,.76,...W('#ffffff'));                                                            // pillow
+      rbox(.4,.98,.02,.98,.42,.66,...W('#7fb3e0'));                                                           // blanket (drapes over the sides)
+      rbox(.4,.48,.02,.98,.66,.7,...W('#dcebf8'));                                                            // folded edge
+      rbox(.94,1,0,1,0,.72,...W('#a8703f'));                                                                  // footboard
+      break; }
+    case 'table': {
+      for (const [u,v] of [[.08,.08],[.08,.84],[.84,.08],[.84,.84]]) rbox(u,u+.08,v,v+.08,0,.72,...dark);
+      rbox(.06,.94,.06,.94,.62,.72,...W('#a8703f'));                                                          // apron
+      rbox(0,1,0,1,.72,.82,...W('#d9a76c'));                                                                  // top
+      const [x,y] = P(cm,rm,U*.82);                                                                           // vase + flower
+      ball(ctx, x, y-TH*.12, TW*.06, TH*.14, '#ffffff', '#6fb7c9', '#3d8496');
+      ctx.strokeStyle = '#3f8a30'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y-TH*.2); ctx.lineTo(x+2, y-TH*.45); ctx.stroke();
+      ball(ctx, x+2, y-TH*.5, TW*.045, TW*.04, '#fff', '#ff7aa2', '#c94d74');
+      break; }
+    case 'chair': {
+      for (const [u,v] of [[.18,.18],[.18,.74],[.74,.18],[.74,.74]]) rbox(u,u+.08,v,v+.08,0,.45,...dark);
+      for (const v of [.18,.74]) rbox(.16,.24,v,v+.08,.45,1.15,...W('#a8703f'));                            // back posts
+      for (const z of [.7,.95]) rbox(.16,.22,.2,.8,z,z+.1,...W('#c48a52'));                                 // back slats
+      rbox(.14,.86,.14,.86,.45,.53,...W('#c48a52'));                                                          // seat
+      rbox(.2,.82,.2,.8,.53,.6,...W('#e8a45a'));                                                              // cushion
+      break; }
+    case 'sofa': {
+      const fab = W('#d9725a'), soft = W('#e88c74');
+      for (const [u,v] of [[.03,.05],[.03,.87],[.9,.05],[.9,.87]]) rbox(u,u+.06,v,v+.08,0,.12,...dark);      // little legs
+      rbox(.02,.98,.0,.3,.12,1.0,...fab);                                                                       // backrest (back side)
+      rbox(.02,.98,.25,.98,.12,.42,...fab);                                                                     // base
+      rbox(.04,.49,.3,.96,.42,.56,...soft); rbox(.51,.96,.3,.96,.42,.56,...soft);                              // seat cushions (gap between)
+      rbox(.05,.48,.12,.3,.56,.92,...soft); rbox(.52,.95,.12,.3,.56,.92,...soft);                              // back cushions
+      rbox(0,.1,.1,1,.12,.7,...fab); rbox(.9,1,.1,1,.12,.7,...fab);                                             // arm rests
+      break; }
+    case 'shelf': {
+      const sw = W('#b07a46');
+      rbox(0,1,0,.08,0,2.3,...sw);                                                                              // back panel
+      rbox(0,.08,0,.42,0,2.3,...sw);                                                                            // left side
+      const BK = ['#d64545','#3f7cc2','#f0a33a','#2a9d8f','#8e6cc4','#e9c46a'];
+      for (let k=0;k<3;k++){ const z0 = .12 + k*.72;
+        rbox(.08,.92,.06,.42,z0-.06,z0,...sw);                                                                  // board
+        let u = .1; for (let b=0;b<6 && u < .86;b++){ const w = .07 + hrnd(it.c*7+it.r, k, b)*.05, h = .4 + hrnd(it.c+3, k, b+9)*.18;
+          rbox(u, Math.min(.9,u+w), .1, .36, z0, z0+h, ...W(BK[(b+k*2)%6])); u += w + .01; }
+      }
+      rbox(.08,.92,.06,.42,2.22,2.3,...sw);                                                                     // top
+      rbox(.92,1,0,.42,0,2.3,...sw);                                                                            // right side (front)
+      break; }
+    case 'plant': {
+      rbox(.28,.72,.28,.72,0,.4,...W('#d07a5a'));                                                              // pot
+      rbox(.24,.76,.24,.76,.4,.48,...W('#e08c6a'));                                                            // rim
+      const [x,y] = P(cm,rm,U*.48);
+      ctx.fillStyle = '#5a3818'; ctx.beginPath(); ctx.ellipse(x, y, TW*.1, TH*.08, 0, 0, Math.PI*2); ctx.fill();
+      for (let k=0;k<7;k++){ const a = -Math.PI/2 + (k-3)*.42 + Math.sin(time*1.3+k)*.04, len = TH*(.7 + (k%3)*.18);
+        const ex = x + Math.cos(a)*len*1.1, ey = y + Math.sin(a)*len, mx = x + Math.cos(a)*len*.5 - Math.sin(a)*6, my = y + Math.sin(a)*len*.5;
+        ctx.fillStyle = k%2 ? '#4aa846' : '#5fbf55'; ctx.beginPath(); ctx.moveTo(x,y); ctx.quadraticCurveTo(mx-6, my, ex, ey); ctx.quadraticCurveTo(mx+6, my+4, x, y); ctx.fill(); }
+      break; }
     case 'lamp': {
-      box(cm-.15,rm-.15,cm+.15,rm+.15,0,U*.08,'#555','#444','#333');
-      box(cm-.03,rm-.03,cm+.03,rm+.03,U*.08,U*1.6,'#666','#555','#444');
-      const [gx,gy] = P(cm,rm,U*1.8);
-      if (NIGHT > .3) addGlow(gx, gy, TW*.9);
-      ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.moveTo(gx-TW*.16, gy+TH*.2); ctx.lineTo(gx-TW*.09, gy-TH*.25); ctx.lineTo(gx+TW*.09, gy-TH*.25); ctx.lineTo(gx+TW*.16, gy+TH*.2); ctx.closePath(); ctx.fill();
+      rbox(.3,.7,.3,.7,0,.06,...W('#5b5b5b'));
+      rbox(.47,.53,.47,.53,.06,1.6,...W('#8a8a8a'));
+      const [gx,gy] = P(cm,rm,U*1.75), on = NIGHT > .3;
+      if (on) addGlow(gx, gy, TW*.9);
+      const sg = ctx.createLinearGradient(gx, gy-TH*.3, gx, gy+TH*.25); sg.addColorStop(0, on ? '#fff6cf' : '#fbe7b5'); sg.addColorStop(1, on ? '#ffd76a' : '#e9c98a');
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.moveTo(gx-TW*.17, gy+TH*.22); ctx.lineTo(gx-TW*.1, gy-TH*.28); ctx.lineTo(gx+TW*.1, gy-TH*.28); ctx.lineTo(gx+TW*.17, gy+TH*.22); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(gx, gy+TH*.22, TW*.17, TH*.05, 0, 0, Math.PI*2); ctx.fill();
       break; }
   }
 }
