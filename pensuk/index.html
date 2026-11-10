@@ -85,8 +85,15 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 #zoneBar{position:absolute;left:8px;right:8px;bottom:30px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 #placeBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;flex-direction:column;gap:8px;background:#ffffffee;border-radius:16px;padding:10px;box-shadow:0 4px 16px #0002}
 #placeBar b{font-size:14px;text-align:center}
-#fishBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;flex-direction:column;gap:8px;background:#ffffffee;border-radius:16px;padding:10px;box-shadow:0 4px 16px #0002}
+#fishBar{z-index:7;position:absolute;left:8px;right:8px;bottom:28px;display:none;flex-direction:column;gap:8px;background:#ffffffee;border-radius:16px;padding:10px;box-shadow:0 4px 16px #0002}
 #fishBar b{font-size:15px;text-align:center}
+#reel{position:absolute;inset:0;z-index:6;display:none;touch-action:none;user-select:none;-webkit-user-select:none;background:#0000000f}
+#reel .rtrack{position:absolute;right:58px;top:14%;height:46%;width:58px;border-radius:14px;background:linear-gradient(#6fb7f2,#2f6f9f);border:4px solid #8a5a2b;box-shadow:0 6px 16px #0004;overflow:hidden}
+#rZone{position:absolute;left:3px;right:3px;top:0;border-radius:10px;background:#7ee08acc;border:2px solid #fff;will-change:transform}
+#rFish{position:absolute;left:0;right:0;top:0;text-align:center;font-size:30px;line-height:34px;height:34px;margin-top:-17px;text-decoration:none;will-change:transform}
+#reel .rprog{position:absolute;right:28px;top:14%;height:46%;width:16px;border-radius:8px;background:#ffffffaa;border:3px solid #8a5a2b;overflow:hidden}
+#rProg{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#ffd166,#4caf6a);height:30%}
+#rHint{position:absolute;right:16px;top:calc(60% + 14px);width:120px;text-align:center;font-size:13px;color:#fff;text-shadow:0 1px 3px #000a}
 #fScale{display:none;position:relative;height:26px;border-radius:13px;background:#e9e2d6;overflow:hidden}#fScale i{position:absolute;top:0;bottom:0;background:#6cc56f;border-radius:13px}#fScale s{position:absolute;left:0;top:0;width:6px;height:26px;background:#d23c3c;border-radius:3px;will-change:transform}
 #fBtn.bite{animation:pulse .35s infinite;background:#e63946}
 #zLabel{cursor:pointer}
@@ -245,7 +252,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="mats"></div>
       <div id="tut"><svg viewBox="0 0 64 64" id="tutAva"></svg><div style="flex:1"><b id="tutStep"></b><div id="tutText"></div><div class="bar" style="height:6px;margin:5px 0 0"><b id="tutProg"></b></div></div></div>
       <div id="zoneBar"><button class="btn ghost" id="zPrev" aria-label="ซูมออก">－</button><b id="zLabel"></b><button class="btn ghost" id="zNext" aria-label="ซูมเข้า">＋</button></div>
-      <div id="fishBar"><b id="fInfo"></b><div id="fScale"><i></i><s id="fMark"></s></div><div class="row"><button class="btn" id="fBtn" style="flex:2;min-height:56px;font-size:20px">🎣 เหวี่ยงเบ็ด</button><button class="btn ghost" id="fCancel">เลิกตก</button></div></div>
+      <div id="reel"><div class="rtrack"><i id="rZone"></i><s id="rFish">🐟</s></div><div class="rprog"><i id="rProg"></i></div><b id="rHint">กดค้าง = ช่องเขียวลอยขึ้น</b></div>
+      <div id="fishBar"><b id="fInfo"></b><div class="row"><button class="btn" id="fBtn" style="flex:2;min-height:56px;font-size:20px">🎣 เหวี่ยงเบ็ด</button><button class="btn ghost" id="fCancel">เลิกตก</button></div></div>
       <div id="placeBar"><b id="pInfo"></b><div class="row"><button class="btn ghost" id="pRot">⟲ หมุน</button><button class="btn ok" id="pOk">✔ วาง</button><button class="btn ghost" id="pCancel">✕ ยกเลิก</button></div></div>
       <div id="roomTitle"></div>
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
@@ -553,7 +561,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.27.2';
+const APP_VER = '0.28.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -3007,9 +3015,16 @@ $('pOk').onclick = () => {
 /* 🎣 v0.24 timing bar: on a bite a marker sweeps 0→1→0 (triangle wave) and you press "ดึง!" inside the green zone.
      pos(t) = 1 − |((t·v) mod 2) − 1|       v = sweeps per second (faster for rarer fish)
      zone width = ROD_ZONE[rod level]; zone start random in [0, 1 − width]; window = 3 full sweeps */
+/* 🎣 v0.28 REEL MINIGAME (designer: Stardew-style). Normalized vertical track, 0 = top, 1 = bottom.
+   green zone (height zh by rod: wood .25 • copper .32 • iron .40):
+     v += (holding ? −1.6 : +1.2)·dt,  v ∈ [−1.4, 1.4],  zy += v·dt,  zy ∈ [0, 1 − zh]  (hitting an edge: v = −0.3·v)
+   fish: every gap ∈ [g0, g1] s picks a new target ∈ [.05, .95];  fy += (target − fy)·min(1, k·dt)
+     (players aged 60+: k × 0.7, gaps × 1.3 — same spirit as the age-adjusted missions)
+   catch meter: starts .30 • fish inside zone +.35/s • outside −.25/s • ≥ 1 caught • ≤ 0 escapes (no penalty) */
+const REEL_ZONE = [0, .25, .32, .40];
 const ROD_ZONE = [0, .35, .45, .55], ROD_NAME = ['', 'เบ็ดไม้', 'เบ็ดทองแดง', 'เบ็ดเหล็ก'];
-const CATCH = [ {k:'tilapia', w:48, win:900, v:.55, exp:4}, {k:'carp', w:24, win:800, v:.7, exp:5}, {k:'shrimp', w:12, win:800, v:.7, exp:4},
-                {k:'goldfish', w:5, win:600, v:1.0, exp:12}, {k:'boot', w:11, win:900, v:.5, exp:1} ];
+const CATCH = [ {k:'tilapia', w:48, win:900, v:.55, exp:4, rk:2.2, rg:[1.2, 2.2]}, {k:'carp', w:24, win:800, v:.7, exp:5, rk:3.2, rg:[.8, 1.6]}, {k:'shrimp', w:12, win:800, v:.7, exp:4, rk:3.4, rg:[.7, 1.4]},
+                {k:'goldfish', w:5, win:600, v:1.0, exp:12, rk:5.5, rg:[.35, .8]}, {k:'boot', w:11, win:900, v:.5, exp:1, rk:1.2, rg:[2, 3]} ];
 const fishPos = (f, now) => { const x = ((now - f.biteT)/1000*f.pick.v) % 2; return 1 - Math.abs(x - 1); };
 let fishing = null;                                          // {gc, gr, phase, t0, biteAt, winEnd, pick}
 function startFishing(gc, gr){
@@ -3018,41 +3033,60 @@ function startFishing(gc, gr){
   goTab('tFarm'); $('zoneBar').style.display = 'none'; $('toolFab').style.display = 'none'; $('fishBar').style.display = 'flex';
   centerOn(gc+.5, gr+.5); renderFishBar();
 }
-function endFishing(){ fishing = null; $('fScale').style.display = 'none'; $('toolFab').style.display = ''; $('fishBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; }
+function endFishing(){ fishing = null; $('reel').style.display = 'none'; $('toolFab').style.display = ''; $('fishBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; }
 function renderFishBar(){
   if (!fishing) return;
   const f = fishing, b = $('fBtn');
-  const txt = { ready:`แตะ "เหวี่ยงเบ็ด" แล้วรอทุ่นจม • 🎣 ${ROD_NAME[Math.min(3, upLv('rod'))]}`, cast:'กำลังเหวี่ยงเบ็ด…', wait:'รอปลากินเบ็ด… ยังไม่ต้องดึงนะ 🤫', bite:'❗ กด "ดึง!" ตอนขีดแดงอยู่ในช่องเขียว' };
+  const txt = { ready:`แตะ "เหวี่ยงเบ็ด" แล้วรอทุ่นจม • 🎣 ${ROD_NAME[Math.min(3, upLv('rod'))]}`, cast:'กำลังเหวี่ยงเบ็ด…', wait:'รอปลากินเบ็ด… ยังไม่ต้องดึงนะ 🤫', bite:'❗ กดค้างให้ปลาอยู่ในช่องเขียว จนหลอดเต็ม!' };
   $('fInfo').textContent = txt[f.phase];
   b.textContent = f.phase==='ready' ? '🎣 เหวี่ยงเบ็ด' : f.phase==='bite' ? '❗ ดึง!' : '🎣 ดึงเบ็ด';
   b.className = 'btn ' + (f.phase==='bite' ? 'ok bite' : f.phase==='ready' ? '' : 'ghost');
+  b.style.display = f.phase==='bite' ? 'none' : '';               // 🎣 reel: hold on the scale instead of this button
   b.disabled = f.phase==='cast' || Date.now() < f.cool;
 }
 function fishPress(){
   const f = fishing; if (!f) return; const now = Date.now();
   if (f.phase==='ready'){ if (!staOk(2, f.gc, f.gr)) return; useSta(2); f.phase = 'cast'; f.t0 = now; renderFishBar(); return; }
   if (f.phase==='wait'){ f.phase = 'ready'; f.cool = now + 800; renderFishBar(); return sheet('ดึงเร็วไป! ปลาตกใจหนีไปแล้ว 😅\nรอให้ทุ่นจมก่อนแล้วค่อยดึงนะครับ', OK); }
-  if (f.phase==='bite'){
-    const c = f.pick, x = fishPos(f, now); f.phase = 'ready'; f.cool = now + 900; $('fScale').style.display = 'none';
-    if (x < f.z0 || x > f.z0 + f.zw){ renderFishBar(); floatText(f.gc, f.gr, 'หลุด! 🐟💨', '#5b8fd8'); sfx('pop'); return; }   // missed the green zone — just cast again
-    f.cool = now + 1200;
-    S.inv[c.k] = (S.inv[c.k]||0) + 1; bump('fish'); gainExp(c.exp); petHappy(pet);
-    save(); refreshHeader(); renderMats(); renderFishBar();
-    reward(`${c.k==='boot' ? 'อ้าว… ได้' : 'ได้ปลา!'} ${MAT[c.k]}${c.k==='goldfish' ? ' ✨ หายาก!' : ''}\n⭐ Exp +${c.exp}`);
-  }
+  if (f.phase==='bite') return;                                // 🎣 v0.28: the reel minigame handles the catch (hold anywhere)
+}
+let reelHold = false;
+function reelStart(f, now){
+  const slow = S.analysis && S.analysis.age >= 60, c = f.pick, zh = REEL_ZONE[Math.min(3, upLv('rod'))];
+  f.reel = { zh, zy:1 - zh, zv:0, fy:.7, ft:.5, next:now, prog:.3, last:now, k:c.rk*(slow ? .7 : 1), g:c.rg.map(x => x*(slow ? 1.3 : 1)) };
+  reelHold = false; $('rZone').style.height = (zh*100) + '%'; $('rFish').textContent = MAT[c.k].split(' ')[0];
+  $('reel').style.display = 'block'; $('rHint').textContent = 'กดค้าง = ช่องเขียวลอยขึ้น';
+}
+function reelStep(f, now){
+  const R = f.reel; if (!R) return; const dt = Math.min(.05, (now - R.last)/1000); R.last = now;
+  R.zv = Math.max(-1.4, Math.min(1.4, R.zv + (reelHold ? -1.6 : 1.2)*dt)); R.zy += R.zv*dt;
+  if (R.zy < 0){ R.zy = 0; R.zv *= -.3; } else if (R.zy > 1 - R.zh){ R.zy = 1 - R.zh; R.zv *= -.3; }
+  if (now >= R.next){ R.ft = .05 + Math.random()*.9; R.next = now + (R.g[0] + Math.random()*(R.g[1] - R.g[0]))*1000; }
+  R.fy += (R.ft - R.fy)*Math.min(1, R.k*dt);
+  const inside = R.fy >= R.zy && R.fy <= R.zy + R.zh; R.prog += (inside ? .35 : -.25)*dt;
+  const H = $('reel').firstElementChild.clientHeight - 8;                     // track inner height (px)
+  $('rZone').style.transform = `translateY(${(R.zy*H).toFixed(1)}px)`; $('rFish').style.transform = `translateY(${(R.fy*H).toFixed(1)}px)`;
+  $('rProg').style.height = (Math.max(0, Math.min(1, R.prog))*100).toFixed(1) + '%'; $('rZone').style.background = inside ? '#7ee08acc' : '#ffe08acc';
+  if (R.prog >= 1) reelEnd(f, true); else if (R.prog <= 0) reelEnd(f, false);
+}
+function reelEnd(f, ok){
+  const c = f.pick, now = Date.now(); f.reel = null; reelHold = false; $('reel').style.display = 'none'; f.phase = 'ready'; f.cool = now + 900;
+  if (!ok){ renderFishBar(); floatText(f.gc, f.gr, 'หลุด! 🐟💨', '#5b8fd8'); sfx('pop'); return; }   // escaped — just cast again
+  f.cool = now + 1200; S.inv[c.k] = (S.inv[c.k]||0) + 1; bump('fish'); gainExp(c.exp); petHappy(pet);
+  save(); refreshHeader(); renderMats(); renderFishBar();
+  reward(`${c.k==='boot' ? 'อ้าว… ได้' : 'ได้ปลา!'} ${MAT[c.k]}${c.k==='goldfish' ? ' ✨ หายาก!' : ''}\n⭐ Exp +${c.exp}`);
 }
 function updateFishing(now){
   const f = fishing; if (!f) return;
-  if (f.phase === 'bite') $('fMark').style.transform = `translateX(${(fishPos(f, now)*($('fScale').clientWidth - 6)).toFixed(1)}px)`;   // GPU-only move, no layout
+  if (f.phase === 'bite') reelStep(f, now);
   if (f.phase==='cast' && now - f.t0 > 600){ f.phase = 'wait'; f.biteAt = now + 2000 + Math.random()*4000; renderFishBar(); }
   else if (f.phase==='wait' && now >= f.biteAt){
     const wOf = c => c.k === 'goldfish' ? c.w*(petSkill(5) ? 2 : 1)*(upLv('rod') >= 3 ? 1.5 : 1) : c.w;     // 🐾 Lv.5 คู่หูตกปลา ×2 • 🎣 iron rod ×1.5
     let r = Math.random()*CATCH.reduce((s,c) => s+wOf(c), 0); f.pick = CATCH.find(c => (r -= wOf(c)) < 0) || CATCH[0];
-    f.phase = 'bite'; f.biteT = now; f.winEnd = now + 3*2000/f.pick.v; f.zw = ROD_ZONE[Math.min(3, upLv('rod'))]; f.z0 = Math.random()*(1 - f.zw); renderFishBar();
-    const sc = $('fScale'); sc.style.display = 'block'; sc.firstElementChild.style.left = (f.z0*100) + '%'; sc.firstElementChild.style.width = (f.zw*100) + '%';
+    f.phase = 'bite'; f.biteT = now; reelStart(f, now); renderFishBar();
+
     try { navigator.vibrate && navigator.vibrate(120); } catch(e){}
   }
-  else if (f.phase==='bite' && now > f.winEnd){ $('fScale').style.display = 'none'; f.phase = 'ready'; f.cool = now + 600; renderFishBar(); sheet('ช้าไปนิด! ปลาหลุดไปแล้ว 🐟💨\nเมื่อทุ่นจมให้กด "ดึง!" ทันที', OK); }
   else if (f.phase==='ready' && f.cool && now >= f.cool){ f.cool = 0; renderFishBar(); }
 }
 /* bobber only (no rod): drops onto the pond, bobs while waiting, dips + ❗ on a bite */
@@ -3798,7 +3832,7 @@ const QUESTS = [
   { id:'pickUp',  name:'อัปเกรดอีเต้อ',               need:1, goal:() => st('up_pick'),
     text:'⚒ โรงตีเหล็ก → ⛏ อีเต้อทองแดง (แท่งทองแดง 3 + ไม้ 5) → ตีแรงขึ้นและลงชั้น 2 ได้', reward:{coins:300} },
   { id:'rodUp',   name:'อัปเกรดเบ็ดตกปลา',          need:1, goal:() => st('up_rod'),
-    text:'⚒ โรงตีเหล็ก → 🎣 เบ็ดทองแดง (แท่งทองแดง 2 + ไม้ 4) → ช่องเขียวตอนดึงปลากว้างขึ้น ตกง่ายขึ้น', reward:{coins:200} },
+    text:'⚒ โรงตีเหล็ก → 🎣 เบ็ดทองแดง (แท่งทองแดง 2 + ไม้ 4) → ช่องเขียวตอนดึงปลาใหญ่ขึ้น ตกง่ายขึ้น', reward:{coins:200} },
   { id:'avWear',  name:'แต่งตัวที่ตู้เสื้อผ้า',          nav:'tBag', need:1, goal:() => st('avWear'),
     text:'🎒 กระเป๋า › 👕 ตู้เสื้อผ้า → เปลี่ยนทรงผม สีเสื้อ หรือของประดับ แล้วบันทึก • ชุดพิเศษได้จากการทำภารกิจครบติดกันและความสนิทกับชาวเมือง', reward:{coins:100} },
   { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
@@ -4324,8 +4358,8 @@ const PROC = {
               {up:'pick', lv:4, name:'⛏ อีเต้อทอง (ลงชั้น 4 • ตี 4 แรง)',    ico:'pickaxe', in:{bar_gold:3, gem:1}, sec:1800},
               {up:'axe', lv:2, name:'🪓 ขวานเหล็ก (ตัดพุ่ม/ต้นไม้แรง ×2)',    ico:'axe', in:{bar_iron:2, wood:5}, sec:900},
               {up:'hammer', lv:2, name:'🔨 ค้อนเหล็ก (ทุบหินแรง ×2)',         ico:'hammer', in:{bar_iron:2, stone:10}, sec:900},
-              {up:'rod', lv:2, name:'🎣 เบ็ดทองแดง (ช่องเขียว 45%)', ico:'m:tilapia', in:{bar_copper:2, wood:4}, sec:600},
-              {up:'rod', lv:3, name:'🎣 เบ็ดเหล็ก (ช่องเขียว 55% • ปลาทองบ่อยขึ้น)', ico:'m:goldfish', in:{bar_iron:3}, sec:1200},
+              {up:'rod', lv:2, name:'🎣 เบ็ดทองแดง (ช่องเขียวใหญ่ขึ้น 25→32%)', ico:'m:tilapia', in:{bar_copper:2, wood:4}, sec:600},
+              {up:'rod', lv:3, name:'🎣 เบ็ดเหล็ก (ช่องเขียว 40% • ปลาทองบ่อยขึ้น)', ico:'m:goldfish', in:{bar_iron:3}, sec:1200},
               {up:'factory', lv:2, name:'⚙️ อัปเกรดโรงงาน (ทำของเร็วขึ้น 25%)', ico:'b:sawmill', in:{bar_iron:3, bar_copper:3}, sec:1800} ]
 };
 const upLv = k => (S.up || {})[k] || 1;                       // ⚒ upgrade levels (pick / axe / hammer / factory)
@@ -4539,6 +4573,8 @@ function setHint(){
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
 $('monFab').onclick = () => openBattle();
+{ const rl = $('reel'), on = e => { e.preventDefault(); reelHold = true; }, off = () => { reelHold = false; };   // 🎣 hold anywhere
+  rl.addEventListener('pointerdown', on); rl.addEventListener('pointerup', off); rl.addEventListener('pointercancel', off); rl.addEventListener('pointerleave', off); }
 $('chatFab').innerHTML = `<svg viewBox="0 0 64 64">${BEAGLE}</svg>`; $('chatFab').onclick = () => { ciDue = false; openCheckin(false); }; $('bClose').onclick = () => closeBattle();
 $('bHit').onclick = () => { if (!monHit('btn')) renderBattle(); };
 $('mineRest').onclick = () => brkChooser(() => exitMine());
