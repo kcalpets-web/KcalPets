@@ -126,7 +126,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #avEd .chip.on{border-color:var(--pri);background:#fff1df}#avEd .chip.lockc{opacity:.55}#avEd .chip small{font-size:11px;color:var(--sub)}
 #avEd .avbot{display:flex;gap:10px}#avEd .avbot .btn{flex:1;min-height:52px}
 #mineBar{position:absolute;left:8px;right:8px;bottom:10px;z-index:5;display:none;align-items:center;justify-content:space-between;gap:8px;background:#2b2420e6;color:#fff;border-radius:16px;padding:8px 12px;font-weight:700}
-#mineBar small{font-weight:400;opacity:.85}#mineBar .btn{min-height:44px;background:#fff;color:var(--ink);white-space:nowrap;flex:none;padding:0 14px}
+#mineBar small{font-weight:400;opacity:.85}#mineBar .stam{position:relative;height:16px;margin:3px 0;border-radius:8px;background:#ffffff33;overflow:hidden;min-width:130px}#mineBar .stam i{position:absolute;left:0;top:0;bottom:0;border-radius:8px}#mineBar .stam b{position:relative;font-size:11px;line-height:16px;padding-left:6px}#mineBar .btn{min-height:44px;background:#fff;color:var(--ink);white-space:nowrap;flex:none;padding:0 14px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}   /* 🃏 v0.17.2 card grid: 2 cols on phones, 3+ on tablets */
 .gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 6px;font:inherit;color:var(--ink);text-align:center;box-shadow:0 2px 6px #0000000d;min-height:44px}
 .gcard b{font-size:14px;line-height:1.25}.gcard small{font-size:11.5px;color:var(--sub);line-height:1.35}
@@ -236,7 +236,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <button id="evFab" aria-label="อีเวนต์">🏮</button>
       <div id="toolBar"></div>
       <div id="seedBar"></div>
-      <div id="mineBar"><div id="mineInfo"></div><button class="btn ghost" id="mineOut">ออกจากเหมือง</button></div>
+      <div id="mineBar"><div id="mineInfo"></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost" id="mineRest">🧘 พัก</button><button class="btn ghost" id="mineOut">ออกจากเหมือง</button></div></div>
       <div id="dropBar"><div id="dropStore" class="dz">📦<small>เก็บเข้าคลัง</small></div><div id="dropTrash" class="dz">🗑️<small>ลบทิ้ง<br>คืนครึ่งหนึ่ง</small></div></div>
       <div id="hint">แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้</div>
     </div>
@@ -527,7 +527,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.24.0';
+const APP_VER = '0.24.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1429,7 +1429,8 @@ const needMini = cost => Object.entries(cost||{}).map(([k,v]) => `<span class="$
    ===================================================================== */
 const EVENT = { id:'loy2569', name:'🏮 เทศกาลลอยกระทง', start:'2026-11-17', end:'2026-11-25', night:'2026-11-24', when:'17–25 พ.ย.' };
 const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-const evTest  = () => store.get('pensuk_evtest') === true;
+const evTest  = () => false;                                  // v0.24.1: test switches removed (event runs on real dates only)
+try { store.set('pensuk_evtest', false); store.set('pensuk_evnight', false); } catch(e){}
 const eventOn = () => evTest() || (isoToday() >= EVENT.start && isoToday() <= EVENT.end);
 const moonNight = () => (evTest() && store.get('pensuk_evnight') === true) || isoToday() === EVENT.night;
 function evState(){ S.ev = S.ev || {}; return S.ev[EVENT.id] || (S.ev[EVENT.id] = { candles:0, used:0, float:{}, tasks:{}, got:{} }); }
@@ -1520,7 +1521,7 @@ const reqIco = (id, q) => q.t === 'give' ? (q.furn && Object.keys(q.furn).length
 function npcComplete(id){
   const q = npcReq(id), s = npcState(id), n = NPCS[id], h0 = npcHearts(id), msgs = [];
   if (q.t === 'give'){ pay(q.give); if (q.furn) for (const [k,v] of Object.entries(q.furn)) S.furn[k] -= v; }
-  s.done = true; s.xp++; bump('npcDone'); if (id === 'coach'){ bump('coachDone'); const en = restTired(50); if (en) msgs.push(`😮‍💨 หายเหนื่อย −${en}`); }
+  s.done = true; s.xp++; bump('npcDone'); if (id === 'coach'){ bump('coachDone'); const en = restTired(50); if (en) msgs.push(restTxt(en).trim()); }
   for (const [k,v] of Object.entries(q.reward)){
     if (k === 'coins'){ S.coins += v; msgs.push(`🪙 ${v.toLocaleString()} เหรียญทอง`); }
     else if (k === 'love'){ msgs.push(loveTxt(v, gainLove(v))); }
@@ -1790,10 +1791,13 @@ const TIRED_ADD = { stone:2, coal:4, ore_copper:4, ore_iron:4, ore_silver:4, ore
 function tiredNow(){ const t = (S.mineTired || 0) - (Date.now() - (S.tiredAt || Date.now()))/60000; return Math.max(0, t); }
 function setTired(v){ S.mineTired = Math.max(0, Math.min(TIRED_MAX, v)); S.tiredAt = Date.now(); }
 function restTired(n){ if (!S.mineOpen) return 0; const b = tiredNow(); setTired(n === Infinity ? 0 : b - n); return Math.round(b - tiredNow()); }   // returns how much was rested
-const restTxt = n => n ? `\n😮‍💨 หายเหนื่อย −${n}` : '';
+const restTxt = n => !n ? '' : tiredNow() <= 0 ? '\n💪 แรงเต็มแล้ว!' : `\n💪 ฟื้นแรง +${n}%`;
+/* 💪 v0.24.1 display: players see STAMINA that starts full and drains (designer: 0→100 tiredness was confusing).
+   stamina% = 100 − tiredNow()  (same fatigue math underneath) */
+const staminaNow = () => Math.round(TIRED_MAX - tiredNow());
 function tiredSheet(){
-  sheet(`😮‍💨 เหนื่อยแล้ว พักสายตาหน่อยนะ\nความเหนื่อย ${Math.round(tiredNow())}/${TIRED_MAX} (ลดเองนาทีละ 1)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วหายเหนื่อยทันที`, [
-    { label:'📵 พักสายตา 2 นาที', cls:'ok', fn:() => { exitMine(); brkStart('rest'); } },
+  sheet(`💪 หมดแรงแล้ว พักสายตาหน่อยนะ\nแรง ${staminaNow()}% (ฟื้นเองนาทีละ 1%)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วแรงเต็มทันที`, [
+    { label:'📵 พักสายตา 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('rest'); } },
     { label:'🫁 หายใจลึก ๆ 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('breath'); } },
     { label:'ไว้ก่อน', cls:'ghost' } ]);
 }
@@ -1821,7 +1825,7 @@ function mineUnlockTick(){
   if (S.mineOpen || (S.mineStage || 0) < MINE_PROJ.length) return;
   S.mineOpen = 1; setTired(0); ensureMineSite();
   const m = mineObj(); if (m){ m[1].closed = 0; markDirty(m[0]); } save();
-  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าโล่งแล้ว ลงไปขุดกันเลย!"\n\nแตะ ⛏ ทางเข้าเหมือง (พื้นที่ Lv.10) → ลากนิ้วผ่านหินเพื่อขุด\n😮‍💨 ขุดได้เรื่อย ๆ — เหนื่อยเมื่อไหร่ พักสายตาหรือขยับตัวสั้น ๆ ก็หาย'); flushRewards();
+  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าโล่งแล้ว ลงไปขุดกันเลย!"\n\nแตะ ⛏ ทางเข้าเหมือง (พื้นที่ Lv.10) → ลากนิ้วผ่านหินเพื่อขุด\n💪 ขุดได้เรื่อย ๆ — แรงหมดเมื่อไหร่ พักสายตาหรือขยับตัวสั้น ๆ ก็แรงเต็ม'); flushRewards();
 }
 let inMine = null;                                            // {N, floor, ver, tiles, ax, ay, tx, ty, face, swing, broken, saved}
 function genMineFloor(f){
@@ -1849,7 +1853,8 @@ function exitMine(){
 }
 function renderMineBar(){
   if (!inMine) return;
-  $('mineInfo').innerHTML = `⛏ ${MINE_FLOORS[inMine.floor].name}<br><small><span style="color:${tiredNow() >= 70 ? '#ffb74d' : 'inherit'}">😮‍💨 ${Math.round(tiredNow())}/${TIRED_MAX}</span> • อีเต้อขั้น ${upLv('pick')} • ทุบแล้ว ${inMine.broken}</small>`;
+  const st = staminaNow(), col = st < 30 ? '#ff9f43' : '#6cc56f';   // 💪 green → orange under 30%
+  $('mineInfo').innerHTML = `⛏ ${MINE_FLOORS[inMine.floor].name}<div class="stam"><i style="width:${st}%;background:${col}"></i><b>💪 ${st}%</b></div><small>อีเต้อขั้น ${upLv('pick')} • ทุบแล้ว ${inMine.broken}</small>`;
 }
 let mineDrag = null;
 function mineStroke(x0, y0, x1, y1){
@@ -1864,7 +1869,7 @@ function mineHitAt(c, r){
   if (t.k === 'floor') return;
   if (t.k === 'ladder'){ mineDrag = null; return mineLadder(); }
   const ore = t.k !== 'stone';
-  if (tiredNow() >= TIRED_MAX){ mineDrag = null; if (Date.now() - toolMsgAt > 1500){ toolMsgAt = Date.now(); floatText(c, r, '😮‍💨 เหนื่อยแล้ว', '#e0892f'); setTimeout(tiredSheet, 250); } return; }
+  if (tiredNow() >= TIRED_MAX){ mineDrag = null; if (Date.now() - toolMsgAt > 1500){ toolMsgAt = Date.now(); floatText(c, r, '💪 หมดแรง', '#e0892f'); setTimeout(tiredSheet, 250); } return; }
   M.hx = c + .5; M.hy = r + .5; M.swing = performance.now() + 300;   // ⛏ v0.23: the pickaxe swings at the rock under the finger
   t.hp -= upLv('pick'); R3D.mineHit(key); sfx('clink'); buzz(12); burst(c, r, ['#a39f99', '#7d7a75', '#ffffff'], 6);
   if (t.hp > 0) return;
@@ -1872,7 +1877,7 @@ function mineHitAt(c, r){
   const n = t.k === 'stone' || t.k === 'coal' ? 1 + (Math.random()*2|0) : 1 + (Math.random() < .15 ? 1 : 0), got = t.k === 'stone' ? 'stone' : t.k;
   invAdd(got, n); bump(ore ? 'oreGet' : 'mineStone'); if (ore) bump('ore_' + t.k);
   floatText(c, r, `+${n}${MAT[got].split(' ')[0]}`, ore ? '#e0892f' : '#6b625a');
-  if (tiredNow() >= TIRED_MAX) setTimeout(tiredSheet, 400); else if (tiredNow() >= 70 && tiredNow() - tAdd < 70) floatText(c, r - 1, '😮‍💨 เริ่มเหนื่อยแล้ว', '#e0892f');
+  if (tiredNow() >= TIRED_MAX) setTimeout(tiredSheet, 400); else if (tiredNow() >= 70 && tiredNow() - tAdd < 70) floatText(c, r - 1, '💪 แรงเหลือน้อยแล้ว', '#e0892f');
   t.k = 'floor'; delete t.hp; M.broken++; M.ver++; gainExp(ore ? 3 : 1);
   if (M.broken === 8){ const fl = M.tiles.map((x, i) => [x, i]).filter(([x, i]) => x.k === 'floor' && i !== key && !(i % M.N <= 1 && ((i / M.N)|0) >= M.N - 2));
     const pick1 = fl[(Math.random()*fl.length)|0]; if (pick1){ pick1[0].k = 'ladder'; M.ver++; floatText(pick1[1] % M.N, (pick1[1] / M.N)|0, '🪜 บันไดลงชั้นถัดไป!', '#2e7d32'); } }
@@ -1934,7 +1939,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, hidden:true, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
-  mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ขุดได้เรื่อย ๆ เหนื่อยแล้วพักจอ 😮‍💨 • สถานที่ถาวร' },
+  mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ขุดได้เรื่อย ๆ แรง 💪 หมดก็พักจอ • สถานที่ถาวร' },
   lanna:     { name:'🏮 โคมไฟล้านนา',  w:1, h:1, price:0, cost:{}, H:2.3, hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • ส่องแสงตอนกลางคืน • ความสวย +2' },
   lotuspond: { name:'🪷 สระบัวกระทง',  w:2, h:2, price:0, cost:{}, H:.6,  hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • สระบัวมีกระทงลอย • ความสวย +3' },
   jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:1500,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
@@ -3706,7 +3711,7 @@ const QUESTS = [
   { id:'mineSet', name:'ช่วยลุงหินซ่อมเหมือง',       need:1, goal:() => S.mineOpen ? 1 : 0,
     text:'ถึง Lv.10 พื้นที่ใหม่จะมี ⛏ ทางเข้าเหมืองที่ถล่มอยู่ และลุงหินจะมาขอให้ช่วย → แตะลุงหิน → ส่งวัตถุดิบครบ 3 ขั้น → เหมืองเปิด', reward:{coins:200} },
   { id:'mineDig', name:'ขุดแร่ครั้งแรก',              need:1, goal:() => st('oreGet'),
-    text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — ขุดได้เรื่อย ๆ ถ้าเหนื่อย 😮‍💨 ให้พักสายตา/ขยับตัวสั้น ๆ ก็หาย', reward:{coins:100, coal:2} },
+    text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — ขุดได้เรื่อย ๆ แรง 💪 หมดเมื่อไหร่ พักสายตา/ขยับตัวสั้น ๆ ก็แรงเต็ม', reward:{coins:100, coal:2} },
   { id:'smelt',   name:'หลอมแท่งทองแดง',             need:1, goal:() => st('proc_bar_copper'),
     text:'(Lv.12) พี่เหล็กจะมาขอให้ช่วยสร้าง ⚒ โรงตีเหล็ก (3 ขั้น) → วางจาก 📦 คลัง → แตะ → 🥉 แท่งทองแดง (แร่ทองแดง 3 + ถ่านหิน 1)', reward:{coins:200} },
   { id:'pickUp',  name:'อัปเกรดอีเต้อ',               need:1, goal:() => st('up_pick'),
@@ -4008,24 +4013,18 @@ function renderBag(){
   v3.textContent = gfxEco() ? '⚙️ คุณภาพกราฟิก: ประหยัด (แตะเพื่อใช้แบบสูง)' : '⚙️ คุณภาพกราฟิก: สูง (แตะเพื่อใช้แบบประหยัด)';
   v3.onclick = () => confirmDo(gfxEco() ? 'เปลี่ยนเป็นคุณภาพสูง?\nภาพคมชัด มีเงาและหญ้าไหวตามลม' : 'เปลี่ยนเป็นโหมดประหยัด?\nภาพละเอียดลดลง ไม่มีเงา/หญ้าไหว\nลื่นขึ้นและประหยัดแบตบนเครื่องรุ่นเก่า', () => setGfx(!gfxEco()));
   renderBrkSettings(L);
-  /* 🧪 temporary test switches for the Loy Krathong event — remove before 17 Nov */
-  const et = document.createElement('button'); et.className = 'btn ghost';
-  et.textContent = evTest() ? '🧪 ทดลองอีเวนต์ลอยกระทง: เปิดอยู่ (แตะเพื่อปิด)' : '🧪 ทดลองอีเวนต์ลอยกระทง (ก่อนวันจริง)';
-  et.onclick = () => { store.set('pensuk_evtest', !evTest()); if (!evTest()) store.set('pensuk_evnight', false); skyKey = ''; updateSky(); renderBag(); questTick(); };
-  const en = document.createElement('button'); en.className = 'btn ghost'; en.style.display = evTest() ? '' : 'none';
-  en.textContent = store.get('pensuk_evnight') === true ? '🌕 ทดลองคืนวันเพ็ญ: เปิดอยู่ (แตะเพื่อปิด)' : '🌕 ทดลองคืนวันเพ็ญ (บังคับกลางคืน)';
-  en.onclick = () => { store.set('pensuk_evnight', store.get('pensuk_evnight') !== true); skyKey = ''; updateSky(); if (R3D) R3D.dirtyAll(); renderBag(); };
   /* 🧪 temporary mine test switch (v0.22.1) — remove together with the Loy Krathong switches */
   const mt = document.createElement('button'); mt.className = 'btn ghost';
-  mt.textContent = S.mineOpen ? '🧪 ทดลองเหมือง: หายเหนื่อย + แร่ชุดทดลอง' : '🧪 ทดลองเหมือง (ปลดล็อกทันที ไม่ต้องรอลุงหิน/Lv.10)';
-  mt.onclick = () => confirmDo(S.mineOpen ? 'หายเหนื่อยทันที และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nทางเข้าเหมืองโผล่ในพื้นที่ที่ 10 + ⚒ โรงตีเหล็กในคลัง\nแร่ชุดทดลอง', () => {
+  mt.textContent = S.mineOpen ? '🧪 ทดลองเหมือง: แรงเต็ม + แร่ชุดทดลอง' : '🧪 ทดลองเหมือง (ปลดล็อกทันที ไม่ต้องรอลุงหิน/Lv.10)';
+  mt.onclick = () => confirmDo(S.mineOpen ? 'แรงเต็มทันที และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nทางเข้าเหมืองโผล่ในพื้นที่ที่ 10 + ⚒ โรงตีเหล็กในคลัง\nแร่ชุดทดลอง', () => {
     S.store = S.store || {}; const first = !S.mineOpen;
     if (first){ S.mineStage = Math.max(S.mineStage || 0, MINE_PROJ.length); while (S.farm.zones.length <= MINE_ZONE) S.farm.zones.push(genZone(S.farm.zones.length)); rebuildChunkMap();
       mineUnlockTick(); S.proj = S.proj || {}; if (!projDone('lek')){ S.proj.lek = PROJ.lek.stages.length; S.store.smithy = (S.store.smithy||0) + 1; } }
     setTired(0); [['ore_copper',9], ['coal',6], ['ore_iron',6], ['wood',5]].forEach(([k, n]) => invAdd(k, n)); save(); renderMats(); renderBag();
-    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\n⛏ ทางเข้าเหมืองอยู่ในพื้นที่ที่ 10 (เลื่อนจอไปหา)\n⚒ โรงตีเหล็ก: ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง' : '😮‍💨 หายเหนื่อย + ได้แร่ชุดทดลอง', OK); });
+    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\n⛏ ทางเข้าเหมืองอยู่ในพื้นที่ที่ 10 (เลื่อนจอไปหา)\n⚒ โรงตีเหล็ก: ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง' : '💪 แรงเต็ม + ได้แร่ชุดทดลอง', OK); });
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
-  L.append(...(AVATAR_ON ? [wd] : []), v3, et, en, mt, mv, out);
+  const sb = document.createElement('button'); sb.className = 'btn ok'; sb.textContent = '🧘 พักเองตอนนี้ (พักจอ / ขยับตัว)'; sb.onclick = () => brkChooser();
+  L.append(...(AVATAR_ON ? [wd] : []), sb, v3, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -4305,6 +4304,7 @@ function setHint(){
 }
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
+$('mineRest').onclick = () => brkChooser(() => exitMine());
 $('toolFab').onclick = () => {
   const open = $('toolBar').style.display === 'flex';
   if (open){ pickTool(null); return; }
@@ -4798,7 +4798,7 @@ function v09Migrate(){
 const BRK = {
   squat:  { icon:'🏋️', label:'ลุกนั่ง 5 ครั้ง',      key:'squat',  unit:'ครั้ง', target:5 },
   neck:   { icon:'🙆', label:'บริหารคอ 1 รอบ',       key:'neck',   unit:'รอบ',  target:1 },
-  rest:   { icon:'📵', label:'พักสายตา 2 นาที',       key:'rest',   unit:'นาที', target:2 },
+  rest:   { icon:'📵', label:'พักสายตา 1 นาที',       key:'rest',   unit:'นาที', target:1 },   // v0.24.1: 2 → 1 min (designer: 2 felt too long)
   breath: { icon:'🫁', label:'หายใจลึก ๆ 1 นาที',     key:'breath', unit:'นาที', target:1 },
   water:  { icon:'💧', label:'ดื่มน้ำ 1 แก้ว',         key:'water',  unit:'แก้ว', target:1 }
 };
@@ -4836,12 +4836,20 @@ function brkStart(k){
   if (k === 'water') return confirmDo('💧 ดื่มน้ำ 1 แก้วแล้วใช่ไหม?', () => brkDone(k));
   openAct({ ...d, brk:k, progress:0, sec:0 });
 }
+/* v0.24.1: a break can be a reminder (pending) OR started by the player any time.
+   💪 stamina always refills; 🪙 / ❤️ / 💗 only while today's quota (BRK_MAX) lasts — no coin farming. */
 function brkDone(k){
-  const b = brkState(), i = b.pending.indexOf(k); if (i < 0) return;
-  b.pending.splice(i, 1); b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); bump('brkDone');
-  const got = gainLove(LOVE_PER_BRK); const en = restTired(Infinity);
+  const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1);
+  const paid = b.count < BRK_MAX; bump('brkDone');
+  const en = restTired(Infinity); let got = 0;
+  if (paid){ b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); got = gainLove(LOVE_PER_BRK); }
   sfx('coin'); save(); refreshHeader(); markBrkNav(); renderMissions();
-  reward(`👏 ขยับตัวแล้ว!\n${loveTxt(LOVE_PER_BRK, got)}${restTxt(en)}\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)`);
+  reward(`👏 พักแล้ว เก่งมาก!${en ? '\n💪 แรงเต็มแล้ว!' : ''}` + (paid ? `\n${loveTxt(LOVE_PER_BRK, got)}\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)` : `\n(รางวัลวันนี้ครบ ${BRK_MAX} ครั้งแล้ว — แต่ร่างกายได้พักจริง 👍)`));
+}
+function brkChooser(after){
+  const b = brkState();
+  sheet(`🧘 พักเองตอนนี้\nเลือกกิจกรรมสั้น ๆ — 💪 แรงในเหมืองเต็มทุกครั้ง\nรางวัลวันนี้ ${Math.max(0, BRK_MAX - b.count)}/${BRK_MAX} ครั้ง`,
+    Object.keys(BRK).map(k => ({ label:`${BRK[k].icon} ${BRK[k].label}`, cls:'ok', fn:() => { if (after) after(); brkStart(k); } })).concat([{ label:'ไว้ก่อน', cls:'ghost' }]));
 }
 function brkSkip(k){ const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1); save(); markBrkNav(); renderMissions(); }
 function renderBrkCard(L){
@@ -4855,7 +4863,8 @@ function renderBrkCard(L){
     r.append(go, sk); c.appendChild(r);
     if (k !== 'water'){ const m = document.createElement('button'); m.className = 'btn ghost'; m.style.cssText = 'width:100%;margin-top:6px;min-height:40px;font-size:13px';
       m.textContent = '✍️ ทำแล้ว (เครื่องนับให้ไม่ได้)'; m.onclick = () => confirmDo(`ทำ ${d.label} แล้วใช่ไหม?`, () => brkDone(k)); c.appendChild(m); } });
-  L.appendChild(c);
+  const own = document.createElement('button'); own.className = 'btn'; own.style.cssText = 'width:100%;margin-top:8px'; own.textContent = '🧘 พักเองตอนนี้'; own.onclick = () => brkChooser();
+  c.appendChild(own); L.appendChild(c);
 }
 function renderBrkSettings(L){
   const cfg = brkCfg(), c = document.createElement('div'); c.className = 'card';
