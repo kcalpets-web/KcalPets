@@ -120,6 +120,34 @@ export function start(){
     return g;
   }
   const CROPC = { carrot:'#f08a3c', corn:'#f2cf4a', tomato:'#e5483e', rice:'#e8c76a', pumpkin:'#f0962f', berry:'#e2364d' };
+  /* 🪷 krathong: banana-leaf base, pink petal ring, white folded leaves, candle + flame (emissive) + 2 incense sticks */
+  const flameMat = new THREE.MeshStandardMaterial({ color:'#ffb02e', emissive:0xff9a1a, emissiveIntensity:1.4, roughness:.6 });
+  const glowMat  = new THREE.MeshBasicMaterial({ color:0xffc65a, transparent:true, opacity:.28, depthWrite:false });
+  function krModel(){
+    const g = new THREE.Group();
+    CY(g, .34, .1, '#5f9e4a', 0, 0, 0); CY(g, .3, .04, '#78b85f', 0, .1, 0);
+    for (let k=0;k<10;k++){ const a = k/10*Math.PI*2, p = CO(g, .07, .2, k%2 ? '#ff9fb8' : '#ffc2d1', Math.cos(a)*.25, .08, Math.sin(a)*.25); p.rotation.set(Math.sin(a)*.4, 0, -Math.cos(a)*.4); }
+    for (let k=0;k<6;k++){ const a = k/6*Math.PI*2 + .3; BALL(g, .08, .12, .045, '#fff0f4', Math.cos(a)*.14, .2, Math.sin(a)*.14).rotation.y = -a; }
+    CY(g, .025, .22, '#fbf8f2', .03, .14, .02);
+    const fl = add(g, SPH, flameMat, .03, .4, .02, .03, .06, .03), gl = add(g, SPH, glowMat, .03, .4, .02, .12, .12, .12); gl.castShadow = false;
+    for (const x of [-.07, -.03]) CY(g, .007, .28, '#9a3b2e', x, .14, -.05);
+    g.userData.flame = fl; g.userData.glow = gl; return g;
+  }
+  function lotus(g, x, y, z){ for (let k=0;k<6;k++){ const a = k/6*Math.PI*2; const p = BALL(g, .07, .11, .045, '#ff9fb8', x + Math.cos(a)*.07, y + .08, z + Math.sin(a)*.07); p.rotation.set(Math.sin(a)*.5, -a, 0); }
+    BALL(g, .05, .04, .05, '#ffd23f', x, y + .1, z); }
+  /* floating krathongs on ponds (index.html KRATHONGS: {id, gc, gr, t0}; not saved) — drift on a circle r 0.45 inside the tile:
+       a = 1.7·id + 0.35·age,  pos = (2gc+1 + 0.45 cos a, 0.04 + 0.02 sin 2age, 2gr+1 + 0.45 sin a),  grow in 0.5 s, fade out over the last 10 s of 120 s */
+  const krG = new THREE.Group(), krMap = new Map(); scene.add(krG);
+  function syncKrathongs(){
+    const list = typeof KRATHONGS !== 'undefined' ? KRATHONGS : [], now = performance.now()/1000;
+    for (const [id, m] of krMap) if (!list.some(k => k.id === id)){ krG.remove(m); krMap.delete(id); }
+    for (const k of list){
+      let m = krMap.get(k.id); if (!m){ m = krModel(); krG.add(m); krMap.set(k.id, m); }
+      const age = now - k.t0, a = k.id*1.7 + age*.35, s = Math.max(.001, Math.min(1, age*2) * Math.min(1, Math.max(0, (120 - age)/10)));
+      m.position.set(k.gc*2 + 1 + Math.cos(a)*.45, .04 + Math.sin(age*2)*.02, k.gr*2 + 1 + Math.sin(a)*.45); m.rotation.y = -a; m.scale.setScalar(s);
+      m.userData.flame.scale.set(.03, .06*(1 + Math.sin(age*23)*.18), .03); m.userData.glow.material.opacity = .18 + (NIGHT||0)*.3;
+    }
+  }
   function objModel(o){
     const it = FARM_ITEMS[o.type], g = new THREE.Group(), W = o.w*2, D = o.h*2, H = it.H;
     if (!o.done){                                              // construction site: pad + posts + ghost volume rising with progress
@@ -186,6 +214,17 @@ export function start(){
       case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true, box:true });
                        for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
+      /* 🏮 v0.18 Loy Krathong event decor */
+      case 'lanna': { const on = NIGHT > .35;                   // Lanna paper lantern hanging from a wooden post (glows at night)
+        RB(g, .55, .1, .55, .04, '#cfc6b8', 0, 0, 0); CY(g, .07, 2.3, '#7a4a26', 0, .1, 0, true); RB(g, .7, .07, .07, .03, '#7a4a26', .3, 2.3, 0);
+        CY(g, .015, .2, '#e2b24a', .6, 2.12, 0);
+        add(g, CYL, mat('#e8584a', on ? 0xff6a2a : 0x2a0f08), .6, 1.78, 0, .27, .5, .27);
+        CY(g, .29, .06, '#e2b24a', .6, 2.0, 0); CY(g, .29, .06, '#e2b24a', .6, 1.5, 0); CY(g, .02, .3, '#e2b24a', .6, 1.22, 0); break; }
+      case 'lotuspond': {                                       // stone-rimmed lotus pond with lily pads and a krathong
+        CY(g, W*.46, .3, '#d9d3c8', 0, 0, 0, true); add(g, CYL, waterMat, 0, .3, 0, W*.41, .06, W*.41);
+        for (let k=0;k<7;k++){ const a = k/7*Math.PI*2 + .4, r = .6 + (k%2)*.35; CY(g, .26, .03, k%2 ? '#5fae52' : '#6dbb5d', Math.cos(a)*r, .32, Math.sin(a)*r);
+          if (k%3 === 0) lotus(g, Math.cos(a)*r, .36, Math.sin(a)*r); }
+        const kr = krModel(); kr.position.set(0, .33, 0); kr.scale.setScalar(.85); g.add(kr); break; }
       default: walls('#f1e7d6', '#9bb3c4', Math.max(1, H*.6));
     }
     return g;
@@ -495,6 +534,7 @@ export function start(){
           f.position.x = Math.cos(a)*.45; f.position.z = Math.sin(a)*.45; f.rotation.y = -a - dir*Math.PI/2; }
       }
       ringMat.opacity = .45;
+      syncKrathongs();
       /* tool hit wobble: shake + squash for 0.35 s, decaying */
       for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
         if (u >= 1 || !m.parent){ m.scale.set(1,1,1); hits.splice(k, 2); continue; }

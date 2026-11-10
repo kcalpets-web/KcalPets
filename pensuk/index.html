@@ -52,7 +52,7 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 .row>*{flex:1}
 /* ---------- header ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
-.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.17.2) no-repeat;background-size:10.4em 7.8em;
+.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.18.0) no-repeat;background-size:10.4em 7.8em;
   background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}                 /* clay icon atlas (8×5 cells), see tools/icons.html */
 #nav button b .ico{width:1.25em;height:1.25em;background-size:10em 7.5em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
@@ -140,6 +140,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #nav button.brk::after{content:'🔔';position:absolute;top:2px;right:18%;font-size:14px;animation:pulse 1s infinite}
 #nav button{position:relative}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
+#evFab{position:absolute;left:10px;bottom:96px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
+#evFab.pulse{animation:pulse 1s infinite}
 #toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
 #toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
 #toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:4px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
@@ -217,6 +219,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="roomTitle"></div>
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
+      <button id="evFab" aria-label="อีเวนต์">🏮</button>
       <div id="toolBar"></div>
       <div id="seedBar"></div>
       <div id="dropBar"><div id="dropStore" class="dz">📦<small>เก็บเข้าคลัง</small></div><div id="dropTrash" class="dz">🗑️<small>ลบทิ้ง<br>คืนครึ่งหนึ่ง</small></div></div>
@@ -509,7 +512,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.17.4';
+const APP_VER = '0.18.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1241,12 +1244,13 @@ const MAT = { stone:'🪨 หิน', grass:'🌿 หญ้า', wood:'🪵 ไ�
 const ICO = ['farm','missions','shop','quests','bag','coin','scissors','axe','hammer','reap','shovel','toolbox',
   'stone','grass','wood','seed','veg','food','tilapia','carp','goldfish','shrimp','boot','corn','tomato','rice','pumpkin','berry',
   'plank','beam','polish','soil','milled','soup','friedrice','jam','sauce','store','trash',
-  'pk_seed','pk_corn','pk_tomato','pk_rice','pk_pumpkin','pk_berry'];   // v0.17.2 seed packets (atlas 8×6)
+  'pk_seed','pk_corn','pk_tomato','pk_rice','pk_pumpkin','pk_berry',   // v0.17.2 seed packets (atlas 8×6)
+  'flower','krathong','candle'];                                        // v0.18 Loy Krathong
 const EMO = [['🌾(?=\\s?เคียว)','reap'],['💠','polish'],['🟫','plank'],
   ['🏡','farm'],['🎯','missions'],['🛒','shop'],['📜','quests'],['🎒','bag'],['🪙','coin'],['✂','scissors'],['🪓','axe'],['🔨','hammer'],['🪏','shovel'],['🧰','toolbox'],
   ['🪨','stone'],['🌿','grass'],['🪵','wood'],['🌱','seed'],['🥕','veg'],['🦴','food'],['🐟','tilapia'],['🐡','carp'],['🐠','goldfish'],['🦐','shrimp'],['👢','boot'],
   ['🌽','corn'],['🍅','tomato'],['🌾','rice'],['🎃','pumpkin'],['🍓','berry'],['📏','beam'],['🟤','soil'],['🍚','milled'],['🥣','soup'],['🍛','friedrice'],
-  ['🫙','jam'],['🥫','sauce'],['📦','store'],['🗑','trash']];
+  ['🫙','jam'],['🥫','sauce'],['📦','store'],['🗑','trash'],['🌸','flower'],['🪷','krathong'],['🕯','candle']];
 const EMO_RE = new RegExp(EMO.map(([e]) => '(' + e + ')\\uFE0F?').join('|'), 'gu');
 const icoSpan = name => { const i = ICO.indexOf(name), sp = document.createElement('span'); sp.className = 'ico'; sp.setAttribute('aria-hidden', 'true');
   sp.style.setProperty('--x', i % 8); sp.style.setProperty('--y', (i/8)|0); return sp; };
@@ -1292,7 +1296,7 @@ function drawIco(c, name, x, y, size, fallback){
    A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
    ===================================================================== */
 const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
-  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed'];
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond'];
 const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
 /** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
 function icoCell(ref){
@@ -1327,8 +1331,77 @@ function detailSheet(ref, text, html, buttons, fb){
   if (html) $('mbody').insertAdjacentHTML('beforeend', `<div style="white-space:normal">${html}</div>`);
 }
 const closeModal = () => $('modal').classList.remove('on');
+
+/* ---- 🏮 event sheet: craft krathong • how to float • candle exchange • event tasks ---- */
+function eventSheet(){
+  const e = evState(), moon = moonNight();
+  sheet(`${EVENT.name}\n${EVENT.when} • คืนวันเพ็ญ 24 พ.ย.${moon ? '\n🌕 วันนี้วันเพ็ญ! ลอยกระทงได้ไม่จำกัด' : ''}\n🪷 ลอยวันนี้ ${floatsToday()}/${moon ? '∞' : FLOAT_PER_DAY} • 🕯 เทียน ${e.candles}\n💡 แตะบ่อน้ำ → "🪷 ลอยกระทง" แล้วขอพร`, [{ label:'ปิด', cls:'ghost' }]);
+  const w = document.createElement('div'), ok = canPay(KR_RECIPE); w.className = 'ws';
+  const sec = t => { const b = document.createElement('b'); b.textContent = t; b.style.display = 'block'; b.style.marginTop = '8px'; w.appendChild(b); };
+  sec('🪷 ทำกระทง (ได้ทันที)');
+  w.appendChild(cardGrid([{ ref:'m:krathong', name:'กระทง', cnt:inv('krathong'), dot:!ok, sub:`${needMini(KR_RECIPE)}<br>🌸 ได้จากตัดหญ้า/ดอกไม้ป่าด้วย ✂️`, price: ok ? 'ทำ' : 'ของไม่พอ',
+    on:() => { closeModal(); if (!canPay(KR_RECIPE)) return detailSheet('m:krathong', 'วัตถุดิบทำกระทงยังไม่พอ', needLine(KR_RECIPE), [{ label:'กลับ', cls:'ghost', fn:eventSheet }]);
+      pay(KR_RECIPE); invAdd('krathong', 1); bump('krCraft'); sfx('pop'); save(); renderMats(); eventSheet(); } }], 64));
+  sec(`🕯 แลกเทียนนำโชค (ทำภารกิจครบ 3 ข้อ = 1 เล่ม/วัน)`);
+  w.appendChild(cardGrid(EV_DECOR.map(id => { const it = FARM_ITEMS[id], got = e.got[id];
+    return { ref:'b:'+id, name:nm(it.name), sub:`📐 ${it.w}×${it.h} • ของพิเศษอีเวนต์`, price: got ? 'ได้แล้ว ✔' : `🕯 ${CANDLE_COST}`, dim:!!got, dot:!got && e.candles < CANDLE_COST,
+      on:() => { closeModal(); if (got) return eventSheet();
+        if (e.candles < CANDLE_COST) return detailSheet('b:'+id, `${it.name}\n${it.desc}\n\nต้องใช้ 🕯 ${CANDLE_COST} (มี ${e.candles})\nทำภารกิจสุขภาพครบ 3 ข้อในวันอีเวนต์ = 🕯 1 เล่ม`, '', [{ label:'กลับ', cls:'ghost', fn:eventSheet }]);
+        confirmDo(`แลก ${it.name} ด้วย 🕯 ${CANDLE_COST}?`, () => { e.candles -= CANDLE_COST; e.used += CANDLE_COST; e.got[id] = 1; S.store = S.store || {}; S.store[id] = (S.store[id]||0) + 1;
+          sfx('done'); save(); renderShop(); reward(`${it.name} +1 🎉\nไปที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน เพื่อวาง`); }); } }; }), 64));
+  sec('📜 ภารกิจอีเวนต์');
+  w.appendChild(cardGrid(EV_TASKS.map(t => { const done = t.goal(), claimed = e.tasks[t.id];
+    return { ref: t.id === 'float1' ? 'm:krathong' : 'candle', name:t.name, sub:'รางวัล ' + rewardText(t.reward).replace(/\n/g, ' '), dim:!!claimed,
+      price: claimed ? 'รับแล้ว ✔' : done ? 'รับรางวัล' : '0/1',
+      on:() => { if (!done || claimed) return; closeModal(); e.tasks[t.id] = 1; Object.entries(t.reward).forEach(([k,v]) => k === 'coins' ? S.coins += v : invAdd(k, v));
+        sfx('coin'); save(); refreshHeader(); renderMats(); reward(`📜 ${t.name}\n${rewardText(t.reward)}`); } }; }), 60));
+  $('mbody').appendChild(w);
+}
+/* ---- 🪷 float a krathong on pond tile (gc, gr) → wish reward after it settles ---- */
+function floatKrathong(gc, gr){
+  fishPrompt = null;
+  if (!eventOn()) return;
+  if (inv('krathong') < 1) return sheet('ยังไม่มีกระทง\nทำได้ที่ปุ่ม 🏮 (🌸 3 + 🌿 2 + 🪵 1)', [{ label:'🏮 ไปทำกระทง', cls:'ok', fn:eventSheet }, { label:'ปิด', cls:'ghost' }]);
+  if (!canFloat()) return sheet(`วันนี้ลอยกระทงครบ ${FLOAT_PER_DAY} ใบแล้ว 🙏\nพรุ่งนี้มาลอยใหม่ได้ • คืนวันเพ็ญ 24 พ.ย. ลอยได้ไม่จำกัด`, OK);
+  const e = evState(); S.inv.krathong--; e.float[todayKey()] = floatsToday() + 1; bump('krFloat');
+  KRATHONGS.push({ id:++krId, gc, gr, t0:performance.now()/1000 }); if (KRATHONGS.length > 6) KRATHONGS.shift();
+  centerOn(gc + .5, gr + .5); sfx('pop'); buzz(15); floatText(gc, gr, '🪷', '#e86f8a'); save(); renderMats();
+  setTimeout(() => {
+    const r = Math.random(); let msg;
+    if (r < .5){ const c = 100 + ((Math.random()*9)|0)*25; S.coins += c; msg = `🪙 ${c} เหรียญทอง`; }
+    else if (r < .75){ const k = Math.random() < .5 ? 'sd_pumpkin' : 'sd_berry'; invAdd(k, 1); msg = `${MAT[k]} +1`; }
+    else if (r < .9){ invAdd('goldfish', 1); msg = `${MAT.goldfish} +1`; }
+    else { invAdd('flower', 3); msg = `${MAT.flower} +3`; }
+    save(); refreshHeader(); renderMats();
+    queueReward(`🙏 ขอให้สุขภาพแข็งแรง มีความสุขตลอดปี\nกระทงลอยไปพร้อมคำอธิษฐาน…\n\n${msg}`); flushRewards();
+  }, 2500);
+}
 /** compact ingredient list for small cards: 🪵3/2 (green/red) */
 const needMini = cost => Object.entries(cost||{}).map(([k,v]) => `<span class="${inv(k)>=v ? 'ok' : 'no'}">${MAT[k].split(' ')[0]}${inv(k)}/${v}</span>`).join(' ');
+
+/* =====================================================================
+   🏮 EVENTS (v0.18) — date-window festivals; EVENT can be re-dated next year.
+   Loy Krathong 2569: 17–25 Nov 2026, full-moon night 24 Nov.
+   • 🌸 flowers: sickle on grass / wild flowers → 40% during the event
+   • 🪷 krathong = 🌸3 + 🌿2 + 🪵1 (event sheet) → tap a pond → "🪷 ลอยกระทง" → floats 2 min (3D) → wish reward
+     3 per day, unlimited on the full-moon day
+   • 🕯 lucky candle: +1 on each event day the 3 health missions are completed → 3 candles = 1 event decor (lanna lamp / lotus pond)
+   • test switches in the bag (pensuk_evtest / pensuk_evnight) — REMOVE before the real event
+   ===================================================================== */
+const EVENT = { id:'loy2569', name:'🏮 เทศกาลลอยกระทง', start:'2026-11-17', end:'2026-11-25', night:'2026-11-24', when:'17–25 พ.ย.' };
+const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const evTest  = () => store.get('pensuk_evtest') === true;
+const eventOn = () => evTest() || (isoToday() >= EVENT.start && isoToday() <= EVENT.end);
+const moonNight = () => (evTest() && store.get('pensuk_evnight') === true) || isoToday() === EVENT.night;
+function evState(){ S.ev = S.ev || {}; return S.ev[EVENT.id] || (S.ev[EVENT.id] = { candles:0, used:0, float:{}, tasks:{}, got:{} }); }
+const FLOAT_PER_DAY = 3, KR_RECIPE = { flower:3, grass:2, wood:1 }, FLOWER_P = .4, CANDLE_COST = 3;   // ⚠️
+const EV_DECOR = ['lanna', 'lotuspond'];
+const EV_TASKS = [ { id:'float1',  name:'ลอยกระทงครั้งแรก',      goal:() => st('krFloat') ? 1 : 0, reward:{ coins:200 } },
+                   { id:'candle1', name:'เก็บเทียนนำโชค 1 เล่ม', goal:() => (evState().candles + evState().used) ? 1 : 0, reward:{ flower:5 } } ];
+const floatsToday = () => evState().float[todayKey()] || 0;
+const canFloat = () => moonNight() || floatsToday() < FLOAT_PER_DAY;
+let KRATHONGS = [], krId = 0;                                  // floating right now (not saved): {id, gc, gr, t0}; r3d.js draws them
+const evClaimable = () => eventOn() && (EV_TASKS.some(t => t.goal() && !evState().tasks[t.id]) || (evState().candles >= CANDLE_COST && EV_DECOR.some(d => !evState().got[d])));
 
 /* ---- natural resources: size class decides the collect cooldown ---- */
 const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // seconds (random in range)
@@ -1362,6 +1435,8 @@ const FARM_ITEMS = {
   barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:2800,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
+  lanna:     { name:'🏮 โคมไฟล้านนา',  w:1, h:1, price:0, cost:{}, H:2.3, hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • ส่องแสงตอนกลางคืน • ความสวย +2' },
+  lotuspond: { name:'🪷 สระบัวกระทง',  w:2, h:2, price:0, cost:{}, H:.6,  hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • สระบัวมีกระทงลอย • ความสวย +3' },
   jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:1500,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
 };
 /* ⏱ v0.17.1 build time by footprint (cheaper prices, longer builds): 1 ช่อง 2 นาที • 2 ช่อง 10 นาที • 4 ช่อง 30 นาที • 6 ช่อง 2 ชม. • 8 ช่อง 4 ชม. ⚠️
@@ -1924,8 +1999,9 @@ function drawWater(gc, gr, time, seed, i){
 
 /* ---- sky: time of day, sun / moon, night tint, night glows ---- */
 let NIGHT = 0, skyKey = '';
+const skyHours = () => { const d = new Date(); return evTest() && store.get('pensuk_evnight') === true ? 21 : d.getHours() + d.getMinutes()/60; };   // 🧪 test: force night
 function updateSky(){
-  const d = new Date(), h = d.getHours() + d.getMinutes()/60;
+  const h = skyHours();
   // 0 = full day, 1 = full night; dusk 17–19, dawn 5–7
   NIGHT = h < 5 || h >= 19.5 ? 1 : h < 7 ? 1-(h-5)/2 : h >= 17.5 ? (h-17.5)/2 : 0;
   const key = Math.round(NIGHT*10) + (h>=17 && h<20 ? 'd' : '');
@@ -1938,9 +2014,10 @@ function updateSky(){
 function drawSunMoon(time){
   /* real-time arc: sun 06:00→18:00, moon 18:00→06:00.  t ∈ [0,1] along the arc:
      x = 34 + t·(cssW − 68),   y = 150 − sin(t·π)·105   (rises left, peaks centre-top, sets right) */
-  const d = new Date(), hh = d.getHours() + d.getMinutes()/60, night = NIGHT > .5;
+  const hh = skyHours(), night = NIGHT > .5;
   const t = night ? (((hh - 18) + 24) % 24)/12 : Math.min(1, Math.max(0, (hh - 6)/12));
   const x = 34 + t*(cssW - 68), y = 150 - Math.sin(t*Math.PI)*105;
+  if (NIGHT > .5 && moonNight()){ drawFullMoon(x, y, time); return; }   // 🌕 v0.18 Loy Krathong night
   if (NIGHT > .5){
     ctx.fillStyle = 'rgba(255,255,230,.15)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#fff6d0'; ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI*2); ctx.fill();
@@ -1951,6 +2028,23 @@ function drawSunMoon(time){
     const g = ctx.createRadialGradient(x, y, 4, x, y, 46); g.addColorStop(0,'rgba(255,240,170,.9)'); g.addColorStop(1,'rgba(255,240,170,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#ffe680'; ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.fill();
+  }
+}
+/* 🌕 full moon (r 24 + halo) + up to 12 sky lanterns rising: y −= 18 px/s, x sways ±8 px, respawn at the bottom */
+const LANTERNS = [];
+function drawFullMoon(x, y, time){
+  const g = ctx.createRadialGradient(x, y, 10, x, y, 70); g.addColorStop(0, 'rgba(255,248,215,.55)'); g.addColorStop(1, 'rgba(255,248,215,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 70, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff6d6'; ctx.beginPath(); ctx.arc(x, y, 24, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(220,210,170,.5)'; for (const [dx,dy,r] of [[-7,-5,5],[6,4,4],[-2,9,3]]){ ctx.beginPath(); ctx.arc(x+dx, y+dy, r, 0, Math.PI*2); ctx.fill(); }
+  if (!LANTERNS.length) for (let k=0;k<12;k++) LANTERNS.push({ x:Math.random()*cssW, y:cssH*(.3 + Math.random()*.8), ph:Math.random()*6, s:.7 + Math.random()*.5 });
+  for (const L of LANTERNS){
+    L.y -= 18*L.s/30; if (L.y < 40){ L.y = cssH + 20; L.x = Math.random()*cssW; }
+    const lx = L.x + Math.sin(time*.8 + L.ph)*8, w = 10*L.s, h = 13*L.s;
+    const lg = ctx.createRadialGradient(lx, L.y, 1, lx, L.y, 18*L.s); lg.addColorStop(0, 'rgba(255,190,90,.6)'); lg.addColorStop(1, 'rgba(255,190,90,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(lx, L.y, 18*L.s, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffb45a'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(lx - w/2, L.y - h/2, w, h, 3) : ctx.rect(lx - w/2, L.y - h/2, w, h); ctx.fill();
+    ctx.fillStyle = '#fff1c4'; ctx.fillRect(lx - w*.2, L.y + h*.1, w*.4, h*.3);
   }
 }
 const glows = [];                                            // reused each frame: [x, y, r, x, y, r, …]
@@ -2368,7 +2462,7 @@ function drawFishLine(time){
 /* "🎣 ตกปลา" button appears ONLY when needed:
    • after tapping a pond (shown above that spot for 5 s), or
    • during the fishing tutorial quest (on the nearest pond to the pet). Hit rects saved for tap testing. */
-const fishBtns = [];                                         // reused: [x, y, w, h, gc, gr]
+const fishBtns = [];                                         // reused: [x, y, w, h, gc, gr, kind 0 fish / 1 krathong]
 let fishPrompt = null;                                       // {gc, gr, until}
 function drawFishButtons(time){
   fishBtns.length = 0; if (fishing || placing) return;
@@ -2385,7 +2479,10 @@ function drawFishButtons(time){
   pill(x, y+3, w, h, 'rgba(0,0,0,.15)'); pill(x, y, w, h, '#2f86c4');
   ctx.fillStyle = '#fff'; ctx.font = '700 14px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('🎣 ตกปลา', x, y+1);
-  fishBtns.push(x - w/2 - 6, y - h/2 - 6, w + 12, h + 12, gc, gr);   // +6 px finger margin each side
+  fishBtns.push(x - w/2 - 6, y - h/2 - 6, w + 12, h + 12, gc, gr, 0);   // +6 px finger margin each side
+  if (eventOn()){                                             // 🏮 v0.18: second button under the fishing one
+    const y2 = y + 42, w2 = 116; pill(x, y2+3, w2, h, 'rgba(0,0,0,.15)'); pill(x, y2, w2, h, '#e86f8a');
+    ctx.fillStyle = '#fff'; ctx.fillText('🪷 ลอยกระทง', x, y2+1); fishBtns.push(x - w2/2 - 6, y2 - h/2 - 6, w2 + 12, h + 12, gc, gr, 1); }
 }
 $('fBtn').onclick = fishPress;
 $('fCancel').onclick = endFishing;
@@ -2476,8 +2573,9 @@ cv.addEventListener('pointerup', e => {
   if (paint){ paintAt(g.c, g.r); return; }
   if (placing){ placeAt(g.c, g.r); return; }
   if (fishing) return;
-  for (let k=0;k<fishBtns.length;k+=6)
-    if (sx >= fishBtns[k] && sx <= fishBtns[k]+fishBtns[k+2] && sy >= fishBtns[k+1] && sy <= fishBtns[k+1]+fishBtns[k+3]) return startFishing(fishBtns[k+4], fishBtns[k+5]);
+  for (let k=0;k<fishBtns.length;k+=7)
+    if (sx >= fishBtns[k] && sx <= fishBtns[k]+fishBtns[k+2] && sy >= fishBtns[k+1] && sy <= fishBtns[k+1]+fishBtns[k+3])
+      return fishBtns[k+6] ? floatKrathong(fishBtns[k+4], fishBtns[k+5]) : startFishing(fishBtns[k+4], fishBtns[k+5]);
   const ps = petSize(), [px,py0] = P(pet.x, pet.y), py = py0 - ps*0.55 - pet.hopH*ps;
   if (Math.hypot(sx-px, sy-py) < Math.max(30, ps*0.6)) return tapPet();
   tapTile(g.c, g.r);
@@ -3125,7 +3223,9 @@ const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง')
   .replace(/\{plv\}/g, S.pet ? S.pet.lv : 1).replace(/\{plv1\}/g, S.pet ? S.pet.lv + 1 : 2).replace(/\{pcost\}/g, S.pet ? needPetExp(S.pet.lv) : 30);
 
 function questTick(){
-  brkTick(); if (S.pet && S.farm) petDailyFind();
+  brkTick();
+  $('evFab').style.display = eventOn() && !tool ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
+  if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
   if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
@@ -3298,6 +3398,8 @@ function matInfo(k){
   for (const [id, it] of Object.entries(FARM_ITEMS)) if (it.cost[k] && !it.hidden) use.push(`สร้าง${nm(it.name)}`);
   if (PET_FOOD[k]) use.push(`อาหารน้อง (🍖 +${PET_FOOD[k][0]})`);
   if (k === 'soil') use.push('ถมบ่อน้ำ');
+  if (k === 'flower'){ from.push('อีเวนต์ลอยกระทง: ตัดหญ้า/ดอกไม้ป่าด้วย ✂️ (40%)'); use.push('ทำกระทง'); }
+  if (k === 'krathong'){ from.push('ทำที่ปุ่ม 🏮 อีเวนต์'); use.push('ลอยที่บ่อน้ำ (แตะบ่อ → 🪷 ลอยกระทง)'); }
   detailSheet('m:'+k, `${MAT[k]} — มี ${inv(k)}` + (SELL[k] ? `\n🪙 ขายได้ชิ้นละ ${sellPrice(k).toLocaleString()}` : '') +
     (from.length ? `\n\nได้จาก: ${[...new Set(from)].join(' • ')}` : '') + (use.length ? `\nใช้ทำ: ${[...new Set(use)].slice(0, 8).join(' • ')}` : ''), '', OK);
 }
@@ -3338,7 +3440,14 @@ function renderBag(){
   v3.textContent = gfxEco() ? '⚙️ คุณภาพกราฟิก: ประหยัด (แตะเพื่อใช้แบบสูง)' : '⚙️ คุณภาพกราฟิก: สูง (แตะเพื่อใช้แบบประหยัด)';
   v3.onclick = () => confirmDo(gfxEco() ? 'เปลี่ยนเป็นคุณภาพสูง?\nภาพคมชัด มีเงาและหญ้าไหวตามลม' : 'เปลี่ยนเป็นโหมดประหยัด?\nภาพละเอียดลดลง ไม่มีเงา/หญ้าไหว\nลื่นขึ้นและประหยัดแบตบนเครื่องรุ่นเก่า', () => setGfx(!gfxEco()));
   renderBrkSettings(L);
-  L.append(v3, mv, out);
+  /* 🧪 temporary test switches for the Loy Krathong event — remove before 17 Nov */
+  const et = document.createElement('button'); et.className = 'btn ghost';
+  et.textContent = evTest() ? '🧪 ทดลองอีเวนต์ลอยกระทง: เปิดอยู่ (แตะเพื่อปิด)' : '🧪 ทดลองอีเวนต์ลอยกระทง (ก่อนวันจริง)';
+  et.onclick = () => { store.set('pensuk_evtest', !evTest()); if (!evTest()) store.set('pensuk_evnight', false); skyKey = ''; updateSky(); renderBag(); questTick(); };
+  const en = document.createElement('button'); en.className = 'btn ghost'; en.style.display = evTest() ? '' : 'none';
+  en.textContent = store.get('pensuk_evnight') === true ? '🌕 ทดลองคืนวันเพ็ญ: เปิดอยู่ (แตะเพื่อปิด)' : '🌕 ทดลองคืนวันเพ็ญ (บังคับกลางคืน)';
+  en.onclick = () => { store.set('pensuk_evnight', store.get('pensuk_evnight') !== true); skyKey = ''; updateSky(); if (R3D) R3D.dirtyAll(); renderBag(); };
+  L.append(v3, et, en, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -3354,6 +3463,7 @@ Object.assign(MAT, {
   corn:'🌽 ข้าวโพด', tomato:'🍅 มะเขือเทศ', rice:'🌾 ข้าวเปลือก', pumpkin:'🎃 ฟักทอง', berry:'🍓 สตรอว์เบอร์รี',
   sd_corn:'🌱 เมล็ดข้าวโพด', sd_tomato:'🌱 เมล็ดมะเขือเทศ', sd_rice:'🌱 เมล็ดข้าว', sd_pumpkin:'🌱 เมล็ดฟักทอง', sd_berry:'🌱 เมล็ดสตรอว์เบอร์รี',
   plank:'🟫 ไม้กระดาน', beam:'📏 ไม้คาน', polish:'💠 ไม้ขัดเงา',
+  flower:'🌸 ดอกไม้', krathong:'🪷 กระทง',                     // v0.18 Loy Krathong
   soil:'🟤 ดิน', milled:'🍚 ข้าวสาร', soup:'🥣 ซุปผัก', friedrice:'🍛 ข้าวผัดปลา', jam:'🫙 แยมสตรอว์เบอร์รี', sauce:'🥫 ซอสมะเขือเทศ'
 });
 const inv = k => S.inv[k] || 0;
@@ -3502,7 +3612,7 @@ function ensureOrders(){
   while (S.orders.length < 3) S.orders.push(newOrder());
   S.orders.forEach((o,i) => { if (o.wait && Date.now() >= o.wait) S.orders[i] = newOrder(); });
 }
-const BEAUTY = { flowerbed:1, lamp:1, bench:1, fence:1, fountain:3, gazebo:3 };
+const BEAUTY = { flowerbed:1, lamp:1, bench:1, fence:1, fountain:3, gazebo:3, lanna:2, lotuspond:3 };
 const beautyScore = () => S.farm.zones.reduce((s,z) => s + z.objs.reduce((t,o) => t + (o.done ? BEAUTY[o.type]||0 : 0), 0), 0);
 function renderOrders(L){
   ensureOrders();
@@ -3591,6 +3701,7 @@ function setHint(){
   $('hint').textContent = tool === 'sow' ? '🌱 ลากนิ้วผ่านแปลงว่างเพื่อหว่าน • 2 นิ้วเลื่อน/ซูม' : tool ? `${TOOLS[tool].e} ลากนิ้วเก็บของ • 2 นิ้วเลื่อน/ซูม`
     : 'แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้';
 }
+$('evFab').onclick = () => eventSheet();
 $('toolFab').onclick = () => {
   const open = $('toolBar').style.display === 'flex';
   if (open){ pickTool(null); return; }
@@ -3662,6 +3773,7 @@ function collectRes(t, z, R, gc, gr){
   const got = [];
   Object.entries(R.yield).forEach(([m,rg]) => { if (m === 'seed') return; const n = rnd(rg); if (n){ invAdd(m, n); got.push(`+${n}${MAT[m].split(' ')[0]}`); } });
   const sd = seedDrop(R.size); if (sd){ invAdd(sd, 1); got.push(`+1${CROPS_BY_SEED[sd].e}🌱`); }
+  if (eventOn() && (t.k === 'grass' || t.k === 'wild') && Math.random() < FLOWER_P){ invAdd('flower', 1); got.push('+1🌸'); bump('flowerGet'); }   // 🏮 v0.18
   t.k = 'clear'; delete t.hp; delete t.shake; markDirty(z);
   bump('collect_'+R.size); bump('toolUse'); gainExp(SIZE_EXP[R.size]);
   floatText(gc, gr, got.join(' '), '#2e7d32'); saveSoon();
@@ -3771,11 +3883,12 @@ function claimBonus(){
   const s = S.streakDate === yesterdayKey() ? (S.streak||0) + 1 : S.streakDate === todayKey() ? (S.streak||1) : 1;
   S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true; S.bestStreak = Math.max(S.bestStreak||0, s);
   const lg = gainLove(LOVE_ALL_BONUS);
+  const candle = eventOn(); if (candle){ evState().candles++; bump('candle'); }   // 🏮 v0.18: 🕯 one lucky candle per completed day
   const extra = Math.min(6, s-1)*50, chest = s % 7 === 0;
   S.coins += COIN_ALL_BONUS + extra + (chest ? 1000 : 0);
   if (chest){ invAdd('sd_pumpkin', 1); invAdd('sd_berry', 1); }
   sfx('done'); save(); refreshHeader(); renderMissions();
-  reward(`🎉 ครบ 3 ภารกิจ!\n${loveTxt(LOVE_ALL_BONUS, lg)}\n🪙 ${COIN_ALL_BONUS} โบนัส` + (extra ? `\n🔥 ต่อเนื่อง ${s} วัน +${extra}` : `\n🔥 เริ่มนับต่อเนื่องวันที่ 1`) +
+  reward(`🎉 ครบ 3 ภารกิจ!\n${loveTxt(LOVE_ALL_BONUS, lg)}${candle ? '\n🕯 เทียนนำโชค +1 (เทศกาลลอยกระทง)' : ''}\n🪙 ${COIN_ALL_BONUS} โบนัส` + (extra ? `\n🔥 ต่อเนื่อง ${s} วัน +${extra}` : `\n🔥 เริ่มนับต่อเนื่องวันที่ 1`) +
     (chest ? `\n🎁 กล่องพิเศษ 7 วัน: 🪙 1,000 + ${MAT.sd_pumpkin} + ${MAT.sd_berry}` : `\n(อีก ${7 - s%7} วันได้กล่องพิเศษ)`));
 }
 
