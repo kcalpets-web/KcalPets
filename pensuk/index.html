@@ -150,6 +150,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .dz.off{opacity:.35;filter:grayscale(1)}
 #nav button.brk::after{content:'🔔';position:absolute;top:2px;right:18%;font-size:14px;animation:pulse 1s infinite}
 #nav button{position:relative}
+#hPet.upOk{color:#e0455f;font-weight:700;animation:pulse 1.2s infinite}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #evFab{position:absolute;left:10px;bottom:96px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
 #evFab.pulse{animation:pulse 1s infinite}
@@ -525,7 +526,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.22.2';
+const APP_VER = '0.23.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1204,7 +1205,24 @@ function refreshHeader(){
   const canUp = S.pet.lv < MAX_PET_LV && (S.love||0) >= needPetExp(S.pet.lv) && !(petGate(S.pet.lv) && bestStreak() < petGate(S.pet.lv));
   $('hName').textContent = `${S.profile.name} • Lv.${S.lv} (${pct}%)`;
   $('hCoin').textContent = S.coins.toLocaleString();
-  $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petMood()} • 💗 ${(S.love||0).toLocaleString()}${canUp ? ' ⬆️ อัปได้!' : ''}`;
+  $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petMood()} • 💗 ${(S.love||0).toLocaleString()}${canUp ? ' ⬆️' : ''}`;
+  $('hPet').classList.toggle('upOk', canUp); petCanUp = canUp;
+  if (canUp && S.petNudge !== S.pet.lv) setTimeout(petNudge, 600);   // ⬆️ v0.23: one pop-up per pet level
+}
+/* ⬆️ v0.23 pet level-up nudges: header chip pulses + ⬆️ bubble over the pet + one pop-up per level */
+let petCanUp = false;
+function petNudge(){
+  if (!S || !S.pet || S.petNudge === S.pet.lv || !petCanUp || $('modal').classList.contains('on') || !$('sMain').classList.contains('on')) return;
+  S.petNudge = S.pet.lv; save(); const p = S.pet, cost = needPetExp(p.lv);
+  sheet(`⬆️ ${p.emoji} ${p.name} พร้อมอัปเลเวลแล้ว!\n💗 พลังใจ ${(S.love||0).toLocaleString()} / ใช้ ${cost}\nLv.${p.lv} → Lv.${p.lv+1} ยิ่งเลเวลสูงยิ่งช่วยงานฟาร์มได้มากขึ้น`,
+    [{ label:`💗 อัปเป็น Lv.${p.lv+1} เลย`, cls:'ok', fn:() => petLevelUp() }, { label:'ไว้ทีหลัง', cls:'ghost' }]);
+}
+function drawPetMark(time){
+  if (!petCanUp || !pet || inRoom) return;
+  const [x, y0] = P(pet.x, pet.y, TH*1.7), y = y0 + Math.sin(time*3)*3;
+  ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.arc(x, y+2, 13, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff6b81'; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '800 15px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⬆', x, y + 1);
 }
 function goTab(id){
   document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('on', x.dataset.t===id));
@@ -1433,18 +1451,31 @@ const NPCS = {
            lines:['วันนี้ผักสดน่ากินจัง มีให้ป้าบ้างไหมจ๊ะ', 'ตลาดคึกคักมาก ช่วยป้าหน่อยนะหลาน', 'ขอบใจจ้ะหลาน ผักบ้านนี้ดีที่สุดเลย'], perk:h => `ออเดอร์ได้เงินเพิ่ม +${h*5}%` },
   coach: { name:'โค้ชฟิต', role:'โค้ชออกกำลังกาย', lv:3, look:{ shirt:'#3fa7d6', pants:'#2d3e50', hair:'#2b1a0e', hat:'band', shoes:'#ffffff' },
            lines:['มาขยับกันหน่อย! ร่างกายแข็งแรง น้องก็แฮปปี้', 'วันนี้พร้อมลุยไหม? สู้ ๆ!', 'เยี่ยมมาก! ทำได้ดีกว่าเมื่อวานอีก'], perk:h => `💗 จากชาเลนจ์ +${h*5}` },
-  mai:   { name:'ลุงไม้', role:'ช่างไม้', lv:4, need:() => ownsDone('sawmill'), needTxt:'มีโรงเลื่อย', look:{ shirt:'#8a9a5b', vest:'#a8743f', hair:'#d9d3c8', hat:'cap', pants:'#5a4a3a', tool:'saw' },
+  mai:   { name:'ลุงไม้', role:'ช่างไม้', lv:4, look:{ shirt:'#8a9a5b', vest:'#a8743f', hair:'#d9d3c8', hat:'cap', pants:'#5a4a3a', tool:'saw' },
            lines:['ไม้ดี ๆ ต้องค่อย ๆ ขัดนะหลาน', 'ลุงกำลังซ่อมบ้านคนในเมือง ขาดของนิดหน่อย', 'งานไม้ดีขนาดนี้ ลุงภูมิใจแทนเลย'], perk:h => `โรงเลื่อยทำของเร็วขึ้น ${h*2}%` },
   khing: { name:'น้องขิง', role:'เด็กในเมือง', lv:5, look:{ shirt:'#ffd166', pants:'#4f7cac', hair:'#3b2a20', balloon:'#ff6b81' },
            lines:['พี่ ๆ! เล่นด้วยกันหน่อยน้า', 'ขิงอยากเห็นปลาตัวใหญ่ ๆ!', 'เย้! พี่เก่งที่สุดเลย'], perk:h => `ของขวัญของตกแต่ง ${h}/5 ชิ้น` },
-  lek:   { name:'พี่เหล็ก', role:'ช่างตีเหล็ก', lv:12, need:() => ownsDone('smithy'), needTxt:'มีโรงตีเหล็ก', look:{ shirt:'#55606b', apron:'#4a3424', hairStyle:'spiky', hair:'#2b1a0e', pants:'#3a3a40', shoes:'#2b1a0e' },
+  lek:   { name:'พี่เหล็ก', role:'ช่างตีเหล็ก', lv:12, need:() => !!S.mineOpen, needTxt:'เหมืองเปิดแล้ว', look:{ shirt:'#55606b', apron:'#4a3424', hairStyle:'spiky', hair:'#2b1a0e', pants:'#3a3a40', shoes:'#2b1a0e' },
            lines:['เหล็กดีต้องตีตอนร้อน ๆ นะน้อง', 'ช่วงนี้มีคนสั่งเครื่องมือเยอะ ขอแร่หน่อย', 'งานเนี้ยบมาก! เดี๋ยวพี่ตีของดี ๆ ให้'], perk:h => `โรงตีเหล็กเร็วขึ้น ${h*3}%` },
-  hin:   { name:'ลุงหิน', role:'คนงานเหมือง', lv:8, look:{ shirt:'#c46a3c', pants:'#4a4a52', hair:'#5a4a3a', hat:'hard', shoes:'#3a2a20' },
+  hin:   { name:'ลุงหิน', role:'คนงานเหมือง', lv:10, look:{ shirt:'#c46a3c', pants:'#4a4a52', hair:'#5a4a3a', hat:'hard', shoes:'#3a2a20' },
            lines:['เหมืองเก่าทางเหนือพังมานาน ช่วยลุงซ่อมทีนะ', 'ข้างในมีแร่เยอะ แต่ระวังสไลม์ด้วยล่ะ', 'ขอบใจมาก! อีกไม่นานเหมืองก็เปิดได้'], perk:h => `ส่วนลดพลังงานลงเหมือง ${h*5}% (เหมืองเปิดอัปเดตหน้า)` }
 };
 const KHING_GIFT = ['flowerbed', 'bench', 'lamp', 'fountain', 'gazebo'];          // 🎁 one per new heart
 const MINE_PROJ = [ { give:{ stone:30, wood:20 }, title:'ขนหินกับไม้ไปเคลียร์ทางเข้า' }, { give:{ plank:6, stone:20 }, title:'ทำนั่งร้านไม้' },
                     { give:{ beam:4, plank:4 }, title:'ค้ำยันอุโมงค์ด้วยไม้คาน' } ];        // ⛏ one stage per day → mine (phase 3)
+/* 🏗 v0.23 NPC BUILD PROJECTS — an NPC arrives asking for help; each stage = deliver materials (no daily wait).
+   Last stage done → their workplace is given for free (📦 storage) or, for the mine, the map entrance opens.
+   Only after that do they start normal daily requests. Stage index: S.proj[id] (ลุงหิน keeps S.mineStage). */
+const PROJ = {
+  mai: { key:'sawmill', stages:[ { give:{ wood:6, stone:4 }, title:'ขนไม้กับหินมาทำฐานโรงเลื่อย' }, { give:{ wood:8, grass:4 }, title:'ตั้งโครงและมุงหลังคา' } ], coin:200 },
+  hin: { key:'mine', stages:MINE_PROJ, coin:600 },
+  lek: { key:'smithy', stages:[ { give:{ stone:15, wood:10 }, title:'ก่อเตาหลอมด้วยหิน' }, { give:{ plank:6, coal:4 }, title:'ทำหลังคาและเติมถ่าน' }, { give:{ ore_copper:4 }, title:'ทดลองหลอมแร่ครั้งแรก' } ], coin:500 } };
+const projStage = id => id === 'hin' ? (S.mineStage || 0) : ((S.proj || {})[id] || 0);
+const projDone = id => !PROJ[id] || projStage(id) >= PROJ[id].stages.length;
+function projMigrate(){                                       // old saves: already-owned workplaces count as finished projects
+  S.proj = S.proj || {}; const owns = k => (S.store && S.store[k]) || S.farm.zones.some(z => z.objs.some(o => o.type === k));
+  for (const id of ['mai', 'lek']) if (!projDone(id) && owns(PROJ[id].key)) S.proj[id] = PROJ[id].stages.length;
+}
 const npcUnlocked = id => { const n = NPCS[id]; return S.lv >= n.lv && (!n.need || n.need()); };
 function npcState(id){ S.npc = S.npc || {}; return S.npc[id] || (S.npc[id] = { xp:0 }); }
 const npcHearts = id => Math.min(5, Math.floor(npcState(id).xp/2));
@@ -1452,6 +1483,8 @@ const npcHearts = id => Math.min(5, Math.floor(npcState(id).xp/2));
 function dayRand(id, k){ let h = 2166136261; for (const ch of todayKey() + id + (k||0)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return ((h >>> 0) % 10000) / 10000; }
 function makeReq(id){
   const h = npcHearts(id), r = k => dayRand(id, k);
+  if (!projDone(id)){ const P = PROJ[id], k = projStage(id), m = P.stages[k];   // 🏗 help build their workplace first
+    return { t:'give', proj:1, title:`${P.key === 'mine' ? 'ซ่อมเหมือง' : 'สร้าง' + FARM_ITEMS[P.key].name.replace(/^\S+ /, '')} ${k+1}/${P.stages.length}: ${m.title}`, give:m.give, reward:{ coins:P.coin + k*150 } }; }
   if (id === 'bua'){ const crops = Object.values(CROPS).filter(c => S.lv >= c.lv), c = crops[(r(1)*crops.length)|0], n = 3 + ((r(2)*4)|0);
     return { t:'give', title:`ขอ${c.name} ${n} ชิ้นไปขายที่ตลาด`, give:{ [c.prod]:n }, reward:{ coins:Math.round(SELL[c.prod]*n*1.6/10)*10, [c.seed === 'seed' ? 'sd_corn' : c.seed]:1 } }; }
   if (id === 'coach'){ const o = [ ['squat', 10 + h*2, 'ลุกนั่ง (สควอต)'], ['neck', 2, 'บริหารคอ'], ['breath', 2, 'หายใจลึก ๆ'] ][(r(1)*3)|0];
@@ -1463,11 +1496,10 @@ function makeReq(id){
   if (id === 'lek'){ const o = [ [{ ore_copper:4 }, 'ขอแร่ทองแดง 4 ก้อน'], [{ coal:3 }, 'ขอถ่านหิน 3 ก้อน'], [{ bar_copper:1 }, 'ขอแท่งทองแดง 1 แท่ง'] ]
       .concat(upLv('pick') >= 2 ? [[{ ore_iron:3 }, 'ขอแร่เหล็ก 3 ก้อน']] : [])[(r(1)*(upLv('pick') >= 2 ? 4 : 3))|0];
     return { t:'give', title:o[1], give:o[0], reward:{ coins:500 + h*50, coal:2 } }; }
-  const stg = S.mineStage || 0;                                 // hin
-  if (stg >= MINE_PROJ.length) return { t:'none', title:'ทางเข้าเหมืองซ่อมเสร็จแล้ว! รอเหมืองเปิดนะ' };
-  const m = MINE_PROJ[stg]; return { t:'give', proj:1, title:`ซ่อมเหมือง ${stg+1}/${MINE_PROJ.length}: ${m.title}`, give:m.give, reward:{ coins:600 + stg*300 } };
+  { const o = [ [{ stone:12 }, 'ขอหิน 12 ก้อนไปเสริมอุโมงค์'], [{ wood:10 }, 'ขอไม้ 10 ท่อนทำค้ำยัน'], [{ beam:1 }, 'ขอไม้คาน 1 ท่อน'] ][(r(1)*3)|0];   // hin (after the repair)
+    return { t:'give', title:o[1], give:o[0], reward:{ coins:400 + h*50, coal:1 } }; }
 }
-function npcReq(id){ const s = npcState(id); if (s.date !== todayKey()){ s.date = todayKey(); s.req = makeReq(id); s.done = false; } return s.req; }
+function npcReq(id){ const s = npcState(id); if (s.date !== todayKey() || (s.done && s.req && s.req.proj)){ s.date = todayKey(); s.req = makeReq(id); s.done = false; } return s.req; }   // 🏗 project stages chain without waiting a day
 function reqReady(id){
   const q = npcReq(id), s = npcState(id); if (s.done || !q || q.t === 'none') return false;
   if (q.t === 'give') return canPay(q.give) && (!q.furn || Object.entries(q.furn).every(([k,v]) => ((S.furn||{})[k]||0) >= v));
@@ -1493,8 +1525,11 @@ function npcComplete(id){
     else if (k === 'love'){ msgs.push(loveTxt(v, gainLove(v))); }
     else { invAdd(k, v); msgs.push(`${MAT[k]} +${v}`); }
   }
-  if (q.proj){ S.mineStage = (S.mineStage||0) + 1;
-    msgs.push(S.mineStage >= MINE_PROJ.length ? (S.lv >= 10 ? '⛏ ทางเข้าเหมืองซ่อมเสร็จ! ไปวางทางเข้าจาก 📦 คลังของฉันได้เลย' : '⛏ ทางเข้าเหมืองซ่อมเสร็จ! เหมืองจะเปิดเมื่อถึง Lv.10') : `⛏ ซ่อมเหมืองคืบหน้า ${S.mineStage}/${MINE_PROJ.length} — พรุ่งนี้มาช่วยต่อนะ`); }
+  if (q.proj){ const P = PROJ[id], k = projStage(id) + 1; if (id === 'hin') S.mineStage = k; else S.proj[id] = k;
+    if (k < P.stages.length) msgs.push(`🏗 คืบหน้า ${k}/${P.stages.length} — ช่วยขั้นถัดไปได้เลย`);
+    else if (id === 'hin') msgs.push('⛏ ซ่อมทางเข้าเหมืองเสร็จแล้ว! แตะทางเข้าเหมืองเพื่อลงไปขุดแร่');
+    else { S.store = S.store || {}; S.store[P.key] = (S.store[P.key]||0) + 1; bump('proj_' + id);
+      msgs.push(`🎁 ${n.name}ให้ ${FARM_ITEMS[P.key].name} ฟรี!\nร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง` + (id === 'mai' ? '\n(สร้างโรงเลื่อยเพิ่มได้ในร้านค้าเมื่อเลเวลถึง)' : '')); } }
   const h1 = npcHearts(id);
   if (h1 > h0){ msgs.push(`❤️ สนิทกับ${n.name}ขึ้น ${h1}/5 • ${n.perk(h1)}`);
     if (id === 'khing'){ const k = KHING_GIFT[h1-1]; S.store = S.store || {}; S.store[k] = (S.store[k]||0) + 1; msgs.push(`🎁 น้องขิงให้ ${FARM_ITEMS[k].name} (อยู่ใน 📦 คลัง)`); } }
@@ -1588,7 +1623,7 @@ function lookOf(a){
   if (w.head) L.hat = w.head; if (w.body) L.outfit = w.body; if (w.hand === 'balloon') L.balloon = true; if (w.feet === 'runShoes') L.runShoes = true;
   return L;
 }
-const avatarLook = () => S && S.avatar ? lookOf(S.avatar) : null;          // read by r3d.js
+const avatarLook = () => AVATAR_ON && S && S.avatar ? lookOf(S.avatar) : null;          // read by r3d.js
 const pick1 = a => a[(Math.random()*a.length)|0];
 const randomAvatar = () => ({ skin:pick1(AV_SKIN), hair:pick1(AV_HAIRS)[0], hairCol:pick1(AV_HAIRC), shirt:pick1(AV_SHIRT), pants:pick1(AV_PANTS), acc:pick1(AV_ACC)[0], wear:{} });
 let AV = null;                                                // live avatar in the farm (not saved)
@@ -1660,8 +1695,9 @@ function avGoTo(x, y, manual){
   return res.reached;
 }
 /* 0.9 tiles/s (1.3 on a day all 3 missions are done) • v0.22.2: follows AV.path (A*) — re-plans once if the way gets blocked */
+const AVATAR_ON = false;                                     // 🧑 v0.23: player avatar retired (designer's call) — the pet is the star; S.avatar kept in saves
 function avTick(dt){
-  if (!S || !S.avatar || !S.farm){ AV = null; return; }
+  if (!AVATAR_ON || !S || !S.avatar || !S.farm){ AV = null; return; }
   if (!AV || !walkAt(AV.x, AV.y)){ const p = npcSpot(pet.x, pet.y, 2) || npcSpot(pet.x, pet.y, 5); if (!p) return; AV = { x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 }; }
   AV.pep = !!(S.bonusClaimed && S.streakDate === todayKey());
   if (AV.emote && performance.now() < AV.emoteEnd) return;      // stand still while emoting
@@ -1688,7 +1724,7 @@ function avTick(dt){
 let avHeadKey = '';
 function updateAvaHead(){
   const im = $('hAva'); if (!im) return;
-  if (!S || !S.avatar || !R3D || !R3D.thumb){ im.style.display = 'none'; return; }
+  if (!AVATAR_ON || !S || !S.avatar || !R3D || !R3D.thumb){ im.style.display = 'none'; return; }
   const key = JSON.stringify(S.avatar); if (key === avHeadKey) return; avHeadKey = key;
   const src = new Image(); src.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 72; const x = c.getContext('2d');
     x.drawImage(src, 34, 6, 60, 60, 0, 0, 72, 72); im.src = c.toDataURL(); im.style.display = ''; };
@@ -1745,10 +1781,25 @@ const MINE_FLOORS = [
   { name:'ชั้น 3 • สายแร่มีค่า',  ores:[['stone',.3], ['ore_iron',.25], ['ore_silver',.25], ['ore_gold',.2]] },
   { name:'ชั้น 4 • ถ้ำคริสตัล',   ores:[['stone',.3], ['ore_silver',.2], ['ore_gold',.3], ['gem',.2]] } ];
 function gainEnergy(n){ if (!S.mineOpen) return 0; const b = S.mineEnergy || 0, a = Math.min(ENERGY_MAX, b + n); S.mineEnergy = a; return a - b; }
+const MINE_ZONE = 9;                                          // ⛏ v0.23: the area unlocked at Lv.10 (zone index 9) comes with the mine entrance
+const mineObj = () => { for (const z of S.farm.zones) for (const o of z.objs) if (o.type === 'mine') return [z, o]; return null; };
+/* place the (collapsed) entrance once: first 2×2 spot in the Lv.10 area with no building / water; nature on it is cleared */
+function ensureMineSite(){
+  if (S.store && S.store.mine) delete S.store.mine;           // v0.22 storage copy is no longer placeable
+  if (mineObj() || S.farm.zones.length <= MINE_ZONE) return;
+  const order = [MINE_ZONE].concat(S.farm.zones.map((_, i) => i).filter(i => i !== MINE_ZONE).reverse());
+  for (const pass of [0, 1]) for (const zi of order){ const z = S.farm.zones[zi];
+    for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++){
+      const ts = [z.tiles[r*GRID+c], z.tiles[r*GRID+c+1], z.tiles[(r+1)*GRID+c], z.tiles[(r+1)*GRID+c+1]];
+      if (ts.some(t => t.k === 'obj' || (!pass && (t.k === 'water' || t.k === 'path')))) continue;   // pass 1 may cover water/path if the area is packed
+      ts.forEach(t => { for (const k in t) delete t[k]; t.k = 'clear'; });
+      const o = addObj(z, 'mine', c, r, 2, 2, true); o.closed = S.mineOpen ? 0 : 1; save(); return; } }
+}
 function mineUnlockTick(){
-  if (S.mineOpen || (S.mineStage || 0) < MINE_PROJ.length || S.lv < 10) return;
-  S.mineOpen = 1; S.mineEnergy = 10; S.store = S.store || {}; S.store.mine = (S.store.mine||0) + 1; save();
-  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าพร้อมแล้ว ไปหาที่วางกันเลย!"\n\nร้านค้า › ฟาร์ม › 📦 คลังของฉัน → ⛏ ทางเข้าเหมือง → วาง (วางแล้วย้ายไม่ได้)\n⚡ พลังขุด +10 (เติมได้จากการออกกำลังกายจริงเท่านั้น)'); flushRewards();
+  if (S.mineOpen || (S.mineStage || 0) < MINE_PROJ.length) return;
+  S.mineOpen = 1; S.mineEnergy = Math.max(S.mineEnergy || 0, 10); ensureMineSite();
+  const m = mineObj(); if (m){ m[1].closed = 0; markDirty(m[0]); } save();
+  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าโล่งแล้ว ลงไปขุดกันเลย!"\n\nแตะ ⛏ ทางเข้าเหมือง (พื้นที่ Lv.10) → ลากนิ้วผ่านหินเพื่อขุด\n⚡ พลังขุด +10 (เติมได้จากการออกกำลังกายจริงเท่านั้น)'); flushRewards();
 }
 let inMine = null;                                            // {N, floor, ver, tiles, ax, ay, tx, ty, face, swing, broken, saved}
 function genMineFloor(f){
@@ -1785,15 +1836,15 @@ function mineStroke(x0, y0, x1, y1){
 }
 function mineHitAt(c, r){
   const M = inMine; if (!M || c < 0 || r < 0 || c >= M.N || r >= M.N) return;
+  if (performance.now() > (M.swing || 0)){ M.hx = c + .5; M.hy = r + .5; }   // ⛏ pickaxe hovers under the finger
   const key = r*M.N + c; if (mineDrag && mineDrag.last === key) return; if (mineDrag) mineDrag.last = key;
   const t = M.tiles[key];
-  if (t.k === 'floor'){ mineGoTo(c, r); return; }
+  if (t.k === 'floor') return;
   if (t.k === 'ladder'){ mineDrag = null; return mineLadder(); }
   const ore = t.k !== 'stone';
   if (ore && (S.mineEnergy || 0) < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(c, r, '⚡ หมด', '#c0392b');
       setTimeout(() => sheet('⚡ พลังขุดหมดแล้ว\nเติมได้จากการออกกำลังกายจริง:\n• ภารกิจสุขภาพ +4 • ครบ 3 ข้อ +3\n• 🔔 ขยับตัวหน่อย +2 • ชาเลนจ์โค้ชฟิต +5\n(หินธรรมดาทุบได้ฟรี)', OK), 300); } return; }
-  M.face = Math.atan2((c + .5 - M.ax)*2, (r + .5 - M.ay)*2); M.swing = performance.now() + 300;
-  const near = (c + .5 - M.ax)**2 + (r + .5 - M.ay)**2; if (near > 2.2) mineGoTo(c, r);   // walk around rocks to beside it
+  M.hx = c + .5; M.hy = r + .5; M.swing = performance.now() + 300;   // ⛏ v0.23: the pickaxe swings at the rock under the finger
   t.hp -= upLv('pick'); R3D.mineHit(key); sfx('clink'); buzz(12); burst(c, r, ['#a39f99', '#7d7a75', '#ffffff'], 6);
   if (t.hp > 0) return;
   const free = ore && Math.random() < npcHearts('hin')*.05; if (ore && !free) S.mineEnergy--;
@@ -1824,9 +1875,7 @@ function mineGoTo(c, r){                                      // tile (c,r): flo
   M.path = smoothPath(M.ax, M.ay, pts, mineClear); const n = M.path.shift(); if (n){ M.tx = n[0]; M.ty = n[1]; }
 }
 function mineFrame(time, dt){
-  const M = inMine, dx = M.tx - M.ax, dy = M.ty - M.ay, d = Math.hypot(dx, dy);
-  if (d < .03){ if (M.path && M.path.length){ const n = M.path.shift(); M.tx = n[0]; M.ty = n[1]; } }
-  else { const st = Math.min(d, 2.4*dt); M.ax += dx/d*st; M.ay += dy/d*st; if (performance.now() > M.swing) M.face = Math.atan2(dx*2, dy*2); }
+  const M = inMine;
   R3D.renderMine(M, time);
 }
 
@@ -1862,7 +1911,7 @@ const FARM_ITEMS = {
   barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:2800,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
-  smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
+  smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, hidden:true, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
   mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ใช้ ⚡ พลังขุด (ได้จากการออกกำลังกายจริง) • วางแล้วย้ายไม่ได้' },
   lanna:     { name:'🏮 โคมไฟล้านนา',  w:1, h:1, price:0, cost:{}, H:2.3, hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • ส่องแสงตอนกลางคืน • ความสวย +2' },
   lotuspond: { name:'🪷 สระบัวกระทง',  w:2, h:2, price:0, cost:{}, H:.6,  hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • สระบัวมีกระทงลอย • ความสวย +3' },
@@ -1954,6 +2003,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
+  projMigrate(); ensureMineSite();                            // 🏗 ⛏ v0.23
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
    asphalt → clear ground, auto bridges → water again. Runs once per save (S.roadsV = 2). */
@@ -2689,7 +2739,7 @@ function frame(now){
       else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
       else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
     }
-    npcTick(dt/1000); avTick(dt/1000); drawNpcMarks(time);  // 👥 v0.19 • 🧑 v0.20
+    npcTick(dt/1000); avTick(dt/1000); drawNpcMarks(time); drawPetMark(time);  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -3096,7 +3146,8 @@ function tapObj(z, o){
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
   if (PROC[o.type]) return procTap(z, o);
-  if (o.type === 'mine') return enterMine();                // ⛏ v0.22
+  if (o.type === 'mine') return S.mineOpen ? enterMine()    // ⛏ v0.22 • v0.23: collapsed until ลุงหิน's repair
+    : detailSheet('b:mine', `⛏ ทางเข้าเหมือง (ถล่มอยู่)\n${S.lv >= NPCS.hin.lv ? `ลุงหินกำลังรอความช่วยเหลือ — ซ่อมแล้ว ${S.mineStage||0}/${MINE_PROJ.length}\nแตะลุงหินในฟาร์มเพื่อส่งวัตถุดิบ` : `ลุงหินจะมาขอให้ช่วยซ่อมเมื่อถึง Lv.${NPCS.hin.lv}`}`, '', OK);
   sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้าง 1 วินาทีแล้วลากเพื่อย้าย • ลากไป 📦 เก็บเข้าคลัง • ลากไป 🗑️ ลบ`, [
     ...(o.w !== o.h ? [{ label:'🔄 หมุน', fn:() => rotateObj(z, o) }] : []),
     {label:'รื้อถอน (ไม่คืนวัตถุดิบ)', cls:'ghost', fn:() => confirmDo(`รื้อถอน ${it.name}?\nจะไม่ได้เหรียญหรือวัตถุดิบคืน`, () => { removeObj(z, o); save(); })},
@@ -3620,12 +3671,12 @@ const QUESTS = [
     text:'เลือกสีผิว ทรงผม สีเสื้อ-กางเกง ของประดับ แล้วกดบันทึก (เปิดได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า หรือแตะรูปหน้าบนแถบด้านบน)', reward:{coins:100} },
   { id:'avWalk',  name:'แตะพื้นให้ตัวละครเดิน',      need:1, goal:() => st('avTap'),
     text:'ตอนไม่ได้ถือเครื่องมือ แตะพื้นหญ้าว่างหรือทางเดิน — ตัวละครจะเดินไปตรงนั้น (กดค้างที่ทางเดินยังรื้อได้เหมือนเดิม)', reward:{coins:100} },
-  { id:'mineSet', name:'วางทางเข้าเหมือง',           need:1, goal:() => S.farm.zones.some(z => z.objs.some(o => o.type === 'mine')) ? 1 : 0,
-    text:'(ต้องช่วยลุงหินซ่อมเหมืองครบ 3 ขั้น + Lv.10) ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → ⛏ ทางเข้าเหมือง → วาง (วางแล้วย้ายไม่ได้)', reward:{coins:200} },
+  { id:'mineSet', name:'ช่วยลุงหินซ่อมเหมือง',       need:1, goal:() => S.mineOpen ? 1 : 0,
+    text:'ถึง Lv.10 พื้นที่ใหม่จะมี ⛏ ทางเข้าเหมืองที่ถล่มอยู่ และลุงหินจะมาขอให้ช่วย → แตะลุงหิน → ส่งวัตถุดิบครบ 3 ขั้น → เหมืองเปิด', reward:{coins:200} },
   { id:'mineDig', name:'ขุดแร่ครั้งแรก',              need:1, goal:() => st('oreGet'),
-    text:'แตะทางเข้าเหมือง → ลากนิ้วผ่านหินที่มีแร่ — แร่ใช้ ⚡ พลังขุดก้อนละ 1 (ได้จากการออกกำลังกายจริง) • หินธรรมดาทุบฟรี', reward:{coins:100, coal:2} },
+    text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — แร่ใช้ ⚡ พลังขุดก้อนละ 1 (ได้จากการออกกำลังกายจริง) • หินธรรมดาทุบฟรี', reward:{coins:100, coal:2} },
   { id:'smelt',   name:'หลอมแท่งทองแดง',             need:1, goal:() => st('proc_bar_copper'),
-    text:'(Lv.12) สร้าง ⚒ โรงตีเหล็ก → แตะ → 🥉 แท่งทองแดง (แร่ทองแดง 3 + ถ่านหิน 1)', reward:{coins:200} },
+    text:'(Lv.12) พี่เหล็กจะมาขอให้ช่วยสร้าง ⚒ โรงตีเหล็ก (3 ขั้น) → วางจาก 📦 คลัง → แตะ → 🥉 แท่งทองแดง (แร่ทองแดง 3 + ถ่านหิน 1)', reward:{coins:200} },
   { id:'pickUp',  name:'อัปเกรดอีเต้อ',               need:1, goal:() => st('up_pick'),
     text:'⚒ โรงตีเหล็ก → ⛏ อีเต้อทองแดง (แท่งทองแดง 3 + ไม้ 5) → ตีแรงขึ้นและลงชั้น 2 ได้', reward:{coins:300} },
   { id:'avWear',  name:'แต่งตัวที่ตู้เสื้อผ้า',          nav:'tBag', need:1, goal:() => st('avWear'),
@@ -3680,13 +3731,14 @@ const QUESTS = [
     text:'ถึง Lv.2 → พื้นที่ 5×5 ใหม่จะต่อกับฟาร์มเดิม ใช้นิ้วลากจอเพื่อดู, ＋/－ ซูม, 🏠 กลับบ้าน (ถึง Lv.50)', reward:{coins:400} },
   { id:'crop2',   name:'ปลูกผักชนิดใหม่',          hl:'plot',   need:1, goal:() => st('plant_other'),
     text:'ปลูกผักที่ไม่ใช่แครอท 1 แปลง — เมล็ดได้ฟรีจากการเคลียร์ฟาร์ม หรือซื้อที่ร้านค้า › ทั่วไป (ข้าวโพดปลดล็อก Lv.3)', reward:{coins:200} },
-  { id:'sawmill', name:'สร้างโรงเลื่อย',           nav:'tShop', shop:'farm', need:1, goal:() => ownsDone('sawmill') ? 1 : 0,
-    text:'ถึง Lv.4 → ร้านค้า › ฟาร์ม › 🪚 โรงเลื่อย — โรงงานแปรรูปไม้ เปิดทางสู่อาคารใหญ่และเฟอร์นิเจอร์ราคาถูก', reward:{coins:300} },
+  { id:'sawmill', name:'ช่วยลุงไม้สร้างโรงเลื่อย',    need:1, goal:() => ownsDone('sawmill') ? 1 : 0,
+    text:'ถึง Lv.4 ลุงไม้จะมาเยี่ยมฟาร์ม → แตะลุงไม้ → ส่งไม้ หิน หญ้า ให้ครบ 2 ขั้น → ได้ 🪚 โรงเลื่อยฟรี → ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง', reward:{coins:300} },
   { id:'plank',   name:'ทำไม้กระดาน',             need:1, goal:() => st('proc_plank'),
     text:'แตะโรงเลื่อย → 🟫 ไม้กระดาน (ไม้ 3) → รอ 5 นาที → แตะรับ — ใช้สร้างครัว โรงสี ยุ้งฉาง บ้านไร่', reward:{coins:200} },
   { id:'craft',   name:'ทำเก้าอี้ตัวแรก',           need:1, goal:() => st('craft'),
     text:'แตะโรงเลื่อย → 🪑 เก้าอี้ (ไม้กระดาน 1) — เตียง โซฟา โต๊ะ เก้าอี้ ชั้นหนังสือ ที่นอนน้อง ทำได้ที่โรงเลื่อยที่เดียว แล้วเอาไปวางในบ้าน', reward:{coins:300} }
 ];
+if (!AVATAR_ON) for (const id of ['avMake', 'avWalk', 'avWear']){ const i = QUESTS.findIndex(q => q.id === id); if (i >= 0) QUESTS.splice(i, 1); }   // 🧑 v0.23
 const SIZE_OF = k => RES[k] ? RES[k].size : null;
 let questDirty = true, questShown = '', questCollapsed = false;
 /* progress is stored as the list of finished quest ids (S.qDone) so the chain can be re-ordered safely */
@@ -3701,7 +3753,7 @@ const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง')
 
 function questTick(){
   brkTick(); if (S && S.farm) mineUnlockTick();
-  if (S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
+  if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
@@ -3832,7 +3884,7 @@ function renderShop(){
         price:`🪙 ${it.price}/ช่อง`, on:() => startPaint(kind, k) }; })));
     const h3 = document.createElement('b'); h3.textContent = '🏗 สิ่งปลูกสร้าง'; L.appendChild(h3);
     const q = (curQuest()||{}).id;
-    L.appendChild(cardGrid(Object.entries(FARM_ITEMS).filter(([id,it]) => !(it.once && starterOwned()) && !it.hidden).map(([id,it]) => {
+    L.appendChild(cardGrid(Object.entries(FARM_ITEMS).filter(([id,it]) => !(it.once && starterOwned()) && !it.hidden && !(id === 'sawmill' && !projDone('mai'))).map(([id,it]) => {
       const okLv = S.lv >= (it.lv||1), ok = S.coins >= it.price && canPay(it.cost), full = atLimit(id), lt = limitTxt(id);
       return { ref:'b:'+id, name:nm(it.name), sub:`📐 ${it.w*it.h} ช่อง • ⏱ ${fmt(placeSec(id, it))}${lt ? '<br>' + lt : ''}`, price: full ? 'ครบแล้ว' : it.price ? `🪙 ${it.price.toLocaleString()}` : 'ฟรี',
         lock: okLv ? null : `Lv.${it.lv}`, dim:!okLv || full, dot: okLv && !full && !ok, glow:(q==='house' && it.once) || (q==='sawmill' && id==='sawmill'), on:() => buildDetail(id) }; })));
@@ -3932,13 +3984,14 @@ function renderBag(){
   /* 🧪 temporary mine test switch (v0.22.1) — remove together with the Loy Krathong switches */
   const mt = document.createElement('button'); mt.className = 'btn ghost';
   mt.textContent = S.mineOpen ? '🧪 ทดลองเหมือง: เติม ⚡ เต็ม + แร่ชุดทดลอง' : '🧪 ทดลองเหมือง (ปลดล็อกทันที ไม่ต้องรอลุงหิน/Lv.10)';
-  mt.onclick = () => confirmDo(S.mineOpen ? 'เติม ⚡ พลังขุดเต็ม 30 และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nได้ ⛏ ทางเข้าเหมือง + ⚒ โรงตีเหล็ก ในคลัง\n⚡ 30 + แร่ชุดทดลอง', () => {
+  mt.onclick = () => confirmDo(S.mineOpen ? 'เติม ⚡ พลังขุดเต็ม 30 และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nทางเข้าเหมืองโผล่ในพื้นที่ที่ 10 + ⚒ โรงตีเหล็กในคลัง\n⚡ 30 + แร่ชุดทดลอง', () => {
     S.store = S.store || {}; const first = !S.mineOpen;
-    if (first){ S.mineOpen = 1; S.mineStage = Math.max(S.mineStage || 0, MINE_PROJ.length); S.store.mine = (S.store.mine||0) + 1; S.store.smithy = (S.store.smithy||0) + 1; }
+    if (first){ S.mineStage = Math.max(S.mineStage || 0, MINE_PROJ.length); while (S.farm.zones.length <= MINE_ZONE) S.farm.zones.push(genZone(S.farm.zones.length)); rebuildChunkMap();
+      mineUnlockTick(); S.proj = S.proj || {}; if (!projDone('lek')){ S.proj.lek = PROJ.lek.stages.length; S.store.smithy = (S.store.smithy||0) + 1; } }
     S.mineEnergy = ENERGY_MAX; [['ore_copper',9], ['coal',6], ['ore_iron',6], ['wood',5]].forEach(([k, n]) => invAdd(k, n)); save(); renderMats(); renderBag();
-    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\nร้านค้า › ฟาร์ม › 📦 คลังของฉัน\n→ วาง ⛏ ทางเข้าเหมือง และ ⚒ โรงตีเหล็ก\n(ทางเข้าเหมืองวางแล้วย้ายไม่ได้)' : '⚡ เต็มแล้ว + ได้แร่ชุดทดลอง', OK); });
+    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\n⛏ ทางเข้าเหมืองอยู่ในพื้นที่ที่ 10 (เลื่อนจอไปหา)\n⚒ โรงตีเหล็ก: ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง' : '⚡ เต็มแล้ว + ได้แร่ชุดทดลอง', OK); });
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
-  L.append(wd, v3, et, en, mt, mv, out);
+  L.append(...(AVATAR_ON ? [wd] : []), v3, et, en, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 

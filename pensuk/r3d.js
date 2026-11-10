@@ -224,6 +224,10 @@ export function start(){
         for (const x of [-.62, .62]) CY(g, .1, 1.45, '#8a5f32', x, 0, D*.33); RB(g, 1.5, .2, .22, .05, '#8a5f32', 0, 1.42, D*.33);
         for (const x of [-.3, .3]) RB(g, .06, .05, D*.5, .02, '#9aa6b1', x, .02, D*.55);
         for (let k=0;k<4;k++) RB(g, .8, .04, .1, .02, '#7a5236', 0, 0, D*.38 + k*.22);
+        if (o.closed){                                          // v0.23 collapsed: rubble plugs the tunnel, a broken beam, no lantern
+          BALL(g, .42, .5, .36, '#9a9086', -.22, .1, D*.36); BALL(g, .36, .42, .32, '#857b71', .26, .1, D*.4); BALL(g, .3, .36, .28, '#a8a096', 0, .55, D*.34);
+          BALL(g, .2, .2, .2, '#8d8379', .55, .05, D*.52); BALL(g, .16, .16, .16, '#a0968a', -.58, .05, D*.5);
+          RB(g, 1.1, .16, .2, .05, '#7a5236', .1, .55, D*.5).rotation.z = .5; break; }
         CY(g, .025, .25, '#3e4248', .75, 1.25, D*.38); add(g, SPH, mat('#ffd27a', NIGHT > .35 ? 0xffb030 : 0x332000), .75, 1.12, D*.38, .1, .12, .1); break; }
       /* 🏮 v0.18 Loy Krathong event decor */
       case 'lanna': { const on = NIGHT > .35;                   // Lanna paper lantern hanging from a wooden post (glows at night)
@@ -597,7 +601,7 @@ export function start(){
   const msun = new THREE.DirectionalLight(0xffe2c0, 1.1); msun.position.set(14, 20, 10); msun.castShadow = true; msun.shadow.mapSize.set(1024, 1024); mscene.add(msun, msun.target);
   const torchL = [0, 1].map(() => { const l = new THREE.PointLight(0xffa040, 18, 14, 1.6); mscene.add(l); return l; });
   const ORE_COL = { ore_copper:'#e07a3f', ore_iron:'#c9d1d8', ore_silver:'#f2f6fa', ore_gold:'#f6c445', coal:'#2b2b30', gem:'#5fd3e8' };
-  let mineG = null, mineVer = -1, mineRes = [], mineAv = null, mineAvKey = '', inMineNow = false;
+  let mineG = null, mineVer = -1, mineRes = [], mineAv = null, mineAvKey = '', mineAx = null, inMineNow = false;
   function rockModel(k, i){
     const g = new THREE.Group(), r = n => hrnd(91, i, n);
     BALL(g, .75 + r(1)*.15, .55 + r(2)*.2, .7, k === 'stone' ? '#8d8a85' : '#7d7a75', 0, .35, 0, true);
@@ -638,14 +642,18 @@ export function start(){
     for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
       if (u >= 1 || !m.parent){ m.scale.set(1,1,1); m.rotation.z = 0; hits.splice(k, 2); continue; }
       const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
-    const look = typeof avatarLook === 'function' ? avatarLook() : null;               // the player's avatar mines here
-    if (look){ const key = JSON.stringify(look); if (!mineAv || key !== mineAvKey){ if (mineAv) mscene.remove(mineAv); mineAv = personModel(look); mineAvKey = key;
-        const pk = new THREE.Group(); CY(pk, .04, .8, '#c99a62', 0, -.4, 0); RB(pk, .62, .07, .08, .02, '#c9d1d8', 0, 0, 0); CO(pk, .05, .14, '#c9d1d8', .33, 0, 0).rotation.z = -Math.PI/2; CO(pk, .05, .14, '#c9d1d8', -.33, 0, 0).rotation.z = Math.PI/2;; pk.position.set(.05, -.42, .05); mineAv.userData.parts.arms[1].add(pk); mscene.add(mineAv); }   // ⛏ pickaxe head
-      const x = M.ax*2, z = M.ay*2, P2 = mineAv.userData.parts; mineAv.position.set(x, 0, z);
-      if (M.face != null) mineAv.rotation.y = M.face;
-      const sw = M.swing && performance.now() < M.swing ? (M.swing - performance.now())/300 : 0;
-      P2.arms[1].rotation.x = sw > 0 ? -2.4 + (1 - sw)*2.6 : Math.sin(time*1.5)*.05; P2.arms[0].rotation.x = 0; P2.legs.forEach(l => l.rotation.x = 0);
-    } else if (mineAv){ mscene.remove(mineAv); mineAv = null; }
+    /* ⛏ v0.23: no avatar — a big pickaxe floats over the rock under the finger (M.hx, M.hy) and swings down on each hit
+       swing u: 1→0 over 300 ms • head angle = −1.1 + (1 − u)·1.9 rad (raised → strike), idle bob = sin(t·2)·0.06 */
+    if (!mineAx){ mineAx = new THREE.Group(); const pk = new THREE.Group(); mineAx.add(pk);
+      CY(pk, .07, 1.5, '#c99a62', 0, 0, 0); RB(pk, 1.1, .13, .14, .04, '#c9d1d8', 0, 1.45, 0);
+      CO(pk, .09, .26, '#dfe6ec', .6, 1.45, 0).rotation.z = -Math.PI/2; CO(pk, .09, .26, '#dfe6ec', -.6, 1.45, 0).rotation.z = Math.PI/2;
+      pk.traverse(m => { if (m.isMesh){ m.castShadow = true; m.renderOrder = 5; } }); mineAx.scale.setScalar(1.7); mscene.add(mineAx); }
+    if (M.hx != null){ mineAx.visible = true;
+      const u = M.swing && performance.now() < M.swing ? (M.swing - performance.now())/300 : 0;
+      mineAx.position.set(M.hx*2 + .6, .9 + Math.sin(time*2)*.06, M.hy*2 + .6); mineAx.rotation.y = YAW;
+      mineAx.children[0].rotation.z = u > 0 ? -1.1 + (1 - u)*1.9 : -.5;
+    } else mineAx.visible = false;
+    if (mineAv){ mscene.remove(mineAv); mineAv = null; }
     renderer.render(mscene, camera);
   }
 
