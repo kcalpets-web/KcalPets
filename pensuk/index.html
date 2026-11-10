@@ -154,9 +154,11 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #hSta{position:relative;width:96px;height:14px;border-radius:7px;background:#0001;overflow:hidden}#hSta i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;transition:width .3s}#hSta b{position:relative;display:block;font-size:10px;line-height:14px;padding-left:5px}
 #hPet.upOk{color:#e0455f;font-weight:700;animation:pulse 1.2s infinite}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
-#evFab{position:absolute;left:10px;bottom:96px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
+#evFab{position:absolute;left:10px;bottom:232px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
 #evFab.pulse{animation:pulse 1s infinite}
-#monFab{position:absolute;left:10px;bottom:160px;width:58px;height:58px;border-radius:50%;border:3px solid #3f8fd8;background:#eef6ff;font-size:28px;box-shadow:0 4px 12px #0003;display:none}
+#chatFab{position:absolute;left:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;padding:4px;box-shadow:0 4px 12px #0003}#chatFab svg{width:100%;height:100%}
+#chatFab.pulse{animation:pulse 1.2s infinite;border-color:#4caf6a}#chatFab.pulse::after{content:'💬';position:absolute;top:-6px;right:-6px;font-size:18px}
+#monFab{position:absolute;left:10px;bottom:164px;width:58px;height:58px;border-radius:50%;border:3px solid #3f8fd8;background:#eef6ff;font-size:28px;box-shadow:0 4px 12px #0003;display:none}
 #monFab.pulse{animation:pulse 1.2s infinite}
 #battle{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#cfe8ff,#fff6e6 70%);overflow:auto}
 #battle .bwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:10px}
@@ -250,6 +252,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
       <button id="evFab" aria-label="อีเวนต์">🏮</button>
       <button id="monFab" aria-label="สู้ปีศาจ">⚔️</button>
+      <button id="chatFab" aria-label="คุยกับเป็นสุข"></button>
       <div id="toolBar"></div>
       <div id="seedBar"></div>
       <div id="mineBar"><div id="mineInfo"></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost" id="mineRest">🧘 พัก</button><button class="btn ghost" id="mineOut">ออกจากเหมือง</button></div></div>
@@ -550,7 +553,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.27.1';
+const APP_VER = '0.27.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -2028,7 +2031,8 @@ function fmt(sec){
   const m = Math.floor(sec/60), s = sec%60;
   return s ? `${m} นาที ${s} วิ` : `${m} นาที`;
 }
-function fmtShort(sec){ sec = Math.max(0, Math.ceil(sec)); const m = Math.floor(sec/60), s = sec%60; return m ? `${m}:${String(s).padStart(2,'0')}` : `${s}s`; }
+function fmtShort(sec){ sec = Math.max(0, Math.ceil(sec)); const h = Math.floor(sec/3600), m = Math.floor(sec/60), s = sec%60;
+  return h ? `${h}:${String(m%60).padStart(2,'0')} ชม.` : m ? `${m}:${String(s).padStart(2,'0')}` : `${s}s`; }   // v0.27.2: 103:48 → 1:43 ชม.
 
 /* ---- chunk layout: square spiral around (0,0) → each new chunk touches the island ---- */
 const SPIRAL = (() => {
@@ -2813,11 +2817,15 @@ function frame(now){
     R3D.ghost(placing, time);                                 // 3D placement ghost (translucent model)
     if (placing && placing.gc != null){ const col = placing.valid ? 'rgba(76,175,106,.45)' : 'rgba(220,60,60,.45)';
       for (let dr=0;dr<placing.h;dr++) for (let dc=0;dc<placing.w;dc++){ const c = placing.gc+dc, r = placing.gr+dr; quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), col); } }
+    const detail = zoom >= CROP_DETAIL_ZOOM; cropGroupsN = 0;
     for (let k=0;k<badges.length;k+=5){
       if (badges[k]===0) jobBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2], time, wall);
       else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
-      else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
+      else { const o = objById(badges[k+3], badges[k+4]);
+        if (!detail && o && o.type === 'plot' && o.done && o.plant && !o.pj) cropGroupAdd(o, badges[k+3], wall);   // 🌾 grouped when zoomed out
+        else buildBadge(o, badges[k+3], time, wall); }
     }
+    drawCropGroups(time);
     npcTick(dt/1000); avTick(dt/1000); drawNpcMarks(time); drawPetMark(time);  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
@@ -2893,6 +2901,28 @@ function badge(x, y, p, left, ready, time, tool){
 function jobBadge(t, gc, gr, time, wall){
   const R = RES[t.k]; if (!R) return; const [x,y] = P(gc+.5, gr+.5, TH*R.h + 14), left = (t.job.end-wall)/1000;
   badge(x, y, 1 - Math.max(0,left)/t.job.dur, left, left <= 0, time, R.tool);
+}
+/* 🌾 v0.27.2 grouped crop labels (designer: per-plot timers piled up unreadably).
+   Zoomed out (zoom < CROP_DETAIL_ZOOM): plots in the same area with the same crop share ONE label at their centre:
+     "🎃 ×12 • 1:43 ชม." (time = soonest plot) • green "✔ 🎃 ×5 พร้อมเก็บ" when any are ripe.
+   Zoom in (≥ CROP_DETAIL_ZOOM) or tap a plot to see each one. Groups live in a reused pool (no per-frame allocation). */
+const CROP_DETAIL_ZOOM = 1.15, cropGroups = [];
+let cropGroupsN = 0;
+function cropGroupAdd(o, z, wall){
+  const c = cropOf(o), left = (o.plant + c.sec*1000 - wall)/1000, ready = left <= 0;
+  let g = null; for (let i=0;i<cropGroupsN;i++){ const q = cropGroups[i]; if (q.z === z && q.crop === o.crop){ g = q; break; } }
+  if (!g){ g = cropGroups[cropGroupsN] || (cropGroups[cropGroupsN] = {}); cropGroupsN++;
+    Object.assign(g, { z, crop:o.crop, ready:0, n:0, sx:0, sy:0, left:Infinity, p:0, e:c.e, sec:c.sec }); }
+  g.n++; if (ready) g.ready++; g.sx += o.c + .5; g.sy += o.r + .5; if (!ready && left < g.left){ g.left = left; g.p = 1 - Math.max(0, left)/c.sec; }
+}
+function drawCropGroups(time){
+  for (let i=0;i<cropGroupsN;i++){ const g = cropGroups[i], [x, y] = P(g.z.cx*GRID + g.sx/g.n, g.z.cy*GRID + g.sy/g.n, TH*.6 + 18);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (g.ready === g.n){ const by = y + Math.sin(time*5)*3; pill(x, by, 124, 26, '#4caf6a'); ctx.fillStyle = '#fff'; ctx.font = '700 13px Mali, sans-serif'; ctx.fillText(`✔ ${g.e} ×${g.n} พร้อมเก็บ`, x, by+1); continue; }
+    if (g.ready){ pill(x, y - 24, 92, 20, '#4caf6a'); ctx.fillStyle = '#fff'; ctx.font = '700 11px Mali, sans-serif'; ctx.fillText(`✔ เก็บได้ ${g.ready}`, x, y - 23); }   // ripe part of a mixed group
+    pill(x, y, 124, 26, 'rgba(255,255,255,.94)');
+    ctx.fillStyle = '#eadbc4'; ctx.fillRect(x-44, y+7, 88, 4); ctx.fillStyle = '#4caf6a'; ctx.fillRect(x-44, y+7, 88*g.p, 4);
+    ctx.fillStyle = '#3b2a1a'; ctx.font = '600 12px Mali, sans-serif'; ctx.fillText(`${g.e} ×${g.n - g.ready} • ${fmtShort(g.left)}`, x, y-3); }
 }
 function buildBadge(o, z, time, wall){
   if (!o) return;
@@ -3935,10 +3965,9 @@ function ciAuto(){
   if (!S || !S.pet || !S.farm || !$('sMain').classList.contains('on') || $('modal').classList.contains('on') || act) return;
   if (inMine || inRoom || fishing || tool || placing || paint || $('battle').style.display === 'block' || quietNow()) return;
   const fresh = !S.chk, c = ciState(); if (fresh){ c.last = Date.now(); save(); return; }   // first session: don't stack a check-in right after onboarding
-  if (Date.now() - (c.last || 0) < CI_EVERY || !ciTopics().length) return;
-  openCheckin(true);
+  ciDue = Date.now() - (c.last || 0) >= CI_EVERY && ciTopics().length > 0;   // v0.27.2: the 💬 button pulses instead of popping the chat open
 }
-let ciQ = [], ciHits = 0, ciDone = [];
+let ciQ = [], ciHits = 0, ciDone = [], ciDue = false;
 function openCheckin(auto){
   const c = ciState(); c.last = Date.now(); save(); bump('checkin');
   ciQ = ciTopics(); ciHits = 0; ciDone = [];
@@ -3989,7 +4018,8 @@ function monLogBatch(n){
 }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
-  brkTick(); ciAuto(); renderSta(); if (S && S.farm) mineUnlockTick();
+  brkTick(); ciAuto(); renderSta();
+  { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); } if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
@@ -4508,7 +4538,8 @@ function setHint(){
 }
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
-$('monFab').onclick = () => openBattle(); $('bClose').onclick = () => closeBattle();
+$('monFab').onclick = () => openBattle();
+$('chatFab').innerHTML = `<svg viewBox="0 0 64 64">${BEAGLE}</svg>`; $('chatFab').onclick = () => { ciDue = false; openCheckin(false); }; $('bClose').onclick = () => closeBattle();
 $('bHit').onclick = () => { if (!monHit('btn')) renderBattle(); };
 $('mineRest').onclick = () => brkChooser(() => exitMine());
 $('toolFab').onclick = () => {
