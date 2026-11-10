@@ -525,7 +525,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.22.1';
+const APP_VER = '0.22.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1597,7 +1597,69 @@ function avEmote(e, sec, tx, ty){
   if (!AV) return; AV.emote = e; AV.emoteEnd = performance.now() + sec*1000;
   AV.faceYaw = tx != null ? Math.atan2((tx - AV.x)*2, (ty - AV.y)*2) : null;
 }
-/* 0.9 tiles/s (1.3 on a day all 3 missions are done) • no path-finding: stops when the next step is blocked */
+/* =====================================================================
+   🧭 GRID PATH-FINDING (v0.22.2) — A* on integer tiles, 8 directions, no corner cutting
+   gridPath(c0,r0, c1,r1, x0,y0,W,H, ok) → { pts:[[x,y]…] tile centres (start excluded), reached:bool }
+     • ok(c,r) = can stand on tile (global coords inside the W×H box starting at x0,y0)
+     • step cost 1 (straight) / √2 (diagonal); h = octile distance
+         h = (dx + dy) + (√2 − 2)·min(dx, dy)
+     • diagonal allowed only if both side tiles are ok → never squeezes past a corner
+     • goal unreachable → path to the reached tile with the smallest h (closest spot), reached=false
+   Buffers are reused (grown on demand) so a tap allocates only the small result array.
+   ===================================================================== */
+let PF_G = new Float32Array(256), PF_P = new Int32Array(256), PF_S = new Uint8Array(256), PF_O = new Int32Array(256);
+const PF_D = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+function gridPath(c0, r0, c1, r1, x0, y0, W, H, ok){
+  const N = W*H; if (PF_G.length < N){ PF_G = new Float32Array(N); PF_P = new Int32Array(N); PF_S = new Uint8Array(N); PF_O = new Int32Array(N); }
+  PF_S.fill(0, 0, N);                                         // 0 unseen • 1 open • 2 closed
+  const hx = (c, r) => { const dx = Math.abs(c - c1), dy = Math.abs(r - r1); return dx + dy + (Math.SQRT2 - 2)*Math.min(dx, dy); };
+  const idx = (c, r) => (r - y0)*W + (c - x0), inB = (c, r) => c >= x0 && r >= y0 && c < x0 + W && r < y0 + H;
+  if (!inB(c0, r0)) return { pts:[], reached:false };
+  const s0 = idx(c0, r0); PF_G[s0] = 0; PF_P[s0] = -1; PF_S[s0] = 1; PF_O[0] = s0; let nO = 1, best = s0, bestH = hx(c0, r0), goal = -1;
+  while (nO){
+    let bi = 0, bf = Infinity;                                  // linear open-list scan: ≤ ~225 tiles, cheaper than a heap here
+    for (let k=0;k<nO;k++){ const i = PF_O[k], c = x0 + i % W, r = y0 + (i / W | 0), f = PF_G[i] + hx(c, r); if (f < bf){ bf = f; bi = k; } }
+    const cur = PF_O[bi]; PF_O[bi] = PF_O[--nO]; PF_S[cur] = 2;
+    const cc = x0 + cur % W, cr = y0 + (cur / W | 0), ch = hx(cc, cr);
+    if (ch < bestH){ bestH = ch; best = cur; }
+    if (cc === c1 && cr === r1){ goal = cur; break; }
+    for (const [dc, dr, w] of PF_D){
+      const nc = cc + dc, nr = cr + dr; if (!inB(nc, nr) || !ok(nc, nr)) continue;
+      if (dc && dr && (!ok(cc + dc, cr) || !ok(cc, cr + dr))) continue;   // no corner cutting
+      const ni = idx(nc, nr); if (PF_S[ni] === 2) continue;
+      const g = PF_G[cur] + w;
+      if (PF_S[ni] !== 1){ PF_S[ni] = 1; PF_O[nO++] = ni; } else if (g >= PF_G[ni]) continue;
+      PF_G[ni] = g; PF_P[ni] = cur;
+    }
+  }
+  const end = goal >= 0 ? goal : best, pts = [];
+  for (let i = end; i !== s0 && i >= 0; i = PF_P[i]) pts.push([x0 + i % W + .5, y0 + (i / W | 0) + .5]);
+  return { pts:pts.reverse(), reached:goal >= 0 };
+}
+/* string-pulling: drop waypoints that can be skipped on a clear straight line (clear(ax,ay,bx,by)) */
+function smoothPath(x, y, pts, clear){
+  const out = []; let ax = x, ay = y, k = 0;
+  while (k < pts.length){ let j = k; while (j + 1 < pts.length && clear(ax, ay, pts[j+1][0], pts[j+1][1])) j++;
+    out.push(pts[j]); ax = pts[j][0]; ay = pts[j][1]; k = j + 1; }
+  return out;
+}
+function farmBox(){                                          // bounding box of all farm areas in global tiles
+  let a = 1e9, b = 1e9, c = -1e9, d = -1e9;
+  for (const z of S.farm.zones){ a = Math.min(a, z.cx*GRID); b = Math.min(b, z.cy*GRID); c = Math.max(c, z.cx*GRID + GRID); d = Math.max(d, z.cy*GRID + GRID); }
+  return [a, b, c - a, d - b];
+}
+/* walk the avatar to (x,y) around obstacles; returns false when it can only get close */
+function avGoTo(x, y, manual){
+  if (!AV) return false;
+  const [bx, by, W, H] = farmBox(), ok = (c, r) => walkable(tileAt(c, r));
+  const tc = Math.floor(x), tr = Math.floor(y), res = gridPath(Math.floor(AV.x), Math.floor(AV.y), tc, tr, bx, by, W, H, ok);
+  const pts = res.pts; if (res.reached && pts.length) pts[pts.length - 1] = [x, y];   // land on the exact tapped spot
+  AV.path = smoothPath(AV.x, AV.y, pts, pathClear);
+  const nx = AV.path.shift(); if (nx){ AV.tx = nx[0]; AV.ty = nx[1]; } else { AV.tx = AV.x; AV.ty = AV.y; }
+  AV.manual = !!manual; AV.wait = 0; AV.lost = !res.reached; AV.goal = [x, y];
+  return res.reached;
+}
+/* 0.9 tiles/s (1.3 on a day all 3 missions are done) • v0.22.2: follows AV.path (A*) — re-plans once if the way gets blocked */
 function avTick(dt){
   if (!S || !S.avatar || !S.farm){ AV = null; return; }
   if (!AV || !walkAt(AV.x, AV.y)){ const p = npcSpot(pet.x, pet.y, 2) || npcSpot(pet.x, pet.y, 5); if (!p) return; AV = { x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 }; }
@@ -1605,17 +1667,21 @@ function avTick(dt){
   if (AV.emote && performance.now() < AV.emoteEnd) return;      // stand still while emoting
   AV.emote = null;
   if (!AV.manual && avToolAt && performance.now() - avToolAt[2] < 1500 && Math.hypot(avToolAt[0] + .5 - AV.x, avToolAt[1] + .5 - AV.y) > 1.6){
-    const p = npcSpot(avToolAt[0] + .5, avToolAt[1] + .5, 1.5); if (p){ AV.tx = p[0]; AV.ty = p[1]; AV.wait = 0; } }
+    const p = npcSpot(avToolAt[0] + .5, avToolAt[1] + .5, 1.5); if (p && !(AV.goal && AV.goal[0] === p[0] && AV.goal[1] === p[1])) avGoTo(p[0], p[1], false); }
   if (AV.wait > 0){ AV.wait -= dt; return; }
   const dx = AV.tx - AV.x, dy = AV.ty - AV.y, d = Math.hypot(dx, dy);
   if (d < .05){
-    AV.manual = false; AV.wait = 2 + Math.random()*4;
+    if (AV.path && AV.path.length){ const n = AV.path.shift(); AV.tx = n[0]; AV.ty = n[1]; return; }   // next waypoint
+    if (AV.lost && AV.manual){ AV.lost = false; floatText(Math.floor(AV.goal[0]), Math.floor(AV.goal[1]), '❓ ไปตรงนั้นไม่ได้', '#8a6d3b'); }
+    AV.goal = null; AV.manual = false; AV.wait = 2 + Math.random()*4;
     const far = Math.hypot(pet.x - AV.x, pet.y - AV.y) > 3, p = far ? npcSpot(pet.x, pet.y, 1.5) : npcSpot(AV.x, AV.y, 2);
     if (p && pathClear(AV.x, AV.y, p[0], p[1])){ AV.tx = p[0]; AV.ty = p[1]; }
     return;
   }
   const step = Math.min(d, (AV.pep ? 1.3 : .9)*dt), nx = AV.x + dx/d*step, ny = AV.y + dy/d*step;
-  if (!walkAt(nx, ny)){ AV.tx = AV.x; AV.ty = AV.y; AV.manual = false; return; }
+  if (!walkAt(nx, ny)){ if (AV.goal && !AV.replan){ AV.replan = true; const g = AV.goal; avGoTo(g[0], g[1], AV.manual); return; }   // something was built on the way → plan again once
+    AV.tx = AV.x; AV.ty = AV.y; AV.path = null; AV.goal = null; AV.manual = false; AV.replan = false; return; }
+  AV.replan = false;
   AV.x = nx; AV.y = ny;
 }
 /* header portrait: head crop of a 128 px avatar thumbnail, cached by look */
@@ -1721,13 +1787,13 @@ function mineHitAt(c, r){
   const M = inMine; if (!M || c < 0 || r < 0 || c >= M.N || r >= M.N) return;
   const key = r*M.N + c; if (mineDrag && mineDrag.last === key) return; if (mineDrag) mineDrag.last = key;
   const t = M.tiles[key];
-  if (t.k === 'floor'){ M.tx = c + .5; M.ty = r + .5; return; }
+  if (t.k === 'floor'){ mineGoTo(c, r); return; }
   if (t.k === 'ladder'){ mineDrag = null; return mineLadder(); }
   const ore = t.k !== 'stone';
   if (ore && (S.mineEnergy || 0) < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(c, r, '⚡ หมด', '#c0392b');
       setTimeout(() => sheet('⚡ พลังขุดหมดแล้ว\nเติมได้จากการออกกำลังกายจริง:\n• ภารกิจสุขภาพ +4 • ครบ 3 ข้อ +3\n• 🔔 ขยับตัวหน่อย +2 • ชาเลนจ์โค้ชฟิต +5\n(หินธรรมดาทุบได้ฟรี)', OK), 300); } return; }
   M.face = Math.atan2((c + .5 - M.ax)*2, (r + .5 - M.ay)*2); M.swing = performance.now() + 300;
-  const near = (c + .5 - M.ax)**2 + (r + .5 - M.ay)**2; if (near > 2.2){ M.tx = c + .5 - Math.sign(c + .5 - M.ax)*.9; M.ty = r + .5; }
+  const near = (c + .5 - M.ax)**2 + (r + .5 - M.ay)**2; if (near > 2.2) mineGoTo(c, r);   // walk around rocks to beside it
   t.hp -= upLv('pick'); R3D.mineHit(key); sfx('clink'); buzz(12); burst(c, r, ['#a39f99', '#7d7a75', '#ffffff'], 6);
   if (t.hp > 0) return;
   const free = ore && Math.random() < npcHearts('hin')*.05; if (ore && !free) S.mineEnergy--;
@@ -1745,10 +1811,22 @@ function mineLadder(){
   const M = inMine, nf = M.floor + 1;
   if (nf >= MINE_FLOORS.length) return sheet('นี่คือชั้นลึกที่สุดแล้ว 💎', OK);
   if (upLv('pick') < nf + 1) return sheet(`🪜 ${MINE_FLOORS[nf].name}\nต้องใช้อีเต้อขั้น ${nf + 1} (ตอนนี้ขั้น ${upLv('pick')})\nอัปเกรดได้ที่ ⚒ โรงตีเหล็ก`, OK);
-  confirmDo(`ลงไป ${MINE_FLOORS[nf].name}?`, () => { M.floor = nf; M.tiles = genMineFloor(nf); M.broken = 0; M.ver++; M.ax = M.tx = .8; M.ay = M.ty = M.N - .8; bump('mineDeep'); renderMineBar(); sfx('chop'); });
+  confirmDo(`ลงไป ${MINE_FLOORS[nf].name}?`, () => { M.floor = nf; M.tiles = genMineFloor(nf); M.broken = 0; M.ver++; M.ax = M.tx = .8; M.ay = M.ty = M.N - .8; M.path = null; bump('mineDeep'); renderMineBar(); sfx('chop'); });
+}
+/* ⛏ mine walking (v0.22.2): rocks block; floor + ladder are walkable; 2.4 tiles/s along an A* path */
+const mineOk = (c, r) => { const M = inMine, t = M.tiles[r*M.N + c]; return !!t && !ROCK_HP[t.k]; };
+function mineClear(x0, y0, x1, y1){ const n = Math.max(1, Math.ceil(Math.hypot(x1-x0, y1-y0)/.2));
+  for (let k=1;k<=n;k++) if (!mineOk(Math.floor(x0+(x1-x0)*k/n), Math.floor(y0+(y1-y0)*k/n))) return false; return true; }
+function mineGoTo(c, r){                                      // tile (c,r): floor → stand on it • rock → stand next to it
+  const M = inMine, rock = !mineOk(c, r), ok = rock ? (cc, rr) => (cc === c && rr === r) || mineOk(cc, rr) : mineOk;
+  const res = gridPath(Math.floor(M.ax), Math.floor(M.ay), c, r, 0, 0, M.N, M.N, ok); let pts = res.pts;
+  if (rock && res.reached) pts = pts.slice(0, -1);             // stop beside the rock, not inside it
+  M.path = smoothPath(M.ax, M.ay, pts, mineClear); const n = M.path.shift(); if (n){ M.tx = n[0]; M.ty = n[1]; }
 }
 function mineFrame(time, dt){
-  const M = inMine; M.ax += (M.tx - M.ax)*Math.min(1, dt*6); M.ay += (M.ty - M.ay)*Math.min(1, dt*6);
+  const M = inMine, dx = M.tx - M.ax, dy = M.ty - M.ay, d = Math.hypot(dx, dy);
+  if (d < .03){ if (M.path && M.path.length){ const n = M.path.shift(); M.tx = n[0]; M.ty = n[1]; } }
+  else { const st = Math.min(d, 2.4*dt); M.ax += dx/d*st; M.ay += dy/d*st; if (performance.now() > M.swing) M.face = Math.atan2(dx*2, dy*2); }
   R3D.renderMine(M, time);
 }
 
@@ -2478,10 +2556,10 @@ function drawFlies(time){
               (not next to buildings, not under the pet; stops at NATURE_CAP items per area)
    • Grow up: untouched items (no job running) grow into the next size after GROW_UP[k].ms
    ===================================================================== */
-const SPAWN_MS = 5*60*1000;                                  // ⚠️ one regrowth roll per area every 5 min
-const NATURE_CAP = 15;                                       // ⚠️ max natural items per 5×5 area
+const SPAWN_MS = 20*60*1000;                                 // ⚠️ v0.22.2: one regrowth roll per area every 20 min (was 5)
+const NATURE_CAP = 8;                                        // ⚠️ v0.22.2: max natural items per 5×5 area (was 15)
 const SPAWN_TABLE = [['grass',.4],['wild',.25],['pebble',.2],['sapling',.15]];
-const GROW_UP = { grass:{to:'bush', ms:30*60e3}, sapling:{to:'tree', ms:60*60e3}, pebble:{to:'rock', ms:45*60e3}, rock:{to:'boulder', ms:3*3600e3} };
+const GROW_UP = { grass:{to:'bush', ms:3*3600e3}, sapling:{to:'tree', ms:6*3600e3}, pebble:{to:'rock', ms:4*3600e3}, rock:{to:'boulder', ms:24*3600e3} };   // ⚠️ v0.22.2 (was 30m/1h/45m/3h)
 function nearObj(z, i){                                      // keep 1 tile of space around buildings
   const c = i%GRID, r = (i/GRID)|0;
   for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++){ const t = tileAt(z.cx*GRID+c+dc, z.cy*GRID+r+dr); if (t && t.k==='obj') return true; }
@@ -2988,7 +3066,7 @@ function tapTile(gc, gr){
   }
   if (t.k==='obj') return tapObj(z, objById(z, t.o));
   if ((t.k === 'path' || t.k === 'clear') && S.avatar && AV){    // 🧑 v0.20 tap-to-move (long-press a path still removes it)
-    AV.tx = gc + .5; AV.ty = gr + .5; AV.manual = true; AV.wait = 0; AV.emote = null; bump('avTap');
+    AV.emote = null; avGoTo(gc + .5, gr + .5, true); bump('avTap');
     burst(gc, gr, ['#ffffff', '#ffd166'], 6); return; }
   if (t.k==='path') return sheet(`${PATHS[t.p].name}\nน้องเดินบนทางเดินได้ และหญ้าจะไม่งอกทับ\n💡 กดค้างเพื่อรื้อ (คืนเงิน)`, OK);
   if (t.k==='clear') return sheet('🌱 พื้นที่โล่ง\nเลือกสิ่งปลูกสร้างและของตกแต่งได้ที่ ร้านค้า › ฟาร์ม',
