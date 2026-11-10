@@ -5,7 +5,7 @@ const { chromium } = require('playwright'); const fs = require('fs'), path = req
 const LIST = [ ['build','starter'],['build','flowerbed'],['build','lamp'],['build','bench'],['build','fence'],['build','doghouse'],['build','sawmill'],
   ['build','fountain'],['build','kitchen'],['build','gazebo'],['build','barn'],['build','mill'],['build','house'],['build','jamhouse'],
   ['path','stone'],['path','wood'],['path','brick'],['bridge','bridge'],
-  ['furn','rug'],['furn','bed'],['furn','table'],['furn','chair'],['furn','sofa'],['furn','shelf'],['furn','plant'],['furn','lamp'],['furn','petbed'],['build','lanna'],['build','lotuspond'],['npc','bua'],['npc','coach'],['npc','mai'],['npc','khing'],['npc','hin'] ];
+  ['furn','rug'],['furn','bed'],['furn','table'],['furn','chair'],['furn','sofa'],['furn','shelf'],['furn','plant'],['furn','lamp'],['furn','petbed'],['build','lanna'],['build','lotuspond'],['npc','bua'],['npc','coach'],['npc','mai'],['npc','khing'],['npc','hin'],['path','asphalt'] ];
 (async () => {
   const b = await chromium.launch({ executablePath:'/usr/bin/google-chrome', args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'] });
   const p = await b.newPage({ viewport:{ width:390, height:844 } });

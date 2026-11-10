@@ -245,7 +245,7 @@ export function start(){
     for (const x of [-.95, .95]) for (const z of [-.78, .78]) CY(g, .06, .62, '#6e4524', x, deck(x) - .05, z, true);   // corner posts
     return g;
   }
-  function tileModel(t, zseed, i, alongX){                              // flat ground pieces: water / bridge / path stones / meadow flowers
+  function tileModel(t, zseed, i, alongX, road){                              // flat ground pieces: water / bridge / path stones / meadow flowers
     const g = new THREE.Group();
     if (t.k === 'water'){
       add(g, rb(2, .1, 2, .02), waterMat, 0, -.02, 0);
@@ -257,6 +257,11 @@ export function start(){
       }
       if (hrnd(zseed, i, 3) < .35) add(g, CYL, mat('#6fbf63'), (hrnd(zseed,i,4)-.5), .05, (hrnd(zseed,i,5)-.5), .3, .02, .3);
       if (t.bridge) g.add(bridgeModel(alongX));
+    } else if (t.k === 'path' && t.p === 'asphalt'){         // 🛣 v0.21 asphalt: full-tile slab + dashed centre line along the road (none at junctions)
+      RB(g, 2.0, .07, 2.0, .04, '#5b5f66', 0, 0, 0);
+      const rx = road ? road[0] : true, rz = road ? road[1] : false;
+      if (rx !== rz) for (const k of [-.5, .5]) RB(g, rx ? .45 : .09, .02, rx ? .09 : .45, .01, '#f2efe4', rx ? k : 0, .07, rx ? 0 : k);
+      if (t.main && rx !== rz) for (const s2 of [-1, 1]) RB(g, rx && !rz ? 2.0 : .06, .03, rx && !rz ? .06 : 2.0, .01, '#8d9199', rx && !rz ? 0 : s2*.97, .07, rx && !rz ? s2*.97 : 0);
     } else if (t.k === 'path'){
       RB(g, 1.5, .08, 1.5, .25, ({ stone:C.stone, wood:'#d8b48a', brick:'#d9917a' })[t.p] || C.stone, (hrnd(zseed,i,6)-.5)*.2, 0, (hrnd(zseed,i,7)-.5)*.2);
     } else if ((t.k === 'clear') && hrnd(zseed, i, 8) < .3){
@@ -282,7 +287,8 @@ export function start(){
       else if (t.k !== 'obj'){
         const lob = (a, b) => { const n = tileAt(a, b); return !!n && (n.k !== 'water' || n.bridge); };          // land or bridge neighbour
         const ax = lob(gc-1, gr) || lob(gc+1, gr), az = lob(gc, gr-1) || lob(gc, gr+1);
-        m = tileModel(t, z.seed, i, ax || !az); }
+        const isR = (a, b) => { const n = tileAt(a, b); return !!n && ((n.k === 'path' && n.p === 'asphalt') || (n.bridge && n.main)); };
+        m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? [isR(gc-1, gr) || isR(gc+1, gr), isR(gc, gr-1) || isR(gc, gr+1)] : null); }
       if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
         if (RES[t.k]){ res[i] = m; const ph = (z.cx*GRID*2 + x + z.cy*GRID*2 + zz)*.35 + hrnd(z.seed, i, 98)*.6;   // phase from position → gusts roll across the farm
           if (t.k === 'grass') sway.push(m, ph, .14, 0); else if (t.k === 'sapling') sway.push(m, ph, .1, 0);

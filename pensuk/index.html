@@ -522,7 +522,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.20.1';
+const APP_VER = '0.21.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1306,7 +1306,7 @@ function drawIco(c, name, x, y, size, fallback){
    A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
    ===================================================================== */
 const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
-  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin'];
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin','p_asphalt'];
 const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
 /** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
 function icoCell(ref){
@@ -1776,6 +1776,33 @@ function ensureZones(){
   let grew = false;
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
+  if (grew || S.roadsV !== 1) layAllRoads();
+}
+/* =====================================================================
+   🛣 MAIN ROADS (v0.21) — every chunk n>0 joins its spiral parent (first earlier chunk next to it)
+   with a straight 1-tile road through both chunk centres (2,2): in the child (2,2)→edge toward the parent,
+   in the parent (2,2)→edge toward the child  ⇒ a tree of streets across the whole town.
+   Water on the route becomes a bridge • structures are skipped (a gap) • main road pieces can't be removed.
+   ===================================================================== */
+function roadParent(idx){
+  const [cx, cy] = SPIRAL[idx];
+  for (let j=0;j<idx;j++){ const [px, py] = SPIRAL[j]; if (Math.abs(px-cx) + Math.abs(py-cy) === 1) return [j, px-cx, py-cy]; }
+  return null;
+}
+function layRoadTile(z, c, r){
+  const t = z.tiles[r*GRID + c]; if (!t || t.k === 'obj') return;
+  if (t.k === 'water'){ t.bridge = true; t.main = true; return; }
+  t.k = 'path'; t.p = 'asphalt'; t.main = true; delete t.job; delete t.hp;
+}
+function layAllRoads(){
+  const Z = S.farm.zones;
+  for (let idx=1; idx<Z.length; idx++){
+    const pr = roadParent(idx); if (!pr) continue;
+    const [j, dx, dy] = pr, child = Z[idx], parent = Z[j];
+    for (let k=0;k<=2;k++){ layRoadTile(child, 2 + dx*k, 2 + dy*k); layRoadTile(parent, 2 - dx*k, 2 - dy*k); }
+  }
+  const first = S.roadsV !== 1; S.roadsV = 1; Z.forEach(z => markDirty(z));
+  if (first && Z.length > 1 && typeof queueReward === 'function') queueReward('🛣 ถนนหลักของเมือง!\nทุกพื้นที่เชื่อมกันด้วยถนนสายหลักแล้ว (ข้ามน้ำเป็นสะพาน)\nถนนหลักรื้อ/ย้ายไม่ได้ • สร้างถนนลาดยางเพิ่มเองได้ที่ ร้านค้า › ฟาร์ม › ทางเดิน');
 }
 function migrateFarm(){
   S.farm.zones = S.farm.zones.map(z => Array.isArray(z) ? { tiles:z } : z);
@@ -2920,7 +2947,8 @@ function tapObj(z, o){
 const PATHS = {
   stone: { name:'🪨 ทางเดินหิน',  price:2, cost:{},         base:'#d6cfbf', edge:'#9d9483', dot:'#bdb4a2' },
   wood:  { name:'🪵 ทางเดินไม้',  price:3, cost:{},         base:'#c99a62', edge:'#8a5f32', dot:'#a97a45' },
-  brick: { name:'🧱 ทางเดินอิฐ',  price:4, cost:{},         base:'#c8735a', edge:'#91472f', dot:'#e0a089' }
+  brick: { name:'🧱 ทางเดินอิฐ',  price:4, cost:{},         base:'#c8735a', edge:'#91472f', dot:'#e0a089' },
+  asphalt:{ name:'🛣 ถนนลาดยาง',  price:6, cost:{stone:1},  base:'#5b5f66', edge:'#3e4248', dot:'#f2efe4' }   // v0.21 (also the town's main roads)
 };
 const BRIDGE = { name:'🌉 สะพานไม้', price:20, cost:{wood:2} };
 let paint = null;                                            // {kind:'path'|'bridge', type}
@@ -2948,17 +2976,19 @@ function renderPaintBar(msg){
 function paintAt(gc, gr){
   const t = tileAt(gc, gr), it = paint.kind==='bridge' ? BRIDGE : PATHS[paint.type];
   if (!t) return renderPaintBar('นอกพื้นที่ฟาร์ม');
+  if (t.main) return renderPaintBar('ถนนหลักของเมืองเปลี่ยนไม่ได้');
   const ok = paint.kind==='bridge' ? (t.k==='water' && !t.bridge) : (t.k==='clear' || (t.k==='path' && t.p !== paint.type));
   if (!ok) return renderPaintBar(paint.kind==='bridge' ? 'สะพานวางได้บนน้ำเท่านั้น' : 'วางได้บนช่องว่างเท่านั้น (เก็บหญ้า/หินก่อน)');
   if (S.coins < it.price || !canPay(it.cost)) return renderPaintBar('เหรียญหรือวัตถุดิบไม่พอแล้ว');
   if (t.k==='path'){ S.coins += PATHS[t.p].price; }          // swapping path type refunds the old piece
   S.coins -= it.price; pay(it.cost);
   if (paint.kind==='bridge'){ t.bridge = true; bump('bridgePlace'); }
-  else { t.k = 'path'; t.p = paint.type; bump('pathPlace'); }
+  else { t.k = 'path'; t.p = paint.type; bump('pathPlace'); if (paint.type === 'asphalt') bump('road'); }
   markAround(gc, gr); save(); refreshHeader(); renderMats(); renderPaintBar();
 }
 function removePiece(gc, gr){
   const t = tileAt(gc, gr); if (!t) return false;
+  if (t.main && (t.k === 'path' || t.bridge)){ sheet('🛣 ถนนหลักของเมือง\nเชื่อมทุกพื้นที่เข้าด้วยกัน — รื้อหรือย้ายไม่ได้\n💡 สร้างถนนลาดยางเพิ่มเองได้ที่ ร้านค้า › ฟาร์ม › ทางเดิน', OK); return true; }
   if (t.k==='path'){
     const it = PATHS[t.p];
     sheet(`${it.name}\nจะรื้อออกไหม? (คืน 🪙 ${it.price})`, [ { label:'รื้อออก', cls:'ok', fn:() => {
@@ -3416,6 +3446,8 @@ const QUESTS = [
     text:'ทำคำขอของชาวเมืองคนไหนก็ได้ 1 อย่าง (ส่งของ/ทำกิจกรรม) — มีคำขอใหม่ทุกวัน ทำแล้วสนิทขึ้น ❤️ ได้สิทธิพิเศษ • ! เปลี่ยนเป็น ✔ สีเขียวเมื่อพร้อมส่ง', reward:{coins:200} },
   { id:'npcCoach',name:'ชาเลนจ์กับโค้ชฟิต',          need:1, goal:() => st('coachDone'),
     text:'(ถึง Lv.3 โค้ชจะมาเยี่ยม) แตะโค้ชฟิต → "เริ่มกับโค้ช" → ขยับตัวจนครบเป้า → ได้ 💗 พลังใจ', reward:{coins:100} },
+  { id:'road',    name:'สร้างถนนลาดยาง',           nav:'tShop', shop:'farm', need:1, goal:() => st('road'),
+    text:'เมืองมีถนนหลักเชื่อมทุกพื้นที่แล้ว (รื้อไม่ได้) • ร้านค้า › ฟาร์ม › ทางเดิน › 🛣 ถนนลาดยาง → แตะพื้นว่างต่อถนนรองของคุณเอง 1 ช่อง', reward:{coins:100, stone:3} },
   { id:'avMake',  name:'สร้างตัวละครของคุณ',        need:1, goal:() => S.avatar ? 1 : 0,
     text:'เลือกสีผิว ทรงผม สีเสื้อ-กางเกง ของประดับ แล้วกดบันทึก (เปิดได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า หรือแตะรูปหน้าบนแถบด้านบน)', reward:{coins:100} },
   { id:'avWalk',  name:'แตะพื้นให้ตัวละครเดิน',      need:1, goal:() => st('avTap'),
