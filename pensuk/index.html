@@ -522,7 +522,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.21.0';
+const APP_VER = '0.21.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1776,33 +1776,18 @@ function ensureZones(){
   let grew = false;
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
-  if (grew || S.roadsV !== 1) layAllRoads();
+  if (S.roadsV !== 2) removeAutoRoads();
 }
-/* =====================================================================
-   🛣 MAIN ROADS (v0.21) — every chunk n>0 joins its spiral parent (first earlier chunk next to it)
-   with a straight 1-tile road through both chunk centres (2,2): in the child (2,2)→edge toward the parent,
-   in the parent (2,2)→edge toward the child  ⇒ a tree of streets across the whole town.
-   Water on the route becomes a bridge • structures are skipped (a gap) • main road pieces can't be removed.
-   ===================================================================== */
-function roadParent(idx){
-  const [cx, cy] = SPIRAL[idx];
-  for (let j=0;j<idx;j++){ const [px, py] = SPIRAL[j]; if (Math.abs(px-cx) + Math.abs(py-cy) === 1) return [j, px-cx, py-cy]; }
-  return null;
-}
-function layRoadTile(z, c, r){
-  const t = z.tiles[r*GRID + c]; if (!t || t.k === 'obj') return;
-  if (t.k === 'water'){ t.bridge = true; t.main = true; return; }
-  t.k = 'path'; t.p = 'asphalt'; t.main = true; delete t.job; delete t.hp;
-}
-function layAllRoads(){
-  const Z = S.farm.zones;
-  for (let idx=1; idx<Z.length; idx++){
-    const pr = roadParent(idx); if (!pr) continue;
-    const [j, dx, dy] = pr, child = Z[idx], parent = Z[j];
-    for (let k=0;k<=2;k++){ layRoadTile(child, 2 + dx*k, 2 + dy*k); layRoadTile(parent, 2 - dx*k, 2 - dy*k); }
-  }
-  const first = S.roadsV !== 1; S.roadsV = 1; Z.forEach(z => markDirty(z));
-  if (first && Z.length > 1 && typeof queueReward === 'function') queueReward('🛣 ถนนหลักของเมือง!\nทุกพื้นที่เชื่อมกันด้วยถนนสายหลักแล้ว (ข้ามน้ำเป็นสะพาน)\nถนนหลักรื้อ/ย้ายไม่ได้ • สร้างถนนลาดยางเพิ่มเองได้ที่ ร้านค้า › ฟาร์ม › ทางเดิน');
+/* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
+   asphalt → clear ground, auto bridges → water again. Runs once per save (S.roadsV = 2). */
+function removeAutoRoads(){
+  let n = 0;
+  for (const z of S.farm.zones){ let ch = false;
+    for (const t of z.tiles) if (t.main){ if (t.k === 'path'){ t.k = 'clear'; delete t.p; } else delete t.bridge; delete t.main; ch = true; n++; }
+    if (ch) markDirty(z); }
+  S.roadsV = 2;
+  if (n && typeof pet !== 'undefined' && !walkAt(pet.x, pet.y)) placePet();
+  if (typeof AV !== 'undefined' && AV && !walkAt(AV.x, AV.y)) AV = null;            // respawns next to the pet
 }
 function migrateFarm(){
   S.farm.zones = S.farm.zones.map(z => Array.isArray(z) ? { tiles:z } : z);
@@ -2948,7 +2933,7 @@ const PATHS = {
   stone: { name:'🪨 ทางเดินหิน',  price:2, cost:{},         base:'#d6cfbf', edge:'#9d9483', dot:'#bdb4a2' },
   wood:  { name:'🪵 ทางเดินไม้',  price:3, cost:{},         base:'#c99a62', edge:'#8a5f32', dot:'#a97a45' },
   brick: { name:'🧱 ทางเดินอิฐ',  price:4, cost:{},         base:'#c8735a', edge:'#91472f', dot:'#e0a089' },
-  asphalt:{ name:'🛣 ถนนลาดยาง',  price:6, cost:{stone:1},  base:'#5b5f66', edge:'#3e4248', dot:'#f2efe4' }   // v0.21 (also the town's main roads)
+  asphalt:{ name:'🛣 ถนนลาดยาง',  price:6, cost:{stone:1},  base:'#5b5f66', edge:'#3e4248', dot:'#f2efe4' }   // v0.21 player-built roads
 };
 const BRIDGE = { name:'🌉 สะพานไม้', price:20, cost:{wood:2} };
 let paint = null;                                            // {kind:'path'|'bridge', type}
@@ -3447,7 +3432,7 @@ const QUESTS = [
   { id:'npcCoach',name:'ชาเลนจ์กับโค้ชฟิต',          need:1, goal:() => st('coachDone'),
     text:'(ถึง Lv.3 โค้ชจะมาเยี่ยม) แตะโค้ชฟิต → "เริ่มกับโค้ช" → ขยับตัวจนครบเป้า → ได้ 💗 พลังใจ', reward:{coins:100} },
   { id:'road',    name:'สร้างถนนลาดยาง',           nav:'tShop', shop:'farm', need:1, goal:() => st('road'),
-    text:'เมืองมีถนนหลักเชื่อมทุกพื้นที่แล้ว (รื้อไม่ได้) • ร้านค้า › ฟาร์ม › ทางเดิน › 🛣 ถนนลาดยาง → แตะพื้นว่างต่อถนนรองของคุณเอง 1 ช่อง', reward:{coins:100, stone:3} },
+    text:'ออกแบบถนนในเมืองของคุณเอง • ร้านค้า › ฟาร์ม › ทางเดิน › 🛣 ถนนลาดยาง → แตะพื้นว่างเพื่อวางถนน 1 ช่อง (เส้นประจะหันตามแนวถนนให้เอง)', reward:{coins:100, stone:3} },
   { id:'avMake',  name:'สร้างตัวละครของคุณ',        need:1, goal:() => S.avatar ? 1 : 0,
     text:'เลือกสีผิว ทรงผม สีเสื้อ-กางเกง ของประดับ แล้วกดบันทึก (เปิดได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า หรือแตะรูปหน้าบนแถบด้านบน)', reward:{coins:100} },
   { id:'avWalk',  name:'แตะพื้นให้ตัวละครเดิน',      need:1, goal:() => st('avTap'),
