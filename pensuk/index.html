@@ -549,7 +549,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.25.0';
+const APP_VER = '0.26.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -3844,8 +3844,8 @@ function monSvg(m){
     <circle cx="78" cy="118" r="13" fill="#fff"/><circle cx="122" cy="118" r="13" fill="#fff"/><circle cx="80" cy="121" r="6" fill="#2b1a10"/><circle cx="120" cy="121" r="6" fill="#2b1a10"/>${mouth}
     ${m.won ? '<text x="150" y="40" font-size="30">✨</text>' : ''}</svg>`;
 }
-function renderBattle(){
-  const m = monState(), next = m.logs.length ? m.logs[m.logs.length-1] + MON_GAP - Date.now() : 0;
+function renderBattle(showHp){
+  const m0 = monState(), hp = showHp == null ? m0.hp : showHp, m = { ...m0, hp, won:m0.won && hp === 0 }, next = m.logs.length ? m.logs[m.logs.length-1] + MON_GAP - Date.now() : 0;
   $('bTitle').textContent = m.won ? '💧 ปีศาจแห้งผาก — ชำระล้างแล้ว!' : '💧 ปีศาจแห้งผาก (ปีศาจรายวัน)';
   $('bHp').style.width = (m.hp/m.max*100) + '%'; $('bHpTxt').textContent = `HP ${m.hp}/${m.max}`;
   $('bMon').innerHTML = monSvg(m); $('bPet').textContent = S.pet.emoji;
@@ -3855,16 +3855,23 @@ function renderBattle(){
   b.textContent = m.won ? '✨ ชนะแล้ววันนี้' : next > 0 ? `⏳ แก้วถัดไปอีก ${Math.ceil(next/60000)} นาที` : `💧 ดื่มน้ำแล้ว 1 แก้ว (${S.pet.name}โจมตี!)`;
   $('bLog').textContent = m.logs.length ? 'ดื่มแล้ว: ' + m.logs.map(t => new Date(t).toTimeString().slice(0,5)).join(' • ') : 'ยังไม่ได้ดื่มเลยวันนี้';
 }
-function openBattle(){ if (!monOn()) return; bump('battleOpen'); renderBattle(); $('battle').style.display = 'block'; }
+function openBattle(replay){ if (!monOn()) return; bump('battleOpen'); const m = monState();
+  if (replay){ const end = m.hp; renderBattle(Math.min(m.max, end + replay));   // 💬 replay the check-in hits one by one (display HP only)
+    for (let i=1;i<=replay;i++) setTimeout(() => { monAnim(end + replay - i); if (i === replay) setTimeout(() => { renderBattle(); monWinReward(); }, 700); }, 600*i); }
+  else renderBattle();
+  $('battle').style.display = 'block'; }
+function monAnim(showHp){ const pt = $('bPet'), mo = $('bMon'), dm = $('bDmg'); pt.classList.add('atk'); sfx('pop'); buzz(20);
+  setTimeout(() => { pt.classList.remove('atk'); mo.classList.remove('hit'); void mo.offsetWidth; mo.classList.add('hit'); dm.textContent = '−1 💧'; dm.classList.remove('on'); void dm.offsetWidth; dm.classList.add('on'); renderBattle(showHp); }, 250); }
+function monWinReward(){ const m = monState(); if (!m.payLove) return; delete m.payLove; const lg = gainLove(MON_LOVE); save();
+  reward(`✨ ชำระล้างปีศาจแห้งผากแล้ว!\nดื่มน้ำครบ ${m.max} แก้ววันนี้\n${loveTxt(MON_LOVE, lg)}\n🪙 ${MON_COIN} เหรียญทอง\n🔥 ชนะติดกัน ${m.streak} วัน`); }
 function closeBattle(){ $('battle').style.display = 'none'; refreshHeader(); }
 /* one glass = one hit; returns true if it counted */
 function monHit(src){
   if (!monOn()) return false; const m = monState(), now = Date.now();
   if (m.won || (m.logs.length && now - m.logs[m.logs.length-1] < MON_GAP)) return false;
-  m.logs.push(now); m.hp = Math.max(0, m.hp - 1); bump('monHit'); save();
+  m.logs.push(now); m.hp = Math.max(0, m.hp - 1); bump('monHit'); { const w = waterToday(); w.n++; w.last = now; } save();
   if ($('battle').style.display === 'block'){
-    const pt = $('bPet'), mo = $('bMon'), dm = $('bDmg'); pt.classList.add('atk'); sfx('pop'); buzz(20);
-    setTimeout(() => { pt.classList.remove('atk'); mo.classList.remove('hit'); void mo.offsetWidth; mo.classList.add('hit'); dm.textContent = '−1 💧'; dm.classList.remove('on'); void dm.offsetWidth; dm.classList.add('on'); renderBattle(); }, 250);
+    monAnim();
   }
   if (!m.hp){ m.won = true; m.streak = (m.streak || 0) + 1; bump('monWin'); S.coins += MON_COIN; const lg = gainLove(MON_LOVE); save();
     setTimeout(() => { renderBattle(); reward(`✨ ชำระล้างปีศาจแห้งผากแล้ว!
@@ -3875,9 +3882,85 @@ ${loveTxt(MON_LOVE, lg)}
   else if (src === 'brk') floatMsg(`💧 ${S.pet.name}โจมตีปีศาจแห้งผาก! HP ${m.hp}/${m.max}`);
   return true;
 }
+/* =====================================================================
+   💬 v0.26 CHECK-IN CHAT — เป็นสุข (the beagle guide) asks, the player answers honestly with big chips.
+   • Opens by itself when the farm is idle, ≥ CI_EVERY since the last check-in, outside quiet hours,
+     and something is still open today; or any time from 💬 (missions tab / bag).
+   • Topics: 💧 water (always) + each unfinished daily mission (ลุกนั่ง / บริหารคอ / พักจอ).
+   • "ทำแล้ว" → logged now (missions progress, water → monster hits) and that topic rests CI_EVERY.
+     "ยังไม่ได้" → kind words, the topic is asked again after CI_LATER. No penalty for honesty.
+   • Water guard: glasses per check-in ≤ elapsed ÷ 15 min since the last glass (first of the day ≤ 3).
+   ===================================================================== */
+const CI_EVERY = 2*3600e3, CI_LATER = 3600e3;
+function ciState(){ const c = S.chk = S.chk || { ask:{} }; if (c.date !== todayKey()){ c.date = todayKey(); c.ask = {}; } return c; }
+function waterToday(){ const w = S.water = S.water || {}; if (w.date !== todayKey()){ w.date = todayKey(); w.n = 0; w.last = 0; } return w; }
+function waterCap(){ const w = waterToday(), m = monOn() ? monState() : null, last = Math.max(w.last || 0, m && m.logs.length ? m.logs[m.logs.length-1] : 0);
+  return last ? Math.min(4, Math.floor((Date.now() - last)/MON_GAP)) : 3; }
+function ciTopics(){
+  const c = ciState(), now = Date.now(), out = [];
+  if ((c.ask.water || 0) <= now && !(monOn() && monState().won)) out.push('water');
+  S.missions.forEach((m, i) => { if (m.progress < m.target && (c.ask[m.key] || 0) <= now) out.push(i); });
+  return out;
+}
+function ciAuto(){
+  if (!S || !S.pet || !S.farm || !$('sMain').classList.contains('on') || $('modal').classList.contains('on') || act) return;
+  if (inMine || inRoom || fishing || tool || placing || paint || $('battle').style.display === 'block' || quietNow()) return;
+  const fresh = !S.chk, c = ciState(); if (fresh){ c.last = Date.now(); save(); return; }   // first session: don't stack a check-in right after onboarding
+  if (Date.now() - (c.last || 0) < CI_EVERY || !ciTopics().length) return;
+  openCheckin(true);
+}
+let ciQ = [], ciHits = 0, ciDone = [];
+function openCheckin(auto){
+  const c = ciState(); c.last = Date.now(); save(); bump('checkin');
+  ciQ = ciTopics(); ciHits = 0; ciDone = [];
+  show('sChat'); $('chatStep').textContent = 'เช็กอิน'; const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
+  const h = new Date().getHours(), hi = h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+  setTimeout(() => { bubble(`${hi}! ${auto ? 'มาเช็กอินกันหน่อยนะ ' : ''}เป็นสุขขอถามสั้น ๆ ${ciQ.length || 1} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก 🐶`, 'bot'); ciNext(); }, 200);
+}
+function ciChips(opts){
+  const box = $('chatIn'); box.innerHTML = ''; const c = document.createElement('div'); c.className = 'chips';
+  opts.forEach(o => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = o.label; b.onclick = () => { box.innerHTML = ''; bubble(o.label, 'me'); o.fn(); }; c.appendChild(b); });
+  box.appendChild(c); dockInput();
+}
+function ciLater(key, txt){ ciState().ask[key] = Date.now() + CI_LATER; save(); setTimeout(() => { bubble(txt, 'bot'); ciNext(); }, 350); }
+function ciNext(){
+  const t = ciQ.shift(), c = ciState();
+  if (t === undefined) return setTimeout(ciEnd, 350);
+  setTimeout(() => {
+    if (t === 'water'){
+      const cap = waterCap(), w = waterToday(), m = monOn() ? monState() : null;
+      bubble(`💧 ตั้งแต่ครั้งก่อน ดื่มน้ำไปกี่แก้วแล้ว?${m ? `\n(ปีศาจแห้งผาก HP ${m.hp}/${m.max})` : `\n(วันนี้บันทึกแล้ว ${w.n} แก้ว)`}`, 'bot');
+      if (!cap){ c.ask.water = Date.now() + MON_GAP; bubble('เพิ่งดื่มไปเมื่อกี้เอง เดี๋ยวค่อยถามใหม่นะ 💧', 'bot'); return ciNext(); }
+      ciChips([{ label:'ยังไม่ได้ดื่ม', fn:() => ciLater('water', 'ไม่เป็นไรนะ ลองไปหยิบน้ำมาดื่มสักแก้ว อีกชั่วโมงเป็นสุขจะมาถามใหม่ 💧') }]
+        .concat(Array.from({ length:cap }, (_, k) => ({ label:`+${k+1} แก้ว`, fn:() => {
+          const n = k + 1; w.n += n; w.last = Date.now(); c.ask.water = Date.now() + CI_EVERY; bump('waterLog');
+          if (m) ciHits += monLogBatch(n); ciDone.push(`💧 ดื่มน้ำ +${n} แก้ว`); save();
+          setTimeout(() => { bubble(n >= 2 ? 'เยี่ยมมาก! ร่างกายสดชื่นขึ้นเยอะเลย 💦' : 'ดีมาก! ดื่มต่อเรื่อย ๆ นะ 💧', 'bot'); ciNext(); }, 350); } }))));
+      return;
+    }
+    const m = S.missions[t], left = Math.ceil(m.target - m.progress);
+    const steps = m.key === 'rest' ? [5, 10, 15, 30] : m.key === 'squat' ? [5, 10, 20] : [1, 2, 3];
+    bubble(`${m.icon} วันนี้ได้${m.label}หรือยัง?\n(เหลืออีก ${left} ${m.unit})`, 'bot');
+    ciChips([{ label:'ยังไม่ได้', fn:() => ciLater(m.key, `ไม่เป็นไรเลย ทำตอนสะดวกนะ อีกชั่วโมงเป็นสุขจะมาชวนใหม่ 🐾\n(หรือกดทำพร้อมน้องได้ที่หน้าภารกิจ)`) }]
+      .concat(steps.filter(v => v <= Math.max(left, steps[0])).map(v => ({ label:`ทำแล้ว ${v} ${m.unit}`, fn:() => {
+        addProgress(m, v); c.ask[m.key] = Date.now() + CI_EVERY; ciDone.push(`${m.icon} ${m.label} +${v} ${m.unit}`); save();
+        setTimeout(() => { bubble(m.progress >= m.target ? `ครบเป้าแล้ว! ไปกดรับ 💗 ที่หน้าภารกิจได้เลย 🎉` : `เก่งมาก! อีก ${Math.ceil(m.target - m.progress)} ${m.unit} ก็ครบแล้ว`, 'bot'); ciNext(); }, 350); } }))));
+  }, 300);
+}
+function ciEnd(){
+  bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
+  ciChips([{ label:ciHits ? '⚔️ ไปดูน้องโจมตี' : '🏡 กลับฟาร์ม', fn:() => { show('sMain'); refreshHeader(); renderMissions(); if (ciHits) openBattle(ciHits); } }]);
+}
+/* log n glasses at once (from the check-in); timestamps spaced MON_GAP back so the 15-min guard stays meaningful */
+function monLogBatch(n){
+  const m = monState(); if (m.won) return 0; const now = Date.now(); let k = 0;
+  for (let i=n-1;i>=0 && m.hp>0;i--){ m.logs.push(now - i*MON_GAP); m.hp--; k++; } bump('monHit');
+  if (!m.hp){ m.won = true; m.streak = (m.streak || 0) + 1; bump('monWin'); S.coins += MON_COIN; m.payLove = 1; }
+  save(); return k;
+}
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
-  brkTick(); if (S && S.farm) mineUnlockTick();
+  brkTick(); ciAuto(); if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
@@ -4114,7 +4197,8 @@ function renderBag(){
   const mo = document.createElement('button'); mo.className = 'btn ghost';                 // ⚔️ v0.25 trial switch
   mo.textContent = S.monTrial ? '🧪 โหมดสู้ปีศาจ (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ปีศาจสุขภาพ';
   mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ปีศาจแล้ว!\nทุกวันจะมี 💧 ปีศาจแห้งผาก\nดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
-  L.append(...(AVATAR_ON ? [wd] : []), sb, mo, v3, mt, mv, out);
+  const ck = document.createElement('button'); ck.className = 'btn ok'; ck.textContent = '💬 เช็กอินกับเป็นสุข'; ck.onclick = () => openCheckin(false);
+  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, mo, v3, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -4595,6 +4679,7 @@ function renderMissions(){
   if (monOn()){ const m = monState(), c = document.createElement('div'); c.className = 'card'; c.style.borderColor = '#3f8fd8';   // ⚔️ trial: today's monster on top
     c.innerHTML = `<div class="mrow"><b>⚔️ ปีศาจวันนี้: 💧 ปีศาจแห้งผาก</b><b>${m.won ? '✨ ชนะ' : `HP ${m.hp}/${m.max}`}</b></div><div class="bar"><b style="width:${(1 - m.hp/m.max)*100}%;background:#3f8fd8"></b></div><div class="muted">ดื่มน้ำจริง 1 แก้ว = โจมตี 1 ครั้ง • ชนะติดกัน ${m.streak||0} วัน</div>`;
     const g = document.createElement('button'); g.className = 'btn ok'; g.style.cssText = 'width:100%;margin-top:8px'; g.textContent = m.won ? 'ดูปีศาจที่ชำระล้างแล้ว' : '⚔️ ไปสู้ปีศาจ'; g.onclick = () => openBattle(); c.appendChild(g); L.appendChild(c); }
+  { const cb = document.createElement('button'); cb.className = 'btn ok'; cb.style.cssText = 'width:100%;margin-bottom:10px'; cb.textContent = '💬 เช็กอินกับเป็นสุข (บอกว่าทำอะไรไปแล้ว)'; cb.onclick = () => openCheckin(false); L.appendChild(cb); }
   renderBrkCard(L);
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
