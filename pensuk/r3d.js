@@ -214,6 +214,17 @@ export function start(){
       case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true, box:true });
                        for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
+      /* ⛏ v0.22 phase 3 */
+      case 'smithy': { walls('#a9b0b8', '#5a5f66', 1.5, { chimney:true });   // blacksmith: grey stone house, forge glow, anvil
+        const on = 1; add(g, CYL, mat('#ff7a2a', 0xff5a1a), W*.3, .5, D*.42, .32, .3, .1).rotation.x = Math.PI/2;
+        RB(g, .55, .25, .3, .05, '#3e4248', -W*.3, 0, D*.55); RB(g, .7, .18, .32, .05, '#55606b', -W*.3, .25, D*.55); break; }
+      case 'mine': {                                            // mine entrance: rocky hill, timber frame, dark tunnel, rails, lantern
+        BALL(g, W*.5, 1.5, D*.42, '#8d8379', 0, .1, -D*.08, true); BALL(g, W*.3, 1.0, D*.3, '#a0968a', -W*.28, .1, D*.05); BALL(g, W*.26, .8, D*.26, '#7d7369', W*.3, .1, D*.08);
+        add(g, CYL, mat('#1c1814'), 0, .75, D*.3, .55, .1, .55).rotation.x = Math.PI/2;
+        for (const x of [-.62, .62]) CY(g, .1, 1.45, '#8a5f32', x, 0, D*.33); RB(g, 1.5, .2, .22, .05, '#8a5f32', 0, 1.42, D*.33);
+        for (const x of [-.3, .3]) RB(g, .06, .05, D*.5, .02, '#9aa6b1', x, .02, D*.55);
+        for (let k=0;k<4;k++) RB(g, .8, .04, .1, .02, '#7a5236', 0, 0, D*.38 + k*.22);
+        CY(g, .025, .25, '#3e4248', .75, 1.25, D*.38); add(g, SPH, mat('#ffd27a', NIGHT > .35 ? 0xffb030 : 0x332000), .75, 1.12, D*.38, .1, .12, .1); break; }
       /* 🏮 v0.18 Loy Krathong event decor */
       case 'lanna': { const on = NIGHT > .35;                   // Lanna paper lantern hanging from a wooden post (glows at night)
         RB(g, .55, .1, .55, .04, '#cfc6b8', 0, 0, 0); CY(g, .07, 2.3, '#7a4a26', 0, .1, 0, true); RB(g, .7, .07, .07, .03, '#7a4a26', .3, 2.3, 0);
@@ -576,6 +587,68 @@ export function start(){
   let ghostG = null, ghostKey = '', inRoomNow = false;
   const ghostMat = new THREE.MeshStandardMaterial({ color:0x4caf6a, transparent:true, opacity:.5, roughness:.9, depthWrite:false });
   let liveAcc = 0;
+  /* =====================================================================
+     ⛏ MINE SCENE (v0.22) — its own scene, same camera rig as the house room (N×N tiles, 1 tile = 2 units).
+     M = { N, floor, ver, tiles:[{k:'floor'|'stone'|'ore_*'|'coal'|'gem'|'ladder', hp}], ax, ay, swing }
+     Rebuilt only when M.ver changes; hit wobble reuses the 0.35 s squash; torches are 2 point lights.
+     ===================================================================== */
+  const mscene = new THREE.Scene(); mscene.fog = new THREE.Fog(0x241d18, 30, 70);
+  mscene.add(new THREE.HemisphereLight(0x9fb4c8, 0x3a2f26, .9));
+  const msun = new THREE.DirectionalLight(0xffe2c0, 1.1); msun.position.set(14, 20, 10); msun.castShadow = true; msun.shadow.mapSize.set(1024, 1024); mscene.add(msun, msun.target);
+  const torchL = [0, 1].map(() => { const l = new THREE.PointLight(0xffa040, 18, 14, 1.6); mscene.add(l); return l; });
+  const ORE_COL = { ore_copper:'#e07a3f', ore_iron:'#c9d1d8', ore_silver:'#f2f6fa', ore_gold:'#f6c445', coal:'#2b2b30', gem:'#5fd3e8' };
+  let mineG = null, mineVer = -1, mineRes = [], mineAv = null, mineAvKey = '', inMineNow = false;
+  function rockModel(k, i){
+    const g = new THREE.Group(), r = n => hrnd(91, i, n);
+    BALL(g, .75 + r(1)*.15, .55 + r(2)*.2, .7, k === 'stone' ? '#8d8a85' : '#7d7a75', 0, .35, 0, true);
+    BALL(g, .4, .32, .38, '#9e9a94', .35*(r(3) - .5)*2, .3, .3);
+    if (ORE_COL[k]) for (let n=0;n<4;n++){ const a = n*1.7 + r(4)*3, c = add(g, new THREE.OctahedronGeometry(1, 0), k === 'coal' ? mat('#2b2b30') : mat(ORE_COL[k], k === 'gem' ? 0x1a6a7a : 0x000000),
+        Math.cos(a)*.45, .62 + (n%2)*.2, Math.sin(a)*.4, .27, .38, .27); c.rotation.set(a, a*.7, 0); }
+    return g;
+  }
+  function buildMine(M){
+    if (mineG) mscene.remove(mineG); mineG = new THREE.Group(); mscene.add(mineG); mineRes = [];
+    const L = M.N*2;
+    RB(mineG, L + 1, .5, L + 1, .1, '#6b625a', L/2, -.5, L/2);                       // floor slab
+    for (let i=0;i<14;i++) BALL(mineG, .3 + hrnd(7,i,1)*.3, .05, .3, '#5e564f', hrnd(7,i,2)*L, .01, hrnd(7,i,3)*L);   // floor speckles
+    for (const [w, d, x, z] of [[L + 1, 1, L/2, -.5], [1, L + 1, -.5, L/2]]){            // two back walls with rock bumps
+      RB(mineG, w, 4.5, d, .3, '#5a524a', x, 0, z);
+      for (let k=0;k<9;k++){ const t = k/8; BALL(mineG, .9, .8 + hrnd(9,k,1)*.6, .9, k%2 ? '#655c53' : '#4f4842', w > 1 ? t*L : x + .3, .6 + hrnd(9,k,2)*3.2, w > 1 ? z + .3 : t*L); }
+    }
+    for (let k=0;k<6;k++){ const c = CO(mineG, .22, .9, '#5a524a', (k+.5)*L/6, 3.6, .2); c.rotation.x = Math.PI; }        // stalactites
+    [[L*.3, .3], [.3, L*.6]].forEach(([x, z], n) => { CY(mineG, .05, .5, '#7a5236', x, 2.2, z); add(mineG, SPH, mat('#ffcf5a', 0xff9a1a), x, 2.75, z, .12, .18, .12); torchL[n].position.set(x + (z < 1 ? 0 : .8), 2.9, z + (z < 1 ? .8 : 0)); });
+    M.tiles.forEach((t, i) => { const c = i % M.N, r = (i / M.N)|0;
+      let m = null;
+      if (t.k === 'ladder'){ m = new THREE.Group(); add(m, CYL, mat('#120f0c'), 0, .03, 0, .7, .04, .7); for (const x of [-.25, .25]) RB(m, .07, .08, 1.2, .02, '#8a5f32', x, .06, 0);
+        for (let k=0;k<4;k++) RB(m, .55, .05, .06, .02, '#a97a45', 0, .1, -.45 + k*.3); }
+      else if (t.k !== 'floor') m = rockModel(t.k, i);
+      if (m){ m.position.set(c*2 + 1, 0, r*2 + 1); markTile(m, c, r); mineG.add(m); mineRes[i] = m; } });
+  }
+  /** wobble the rock at tile i (tool hit) */
+  function mineHit(i){ const m = mineRes[i]; if (m) hits.push(m, performance.now()); }
+  function renderMine(M, time){
+    if (ctxLost) return;
+    can.style.display = ''; resize(); inRoomNow = false; inMineNow = true;
+    if (M.ver !== mineVer){ mineVer = M.ver; buildMine(M); }
+    const L = M.N*2, tgt = new THREE.Vector3(L*.52, 1.2, L*.52), half = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+    const dist = Math.max(L*1.55/(2*half*Math.min(1, camera.aspect)), 12), cp = Math.cos(PITCH);
+    camera.position.set(tgt.x + Math.sin(YAW)*cp*dist, tgt.y + Math.sin(PITCH)*dist, tgt.z + Math.cos(YAW)*cp*dist); camera.lookAt(tgt);
+    msun.target.position.copy(tgt); Object.assign(msun.shadow.camera, { left:-L, right:L, top:L, bottom:-L, near:1, far:80 }); msun.shadow.camera.updateProjectionMatrix();
+    torchL.forEach((l, n) => l.intensity = 16 + Math.sin(time*9 + n*2)*3);
+    for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
+      if (u >= 1 || !m.parent){ m.scale.set(1,1,1); m.rotation.z = 0; hits.splice(k, 2); continue; }
+      const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
+    const look = typeof avatarLook === 'function' ? avatarLook() : null;               // the player's avatar mines here
+    if (look){ const key = JSON.stringify(look); if (!mineAv || key !== mineAvKey){ if (mineAv) mscene.remove(mineAv); mineAv = personModel(look); mineAvKey = key;
+        const pk = new THREE.Group(); CY(pk, .04, .8, '#c99a62', 0, -.4, 0); RB(pk, .62, .07, .08, .02, '#c9d1d8', 0, 0, 0); CO(pk, .05, .14, '#c9d1d8', .33, 0, 0).rotation.z = -Math.PI/2; CO(pk, .05, .14, '#c9d1d8', -.33, 0, 0).rotation.z = Math.PI/2;; pk.position.set(.05, -.42, .05); mineAv.userData.parts.arms[1].add(pk); mscene.add(mineAv); }   // ⛏ pickaxe head
+      const x = M.ax*2, z = M.ay*2, P2 = mineAv.userData.parts; mineAv.position.set(x, 0, z);
+      if (M.face != null) mineAv.rotation.y = M.face;
+      const sw = M.swing && performance.now() < M.swing ? (M.swing - performance.now())/300 : 0;
+      P2.arms[1].rotation.x = sw > 0 ? -2.4 + (1 - sw)*2.6 : Math.sin(time*1.5)*.05; P2.arms[0].rotation.x = 0; P2.legs.forEach(l => l.rotation.x = 0);
+    } else if (mineAv){ mscene.remove(mineAv); mineAv = null; }
+    renderer.render(mscene, camera);
+  }
+
   /* ---------- 🖼 thumbnails (v0.17.2, used by tools/thumbs.html to bake icons/atlas2.webp) ----------
      Builds the REAL in-game model on a tiny grass/floor pad, same lights + tone mapping,
      camera = 3/4 view (dir (0.55, 0.6, 1)), framed by the bounding sphere:  dist = r / sin(fov/2) · 0.92 */
@@ -638,7 +711,7 @@ export function start(){
       for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
         if (u >= 1 || !m.parent){ m.scale.set(1,1,1); hits.splice(k, 2); continue; }
         const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
-      inRoomNow = false; updatePet(time, pet, scene); syncNPCs(time); syncAvatar(time);
+      inRoomNow = false; inMineNow = false; updatePet(time, pet, scene); syncNPCs(time); syncAvatar(time);
       const k = NIGHT || 0;                                     // day ↔ night from the real clock (same NIGHT as 2D)
       /* clouds live only BEHIND the island (away from the camera, which sits toward +x+z):
          pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */
@@ -648,13 +721,14 @@ export function start(){
       renderer.render(scene, camera);
     },
     hide(){ can.style.display = 'none'; },
+    renderMine, mineHit,
     /** ⚙️ graphics quality: true = eco (older phones), false = high */
     setQuality(e){ eco = !!e; renderer.setPixelRatio(eco ? 1 : Math.min(2, devicePixelRatio || 1)); renderer.shadowMap.enabled = !eco;
       lastW = 0; for (const sc of [scene, rscene]) sc.traverse(o => { if (o.material) o.material.needsUpdate = true; }); },
     /** draw the house interior in 3D; camera frames the whole N×N room */
     renderRoom(ir, rpet, rp, time){
       if (ctxLost) return;
-      can.style.display = ''; resize(); inRoomNow = true;
+      can.style.display = ''; resize(); inRoomNow = true; inMineNow = false;
       const R = ir.o.room, key = ir.N + '|' + R.wall + '|' + R.floor + '|' + (NIGHT > .6 ? 2 : NIGHT > .2 ? 1 : 0) + '|' + JSON.stringify(R.items);
       if (key !== roomKey){ roomKey = key; buildRoom(ir); }
       const L = ir.N*2, tgt = new THREE.Vector3(L*.52, 1.2, L*.52), half = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
@@ -688,7 +762,7 @@ export function start(){
     proj(c, r, zpx){ v.set(c*2, (zpx || 0)/TH, r*2).project(camera); return [(v.x+1)*.5*cssW, (1-v.y)*.5*cssH]; },
     pick(sx, sy){
       ndc.set(sx/cssW*2 - 1, -(sy/cssH)*2 + 1); ray.setFromCamera(ndc, camera);
-      pickables.length = 0; if (inRoomNow){ if (roomG) pickables.push(roomG); } else for (const e of zones.values()) pickables.push(e.g);
+      pickables.length = 0; if (inMineNow){ if (mineG) pickables.push(mineG); } else if (inRoomNow){ if (roomG) pickables.push(roomG); } else for (const e of zones.values()) pickables.push(e.g);
       const hit = ray.intersectObjects(pickables, true).find(h => h.object.userData.tile && h.point.y > .05);
       if (hit) return { c: hit.object.userData.tile[0], r: hit.object.userData.tile[1] };
       const o = ray.ray.origin, d = ray.ray.direction, t = -o.y / (d.y || -1e-6);
