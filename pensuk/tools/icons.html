@@ -217,8 +217,17 @@ const M = {
     for (let k=0;k<6;k++){ const a = k/6*Math.PI*2 + .26; const r = RB(g, .08, 1.2, .06, .03, '#6a8e75', Math.cos(a)*.7, -.25, Math.sin(a)*.7); r.rotation.y = -a; r.rotation.x = Math.sin(a)*.08; }
     CY(g, .82, .14, '#6a8e75', 0, .58, 0); BALL(g, .82, .18, .82, '#7fa38a', 0, .66, 0);
     RB(g, .5, .12, .14, .06, '#55606b', 0, .9, 0); },
+  /* ===== v0.17.2: seed packets (kraft paper bag + the crop stuck on the front) ===== */
+  pk_seed(g){ packet(g, 'veg', '#f3e3c3'); }, pk_corn(g){ packet(g, 'corn', '#f6efc8'); }, pk_tomato(g){ packet(g, 'tomato', '#f7dccf'); },
+  pk_rice(g){ packet(g, 'rice', '#efe6c9'); }, pk_pumpkin(g){ packet(g, 'pumpkin', '#f6e0c4'); }, pk_berry(g){ packet(g, 'berry', '#f8d9de'); },
 };
-
+function packet(g, crop, col){
+  RB(g, 1.5, 1.9, .35, .12, col, 0, -.1, 0);                         // paper bag
+  RB(g, 1.55, .28, .4, .08, '#c9a777', 0, .9, 0);                    // folded top
+  RB(g, 1.2, .14, .05, .04, '#7fbf6a', 0, -.8, .19);                  // green label strip
+  for (const x of [-.4, 0, .4]) BALL(g, .07, .1, .05, '#8a5f3e', x, -.8, .23);   // seeds on the strip
+  const f = grp(g, 0, .05, .3); f.scale.setScalar(.42); M[crop](f);   // the crop as a sticker
+}
 /* ---------------- scene: r3d.js lights, 3/4 view from front-top ---------------- */
 const scene = new THREE.Scene();
 scene.add(new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15));

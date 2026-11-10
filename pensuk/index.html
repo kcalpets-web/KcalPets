@@ -52,9 +52,9 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 .row>*{flex:1}
 /* ---------- header ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
-.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.16.1) no-repeat;background-size:10.4em 6.5em;
+.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.17.2) no-repeat;background-size:10.4em 7.8em;
   background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}                 /* clay icon atlas (8×5 cells), see tools/icons.html */
-#nav button b .ico{width:1.25em;height:1.25em;background-size:10em 6.25em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
+#nav button b .ico{width:1.25em;height:1.25em;background-size:10em 7.5em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
 .coin i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe680,var(--gold) 60%,#b88600);display:inline-block}
 /* ---------- cards ---------- */
@@ -115,6 +115,16 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #modal.on{display:flex}
 #mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}   /* 🃏 v0.17.2 card grid: 2 cols on phones, 3+ on tablets */
+.gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 6px;font:inherit;color:var(--ink);text-align:center;box-shadow:0 2px 6px #0000000d;min-height:44px}
+.gcard b{font-size:14px;line-height:1.25}.gcard small{font-size:11.5px;color:var(--sub);line-height:1.35}
+.gcard .pr{margin-top:4px;background:var(--pri);color:#fff;border-radius:12px;padding:3px 12px;font-weight:700;font-size:14px;white-space:nowrap}
+.gcard.dim{opacity:.55}.gcard .lk{font-size:12px;color:var(--sub)}.gcard .dot{position:absolute;top:9px;left:9px;width:10px;height:10px;border-radius:50%;background:#e8735a}
+.gcard .cnt{position:absolute;top:6px;right:8px;font-style:normal;font-weight:700;font-size:13px;background:#fff4cc;border-radius:10px;padding:0 7px}
+.gcard.sel{border-color:var(--pri);background:#fff1df;box-shadow:0 0 0 3px #e0892f55}.gcard .ok{color:#2e7d32}.gcard .no{color:#c0392b}
+.bico{display:inline-block;background-repeat:no-repeat;flex:none}.dico{text-align:center;margin-bottom:4px}
+#seedBar{position:absolute;left:8px;right:8px;bottom:118px;display:none;gap:6px;overflow-x:auto;background:#ffffffee;border-radius:16px;padding:6px;box-shadow:0 4px 16px #0002}
+#seedBar .gcard{flex:0 0 80px;padding:6px 4px}#seedBar .gcard b{font-size:12px}
 .ws{white-space:normal;margin-top:10px;font-size:15px;max-height:52vh;overflow-y:auto}.ws .card{margin:8px 0}.ws .wst{background:#fff7e6}.ws .wst .btn{width:100%;margin-top:8px}
 .needs{margin-top:10px;white-space:normal;font-size:15px}
 .needs .nd{display:flex;align-items:center;gap:8px;margin:6px 0}.needs .nd span{flex:0 0 92px}.needs .nd em{flex:0 0 30px;text-align:right;font-style:normal;font-weight:700}
@@ -132,9 +142,9 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
 #toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
-#toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:6px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
-#toolBar .tb{flex:1;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fff;font:600 13px 'Mali';color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-#toolBar .tb b{font-size:26px} #toolBar .tb.on{border-color:var(--pri);background:#fff1df;box-shadow:0 0 0 3px #e0892f55} #toolBar .tb.x{flex:.8;color:var(--sub)}
+#toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:4px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
+#toolBar .tb{flex:1;min-width:0;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fff;font:600 13px 'Mali';color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#toolBar .tb b{font-size:26px} #toolBar .tb.on{border-color:var(--pri);background:#fff1df;box-shadow:0 0 0 3px #e0892f55} #toolBar .tb.x{flex:.6;color:var(--sub)}
 #act{position:fixed;inset:0;z-index:8;display:none;flex-direction:column;background:var(--bg);max-width:480px;margin:0 auto}
 #act.dark{background:#0b0d12}
 .actc{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px;overflow-y:auto}
@@ -208,6 +218,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
       <div id="toolBar"></div>
+      <div id="seedBar"></div>
       <div id="dropBar"><div id="dropStore" class="dz">📦<small>เก็บเข้าคลัง</small></div><div id="dropTrash" class="dz">🗑️<small>ลบทิ้ง<br>คืนครึ่งหนึ่ง</small></div></div>
       <div id="hint">แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้</div>
     </div>
@@ -498,7 +509,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.17.1';
+const APP_VER = '0.17.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1229,7 +1240,8 @@ const MAT = { stone:'🪨 หิน', grass:'🌿 หญ้า', wood:'🪵 ไ�
    Context rules come first (🌾 next to "เคียว" = the sickle tool, otherwise rice; 💠 = polished wood, 🟫 = plank). */
 const ICO = ['farm','missions','shop','quests','bag','coin','scissors','axe','hammer','reap','shovel','toolbox',
   'stone','grass','wood','seed','veg','food','tilapia','carp','goldfish','shrimp','boot','corn','tomato','rice','pumpkin','berry',
-  'plank','beam','polish','soil','milled','soup','friedrice','jam','sauce','store','trash'];
+  'plank','beam','polish','soil','milled','soup','friedrice','jam','sauce','store','trash',
+  'pk_seed','pk_corn','pk_tomato','pk_rice','pk_pumpkin','pk_berry'];   // v0.17.2 seed packets (atlas 8×6)
 const EMO = [['🌾(?=\\s?เคียว)','reap'],['💠','polish'],['🟫','plank'],
   ['🏡','farm'],['🎯','missions'],['🛒','shop'],['📜','quests'],['🎒','bag'],['🪙','coin'],['✂','scissors'],['🪓','axe'],['🔨','hammer'],['🪏','shovel'],['🧰','toolbox'],
   ['🪨','stone'],['🌿','grass'],['🪵','wood'],['🌱','seed'],['🥕','veg'],['🦴','food'],['🐟','tilapia'],['🐡','carp'],['🐠','goldfish'],['🦐','shrimp'],['👢','boot'],
@@ -1273,6 +1285,50 @@ function drawIco(c, name, x, y, size, fallback){
   if (icoImg.complete && icoImg.naturalWidth && i >= 0) c.drawImage(icoImg, (i%8)*128, ((i/8)|0)*128, 128, 128, x - size/2, y - size/2, size, size);
   else { c.font = (size*.8|0) + 'px serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(fallback || '', x, y); }
 }
+
+/* =====================================================================
+   🃏 CARD GRID (v0.17.2) — one look for every list of things: shop, workshops, bag, decor, feed, seeds.
+   Icons: atlas 1 = clay icons (tools/icons.html, 8×6) • atlas 2 = real 3D model thumbnails (tools/bake_thumbs.js, 8×4).
+   A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
+   ===================================================================== */
+const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed'];
+const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
+/** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
+function icoCell(ref){
+  const [k, id] = ref.includes(':') ? ref.split(':') : ['', ref];
+  if (k === 'm'){ const n = SEED_PK[id] || id, i = ICO.indexOf(n); return i >= 0 ? [1, i] : null; }
+  const n2 = k === 'b' ? 'b_'+id : k === 'f' ? 'f_'+id : k === 'p' ? 'p_'+id : id, j = ICO2.indexOf(n2);
+  if (j >= 0) return [2, j];
+  const i = ICO.indexOf(id); return i >= 0 ? [1, i] : null;
+}
+function bigIco(ref, px, fallback){
+  const c = icoCell(ref);
+  if (!c) return `<span class="bico" style="width:${px}px;height:${px}px;font-size:${px*.62|0}px;line-height:${px}px">${fallback || '❔'}</span>`;
+  const [a, i] = c, rows = a === 1 ? 6 : 4, url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp';
+  return `<span class="bico" style="width:${px}px;height:${px}px;background-image:url(${url}?v=${APP_VER});background-size:${8*px}px ${rows*px}px;background-position:${-(i%8)*px}px ${-((i/8)|0)*px}px"></span>`;
+}
+const nm = s => String(s).replace(/^\S+\s+/, '');                 // drop the leading emoji from a display name
+/** items: {ref, name, sub, price, cnt, dot, lock, dim, sel, glow, fb, on} → <div class="cgrid"> of tappable cards */
+function cardGrid(items, px){
+  const g = document.createElement('div'); g.className = 'cgrid';
+  for (const it of items){
+    const c = document.createElement('button'); c.className = 'gcard' + (it.dim ? ' dim' : '') + (it.sel ? ' sel' : '') + (it.glow ? ' tutGlow' : '');
+    c.innerHTML = (it.cnt != null ? `<em class="cnt">×${it.cnt}</em>` : '') + (it.dot ? '<i class="dot"></i>' : '') + bigIco(it.ref, px || 76, it.fb) +
+      `<b>${it.name}</b>` + (it.sub ? `<small>${it.sub}</small>` : '') + (it.lock ? `<span class="lk">🔒 ${it.lock}</span>` : it.price != null ? `<span class="pr">${it.price}</span>` : '');
+    c.onclick = it.on || null; g.appendChild(c);
+  }
+  return g;
+}
+/** sheet with a big icon on top and optional HTML under the text */
+function detailSheet(ref, text, html, buttons, fb){
+  sheet(text, buttons);
+  $('mbody').insertAdjacentHTML('afterbegin', `<div class="dico">${bigIco(ref, 104, fb)}</div>`);
+  if (html) $('mbody').insertAdjacentHTML('beforeend', `<div style="white-space:normal">${html}</div>`);
+}
+const closeModal = () => $('modal').classList.remove('on');
+/** compact ingredient list for small cards: 🪵3/2 (green/red) */
+const needMini = cost => Object.entries(cost||{}).map(([k,v]) => `<span class="${inv(k)>=v ? 'ok' : 'no'}">${MAT[k].split(' ')[0]}${inv(k)}/${v}</span>`).join(' ');
 
 /* ---- natural resources: size class decides the collect cooldown ---- */
 const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // seconds (random in range)
@@ -2844,10 +2900,12 @@ function commitRoomPlace(){
 }
 function openFurnMenu(){
   const have = Object.entries(S.furn||{}).filter(([,n]) => n > 0);
-  const opts = have.map(([k,n]) => ({ label:`${FURN[k].name} (มี ${n}) • วาง`, cls:'ok', fn:() => startRoomPlace(k) }));
-  opts.push({ label:'🛒 ซื้อของตกแต่งเพิ่ม', fn:() => { exitHome(); openShop('home'); } });
-  opts.push({ label:'ปิด', cls:'ghost' });
-  sheet(have.length ? '🛋 ของตกแต่งในกระเป๋า — เลือกชิ้นที่จะวาง\n💡 กดค้างที่ของในบ้านเพื่อย้ายหรือเก็บ' : 'ยังไม่มีของตกแต่ง\nซื้อได้ที่ ร้านค้า › 🛋 ในบ้าน', opts);
+  sheet(have.length ? '🛋 ของตกแต่งในกระเป๋า — แตะชิ้นที่จะวาง\n💡 กดค้างที่ของในบ้านเพื่อย้ายหรือเก็บ' : 'ยังไม่มีของตกแต่ง\nซื้อได้ที่ ร้านค้า › 🛋 บ้าน หรือทำที่ 🪚 โรงเลื่อย',
+    [{ label:'🛒 ซื้อของตกแต่งเพิ่ม', fn:() => { exitHome(); openShop('home'); } }, { label:'ปิด', cls:'ghost' }]);
+  if (!have.length) return;
+  const w = document.createElement('div'); w.className = 'ws';
+  w.appendChild(cardGrid(have.map(([k,n]) => ({ ref:'f:'+k, name:nm(FURN[k].name), cnt:n, sub:`📐 ${FURN[k].w}×${FURN[k].h}`, price:'วาง', on:() => { closeModal(); startRoomPlace(k); } })), 64));
+  $('mbody').appendChild(w);
 }
 function openStyleMenu(){
   const R = inRoom.o.room;
@@ -2917,9 +2975,10 @@ function petSheet(){
 function feedMenu(){
   const have = Object.keys(PET_FOOD).filter(k => inv(k) > 0);
   if (!have.length) return sheet('ยังไม่มีอาหารให้น้อง\n\n• ปลูกผัก/ตกปลาในฟาร์ม (ฟรี)\n• หรือซื้อ 🦴 อาหารสัตว์ที่ร้านค้า › ทั่วไป', [{ label:'กลับ', cls:'ghost', fn:petSheet }]);
-  sheet(`🍖 ให้อาหาร${S.pet.name} (อิ่มตอนนี้ ${Math.round(needVal('food'))}/100)`,
-    [...have.map(k => ({ label:`${MAT[k]} (มี ${inv(k)}) อิ่ม +${PET_FOOD[k][0]} • ❤️ +${PET_FOOD[k][1]}`, fn:() => feed(k) })),
-     { label:'กลับ', cls:'ghost', fn:petSheet }]);
+  sheet(`🍖 ให้อาหาร${S.pet.name} (อิ่มตอนนี้ ${Math.round(needVal('food'))}/100)\nแตะอาหารเพื่อป้อน`, [{ label:'กลับ', cls:'ghost', fn:petSheet }]);
+  const w = document.createElement('div'); w.className = 'ws';
+  w.appendChild(cardGrid(have.map(k => ({ ref:'m:'+k, name:nm(MAT[k]), cnt:inv(k), sub:`🍖 +${PET_FOOD[k][0]} • ❤️ +${PET_FOOD[k][1]}`, on:() => { closeModal(); feed(k); setTimeout(flushRewards, 150); } })), 60));
+  $('mbody').appendChild(w);
 }
 function feed(item){
   const [fill, hearts] = PET_FOOD[item] || [20, 2];
@@ -3000,6 +3059,8 @@ const QUESTS = [
     text:'ใช้ ⛏️ ค้อน กับก้อนหิน หรือ 🪓 ขวาน กับพุ่มไม้ — ของชิ้นกลางต้องลากผ่าน 3 ครั้ง (ดูจุดสีส้มที่เหลือ)', reward:{coins:100} },
   { id:'plot',    name:'ขุดแปลงผัก',             tool:1, need:1, goal:() => plotsDone(),
     text:'แตะ 🧰 → 🪏 พลั่ว → ลากนิ้วผ่านพื้นหญ้าว่าง 1 ช่อง ได้แปลงผักฟรี ปลูกได้ทันที (แปลงที่ไม่ได้ปลูก 24 ชม. จะกลับเป็นหญ้า)', reward:{coins:100, seed:2} },
+  { id:'sow',     name:'หว่านเมล็ดแบบลาก',          tool:1, hl:'plot', need:2, goal:() => st('sow'),
+    text:'แตะแปลงผักว่าง (หรือ 🧰 → 🌱 หว่าน) → เลือกซองเมล็ดจากแถบการ์ด → ลากนิ้วผ่านแปลงว่าง — หว่านทันทีแปลงละ 1 เมล็ด ไม่ต้องยืนยัน (ทำ 2 ครั้ง)', reward:{coins:100, seed:3} },
   { id:'move',    name:'ย้ายหรือเก็บสิ่งปลูกสร้าง',  hl:'plot',   need:1, goal:() => st('moveStore'),
     text:'กดค้างที่แปลงผัก 1 วินาที (มีวงแหวนนับ) → ลากนิ้วไปวางที่ใหม่แล้วปล่อย — ปล่อยตรงที่วางไม่ได้ของจะกลับที่เดิม', reward:{coins:100} },
   { id:'dragStore', name:'ลากไปเก็บเข้าคลัง',      hl:'plot',   need:1, goal:() => st('dragStore'),
@@ -3135,20 +3196,25 @@ function renderShop(){
     const info = document.createElement('div'); info.className = 'muted';
     info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วได้ทันที เก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง';
     L.appendChild(info);
-    Object.entries(FURN).filter(([id]) => !craftRecipe(id)).forEach(([id,f]) => {
-      const c = document.createElement('div'); c.className = 'card mrow' + ((curQuest()||{}).id==='decor' ? ' tutGlow' : '');
-      c.innerHTML = `<div><b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)${f.flat ? ' • ปูพื้น วางของทับได้' : ''} • ⏱ ได้ทันที • มีในกระเป๋า ${(S.furn||{})[id]||0}</div></div>`;
-      const b = document.createElement('button'); b.className = 'btn'; b.style.whiteSpace = 'nowrap'; b.textContent = `🪙 ${f.price.toLocaleString()}`; b.disabled = S.coins < f.price;
-      b.onclick = () => confirmDo(`ซื้อ ${f.name} ราคา ${f.price} เหรียญ?`, () => { S.coins -= f.price; S.furn[id] = (S.furn[id]||0) + 1; save(); refreshHeader(); renderShop();
-        reward(`${f.name} +1\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง`); });
-      c.appendChild(b); L.appendChild(c);
-    });
-    /* sawmill-only furniture: full recipe so players can plan */
+    L.appendChild(cardGrid(Object.entries(FURN).filter(([id]) => !craftRecipe(id)).map(([id,f]) => ({ ref:'f:'+id, name:nm(f.name),
+      sub:`📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง) • ⏱ ทันที`, price:`🪙 ${f.price.toLocaleString()}`, cnt:(S.furn||{})[id] || null, dot:S.coins < f.price,
+      glow:(curQuest()||{}).id==='decor', on:() => furnDetail(id) }))));
     const h = document.createElement('b'); h.textContent = '🪚 ทำได้ที่โรงเลื่อยเท่านั้น (ร้านไม่ขาย)'; h.style.marginTop = '8px'; L.appendChild(h);
-    Object.entries(FURN).filter(([id]) => craftRecipe(id)).forEach(([id,f]) => { const r = craftRecipe(id), c = document.createElement('div'); c.className = 'card';
-      c.innerHTML = `<b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง) • ⏱ ${fmt(r.sec)} • มีในกระเป๋า ${(S.furn||{})[id]||0}</div>${needLine(r.in)}`; L.appendChild(c); });
+    L.appendChild(cardGrid(Object.entries(FURN).filter(([id]) => craftRecipe(id)).map(([id,f]) => { const r = craftRecipe(id);
+      return { ref:'f:'+id, name:nm(f.name), sub:`📐 ${f.w*f.h} ช่อง • ⏱ ${fmt(r.sec)}<br>${needMini(r.in)}`, price:'🪚 โรงเลื่อย', cnt:(S.furn||{})[id] || null,
+        on:() => detailSheet('f:'+id, `${f.name}\nทำได้ที่ 🪚 โรงเลื่อยเท่านั้น\n📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)\n⏱ ${fmt(r.sec)}`, needLine(r.in), OK) }; })));
     if (!ownsDone('sawmill')){ const e = document.createElement('div'); e.className = 'muted'; e.textContent = '🔓 สร้าง 🪚 โรงเลื่อย (Lv.4) เพื่อทำของเหล่านี้'; L.appendChild(e); }
     return;
+  }
+  function furnDetail(id){
+    const f = FURN[id];
+    detailSheet('f:'+id, `${f.name}
+🪙 ${f.price.toLocaleString()}
+📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)${f.flat ? ' • ปูพื้น วางของทับได้' : ''}
+⏱ ซื้อแล้วได้ทันที • มีในกระเป๋า ${(S.furn||{})[id]||0}`, '',
+      [ S.coins >= f.price ? { label:`ซื้อ (🪙 ${f.price.toLocaleString()})`, cls:'ok', fn:() => { S.coins -= f.price; S.furn[id] = (S.furn[id]||0) + 1; sfx('coin'); save(); refreshHeader(); renderShop();
+          reward(`${f.name} +1\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง`); } }
+                           : { label:`เหรียญไม่พอ (มี ${S.coins.toLocaleString()})`, cls:'ghost' }, { label:'ปิด', cls:'ghost' } ]);
   }
   if (shopTab === 'farm'){
     const info = document.createElement('div'); info.className = 'muted';
@@ -3157,46 +3223,28 @@ function renderShop(){
     const stored = Object.entries(S.store||{}).filter(([,n]) => n > 0);
     if (stored.length){
       const h = document.createElement('b'); h.textContent = '📦 คลังของฉัน (วางได้ฟรี ไม่ต้องรอสร้าง)'; L.appendChild(h);
-      stored.forEach(([id,n]) => { const it = FARM_ITEMS[id], c = document.createElement('div'); c.className = 'card mrow';
-        c.innerHTML = `<div><b>${it.name}</b><div class="muted">📐 ${it.w}×${it.h} • มี ${n} ชิ้น</div></div>`;
-        const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = 'นำออกมาวาง'; b.onclick = () => startPlacing(id, { store:true });
-        c.appendChild(b); L.appendChild(c); });
+      L.appendChild(cardGrid(stored.map(([id,n]) => { const it = FARM_ITEMS[id];
+        return { ref:'b:'+id, name:nm(it.name), cnt:n, sub:`📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง)`, price:'วางฟรี', on:() => startPlacing(id, { store:true }) }; })));
       const h2 = document.createElement('b'); h2.textContent = '🛠 สร้างใหม่'; L.appendChild(h2);
     }
     const hp = document.createElement('b'); hp.textContent = '🛤 ทางเดิน & สะพาน (วางทีละช่อง เชื่อมกันเอง)'; L.appendChild(hp);
-    [...Object.entries(PATHS).map(([k,pp]) => ['path', k, pp]), ['bridge', null, BRIDGE]].forEach(([kind, k, it]) => {
-      const q = (curQuest()||{}).id, glow = (q==='path' && kind==='path') || (q==='bridge' && kind==='bridge');
-      const c = document.createElement('div'); c.className = 'card mrow' + (glow ? ' tutGlow' : '');
-      c.innerHTML = `<div><b>${it.name}</b><div class="muted">🪙 ${it.price}${Object.keys(it.cost).length ? ' + ' + Object.entries(it.cost).map(([m,v]) => MAT[m]+' '+v).join(', ') : ''} ต่อช่อง • 📐 1 ช่อง • ⏱ วางเสร็จทันที${kind==='bridge' ? ' • วางบนน้ำ ข้ามบ่อได้' : ''}</div></div>`;
-      const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'วาง'; b.onclick = () => startPaint(kind, k);
-      c.appendChild(b); L.appendChild(c);
-    });
+    L.appendChild(cardGrid([...Object.entries(PATHS).map(([k,pp]) => ['path', k, pp]), ['bridge', null, BRIDGE]].map(([kind, k, it]) => {
+      const q = (curQuest()||{}).id, cost = Object.entries(it.cost);
+      return { ref: kind === 'bridge' ? 'bridge' : 'p:'+k, name:nm(it.name), glow:(q==='path' && kind==='path') || (q==='bridge' && kind==='bridge'),
+        sub:`📐 1 ช่อง • ⏱ ทันที${cost.length ? '<br>+ ' + cost.map(([m,v]) => MAT[m]+' '+v).join(', ') : ''}${kind==='bridge' ? '<br>วางบนน้ำ' : ''}`,
+        price:`🪙 ${it.price}/ช่อง`, on:() => startPaint(kind, k) }; })));
     const h3 = document.createElement('b'); h3.textContent = '🏗 สิ่งปลูกสร้าง'; L.appendChild(h3);
-    Object.entries(FARM_ITEMS).forEach(([id,it]) => {
-      if (it.once && starterOwned()) return;                 // starter house: only one
-      if (it.hidden) return;                                 // v0.15: plots are dug with the shovel, not bought
-      const okLv = S.lv >= (it.lv||1), okCoin = S.coins >= it.price, okMat = canPay(it.cost);
-      const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='house' && it.once || (curQuest()||{}).id==='plot' && id==='plot' || (curQuest()||{}).id==='sawmill' && id==='sawmill' ? ' tutGlow' : '');
-      c.innerHTML = `<div class="mrow"><b>${it.name}</b><span class="coin" style="padding:2px 10px">🪙 ${it.price ? it.price.toLocaleString() : 'ฟรี'}</span></div>
-        <div class="muted">${it.desc}</div>
-        <div class="muted" style="margin-top:6px">📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง) • ⏱ ${fmt(buildSec(it))}${placeSec(id, it) < buildSec(it) ? ` (ครั้งแรก ${fmt(placeSec(id, it))})` : ''}${it.lv ? ` • 🔓 Lv.${it.lv}` : ''}</div>
-        ${needLine(it.cost)}`;
-      const b = document.createElement('button'); b.className = 'btn' + (okCoin && okMat ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
-      b.textContent = !okLv ? `🔒 ปลดล็อกที่ Lv.${it.lv}` : okCoin && okMat ? 'เลือกตำแหน่งสร้าง' : (okCoin ? 'วัตถุดิบไม่พอ' : 'เหรียญไม่พอ');
-      if (!okLv) c.style.opacity = .6;
-      b.disabled = !(okLv && okCoin && okMat); b.onclick = () => startPlacing(id);
-      c.appendChild(b); L.appendChild(c);
-    });
+    const q = (curQuest()||{}).id;
+    L.appendChild(cardGrid(Object.entries(FARM_ITEMS).filter(([id,it]) => !(it.once && starterOwned()) && !it.hidden).map(([id,it]) => {
+      const okLv = S.lv >= (it.lv||1), ok = S.coins >= it.price && canPay(it.cost);
+      return { ref:'b:'+id, name:nm(it.name), sub:`📐 ${it.w*it.h} ช่อง • ⏱ ${fmt(placeSec(id, it))}`, price: it.price ? `🪙 ${it.price.toLocaleString()}` : 'ฟรี',
+        lock: okLv ? null : `Lv.${it.lv}`, dim:!okLv, dot: okLv && !ok, glow:(q==='house' && it.once) || (q==='sawmill' && id==='sawmill'), on:() => buildDetail(id) }; })));
     return;
   }
   const h1 = document.createElement('b'); h1.textContent = '🛒 ซื้อของ'; L.appendChild(h1);
-  Object.keys(BUY).forEach(k => {
-    const sc = seedCrop(k); if (sc && S.lv < sc.lv) return;              // seeds unlock with player level
-    L.appendChild(shopRow({k, p:BUY[k], d:buyDetail(k)}, 'ซื้อ', () => {
-      if (S.coins < BUY[k]) return sheet('เหรียญทองไม่พอ\nทำภารกิจสุขภาพหรือส่งคำสั่งซื้อเพื่อรับเหรียญเพิ่มนะครับ', OK);
-      confirmDo(`ซื้อ ${MAT[k]} 1 ชิ้น ราคา ${BUY[k]} เหรียญ?`, () => { S.coins -= BUY[k]; invAdd(k, 1); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); });
-    }));
-  });
+  L.appendChild(cardGrid(Object.keys(BUY).filter(k => { const sc = seedCrop(k); return !(sc && S.lv < sc.lv); }).map(k => { const sc = seedCrop(k);
+    return { ref:'m:'+k, name:nm(MAT[k]), cnt:inv(k) || null, dot:S.coins < BUY[k], price:`🪙 ${BUY[k]}`,
+      sub: sc ? `⏱ โต ${fmt(sc.sec)} • ขาย ${SELL[sc.prod]}` : buyDetail(k), glow:(curQuest()||{}).id==='buyFood' && k==='food', on:() => buySheet(k) }; })));
   const h = document.createElement('b'); h.textContent = '🪙 ขายของ' + (ownsDone('barn') ? ' (🌾 ยุ้งฉาง +10%)' : ''); h.style.marginTop = '8px'; L.appendChild(h);
   Object.keys(SELL).filter(k => inv(k) > 0).forEach(k => L.appendChild(shopRow({k, p:sellPrice(k)}, 'ขาย', () => {
     if (!inv(k)) return;
@@ -3208,6 +3256,14 @@ function renderShop(){
   }, true)));
   if (!Object.keys(SELL).some(k => inv(k) > 0)){ const e = document.createElement('div'); e.className = 'muted'; e.textContent = 'ยังไม่มีของให้ขาย'; L.appendChild(e); }
 }
+function buySheet(k){
+  const p = BUY[k], buy = n => { if (S.coins < p*n) return sheet('เหรียญทองไม่พอ\nทำภารกิจสุขภาพหรือส่งคำสั่งซื้อเพื่อรับเหรียญเพิ่มนะครับ', OK);
+    S.coins -= p*n; invAdd(k, n); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); };
+  detailSheet('m:'+k, `${MAT[k]}\n🪙 ${p} เหรียญ/ชิ้น • มีอยู่ ${inv(k)}\n${buyDetail(k)}`, '',
+    [ { label:`ซื้อ 1 ชิ้น (🪙 ${p})`, cls: S.coins >= p ? 'ok' : 'ghost', fn:() => buy(1) },
+      ...(S.coins >= p*5 ? [{ label:`ซื้อ 5 ชิ้น (🪙 ${(p*5).toLocaleString()})`, fn:() => buy(5) }] : []),
+      { label:'ปิด', cls:'ghost' } ]);
+}
 function shopRow(it, verb, fn, sell){
   const c = document.createElement('div'); c.className='card mrow';
   c.innerHTML = `<div><b>${MAT[it.k]}</b><div class="muted">${sell ? 'มี '+(S.inv[it.k]||0)+' • ' : ''}🪙 ${it.p.toLocaleString()} เหรียญ${it.d ? '<br>' + it.d : ''}</div></div>`;
@@ -3215,12 +3271,38 @@ function shopRow(it, verb, fn, sell){
   if (sell && !S.inv[it.k]) b.disabled = true;
   c.appendChild(b); return c;
 }
+/** 🎒 what an item is: amount, sell price, where it comes from, what uses it */
+function matInfo(k){
+  const from = [], use = [];
+  for (const [b, list] of Object.entries(PROC)) list.forEach(r => { if (r.out === k) from.push(`ทำที่ ${FARM_ITEMS[b].name}`); if (r.in[k]) use.push(recName(r)); });
+  const crop = Object.values(CROPS).find(c => c.prod === k); if (crop) from.push(`เก็บเกี่ยวจากแปลงผัก (⏱ ${fmt(crop.sec)})`);
+  if (CROPS_BY_SEED[k]) { const c = CROPS_BY_SEED[k]; use.push(`ปลูก${c.name} (⏱ ${fmt(c.sec)})`); from.push('ร้านค้า / เคลียร์หญ้า-หิน-ต้นไม้'); }
+  if (CATCH.some(c => c.k === k)) from.push('🎣 ตกปลาที่บ่อน้ำ');
+  if (['stone','grass','wood'].includes(k)) from.push('เก็บจากธรรมชาติด้วย 🧰 เครื่องมือ');
+  if (BUY[k] && !CROPS_BY_SEED[k]) from.push(`ร้านค้า 🪙 ${BUY[k]}`);
+  for (const [id, it] of Object.entries(FARM_ITEMS)) if (it.cost[k] && !it.hidden) use.push(`สร้าง${nm(it.name)}`);
+  if (PET_FOOD[k]) use.push(`อาหารน้อง (🍖 +${PET_FOOD[k][0]})`);
+  if (k === 'soil') use.push('ถมบ่อน้ำ');
+  detailSheet('m:'+k, `${MAT[k]} — มี ${inv(k)}` + (SELL[k] ? `\n🪙 ขายได้ชิ้นละ ${sellPrice(k).toLocaleString()}` : '') +
+    (from.length ? `\n\nได้จาก: ${[...new Set(from)].join(' • ')}` : '') + (use.length ? `\nใช้ทำ: ${[...new Set(use)].slice(0, 8).join(' • ')}` : ''), '', OK);
+}
 function renderBag(){
   const L = $('bagList');
-  L.innerHTML = '<b>🎒 กระเป๋า</b>' + Object.keys(MAT).filter(k => inv(k) || ['stone','grass','wood','food'].includes(k)).map(k => `<div class="card mrow"><span>${MAT[k]}</span><b>${inv(k)}</b></div>`).join('') +
+  L.innerHTML = '' +
     `<div class="card"><b>ระดับผู้เล่น Lv.${S.lv}/${MAX_LV}</b><div class="muted">Exp ${S.exp}/${needExp(S.lv)} • ฟาร์ม ${S.farm.zones.length}/${MAX_ZONES} พื้นที่ (พื้นที่ละ 5×5 ต่อกันเป็นผืนเดียว)<br>` +
     `ทุก Lv. ปลดล็อกพื้นที่ใหม่ติดกับฟาร์มเดิม จนถึง Lv.${MAX_ZONES}<br>Exp: เก็บชิ้นเล็ก +3 • กลาง +6 • ใหญ่ +15 • สร้างเสร็จ +10 • เก็บเกี่ยว +5 • แปรรูป +8 • ออเดอร์ +5–60 • ภารกิจ +20 • ให้อาหาร +3</div></div>` +
     `<div class="card"><b>ข้อมูลของคุณ</b><div class="muted">BMR ${S.analysis.bmr} • TDEE ${S.analysis.tdee} kcal • BMI ${S.analysis.bmi}</div></div>`;
+  /* 🃏 v0.17.2: items as cards on top (tap = what it is / where it comes from / what it's for) */
+  const top = document.createDocumentFragment(), hb = document.createElement('b'); hb.textContent = '🎒 กระเป๋า'; top.appendChild(hb);
+  top.appendChild(cardGrid(Object.keys(MAT).filter(k => inv(k) || ['stone','grass','wood','food'].includes(k)).map(k => ({ ref:'m:'+k, name:nm(MAT[k]), cnt:inv(k),
+    sub: SELL[k] ? `ขาย ${sellPrice(k).toLocaleString()}` : '', on:() => matInfo(k) })), 60));
+  const furn = Object.entries(S.furn||{}).filter(([,n]) => n > 0);
+  if (furn.length){ const hf = document.createElement('b'); hf.textContent = '🛋 ของตกแต่ง (วางในบ้าน)'; top.appendChild(hf);
+    top.appendChild(cardGrid(furn.map(([k,n]) => ({ ref:'f:'+k, name:nm(FURN[k].name), cnt:n, sub:`📐 ${FURN[k].w}×${FURN[k].h}`,
+      on:() => detailSheet('f:'+k, `${FURN[k].name} (มี ${n})
+📐 ${FURN[k].w}×${FURN[k].h} (${FURN[k].w*FURN[k].h} ช่อง)
+วาง: แตะบ้านเพื่อเข้าไป → 🛋 ของตกแต่ง`, '', OK) })), 60)); }
+  L.insertBefore(top, L.firstChild);
   const out = document.createElement('button'); out.className='btn ghost'; out.textContent='ออกจากระบบ';
   out.onclick = () => confirmDo('ออกจากระบบ?\n(ครั้งหน้าต้องเข้าสู่ระบบใหม่)', () => { cloudFlush(); cloudSynced = false; clearTimeout(cloudRetry); stopLoop(); endPlacingSafe(); USER=null; S=null; store.set('pensuk_last', null);
     if (fb && fb.auth.currentUser) fb.auth.signOut(); $('lPass').value=''; $('lErr').textContent=''; show('sLogin'); });
@@ -3301,6 +3383,16 @@ const recName = r => r.furn ? FURN[r.furn].name : MAT[r.out];
 const inText = o => Object.entries(o).map(([k,v]) => `${MAT[k].split(' ')[0]}${v}`).join(' + ');
 
 /** 🧱 ingredient line: have/need, green when enough */
+/** 🏗 full detail of a farm structure + build button (v0.17.2 card tap) */
+function buildDetail(id){
+  const it = FARM_ITEMS[id], okLv = S.lv >= (it.lv||1), okCoin = S.coins >= it.price, okMat = canPay(it.cost), sec = placeSec(id, it);
+  detailSheet('b:'+id, `${it.name}\n${it.desc}\n\n🪙 ${it.price ? it.price.toLocaleString() + ' เหรียญ' : 'ฟรี'}\n📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง)\n⏱ สร้าง ${fmt(sec)}${sec < buildSec(it) ? ` (ครั้งแรกเร็วพิเศษ • ปกติ ${fmt(buildSec(it))})` : ''}` +
+    (it.lv ? `\n🔓 ปลดล็อกที่ Lv.${it.lv}` : ''), needLine(it.cost),
+    [ !okLv ? { label:`🔒 ปลดล็อกที่ Lv.${it.lv} (ตอนนี้ Lv.${S.lv})`, cls:'ghost' }
+      : okCoin && okMat ? { label:'เลือกตำแหน่งสร้าง', cls:'ok', fn:() => startPlacing(id) }
+      : { label: okCoin ? 'วัตถุดิบไม่พอ' : `เหรียญไม่พอ (มี ${S.coins.toLocaleString()})`, cls:'ghost' },
+      { label:'ปิด', cls:'ghost' } ]);
+}
 function needLine(cost){ const e = Object.entries(cost||{}); if (!e.length) return '';
   return `<div style="margin-top:4px;font-size:14px">🧱 ${e.map(([k,v]) => `<span style="color:${inv(k)>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${inv(k)}/${v}</span>`).join(' • ')}</div>`; }
 /* general-shop detail line for each buyable thing */
@@ -3334,17 +3426,17 @@ function workshop(z, o){
     }
   } else stEl.innerHTML = `<b>● ว่าง</b><div class="muted">เลือกสิ่งที่จะทำด้านล่าง (ทำได้ทีละ 1 อย่าง)</div>`;
   box.appendChild(stEl);
-  list.forEach((r, i) => {
-    const ok = canPay(r.in), f = r.furn && FURN[r.furn], c = document.createElement('div'); c.className = 'card';
-    const right = f ? `📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)` : `ขาย ${sellPrice(r.out).toLocaleString()}`;
-    c.innerHTML = `<div class="mrow"><b>${recName(r)}</b><span class="muted">${right}</span></div>
-      <div class="muted">⏱ ${fmt(r.sec)}${f ? ` • มีในกระเป๋า ${(S.furn||{})[r.furn]||0}` : ` • มีอยู่ ${inv(r.out)}`}</div>${needLine(r.in)}`;
-    const b = document.createElement('button'); b.className = 'btn' + (ok && !busy ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
-    b.textContent = busy ? 'โรงงานกำลังทำอย่างอื่นอยู่' : ok ? `ทำ ${recName(r)}` : 'วัตถุดิบไม่พอ'; b.disabled = busy || !ok;
-    b.onclick = () => { close(); confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
-      pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; bump('procStart'); save(); renderMats(); sfx('pop'); markDirty(z); }); };
-    c.appendChild(b); box.appendChild(c);
-  });
+  box.appendChild(cardGrid(list.map((r, i) => {
+    const ok = canPay(r.in), f = r.furn && FURN[r.furn];
+    const make = () => confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
+      pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; bump('procStart'); save(); renderMats(); sfx('pop'); markDirty(z); });
+    return { ref: f ? 'f:'+r.furn : 'm:'+r.out, name:nm(recName(r)), dot:!ok, dim:busy,
+      sub:`⏱ ${fmt(r.sec)} • ${f ? `📐 ${f.w*f.h} ช่อง` : `ขาย ${sellPrice(r.out).toLocaleString()}`}<br>${needMini(r.in)}`,
+      price: busy ? 'รอคิว' : ok ? 'ทำ' : 'ของไม่พอ', cnt: (f ? (S.furn||{})[r.furn] : inv(r.out)) || null,
+      on:() => { closeModal();
+        if (busy) return sheet(`${it.name} กำลังทำอย่างอื่นอยู่\nทำได้ทีละ 1 อย่าง — รอให้เสร็จหรือ ⚡ เร่งก่อน`, [{ label:'กลับ', cls:'ghost', fn:() => workshop(z, o) }]);
+        if (!ok) return detailSheet(f ? 'f:'+r.furn : 'm:'+r.out, `${recName(r)}\nวัตถุดิบยังไม่พอ`, needLine(r.in), [{ label:'กลับ', cls:'ghost', fn:() => workshop(z, o) }]);
+        make(); } }; }), 64));
   $('mbody').appendChild(box);
 }
 function collectJob(z, o){
@@ -3356,15 +3448,10 @@ function collectJob(z, o){
 }
 /* ---------- vegetable plots: choose which seed to plant ---------- */
 function plotTap(z, o){
-  if (!o.plant){
-    const have = Object.entries(CROPS).filter(([,c]) => inv(c.seed) > 0);
-    if (!have.length) return sheet('ยังไม่มีเมล็ดพันธุ์\n• เคลียร์หญ้า/หิน/ต้นไม้ มีโอกาสได้เมล็ดฟรี\n• หรือซื้อที่ ร้านค้า › ทั่วไป',
+  if (!o.plant){                                              // v0.17.2: pick a seed once, then drag to sow
+    if (!Object.values(CROPS).some(c => inv(c.seed) > 0)) return sheet('ยังไม่มีเมล็ดพันธุ์\n• เคลียร์หญ้า/หิน/ต้นไม้ มีโอกาสได้เมล็ดฟรี\n• หรือซื้อที่ ร้านค้า › ทั่วไป',
       [{label:'ไปที่ร้านค้า', cls:'ok', fn:() => openShop('general')}, {label:'ปิด', cls:'ghost'}]);
-    const btns = have.map(([id,c]) => ({ label:`${c.e} ปลูก${c.name} (มี ${inv(c.seed)}) • ⏱${fmt(c.sec)} • ขาย ${c.sell}/ชิ้น`, fn:() =>
-      confirmDo(`ปลูก${c.name}?\nโตเต็มที่ใน ${fmt(c.sec)}\nได้ ${c.yield[0]===c.yield[1] ? c.yield[0] : c.yield.join('–')} ชิ้น`, () => {
-        S.inv[c.seed]--; o.plant = Date.now(); o.crop = id; o.idle = Date.now(); if (id !== 'carrot') bump('plant_other'); sfx('pop'); save(); renderMats(); }) }));
-    btns.push({label:'ปิด', cls:'ghost'});
-    return sheet('🌱 เลือกเมล็ดที่จะปลูก', btns);
+    $('toolBar').style.display = 'flex'; $('zoneBar').style.display = 'none'; pickTool('sow'); return;
   }
   const c = cropOf(o), left = cropLeft(o);
   if (left > 0) return sheet(`${c.e} ${c.name} กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - c.sec*1000; }), {label:'ปิด', cls:'ghost'} ]);
@@ -3440,10 +3527,12 @@ const TOOLS = {
   reap:   { e:'🌾', name:'เคียว', fits:[], harvest:true,                 snd:'snip',  col:['#f2cf4a','#6dbb5d','#f08a3c'] },
   shovel: { e:'🪏', name:'พลั่ว', fits:[], dig:true,                     snd:'chop',  col:['#a87b55','#7a5236','#86c8ea'] },
   axe:    { e:'🪓', name:'ขวาน',          fits:['bush','tree'],                snd:'chop',  col:['#b07a40','#8a5a2b','#6fae3b'] },
-  hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] }
+  hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] },
+  sow:    { e:'🌱', name:'หว่าน', fits:[], sow:true,                      snd:'pop',   col:['#7fbf6a','#a87b55','#ffffff'] }   // v0.17.2 drag-to-sow
 };
 const HITS = { small:1, medium:3, large:6 };
-const TOOL_ICO = { sickle:'scissors', axe:'axe', hammer:'hammer', reap:'reap', shovel:'shovel' };
+const TOOL_ICO = { sickle:'scissors', axe:'axe', hammer:'hammer', reap:'reap', shovel:'shovel', sow:'pk_seed' };
+let sowSeed = null;                                          // crop id chosen in the 🌱 seed bar
 const toolFor = k => Object.keys(TOOLS).find(id => TOOLS[id].fits.includes(k));
 let tool = null, toolDrag = null, toolMsgAt = 0, saveTimer = 0;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { save(); renderMats(); refreshHeader(); }, 700); }
@@ -3451,22 +3540,39 @@ function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { sav
 function renderToolBar(){
   const bar = $('toolBar');
   bar.innerHTML = Object.entries(TOOLS).map(([id,t]) => `<button class="tb${tool===id?' on':''}" data-t="${id}"><b>${icoHTML(TOOL_ICO[id])}</b>${t.name.replace('ตัดหญ้า','')}</button>`).join('') +
-    `<button class="tb x" data-t="">✕<br>เลิกใช้</button>`;
+    `<button class="tb x" data-t="">✕<br>ปิด</button>`;
   bar.querySelectorAll('button').forEach(b => b.onclick = () => pickTool(b.dataset.t || null));
   $('toolFab').classList.toggle('on', !!tool);
+  renderSeedBar();
+}
+/* 🌱 seed bar: pick once, then drag across empty plots (each plot −1 seed, no confirm) */
+function firstSeed(){ const e = Object.entries(CROPS).find(([,c]) => S.lv >= c.lv && inv(c.seed) > 0); return e ? e[0] : 'carrot'; }
+function renderSeedBar(){
+  const sb = $('seedBar'); if (tool !== 'sow'){ sb.style.display = 'none'; return; }
+  if (!sowSeed || !CROPS[sowSeed] || (inv(CROPS[sowSeed].seed) < 1 && Object.values(CROPS).some(c => inv(c.seed) > 0))) sowSeed = firstSeed();
+  sb.style.display = 'flex'; sb.innerHTML = '';
+  const g = cardGrid(Object.entries(CROPS).filter(([,c]) => S.lv >= c.lv).map(([id,c]) => ({ ref:'m:'+c.seed, name:c.name, cnt:inv(c.seed), sub:`⏱ ${fmt(c.sec)}`,
+    sel:id === sowSeed, dim:inv(c.seed) < 1,
+    on:() => { if (inv(c.seed) < 1) return sheet(`ไม่มีเมล็ด${c.name}
+ซื้อได้ที่ ร้านค้า › ทั่วไป หรือเคลียร์พื้นที่มีโอกาสได้เมล็ดฟรี`, [{ label:'ไปที่ร้านค้า', cls:'ok', fn:() => openShop('general') }, { label:'ปิด', cls:'ghost' }]);
+      sowSeed = id; TOOL_ICO.sow = SEED_PK[c.seed]; renderSeedBar(); sfx('pop'); } })), 40);
+  g.style.cssText = 'display:flex;margin:0;gap:6px'; while (g.firstChild) sb.appendChild(g.firstChild);
+  TOOL_ICO.sow = SEED_PK[CROPS[sowSeed].seed];
 }
 function pickTool(id){
   if (!id){ tool = null; $('toolBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; setHint(); renderToolBar(); return; }
   const t = TOOLS[id];
   const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
   if (S.toolOk && S.toolOk[id]) return go();                 // confirm once per tool (like path mode)
+  if (t.sow) return confirmDo(`ใช้ 🌱 หว่านเมล็ด?\nเลือกเมล็ดจากแถบการ์ด แล้วลากนิ้วผ่านแปลงผักว่าง — หว่านทันทีแปลงละ 1 เมล็ด ไม่ต้องยืนยัน\n(แปลงที่ปลูกแล้วจะข้าม • เมล็ดหมดจะหยุดเอง • เลื่อน/ซูมใช้ 2 นิ้ว)`, () => {
+    S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
   confirmDo(t.dig ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านพื้นหญ้า → แปลงผัก (ฟรี)\n• ลากผ่านแปลงว่างอีกครั้ง → 💧 บ่อน้ำ + 🟤 ดิน 1\n• ลากผ่านบ่อน้ำ → ถมเป็นหญ้า (ใช้ 🟤 ดิน 1)\n(ลาก 1 ครั้งทำได้อย่างเดียว • แปลงที่ขุดไว้ไม่ได้ปลูก 24 ชม. จะกลับเป็นหญ้า)`
     : t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
     : `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
 }
 function setHint(){
-  $('hint').textContent = tool ? `${TOOLS[tool].e} ลากนิ้วเก็บของ • 2 นิ้วเลื่อน/ซูม`
+  $('hint').textContent = tool === 'sow' ? '🌱 ลากนิ้วผ่านแปลงว่างเพื่อหว่าน • 2 นิ้วเลื่อน/ซูม' : tool ? `${TOOLS[tool].e} ลากนิ้วเก็บของ • 2 นิ้วเลื่อน/ซูม`
     : 'แตะ 🧰 เลือกเครื่องมือ แล้วลากนิ้วเก็บหญ้า/หิน/ต้นไม้';
 }
 $('toolFab').onclick = () => {
@@ -3487,6 +3593,14 @@ function toolHit(gc, gr){
   if (toolDrag && toolDrag.last === key) return;              // one hit per tile entry (re-enter to hit again)
   if (toolDrag) toolDrag.last = key;
   const t = tileAt(gc, gr); if (!t) return;
+  if (TOOLS[tool].sow){                                       // 🌱 drag-to-sow (v0.17.2): empty finished plot → plant the chosen seed
+    if (t.k !== 'obj') return; const z = hitZone, o = objById(z, t.o);
+    if (!o || o.type !== 'plot' || !o.done || o.plant) return;
+    const c = CROPS[sowSeed]; if (!c) return;
+    if (inv(c.seed) < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(gc, gr, 'เมล็ดหมด', '#c0392b'); } return; }
+    S.inv[c.seed]--; o.plant = Date.now(); o.crop = sowSeed; o.idle = Date.now(); bump('sow'); if (sowSeed !== 'carrot') bump('plant_other');
+    burst(gc, gr, TOOLS.sow.col, 8); sfx('pop'); buzz(10); floatText(gc, gr, `−1${c.e}`, '#2e7d32'); markDirty(z); renderMats(); renderSeedBar(); saveSoon(); return;
+  }
   if (TOOLS[tool].dig){                                       // 🪏 staged digging (v0.15): grass → free plot → pond • fill pond → grass
     const z = hitZone, mode = toolDrag && toolDrag.mode, lc = gc - z.cx*GRID, lr = gr - z.cy*GRID;   // one stroke = one kind of action
     const setMode = m => { if (toolDrag) toolDrag.mode = m; };
@@ -3563,7 +3677,7 @@ function drawToolFx(time, dt){
   ctx.globalAlpha = 1;
   if (tool && toolDrag && toolDrag.x != null){                 // tool follows the finger, lifted above it so the finger never hides the tile
     ctx.save(); ctx.translate(toolDrag.x + 18, toolDrag.y - 44); ctx.rotate(Math.sin(time*18)*.45 - .3);
-    drawIco(ctx, TOOL_ICO[tool], 0, 0, 46, TOOLS[tool].e); ctx.restore();
+    drawIco(ctx, TOOL_ICO[tool], 0, 0, 46, TOOLS[tool].e);   // 🌱 sow shows the chosen seed packet ctx.restore();
   }
 }
 /* remaining-hits pips over a medium/large item that has been hit */

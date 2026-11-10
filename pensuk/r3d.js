@@ -441,8 +441,30 @@ export function start(){
   let ghostG = null, ghostKey = '', inRoomNow = false;
   const ghostMat = new THREE.MeshStandardMaterial({ color:0x4caf6a, transparent:true, opacity:.5, roughness:.9, depthWrite:false });
   let liveAcc = 0;
+  /* ---------- 🖼 thumbnails (v0.17.2, used by tools/thumbs.html to bake icons/atlas2.webp) ----------
+     Builds the REAL in-game model on a tiny grass/floor pad, same lights + tone mapping,
+     camera = 3/4 view (dir (0.55, 0.6, 1)), framed by the bounding sphere:  dist = r / sin(fov/2) · 0.92 */
+  let thumbR = null;
+  function thumb(kind, id){
+    if (!thumbR){ thumbR = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true }); thumbR.setSize(128, 128); thumbR.setPixelRatio(1);
+      thumbR.setClearColor(0, 0); thumbR.toneMapping = THREE.ACESFilmicToneMapping; thumbR.toneMappingExposure = 1.05; thumbR.outputColorSpace = THREE.SRGBColorSpace; }
+    const sc = new THREE.Scene(), g = new THREE.Group(); sc.add(g);
+    sc.add(new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15)); const sl = new THREE.DirectionalLight(0xfff1dc, 2.3); sl.position.set(3, 6, 4); sc.add(sl);
+    const keep = curSway; curSway = []; const keepFish = fishes; fishes = [];
+    if (kind === 'build'){ const it = FARM_ITEMS[id], o = { type:id, w:it.w, h:it.h, done:true, id:1, c:0, r:0, plant:0 };
+      RB(g, it.w*2 + .3, .25, it.h*2 + .3, .12, C.grass, 0, -.25, 0); g.add(objModel(o)); }
+    else if (kind === 'path'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'path', p:id }, 1, 0)); }
+    else if (kind === 'bridge'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'water', bridge:1 }, 7, 1, true)); }
+    else if (kind === 'furn'){ const f = FURN[id]; RB(g, f.w*2 + .2, .12, f.h*2 + .2, .06, '#e6d2b0', 0, -.12, 0); g.add(furnModel(id, f.w*2, f.h*2)); }
+    curSway = keep; fishes = keepFish;
+    const cam = new THREE.PerspectiveCamera(30, 1, .1, 200), sph = new THREE.Box3().setFromObject(g).getBoundingSphere(new THREE.Sphere());
+    const dir = new THREE.Vector3(.55, .6, 1).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
+    cam.position.copy(sph.center).addScaledVector(dir, dist); cam.lookAt(sph.center);
+    thumbR.render(sc, cam); return thumbR.domElement.toDataURL('image/png');
+  }
+
   const api = {
-    on: true, canvas: can,
+    on: true, canvas: can, thumb,
     dirty(z){ const e = zones.get(z); if (e) e.dirty = true; },
     dirtyAll(){ for (const e of zones.values()) e.dirty = true; },
     render(time, dt){
