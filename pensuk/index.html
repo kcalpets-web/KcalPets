@@ -183,7 +183,20 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #bPet{position:absolute;left:8%;bottom:2%;font-size:64px;transition:transform .25s}#bPet.atk{transform:translate(90px,-70px) scale(1.15)}
 #bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
 #bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
-#bHit{min-height:60px;font-size:20px}#bLog{text-align:center;font-size:13px}
+#bHit{min-height:60px;font-size:20px}
+#xb{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#e6dcff,#fff6e6 70%);overflow:auto}
+#xb .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:8px}
+#xb .bhead{display:flex;align-items:center;justify-content:space-between;gap:8px}#xb .bhead b{font-size:18px}
+#xb .bhp{position:relative;height:22px;border-radius:11px;background:#0001;overflow:hidden}#xb .bhp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#e8734a,#f2b33d);border-radius:11px;transition:width .5s}
+#xb .bhp b{position:relative;display:block;text-align:center;font-size:13px;line-height:22px}#xb .bstage{position:relative}
+#xb .xhp{display:flex;align-items:center;gap:8px}#xb .xhp span{width:56px;font-size:13px;font-weight:700}#xb .xhp .bhp{flex:1}
+#xb .bhp.pet i{background:linear-gradient(90deg,#4caf6a,#8bd36b)}#xb .bstage{height:min(34vh,260px)}
+#xMon{position:absolute;left:50%;top:0;width:56%;transform:translateX(-50%)}#xMon svg{width:100%;height:auto;display:block}#xMon.hit{animation:mshake .35s}
+#xPet{position:absolute;left:6%;bottom:0;font-size:58px;transition:transform .25s}#xPet.atk{transform:translate(90px,-60px) scale(1.15)}#xPet.hurt{animation:mshake .35s}
+#xDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 32px Mali,sans-serif;color:#d2462e;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}#xDmg.on{animation:dmg .9s}
+#xBig{text-align:center;font:800 64px/1.1 Mali,sans-serif;color:#5b3fa0;min-height:72px}
+#xSay{white-space:pre-line;text-align:center;font-size:20px;font-weight:700;line-height:1.4;min-height:56px}
+#xBtns{display:flex;flex-direction:column;gap:8px}#xBtns .btn{min-height:56px;font-size:18px}#bLog{text-align:center;font-size:13px}
 #toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
 #toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
 #toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:4px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
@@ -279,6 +292,12 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   <div class="tab" id="tQuest"><div class="scroll" id="questList"></div></div>
   <div class="tab" id="tBag"><div class="scroll" id="bagList"></div></div>
 
+  <div id="xb"><div class="xwrap">
+    <div class="bhead"><b id="xTitle">🛋 อสูรนั่งนิ่ง</b><button class="btn ghost" id="xStop">⏸ หยุดพัก</button></div>
+    <div class="xhp"><span>อสูร</span><div class="bhp"><i id="xHpM"></i><b id="xHpMT"></b></div></div>
+    <div class="xhp"><span id="xPetN">น้อง</span><div class="bhp pet"><i id="xHpP"></i><b id="xHpPT"></b></div></div>
+    <div class="bstage"><div id="xMon"></div><div id="xPet"></div><div id="xDmg"></div></div>
+    <div id="xBig"></div><div id="xSay"></div><div id="xBtns"></div></div></div>
   <div id="battle"><div class="bwrap">
     <div class="bhead"><b id="bTitle"></b><button class="btn ghost" id="bClose">ปิด</button></div>
     <div class="bhp"><i id="bHp"></i><b id="bHpTxt"></b></div>
@@ -567,7 +586,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.28.2';
+const APP_VER = '0.29.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -3965,7 +3984,8 @@ function monState(){
     Object.assign(m, { date:todayKey(), max:monTarget(), hp:monTarget(), logs:[], won:false }); }
   return m;
 }
-const monOn = () => !!(S && S.monTrial && S.pet);
+const monOn = () => false;                                     // 💧 v0.29: water monster parked — the trial now tests the exercise battle (code kept)
+const exOn = () => !!(S && S.monTrial && S.pet);
 /* SVG droplet monster: sandy & cracked when full HP → turns blue and smiles as it's purified (t = 1 − hp/max) */
 function monSvg(m){
   const t = 1 - m.hp/m.max, mix = (a, b) => '#' + [0,2,4].map(i => Math.round(parseInt(a.substr(i,2),16)*(1-t) + parseInt(b.substr(i,2),16)*t).toString(16).padStart(2,'0')).join('');
@@ -4082,7 +4102,7 @@ const FAQ = [
   { k:['นอน','ง่วง','หลับ','ดึก'], a:'😴 ผู้ใหญ่ควรนอน 7–9 ชั่วโมง เข้านอนเวลาเดิมทุกวัน งดจอก่อนนอนสัก 30–60 นาที ห้องมืดและเย็นจะหลับง่ายขึ้น' },
   { k:['กิน','อาหาร','ข้าว','มื้อ','หิว'], a:'🍽 จานสุขภาพ: ผักครึ่งจาน ข้าว/แป้งหนึ่งในสี่ โปรตีนหนึ่งในสี่ • เลือกผลไม้แทนขนมหวาน • ลดน้ำหวานและของทอด' },
   { k:['ออกกำลัง','วิ่ง','เดิน','คาร์ดิโอ'], a:'🏃 ควรออกกำลังหนักปานกลาง (เดินเร็ว ปั่นจักรยาน) รวม 150 นาที/สัปดาห์ + เวทหรือบริหารกล้ามเนื้อ 2 วัน/สัปดาห์ เริ่มน้อย ๆ แล้วค่อยเพิ่ม' },
-  { k:['ปีศาจ','สู้','มอนสเตอร์'], a:() => monOn() ? `⚔️ ปีศาจรายวัน: 💧 ปีศาจแห้งผาก HP ${monState().hp}/${monState().max} — ดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง (ปุ่ม ⚔️ ในฟาร์ม)` : '⚔️ โหมดสู้ปีศาจยังเป็นการทดลอง เปิดได้ในกระเป๋า › "🧪 ทดลองโหมดสู้ปีศาจสุขภาพ"' },
+  { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => exOn() ? `⚔️ อสูรนั่งนิ่ง HP ${exState().mhp}/${EX_MHP} — แตะ ⚔️ ในฟาร์ม • ตาเรา: ${exMove().name} 3 ครั้ง (ครั้งละ 4–6 ดาเมจ) • ตาอสูร: ${exMove().def} ${exMove().dsec} วิ เพื่อป้องกัน • แพ้ไม่เสียอะไร` : monOn() ? `⚔️ ปีศาจรายวัน: 💧 ปีศาจแห้งผาก HP ${monState().hp}/${monState().max} — ดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง (ปุ่ม ⚔️ ในฟาร์ม)` : '⚔️ โหมดสู้ปีศาจยังเป็นการทดลอง เปิดได้ในกระเป๋า › "🧪 ทดลองโหมดสู้ปีศาจสุขภาพ"' },
   { k:['เช็กอิน','คุย','แชท','ถามอะไร'], a:'💬 คุยกับเป็นสุขได้ 3 อย่าง: 1) เช็กอิน บอกว่าทำอะไรเพื่อสุขภาพไปแล้ว (ปุ่มนี้จะกะพริบทุก 2 ชม.) 2) ถามเรื่องเกม พิมพ์ถามได้เลย 3) รับคำแนะนำสุขภาพตามช่วงเวลา' } ];
 function faqReply(q){
   const t = q.toLowerCase(); let best = null, bs = 0;
@@ -4186,12 +4206,103 @@ function monLogBatch(n){
   if (!m.hp){ m.won = true; m.streak = (m.streak || 0) + 1; bump('monWin'); S.coins += MON_COIN; m.payLove = 1; }
   save(); return k;
 }
+/* =====================================================================
+   🏋️ v0.29 EXERCISE BATTLE PROTOTYPE (designer: real motions are the moves; turn-based)
+   Trial monster: 🛋 อสูรนั่งนิ่ง (HP 30). Pet HP 20. Hands-free: big countdown + Thai voice (speechSynthesis) + beeps.
+   Verification = A (timer + honest answer). Moves adapt to the profile (age ≥ 60 or "ท่าง่าย"): chair stand / wall-lean.
+     🗡 ATTACK  = 3 reps of [squat hold H s → stand up]; afterwards "ทำได้กี่ครั้ง?" → each rep 4–6 damage
+     🛡 DEFEND  = hold the squat D s while the monster attacks; answer ครบ / ครึ่งหนึ่ง / ไม่ได้ → pet takes 0 / 4 / 8
+     H = 3 s (easy 2 s), D = 10 s (easy 5 s). Safety: warm-up note, ⏸ stop always visible, losing costs nothing.
+   Win: 💗 30 + 🪙 300 + 💪 full + reps count toward the ลุกนั่ง mission. Monster HP carries over within the day.
+   ===================================================================== */
+const EX_MHP = 30, EX_PHP = 20;
+let exT = null;                                               // running step timer
+function exState(){ const x = S.ex = S.ex || {}; if (x.date !== todayKey()) Object.assign(x, { date:todayKey(), mhp:EX_MHP, won:false, reps:0 }); return x; }
+const exEasy = () => !!(S.exEasy || (S.analysis && S.analysis.age >= 60));
+const exMove = () => exEasy() ? { name:'ลุก-นั่งจากเก้าอี้', down:'นั่งลงบนเก้าอี้ช้า ๆ', hold:2, def:'ยืนพิงผนัง ย่อเข่าเล็กน้อย', dsec:5 }
+                              : { name:'สควอท', down:'ย่อลง!', hold:3, def:'ย่อค้างไว้!', dsec:10 };
+function exSpeak(t){ try { const u = new SpeechSynthesisUtterance(t); u.lang = 'th-TH'; u.rate = 1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){} }
+function exMonSvg(hpFrac){                                   // purple couch-potato blob, sleepy eyes; perks up (and leaves the couch) as HP drops
+  const lid = 4 + hpFrac*10;
+  return `<svg viewBox="0 0 200 170" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="104" width="164" height="46" rx="16" fill="#8a5a3b"/><rect x="10" y="88" width="26" height="62" rx="12" fill="#7a4e33"/><rect x="164" y="88" width="26" height="62" rx="12" fill="#7a4e33"/>
+    <path d="M40 112 C40 50 160 50 160 112 Z" fill="#9b7fd4" stroke="#5b3fa0" stroke-width="5"/><ellipse cx="100" cy="112" rx="62" ry="14" fill="#9b7fd4"/>
+    <circle cx="78" cy="84" r="12" fill="#fff"/><circle cx="122" cy="84" r="12" fill="#fff"/><circle cx="78" cy="87" r="5" fill="#2b1a10"/><circle cx="122" cy="87" r="5" fill="#2b1a10"/>
+    <rect x="64" y="70" width="28" height="${lid}" fill="#9b7fd4"/><rect x="108" y="70" width="28" height="${lid}" fill="#9b7fd4"/>
+    <path d="M86 102 q14 ${hpFrac > .3 ? 6 : -6} 28 0" stroke="#3a2a5a" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <rect x="132" y="96" width="30" height="18" rx="4" fill="#333"/><rect x="136" y="99" width="22" height="12" rx="2" fill="#7fd0ff"/>
+    <text x="150" y="50" font-size="20">${hpFrac > .5 ? '💤' : ''}</text></svg>`;
+}
+function exRender(){
+  const x = exState(), mf = x.mhp/EX_MHP;
+  $('xHpM').style.width = (mf*100) + '%'; $('xHpMT').textContent = `${x.mhp}/${EX_MHP}`;
+  $('xHpP').style.width = (x.php/EX_PHP*100) + '%'; $('xHpPT').textContent = `${x.php}/${EX_PHP}`;
+  $('xMon').innerHTML = exMonSvg(mf); $('xPet').textContent = S.pet.emoji; $('xPetN').textContent = S.pet.name;
+}
+function exBtns(list){ const b = $('xBtns'); b.innerHTML = ''; list.forEach(o => { const e = document.createElement('button'); e.className = 'btn ' + (o.cls || 'ok'); e.textContent = o.label; e.onclick = o.fn; b.appendChild(e); }); }
+function exFx(who, txt){ const el = who === 'mon' ? $('xMon') : $('xPet'), dm = $('xDmg');
+  el.classList.remove(who === 'mon' ? 'hit' : 'hurt'); void el.offsetWidth; el.classList.add(who === 'mon' ? 'hit' : 'hurt');
+  dm.style.color = who === 'mon' ? '#d2462e' : '#5b3fa0'; dm.textContent = txt; dm.classList.remove('on'); void dm.offsetWidth; dm.classList.add('on'); sfx('pop'); buzz(25); }
+/* run a list of timed steps: {say, big, sec, voice}; real-time countdown, cancellable */
+function exSteps(steps, done){
+  clearInterval(exT); let i = -1, end = 0;
+  const next = () => { i++; if (i >= steps.length){ clearInterval(exT); exT = null; return done(); }
+    const st = steps[i]; end = Date.now() + st.sec*1000; $('xSay').textContent = st.say; if (st.voice) exSpeak(st.voice); sfx('chop'); tick(); };
+  const tick = () => { const left = Math.ceil((end - Date.now())/1000); $('xBig').textContent = steps[i].big != null ? steps[i].big : (left > 0 ? left : ''); if (Date.now() >= end) next(); };
+  exBtns([]); next(); exT = setInterval(tick, 100);
+}
+function openEx(){
+  if (!exOn()) return; const x = exState(); x.php = x.php || EX_PHP; bump('exOpen');
+  $('xb').style.display = 'block'; exRender(); $('xBig').textContent = '';
+  if (x.won){ $('xSay').textContent = `ชนะอสูรนั่งนิ่งแล้ววันนี้! 🎉 ร่างกายได้ขยับไป ${x.reps} ครั้ง\nพรุ่งนี้อสูรตัวใหม่จะมา`; return exBtns([{ label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]); }
+  const m = exMove();
+  $('xSay').innerHTML = `🛋 อสูรนั่งนิ่งดูดแรงคนที่นั่งนานจนไม่อยากลุก!<br><small>ท่าวันนี้: <b>${m.name}</b> • เคลียร์พื้นที่รอบตัว • เจ็บหรือเวียนหัว กด ⏸ หยุดทันที</small>`;
+  exBtns([{ label:'▶ เริ่มต่อสู้ (วอร์มอัพ 10 วิ)', fn:() => exSteps([{ say:'วอร์มอัพ: ย่ำเท้าอยู่กับที่ แกว่งแขนเบา ๆ', sec:10, voice:'วอร์มอัพ ย่ำเท้าอยู่กับที่' }], exPlayerTurn) },
+          { label:exEasy() ? '✓ ใช้ท่าง่ายอยู่ (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย (เก้าอี้ / พิงผนัง)', cls:'ghost', fn:() => { S.exEasy = !S.exEasy; save(); openEx(); } }]);
+}
+function exPlayerTurn(){
+  const m = exMove(); $('xBig').textContent = '⚔️'; $('xSay').textContent = 'ตาของเรา! โจมตีด้วย' + m.name + ' 3 ครั้ง';
+  exBtns([{ label:`🗡 โจมตี: ${m.name} × 3`, fn:() => {
+    const st = []; for (let r=1;r<=3;r++){ st.push({ say:`ครั้งที่ ${r}/3: ${m.down} ค้างไว้`, sec:m.hold, voice:r === 1 ? m.down : 'ลง' }, { say:'ยืนขึ้น!', big:'⬆️', sec:1.5, voice:'ยืน' }); }
+    exSteps(st, () => { $('xBig').textContent = '❓'; $('xSay').textContent = 'ทำได้กี่ครั้ง? ตอบตามจริงนะ';
+      exBtns([3, 2, 1, 0].map(n => ({ label:n ? `ทำได้ ${n} ครั้ง` : 'ไม่ไหว ข้ามไปก่อน', cls:n ? 'ok' : 'ghost', fn:() => exHit(n) }))); }); } }]);
+}
+function exHit(n){
+  const x = exState(); let dmg = 0; for (let k=0;k<n;k++) dmg += 4 + (Math.random()*3|0);   // 4–6 per rep
+  x.reps += n; S.exReps = (S.exReps||0) + n; const sq = S.missions.find(m => m.key === 'squat'); if (sq && n) addProgress(sq, n);
+  if (dmg){ const pt = $('xPet'); pt.classList.add('atk'); setTimeout(() => { pt.classList.remove('atk'); x.mhp = Math.max(0, x.mhp - dmg); exFx('mon', `−${dmg}`); exRender(); save();
+      setTimeout(() => x.mhp ? exEnemyTurn() : exWin(), 900); }, 250); }
+  else { $('xSay').textContent = 'ไม่เป็นไร พักหายใจก่อน 🫁'; setTimeout(exEnemyTurn, 900); }
+}
+function exEnemyTurn(){
+  const m = exMove(); $('xBig').textContent = '⚠️'; $('xSay').textContent = `อสูรกำลังจะโจมตี! เตรียม${m.def}`;
+  exBtns([{ label:`🛡 ป้องกัน: ${m.def} ${m.dsec} วิ`, fn:() =>
+    exSteps([{ say:'เตรียมตัว…', sec:3, voice:'เตรียมตัว' }, { say:`🛡 ${m.def} ห้ามลุก!`, sec:m.dsec, voice:m.def }], () => {
+      $('xBig').textContent = '❓'; $('xSay').textContent = 'ค้างได้ครบไหม?';
+      exBtns([{ label:'ครบ! 💪', fn:() => exBlock(0) }, { label:'ได้ครึ่งหนึ่ง', fn:() => exBlock(4) }, { label:'ไม่ได้ค้าง', cls:'ghost', fn:() => exBlock(8) }]); }) }]);
+}
+function exBlock(dmg){
+  const x = exState(); x.php = Math.max(0, x.php - dmg); exRender(); save();
+  if (dmg) exFx('pet', `−${dmg}`); $('xSay').textContent = dmg ? `${S.pet.name}โดนโจมตี −${dmg}` : 'ป้องกันได้สมบูรณ์! 🛡✨';
+  setTimeout(() => x.php ? exPlayerTurn() : exLose(), 1000);
+}
+function exWin(){
+  const x = exState(); x.won = true; bump('exWin'); S.coins += 300; const lg = gainLove(30); setTired(0); save(); refreshHeader();
+  $('xBig').textContent = '🏆'; exSpeak('ชนะแล้ว เก่งมาก');
+  $('xSay').textContent = `ชนะอสูรนั่งนิ่ง! ขยับไปทั้งหมด ${x.reps} ครั้ง\n${loveTxt(30, lg)} • 🪙 300 • 💪 แรงเต็ม`;
+  exBtns([{ label:'🏡 กลับฟาร์ม', fn:closeEx }]);
+}
+function exLose(){
+  const x = exState(); x.php = EX_PHP; save();
+  $('xBig').textContent = '😮‍💨'; $('xSay').textContent = `${S.pet.name}เหนื่อยแล้ว ไปพักก่อนนะ ไม่เสียอะไรเลย\nอสูรเหลือ HP ${x.mhp} — กลับมาสู้ต่อเมื่อพร้อม`;
+  exBtns([{ label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]);
+}
+function closeEx(){ clearInterval(exT); exT = null; try { speechSynthesis.cancel(); } catch(e){} $('xb').style.display = 'none'; refreshHeader(); renderMissions(); }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
   brkTick(); ciAuto(); renderSta(); guideTick();
   { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); if (f.style.display === 'none') $('gBub').style.display = 'none'; } if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
-  { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
+  { const m = exOn() ? exState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
@@ -4424,8 +4535,8 @@ function renderBag(){
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
   const sb = document.createElement('button'); sb.className = 'btn ok'; sb.textContent = '🧘 พักเองตอนนี้ (พักจอ / ขยับตัว)'; sb.onclick = () => brkChooser();
   const mo = document.createElement('button'); mo.className = 'btn ghost';                 // ⚔️ v0.25 trial switch
-  mo.textContent = S.monTrial ? '🧪 โหมดสู้ปีศาจ (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ปีศาจสุขภาพ';
-  mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ปีศาจแล้ว!\nทุกวันจะมี 💧 ปีศาจแห้งผาก\nดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
+  mo.textContent = S.monTrial ? '🧪 โหมดสู้ด้วยออกกำลังกาย (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ด้วยการออกกำลังกาย';
+  mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ด้วยการออกกำลังกายแล้ว!\nอสูรนั่งนิ่งรออยู่ — โจมตีด้วยสควอทจริง ป้องกันด้วยการย่อค้าง\n(ท่าง่าย: ลุก-นั่งเก้าอี้ / พิงผนัง)\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
   const ck = document.createElement('button'); ck.className = 'btn ok'; ck.textContent = '💬 เช็กอินกับเป็นสุข'; ck.onclick = () => openCheckin(false);
   L.append(...(AVATAR_ON ? [wd] : []), ck, sb, mo, v3, mt, mv, out);
 }
@@ -4708,7 +4819,8 @@ function setHint(){
 }
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
-$('monFab').onclick = () => openBattle();
+$('monFab').onclick = () => openEx();
+$('xStop').onclick = () => { const x = S.ex; closeEx(); if (x && !x.won) sheet('⏸ หยุดพักแล้ว ไม่เสียอะไร\nกลับมาสู้ต่อได้ทุกเมื่อ (เลือดอสูรยังอยู่เท่าเดิม)', OK); };
 { const rl = $('reel'), on = e => { e.preventDefault(); reelHold = true; }, off = () => { reelHold = false; };   // 🎣 hold anywhere
   rl.addEventListener('pointerdown', on); rl.addEventListener('pointerup', off); rl.addEventListener('pointercancel', off); rl.addEventListener('pointerleave', off); }
 $('chatFab').innerHTML = `<svg viewBox="0 0 64 64">${BEAGLE}</svg>`; $('chatFab').onclick = () => { ciDue = false; openCheckin(false); }; $('bClose').onclick = () => closeBattle();
@@ -4915,6 +5027,9 @@ function claimBonus(){
 
 function renderMissions(){
   const L = $('missionList'); L.innerHTML = '';
+  if (exOn()){ const x = exState(), c = document.createElement('div'); c.className = 'card'; c.style.borderColor = '#7b5bd0';   // 🏋️ exercise-battle trial
+    c.innerHTML = `<div class="mrow"><b>⚔️ อสูรวันนี้: 🛋 อสูรนั่งนิ่ง</b><b>${x.won ? '🏆 ชนะ' : `HP ${x.mhp}/${EX_MHP}`}</b></div><div class="bar"><b style="width:${(1 - x.mhp/EX_MHP)*100}%;background:#7b5bd0"></b></div><div class="muted">โจมตีด้วยการ${exMove().name}จริง • ป้องกันด้วยการค้างท่า</div>`;
+    const g = document.createElement('button'); g.className = 'btn ok'; g.style.cssText = 'width:100%;margin-top:8px'; g.textContent = x.won ? 'ดูผลการต่อสู้' : '🏋️ ไปสู้ด้วยการออกกำลังกาย'; g.onclick = () => openEx(); c.appendChild(g); L.appendChild(c); }
   if (monOn()){ const m = monState(), c = document.createElement('div'); c.className = 'card'; c.style.borderColor = '#3f8fd8';   // ⚔️ trial: today's monster on top
     c.innerHTML = `<div class="mrow"><b>⚔️ ปีศาจวันนี้: 💧 ปีศาจแห้งผาก</b><b>${m.won ? '✨ ชนะ' : `HP ${m.hp}/${m.max}`}</b></div><div class="bar"><b style="width:${(1 - m.hp/m.max)*100}%;background:#3f8fd8"></b></div><div class="muted">ดื่มน้ำจริง 1 แก้ว = โจมตี 1 ครั้ง • ชนะติดกัน ${m.streak||0} วัน</div>`;
     const g = document.createElement('button'); g.className = 'btn ok'; g.style.cssText = 'width:100%;margin-top:8px'; g.textContent = m.won ? 'ดูปีศาจที่ชำระล้างแล้ว' : '⚔️ ไปสู้ปีศาจ'; g.onclick = () => openBattle(); c.appendChild(g); L.appendChild(c); }
