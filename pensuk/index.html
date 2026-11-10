@@ -525,7 +525,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.22.0';
+const APP_VER = '0.22.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -3851,8 +3851,16 @@ function renderBag(){
   const en = document.createElement('button'); en.className = 'btn ghost'; en.style.display = evTest() ? '' : 'none';
   en.textContent = store.get('pensuk_evnight') === true ? '🌕 ทดลองคืนวันเพ็ญ: เปิดอยู่ (แตะเพื่อปิด)' : '🌕 ทดลองคืนวันเพ็ญ (บังคับกลางคืน)';
   en.onclick = () => { store.set('pensuk_evnight', store.get('pensuk_evnight') !== true); skyKey = ''; updateSky(); if (R3D) R3D.dirtyAll(); renderBag(); };
+  /* 🧪 temporary mine test switch (v0.22.1) — remove together with the Loy Krathong switches */
+  const mt = document.createElement('button'); mt.className = 'btn ghost';
+  mt.textContent = S.mineOpen ? '🧪 ทดลองเหมือง: เติม ⚡ เต็ม + แร่ชุดทดลอง' : '🧪 ทดลองเหมือง (ปลดล็อกทันที ไม่ต้องรอลุงหิน/Lv.10)';
+  mt.onclick = () => confirmDo(S.mineOpen ? 'เติม ⚡ พลังขุดเต็ม 30 และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nได้ ⛏ ทางเข้าเหมือง + ⚒ โรงตีเหล็ก ในคลัง\n⚡ 30 + แร่ชุดทดลอง', () => {
+    S.store = S.store || {}; const first = !S.mineOpen;
+    if (first){ S.mineOpen = 1; S.mineStage = Math.max(S.mineStage || 0, MINE_PROJ.length); S.store.mine = (S.store.mine||0) + 1; S.store.smithy = (S.store.smithy||0) + 1; }
+    S.mineEnergy = ENERGY_MAX; [['ore_copper',9], ['coal',6], ['ore_iron',6], ['wood',5]].forEach(([k, n]) => invAdd(k, n)); save(); renderMats(); renderBag();
+    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\nร้านค้า › ฟาร์ม › 📦 คลังของฉัน\n→ วาง ⛏ ทางเข้าเหมือง และ ⚒ โรงตีเหล็ก\n(ทางเข้าเหมืองวางแล้วย้ายไม่ได้)' : '⚡ เต็มแล้ว + ได้แร่ชุดทดลอง', OK); });
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
-  L.append(wd, v3, et, en, mv, out);
+  L.append(wd, v3, et, en, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
