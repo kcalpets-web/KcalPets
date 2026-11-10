@@ -550,7 +550,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.27.0';
+const APP_VER = '0.27.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -623,7 +623,19 @@ function cloudFlush(){
   fb.db.collection('users').doc(fb.auth.currentUser.uid).set({ save: JSON.parse(JSON.stringify(S)), savedAt: S.savedAt || Date.now() })
     .catch(e => console.log('cloud write failed', e));
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudFlush(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden'){ if (S && S.pet){ S.awayAt = Date.now(); try { save(); } catch(e){} } cloudFlush(); }
+  else awayCheck();
+});
+/* 💪 v0.27.1 away rest (designer): leaving the game ≥ 15 min counts as a screen break → stamina back to 100%.
+   It does NOT add minutes to the 📵 screen-rest mission and gives no break-quota rewards. */
+const AWAY_REST = 15*60*1000;
+function awayCheck(){
+  if (!S || !S.pet || !S.awayAt) return; const away = Date.now() - S.awayAt; delete S.awayAt;
+  if (away >= AWAY_REST && tiredNow() > 0){ setTired(0); save(); bump('awayRest');
+    setTimeout(() => { const [x, y] = [cssW/2, 120]; fxSpawn(x, y, 0, -30, 2.2, '#2e9e4f', `💪 พักจอมา ${Math.round(away/60000)} นาที แรงเต็มแล้ว!`); }, 400); }
+  else save();
+}
 
 /* =====================================================================
    LINK A USERNAME ACCOUNT TO GOOGLE (keep existing progress)
@@ -1219,7 +1231,7 @@ $('bPetOk').onclick = () => {
    MAIN shell: header, tabs, daily reset
    ===================================================================== */
 function openMain(){
-  show('sMain'); dailyReset();
+  show('sMain'); dailyReset(); awayCheck();   // 💪 app reopened after a while = rested
   refreshHeader(); renderMats(); renderMissions(); renderShop(); renderBag();
   resizeFarm(); startLoop(); setHint(); setTimeout(checkLogin, 700);
 }
