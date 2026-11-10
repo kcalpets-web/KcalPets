@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><title>เป็นสุข — clay icon baker</title>
+<!-- Dev tool (not loaded by the game): renders the UI icons as clay 3D models with the SAME
+     lighting / palette / materials as r3d.js, and exports each as a transparent PNG.
+     Run headless: window.bake() → {name: dataURL}.  Open in a browser to preview the sheet. -->
+<script type="importmap">{"imports":{"three":"../lib/three.module.min.js","three/addons/":"../lib/"}}</script>
+<style>body{margin:0;background:#cfe6f3;font:14px sans-serif}#sheet{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px}
+.c{background:#fff8;border-radius:14px;text-align:center;padding:6px}.c img{width:96px;height:96px}.c img.s{width:28px;height:28px;margin-left:4px}.d{background:#2b3a55;color:#fff}</style></head>
+<body><div id="sheet"></div>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/RoundedBoxGeometry.js';
+
+const SIZE = 192;                                             // export px (shown at 24–48 css px → crisp on 3× screens)
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true });
+renderer.setSize(SIZE, SIZE); renderer.setClearColor(0, 0);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;   // same as r3d.js
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+/* ---- same material + primitive helpers as r3d.js ---- */
+const MATS = new Map();
+const mat = hex => { if (!MATS.has(hex)) MATS.set(hex, new THREE.MeshStandardMaterial({ color:hex, roughness:.9, metalness:0 })); return MATS.get(hex); };
+const SPH = new THREE.SphereGeometry(1, 28, 18), CONE = new THREE.ConeGeometry(1, 1, 24), CYL = new THREE.CylinderGeometry(1, 1, 1, 28);
+const rb = (w,h,d,r) => new RoundedBoxGeometry(w, h, d, 4, Math.min(r, w/2-.001, h/2-.001, d/2-.001));
+function add(g, geom, hex, x,y,z, sx,sy,sz){ const m = new THREE.Mesh(geom, mat(hex)); m.position.set(x,y,z); if (sx != null) m.scale.set(sx,sy,sz); g.add(m); return m; }
+const RB   = (g,w,h,d,r,hex,x,y,z) => add(g, rb(w,h,d,r), hex, x,y,z);                 // centred
+const BALL = (g,rx,ry,rz,hex,x,y,z) => add(g, SPH, hex, x,y,z, rx,ry,rz);
+const CY   = (g,r,h,hex,x,y,z) => add(g, CYL, hex, x,y,z, r,h,r);                       // centred, along y
+const CO   = (g,r,h,hex,x,y,z) => add(g, CONE, hex, x,y,z, r,h,r);
+const TOR  = (g,R,t,hex,x,y,z,arc) => add(g, new THREE.TorusGeometry(R, t, 14, 40, arc || Math.PI*2), hex, x,y,z);
+const grp  = (g, x=0,y=0,z=0) => { const n = new THREE.Group(); n.position.set(x,y,z); g.add(n); return n; };
+
+function fish(g, body, fin, belly, fancy){
+  BALL(g, .95, .55, .38, body, 0, 0, 0); BALL(g, .7, .3, .3, belly, .1, -.22, .05);
+  const t = grp(g, -.95, 0, 0); for (const sd of [-1,1]){ const f = BALL(t, fancy ? .5 : .4, fancy ? .32 : .22, .06, fin, -.25, sd*.22, 0); f.rotation.z = sd*.6; }
+  BALL(g, .35, .2, .05, fin, -.05, .5, 0).rotation.z = -.3; BALL(g, .22, .1, .05, fin, .2, -.38, .3).rotation.z = .5;
+  BALL(g, .13, .13, .06, C.white, .58, .14, .31); BALL(g, .07, .07, .04, '#2b2b2b', .61, .14, .36);
+  g.rotation.z = .12;
+}
+function bowl(g, col, inner){
+  add(g, new THREE.SphereGeometry(1, 32, 16, 0, Math.PI*2, Math.PI/2, Math.PI/2), col, 0, .3, 0, 1, .85, 1).material = new THREE.MeshStandardMaterial({ color:col, roughness:.85, side:THREE.DoubleSide });
+  CY(g, .45, .12, inner, 0, -.55, 0); TOR(g, 1, .06, inner, 0, .3, 0).rotation.x = Math.PI/2;
+}
+/* palette = r3d.js "Modern Clay" + UI accents */
+const C = { grass:'#8cc97a', grassD:'#6eab5f', soil:'#a87b55', oak:'#d6b07f', trunk:'#9a6a45', white:'#fbf8f2', cream:'#f4ecdc',
+  leaf:'#6dbb5d', red:'#e8645a', redD:'#c94c44', orange:'#ff9f5a', gold:'#f6c445', goldD:'#e0a92e', steel:'#c9d1d8', steelD:'#9aa6b1',
+  blue:'#86c8ea', navy:'#4f6d8f', pink:'#ff8fa3' };
+
+/* ---------------- models (each built roughly inside a 2×2×2 box; auto-fitted later) ---------------- */
+const M = {
+  farm(g){                                   // 🏡 clay island: grass disc, little house, tree
+    CY(g, 1.25, .28, C.soil, 0, -.32, 0); CY(g, 1.27, .14, C.grass, 0, -.14, 0);
+    const h = grp(g, -.2, 0, .1);
+    RB(h, .95, .7, .8, .1, C.cream, 0, .28, 0);
+    const roof = new THREE.Shape(); roof.moveTo(-.62,0); roof.lineTo(.62,0); roof.lineTo(0,.55); roof.closePath();
+    const rg = new THREE.ExtrudeGeometry(roof, { depth:.95, bevelEnabled:true, bevelThickness:.05, bevelSize:.05, bevelSegments:2 }); rg.translate(0,0,-.475);
+    add(h, rg, C.red, 0, .62, 0);
+    RB(h, .26, .4, .06, .05, C.trunk, .1, .13, .42); RB(h, .2, .2, .06, .04, C.blue, -.28, .36, .42);
+    CY(g, .07, .5, C.trunk, .78, .2, -.25); BALL(g, .38, .36, .38, C.leaf, .78, .62, -.25);
+    BALL(g, .16, .12, .16, C.grassD, .55, .02, .7); BALL(g, .07, .07, .07, C.pink, -.85, .05, .65);
+  },
+  missions(g){                               // 🎯 target with arrow
+    const t = grp(g); t.rotation.x = Math.PI/2;
+    [[1, C.red],[.78, C.white],[.56, C.red],[.34, C.white],[.14, C.red]].forEach(([r,c],i) => CY(t, r, .18 + i*.05, c, 0, i*.025, 0));
+    const a = grp(g, .1, .1, .35); a.rotation.set(0, 0, -Math.PI/4); a.rotateX(-.5);
+    CY(a, .05, 1.3, C.oak, 0, .65, 0); CO(a, .12, .25, C.steelD, 0, -.05, 0).rotation.z = Math.PI;
+    for (const s of [-1,1]) RB(a, .02, .3, .2, .01, C.gold, s*.0, 1.2, s*.0).rotation.y = s > 0 ? 0 : Math.PI/2;
+  },
+  shop(g){                                   // 🛒 market stall with striped awning + produce
+    RB(g, 1.9, .7, .8, .12, C.oak, 0, -.45, 0);
+    RB(g, 1.95, .1, .85, .05, C.trunk, 0, -.05, 0);
+    for (const x of [-.85,.85]) CY(g, .06, 1.3, C.trunk, x, .55, -.25);
+    for (let k=0;k<6;k++){ const s = RB(g, .34, .1, .9, .05, k%2 ? C.white : C.red, -.85 + k*.34, 1.15, .05); s.rotation.x = .35; }
+    for (let k=0;k<5;k++) BALL(g, .07, .05, .07, k%2 ? C.white : C.red, -.68 + k*.34, .94, .5);
+    BALL(g, .2, .2, .2, C.red, -.5, .15, .1); BALL(g, .18, .18, .18, C.orange, -.15, .14, .15);
+    BALL(g, .22, .2, .22, C.leaf, .3, .15, .1); BALL(g, .16, .16, .16, C.gold, .65, .12, .2);
+  },
+  quests(g){                                 // 📜 scroll with text lines + ribbon
+    RB(g, 1.3, 1.6, .1, .05, C.cream, 0, 0, 0);
+    for (const y of [.85,-.85]){ const r = CY(g, .16, 1.55, C.oak, 0, y, .05); r.rotation.z = Math.PI/2; for (const x of [-.82,.82]){ const k = CY(g, .1, .1, C.trunk, x, y, .05); k.rotation.z = Math.PI/2; } }
+    [.45,.2,-.05,-.3].forEach((y,i) => RB(g, i===3 ? .55 : .85, .07, .04, .03, C.soil, i===3 ? -.15 : 0, y, .07));
+    BALL(g, .16, .16, .08, C.red, .35, -.55, .12); RB(g, .1, .32, .04, .03, C.redD, .3, -.75, .1).rotation.z = .3; RB(g, .1, .32, .04, .03, C.redD, .42, -.75, .1).rotation.z = -.3;
+  },
+  bag(g){                                    // 🎒 clay backpack
+    RB(g, 1.3, 1.5, .8, .35, C.orange, 0, 0, 0);
+    RB(g, 1.32, .7, .84, .3, '#e8843f', 0, .45, .03);                 // flap
+    RB(g, .8, .55, .3, .15, '#e8843f', 0, -.35, .45);                 // front pocket
+    BALL(g, .07, .07, .05, C.gold, 0, .15, .45); BALL(g, .06, .06, .04, C.gold, 0, -.15, .6);
+    const h = TOR(g, .25, .07, C.trunk, 0, .85, 0, Math.PI); h.rotation.y = Math.PI/2;
+    for (const x of [-.45,.45]) RB(g, .14, 1.2, .1, .05, C.trunk, x, 0, -.42);
+  },
+  coin(g){                                   // 🪙 gold coin with heart emboss (health game)
+    const c = grp(g); c.rotation.x = Math.PI/2;
+    CY(c, 1, .28, C.goldD, 0, 0, 0); CY(c, .92, .3, C.gold, 0, 0, 0); CY(c, .72, .32, C.goldD, 0, 0, 0); CY(c, .66, .33, C.gold, 0, 0, 0);
+    const hs = new THREE.Shape(); hs.moveTo(0,-.32); hs.bezierCurveTo(-.5,.05,-.25,.42,0,.18); hs.bezierCurveTo(.25,.42,.5,.05,0,-.32);
+    const hg = new THREE.ExtrudeGeometry(hs, { depth:.08, bevelEnabled:true, bevelThickness:.04, bevelSize:.04, bevelSegments:3 });
+    add(g, hg, C.goldD, 0, 0, .14);
+  },
+  /* tools are laid diagonally (handle bottom-left → head top-right) so they read at small sizes */
+  scissors(g){                               // ✂️ กรรไกร
+    for (const s of [-1,1]){ const b = grp(g); b.rotation.z = s*.28;
+      RB(b, .24, 1.3, .08, .07, C.steel, 0, .6, s*.05); CO(b, .12, .25, C.steel, 0, 1.36, s*.05);
+      RB(b, .14, .4, .1, .05, C.orange, s*.1, -.25, 0).rotation.z = s*.45;
+      TOR(b, .27, .1, C.orange, s*.26, -.62, 0); }
+    BALL(g, .08, .08, .08, C.steelD, 0, .0, .08);
+    g.rotation.z = -Math.PI/4;
+  },
+  axe(g){                                    // 🪓 ขวาน
+    CY(g, .13, 2.1, C.oak, 0, 0, 0);
+    RB(g, .6, .46, .3, .1, C.steelD, .1, .8, 0);
+    const bl = new THREE.Shape(); bl.moveTo(0,-.32); bl.quadraticCurveTo(.55,-.45,.62,0); bl.quadraticCurveTo(.55,.45,0,.32); bl.closePath();
+    add(g, new THREE.ExtrudeGeometry(bl, { depth:.1, bevelEnabled:true, bevelThickness:.04, bevelSize:.04, bevelSegments:2 }), C.steel, .3, .8, -.05);
+    BALL(g, .12, .1, .12, C.trunk, 0, -1.05, 0);
+    g.rotation.z = -Math.PI/4;
+  },
+  hammer(g){                                 // 🔨 ค้อน
+    CY(g, .14, 2, C.oak, 0, -.15, 0);
+    RB(g, .35, .35, .4, .08, C.red, 0, -1.05, 0);                    // grip end
+    const h = CY(g, .32, 1.25, C.steelD, .05, .9, 0); h.rotation.z = Math.PI/2;
+    const f = CY(g, .36, .12, C.steel, .7, .9, 0); f.rotation.z = Math.PI/2;
+    g.rotation.z = -Math.PI/4;
+  },
+  reap(g){                                   // 🌾 เคียว (sickle): wide crescent blade + wooden handle + wheat
+    CY(g, .14, 1.1, C.oak, 0, -.55, 0); BALL(g, .16, .12, .16, C.trunk, 0, -1.12, 0);
+    CY(g, .17, .14, C.steelD, 0, 0, 0);
+    const b = TOR(g, .72, .17, C.steel, .72, .05, 0, Math.PI*1.08); b.scale.set(1, 1, .35);
+    CO(g, .15, .3, C.steel, 1.44, -.08, 0).rotation.z = Math.PI;
+    for (let k=0;k<3;k++){ const a = .35 - k*.35, w = grp(g, -.75 + k*.18, .55, -.3); w.rotation.z = a;
+      CY(w, .04, .9, '#d9b54a', 0, .45, 0); for (let e=0;e<4;e++) for (const sd of [-1,1]) BALL(w, .06, .12, .06, '#f0cf6a', sd*.07, .82 + e*.13, 0).rotation.z = -sd*.4; }
+    g.rotation.z = -Math.PI/6;
+  },
+  shovel(g){                                 // 🪏 พลั่ว
+    CY(g, .13, 1.7, C.oak, 0, -.1, 0);
+    TOR(g, .24, .09, C.trunk, 0, -1.12, 0);
+    RB(g, .44, .1, .14, .05, C.trunk, 0, -.95, 0);
+    CY(g, .12, .2, C.steelD, 0, .78, 0);
+    const bs = new THREE.Shape(); bs.moveTo(-.5,0); bs.lineTo(.5,0); bs.lineTo(.5,.7); bs.quadraticCurveTo(.28,1.08,0,1.2); bs.quadraticCurveTo(-.28,1.08,-.5,.7); bs.closePath();
+    add(g, new THREE.ExtrudeGeometry(bs, { depth:.08, bevelEnabled:true, bevelThickness:.04, bevelSize:.04, bevelSegments:2 }), C.steel, 0, .85, -.04);
+    BALL(g, .1, .08, .03, C.soil, .12, 1.25, .07); BALL(g, .07, .06, .03, C.soil, -.15, 1.05, .07);
+    g.rotation.z = -Math.PI/4;
+  },
+  toolbox(g){                                // 🧰 red toolbox with handle
+    RB(g, 1.9, .95, .9, .14, C.red, 0, -.25, 0);
+    RB(g, 1.96, .3, .96, .12, C.redD, 0, .3, 0);
+    RB(g, .3, .22, .06, .04, C.gold, 0, .15, .5);
+    const h = TOR(g, .38, .08, '#55606b', 0, .48, 0, Math.PI);
+    for (const x of [-.38,.38]) RB(g, .16, .12, .3, .04, '#55606b', x, .5, 0);
+    RB(g, 1.5, .05, .04, .02, C.redD, 0, -.45, .46);
+  },
+
+  /* ===== round 2: materials, produce, fish, processed goods, drop zones ===== */
+  stone(g){ BALL(g, .8, .55, .7, '#b9b3aa', -.25, -.2, 0); BALL(g, .55, .42, .5, '#cfc8bd', .5, -.3, .2); BALL(g, .4, .3, .35, '#a39d94', .1, .3, -.1); },
+  grass(g){ BALL(g, 1, .25, .7, C.soil, 0, -.75, 0);
+    [[-.55,.0,-.4,1.3],[-.25,.2,.0,1.7],[.1,-.1,.1,1.9],[.4,.15,-.3,1.5],[.65,-.05,.05,1.2],[-.05,.1,-.25,1.4]].forEach(([x,z,rz,h],k) => {
+      const b = CO(g, .16, h, k%2 ? C.leaf : C.grassD, x, -.6 + h/2, z); b.rotation.z = rz*.5; }); },
+  wood(g){ [[-.48,-.35],[.48,-.35],[0,.42]].forEach(([x,y]) => { const l = CY(g, .45, 1.6, C.trunk, x, y, 0); l.rotation.x = Math.PI/2;
+      const e = CY(g, .38, .04, C.oak, x, y, .8); e.rotation.x = Math.PI/2; const r = CY(g, .18, .05, '#c49a66', x, y, .81); r.rotation.x = Math.PI/2; }); },
+  seed(g){ BALL(g, .9, .3, .8, C.soil, 0, -.7, 0); CY(g, .07, .9, '#5fae52', 0, -.1, 0);
+    for (const sd of [-1,1]){ const l = BALL(g, .45, .1, .25, C.leaf, sd*.42, .42, 0); l.rotation.z = sd*.45; } },
+  veg(g){ const c = grp(g); c.rotation.z = -.6; CO(c, .38, 1.6, C.orange, 0, -.2, 0).rotation.z = Math.PI;
+    for (let k=0;k<4;k++) RB(c, .5, .05, .04, .02, '#e8843f', 0, .25 - k*.32, .2 + k*.0).scale.set(1-k*.2, 1, 1);
+    [-.25,0,.25].forEach((a,k) => { const l = BALL(c, .1, .45, .1, k===1 ? C.leaf : C.grassD, a*.8, .95, 0); l.rotation.z = -a*1.5; }); },
+  food(g){ const b = grp(g); b.rotation.z = Math.PI/5; CY(b, .2, 1.6, C.white, 0, 0, 0);
+    for (const y of [-.8,.8]) for (const x of [-.18,.18]) BALL(b, .26, .26, .26, C.white, x, y, 0); },
+  tilapia(g){ fish(g, '#8fa3ad', '#6f8792', '#c7d3d8'); },
+  carp(g){ fish(g, '#d7d3c4', '#e0b64a', '#f2efe4'); },
+  goldfish(g){ fish(g, '#ff8c3a', '#ffb366', '#ffd2a8', true); },
+  shrimp(g){ for (let k=0;k<7;k++){ const a = -.3 + k*.45; BALL(g, .34 - k*.03, .3 - k*.025, .3, k%2 ? '#ff8a6a' : '#ff9e80', Math.cos(a)*.75 - .1, Math.sin(a)*.75, 0); }
+    const t = grp(g, -.45, .95, 0); for (const r of [-.5,0,.5]) BALL(t, .1, .3, .08, '#ff7a5a', 0, .2, 0).rotation.z = r;
+    BALL(g, .06, .06, .06, '#2b2b2b', .75, -.05, .25);
+    for (const r of [.4,.7]){ const an = CY(g, .02, 1.1, '#e8645a', 1.05, -.6, 0); an.rotation.z = r; } g.rotation.z = -1.9; },
+  boot(g){ RB(g, .75, 1.4, .7, .2, '#8a5a3c', -.2, .2, 0); RB(g, 1.4, .55, .75, .22, '#8a5a3c', .1, -.55, 0);
+    RB(g, 1.45, .14, .8, .06, '#5a3a26', .1, -.85, 0); RB(g, .82, .18, .76, .08, '#6e4630', -.2, .85, 0);
+    BALL(g, .12, .12, .05, C.blue, .45, -.35, .4); },
+  corn(g){ const c = grp(g); c.rotation.z = -.5; BALL(c, .38, .85, .38, '#f6c445', 0, .1, 0);
+    for (let y=-5;y<=5;y++) for (let k=0;k<5;k++){ const a = k/5*Math.PI - Math.PI/2 + (y%2)*.3; BALL(c, .08, .08, .05, '#ffd96a', Math.sin(a)*.34*Math.sqrt(1-(y/6)**2), .1 + y*.14, Math.cos(a)*.34*Math.sqrt(1-(y/6)**2)); }
+    for (const sd of [-1,1]){ const h = BALL(c, .25, .75, .1, C.leaf, sd*.3, -.35, .1); h.rotation.z = -sd*.3; }
+    CY(c, .1, .3, '#8fbf6a', 0, -.85, 0); },
+  tomato(g){ BALL(g, .85, .7, .85, '#e8483f', 0, 0, 0);
+    for (let k=0;k<5;k++){ const a = k/5*Math.PI*2, l = BALL(g, .28, .05, .1, C.leaf, Math.cos(a)*.22, .68, Math.sin(a)*.22); l.rotation.y = -a; }
+    CY(g, .06, .25, '#4f9a45', 0, .8, 0); BALL(g, .18, .1, .1, '#ffffff', -.4, .3, .62); },
+  rice(g){ for (let k=0;k<5;k++){ const a = (k-2)*.22, w = grp(g, (k-2)*.08, -.9, (k%2)*.1); w.rotation.z = a;
+      CY(w, .05, 1.3, '#d9b54a', 0, .65, 0); for (let e=0;e<5;e++) for (const sd of [-1,1]) BALL(w, .08, .15, .08, '#f0cf6a', sd*.09, 1.25 + e*.16, 0).rotation.z = -sd*.4; }
+    RB(g, .55, .16, .4, .07, C.redD, 0, -.35, .05); },
+  pumpkin(g){ for (let k=0;k<7;k++){ const a = k/7*Math.PI*2; BALL(g, .45, .62, .45, k%2 ? '#f08a2c' : '#ff9a3c', Math.cos(a)*.5, 0, Math.sin(a)*.5); }
+    BALL(g, .5, .6, .5, '#f08a2c', 0, 0, 0); CY(g, .1, .4, '#7a8a3a', .05, .65, 0).rotation.z = -.3; BALL(g, .3, .06, .16, C.leaf, -.3, .62, .1).rotation.z = .3; },
+  berry(g){ BALL(g, .7, .55, .7, '#e83a4a', 0, .15, 0); CO(g, .62, .9, '#e83a4a', 0, -.55, 0).rotation.z = Math.PI;
+    for (let k=0;k<9;k++){ const x = ((k%3)-1)*.28, y = .3 - ((k/3)|0)*.3; BALL(g, .05, .07, .03, '#ffe08a', x*(1-((k/3)|0)*.25), y, Math.sqrt(Math.max(0,.45 - x*x))+.12 - ((k/3)|0)*.12); }
+    for (let k=0;k<5;k++){ const a = k/5*Math.PI*2, l = BALL(g, .3, .05, .12, C.leaf, Math.cos(a)*.25, .62, Math.sin(a)*.25); l.rotation.y = -a; } CY(g, .06, .3, '#4f9a45', 0, .78, 0); },
+  plank(g){ for (let k=0;k<3;k++){ const b = RB(g, 2, .26, .7, .06, k%2 ? '#d6b07f' : '#e2c08f', (k-1)*.12, -.4 + k*.3, 0); b.rotation.y = (k-1)*.12; } },
+  beam(g){ const b = grp(g); b.rotation.set(.25, -.35, .25); RB(b, 2.4, .55, .55, .1, '#c99a62', 0, 0, 0);
+    RB(b, 2.42, .06, .57, .02, '#b8864f', 0, -.12, 0);
+    for (let k=0;k<7;k++) RB(b, .04, .04, k%2 ? .14 : .26, .01, '#7a5236', -1.05 + k*.35, .28, .29 - (k%2 ? .07 : .13)); },
+  polish(g){ const shiny = new THREE.MeshStandardMaterial({ color:'#e8bf86', roughness:.35, metalness:.05 });
+    const b = new THREE.Mesh(rb(2, .3, .8, .08), shiny); b.rotation.y = .15; g.add(b);
+    const sh = new THREE.Mesh(rb(1.95, .02, .12, .01), new THREE.MeshStandardMaterial({ color:'#fff6e0', roughness:.2 })); sh.position.set(0, .16, .1); sh.rotation.y = .15; g.add(sh);
+    for (const [x,y,s] of [[.55,.7,.28],[-.5,.55,.18],[.05,.95,.14]]){ const o = add(g, new THREE.OctahedronGeometry(1), '#ffd23f', x, y, .2, s*.6, s, s*.3); o.rotation.z = Math.PI/4*0; } },
+  soil(g){ BALL(g, 1, .5, .9, '#8a5f3e', 0, -.3, 0); BALL(g, .6, .45, .55, '#9a6b47', -.1, .1, .05);     BALL(g, .2, .15, .2, '#a87b55', -.6, -.25, .55); },
+  milled(g){ bowl(g, C.white, '#e0d6c4'); for (let k=0;k<26;k++){ const a = k*2.4, r = Math.sqrt(k/26)*.75; BALL(g, .13, .09, .09, '#ffffff', Math.cos(a)*r, .35 + (1-r)*.3, Math.sin(a)*r).rotation.y = a; } },
+  soup(g){ bowl(g, '#5aa3c8', '#4a8fb3'); CY(g, .8, .06, '#f0a040', 0, .32, 0);
+    [[.3,.1,C.orange],[-.3,.2,C.leaf],[.0,-.35,'#ffd96a'],[-.35,-.25,C.orange],[.4,-.3,C.leaf]].forEach(([x,z,c]) => RB(g, .18, .1, .18, .04, c, x, .38, z)); },
+  friedrice(g){ CY(g, 1.15, .1, C.white, 0, -.4, 0); CY(g, 1.0, .12, '#ece4d6', 0, -.36, 0);
+    for (let k=0;k<40;k++){ const a = k*2.4, r = Math.sqrt(k/40)*.8; BALL(g, .1, .08, .08, k%5 ? '#f2c66d' : '#e9a94c', Math.cos(a)*r, -.2 + (1-r)*.45, Math.sin(a)*r); }
+    [[.3,.1],[-.25,.3],[.1,-.35]].forEach(([x,z]) => BALL(g, .06, .05, .06, C.leaf, x, .15, z));
+    const f = grp(g, .35, .3, .3); f.rotation.set(-.6, .4, 0); BALL(f, .4, .2, .2, '#c8a07a', 0, 0, 0); CO(f, .18, .3, '#c8a07a', .45, 0, 0).rotation.z = -Math.PI/2; },
+  jam(g){ CY(g, .7, 1.2, '#d0313f', 0, -.25, 0);
+    CY(g, .75, .55, C.cream, 0, -.2, 0);
+    BALL(g, .2, .2, .08, '#e83a4a', 0, -.15, .76);
+    CY(g, .6, .2, '#e2d6c0', 0, .45, 0);
+    for (let k=0;k<8;k++){ const a = k/8*Math.PI*2; BALL(g, .3, .12, .3, k%2 ? '#e8645a' : C.white, Math.cos(a)*.52, .6, Math.sin(a)*.52); }
+    BALL(g, .62, .14, .62, '#e8645a', 0, .68, 0); RB(g, 1.0, .06, 1.0, .03, '#d4a64a', 0, .55, 0); },
+  sauce(g){ CY(g, .62, 1.5, '#d8443c', 0, 0, 0); CY(g, .64, .1, C.steel, 0, .76, 0); CY(g, .64, .1, C.steel, 0, -.76, 0);
+    CY(g, .63, .7, C.cream, 0, 0, 0); BALL(g, .3, .26, .1, '#e8483f', 0, 0, .62); BALL(g, .12, .04, .06, C.leaf, 0, .25, .66);
+    TOR(g, .14, .03, C.steelD, 0, .83, .25).rotation.x = Math.PI/2; },
+  store(g){ RB(g, 1.7, 1.1, 1.3, .08, '#d6a066', 0, -.2, 0); RB(g, .3, .02, 1.32, .01, '#b8864f', 0, .36, 0);
+    for (const sd of [-1,1]){ const f = RB(g, .85, .05, 1.28, .03, '#e2b277', sd*.68, .5, 0); f.rotation.z = sd*.55; }
+    RB(g, .24, .06, 1.34, .02, '#f0e2b0', 0, .37, 0); BALL(g, .2, .08, .2, C.gold, .2, .45, .15).visible = false; },
+  trash(g){ const body = add(g, new THREE.CylinderGeometry(.75, .6, 1.5, 28), '#7fa38a', 0, -.25, 0);
+    for (let k=0;k<6;k++){ const a = k/6*Math.PI*2 + .26; const r = RB(g, .08, 1.2, .06, .03, '#6a8e75', Math.cos(a)*.7, -.25, Math.sin(a)*.7); r.rotation.y = -a; r.rotation.x = Math.sin(a)*.08; }
+    CY(g, .82, .14, '#6a8e75', 0, .58, 0); BALL(g, .82, .18, .82, '#7fa38a', 0, .66, 0);
+    RB(g, .5, .12, .14, .06, '#55606b', 0, .9, 0); },
+};
+
+/* ---------------- scene: r3d.js lights, 3/4 view from front-top ---------------- */
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15));
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.3); sun.position.set(3, 5, 4); scene.add(sun);
+const rim = new THREE.DirectionalLight(0xffffff, .6); rim.position.set(-4, 2, -3); scene.add(rim);
+const cam = new THREE.PerspectiveCamera(26, 1, .1, 100);
+const VIEW = { farm:[.55,.6,1], shop:[.45,.45,1], bag:[.5,.25,1], toolbox:[.55,.5,1], milled:[.3,.9,1], soup:[.3,.9,1], friedrice:[.3,.8,1],
+  jam:[.35,.45,1], sauce:[.35,.4,1], store:[.5,.55,1], trash:[.4,.4,1], wood:[.4,.3,1], plank:[.4,.6,1], polish:[.3,.7,1], tomato:[.2,.5,1], pumpkin:[.2,.45,1], berry:[.2,.3,1], soil:[.3,.5,1], grass:[.2,.25,1], seed:[.2,.3,1], stone:[.3,.4,1] };     // per-icon view dir (default: mostly frontal)
+
+function shot(name){
+  const g = new THREE.Group(); M[name](g); scene.add(g);
+  const box = new THREE.Box3().setFromObject(g), sph = box.getBoundingSphere(new THREE.Sphere());
+  const dir = new THREE.Vector3(...(VIEW[name] || [.3,.3,1])).normalize();
+  const dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(cam.fov/2)) * .9;            // fit bounding sphere (×.9: spheres overestimate)
+  cam.position.copy(sph.center).addScaledVector(dir, dist); cam.lookAt(sph.center);
+  renderer.render(scene, cam); const url = renderer.domElement.toDataURL('image/png');
+  scene.remove(g); return url;
+}
+window.ICONS = Object.keys(M);
+/* atlas for the game: COLS×ROWS cells of CELL px, order = ICONS (index.html ICO list must match) */
+const CELL = 128, COLS = 8;
+window.atlas = () => { const rows = Math.ceil(ICONS.length/COLS), a = document.createElement('canvas'); a.width = COLS*CELL; a.height = rows*CELL;
+  const x = a.getContext('2d'); ICONS.forEach((n,i) => { shot(n); x.drawImage(renderer.domElement, (i%COLS)*CELL, ((i/COLS)|0)*CELL, CELL, CELL); });
+  return { url:a.toDataURL('image/webp', .9), rows, order:ICONS }; };
+window.bake = () => Object.fromEntries(ICONS.map(n => [n, shot(n)]));
+const out = bake(), sh = document.getElementById('sheet');
+for (const [n,u] of Object.entries(out)) sh.insertAdjacentHTML('beforeend', `<div class="c"><img src="${u}"><div><img class="s" src="${u}"> ${n}</div></div>`);
+window.DONE = true;
+</script></body></html>

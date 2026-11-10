@@ -52,6 +52,9 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 .row>*{flex:1}
 /* ---------- header ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
+.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp) no-repeat;background-size:10.4em 6.5em;
+  background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}                 /* clay icon atlas (8×5 cells), see tools/icons.html */
+#nav button b .ico{width:1.25em;height:1.25em;background-size:10em 6.25em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
 .coin i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe680,var(--gold) 60%,#b88600);display:inline-block}
 /* ---------- cards ---------- */
@@ -426,7 +429,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.15.0';
+const APP_VER = '0.16.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1150,6 +1153,56 @@ const COIN_PER_MISSION = 200, COIN_ALL_BONUS = 300;          // ⚠️ v0.9 econ
 const GRID = 5;
 const MAT = { stone:'🪨 หิน', grass:'🌿 หญ้า', wood:'🪵 ไม้', seed:'🌱 เมล็ด', veg:'🥕 แครอท', food:'🦴 อาหารสัตว์',
               tilapia:'🐟 ปลานิล', carp:'🐡 ปลาตะเพียน', shrimp:'🦐 กุ้ง', goldfish:'🐠 ปลาทอง', boot:'👢 รองเท้าเก่า' };
+
+/* ---- 🎨 clay icons (v0.16): emoji in the DOM → <span class="ico"> cut from icons/atlas.webp ----
+   atlas cell i → column i%8, row ⌊i/8⌋ ; order MUST match tools/icons.html ICONS.
+   Context rules come first (🌾 next to "เคียว" = the sickle tool, otherwise rice; 💠 = polished wood, 🟫 = plank). */
+const ICO = ['farm','missions','shop','quests','bag','coin','scissors','axe','hammer','reap','shovel','toolbox',
+  'stone','grass','wood','seed','veg','food','tilapia','carp','goldfish','shrimp','boot','corn','tomato','rice','pumpkin','berry',
+  'plank','beam','polish','soil','milled','soup','friedrice','jam','sauce','store','trash'];
+const EMO = [['🌾(?=\\s?เคียว)','reap'],['💠','polish'],['🟫','plank'],
+  ['🏡','farm'],['🎯','missions'],['🛒','shop'],['📜','quests'],['🎒','bag'],['🪙','coin'],['✂','scissors'],['🪓','axe'],['🔨','hammer'],['🪏','shovel'],['🧰','toolbox'],
+  ['🪨','stone'],['🌿','grass'],['🪵','wood'],['🌱','seed'],['🥕','veg'],['🦴','food'],['🐟','tilapia'],['🐡','carp'],['🐠','goldfish'],['🦐','shrimp'],['👢','boot'],
+  ['🌽','corn'],['🍅','tomato'],['🌾','rice'],['🎃','pumpkin'],['🍓','berry'],['📏','beam'],['🟤','soil'],['🍚','milled'],['🥣','soup'],['🍛','friedrice'],
+  ['🫙','jam'],['🥫','sauce'],['📦','store'],['🗑','trash']];
+const EMO_RE = new RegExp(EMO.map(([e]) => '(' + e + ')\\uFE0F?').join('|'), 'gu');
+const icoSpan = name => { const i = ICO.indexOf(name), sp = document.createElement('span'); sp.className = 'ico'; sp.setAttribute('aria-hidden', 'true');
+  sp.style.setProperty('--x', i % 8); sp.style.setProperty('--y', (i/8)|0); return sp; };
+const icoHTML = name => icoSpan(name).outerHTML;
+const SKIP_ICO = /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|CANVAS)$/;
+function iconizeText(tn){
+  const txt = tn.nodeValue; EMO_RE.lastIndex = 0; if (!EMO_RE.test(txt)) return;
+  const p = tn.parentNode; if (!p || SKIP_ICO.test(p.nodeName)) return;
+  const frag = document.createDocumentFragment(); let last = 0; EMO_RE.lastIndex = 0;
+  for (let m; (m = EMO_RE.exec(txt)); ){
+    const gi = m.slice(1).findIndex(x => x !== undefined);           // which EMO entry matched
+    if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+    frag.appendChild(icoSpan(EMO[gi][1])); last = m.index + m[0].length;
+  }
+  if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+  p.replaceChild(frag, tn);
+}
+function iconize(root){
+  if (root.nodeType === 3) return iconizeText(root);
+  if (root.nodeType !== 1 || SKIP_ICO.test(root.nodeName)) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), list = [];
+  for (let n; (n = w.nextNode()); ) list.push(n);                 // collect first, then replace (walker would break mid-edit)
+  for (const n of list) iconizeText(n);
+}
+/* new / changed text anywhere in the page is converted in one batch per microtask (cheap regex test per text node) */
+let icoQ = new Set(), icoPending = false;
+new MutationObserver(ms => {
+  for (const m of ms){ if (m.type === 'characterData') icoQ.add(m.target); else for (const n of m.addedNodes) icoQ.add(n); }
+  if (!icoPending){ icoPending = true; queueMicrotask(() => { icoPending = false; const q = icoQ; icoQ = new Set(); for (const n of q) if (n.isConnected) iconize(n); }); }
+}).observe(document.body, { childList:true, subtree:true, characterData:true });
+iconize(document.body);
+/* canvas: draw an atlas cell (tool cursor) — falls back to the emoji until the atlas is loaded */
+const icoImg = new Image(); icoImg.src = 'icons/atlas.webp';
+function drawIco(c, name, x, y, size, fallback){
+  const i = ICO.indexOf(name);
+  if (icoImg.complete && icoImg.naturalWidth && i >= 0) c.drawImage(icoImg, (i%8)*128, ((i/8)|0)*128, 128, 128, x - size/2, y - size/2, size, size);
+  else { c.font = (size*.8|0) + 'px serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(fallback || '', x, y); }
+}
 
 /* ---- natural resources: size class decides the collect cooldown ---- */
 const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // seconds (random in range)
@@ -3043,8 +3096,8 @@ function renderBag(){
     L.append(lk);
   }
   const v3 = document.createElement('button'); v3.className = 'btn ghost';
-  v3.textContent = want3D() ? '🧊 กราฟิก 3D: เปิดอยู่ (แตะเพื่อใช้ 2D)' : '🧊 กราฟิก 2D: เปิดอยู่ (แตะเพื่อใช้ 3D)';
-  v3.onclick = () => confirmDo(want3D() ? 'เปลี่ยนเป็นกราฟิก 2D?\n(เบากว่า เหมาะกับเครื่องรุ่นเก่า)' : 'เปลี่ยนเป็นกราฟิก 3D?', () => set3D(!want3D()));
+  v3.textContent = gfxEco() ? '⚙️ คุณภาพกราฟิก: ประหยัด (แตะเพื่อใช้แบบสูง)' : '⚙️ คุณภาพกราฟิก: สูง (แตะเพื่อใช้แบบประหยัด)';
+  v3.onclick = () => confirmDo(gfxEco() ? 'เปลี่ยนเป็นคุณภาพสูง?\nภาพคมชัด มีเงาและหญ้าไหวตามลม' : 'เปลี่ยนเป็นโหมดประหยัด?\nภาพละเอียดลดลง ไม่มีเงา/หญ้าไหว\nลื่นขึ้นและประหยัดแบตบนเครื่องรุ่นเก่า', () => setGfx(!gfxEco()));
   renderBrkSettings(L);
   L.append(v3, mv, out);
 }
@@ -3061,7 +3114,7 @@ Object.assign(MAT, {
   seed:'🌱 เมล็ดแครอท', veg:'🥕 แครอท',
   corn:'🌽 ข้าวโพด', tomato:'🍅 มะเขือเทศ', rice:'🌾 ข้าวเปลือก', pumpkin:'🎃 ฟักทอง', berry:'🍓 สตรอว์เบอร์รี',
   sd_corn:'🌱 เมล็ดข้าวโพด', sd_tomato:'🌱 เมล็ดมะเขือเทศ', sd_rice:'🌱 เมล็ดข้าว', sd_pumpkin:'🌱 เมล็ดฟักทอง', sd_berry:'🌱 เมล็ดสตรอว์เบอร์รี',
-  plank:'🟫 ไม้กระดาน', beam:'📏 ไม้คาน', polish:'✨ ไม้ขัดเงา',
+  plank:'🟫 ไม้กระดาน', beam:'📏 ไม้คาน', polish:'💠 ไม้ขัดเงา',
   soil:'🟤 ดิน', milled:'🍚 ข้าวสาร', soup:'🥣 ซุปผัก', friedrice:'🍛 ข้าวผัดปลา', jam:'🫙 แยมสตรอว์เบอร์รี', sauce:'🥫 ซอสมะเขือเทศ'
 });
 const inv = k => S.inv[k] || 0;
@@ -3219,13 +3272,14 @@ const TOOLS = {
   hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] }
 };
 const HITS = { small:1, medium:3, large:6 };
+const TOOL_ICO = { sickle:'scissors', axe:'axe', hammer:'hammer', reap:'reap', shovel:'shovel' };
 const toolFor = k => Object.keys(TOOLS).find(id => TOOLS[id].fits.includes(k));
 let tool = null, toolDrag = null, toolMsgAt = 0, saveTimer = 0;
 function saveSoon(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { save(); renderMats(); refreshHeader(); }, 700); }
 
 function renderToolBar(){
   const bar = $('toolBar');
-  bar.innerHTML = Object.entries(TOOLS).map(([id,t]) => `<button class="tb${tool===id?' on':''}" data-t="${id}"><b>${t.e}</b>${t.name.replace('ตัดหญ้า','')}</button>`).join('') +
+  bar.innerHTML = Object.entries(TOOLS).map(([id,t]) => `<button class="tb${tool===id?' on':''}" data-t="${id}"><b>${icoHTML(TOOL_ICO[id])}</b>${t.name.replace('ตัดหญ้า','')}</button>`).join('') +
     `<button class="tb x" data-t="">✕<br>เลิกใช้</button>`;
   bar.querySelectorAll('button').forEach(b => b.onclick = () => pickTool(b.dataset.t || null));
   $('toolFab').classList.toggle('on', !!tool);
@@ -3235,7 +3289,7 @@ function pickTool(id){
   const t = TOOLS[id];
   const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
   if (S.toolOk && S.toolOk[id]) return go();                 // confirm once per tool (like path mode)
-  confirmDo(t.dig ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านพื้นหญ้า → 🟫 แปลงผัก (ฟรี)\n• ลากผ่านแปลงว่างอีกครั้ง → 💧 บ่อน้ำ + 🟤 ดิน 1\n• ลากผ่านบ่อน้ำ → ถมเป็นหญ้า (ใช้ 🟤 ดิน 1)\n(ลาก 1 ครั้งทำได้อย่างเดียว • แปลงที่ขุดไว้ไม่ได้ปลูก 24 ชม. จะกลับเป็นหญ้า)`
+  confirmDo(t.dig ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านพื้นหญ้า → แปลงผัก (ฟรี)\n• ลากผ่านแปลงว่างอีกครั้ง → 💧 บ่อน้ำ + 🟤 ดิน 1\n• ลากผ่านบ่อน้ำ → ถมเป็นหญ้า (ใช้ 🟤 ดิน 1)\n(ลาก 1 ครั้งทำได้อย่างเดียว • แปลงที่ขุดไว้ไม่ได้ปลูก 24 ชม. จะกลับเป็นหญ้า)`
     : t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
     : `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
@@ -3338,7 +3392,7 @@ function drawToolFx(time, dt){
   ctx.globalAlpha = 1;
   if (tool && toolDrag && toolDrag.x != null){                 // tool follows the finger, lifted above it so the finger never hides the tile
     ctx.save(); ctx.translate(toolDrag.x + 18, toolDrag.y - 44); ctx.rotate(Math.sin(time*18)*.45 - .3);
-    ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(TOOLS[tool].e, 0, 0); ctx.restore();
+    drawIco(ctx, TOOL_ICO[tool], 0, 0, 46, TOOLS[tool].e); ctx.restore();
   }
 }
 /* remaining-hits pips over a medium/large item that has been hit */
@@ -3892,21 +3946,19 @@ function roomItemMenu(it){
     { label:'ปิด', cls:'ghost' } ]);
 }
 
-/* ---- 🧊 3D renderer: on by default when WebGL works; per-device switch in the bag ---- */
-const want3D = () => store.get('pensuk_3d') !== false;
-let r3dLoading = false;
+/* ---- 🧊 3D renderer (v0.16: 3D only). The old 2D renderer stays ONLY as an emergency fallback
+   for devices without WebGL (a notice tells the player); it is no longer maintained for new features. ---- */
+const want3D = () => true;
+const gfxEco = () => store.get('pensuk_gfx') === 'eco';            // ⚙️ per-device quality: 'eco' | default high
+let r3dLoading = false, r3dFailNote = false;
 function load3D(){
-  if (!want3D() || r3dLoading) { if (R3D) R3D.on = want3D(); return; }
   if (R3D){ R3D.on = true; return; }
-  r3dLoading = true;
-  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = want3D(); invalidateAll(); })
-    .catch(e => { console.log('3D unavailable → 2D', e); r3dLoading = false; store.set('pensuk_3d', false); });
+  if (r3dLoading) return; r3dLoading = true;
+  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = true; R3D.setQuality(gfxEco()); invalidateAll(); })
+    .catch(e => { console.log('3D unavailable', e); r3dLoading = false;
+      if (!r3dFailNote){ r3dFailNote = true; sheet('เครื่องนี้แสดงกราฟิก 3D ไม่ได้ 😢\nตอนนี้ใช้ภาพแบบสำรองไปก่อน\n\nลองเปิดเกมใน Safari หรือ Chrome โดยตรง (ไม่ใช่ในแอป LINE/Facebook) หรือรีสตาร์ตเบราว์เซอร์', OK); } });
 }
-function set3D(on){
-  store.set('pensuk_3d', on);
-  if (on){ r3dLoading = false; load3D(); } else if (R3D){ R3D.on = false; R3D.hide(); invalidateAll(); }
-  renderBag();
-}
+function setGfx(eco){ store.set('pensuk_gfx', eco ? 'eco' : 'high'); if (R3D) R3D.setQuality(eco); renderBag(); }
 
 /* ---- boot ---- */
 autoLogin();

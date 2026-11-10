@@ -32,6 +32,14 @@ export function start(){
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  /* GPU context can be dropped by iOS/Android when memory is low or the app is backgrounded:
+     preventDefault lets the browser restore it; three.js re-uploads, we rebuild every zone. */
+  can.addEventListener('webglcontextlost', e => { e.preventDefault(); ctxLost = true; });
+  can.addEventListener('webglcontextrestored', () => { ctxLost = false; for (const e of zones.values()) e.dirty = true; roomKey = ''; });
+  let ctxLost = false;
+  /* ⚙️ quality (v0.16): 'high' = DPR ≤ 2 + soft shadows + wind sway, 60 fps
+                         'eco'  = DPR 1, no shadows, no sway, 3D redrawn every 2nd frame (≈30 fps)  */
+  let eco = false, frameN = 0;
 
   /* ---------- caches ---------- */
   const MATS = new Map(), GEOS = new Map();
@@ -437,8 +445,10 @@ export function start(){
     dirty(z){ const e = zones.get(z); if (e) e.dirty = true; },
     dirtyAll(){ for (const e of zones.values()) e.dirty = true; },
     render(time, dt){
-      can.style.display = ''; resize(); updateCamera();
+      can.style.display = ''; if (ctxLost) return;
       liveAcc += dt;
+      if (eco && (++frameN & 1)) return;                       // eco: skip every other 3D frame (last frame stays on screen)
+      resize(); updateCamera();
       for (const z of S.farm.zones){ const e = zones.get(z);
         if (!e || e.dirty || (e.live && liveAcc > 3)) buildZone(z); }
       if (liveAcc > 3) liveAcc = 0;
@@ -450,7 +460,7 @@ export function start(){
         /* wind: gust(t) = 0.55 + 0.3·sin(0.35t) + 0.2·sin(1.1t + 1)  (slow swell + flutter)
            lean  = 0.5·gust·amp  (everything leans the same way)  + sway = sin(2.2t − phase)·amp·(0.5 + gust)
            kind 0 = tilt (grass, saplings, trees) • 1 = flower (tilt + nod) • 2 = bush (breathe: scale ±amp) */
-        for (let k=0;k<e.sway.length;k+=4){ const m = e.sway[k], ph = e.sway[k+1], a = e.sway[k+2], kind = e.sway[k+3];
+        if (!eco) for (let k=0;k<e.sway.length;k+=4){ const m = e.sway[k], ph = e.sway[k+1], a = e.sway[k+2], kind = e.sway[k+3];
           const w = Math.sin(time*2.2 - ph);
           if (kind === 2){ const sc = 1 + w*a*gust; m.scale.set(sc, 1 + w*a*.6*gust, sc); continue; }
           m.rotation.z = .5*gust*a + w*a*(.5 + gust);
@@ -476,8 +486,12 @@ export function start(){
       renderer.render(scene, camera);
     },
     hide(){ can.style.display = 'none'; },
+    /** ⚙️ graphics quality: true = eco (older phones), false = high */
+    setQuality(e){ eco = !!e; renderer.setPixelRatio(eco ? 1 : Math.min(2, devicePixelRatio || 1)); renderer.shadowMap.enabled = !eco;
+      lastW = 0; for (const sc of [scene, rscene]) sc.traverse(o => { if (o.material) o.material.needsUpdate = true; }); },
     /** draw the house interior in 3D; camera frames the whole N×N room */
     renderRoom(ir, rpet, rp, time){
+      if (ctxLost) return;
       can.style.display = ''; resize(); inRoomNow = true;
       const R = ir.o.room, key = ir.N + '|' + R.wall + '|' + R.floor + '|' + (NIGHT > .6 ? 2 : NIGHT > .2 ? 1 : 0) + '|' + JSON.stringify(R.items);
       if (key !== roomKey){ roomKey = key; buildRoom(ir); }
