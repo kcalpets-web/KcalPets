@@ -561,7 +561,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.28.0';
+const APP_VER = '0.28.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1609,20 +1609,38 @@ function npcSpot(x0, y0, rad){
     if (walkable(z.tiles[i])) return [z.cx*GRID + i%GRID + .5, z.cy*GRID + ((i/GRID)|0) + .5]; }
   return null;
 }
+/* 🌙 v0.28.1 craftsmen go home at night: ลุงไม้ → 🪚 sawmill • ลุงหิน → ⛏ mine • พี่เหล็ก → ⚒ smithy.
+   NIGHT ≥ .9 (≈ 19:30–05:00): they walk (A* gridPath) to the tile in front of their building and disappear inside;
+   they don't rotate back in until morning, and the first one out appears at their own door. */
+const NPC_HOME = { mai:'sawmill', hin:'mine', lek:'smithy' };
+function npcDoor(id){
+  const k = NPC_HOME[id]; if (!k) return null;
+  for (const z of S.farm.zones) for (const o of z.objs) if (o.type === k && o.done !== false && !(k === 'mine' && o.closed)){
+    const gx = z.cx*GRID + o.c, gy = z.cy*GRID + o.r, cx = gx + Math.floor(o.w/2), cy = gy + o.h;   // front-centre tile
+    if (walkAt(cx + .5, cy + .5)) return [cx + .5, cy + .5];
+    const p = npcSpot(cx + .5, cy + .5, 3); return p; }
+  return null;
+}
+const npcAsleep = id => NIGHT >= .9 && !!npcDoor(id);
 function npcTick(dt){
   if (!S || !S.farm) return;
   const now = Date.now();
+  for (const n of NPC_LIVE) if (!n.homing && npcAsleep(n.id)){ const d = npcDoor(n.id), [bx, by, W, H] = farmBox();   // 🌙 head home
+    const res = gridPath(Math.floor(n.x), Math.floor(n.y), Math.floor(d[0]), Math.floor(d[1]), bx, by, W, H, (c, r) => walkable(tileAt(c, r)));
+    n.path = smoothPath(n.x, n.y, res.pts, pathClear); n.homing = true; n.wait = 0; const f = n.path.shift() || d; n.tx = f[0]; n.ty = f[1]; }
   if (now > npcRotAt || NPC_LIVE.some(n => !npcUnlocked(n.id))){
     const retry = npcRetry; npcRetry = false; npcRotAt = now + 180000;
-    const ids = Object.keys(NPCS).filter(npcUnlocked).map(id => [id, (npcPending(id) ? 2 : 0) + (retry && NPC_LIVE.some(n => n.id === id) ? 4 : 0) + Math.random()]).sort((a,b) => b[1] - a[1]).map(e => e[0]).slice(0, 3);
-    NPC_LIVE = NPC_LIVE.filter(n => ids.includes(n.id));
-    for (const id of ids) if (!NPC_LIVE.some(n => n.id === id)){ const p = npcSpot(pet.x, pet.y, 5); if (p) NPC_LIVE.push({ id, x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 + Math.random()*3 }); }
+    const ids = Object.keys(NPCS).filter(id => npcUnlocked(id) && !npcAsleep(id)).map(id => [id, (npcPending(id) ? 2 : 0) + (retry && NPC_LIVE.some(n => n.id === id) ? 4 : 0) + Math.random()]).sort((a,b) => b[1] - a[1]).map(e => e[0]).slice(0, 3);
+    NPC_LIVE = NPC_LIVE.filter(n => ids.includes(n.id) || n.homing);   // walking home keeps them until they reach the door
+    for (const id of ids) if (!NPC_LIVE.some(n => n.id === id)){ const p = npcDoor(id) || npcSpot(pet.x, pet.y, 5); if (p) NPC_LIVE.push({ id, x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 + Math.random()*3 }); }   // ☀️ craftsmen step out of their own door
     if (NPC_LIVE.length < ids.length){ npcRotAt = now + 5000; npcRetry = true; }   // couldn't place everyone → retry soon, keep who is already here
   }
+  if (NPC_LIVE.some(n => n.gone)) NPC_LIVE = NPC_LIVE.filter(n => !n.gone);   // 🏠 inside for the night
   for (const n of NPC_LIVE){
-    if (!walkAt(n.x, n.y)){ const p = npcSpot(n.x, n.y, 4); if (p){ n.x = n.tx = p[0]; n.y = n.ty = p[1]; } continue; }
+    if (!walkAt(n.x, n.y) && !n.homing){ const p = npcSpot(n.x, n.y, 4); if (p){ n.x = n.tx = p[0]; n.y = n.ty = p[1]; } continue; }
     if (n.wait > 0){ n.wait -= dt; continue; }
     const dx = n.tx - n.x, dy = n.ty - n.y, d = Math.hypot(dx, dy);
+    if (d < .05 && n.homing){ if (n.path && n.path.length){ const f = n.path.shift(); n.tx = f[0]; n.ty = f[1]; } else n.gone = true; continue; }
     if (d < .05){ n.wait = 2 + Math.random()*4; for (let k=0;k<12;k++){ const p = npcSpot(n.x, n.y, 3); if (p && pathClear(n.x, n.y, p[0], p[1])){ n.tx = p[0]; n.ty = p[1]; break; } } continue; }
     const step = Math.min(d, .9*dt); n.x += dx/d*step; n.y += dy/d*step;
   }
