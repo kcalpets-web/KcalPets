@@ -148,8 +148,9 @@ export function start(){
     switch (o.type){
       case 'plot': {
         RB(g, W-.2, .3, D-.2, .1, '#7a5236', 0, 0, 0);
-        if (o.dug && !o.plant && o.idle){                       // abandoned: weeds appear during the last 6 h before it turns to grass
-          const u = Math.max(0, Math.min(1, (Date.now() - o.idle - 18*3600e3) / (6*3600e3)));
+        if (o.dug && !o.plant && o.idle){                       // abandoned: weeds appear during the last 6 h before it turns to grass  u = (now − idle − (lim − 6h)) / 6h
+          const lim = typeof plotIdleMs === 'function' ? plotIdleMs() : 24*3600e3;      // 24 h (48 h with the pet's Lv.12 skill)
+          const u = Math.max(0, Math.min(1, (Date.now() - o.idle - (lim - 6*3600e3)) / (6*3600e3)));
           for (let k=0;k<Math.round(u*9);k++) CO(g, .07, .35 + (k%3)*.1, '#7dbb69', ((k*37)%9/9 - .5)*1.4, .3, ((k*53)%9/9 - .5)*1.4); }
         for (let k=-1;k<=1;k++) RB(g, W-.5, .06, .18, .04, '#6a4630', 0, .3, k*.5);
         if (o.plant){ const cp = CROPS[o.crop || 'carrot'], p = Math.min(1, (Date.now()-o.plant)/(cp.sec*1000)), col = CROPC[o.crop || 'carrot'];

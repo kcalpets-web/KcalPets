@@ -115,6 +115,10 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #modal.on{display:flex}
 #mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
+.needs{margin-top:10px;white-space:normal;font-size:15px}
+.needs .nd{display:flex;align-items:center;gap:8px;margin:6px 0}.needs .nd span{flex:0 0 92px}.needs .nd em{flex:0 0 30px;text-align:right;font-style:normal;font-weight:700}
+.needs .nd i{flex:1;height:12px;border-radius:8px;background:#0001;overflow:hidden}.needs .nd b{display:block;height:100%;border-radius:8px}
+.needs .sk{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.needs .sk span{font-size:12px;padding:2px 8px;border-radius:10px;background:#0000000d;color:#888}.needs .sk span.on{background:#e6f4e2;color:#2e7d32}
 .mbtns{display:flex;flex-direction:column;gap:8px}
 #mbox{max-height:88vh;overflow-y:auto}
 #dropBar{position:absolute;left:10px;right:10px;bottom:24px;display:none;justify-content:space-between;pointer-events:none;z-index:3}
@@ -295,6 +299,70 @@ function gainPetExp(n){
   if (p.lv >= MAX_PET_LV) p.pexp = 0;
   if (msgs.length) queueReward(msgs.join('\n'));
 }
+/* =====================================================================
+   💗 PET CARE (v0.17) — "your health grows your pet"
+   • 💗 พลังใจ (S.love) comes ONLY from real health actions (missions, move breaks, 3-a-day bonus);
+     it cannot be bought with coins. Spending it levels the pet: Lv N → N+1 costs needPetExp(N) = N×30 💗.
+   • Evolution needs a streak too: Lv.8 (ร่าง 2) needs a best streak ≥ 3 days, Lv.15 (ร่าง 3) ≥ 7 days.
+   • 3 needs decay with real time (no timers kept running — evaluated on read):
+         value(t) = clamp(v0 − 100·Δhours / H, 0, 100)      H: food 24 h, bath 48 h, play 24 h ⚠️
+     All three ≥ 60 → every 💗 earned ×1.5 (care bonus).
+   • Never punishing: low needs only make the pet sleepy / waiting — no sickness, no loss.
+   ===================================================================== */
+const LOVE_PER_MISSION = 30, LOVE_ALL_BONUS = 20, LOVE_PER_BRK = 10, CARE_OK = 60, CARE_MULT = 1.5;   // ⚠️
+const NEED = { food:{ e:'🍖', name:'อิ่ม',  hrs:24 }, bath:{ e:'🛁', name:'สะอาด', hrs:48 }, play:{ e:'🎾', name:'สนุก', hrs:24 } };
+function needVal(k){ const n = S.pet.need && S.pet.need[k]; if (!n) return 50;     // never cared yet → half (no free care bonus)
+  return Math.max(0, Math.min(100, n.v - (Date.now() - n.t)/3.6e6 * 100/NEED[k].hrs)); }
+function needSet(k, v){ S.pet.need = S.pet.need || {}; S.pet.need[k] = { v:Math.max(0, Math.min(100, v)), t:Date.now() }; }
+const careFull = () => Object.keys(NEED).every(k => needVal(k) >= CARE_OK);
+const careAvg  = () => Object.keys(NEED).reduce((a,k) => a + needVal(k), 0) / 3;
+const petMood  = () => { const a = careAvg(); return a >= 70 ? '😊' : a >= 35 ? '🙂' : '😴'; };
+/** add 💗 from a health action; returns the amount actually given (after the care bonus) */
+function gainLove(n){ const got = Math.round(n * (careFull() ? CARE_MULT : 1)); S.love = (S.love || 0) + got; bump('loveGain', got); return got; }
+const loveTxt = (base, got) => `💗 พลังใจ +${got}` + (got > base ? ` (ดูแลน้องครบ ×${CARE_MULT})` : '');
+function bestStreak(){ return Math.max(S.bestStreak || 0, streakNow()); }
+/** streak needed to go from lv → lv+1 (0 = none) */
+const petGate = lv => lv + 1 === 8 ? 3 : lv + 1 === 15 ? 7 : 0;
+function petLevelUp(){
+  const p = S.pet, cost = needPetExp(p.lv), g = petGate(p.lv);
+  if (p.lv >= MAX_PET_LV || (S.love||0) < cost || (g && bestStreak() < g)) return;
+  S.love -= cost; const st0 = petStage(p.lv).name; p.lv++; bump('petUp');
+  let msg = `${p.emoji} ${p.name} เลื่อนเป็น Lv.${p.lv}! (ใช้ 💗 ${cost})`;
+  if (petStage(p.lv).name !== st0){ msg += `\n✨ พัฒนาร่างเป็น "${petStage(p.lv).name}" แล้ว!`; pet.evolve = 2.5; }
+  const sk = PET_SKILLS.find(k => k.lv === p.lv); if (sk) msg += `\n🐾 ความสามารถใหม่: ${sk.name} — ${sk.text}`;
+  petHappy(pet); sfx('done'); save(); refreshHeader(); reward(msg);
+}
+/* 🐾 pet skills unlocked by level — the pet helps on the farm */
+const PET_SKILLS = [
+  { lv:3,  name:'ขุดหาของ',      text:'วันละครั้ง น้องขุดเจอเมล็ดหรือเหรียญในฟาร์ม' },
+  { lv:5,  name:'คู่หูตกปลา',     text:'โอกาสได้ 🐠 ปลาทองเพิ่มเป็น 2 เท่า' },
+  { lv:8,  name:'ช่วยเก็บเกี่ยว',   text:'เก็บแปลงผักที่สุกให้เองวันละ 3 แปลง' },
+  { lv:12, name:'เฝ้าแปลง',       text:'แปลงที่ขุดไว้อยู่ได้ 48 ชม. (จาก 24 ชม.)' } ];
+const petSkill = lv => S.pet && S.pet.lv >= lv;
+/** Lv.3: once a day the pet digs something up */
+function petDailyFind(){
+  if (!petSkill(3) || S.petFindDate === todayKey()) return;
+  S.petFindDate = todayKey();
+  const seeds = Object.values(CROPS).filter(c => S.lv >= c.lv).map(c => c.seed), r = Math.random();
+  if (r < .6){ const k = seeds[(Math.random()*seeds.length)|0] || 'seed', n = 1 + (Math.random()*2|0); invAdd(k, n); queueReward(`🐾 ${S.pet.name} ขุดเจอของ!\n${MAT[k]} +${n}`); }
+  else { const c = 100 + ((Math.random()*5)|0)*25; S.coins += c; queueReward(`🐾 ${S.pet.name} ขุดเจอของ!\n🪙 ${c} เหรียญทอง`); }
+  bump('petFind'); save(); refreshHeader(); renderMats(); flushRewards();
+}
+/** Lv.8: harvest up to 3 ripe plots a day (called from natureTick) */
+function petAutoHarvest(){
+  if (!petSkill(8)) return;
+  const d = S.petHarv && S.petHarv.d === todayKey() ? S.petHarv : (S.petHarv = { d:todayKey(), n:0 });
+  if (d.n >= 3) return;
+  for (const z of S.farm.zones) for (const o of z.objs){
+    if (d.n >= 3) return;
+    if (o.type !== 'plot' || !o.done || !o.plant || cropLeft(o) > 0) continue;
+    const c = cropOf(o), n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; o.idle = Date.now(); d.n++;
+    bump('harvest'); bump('petHarvest'); markDirty(z); floatText(z.cx*GRID + o.c, z.cy*GRID + o.r, `🐾+${n}${c.e}`, '#2e7d32'); save(); renderMats();
+  }
+}
+/** dug plots revert after this long without crops (Lv.12 skill doubles it) — r3d.js reads it for the weeds */
+function plotIdleMs(){ return (petSkill(12) ? 48 : 24) * 3600 * 1000; }
+
 /* Level-up popups wait until the current sheet closes */
 const rewardQ = [];
 function queueReward(t){ rewardQ.push(t); }
@@ -429,7 +497,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.16.1';
+const APP_VER = '0.17.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1104,10 +1172,11 @@ function openMain(){
 }
 function refreshHeader(){
   const pct = S.lv>=MAX_LV ? 100 : Math.floor(S.exp/needExp(S.lv)*100);
-  const pp = S.pet.lv>=MAX_PET_LV ? 100 : Math.floor(S.pet.pexp/needPetExp(S.pet.lv)*100);
+  if (S.pet.pexp){ S.love = (S.love||0) + S.pet.pexp; S.pet.pexp = 0; }   // v0.17: old pet Exp becomes 💗
+  const canUp = S.pet.lv < MAX_PET_LV && (S.love||0) >= needPetExp(S.pet.lv) && !(petGate(S.pet.lv) && bestStreak() < petGate(S.pet.lv));
   $('hName').textContent = `${S.profile.name} • Lv.${S.lv} (${pct}%)`;
   $('hCoin').textContent = S.coins.toLocaleString();
-  $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petStage(S.pet.lv).name} (${pp}%) • ❤️ ${S.pet.heart}`;
+  $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petMood()} • 💗 ${(S.love||0).toLocaleString()}${canUp ? ' ⬆️ อัปได้!' : ''}`;
 }
 function goTab(id){
   document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('on', x.dataset.t===id));
@@ -1135,7 +1204,7 @@ function dailyReset(){
 /* =====================================================================
    3-4) MISSIONS — 3/day, reward = gold coins
    ===================================================================== */
-const COIN_PER_MISSION = 200, COIN_ALL_BONUS = 300;          // ⚠️ v0.9 economy ×20
+const COIN_PER_MISSION = 100, COIN_ALL_BONUS = 300;          // ⚠️ v0.17: missions = 💗 30 + 🪙 100 (was 🪙 200)
 
 /* =====================================================================
    6) FARM WORLD — one contiguous isometric map made of 5×5 chunks.
@@ -1883,15 +1952,14 @@ function nearObj(z, i){                                      // keep 1 tile of s
   for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++){ const t = tileAt(z.cx*GRID+c+dc, z.cy*GRID+r+dr); if (t && t.k==='obj') return true; }
   return false;
 }
-const PLOT_IDLE = 24*3600*1000;                             // ⚠️ dug plots left unplanted this long turn back into grass
 function plotDecay(){
   const now = Date.now(); let ch = false;
   for (const z of S.farm.zones) for (const o of z.objs.slice())
-    if (o.type === 'plot' && o.dug && !o.plant && now - (o.idle || now) > PLOT_IDLE){ removeObj(z, o); ch = true; }
+    if (o.type === 'plot' && o.dug && !o.plant && now - (o.idle || now) > plotIdleMs()){ removeObj(z, o); ch = true; }
   if (ch) save();
 }
 function natureTick(){
-  plotDecay();
+  plotDecay(); petAutoHarvest();
   const now = Date.now(); let changed = false, firstGrow = false;
   S.farm.natureAt = S.farm.natureAt || now;
   const rolls = Math.min(24, Math.floor((now - S.farm.natureAt)/SPAWN_MS));   // catch up after being away (cap 2 h)
@@ -2193,7 +2261,8 @@ function updateFishing(now){
   const f = fishing; if (!f) return;
   if (f.phase==='cast' && now - f.t0 > 600){ f.phase = 'wait'; f.biteAt = now + 2000 + Math.random()*4000; renderFishBar(); }
   else if (f.phase==='wait' && now >= f.biteAt){
-    let r = Math.random()*CATCH.reduce((s,c) => s+c.w, 0); f.pick = CATCH.find(c => (r -= c.w) < 0) || CATCH[0];
+    const wOf = c => c.k === 'goldfish' && petSkill(5) ? c.w*2 : c.w;     // 🐾 Lv.5 คู่หูตกปลา: goldfish weight ×2
+    let r = Math.random()*CATCH.reduce((s,c) => s+wOf(c), 0); f.pick = CATCH.find(c => (r -= wOf(c)) < 0) || CATCH[0];
     f.phase = 'bite'; f.winEnd = now + f.pick.win; renderFishBar();
     try { navigator.vibrate && navigator.vibrate(120); } catch(e){}
   }
@@ -2801,20 +2870,68 @@ $('rExit').onclick = exitHome;
 function tapPet(){
   if (fishing) return;
   petHappy(pet); bump('petTap'); sfx('bark');                // hop + hearts on every tap
-  const opts = [];
-  if (S.inv.food) opts.push({label:`🦴 ให้อาหาร (มี ${S.inv.food}) Exp+20`, cls:'ok', fn:() => confirmDo('ให้อาหารน้อง?', () => feed('food',10,20))});
-  if (S.inv.veg)  opts.push({label:`🥕 ให้แครอท (มี ${S.inv.veg}) Exp+10`, fn:() => confirmDo('ให้แครอทน้อง?', () => feed('veg',5,10))});
-  for (const [k,h,x] of [['tilapia',6,12],['carp',8,15],['shrimp',6,12],['goldfish',15,40],['soup',10,30],['friedrice',20,60]])
-    if (S.inv[k]) opts.push({label:`${MAT[k]} (มี ${S.inv[k]}) Exp+${x}`, fn:() => confirmDo(`ให้${MAT[k].split(' ')[1]}น้อง?`, () => feed(k,h,x))});
-  opts.push({label:'ปิด', cls:'ghost'});
-  const p = S.pet, nx = PET_STAGES.find(s => s.lv > p.lv);
-  sheet(`${p.emoji} ${p.name} — Lv.${p.lv}\n${petStage(p.lv).name}\nExp ${p.pexp}/${needPetExp(p.lv)}\n❤️ ความผูกพัน ${p.heart}/100\nเกิดวันที่ ${p.born}` +
-        (nx ? `\nพัฒนาเป็น "${nx.name}" ที่ Lv.${nx.lv}` : '\nพัฒนาครบทุกร่างแล้ว 👑'), opts);
+  petSheet();
 }
-function feed(item, hearts, pexp){
-  S.inv[item]--; S.pet.heart = Math.min(100, S.pet.heart + hearts); petHappy(pet); bump('feed');
-  gainPetExp(pexp); gainExp(EXP.feed); save(); refreshHeader(); renderMats();
-  reward(`${S.pet.name} มีความสุข! ❤️ +${hearts}\n${S.pet.emoji} Exp +${pexp} • ⭐ Exp +${EXP.feed}`);
+/* farm food the pet eats: [fills 🍖, ❤️ bond] ⚠️ */
+const PET_FOOD = { food:[40,3], veg:[20,2], corn:[25,2], tomato:[20,2], pumpkin:[50,4], berry:[15,3],
+  tilapia:[30,3], carp:[30,3], shrimp:[25,3], soup:[60,6], friedrice:[80,8] };
+function petSheet(){
+  const p = S.pet, cost = needPetExp(p.lv), g = petGate(p.lv), love = S.love||0, nx = PET_STAGES.find(s => s.lv > p.lv);
+  const locked = g && bestStreak() < g, max = p.lv >= MAX_PET_LV;
+  const nextSk = PET_SKILLS.find(k => k.lv > p.lv), sleepy = careAvg() < 35;
+  const btns = [];
+  if (!max) btns.push(locked
+    ? { label:`🔒 อัปเป็น Lv.${p.lv+1} ต้องทำภารกิจครบ 3 ข้อติดกัน ${g} วัน (ดีที่สุด ${bestStreak()})`, cls:'ghost', fn:petSheet }
+    : { label:`💗 อัปเลเวลเป็น Lv.${p.lv+1} (ใช้ ${cost} • มี ${love})`, cls: love >= cost ? 'ok' : 'ghost',
+        fn:() => love >= cost ? confirmDo(`ใช้ 💗 ${cost} อัปเลเวล ${p.name}?`, petLevelUp)
+                              : sheet(`💗 ยังไม่พอ (มี ${love}/${cost})\n\nได้ 💗 จากการดูแลสุขภาพจริงเท่านั้น:\n• ภารกิจสุขภาพ ข้อละ ${LOVE_PER_MISSION}\n• ครบ 3 ข้อ โบนัส ${LOVE_ALL_BONUS}\n• 🔔 ขยับตัวหน่อย ครั้งละ ${LOVE_PER_BRK}\n• ดูแลน้องครบ 3 อย่าง ได้ ×${CARE_MULT}`, OK) });
+  btns.push({ label:'🍖 ให้อาหาร', fn:feedMenu });
+  btns.push({ label:'🛁 อาบน้ำ', fn:petBath });
+  btns.push({ label:'🎾 เล่นบอล', fn:petPlay });
+  btns.push({ label:'ปิด', cls:'ghost' });
+  sheet(`${p.emoji} ${p.name} — Lv.${p.lv} ${petMood()}\n${petStage(p.lv).name}` +
+        (sleepy ? `\n😴 ${p.name} ง่วง ๆ นั่งรอคุณอยู่ — ดูแลหน่อยนะ` : careFull() ? `\n✨ ดูแลครบ! 💗 ที่ได้วันนี้ ×${CARE_MULT}` : '') +
+        `\n❤️ ความผูกพัน ${p.heart}/100` +
+        (nx ? `\nร่างถัดไป "${nx.name.split(' · ')[1] || nx.name}" ที่ Lv.${nx.lv}` : '\nพัฒนาครบทุกร่างแล้ว 👑') +
+        (nextSk ? `\n🐾 Lv.${nextSk.lv}: ${nextSk.name}` : ''), btns);
+  /* need bars + skills (HTML appended under the text) */
+  const box = document.createElement('div'); box.className = 'needs';
+  box.innerHTML = Object.entries(NEED).map(([k,n]) => { const v = Math.round(needVal(k));
+    return `<div class="nd"><span>${n.e} ${n.name}</span><i><b style="width:${v}%;background:${v >= CARE_OK ? '#6cc070' : v >= 30 ? '#f2b84b' : '#e8735a'}"></b></i><em>${v}</em></div>`; }).join('') +
+    `<div class="sk">${PET_SKILLS.map(k => `<span class="${p.lv >= k.lv ? 'on' : ''}">${p.lv >= k.lv ? '🐾' : '🔒'} Lv.${k.lv} ${k.name}</span>`).join('')}</div>`;
+  $('mbody').appendChild(box);
+}
+function feedMenu(){
+  const have = Object.keys(PET_FOOD).filter(k => inv(k) > 0);
+  if (!have.length) return sheet('ยังไม่มีอาหารให้น้อง\n\n• ปลูกผัก/ตกปลาในฟาร์ม (ฟรี)\n• หรือซื้อ 🦴 อาหารสัตว์ที่ร้านค้า › ทั่วไป', [{ label:'กลับ', cls:'ghost', fn:petSheet }]);
+  sheet(`🍖 ให้อาหาร${S.pet.name} (อิ่มตอนนี้ ${Math.round(needVal('food'))}/100)`,
+    [...have.map(k => ({ label:`${MAT[k]} (มี ${inv(k)}) อิ่ม +${PET_FOOD[k][0]} • ❤️ +${PET_FOOD[k][1]}`, fn:() => feed(k) })),
+     { label:'กลับ', cls:'ghost', fn:petSheet }]);
+}
+function feed(item){
+  const [fill, hearts] = PET_FOOD[item] || [20, 2];
+  S.inv[item]--; needSet('food', needVal('food') + fill); S.pet.heart = Math.min(100, S.pet.heart + hearts); petHappy(pet); bump('feed');
+  if (item !== 'food') bump('feedFarm');
+  gainExp(EXP.feed); save(); refreshHeader(); renderMats(); sfx('pop');
+  reward(`${S.pet.name} อร่อยมาก! 😋\n🍖 อิ่ม ${Math.round(needVal('food'))}/100 • ❤️ +${hearts}\n⭐ Exp +${EXP.feed}`);
+}
+function petBath(){
+  const v = needVal('bath');
+  if (v >= 95) return sheet(`${S.pet.name} ยังสะอาดอยู่เลย ✨ (${Math.round(v)}/100)`, [{ label:'กลับ', cls:'ghost', fn:petSheet }]);
+  needSet('bath', 100); S.pet.heart = Math.min(100, S.pet.heart + 2); bump('bath');
+  const gc = Math.floor(pet.x), gr = Math.floor(pet.y);
+  burst(gc, gr, ['#ffffff','#bfe6ff','#86c8ea'], 18); burst(gc, gr, ['#ffffff','#d6f0ff'], 12); petHappy(pet); sfx('pop'); buzz(20);
+  save(); refreshHeader();
+  reward(`🛁 อาบน้ำให้${S.pet.name}แล้ว ฟองฟอดเต็มตัว!\n🛁 สะอาด 100/100 • ❤️ +2\n(สะอาดอยู่ได้ราว 2 วัน)`);
+}
+function petPlay(){
+  const v = needVal('play');
+  if (v >= 95) return sheet(`${S.pet.name} เล่นจนเหนื่อยแล้ว ขอพักก่อนนะ 😆 (${Math.round(v)}/100)`, [{ label:'กลับ', cls:'ghost', fn:petSheet }]);
+  needSet('play', v + 40); S.pet.heart = Math.min(100, S.pet.heart + 1); bump('play');
+  pet.target = null; petHappy(pet); setTimeout(() => petHappy(pet), 500); setTimeout(() => petHappy(pet), 1000);
+  burst(Math.floor(pet.x), Math.floor(pet.y), ['#ffd166','#ff9f5a','#ffffff'], 14); sfx('bark'); buzz(15);
+  save(); refreshHeader();
+  reward(`🎾 โยนบอล… ${S.pet.name} วิ่งไปคาบกลับมา!\n🎾 สนุก ${Math.round(needVal('play'))}/100 • ❤️ +1`);
 }
 /* =====================================================================
    QUESTS — sequential tutorial chain that teaches every core system.
@@ -2849,13 +2966,21 @@ const QUESTS = [
   { id:'mLog',    name:'ลองทำภารกิจสุขภาพ',        nav:'tMission', need:1, goal:() => st('missionLog'),
     text:'เปิด 🎯 ภารกิจ แล้วกด "▶ เริ่ม" ที่ข้อไหนก็ได้ — 📵 พักจอ, 🏋️ ลุกนั่ง หรือ 🙆 บริหารคอ', reward:{coins:100} },
   { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
-    text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 🪙 200" — ภารกิจสุขภาพคือรายได้หลัก ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
+    text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 💗 30 + 🪙 100" — 💗 พลังใจใช้เลี้ยงน้อง ได้จากการดูแลสุขภาพจริงเท่านั้น ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
+  { id:'petup',   name:'ใช้ 💗 อัปเลเวลน้อง',       hl:'pet',    need:1, goal:() => st('petUp'),
+    text:'แตะ {pet} → "💗 อัปเลเวล" — Lv.1→2 ใช้ 💗 30 • น้องยิ่งเลเวลสูงยิ่งช่วยงานฟาร์มได้ (Lv.3 ขุดหาของ, Lv.5 คู่หูตกปลา…) • ร่างใหม่ต้องทำภารกิจครบติดกันหลายวัน', reward:{coins:100} },
   { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
-    text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 50 เหรียญ (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
+    text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 💗 10 + 🪙 25 (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
     text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:100} },
   { id:'feed',    name:'ให้อาหารน้อง',            hl:'pet',    need:1, goal:() => st('feed'),
-    text:'แตะ {pet} → ให้อาหาร — น้องได้ Exp และพัฒนาร่างที่ Lv.8 และ Lv.15', reward:{coins:100, food:1} },
+    text:'แตะ {pet} → 🍖 ให้อาหาร → 🦴 อาหารสัตว์ — เติมแถบ 🍖 อิ่ม (แถบลดลงเองตามเวลาจริง)', reward:{coins:100, food:1} },
+  { id:'feedFarm',name:'ป้อนผักจากฟาร์ม',          hl:'pet',    need:1, goal:() => st('feedFarm'),
+    text:'แตะ {pet} → 🍖 ให้อาหาร → เลือกผักที่ปลูกหรือปลาที่ตกได้ — ของจากฟาร์มเลี้ยงน้องได้ฟรี', reward:{coins:100, seed:2} },
+  { id:'bath',    name:'อาบน้ำให้น้อง',            hl:'pet',    need:1, goal:() => st('bath'),
+    text:'แตะ {pet} → 🛁 อาบน้ำ — แถบ 🛁 สะอาดเต็ม อยู่ได้ราว 2 วัน', reward:{coins:100} },
+  { id:'play',    name:'เล่นบอลกับน้อง',           hl:'pet',    need:1, goal:() => st('play'),
+    text:'แตะ {pet} → 🎾 เล่นบอล — ดูแลครบ 3 แถบ (อิ่ม/สะอาด/สนุก ≥ 60) แล้ว 💗 ที่ได้จากภารกิจ ×1.5 • น้องไม่ป่วยไม่หายไปไหน แค่ง่วง ๆ รอคุณ', reward:{coins:100} },
   { id:'fish',    name:'ตกปลา',                 hl:'water',  need:3, goal:() => st('fish'),
     text:'แตะที่บ่อน้ำ แล้วกดปุ่ม "🎣 ตกปลา" ที่โผล่ขึ้นมา → เหวี่ยงเบ็ด → รอทุ่นจม ❗ → กด "ดึง!" ให้ทัน — ตกให้ได้ 3 ครั้ง ปลาขายได้ ส่งออเดอร์ได้ หรือให้น้องกิน', reward:{coins:200} },
   { id:'medium',  name:'ทุบหิน/ตัดพุ่มไม้',         hl:'medium', tool:1, need:1, goal:() => st('collect_medium'),
@@ -2911,7 +3036,7 @@ const curQuest = () => { if (!S || !S.qDone) return null; const i = qIndex(); re
 const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
 
 function questTick(){
-  brkTick();
+  brkTick(); if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
   if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
@@ -3467,12 +3592,13 @@ function yesterdayKey(){ const d = new Date(); d.setDate(d.getDate()-1); return 
 const streakNow = () => (S.streakDate === todayKey() || S.streakDate === yesterdayKey()) ? (S.streak||0) : 0;
 function claimBonus(){
   const s = S.streakDate === yesterdayKey() ? (S.streak||0) + 1 : S.streakDate === todayKey() ? (S.streak||1) : 1;
-  S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true;
+  S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true; S.bestStreak = Math.max(S.bestStreak||0, s);
+  const lg = gainLove(LOVE_ALL_BONUS);
   const extra = Math.min(6, s-1)*50, chest = s % 7 === 0;
   S.coins += COIN_ALL_BONUS + extra + (chest ? 1000 : 0);
   if (chest){ invAdd('sd_pumpkin', 1); invAdd('sd_berry', 1); }
   sfx('done'); save(); refreshHeader(); renderMissions();
-  reward(`🎉 ครบ 3 ภารกิจ!\n🪙 ${COIN_ALL_BONUS} โบนัส` + (extra ? `\n🔥 ต่อเนื่อง ${s} วัน +${extra}` : `\n🔥 เริ่มนับต่อเนื่องวันที่ 1`) +
+  reward(`🎉 ครบ 3 ภารกิจ!\n${loveTxt(LOVE_ALL_BONUS, lg)}\n🪙 ${COIN_ALL_BONUS} โบนัส` + (extra ? `\n🔥 ต่อเนื่อง ${s} วัน +${extra}` : `\n🔥 เริ่มนับต่อเนื่องวันที่ 1`) +
     (chest ? `\n🎁 กล่องพิเศษ 7 วัน: 🪙 1,000 + ${MAT.sd_pumpkin} + ${MAT.sd_berry}` : `\n(อีก ${7 - s%7} วันได้กล่องพิเศษ)`));
 }
 
@@ -3482,7 +3608,7 @@ function renderMissions(){
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
   head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div><div class="bar"><b style="width:${done/3*100}%"></b></div>
-    <div class="muted">ภารกิจละ 🪙 ${COIN_PER_MISSION} • ครบ 3 ภารกิจ โบนัส 🪙 ${COIN_ALL_BONUS}</div>
+    <div class="muted">ภารกิจละ 💗 ${LOVE_PER_MISSION} + 🪙 ${COIN_PER_MISSION} • ครบ 3 ภารกิจ โบนัส 💗 ${LOVE_ALL_BONUS} + 🪙 ${COIN_ALL_BONUS}${careFull() ? ' • ดูแลน้องครบ 💗 ×1.5' : ''}</div>
     <div style="margin-top:6px;font-weight:600">🔥 ทำครบต่อเนื่อง ${sk} วัน <span class="muted">• ครบ 7 วันได้กล่องพิเศษ</span></div>`;
   L.appendChild(head);
   S.missions.forEach((m, i) => {
@@ -3493,7 +3619,7 @@ function renderMissions(){
     const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
     if (m.claimed) row.innerHTML = '<button class="btn" disabled>✅ รับแล้ว</button>';
     else if (m.progress >= m.target){
-      const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = `รับ 🪙 ${COIN_PER_MISSION}`;
+      const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = `รับ 💗 ${LOVE_PER_MISSION} + 🪙 ${COIN_PER_MISSION}`;
       b.onclick = () => confirmDo(`รับรางวัลภารกิจ "${m.label}"?`, () => claim(i)); row.appendChild(b);
     } else {
       const go = document.createElement('button'); go.className = 'btn'; go.textContent = '▶ เริ่ม'; go.onclick = () => openAct(m);
@@ -3526,9 +3652,9 @@ function addProgress(m, v){
 }
 function claim(i){
   S.missions[i].claimed = true; S.coins += COIN_PER_MISSION; bump('missionClaim');
-  gainExp(EXP.mission); gainPetExp(10); sfx('coin');
+  const got = gainLove(LOVE_PER_MISSION); gainExp(EXP.mission); sfx('coin'); petHappy(pet);
   save(); refreshHeader(); renderMissions();
-  reward(`🪙 ${COIN_PER_MISSION} เหรียญทอง\n⭐ Exp +${EXP.mission} • ${S.pet.emoji} Exp +10`);
+  reward(`${loveTxt(LOVE_PER_MISSION, got)}\n🪙 ${COIN_PER_MISSION} เหรียญทอง\n⭐ Exp +${EXP.mission}\n(แตะ ${S.pet.name} เพื่อใช้ 💗 อัปเลเวล)`);
 }
 
 /* ---- activity overlay ---- */
@@ -3779,7 +3905,7 @@ const BRK = {
   breath: { icon:'🫁', label:'หายใจลึก ๆ 1 นาที',     key:'breath', unit:'นาที', target:1 },
   water:  { icon:'💧', label:'ดื่มน้ำ 1 แก้ว',         key:'water',  unit:'แก้ว', target:1 }
 };
-const BRK_COIN = 50, BRK_MAX = 6;
+const BRK_COIN = 25, BRK_MAX = 6;                          // ⚠️ v0.17: 💗 10 + 🪙 25 (was 🪙 50)
 const brkCfg = () => (S.brkCfg = S.brkCfg || { on:true, every:60, quiet:true });
 function brkState(){
   const b = S.brk = S.brk || { next: Date.now() + brkCfg().every*60000, pending:[], date:todayKey(), count:0 };
@@ -3816,8 +3942,9 @@ function brkStart(k){
 function brkDone(k){
   const b = brkState(), i = b.pending.indexOf(k); if (i < 0) return;
   b.pending.splice(i, 1); b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); bump('brkDone');
+  const got = gainLove(LOVE_PER_BRK);
   sfx('coin'); save(); refreshHeader(); markBrkNav(); renderMissions();
-  reward(`👏 ขยับตัวแล้ว!\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)`);
+  reward(`👏 ขยับตัวแล้ว!\n${loveTxt(LOVE_PER_BRK, got)}\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)`);
 }
 function brkSkip(k){ const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1); save(); markBrkNav(); renderMissions(); }
 function renderBrkCard(L){
