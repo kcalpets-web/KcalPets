@@ -151,6 +151,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .dz.off{opacity:.35;filter:grayscale(1)}
 #nav button.brk::after{content:'🔔';position:absolute;top:2px;right:18%;font-size:14px;animation:pulse 1s infinite}
 #nav button{position:relative}
+#hSta{position:relative;width:96px;height:14px;border-radius:7px;background:#0001;overflow:hidden}#hSta i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;transition:width .3s}#hSta b{position:relative;display:block;font-size:10px;line-height:14px;padding-left:5px}
 #hPet.upOk{color:#e0455f;font-weight:700;animation:pulse 1.2s infinite}
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #evFab{position:absolute;left:10px;bottom:96px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
@@ -232,7 +233,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 <section class="screen" id="sMain">
   <div class="top">
     <div style="display:flex;align-items:center;gap:8px"><img id="hAva" alt="" style="width:40px;height:40px;border-radius:50%;background:#fff4dc;border:2px solid var(--line);display:none" onclick="openAvatarEd('wardrobe')"><div><b id="hName"></b><div class="muted" id="hPet"></div></div></div>
-    <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div class="coin">🪙 <span id="hCoin">0</span></div></div>
+    <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="coin">🪙 <span id="hCoin">0</span></div><div id="hSta" title="แรง"><i></i><b></b></div></div></div>
   </div>
 
   <div class="tab on" id="tFarm">
@@ -549,7 +550,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.26.0';
+const APP_VER = '0.27.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1227,7 +1228,7 @@ function refreshHeader(){
   if (S.pet.pexp){ S.love = (S.love||0) + S.pet.pexp; S.pet.pexp = 0; }   // v0.17: old pet Exp becomes 💗
   const canUp = S.pet.lv < MAX_PET_LV && (S.love||0) >= needPetExp(S.pet.lv) && !(petGate(S.pet.lv) && bestStreak() < petGate(S.pet.lv));
   $('hName').textContent = `${S.profile.name} • Lv.${S.lv} (${pct}%)`;
-  $('hCoin').textContent = S.coins.toLocaleString();
+  $('hCoin').textContent = S.coins.toLocaleString(); renderSta();
   $('hPet').textContent = `${S.pet.emoji} ${S.pet.name} Lv.${S.pet.lv} ${petMood()} • 💗 ${(S.love||0).toLocaleString()}${canUp ? ' ⬆️' : ''}`;
   $('hPet').classList.toggle('upOk', canUp); petCanUp = canUp;
   if (canUp && S.petNudge !== S.pet.lv) setTimeout(petNudge, 600);   // ⬆️ v0.23: one pop-up per pet level
@@ -1811,18 +1812,34 @@ const MINE_FLOORS = [
    mission −20 • all-3 bonus −20 • coach −50 • any move/screen break → 0.  */
 const TIRED_ADD = { stone:2, coal:4, ore_copper:4, ore_iron:4, ore_silver:4, ore_gold:4, gem:6 };
 function tiredNow(){ const t = (S.mineTired || 0) - (Date.now() - (S.tiredAt || Date.now()))/60000; return Math.max(0, t); }
-function setTired(v){ S.mineTired = Math.max(0, Math.min(TIRED_MAX, v)); S.tiredAt = Date.now(); }
-function restTired(n){ if (!S.mineOpen) return 0; const b = tiredNow(); setTired(n === Infinity ? 0 : b - n); return Math.round(b - tiredNow()); }   // returns how much was rested
+function setTired(v){ S.mineTired = Math.max(0, Math.min(TIRED_MAX, v)); S.tiredAt = Date.now(); if (typeof renderSta === 'function') renderSta(); }
+function restTired(n){ const b = tiredNow(); setTired(n === Infinity ? 0 : b - n); return Math.round(b - tiredNow()); }   // returns how much was rested
 const restTxt = n => !n ? '' : tiredNow() <= 0 ? '\n💪 แรงเต็มแล้ว!' : `\n💪 ฟื้นแรง +${n}%`;
 /* 💪 v0.24.1 display: players see STAMINA that starts full and drains (designer: 0→100 tiredness was confusing).
    stamina% = 100 − tiredNow()  (same fatigue math underneath) */
 const staminaNow = () => Math.round(TIRED_MAX - tiredNow());
 function tiredSheet(){
-  sheet(`💪 หมดแรงแล้ว พักสายตาหน่อยนะ\nแรง ${staminaNow()}% (ฟื้นเองนาทีละ 1%)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วแรงเต็มทันที`, [
+  sheet(`💪 หมดแรงแล้ว พักกับน้องหน่อยนะ\nแรง ${staminaNow()}% (ฟื้นเองนาทีละ 1%)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วแรงเต็มทันที`, [
     { label:'📵 พักสายตา 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('rest'); } },
     { label:'🫁 หายใจลึก ๆ 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('breath'); } },
     { label:'ไว้ก่อน', cls:'ghost' } ]);
 }
+/* 💪 v0.27 STAMINA EVERYWHERE (designer: "every activity uses stamina, like real life")
+   cost per finished action: grass/small 1 • medium 2 • large 3 • till / dig / fill 1 • sow 1 • harvest 1 • fishing cast 2 • mine 2/4/6
+   free: buying/selling, decorating, building placement, talking, pet care, collecting workshop output.
+   Gate: an action needs stamina ≥ its cost; empty → "พักกับน้องหน่อยนะ" (same break buttons). */
+const STA_RES = { small:1, medium:2, large:3 };
+let staMsgAt = 0;
+function staOk(cost, gc, gr){
+  if (TIRED_MAX - tiredNow() >= cost - 1e-6) return true;           // raw value (the % shown is rounded)
+  if (Date.now() - staMsgAt > 2500){ staMsgAt = Date.now(); if (gc != null) floatText(gc, gr, '💪 หมดแรง', '#e0892f'); setTimeout(tiredSheet, 250); }
+  return false;
+}
+function useSta(cost){ setTired(tiredNow() + cost); renderSta();
+  if (!S.staIntro){ S.staIntro = 1; save(); setTimeout(() => sheet('💪 แรง (มุมขวาบน)\nทุกงานในฟาร์มใช้แรงเหมือนชีวิตจริง — ตัดหญ้า ตัดไม้ ทุบหิน ขุด ปลูก เก็บผัก ตกปลา ขุดแร่\n\n• ฟื้นเองนาทีละ 1%\n• พักสายตา / ขยับตัว / หายใจลึก ๆ → แรงเต็มทันที\n• เช็กอินกับเป็นสุขว่าทำอะไรไปแล้ว → ฟื้นแรงด้วย\n\nแรงหมดเมื่อไหร่ ได้เวลาพักกับน้องแล้ว 🐶', OK), 300); } }
+function renderSta(){ const el = $('hSta'); if (!el || !S) return; const v = staminaNow();
+  el.firstElementChild.style.width = v + '%'; el.firstElementChild.style.background = v < 30 ? '#ff9f43' : '#6cc56f'; el.lastElementChild.textContent = `💪 ${v}%`;
+  if (inMine) renderMineBar(); }
 const MINE_ZONE = 9;                                          // ⛏ v0.23: the area unlocked at Lv.10 (zone index 9) comes with the mine entrance
 const mineObj = () => { for (const z of S.farm.zones) for (const o of z.objs) if (o.type === 'mine') return [z, o]; return null; };
 /* place the (collapsed) entrance once: first 2×2 spot in the Lv.10 area with no building / water; nature on it is cleared */
@@ -1847,7 +1864,7 @@ function mineUnlockTick(){
   if (S.mineOpen || (S.mineStage || 0) < MINE_PROJ.length) return;
   S.mineOpen = 1; setTired(0); ensureMineSite();
   const m = mineObj(); if (m){ m[1].closed = 0; markDirty(m[0]); } save();
-  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าโล่งแล้ว ลงไปขุดกันเลย!"\n\nแตะ ⛏ ทางเข้าเหมือง (พื้นที่ Lv.10) → ลากนิ้วผ่านหินเพื่อขุด\n💪 ขุดได้เรื่อย ๆ — แรงหมดเมื่อไหร่ พักสายตาหรือขยับตัวสั้น ๆ ก็แรงเต็ม'); flushRewards();
+  queueReward('⛏ เหมืองเปิดแล้ว!\nลุงหิน: "ทางเข้าโล่งแล้ว ลงไปขุดกันเลย!"\n\nแตะ ⛏ ทางเข้าเหมือง (พื้นที่ Lv.10) → ลากนิ้วผ่านหินเพื่อขุด\n💪 ขุดแร่ใช้แรงเหมือนงานฟาร์ม — แรงหมดเมื่อไหร่ พักสายตาหรือขยับตัวสั้น ๆ ก็แรงเต็ม'); flushRewards();
 }
 let inMine = null;                                            // {N, floor, ver, tiles, ax, ay, tx, ty, face, swing, broken, saved}
 function genMineFloor(f){
@@ -2971,7 +2988,7 @@ function renderFishBar(){
 }
 function fishPress(){
   const f = fishing; if (!f) return; const now = Date.now();
-  if (f.phase==='ready'){ f.phase = 'cast'; f.t0 = now; renderFishBar(); return; }
+  if (f.phase==='ready'){ if (!staOk(2, f.gc, f.gr)) return; useSta(2); f.phase = 'cast'; f.t0 = now; renderFishBar(); return; }
   if (f.phase==='wait'){ f.phase = 'ready'; f.cool = now + 800; renderFishBar(); return sheet('ดึงเร็วไป! ปลาตกใจหนีไปแล้ว 😅\nรอให้ทุ่นจมก่อนแล้วค่อยดึงนะครับ', OK); }
   if (f.phase==='bite'){
     const c = f.pick, x = fishPos(f, now); f.phase = 'ready'; f.cool = now + 900; $('fScale').style.display = 'none';
@@ -3934,7 +3951,7 @@ function ciNext(){
       ciChips([{ label:'ยังไม่ได้ดื่ม', fn:() => ciLater('water', 'ไม่เป็นไรนะ ลองไปหยิบน้ำมาดื่มสักแก้ว อีกชั่วโมงเป็นสุขจะมาถามใหม่ 💧') }]
         .concat(Array.from({ length:cap }, (_, k) => ({ label:`+${k+1} แก้ว`, fn:() => {
           const n = k + 1; w.n += n; w.last = Date.now(); c.ask.water = Date.now() + CI_EVERY; bump('waterLog');
-          if (m) ciHits += monLogBatch(n); ciDone.push(`💧 ดื่มน้ำ +${n} แก้ว`); save();
+          if (m) ciHits += monLogBatch(n); restTired(10); ciDone.push(`💧 ดื่มน้ำ +${n} แก้ว`); save();
           setTimeout(() => { bubble(n >= 2 ? 'เยี่ยมมาก! ร่างกายสดชื่นขึ้นเยอะเลย 💦' : 'ดีมาก! ดื่มต่อเรื่อย ๆ นะ 💧', 'bot'); ciNext(); }, 350); } }))));
       return;
     }
@@ -3943,12 +3960,12 @@ function ciNext(){
     bubble(`${m.icon} วันนี้ได้${m.label}หรือยัง?\n(เหลืออีก ${left} ${m.unit})`, 'bot');
     ciChips([{ label:'ยังไม่ได้', fn:() => ciLater(m.key, `ไม่เป็นไรเลย ทำตอนสะดวกนะ อีกชั่วโมงเป็นสุขจะมาชวนใหม่ 🐾\n(หรือกดทำพร้อมน้องได้ที่หน้าภารกิจ)`) }]
       .concat(steps.filter(v => v <= Math.max(left, steps[0])).map(v => ({ label:`ทำแล้ว ${v} ${m.unit}`, fn:() => {
-        addProgress(m, v); c.ask[m.key] = Date.now() + CI_EVERY; ciDone.push(`${m.icon} ${m.label} +${v} ${m.unit}`); save();
+        addProgress(m, v); restTired(10); c.ask[m.key] = Date.now() + CI_EVERY; ciDone.push(`${m.icon} ${m.label} +${v} ${m.unit}`); save();
         setTimeout(() => { bubble(m.progress >= m.target ? `ครบเป้าแล้ว! ไปกดรับ 💗 ที่หน้าภารกิจได้เลย 🎉` : `เก่งมาก! อีก ${Math.ceil(m.target - m.progress)} ${m.unit} ก็ครบแล้ว`, 'bot'); ciNext(); }, 350); } }))));
   }, 300);
 }
 function ciEnd(){
-  bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
+  bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}\n💪 ฟื้นแรง +${ciDone.length*10}%${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
   ciChips([{ label:ciHits ? '⚔️ ไปดูน้องโจมตี' : '🏡 กลับฟาร์ม', fn:() => { show('sMain'); refreshHeader(); renderMissions(); if (ciHits) openBattle(ciHits); } }]);
 }
 /* log n glasses at once (from the check-in); timestamps spaced MON_GAP back so the 15-min guard stays meaningful */
@@ -3960,7 +3977,7 @@ function monLogBatch(n){
 }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
-  brkTick(); ciAuto(); if (S && S.farm) mineUnlockTick();
+  brkTick(); ciAuto(); renderSta(); if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
@@ -4355,7 +4372,8 @@ function plotTap(z, o){
   }
   const c = cropOf(o), left = cropLeft(o);
   if (left > 0) return sheet(`${c.e} ${c.name} กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - c.sec*1000; }), {label:'ปิด', cls:'ghost'} ]);
-  return confirmDo(`เก็บเกี่ยว${c.name}?`, () => {
+  if (!staOk(1)) return;
+  return confirmDo(`เก็บเกี่ยว${c.name}? (💪 −1)`, () => { useSta(1);
     const n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; o.idle = Date.now(); bump('harvest'); gainExp(EXP.harvest); sfx('coin');
     save(); refreshHeader(); renderMats(); reward(`${MAT[c.prod]} +${n}\n⭐ Exp +${EXP.harvest}`);
   });
@@ -4505,6 +4523,7 @@ function toolHit(gc, gr){
     if (!o || o.type !== 'plot' || !o.done || o.plant) return;
     const c = CROPS[sowSeed]; if (!c) return;
     if (inv(c.seed) < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(gc, gr, 'เมล็ดหมด', '#c0392b'); } return; }
+    if (!staOk(1, gc, gr)) return; useSta(1);   // 💪
     S.inv[c.seed]--; o.plant = Date.now(); o.crop = sowSeed; o.idle = Date.now(); bump('sow'); if (sowSeed !== 'carrot') bump('plant_other');
     burst(gc, gr, TOOLS.sow.col, 8); sfx('pop'); buzz(10); floatText(gc, gr, `−1${c.e}`, '#2e7d32'); markDirty(z); renderMats(); renderSeedBar(); saveSoon(); return;
   }
@@ -4512,18 +4531,21 @@ function toolHit(gc, gr){
     const z = hitZone, mode = toolDrag && toolDrag.mode, lc = gc - z.cx*GRID, lr = gr - z.cy*GRID;   // one stroke = one kind of action
     const setMode = m => { if (toolDrag) toolDrag.mode = m; };
     if (t.k === 'clear' && (!mode || mode === 'till')){           // dig 1: grass → tilled plot (free, plant right away)
+      if (!staOk(1, gc, gr)) return; useSta(1);   // 💪
       setMode('till'); const o = addObj(z, 'plot', lc, lr, 1, 1, true); o.dug = 1; o.idle = Date.now();
       bump('till'); burst(gc, gr, TOOLS.shovel.col, 8); sfx('chop'); buzz(15); floatText(gc, gr, '🟫 แปลงผัก', '#7a5236'); saveSoon(); return;
     }
     if (t.k === 'obj' && (!mode || mode === 'pond')){             // dig 2: empty plot → pond (+1 soil); planted plots are protected
       const o = objById(z, t.o); if (!o || o.type !== 'plot' || !o.done) return;
       if (o.plant){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(gc, gr, 'มีผักปลูกอยู่', '#c0392b'); } return; }
+      if (!staOk(1, gc, gr)) return; useSta(1);   // 💪
       setMode('pond'); removeObj(z, o); t.k = 'water'; invAdd('soil', 1); bump('dig');
       burst(gc, gr, TOOLS.shovel.col, 8); sfx('chop'); buzz(15); floatText(gc, gr, '💧 +1🟤', '#2f6f8f'); markDirty(z); saveSoon(); return;
     }
     if (t.k === 'water' && (!mode || mode === 'fill')){           // fill: pond → grass (−1 soil)
       if (t.bridge){ floatText(gc, gr, 'รื้อสะพานก่อน', '#c0392b'); return; }
       if (inv('soil') < 1){ if (Date.now() - toolMsgAt > 2000){ toolMsgAt = Date.now(); floatText(gc, gr, 'ต้องใช้ 🟤 ดิน', '#c0392b'); } return; }
+      if (!staOk(1, gc, gr)) return; useSta(1);   // 💪
       setMode('fill'); S.inv.soil--; t.k = 'clear'; bump('fill'); burst(gc, gr, TOOLS.shovel.col, 8); sfx('chop'); buzz(15);
       floatText(gc, gr, '−1🟤', '#7a5236'); markDirty(z); saveSoon(); return;
     }
@@ -4532,6 +4554,7 @@ function toolHit(gc, gr){
   if (TOOLS[tool].harvest && t.k === 'obj'){                 // 🌾 sickle on a ripe plot = harvest (one stroke = cut OR harvest, by the first hit)
     if (toolDrag && toolDrag.mode === 'cut') return; const z = hitZone, o = objById(z, t.o);
     if (!o || o.type !== 'plot' || !o.done || !o.plant || cropLeft(o) > 0) return;
+    if (!staOk(1, gc, gr)) return; useSta(1);   // 💪
     if (toolDrag) toolDrag.mode = 'harvest';
     const c = cropOf(o), n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; o.idle = Date.now();
     bump('harvest'); bump('reap'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.sickle.col, 8); sfx('snip'); buzz(15);
@@ -4544,6 +4567,7 @@ function toolHit(gc, gr){
     if (Date.now() - toolMsgAt > 2500){ toolMsgAt = Date.now(); const need = TOOLS[toolFor(t.k)]; floatText(gc, gr, `ใช้ ${need.e}`, '#c0392b'); }
     return;
   }
+  if (!staOk(STA_RES[R.size], gc, gr)) return;             // 💪 need the full cost before swinging
   if (t.job) delete t.job;                                    // v0.8 timed jobs finish instantly with tools
   t.hp = (t.hp == null ? HITS[R.size] : t.hp) - ((tool === 'axe' || tool === 'hammer') && upLv(tool) >= 2 ? 2 : 1);   // ⚒ iron axe / hammer hit ×2
   burst(gc, gr, T.col, R.size === 'large' ? 10 : 6); sfx(T.snd); buzz(12);
@@ -4557,7 +4581,7 @@ function collectRes(t, z, R, gc, gr){
   const sd = seedDrop(R.size); if (sd){ invAdd(sd, 1); got.push(`+1${CROPS_BY_SEED[sd].e}🌱`); }
   if (eventOn() && (t.k === 'grass' || t.k === 'wild') && Math.random() < FLOWER_P){ invAdd('flower', 1); got.push('+1🌸'); bump('flowerGet'); }   // 🏮 v0.18
   t.k = 'clear'; delete t.hp; delete t.shake; markDirty(z);
-  bump('collect_'+R.size); bump('toolUse'); gainExp(SIZE_EXP[R.size]);
+  bump('collect_'+R.size); bump('toolUse'); gainExp(SIZE_EXP[R.size]); if (tool) useSta(STA_RES[R.size]);   // 💪 (pet / timed jobs stay free)
   floatText(gc, gr, got.join(' '), '#2e7d32'); saveSoon();
 }
 const CROPS_BY_SEED = Object.fromEntries(Object.values(CROPS).map(c => [c.seed, c]));
