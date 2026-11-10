@@ -120,13 +120,11 @@ const M = {
     const f = CY(g, .36, .12, C.steel, .7, .9, 0); f.rotation.z = Math.PI/2;
     g.rotation.z = -Math.PI/4;
   },
-  reap(g){                                   // 🌾 เคียว (sickle): wide crescent blade + wooden handle + wheat
+  reap(g){                                   // 🌾 เคียว (sickle): wide crescent blade + wooden handle (v0.16.1: no wheat)
     CY(g, .14, 1.1, C.oak, 0, -.55, 0); BALL(g, .16, .12, .16, C.trunk, 0, -1.12, 0);
     CY(g, .17, .14, C.steelD, 0, 0, 0);
     const b = TOR(g, .72, .17, C.steel, .72, .05, 0, Math.PI*1.08); b.scale.set(1, 1, .35);
     CO(g, .15, .3, C.steel, 1.44, -.08, 0).rotation.z = Math.PI;
-    for (let k=0;k<3;k++){ const a = .35 - k*.35, w = grp(g, -.75 + k*.18, .55, -.3); w.rotation.z = a;
-      CY(w, .04, .9, '#d9b54a', 0, .45, 0); for (let e=0;e<4;e++) for (const sd of [-1,1]) BALL(w, .06, .12, .06, '#f0cf6a', sd*.07, .82 + e*.13, 0).rotation.z = -sd*.4; }
     g.rotation.z = -Math.PI/6;
   },
   shovel(g){                                 // 🪏 พลั่ว

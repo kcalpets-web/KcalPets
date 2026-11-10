@@ -52,7 +52,7 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 .row>*{flex:1}
 /* ---------- header ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
-.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp) no-repeat;background-size:10.4em 6.5em;
+.ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.16.1) no-repeat;background-size:10.4em 6.5em;
   background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}                 /* clay icon atlas (8×5 cells), see tools/icons.html */
 #nav button b .ico{width:1.25em;height:1.25em;background-size:10em 6.25em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
@@ -429,7 +429,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.16.0';
+const APP_VER = '0.16.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1197,7 +1197,7 @@ new MutationObserver(ms => {
 }).observe(document.body, { childList:true, subtree:true, characterData:true });
 iconize(document.body);
 /* canvas: draw an atlas cell (tool cursor) — falls back to the emoji until the atlas is loaded */
-const icoImg = new Image(); icoImg.src = 'icons/atlas.webp';
+const icoImg = new Image(); icoImg.src = 'icons/atlas.webp?v=' + APP_VER;   // version query busts the phone cache when the atlas changes
 function drawIco(c, name, x, y, size, fallback){
   const i = ICO.indexOf(name);
   if (icoImg.complete && icoImg.naturalWidth && i >= 0) c.drawImage(icoImg, (i%8)*128, ((i/8)|0)*128, 128, 128, x - size/2, y - size/2, size, size);
