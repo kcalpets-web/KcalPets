@@ -509,7 +509,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.17.2';
+const APP_VER = '0.17.3';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -2106,6 +2106,7 @@ function frame(now){
   if (!cssW) resizeFarm();
   if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
   const time = now/1000, wall = Date.now();
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';   // v0.17.3: reset HUD state every frame (a stray save/translate can never stick)
   ctx.clearRect(0,0,cssW,cssH);
   cv.classList.toggle('see3d', !!use3D());
   if (inRoom && use3D()){                                     // inside a house — 3D room + HUD
@@ -3040,7 +3041,7 @@ const QUESTS = [
   { id:'mClaim',  name:'รับเหรียญจากภารกิจ',       nav:'tMission', need:1, goal:() => st('missionClaim'),
     text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 💗 30 + 🪙 100" — 💗 พลังใจใช้เลี้ยงน้อง ได้จากการดูแลสุขภาพจริงเท่านั้น ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
   { id:'petup',   name:'ใช้ 💗 อัปเลเวลน้อง',       hl:'pet',    need:1, goal:() => st('petUp'),
-    text:'แตะ {pet} → "💗 อัปเลเวล" — Lv.1→2 ใช้ 💗 30 • น้องยิ่งเลเวลสูงยิ่งช่วยงานฟาร์มได้ (Lv.3 ขุดหาของ, Lv.5 คู่หูตกปลา…) • ร่างใหม่ต้องทำภารกิจครบติดกันหลายวัน', reward:{coins:100} },
+    text:'แตะ {pet} → "💗 อัปเลเวล" — Lv.{plv}→{plv1} ใช้ 💗 {pcost} (ได้ 💗 จากภารกิจสุขภาพ) • น้องยิ่งเลเวลสูงยิ่งช่วยงานฟาร์มได้ (Lv.3 ขุดหาของ, Lv.5 คู่หูตกปลา…) • ร่างใหม่ต้องทำภารกิจครบติดกันหลายวัน', reward:{coins:100} },
   { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
     text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 💗 10 + 🪙 25 (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
@@ -3107,7 +3108,8 @@ function questMigrate(){
 }
 const qIndex = () => QUESTS.findIndex(q => !S.qDone.includes(q.id));
 const curQuest = () => { if (!S || !S.qDone) return null; const i = qIndex(); return i < 0 ? null : QUESTS[i]; };
-const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง');
+const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง')
+  .replace(/\{plv\}/g, S.pet ? S.pet.lv : 1).replace(/\{plv1\}/g, S.pet ? S.pet.lv + 1 : 2).replace(/\{pcost\}/g, S.pet ? needPetExp(S.pet.lv) : 30);
 
 function questTick(){
   brkTick(); if (S.pet && S.farm) petDailyFind();
@@ -3677,7 +3679,8 @@ function drawToolFx(time, dt){
   ctx.globalAlpha = 1;
   if (tool && toolDrag && toolDrag.x != null){                 // tool follows the finger, lifted above it so the finger never hides the tile
     ctx.save(); ctx.translate(toolDrag.x + 18, toolDrag.y - 44); ctx.rotate(Math.sin(time*18)*.45 - .3);
-    drawIco(ctx, TOOL_ICO[tool], 0, 0, 46, TOOLS[tool].e);   // 🌱 sow shows the chosen seed packet ctx.restore();
+    drawIco(ctx, TOOL_ICO[tool], 0, 0, 46, TOOLS[tool].e);   // 🌱 sow shows the chosen seed packet
+    ctx.restore();                                           // ⚠️ v0.17.3: must pair with save() or the HUD transform leaks
   }
 }
 /* remaining-hits pips over a medium/large item that has been hit */
