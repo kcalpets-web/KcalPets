@@ -331,31 +331,59 @@ export function start(){
      Look comes from index.html NPCS[id].look; live positions from NPC_LIVE [{id, x, y}] (global tile coords).
      Walk: yaw = atan2(dx, dz) of the frame-to-frame move, legs/arms swing with phase += distance·3.2
      ===================================================================== */
-  function npcModel(id){
-    const L = (typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].look) || {}, g = new THREE.Group(), parts = { legs:[], arms:[] };
-    const skin = L.skin || '#f2c9a0';
+  /* 🧑 one clay person for NPCs and the player (v0.20). look:
+       skin, hair, hairStyle(short|long|bun|spiky|bob|pony|none), shirt, pants, shoes, apron, vest,
+       hat(straw|band|gold|cap|hard), glasses, balloon, tool, outfit(sport|thai|carpenter) */
+  function personModel(L){
+    L = L || {}; const g = new THREE.Group(), parts = { legs:[], arms:[] }, skin = L.skin || '#f2c9a0';
+    let shirt = L.shirt || '#e8735a', pants = L.pants || '#5d6b84', shoes = L.shoes || '#4a3a30';
+    if (L.outfit === 'sport'){ shirt = '#ff6b4a'; pants = '#2d3e50'; }
+    if (L.outfit === 'thai'){ shirt = '#f4e4c1'; pants = '#8c2f39'; }
+    if (L.runShoes) shoes = '#ffffff';
+    const shorts = L.outfit === 'sport';
     for (const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.13, .62, 0); g.add(l);
-      CY(l, .085, .55, L.pants || '#5d6b84', 0, -.6, 0); BALL(l, .1, .07, .14, L.shoes || '#4a3a30', 0, -.6, .04); parts.legs.push(l); }
-    RB(g, .52, .62, .36, .16, L.shirt || '#e8735a', 0, .6, 0, true);                       // body
-    if (L.apron) RB(g, .4, .45, .05, .05, L.apron, 0, .62, .18);
+      if (shorts){ CY(l, .095, .25, pants, 0, -.25, 0); CY(l, .075, .32, skin, 0, -.57, 0); } else CY(l, .085, .55, pants, 0, -.6, 0);
+      BALL(l, .1, .07, .14, shoes, 0, -.6, .04); if (L.runShoes) BALL(l, .1, .02, .14, '#ff9f5a', 0, -.64, .04); parts.legs.push(l); }
+    if (L.outfit === 'thai') CY(g, .3, .62, '#8c2f39', 0, .02, 0);                         // sarong (pha nung) over the legs
+    RB(g, .52, .62, .36, .16, shirt, 0, .6, 0, true);                                    // body
+    if (L.outfit === 'sport') RB(g, .53, .08, .37, .03, '#ffffff', 0, .95, 0);
+    if (L.outfit === 'thai'){ const sb = RB(g, .12, .8, .4, .04, '#e0a92e', 0, .55, 0); sb.rotation.z = .6; }   // sabai sash
+    if (L.apron || L.outfit === 'carpenter') RB(g, .4, .45, .05, .05, L.apron || '#a8743f', 0, .62, .18);
     if (L.vest) RB(g, .54, .4, .38, .14, L.vest, 0, .8, 0);
     for (const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.33, 1.12, 0); g.add(a);
-      CY(a, .07, .45, L.shirt || '#e8735a', 0, -.45, 0); BALL(a, .08, .08, .08, skin, 0, -.48, 0); parts.arms.push(a); }
+      CY(a, .07, .45, shirt, 0, -.45, 0); BALL(a, .08, .08, .08, skin, 0, -.48, 0); parts.arms.push(a); }
     const h = new THREE.Group(); h.position.y = 1.48; g.add(h); parts.head = h;
     BALL(h, .3, .3, .28, skin, 0, 0, 0, true);
     for (const s of [-1,1]){ BALL(h, .035, .045, .02, '#2b1a0e', s*.1, .03, .26); BALL(h, .05, .03, .015, '#ff9fb0', s*.17, -.05, .24); }
     BALL(h, .05, .02, .02, '#c0584a', 0, -.1, .26);                                          // smile
-    if (L.hair) BALL(h, .31, .2, .29, L.hair, 0, .12, -.03);
-    if (L.bun) BALL(h, .12, .12, .12, L.hair, 0, .28, -.15);
+    const hc = L.hair || '#3b2a20', hs = L.hairStyle || (L.bun ? 'bun' : 'short');
+    if (hs !== 'none') BALL(h, .31, .2, .29, hc, 0, .12, -.03);
+    if (hs === 'bun') BALL(h, .12, .12, .12, hc, 0, .28, -.15);
+    if (hs === 'long') BALL(h, .3, .4, .14, hc, 0, -.12, -.2);
+    if (hs === 'bob'){ BALL(h, .34, .24, .3, hc, 0, .02, -.04); }
+    if (hs === 'pony'){ BALL(h, .09, .25, .09, hc, 0, -.05, -.32).rotation.x = .5; }
+    if (hs === 'spiky') for (let k=0;k<5;k++){ const a = (k-2)*.4; const c = CO(h, .08, .2, hc, Math.sin(a)*.18, .3, -.02 - Math.cos(a)*.05); c.rotation.z = -a*.6; }
+    if (L.glasses){ for (const s of [-1,1]){ const r = add(h, new THREE.TorusGeometry(.065, .015, 6, 16), mat('#2b2b2b'), s*.1, .03, .27); }
+      RB(h, .06, .015, .015, .005, '#2b2b2b', 0, .03, .27); }
     switch (L.hat){
       case 'straw': CY(h, .5, .04, '#e9c46a', 0, .2, 0); CO(h, .25, .22, '#e9c46a', 0, .22, 0); CY(h, .26, .05, '#e8735a', 0, .22, 0); break;
       case 'band':  CY(h, .31, .07, '#e5483e', 0, .1, 0); CY(g, .015, .3, '#d9d9d9', .05, 1.05, .2); BALL(g, .05, .03, .05, '#f6c445', .05, .9, .21); break;   // headband + whistle
-      case 'cap':   BALL(h, .31, .14, .3, '#4f7cac', 0, .17, 0); RB(h, .26, .03, .2, .02, '#4f7cac', 0, .16, .3); break;
+      case 'redband': CY(h, .31, .07, '#e5483e', 0, .1, 0); break;
+      case 'gold':  CY(h, .31, .07, '#f6c445', 0, .1, 0); BALL(h, .05, .05, .03, '#fff3b0', 0, .14, .3); break;
+      case 'cap':   BALL(h, .31, .14, .3, L.capCol || '#4f7cac', 0, .17, 0); RB(h, .26, .03, .2, .02, L.capCol || '#4f7cac', 0, .16, .3); break;
       case 'hard':  BALL(h, .33, .2, .32, '#f6c445', 0, .16, 0); CY(h, .36, .04, '#f6c445', 0, .14, 0); BALL(h, .07, .06, .04, '#fff6c0', 0, .26, .3); break;
     }
-    if (L.balloon){ CY(g, .008, 1.1, '#ffffff', .4, .75, 0); BALL(g, .2, .25, .2, L.balloon, .4, 2.0, 0, true); }
+    if (L.balloon){ CY(g, .008, 1.1, '#ffffff', .4, .75, 0); BALL(g, .2, .25, .2, L.balloon === true ? '#ff6b81' : L.balloon, .4, 2.0, 0, true); }
     if (L.tool === 'saw') { const t = RB(g, .06, .5, .02, .01, '#c9d1d8', -.42, .45, .1); t.rotation.z = .3; }
     g.userData.parts = parts; g.scale.setScalar(.95); return g;
+  }
+  const npcModel = id => personModel((typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].look) || {});
+  /* emote pose on a person (arms/legs/body), e = 'wave' | 'cheer' | 'squat', k = 0..1 progress */
+  function poseEmote(m, e, t){
+    const P2 = m.userData.parts;
+    if (e === 'wave'){ P2.arms[1].rotation.z = 2.4 + Math.sin(t*14)*.35; P2.arms[1].rotation.x = 0; }
+    else if (e === 'cheer'){ P2.arms[0].rotation.z = -2.6; P2.arms[1].rotation.z = 2.6; m.position.y = Math.abs(Math.sin(t*8))*.25; }
+    else if (e === 'squat'){ const k = (Math.sin(t*4) + 1)/2; m.position.y = -k*.35; P2.legs.forEach(l => l.rotation.x = -k*.9); P2.arms.forEach(a => { a.rotation.x = -1.4; a.rotation.z = 0; }); }
   }
   const npcG = new THREE.Group(), npcMap = new Map(); scene.add(npcG);
   function syncNPCs(time){
@@ -371,6 +399,22 @@ export function start(){
       P2.arms.forEach((a, i) => a.rotation.x = mv ? Math.sin(ph + (1-i)*Math.PI)*.45 : Math.sin(time*1.5 + i)*.05);
       P2.head.rotation.y = mv ? 0 : Math.sin(time*.7 + n.x)*.35;
     }
+  }
+  /* 🧑 player avatar (index.html AV = {x, y, emote, emoteEnd, pep}; S.avatar = look). Rebuilt only when the look changes. */
+  let avM = null, avKey = '', avLp = [0, 0], avPh = 0;
+  function syncAvatar(time){
+    const A = typeof AV !== 'undefined' ? AV : null, look = A && typeof avatarLook === 'function' ? avatarLook() : null;
+    if (!A || !look){ if (avM){ scene.remove(avM); avM = null; } return; }
+    const key = JSON.stringify(look);
+    if (!avM || key !== avKey){ if (avM) scene.remove(avM); avM = personModel(look); avKey = key; scene.add(avM); avLp = [A.x*2, A.y*2]; }
+    const x = A.x*2, z = A.y*2, dx = x - avLp[0], dz = z - avLp[1], d = Math.hypot(dx, dz), P2 = avM.userData.parts;
+    if (d > .002 && d < 2){ avM.rotation.y = Math.atan2(dx, dz); avPh += d*3.2; }
+    avLp = [x, z]; const mv = d > .002;
+    avM.position.set(x, mv ? Math.abs(Math.sin(avPh))*(A.pep ? .09 : .05) : 0, z);
+    P2.legs.forEach((l, i) => { l.rotation.x = mv ? Math.sin(avPh + i*Math.PI)*.55 : 0; });
+    P2.arms.forEach((a, i) => { a.rotation.z = 0; a.rotation.x = mv ? Math.sin(avPh + (1-i)*Math.PI)*(A.pep ? .7 : .45) : Math.sin(time*1.5 + i)*.05; });
+    P2.head.rotation.y = mv ? 0 : Math.sin(time*.6)*.3;
+    if (A.emote && performance.now() < A.emoteEnd){ if (A.faceYaw != null) avM.rotation.y = A.faceYaw; poseEmote(avM, A.emote, time); }
   }
   let petPhase = 0, lpx = 0, lpz = 0, petYaw = 0;
   function updatePet(time, src, sc3){
@@ -530,8 +574,9 @@ export function start(){
      Builds the REAL in-game model on a tiny grass/floor pad, same lights + tone mapping,
      camera = 3/4 view (dir (0.55, 0.6, 1)), framed by the bounding sphere:  dist = r / sin(fov/2) · 0.92 */
   let thumbR = null;
-  function thumb(kind, id){
-    if (!thumbR){ thumbR = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true }); thumbR.setSize(128, 128); thumbR.setPixelRatio(1);
+  function thumb(kind, id, yaw, size){
+    size = size || 128; if (thumbR && thumbR.domElement.width !== size) thumbR.setSize(size, size);
+    if (!thumbR){ thumbR = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true }); thumbR.setPixelRatio(1); thumbR.setSize(size, size);
       thumbR.setClearColor(0, 0); thumbR.toneMapping = THREE.ACESFilmicToneMapping; thumbR.toneMappingExposure = 1.05; thumbR.outputColorSpace = THREE.SRGBColorSpace; }
     const sc = new THREE.Scene(), g = new THREE.Group(); sc.add(g);
     sc.add(new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15)); const sl = new THREE.DirectionalLight(0xfff1dc, 2.3); sl.position.set(3, 6, 4); sc.add(sl);
@@ -541,10 +586,11 @@ export function start(){
     else if (kind === 'path'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'path', p:id }, 1, 0)); }
     else if (kind === 'bridge'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'water', bridge:1 }, 7, 1, true)); }
     else if (kind === 'npc'){ CY(g, .7, .1, C.grass, 0, -.1, 0); const m = npcModel(id); g.add(m); }
+    else if (kind === 'avatar'){ const m = personModel(id); m.rotation.y = yaw || 0; g.add(m); }   // id = look object
     else if (kind === 'furn'){ const f = FURN[id]; RB(g, f.w*2 + .2, .12, f.h*2 + .2, .06, '#e6d2b0', 0, -.12, 0); g.add(furnModel(id, f.w*2, f.h*2)); }
     curSway = keep; fishes = keepFish;
     const cam = new THREE.PerspectiveCamera(30, 1, .1, 200), sph = new THREE.Box3().setFromObject(g).getBoundingSphere(new THREE.Sphere());
-    const dir = (kind === 'npc' ? new THREE.Vector3(.3, .22, 1) : new THREE.Vector3(.55, .6, 1)).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
+    const dir = (kind === 'npc' || kind === 'avatar' ? new THREE.Vector3(.3, .22, 1) : new THREE.Vector3(.55, .6, 1)).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
     cam.position.copy(sph.center).addScaledVector(dir, dist); cam.lookAt(sph.center);
     thumbR.render(sc, cam); return thumbR.domElement.toDataURL('image/png');
   }
@@ -586,7 +632,7 @@ export function start(){
       for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
         if (u >= 1 || !m.parent){ m.scale.set(1,1,1); hits.splice(k, 2); continue; }
         const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
-      inRoomNow = false; updatePet(time, pet, scene); syncNPCs(time);
+      inRoomNow = false; updatePet(time, pet, scene); syncNPCs(time); syncAvatar(time);
       const k = NIGHT || 0;                                     // day ↔ night from the real clock (same NIGHT as 2D)
       /* clouds live only BEHIND the island (away from the camera, which sits toward +x+z):
          pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */

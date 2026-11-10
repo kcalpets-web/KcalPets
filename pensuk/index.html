@@ -115,6 +115,15 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #modal.on{display:flex}
 #mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
+.avEd{}#avEd{position:fixed;inset:0;z-index:70;background:linear-gradient(#cfe6f3,#f7f2e8);flex-direction:column;padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 10px)}
+#avEd .avtop{display:flex;justify-content:space-between;align-items:center;font-size:18px;min-height:44px}
+#avEd .avprev{display:flex;align-items:center;justify-content:center;gap:10px}#avEd .avprev .btn{min-width:48px;min-height:48px}
+#avEd .avopts{flex:1;overflow-y:auto;background:#ffffffcc;border-radius:18px;padding:10px 12px;margin:8px 0}#avEd .avopts>b{display:block;margin:8px 0 4px;font-size:14px}
+#avEd .avrow{display:flex;gap:8px;overflow-x:auto;padding:2px}#avEd .avrow.wrap{flex-wrap:wrap}
+#avEd .sw{flex:none;width:40px;height:40px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px #0003}#avEd .sw.on{box-shadow:0 0 0 3px var(--pri)}
+#avEd .chip{flex:none;min-height:40px;padding:6px 12px;border-radius:14px;border:2px solid var(--line);background:#fff;font:inherit;font-size:14px;color:var(--ink);display:flex;flex-direction:column;align-items:center}
+#avEd .chip.on{border-color:var(--pri);background:#fff1df}#avEd .chip.lockc{opacity:.55}#avEd .chip small{font-size:11px;color:var(--sub)}
+#avEd .avbot{display:flex;gap:10px}#avEd .avbot .btn{flex:1;min-height:52px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}   /* 🃏 v0.17.2 card grid: 2 cols on phones, 3+ on tablets */
 .gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 6px;font:inherit;color:var(--ink);text-align:center;box-shadow:0 2px 6px #0000000d;min-height:44px}
 .gcard b{font-size:14px;line-height:1.25}.gcard small{font-size:11.5px;color:var(--sub);line-height:1.35}
@@ -201,9 +210,10 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 </section>
 
 <!-- ===== MAIN (farm / missions / shop / bag) ===== -->
+<div id="avEd" style="display:none"></div>
 <section class="screen" id="sMain">
   <div class="top">
-    <div><b id="hName"></b><div class="muted" id="hPet"></div></div>
+    <div style="display:flex;align-items:center;gap:8px"><img id="hAva" alt="" style="width:40px;height:40px;border-radius:50%;background:#fff4dc;border:2px solid var(--line);display:none" onclick="openAvatarEd('wardrobe')"><div><b id="hName"></b><div class="muted" id="hPet"></div></div></div>
     <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div class="coin">🪙 <span id="hCoin">0</span></div></div>
   </div>
 
@@ -396,7 +406,7 @@ function sheet(text, buttons){
   $('modal').classList.add('on');
 }
 const confirmDo = (text, fn) => sheet(text, [{label:'ยืนยัน',cls:'ok',fn},{label:'ยกเลิก',cls:'ghost'}]);
-const reward = text => sheet('🎁 ได้รับรางวัล\n\n'+text, [{label:'ตกลง',cls:'ok'}]);
+const reward = text => { sheet('🎁 ได้รับรางวัล\n\n'+text, [{label:'ตกลง',cls:'ok'}]); if (typeof avEmote === 'function') avEmote('cheer', 1.6); };   // 🧑 avatar cheers
 
 /* ---------------- Screen router ---------------- */
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }
@@ -512,7 +522,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.19.0';
+const APP_VER = '0.20.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1349,6 +1359,11 @@ function eventSheet(){
         if (e.candles < CANDLE_COST) return detailSheet('b:'+id, `${it.name}\n${it.desc}\n\nต้องใช้ 🕯 ${CANDLE_COST} (มี ${e.candles})\nทำภารกิจสุขภาพครบ 3 ข้อในวันอีเวนต์ = 🕯 1 เล่ม`, '', [{ label:'กลับ', cls:'ghost', fn:eventSheet }]);
         confirmDo(`แลก ${it.name} ด้วย 🕯 ${CANDLE_COST}?`, () => { e.candles -= CANDLE_COST; e.used += CANDLE_COST; e.got[id] = 1; S.store = S.store || {}; S.store[id] = (S.store[id]||0) + 1;
           sfx('done'); save(); renderShop(); reward(`${it.name} +1 🎉\nไปที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน เพื่อวาง`); }); } }; }), 64));
+  { const got = !!(S.wardrobe||{}).thai;                       // 🌺 v0.20: Thai outfit for the avatar
+    w.appendChild(cardGrid([{ ref:'none', fb:'🌺', name:'ชุดไทย (ตัวละคร)', sub:'ชุดพิเศษสำหรับตัวละครของคุณ', price: got ? 'ได้แล้ว ✔' : `🕯 ${CANDLE_COST}`, dim:got, dot:!got && e.candles < CANDLE_COST,
+      on:() => { if (got) return; closeModal(); if (e.candles < CANDLE_COST) return sheet(`ต้องใช้ 🕯 ${CANDLE_COST} (มี ${e.candles})`, [{ label:'กลับ', cls:'ghost', fn:eventSheet }]);
+        confirmDo(`แลก 🌺 ชุดไทย ด้วย 🕯 ${CANDLE_COST}?`, () => { e.candles -= CANDLE_COST; e.used += CANDLE_COST; S.wardrobe = S.wardrobe || {}; S.wardrobe.thai = 1; sfx('done'); save();
+          reward('🌺 ชุดไทย +1\nใส่ได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า › ชุดพิเศษ'); }); } }], 64)); }
   sec('📜 ภารกิจอีเวนต์');
   w.appendChild(cardGrid(EV_TASKS.map(t => { const done = t.goal(), claimed = e.tasks[t.id];
     return { ref: t.id === 'float1' ? 'm:krathong' : 'candle', name:t.name, sub:'รางวัล ' + rewardText(t.reward).replace(/\n/g, ' '), dim:!!claimed,
@@ -1401,7 +1416,7 @@ const EV_TASKS = [ { id:'float1',  name:'ลอยกระทงครั้ง
 const floatsToday = () => evState().float[todayKey()] || 0;
 const canFloat = () => moonNight() || floatsToday() < FLOAT_PER_DAY;
 let KRATHONGS = [], krId = 0;                                  // floating right now (not saved): {id, gc, gr, t0}; r3d.js draws them
-const evClaimable = () => eventOn() && (EV_TASKS.some(t => t.goal() && !evState().tasks[t.id]) || (evState().candles >= CANDLE_COST && EV_DECOR.some(d => !evState().got[d])));
+const evClaimable = () => eventOn() && (EV_TASKS.some(t => t.goal() && !evState().tasks[t.id]) || (evState().candles >= CANDLE_COST && (EV_DECOR.some(d => !evState().got[d]) || !(S.wardrobe||{}).thai)));
 
 /* =====================================================================
    👥 TOWNSFOLK (v0.19) — 5 NPCs visit the farm; each has ONE request per day (deterministic from the date),
@@ -1478,6 +1493,7 @@ function npcComplete(id){
 }
 function npcTalk(id){
   const n = NPCS[id], s = npcState(id); bump('npcTalk'); if (id === 'bua') bump('talkBua');
+  { const live = NPC_LIVE.find(x => x.id === id); if (live) avEmote('wave', 2, live.x, live.y); }   // 🧑 wave at them
   if (!npcUnlocked(id)) return detailSheet('npc:'+id, `${n.name} — ${n.role}\n🔒 จะมาเยี่ยมเมื่อถึง Lv.${n.lv}${n.needTxt ? ' และ' + n.needTxt : ''}`, '', OK);
   const q = npcReq(id), h = npcHearts(id), ready = reqReady(id);
   detailSheet('npc:'+id, `${n.name} — ${n.role}\n${'❤️'.repeat(h)}${'🤍'.repeat(5-h)}  ความสนิท ${h}/5\n\n"${n.lines[s.done ? 2 : (dayRand(id, 9) < .5 ? 0 : 1)]}"`, '', [{ label:'ปิด', cls:'ghost' }]);
@@ -1532,6 +1548,111 @@ function npcAt(sx, sy){
   for (const n of NPC_LIVE){ const [x, y] = P(n.x, n.y, TH*1.0), [mx, my] = P(n.x, n.y, TH*2.0);
     if (Math.hypot(sx - x, sy - y) < Math.max(32, TW*.35) || Math.hypot(sx - mx, sy - my) < 22) return n.id; }
   return null;
+}
+
+/* =====================================================================
+   🧑 PLAYER AVATAR (v0.20) — S.avatar = { skin, hair, hairCol, shirt, pants, acc, wear:{head, body, hand, feet} }
+   No body-shape/weight options on purpose. Outfits are earned by playing (never bought).
+   Farm: AV walks near the pet, goes where you tap (tap empty ground/path with no tool),
+   heads toward tool work, waves at NPCs, cheers on rewards, squats after coach challenges.
+   ===================================================================== */
+const AV_SKIN  = ['#f9dcc4', '#f2c9a0', '#e0ac80', '#c68a5c', '#9c6640', '#6e4428'];
+const AV_HAIRC = ['#2b1a0e', '#5a3a2a', '#8a5a3a', '#c9a06a', '#d9d3c8', '#c0584a'];
+const AV_SHIRT = ['#e8735a', '#3fa7d6', '#6dbb5d', '#f6c445', '#b388eb', '#ff8fb1', '#ffffff', '#4a4a52'];
+const AV_PANTS = ['#5d6b84', '#2d3e50', '#7a5a3a', '#4a4a52', '#8a9a5b', '#c9a06a'];
+const AV_HAIRS = [['short','สั้น'], ['spiky','ตั้ง'], ['bob','บ๊อบ'], ['long','ยาว'], ['pony','หางม้า'], ['bun','มวย'], ['none','เกรียน']];
+const AV_ACC   = [['', 'ไม่มี'], ['glasses', '👓 แว่น'], ['cap', '🧢 หมวกแก๊ป']];
+const WARDROBE = [
+  { id:'runShoes',  slot:'feet', name:'👟 รองเท้าวิ่ง',          how:'ทำภารกิจครบ 3 ข้อติดกัน 3 วัน', ok:() => bestStreak() >= 3 },
+  { id:'sport',     slot:'body', name:'🎽 ชุดกีฬา',             how:'ทำภารกิจครบติดกัน 7 วัน',      ok:() => bestStreak() >= 7 },
+  { id:'gold',      slot:'head', name:'🥇 ผ้าคาดหัวทองคำ',       how:'ทำภารกิจครบติดกัน 30 วัน',     ok:() => bestStreak() >= 30 },
+  { id:'straw',     slot:'head', name:'👒 หมวกสาน',             how:'สนิทกับป้าบัว ❤️3',            ok:() => npcHearts('bua') >= 3 },
+  { id:'redband',   slot:'head', name:'🔴 ผ้าคาดหัวแดง',         how:'สนิทกับโค้ชฟิต ❤️3',           ok:() => npcHearts('coach') >= 3 },
+  { id:'carpenter', slot:'body', name:'🪚 ผ้ากันเปื้อนช่างไม้',    how:'สนิทกับลุงไม้ ❤️3',            ok:() => npcHearts('mai') >= 3 },
+  { id:'balloon',   slot:'hand', name:'🎈 ลูกโป่ง',             how:'สนิทกับน้องขิง ❤️3',           ok:() => npcHearts('khing') >= 3 },
+  { id:'thai',      slot:'body', name:'🌺 ชุดไทย',              how:'อีเวนต์ลอยกระทง: แลกด้วย 🕯 3', ok:() => !!(S.wardrobe||{}).thai } ];
+const SLOT_TH = { head:'หัว', body:'ชุด', hand:'ถือ', feet:'เท้า' };
+function lookOf(a){
+  if (!a) return null; const w = a.wear || {};
+  const L = { skin:a.skin, hair:a.hairCol, hairStyle:a.hair, shirt:a.shirt, pants:a.pants, glasses:a.acc === 'glasses', hat:a.acc === 'cap' ? 'cap' : null, capCol:'#e8735a' };
+  if (w.head) L.hat = w.head; if (w.body) L.outfit = w.body; if (w.hand === 'balloon') L.balloon = true; if (w.feet === 'runShoes') L.runShoes = true;
+  return L;
+}
+const avatarLook = () => S && S.avatar ? lookOf(S.avatar) : null;          // read by r3d.js
+const pick1 = a => a[(Math.random()*a.length)|0];
+const randomAvatar = () => ({ skin:pick1(AV_SKIN), hair:pick1(AV_HAIRS)[0], hairCol:pick1(AV_HAIRC), shirt:pick1(AV_SHIRT), pants:pick1(AV_PANTS), acc:pick1(AV_ACC)[0], wear:{} });
+let AV = null;                                                // live avatar in the farm (not saved)
+let avToolAt = null;                                         // [gc, gr, time] of the last tool hit
+function avEmote(e, sec, tx, ty){
+  if (!AV) return; AV.emote = e; AV.emoteEnd = performance.now() + sec*1000;
+  AV.faceYaw = tx != null ? Math.atan2((tx - AV.x)*2, (ty - AV.y)*2) : null;
+}
+/* 0.9 tiles/s (1.3 on a day all 3 missions are done) • no path-finding: stops when the next step is blocked */
+function avTick(dt){
+  if (!S || !S.avatar || !S.farm){ AV = null; return; }
+  if (!AV || !walkAt(AV.x, AV.y)){ const p = npcSpot(pet.x, pet.y, 2) || npcSpot(pet.x, pet.y, 5); if (!p) return; AV = { x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 }; }
+  AV.pep = !!(S.bonusClaimed && S.streakDate === todayKey());
+  if (AV.emote && performance.now() < AV.emoteEnd) return;      // stand still while emoting
+  AV.emote = null;
+  if (!AV.manual && avToolAt && performance.now() - avToolAt[2] < 1500 && Math.hypot(avToolAt[0] + .5 - AV.x, avToolAt[1] + .5 - AV.y) > 1.6){
+    const p = npcSpot(avToolAt[0] + .5, avToolAt[1] + .5, 1.5); if (p){ AV.tx = p[0]; AV.ty = p[1]; AV.wait = 0; } }
+  if (AV.wait > 0){ AV.wait -= dt; return; }
+  const dx = AV.tx - AV.x, dy = AV.ty - AV.y, d = Math.hypot(dx, dy);
+  if (d < .05){
+    AV.manual = false; AV.wait = 2 + Math.random()*4;
+    const far = Math.hypot(pet.x - AV.x, pet.y - AV.y) > 3, p = far ? npcSpot(pet.x, pet.y, 1.5) : npcSpot(AV.x, AV.y, 2);
+    if (p && pathClear(AV.x, AV.y, p[0], p[1])){ AV.tx = p[0]; AV.ty = p[1]; }
+    return;
+  }
+  const step = Math.min(d, (AV.pep ? 1.3 : .9)*dt), nx = AV.x + dx/d*step, ny = AV.y + dy/d*step;
+  if (!walkAt(nx, ny)){ AV.tx = AV.x; AV.ty = AV.y; AV.manual = false; return; }
+  AV.x = nx; AV.y = ny;
+}
+/* header portrait: head crop of a 128 px avatar thumbnail, cached by look */
+let avHeadKey = '';
+function updateAvaHead(){
+  const im = $('hAva'); if (!im) return;
+  if (!S || !S.avatar || !R3D || !R3D.thumb){ im.style.display = 'none'; return; }
+  const key = JSON.stringify(S.avatar); if (key === avHeadKey) return; avHeadKey = key;
+  const src = new Image(); src.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 72; const x = c.getContext('2d');
+    x.drawImage(src, 34, 6, 60, 60, 0, 0, 72, 72); im.src = c.toDataURL(); im.style.display = ''; };
+  src.src = R3D.thumb('avatar', lookOf(S.avatar), .25);
+}
+/* ---- 🧑 creator / 👕 wardrobe (same screen) ---- */
+let avDraft = null, avYaw = .35, avMode = 'create';
+function openAvatarEd(mode){
+  avMode = mode || 'create'; avDraft = JSON.parse(JSON.stringify(S.avatar || randomAvatar())); avDraft.wear = avDraft.wear || {}; avYaw = .35;
+  $('avEd').style.display = 'flex'; renderAvatarEd();
+}
+function renderAvatarEd(){
+  const E = $('avEd'), d = avDraft;
+  const sw = (key, list) => `<div class="avrow">${list.map(c => `<button class="sw${d[key] === c ? ' on' : ''}" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`;
+  const chips = (key, list) => `<div class="avrow">${list.map(([v, n]) => `<button class="chip${(d[key]||'') === v ? ' on' : ''}" data-k="${key}" data-v="${v}">${n}</button>`).join('')}</div>`;
+  const wear = WARDROBE.map(w => { const ok = w.ok(), on = d.wear[w.slot] === w.id;
+    return `<button class="chip${on ? ' on' : ''}${ok ? '' : ' lockc'}" data-w="${w.id}" ${ok ? '' : 'disabled'}>${w.name}${ok ? '' : `<small>🔒 ${w.how}</small>`}</button>`; }).join('');
+  E.innerHTML = `<div class="avtop"><b>${avMode === 'create' ? '🧑 สร้างตัวละครของคุณ' : '👕 ตู้เสื้อผ้า'}</b>${avMode === 'create' ? '' : '<button class="btn ghost" id="avX">ปิด</button>'}</div>
+    <div class="avprev"><button class="btn ghost" id="avL">◀</button><div id="avImg"></div><button class="btn ghost" id="avR">▶</button></div>
+    <div class="avopts">
+      <b>สีผิว</b>${sw('skin', AV_SKIN)}<b>ทรงผม</b>${chips('hair', AV_HAIRS)}<b>สีผม</b>${sw('hairCol', AV_HAIRC)}
+      <b>สีเสื้อ</b>${sw('shirt', AV_SHIRT)}<b>สีกางเกง</b>${sw('pants', AV_PANTS)}<b>ของประดับ</b>${chips('acc', AV_ACC)}
+      <b>👕 ชุดพิเศษ (ได้จากการเล่น — แตะซ้ำเพื่อถอด)</b><div class="avrow wrap">${wear}</div>
+      <div class="muted">ตัวละครไม่มีตัวเลือกรูปร่าง/น้ำหนัก — ทุกคนแข็งแรงได้ในแบบของตัวเอง 💪</div>
+    </div>
+    <div class="avbot"><button class="btn ghost" id="avRnd">🎲 สุ่ม</button><button class="btn ok" id="avOk">บันทึก</button></div>`;
+  const img = $('avImg');
+  if (R3D && R3D.thumb){ const i = new Image(); i.src = R3D.thumb('avatar', lookOf(d), avYaw, 256); i.style.cssText = 'width:200px;height:200px'; img.appendChild(i); }
+  else img.innerHTML = '<span style="font-size:110px">🧑</span>';
+  E.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { d[b.dataset.k] = b.dataset.v; sfx('pop'); renderAvatarEd(); });
+  E.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { const w = WARDROBE.find(x => x.id === b.dataset.w); d.wear[w.slot] = d.wear[w.slot] === w.id ? null : w.id; sfx('pop'); renderAvatarEd(); });
+  $('avL').onclick = () => { avYaw -= .6; renderAvatarEd(); }; $('avR').onclick = () => { avYaw += .6; renderAvatarEd(); };
+  $('avRnd').onclick = () => { const w = d.wear; avDraft = randomAvatar(); avDraft.wear = w; renderAvatarEd(); };
+  if ($('avX')) $('avX').onclick = () => { $('avEd').style.display = 'none'; };
+  $('avOk').onclick = () => {
+    const first = !S.avatar, changed = JSON.stringify(S.avatar) !== JSON.stringify(avDraft);
+    S.avatar = avDraft; if (first) bump('avatarMade'); else if (changed) bump('avWear');
+    $('avEd').style.display = 'none'; save(); updateAvaHead(); refreshHeader(); sfx('done'); if ($('tBag').classList.contains('on')) renderBag();
+    if (first) reward('🧑 ตัวละครของคุณพร้อมแล้ว!\nแตะพื้นว่างในฟาร์มเพื่อเดินไปตรงนั้น\nแต่งตัวใหม่ได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า\n\n💪 ทำภารกิจครบติดกันหลายวัน = ได้ชุดพิเศษ');
+  };
 }
 
 /* ---- natural resources: size class decides the collect cooldown ---- */
@@ -2378,7 +2499,7 @@ function frame(now){
       else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
       else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
     }
-    npcTick(dt/1000); drawNpcMarks(time);                   // 👥 v0.19
+    npcTick(dt/1000); avTick(dt/1000); drawNpcMarks(time);  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -2750,6 +2871,9 @@ function tapTile(gc, gr){
       [{ label:`ใช้ ${T.e} ${T.name}`, cls:'ok', fn:() => { $('toolBar').style.display = 'flex'; $('zoneBar').style.display = 'none'; pickTool(tid); } }, {label:'ปิด', cls:'ghost'}]);
   }
   if (t.k==='obj') return tapObj(z, objById(z, t.o));
+  if ((t.k === 'path' || t.k === 'clear') && S.avatar && AV){    // 🧑 v0.20 tap-to-move (long-press a path still removes it)
+    AV.tx = gc + .5; AV.ty = gr + .5; AV.manual = true; AV.wait = 0; AV.emote = null; bump('avTap');
+    burst(gc, gr, ['#ffffff', '#ffd166'], 6); return; }
   if (t.k==='path') return sheet(`${PATHS[t.p].name}\nน้องเดินบนทางเดินได้ และหญ้าจะไม่งอกทับ\n💡 กดค้างเพื่อรื้อ (คืนเงิน)`, OK);
   if (t.k==='clear') return sheet('🌱 พื้นที่โล่ง\nเลือกสิ่งปลูกสร้างและของตกแต่งได้ที่ ร้านค้า › ฟาร์ม',
     [{label:'ไปที่ ร้านค้า › ฟาร์ม', cls:'ok', fn:() => openShop('farm')}, {label:'ปิด', cls:'ghost'}]);
@@ -3292,6 +3416,12 @@ const QUESTS = [
     text:'ทำคำขอของชาวเมืองคนไหนก็ได้ 1 อย่าง (ส่งของ/ทำกิจกรรม) — มีคำขอใหม่ทุกวัน ทำแล้วสนิทขึ้น ❤️ ได้สิทธิพิเศษ • ! เปลี่ยนเป็น ✔ สีเขียวเมื่อพร้อมส่ง', reward:{coins:200} },
   { id:'npcCoach',name:'ชาเลนจ์กับโค้ชฟิต',          need:1, goal:() => st('coachDone'),
     text:'(ถึง Lv.3 โค้ชจะมาเยี่ยม) แตะโค้ชฟิต → "เริ่มกับโค้ช" → ขยับตัวจนครบเป้า → ได้ 💗 พลังใจ', reward:{coins:100} },
+  { id:'avMake',  name:'สร้างตัวละครของคุณ',        need:1, goal:() => S.avatar ? 1 : 0,
+    text:'เลือกสีผิว ทรงผม สีเสื้อ-กางเกง ของประดับ แล้วกดบันทึก (เปิดได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า หรือแตะรูปหน้าบนแถบด้านบน)', reward:{coins:100} },
+  { id:'avWalk',  name:'แตะพื้นให้ตัวละครเดิน',      need:1, goal:() => st('avTap'),
+    text:'ตอนไม่ได้ถือเครื่องมือ แตะพื้นหญ้าว่างหรือทางเดิน — ตัวละครจะเดินไปตรงนั้น (กดค้างที่ทางเดินยังรื้อได้เหมือนเดิม)', reward:{coins:100} },
+  { id:'avWear',  name:'แต่งตัวที่ตู้เสื้อผ้า',          nav:'tBag', need:1, goal:() => st('avWear'),
+    text:'🎒 กระเป๋า › 👕 ตู้เสื้อผ้า → เปลี่ยนทรงผม สีเสื้อ หรือของประดับ แล้วบันทึก • ชุดพิเศษได้จากการทำภารกิจครบติดกันและความสนิทกับชาวเมือง', reward:{coins:100} },
   { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
     text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 💗 10 + 🪙 25 (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
@@ -3363,6 +3493,7 @@ const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง')
 
 function questTick(){
   brkTick();
+  if (S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   $('evFab').style.display = eventOn() && !tool ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
@@ -3590,7 +3721,8 @@ function renderBag(){
   const en = document.createElement('button'); en.className = 'btn ghost'; en.style.display = evTest() ? '' : 'none';
   en.textContent = store.get('pensuk_evnight') === true ? '🌕 ทดลองคืนวันเพ็ญ: เปิดอยู่ (แตะเพื่อปิด)' : '🌕 ทดลองคืนวันเพ็ญ (บังคับกลางคืน)';
   en.onclick = () => { store.set('pensuk_evnight', store.get('pensuk_evnight') !== true); skyKey = ''; updateSky(); if (R3D) R3D.dirtyAll(); renderBag(); };
-  L.append(v3, et, en, mv, out);
+  const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
+  L.append(wd, v3, et, en, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -3865,6 +3997,7 @@ function toolHit(gc, gr){
   if (toolDrag && toolDrag.last === key) return;              // one hit per tile entry (re-enter to hit again)
   if (toolDrag) toolDrag.last = key;
   const t = tileAt(gc, gr); if (!t) return;
+  avToolAt = [gc, gr, performance.now()];                    // 🧑 the avatar walks toward tool work
   if (TOOLS[tool].sow){                                       // 🌱 drag-to-sow (v0.17.2): empty finished plot → plant the chosen seed
     if (t.k !== 'obj') return; const z = hitZone, o = objById(z, t.o);
     if (!o || o.type !== 'plot' || !o.done || o.plant) return;
@@ -4103,7 +4236,7 @@ function openAct(m){
 function closeAct(){
   if (!act) return; act.stops.forEach(f => { try { f(); } catch(e){} }); const fin = act.m; act = null;
   if (fin.brk && fin.progress >= fin.target) setTimeout(() => brkDone(fin.brk), 50);   // 🔔 break finished → reward
-  if (fin.npc && fin.progress >= fin.target){ npcReq(fin.npc).ok = true; setTimeout(() => npcComplete(fin.npc), 50); }   // 👥 coach challenge done
+  if (fin.npc && fin.progress >= fin.target){ npcReq(fin.npc).ok = true; setTimeout(() => { npcComplete(fin.npc); avEmote('squat', 3); }, 50); }   // 👥 coach challenge done → 🧑 squats in the farm
   $('act').style.display = 'none'; $('act').innerHTML = '';
   if (S && $('sMain').classList.contains('on')){ startLoop(); renderMissions(); flushRewards(); }
 }
@@ -4517,7 +4650,7 @@ let r3dLoading = false, r3dFailNote = false;
 function load3D(){
   if (R3D){ R3D.on = true; return; }
   if (r3dLoading) return; r3dLoading = true;
-  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = true; R3D.setQuality(gfxEco()); invalidateAll(); })
+  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = true; R3D.setQuality(gfxEco()); invalidateAll(); updateAvaHead(); })
     .catch(e => { console.log('3D unavailable', e); r3dLoading = false;
       if (!r3dFailNote){ r3dFailNote = true; sheet('เครื่องนี้แสดงกราฟิก 3D ไม่ได้ 😢\nตอนนี้ใช้ภาพแบบสำรองไปก่อน\n\nลองเปิดเกมใน Safari หรือ Chrome โดยตรง (ไม่ใช่ในแอป LINE/Facebook) หรือรีสตาร์ตเบราว์เซอร์', OK); } });
 }
