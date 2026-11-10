@@ -509,7 +509,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.17.3';
+const APP_VER = '0.17.4';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1370,6 +1370,18 @@ const SIZE_SEC = { 1:120, 2:600, 4:1800, 6:7200, 8:14400 }, FIRST_BUILD = 180;
 const buildSec = it => it.fixedSec || SIZE_SEC[it.w*it.h] || it.w*it.h*1800;      // starter fixed 30 s
 const firstBuild = type => !(S.builtOnce||{})[type] && !S.farm.zones.some(z => z.objs.some(o => o.type === type)) && !((S.store||{})[type] > 0);
 const placeSec = (type, it) => firstBuild(type) ? Math.min(FIRST_BUILD, buildSec(it)) : buildSec(it);
+/* 🏘 build limits (v0.17.4) — homes/bonus buildings 1 each, factories 1→2 (Lv.15)→3 (Lv.30), big decor 3, small decor/paths unlimited ⚠️
+   count = placed (built or under construction) + kept in 📦 storage; players already above a limit keep what they have */
+const LIMIT = { starter:1, house:1, doghouse:1, barn:1, fountain:3, gazebo:3 }, FACTORY_LIM = [[1,1],[15,2],[30,3]];
+function buildLimit(type){
+  if (PROC[type]) return FACTORY_LIM.reduce((n,[lv,c]) => S.lv >= lv ? c : n, 1);
+  return LIMIT[type] || Infinity;
+}
+const buildCount = type => S.farm.zones.reduce((n,z) => n + z.objs.filter(o => o.type === type).length, 0) + ((S.store||{})[type] || 0);
+const atLimit = type => buildCount(type) >= buildLimit(type);
+/** next level that raises a factory limit (for the "unlock more at Lv.x" hint) */
+const nextLimitLv = type => PROC[type] ? (FACTORY_LIM.find(([lv]) => lv > S.lv) || [])[0] : null;
+const limitTxt = type => buildLimit(type) === Infinity ? '' : `สร้างแล้ว ${buildCount(type)}/${buildLimit(type)}`;
 function objBuildSec(o){ return o.bsec || buildSec(FARM_ITEMS[o.type]); }       // progress bars (2D + r3d.js)
 const fmtTime = it => it.fixedSec ? fmt(it.fixedSec) : fmt(buildSec(it));
 const starterOwned = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter')) || ((S.store||{}).starter > 0);
@@ -2280,6 +2292,7 @@ $('pOk').onclick = () => {
     return;
   }
   if (it.once && starterOwned()) return sheet('สร้างบ้านหลังแรกไปแล้วครับ', OK);
+  if (atLimit(placing.type)) return sheet(`${it.name} ครบจำนวนแล้ว (${limitTxt(placing.type)})` + (nextLimitLv(placing.type) ? `\nสร้างเพิ่มได้ที่ Lv.${nextLimitLv(placing.type)}` : ''), OK);
   if (S.coins < it.price || !canPay(it.cost)) return sheet('เหรียญหรือวัตถุดิบไม่พอแล้ว', OK);
   const sec = placeSec(placing.type, it);
   confirmDo(`สร้าง ${it.name} ที่นี่?\n🪙 ${it.price ? it.price.toLocaleString() + ' เหรียญ' : 'ฟรี'}\n${costText(it.cost)}\n📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง)\n⏱ ใช้เวลาสร้าง ${fmt(sec)}${sec < buildSec(it) ? ' (สร้างครั้งแรกเร็วพิเศษ)' : ''}`, () => {
@@ -3238,9 +3251,9 @@ function renderShop(){
     const h3 = document.createElement('b'); h3.textContent = '🏗 สิ่งปลูกสร้าง'; L.appendChild(h3);
     const q = (curQuest()||{}).id;
     L.appendChild(cardGrid(Object.entries(FARM_ITEMS).filter(([id,it]) => !(it.once && starterOwned()) && !it.hidden).map(([id,it]) => {
-      const okLv = S.lv >= (it.lv||1), ok = S.coins >= it.price && canPay(it.cost);
-      return { ref:'b:'+id, name:nm(it.name), sub:`📐 ${it.w*it.h} ช่อง • ⏱ ${fmt(placeSec(id, it))}`, price: it.price ? `🪙 ${it.price.toLocaleString()}` : 'ฟรี',
-        lock: okLv ? null : `Lv.${it.lv}`, dim:!okLv, dot: okLv && !ok, glow:(q==='house' && it.once) || (q==='sawmill' && id==='sawmill'), on:() => buildDetail(id) }; })));
+      const okLv = S.lv >= (it.lv||1), ok = S.coins >= it.price && canPay(it.cost), full = atLimit(id), lt = limitTxt(id);
+      return { ref:'b:'+id, name:nm(it.name), sub:`📐 ${it.w*it.h} ช่อง • ⏱ ${fmt(placeSec(id, it))}${lt ? '<br>' + lt : ''}`, price: full ? 'ครบแล้ว' : it.price ? `🪙 ${it.price.toLocaleString()}` : 'ฟรี',
+        lock: okLv ? null : `Lv.${it.lv}`, dim:!okLv || full, dot: okLv && !full && !ok, glow:(q==='house' && it.once) || (q==='sawmill' && id==='sawmill'), on:() => buildDetail(id) }; })));
     return;
   }
   const h1 = document.createElement('b'); h1.textContent = '🛒 ซื้อของ'; L.appendChild(h1);
@@ -3389,8 +3402,9 @@ const inText = o => Object.entries(o).map(([k,v]) => `${MAT[k].split(' ')[0]}${v
 function buildDetail(id){
   const it = FARM_ITEMS[id], okLv = S.lv >= (it.lv||1), okCoin = S.coins >= it.price, okMat = canPay(it.cost), sec = placeSec(id, it);
   detailSheet('b:'+id, `${it.name}\n${it.desc}\n\n🪙 ${it.price ? it.price.toLocaleString() + ' เหรียญ' : 'ฟรี'}\n📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง)\n⏱ สร้าง ${fmt(sec)}${sec < buildSec(it) ? ` (ครั้งแรกเร็วพิเศษ • ปกติ ${fmt(buildSec(it))})` : ''}` +
-    (it.lv ? `\n🔓 ปลดล็อกที่ Lv.${it.lv}` : ''), needLine(it.cost),
+    (it.lv ? `\n🔓 ปลดล็อกที่ Lv.${it.lv}` : '') + (limitTxt(id) ? `\n🏘 ${limitTxt(id)}${nextLimitLv(id) ? ` (เพิ่มเป็น ${FACTORY_LIM.find(([lv]) => lv === nextLimitLv(id))[1]} ที่ Lv.${nextLimitLv(id)})` : ''}` : ''), needLine(it.cost),
     [ !okLv ? { label:`🔒 ปลดล็อกที่ Lv.${it.lv} (ตอนนี้ Lv.${S.lv})`, cls:'ghost' }
+      : atLimit(id) ? { label:`ครบจำนวนแล้ว (${limitTxt(id)})`, cls:'ghost' }
       : okCoin && okMat ? { label:'เลือกตำแหน่งสร้าง', cls:'ok', fn:() => startPlacing(id) }
       : { label: okCoin ? 'วัตถุดิบไม่พอ' : `เหรียญไม่พอ (มี ${S.coins.toLocaleString()})`, cls:'ghost' },
       { label:'ปิด', cls:'ghost' } ]);
