@@ -203,7 +203,16 @@ export function start(){
         const b = new THREE.Group(); b.position.set(0, 1.9, W*.42 + .15); b.userData.spin = 1; g.add(b);   // hub in front of the roof overhang (cone r = 0.42W) → blades never cut the roof
         RB(g, .14, .14, W*.42 + .15 - D*.27, .05, '#8a5a33', 0, 1.83, (W*.42 + .15 + D*.27)/2);           // axle from the tower to the hub
         for (let k=0;k<4;k++){ const a = new THREE.Group(); a.rotation.z = k*Math.PI/2; b.add(a); RB(a, .25, 1.6, .05, .03, C.white, 0, .1, 0); } break; }
-      case 'doghouse': walls('#f2c46d', '#e98b6d', 1.2, { door:'#3b2a20' }); CY(g, .22, .1, '#5f8fc9', W*.3, 0, D*.42); break;   // + water bowl
+      case 'doghouse': {                                         // v0.24 1×1 kennel: plank body, red gable roof, arched door, name plate, water bowl
+        RB(g, 1.5, .12, 1.5, .04, '#cdb08a', 0, 0, 0);
+        RB(g, 1.15, .78, 1.05, .06, '#e3a85f', 0, .12, -.08, true);
+        for (let k=1;k<4;k++) RB(g, 1.17, .025, 1.07, .01, '#c78a45', 0, .12 + k*.2, -.08);                 // plank lines
+        const rf = add(g, gable(1.35, .55, 1.25), mat('#d64933'), 0, .9, -.08, null, null, null, true); rf.rotation.y = Math.PI/2;
+        RB(g, 1.42, .08, .1, .03, '#9c2f1e', 0, 1.42, -.08);                                                    // ridge
+        add(g, CYL, mat('#2b1a10'), 0, .12 + .3, .45, .26, .02, .26).rotation.x = Math.PI/2;                // arched opening (round top)
+        RB(g, .52, .3, .03, .02, '#2b1a10', 0, .12, .45);                                                       // door bottom
+        RB(g, .42, .14, .03, .02, '#fff3d6', 0, .74, .46);                                                      // name plate
+        CY(g, .17, .08, '#5f8fc9', .55, .12, .52); CY(g, .13, .02, '#9fd3f2', .55, .19, .52); break; }
       case 'starter':  walls('#fbf3e4', '#e98b6d', 1.6, { chimney:true, shutters:'#8fb79a', box:true }); break;
       case 'house':    walls('#ffffff', '#6f8fa8', 2.2, { chimney:true, shutters:'#6f8fa8', box:true });
                        RB(g, W*.5, .1, .9, .05, '#d6b07f', -W*.12, .18, D*.41+.45); for (const x of [-W*.33, W*.08]) CY(g, .06, 1.3, '#ffffff', x, .18, D*.41+.85); break;   // porch
