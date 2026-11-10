@@ -522,7 +522,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.20.0';
+const APP_VER = '0.20.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1349,7 +1349,7 @@ function eventSheet(){
   const w = document.createElement('div'), ok = canPay(KR_RECIPE); w.className = 'ws';
   const sec = t => { const b = document.createElement('b'); b.textContent = t; b.style.display = 'block'; b.style.marginTop = '8px'; w.appendChild(b); };
   sec('🪷 ทำกระทง (ได้ทันที)');
-  w.appendChild(cardGrid([{ ref:'m:krathong', name:'กระทง', cnt:inv('krathong'), dot:!ok, sub:`${needMini(KR_RECIPE)}<br>🌸 ได้จากตัดหญ้า/ดอกไม้ป่าด้วย ✂️`, price: ok ? 'ทำ' : 'ของไม่พอ',
+  w.appendChild(cardGrid([{ ref:'m:krathong', name:'กระทง', cnt:inv('krathong'), dot:!ok, sub:`${needMini(KR_RECIPE)}<br>🌸 ได้จากตัดหญ้า/ดอกไม้ป่าด้วย 🌾 เคียว`, price: ok ? 'ทำ' : 'ของไม่พอ',
     on:() => { closeModal(); if (!canPay(KR_RECIPE)) return detailSheet('m:krathong', 'วัตถุดิบทำกระทงยังไม่พอ', needLine(KR_RECIPE), [{ label:'กลับ', cls:'ghost', fn:eventSheet }]);
       pay(KR_RECIPE); invAdd('krathong', 1); bump('krCraft'); sfx('pop'); save(); renderMats(); eventSheet(); } }], 64));
   sec(`🕯 แลกเทียนนำโชค (ทำภารกิจครบ 3 ข้อ = 1 เล่ม/วัน)`);
@@ -1473,7 +1473,7 @@ function reqProgress(q){
   return '';
 }
 const reqIco = (id, q) => q.t === 'give' ? (q.furn && Object.keys(q.furn).length ? 'f:' + Object.keys(q.furn)[0] : 'm:' + Object.keys(q.give)[0])
-  : q.t === 'act' ? ({ fish:'m:tilapia', sow:'m:seed', harvest:'reap', collect_small:'scissors' })[q.stat] : q.t === 'ex' ? 'missions' : 'npc:' + id;
+  : q.t === 'act' ? ({ fish:'m:tilapia', sow:'m:seed', harvest:'reap', collect_small:'reap' })[q.stat] : q.t === 'ex' ? 'missions' : 'npc:' + id;
 function npcComplete(id){
   const q = npcReq(id), s = npcState(id), n = NPCS[id], h0 = npcHearts(id), msgs = [];
   if (q.t === 'give'){ pay(q.give); if (q.furn) for (const [k,v] of Object.entries(q.furn)) S.furn[k] -= v; }
@@ -1660,9 +1660,9 @@ const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // sec
 const SIZE_EXP  = { small:3, medium:6, large:15 };
 const SIZE_TH   = { small:'เล็ก', medium:'กลาง', large:'ใหญ่' };
 const RES = {
-  grass:   { name:'พงหญ้า',     verb:'ถอนหญ้า',      tool:'✂️', size:'small',  h:.7,  yield:{grass:[2,3]} },
-  wild:    { name:'ดอกไม้ป่า',   verb:'เก็บดอกไม้ป่า',  tool:'✂️', size:'small',  h:.8,  yield:{grass:[1,2], seed:[0,1]} },
-  sapling: { name:'ต้นกล้า',     verb:'ถอนต้นกล้า',    tool:'✂️', size:'small',  h:.7,  yield:{wood:[1,1], seed:[0,1]} },
+  grass:   { name:'พงหญ้า',     verb:'ถอนหญ้า',      tool:'🌾', size:'small',  h:.7,  yield:{grass:[2,3]} },
+  wild:    { name:'ดอกไม้ป่า',   verb:'เก็บดอกไม้ป่า',  tool:'🌾', size:'small',  h:.8,  yield:{grass:[1,2], seed:[0,1]} },
+  sapling: { name:'ต้นกล้า',     verb:'ถอนต้นกล้า',    tool:'🌾', size:'small',  h:.7,  yield:{wood:[1,1], seed:[0,1]} },
   pebble:  { name:'หินก้อนเล็ก', verb:'เก็บหินเล็ก',    tool:'⛏️', size:'small',  h:.5,  yield:{stone:[1,2]} },
   rock:    { name:'ก้อนหิน',     verb:'ทุบหิน',        tool:'⛏️', size:'medium', h:.9,  yield:{stone:[3,4]} },
   bush:    { name:'พุ่มไม้',      verb:'ตัดพุ่มไม้',     tool:'🪓', size:'medium', h:1.1, yield:{wood:[1,2], grass:[1,2]} },
@@ -3395,9 +3395,9 @@ const QUESTS = [
   { id:'hello',   name:'ทักทายน้อง',            hl:'pet',    need:1, goal:() => st('petTap'),
     text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
-    text:'แตะ 🧰 (มุมขวาล่าง) → ✂️ กรรไกร → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
+    text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
-    text:'ใช้ ✂️ กรรไกร และ ⛏️ ค้อน ลากผ่านของในกรอบสีเหลืองให้หมด เพื่อเตรียมที่สร้างบ้าน', reward:{coins:100} },
+    text:'ใช้ 🌾 เคียว และ ⛏️ ค้อน ลากผ่านของในกรอบสีเหลืองให้หมด เพื่อเตรียมที่สร้างบ้าน', reward:{coins:100} },
   { id:'house',   name:'สร้างบ้านหลังแรก',        nav:'tShop', shop:'farm', need:1, goal:() => starterOwned() ? 1 : 0,
     text:'ไปที่ 🛒 ร้านค้า › ฟาร์ม › "บ้านหลังแรก" (ฟรี) → แตะพื้นที่โล่ง → ✔ วาง', reward:{coins:0} },
   { id:'houseOk', name:'รับบ้าน',                hl:'starter', need:1, goal:() => starterDone() ? 1 : 0,
@@ -3672,7 +3672,7 @@ function matInfo(k){
   for (const [id, it] of Object.entries(FARM_ITEMS)) if (it.cost[k] && !it.hidden) use.push(`สร้าง${nm(it.name)}`);
   if (PET_FOOD[k]) use.push(`อาหารน้อง (🍖 +${PET_FOOD[k][0]})`);
   if (k === 'soil') use.push('ถมบ่อน้ำ');
-  if (k === 'flower'){ from.push('อีเวนต์ลอยกระทง: ตัดหญ้า/ดอกไม้ป่าด้วย ✂️ (40%)'); use.push('ทำกระทง'); }
+  if (k === 'flower'){ from.push('อีเวนต์ลอยกระทง: ตัดหญ้า/ดอกไม้ป่าด้วย 🌾 เคียว (40%)'); use.push('ทำกระทง'); }
   if (k === 'krathong'){ from.push('ทำที่ปุ่ม 🏮 อีเวนต์'); use.push('ลอยที่บ่อน้ำ (แตะบ่อ → 🪷 ลอยกระทง)'); }
   detailSheet('m:'+k, `${MAT[k]} — มี ${inv(k)}` + (SELL[k] ? `\n🪙 ขายได้ชิ้นละ ${sellPrice(k).toLocaleString()}` : '') +
     (from.length ? `\n\nได้จาก: ${[...new Set(from)].join(' • ')}` : '') + (use.length ? `\nใช้ทำ: ${[...new Set(use)].slice(0, 8).join(' • ')}` : ''), '', OK);
@@ -3926,15 +3926,14 @@ function renderOrders(L){
    Two fingers still pan / pinch-zoom while a tool is active.
    ===================================================================== */
 const TOOLS = {
-  sickle: { e:'✂️', name:'กรรไกร', fits:['grass','wild','sapling'],      snd:'snip',  col:['#7cc94f','#4f9a2f','#ffd23f'] },
-  reap:   { e:'🌾', name:'เคียว', fits:[], harvest:true,                 snd:'snip',  col:['#f2cf4a','#6dbb5d','#f08a3c'] },
+  sickle: { e:'🌾', name:'เคียว', fits:['grass','wild','sapling'], harvest:true, snd:'snip', col:['#7cc94f','#f2cf4a','#f08a3c'] },   // v0.20.1: กรรไกร + เคียว merged — cut OR harvest
   shovel: { e:'🪏', name:'พลั่ว', fits:[], dig:true,                     snd:'chop',  col:['#a87b55','#7a5236','#86c8ea'] },
   axe:    { e:'🪓', name:'ขวาน',          fits:['bush','tree'],                snd:'chop',  col:['#b07a40','#8a5a2b','#6fae3b'] },
   hammer: { e:'⛏️', name:'ค้อน',          fits:['pebble','rock','boulder'],    snd:'clink', col:['#b8b2a6','#8f897e','#e0dbd0'] },
   sow:    { e:'🌱', name:'หว่าน', fits:[], sow:true,                      snd:'pop',   col:['#7fbf6a','#a87b55','#ffffff'] }   // v0.17.2 drag-to-sow
 };
 const HITS = { small:1, medium:3, large:6 };
-const TOOL_ICO = { sickle:'scissors', axe:'axe', hammer:'hammer', reap:'reap', shovel:'shovel', sow:'pk_seed' };
+const TOOL_ICO = { sickle:'reap', axe:'axe', hammer:'hammer', shovel:'shovel', sow:'pk_seed' };
 let sowSeed = null;                                          // crop id chosen in the 🌱 seed bar
 const toolFor = k => Object.keys(TOOLS).find(id => TOOLS[id].fits.includes(k));
 let tool = null, toolDrag = null, toolMsgAt = 0, saveTimer = 0;
@@ -3970,7 +3969,7 @@ function pickTool(id){
   if (t.sow) return confirmDo(`ใช้ 🌱 หว่านเมล็ด?\nเลือกเมล็ดจากแถบการ์ด แล้วลากนิ้วผ่านแปลงผักว่าง — หว่านทันทีแปลงละ 1 เมล็ด ไม่ต้องยืนยัน\n(แปลงที่ปลูกแล้วจะข้าม • เมล็ดหมดจะหยุดเอง • เลื่อน/ซูมใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
   confirmDo(t.dig ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านพื้นหญ้า → แปลงผัก (ฟรี)\n• ลากผ่านแปลงว่างอีกครั้ง → 💧 บ่อน้ำ + 🟤 ดิน 1\n• ลากผ่านบ่อน้ำ → ถมเป็นหญ้า (ใช้ 🟤 ดิน 1)\n(ลาก 1 ครั้งทำได้อย่างเดียว • แปลงที่ขุดไว้ไม่ได้ปลูก 24 ชม. จะกลับเป็นหญ้า)`
-    : t.harvest ? `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่านแปลงผักที่สุกแล้ว เพื่อเก็บเกี่ยวทันที\n(แปลงที่ยังไม่สุกจะไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
+    : t.harvest ? `ใช้ ${t.e} ${t.name}?\n• ลากผ่านหญ้า / ดอกไม้ป่า / ต้นกล้า → ตัดเก็บ\n• ลากผ่านแปลงผักที่สุก → เก็บเกี่ยวทันที\n(ลาก 1 ครั้งทำได้อย่างเดียวตามช่องแรกที่โดน • แปลงที่ยังไม่สุกไม่โดนเก็บ • เลื่อน/ซูมใช้ 2 นิ้ว)`
     : `ใช้ ${t.e} ${t.name}?\nลากนิ้วผ่าน${t.fits.map(k => RES[k].name).join(' ')} เพื่อเก็บ\n• ชิ้นเล็ก: ลากผ่าน 1 ครั้ง\n• ชิ้นกลาง 3 ครั้ง • ชิ้นใหญ่ 6 ครั้ง\n(เลื่อน/ซูมฟาร์มใช้ 2 นิ้ว)`, () => {
     S.toolOk = S.toolOk || {}; S.toolOk[id] = true; save(); go(); });
 }
@@ -4027,14 +4026,16 @@ function toolHit(gc, gr){
     }
     return;
   }
-  if (TOOLS[tool].harvest){                                   // 🌾 sickle: harvest every ripe plot the finger passes
-    if (t.k !== 'obj') return; const z = hitZone, o = objById(z, t.o);
+  if (TOOLS[tool].harvest && t.k === 'obj'){                 // 🌾 sickle on a ripe plot = harvest (one stroke = cut OR harvest, by the first hit)
+    if (toolDrag && toolDrag.mode === 'cut') return; const z = hitZone, o = objById(z, t.o);
     if (!o || o.type !== 'plot' || !o.done || !o.plant || cropLeft(o) > 0) return;
+    if (toolDrag) toolDrag.mode = 'harvest';
     const c = cropOf(o), n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; o.idle = Date.now();
-    bump('harvest'); bump('reap'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.reap.col, 8); sfx('snip'); buzz(15);
+    bump('harvest'); bump('reap'); gainExp(EXP.harvest); burst(gc, gr, TOOLS.sickle.col, 8); sfx('snip'); buzz(15);
     floatText(gc, gr, `+${n}${c.e}`, '#2e7d32'); markDirty(z); saveSoon(); return;
   }
   if (!RES[t.k]) return;
+  if (TOOLS[tool].harvest && TOOLS[tool].fits.includes(t.k)){ if (toolDrag && toolDrag.mode === 'harvest') return; if (toolDrag) toolDrag.mode = 'cut'; }
   const z = hitZone, R = RES[t.k], T = TOOLS[tool];
   if (!T.fits.includes(t.k)){
     if (Date.now() - toolMsgAt > 2500){ toolMsgAt = Date.now(); const need = TOOLS[toolFor(t.k)]; floatText(gc, gr, `ใช้ ${need.e}`, '#c0392b'); }
