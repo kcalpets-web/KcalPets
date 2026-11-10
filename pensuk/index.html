@@ -93,7 +93,10 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 #rFish{position:absolute;left:0;right:0;top:0;text-align:center;font-size:30px;line-height:34px;height:34px;margin-top:-17px;text-decoration:none;will-change:transform}
 #reel .rprog{position:absolute;right:28px;top:14%;height:46%;width:16px;border-radius:8px;background:#ffffffaa;border:3px solid #8a5a2b;overflow:hidden}
 #rProg{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#ffd166,#4caf6a);height:30%}
-#rHint{position:absolute;right:16px;top:calc(60% + 14px);width:120px;text-align:center;font-size:13px;color:#fff;text-shadow:0 1px 3px #000a}
+#rHint{position:absolute;right:16px;top:calc(60% + 14px);width:150px;text-align:center;font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000a}
+#rHint.tut{left:16px;right:auto;top:20%;width:auto;max-width:52%;background:#fffffff0;color:var(--ink);text-shadow:none;border-radius:16px;padding:12px 14px;font-size:17px;box-shadow:0 6px 16px #0003;animation:pulse 1.4s infinite}
+#rFish.out{animation:fwig .25s infinite}@keyframes fwig{0%,100%{margin-left:-4px}50%{margin-left:4px}}
+#reel.out .rprog{border-color:#d23c3c}
 #fScale{display:none;position:relative;height:26px;border-radius:13px;background:#e9e2d6;overflow:hidden}#fScale i{position:absolute;top:0;bottom:0;background:#6cc56f;border-radius:13px}#fScale s{position:absolute;left:0;top:0;width:6px;height:26px;background:#d23c3c;border-radius:3px;will-change:transform}
 #fBtn.bite{animation:pulse .35s infinite;background:#e63946}
 #zLabel{cursor:pointer}
@@ -163,6 +166,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #evFab{position:absolute;left:10px;bottom:232px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
 #evFab.pulse{animation:pulse 1s infinite}
+#gBub{position:absolute;left:76px;bottom:100px;max-width:min(64%,260px);display:none;background:#fff;border:2px solid var(--pri);border-radius:16px 16px 16px 4px;padding:10px 12px;font-size:14px;line-height:1.45;box-shadow:0 6px 16px #0003;z-index:5;animation:gin .3s}
+@keyframes gin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #chatFab{position:absolute;left:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;padding:4px;box-shadow:0 4px 12px #0003}#chatFab svg{width:100%;height:100%}
 #chatFab.pulse{animation:pulse 1.2s infinite;border-color:#4caf6a}#chatFab.pulse::after{content:'💬';position:absolute;top:-6px;right:-6px;font-size:18px}
 #monFab{position:absolute;left:10px;bottom:164px;width:58px;height:58px;border-radius:50%;border:3px solid #3f8fd8;background:#eef6ff;font-size:28px;box-shadow:0 4px 12px #0003;display:none}
@@ -261,6 +266,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <button id="evFab" aria-label="อีเวนต์">🏮</button>
       <button id="monFab" aria-label="สู้ปีศาจ">⚔️</button>
       <button id="chatFab" aria-label="คุยกับเป็นสุข"></button>
+      <div id="gBub"></div>
       <div id="toolBar"></div>
       <div id="seedBar"></div>
       <div id="mineBar"><div id="mineInfo"></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost" id="mineRest">🧘 พัก</button><button class="btn ghost" id="mineOut">ออกจากเหมือง</button></div></div>
@@ -561,7 +567,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.28.1';
+const APP_VER = '0.28.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -643,6 +649,7 @@ document.addEventListener('visibilitychange', () => {
 const AWAY_REST = 15*60*1000;
 function awayCheck(){
   if (!S || !S.pet || !S.awayAt) return; const away = Date.now() - S.awayAt; delete S.awayAt;
+  if (away >= AWAY_REST){ gbPlay = 0; gbNext = 4000; gbN = 0; }   // 💬 a new session → greet again, restart the 15-min play clock
   if (away >= AWAY_REST && tiredNow() > 0){ setTired(0); save(); bump('awayRest');
     setTimeout(() => { const [x, y] = [cssW/2, 120]; fxSpawn(x, y, 0, -30, 2.2, '#2e9e4f', `💪 พักจอมา ${Math.round(away/60000)} นาที แรงเต็มแล้ว!`); }, 400); }
   else save();
@@ -2851,8 +2858,8 @@ function frame(now){
         if (!detail && o && o.type === 'plot' && o.done && o.plant && !o.pj) cropGroupAdd(o, badges[k+3], wall);   // 🌾 grouped when zoomed out
         else buildBadge(o, badges[k+3], time, wall); }
     }
-    drawCropGroups(time);
-    npcTick(dt/1000); avTick(dt/1000); drawNpcMarks(time); drawPetMark(time);  // 👥 v0.19 • 🧑 v0.20
+    if (!(fishing && fishing.reel)) drawCropGroups(time);   // nothing on top of the reel
+    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); }  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -3073,22 +3080,35 @@ function reelStart(f, now){
   const slow = S.analysis && S.analysis.age >= 60, c = f.pick, zh = REEL_ZONE[Math.min(3, upLv('rod'))];
   f.reel = { zh, zy:1 - zh, zv:0, fy:.7, ft:.5, next:now, prog:.3, last:now, k:c.rk*(slow ? .7 : 1), g:c.rg.map(x => x*(slow ? 1.3 : 1)) };
   reelHold = false; $('rZone').style.height = (zh*100) + '%'; $('rFish').textContent = MAT[c.k].split(' ')[0];
-  $('reel').style.display = 'block'; $('rHint').textContent = 'กดค้าง = ช่องเขียวลอยขึ้น';
+  if (!S.reelTutDone){ Object.assign(f.reel, { tut:1, tt:0, k:f.reel.k*.4, prog:.15 }); $('rFish').textContent = '🐟'; }   // 🎓 first reel = practice fish
+  $('reel').style.display = 'block'; $('fishBar').style.display = 'none';   // hide "เลิกตก" while reeling
+  reelHintSet();
+}
+/* 🎓 tutorial steps: 1 hold ≥ .6 s → 2 release ≥ .6 s → 3 keep the (slow) practice fish in the zone; meter never empties */
+function reelHintSet(){
+  const R = fishing && fishing.reel, el = $('rHint'); if (!R) return;
+  el.className = R.tut ? 'tut' : ''; el.innerHTML = !R.tut ? 'กดค้าง = ช่องเขียวขึ้น<br>ปล่อย = ลง'
+    : R.tut === 1 ? '① กดนิ้วค้างไว้ที่ไหนก็ได้<br>👆 ช่องเขียวจะลอยขึ้น' : R.tut === 2 ? '② ปล่อยนิ้ว<br>👇 ช่องเขียวจะตกลง' : '③ ประคองให้ปลาอยู่ในช่องเขียว<br>จนหลอดข้าง ๆ เต็ม!';
 }
 function reelStep(f, now){
   const R = f.reel; if (!R) return; const dt = Math.min(.05, (now - R.last)/1000); R.last = now;
+  if (R.tut === 1 || R.tut === 2){ const want = R.tut === 1 ? reelHold : !reelHold;   // real-time ms (independent of frame rate)
+    if (!want) R.t0 = 0; else if (!R.t0) R.t0 = now; else if (now - R.t0 > 600){ R.tut++; R.t0 = 0; reelHintSet(); sfx('pop'); } }
   R.zv = Math.max(-1.4, Math.min(1.4, R.zv + (reelHold ? -1.6 : 1.2)*dt)); R.zy += R.zv*dt;
   if (R.zy < 0){ R.zy = 0; R.zv *= -.3; } else if (R.zy > 1 - R.zh){ R.zy = 1 - R.zh; R.zv *= -.3; }
   if (now >= R.next){ R.ft = .05 + Math.random()*.9; R.next = now + (R.g[0] + Math.random()*(R.g[1] - R.g[0]))*1000; }
   R.fy += (R.ft - R.fy)*Math.min(1, R.k*dt);
-  const inside = R.fy >= R.zy && R.fy <= R.zy + R.zh; R.prog += (inside ? .35 : -.25)*dt;
+  const inside = R.fy >= R.zy && R.fy <= R.zy + R.zh;
+  if (!R.tut || R.tut === 3) R.prog += (inside ? .35 : -.25)*dt; if (R.tut) R.prog = Math.max(.12, R.prog);   // practice fish can't escape
   const H = $('reel').firstElementChild.clientHeight - 8;                     // track inner height (px)
   $('rZone').style.transform = `translateY(${(R.zy*H).toFixed(1)}px)`; $('rFish').style.transform = `translateY(${(R.fy*H).toFixed(1)}px)`;
-  $('rProg').style.height = (Math.max(0, Math.min(1, R.prog))*100).toFixed(1) + '%'; $('rZone').style.background = inside ? '#7ee08acc' : '#ffe08acc';
+  $('rProg').style.height = (Math.max(0, Math.min(1, R.prog))*100).toFixed(1) + '%';
+  $('rFish').classList.toggle('out', !inside); $('reel').classList.toggle('out', !inside);   // zone stays GREEN; fish wiggles + meter flashes red when outside
   if (R.prog >= 1) reelEnd(f, true); else if (R.prog <= 0) reelEnd(f, false);
 }
 function reelEnd(f, ok){
-  const c = f.pick, now = Date.now(); f.reel = null; reelHold = false; $('reel').style.display = 'none'; f.phase = 'ready'; f.cool = now + 900;
+  const c = f.pick, now = Date.now(), tut = f.reel && f.reel.tut; f.reel = null; reelHold = false; $('reel').style.display = 'none'; $('fishBar').style.display = 'flex'; f.phase = 'ready'; f.cool = now + 900;
+  if (tut){ S.reelTutDone = 1; bump('reelTut'); }
   if (!ok){ renderFishBar(); floatText(f.gc, f.gr, 'หลุด! 🐟💨', '#5b8fd8'); sfx('pop'); return; }   // escaped — just cast again
   f.cool = now + 1200; S.inv[c.k] = (S.inv[c.k]||0) + 1; bump('fish'); gainExp(c.exp); petHappy(pet);
   save(); refreshHeader(); renderMats(); renderFishBar();
@@ -3813,6 +3833,8 @@ function has2x2Clear(){
 const QUESTS = [
   { id:'hello',   name:'ทักทายน้อง',            hl:'pet',    need:1, goal:() => st('petTap'),
     text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
+  { id:'askGuide', name:'คุยกับเป็นสุข',          need:1, goal:() => st('guideAsk'),
+    text:'แตะปุ่มหน้าบีเกิล 💬 ซ้ายล่างของฟาร์ม → คุยกับเป็นสุขได้ 3 อย่าง: ① เช็กอินว่าทำอะไรเพื่อสุขภาพไปแล้ว ② พิมพ์ถามเรื่องเกม (ลืมอะไรถามได้) ③ รับคำแนะนำสุขภาพตามเวลา — ลองถามอะไรสักข้อดูนะ', reward:{coins:100} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
@@ -3867,6 +3889,8 @@ const QUESTS = [
     text:'แตะ {pet} → 🎾 เล่นบอล — ดูแลครบ 3 แถบ (อิ่ม/สะอาด/สนุก ≥ 60) แล้ว 💗 ที่ได้จากภารกิจ ×1.5 • น้องไม่ป่วยไม่หายไปไหน แค่ง่วง ๆ รอคุณ', reward:{coins:100} },
   { id:'fish',    name:'ตกปลา',                 hl:'water',  need:3, goal:() => st('fish'),
     text:'แตะที่บ่อน้ำ แล้วกดปุ่ม "🎣 ตกปลา" ที่โผล่ขึ้นมา → เหวี่ยงเบ็ด → รอทุ่นจม ❗ → กด "ดึง!" ให้ทัน — ตกให้ได้ 3 ครั้ง ปลาขายได้ ส่งออเดอร์ได้ หรือให้น้องกิน', reward:{coins:200} },
+  { id:'reelTut', name:'ฝึกตกปลากับเป็นสุข',      hl:'water', need:1, goal:() => st('reelTut'),
+    text:'แตะบ่อน้ำ → ตกปลา → เหวี่ยงเบ็ด → ทุ่นจมแล้วจะขึ้นหลอด ครั้งแรกเป็น "ปลาฝึก" ไม่มีวันหลุด เป็นสุขจะบอกทีละขั้น: กดค้าง → ปล่อย → ประคองปลาให้อยู่ในช่องเขียวจนหลอดเต็ม', reward:{coins:150} },
   { id:'medium',  name:'ทุบหิน/ตัดพุ่มไม้',         hl:'medium', tool:1, need:1, goal:() => st('collect_medium'),
     text:'ใช้ ⛏️ ค้อน กับก้อนหิน หรือ 🪓 ขวาน กับพุ่มไม้ — ของชิ้นกลางต้องลากผ่าน 3 ครั้ง (ดูจุดสีส้มที่เหลือ)', reward:{coins:100} },
   { id:'plot',    name:'ขุดแปลงผัก',             tool:1, need:1, goal:() => plotsDone(),
@@ -4020,12 +4044,106 @@ function ciAuto(){
   ciDue = Date.now() - (c.last || 0) >= CI_EVERY && ciTopics().length > 0;   // v0.27.2: the 💬 button pulses instead of popping the chat open
 }
 let ciQ = [], ciHits = 0, ciDone = [], ciDue = false;
+/* 🐶 v0.28.2 เป็นสุขแนะนำสุขภาพตามช่วงเวลา (designer: sleep / meals / exercise / water / anything healthy).
+   Advice only — general, gentle, never a diagnosis. Picked by local hour + today's logs. */
+function healthTip(){
+  const h = new Date().getHours() + new Date().getMinutes()/60, w = waterToday(), need = monTarget();
+  const wantByNow = Math.round(need*Math.max(0, Math.min(1, (h - 7)/14)));          // glasses expected by now (07:00 → 21:00)
+  if (h >= 21.5 || h < 5) return '🌙 ดึกแล้วนะ วางมือถือแล้วเข้านอนกันเถอะ แสงจอทำให้หลับยาก ผู้ใหญ่ควรนอนให้ได้ 7–9 ชั่วโมง พรุ่งนี้จะได้สดชื่น 😴';
+  if (h >= 5 && h < 9.5) return '🍳 อรุณสวัสดิ์! ทานมื้อเช้าหรือยัง ลองมีไข่หรือนม กับผลไม้สักอย่าง จะอิ่มนานและมีแรงทั้งเช้า';
+  if (h >= 11.5 && h < 13.5) return '🥗 ใกล้มื้อกลางวันแล้ว ลองให้ผักได้ครึ่งจาน ข้าวหนึ่งในสี่ อีกส่วนเป็นโปรตีน อย่าลืมน้ำเปล่าด้วยนะ';
+  if (h >= 17.5 && h < 19.5) return '🍲 มื้อเย็นทานเบา ๆ และทานก่อนนอนสัก 2–3 ชั่วโมง ร่างกายจะได้พักเต็มที่';
+  if (w.n < wantByNow - 1) return `💧 วันนี้ดื่มน้ำไป ${w.n} แก้ว ช่วงนี้ควรได้ราว ${wantByNow} แก้วแล้ว ไปดื่มน้ำสักแก้วกันนะ`;
+  const tips = ['🚶 นั่งนานแล้วหรือเปล่า ลุกเดินสัก 2–3 นาที ช่วยให้เลือดไหลเวียนดีขึ้น',
+    '🏃 ออกกำลังกายหนักปานกลางรวม 150 นาทีต่อสัปดาห์ = วันละ 30 นาที 5 วัน แบ่งเป็นช่วงละ 10 นาทีก็ได้',
+    '👀 ใช้กฎ 20-20-20: ทุก 20 นาที มองไกล 20 ฟุต (6 เมตร) นาน 20 วินาที ตาจะล้าน้อยลง',
+    '🍎 หิวระหว่างวันลองเลือกผลไม้หรือถั่วแทนขนมหวาน', '🫁 ลองหายใจเข้าลึก ๆ 4 วิ กลั้น 4 วิ ผ่อนออก 6 วิ สัก 3 รอบ ช่วยคลายเครียด'];
+  return tips[(new Date().getHours() + (S.lv||0)) % tips.length];
+}
+/* ❓ ask the guide: keyword FAQ (Thai, no network). score = number of keywords found in the question */
+const FAQ = [
+  { k:['💗','พลังใจ','หัวใจชมพู','ใจ'], a:() => `💗 พลังใจได้จากการดูแลสุขภาพจริงเท่านั้น: ภารกิจสุขภาพ 3 ข้อ (หน้าภารกิจ), ครบ 3 ข้อได้โบนัส, 🔔 ขยับตัว/พักจอ, ชาเลนจ์โค้ชฟิต${monOn() ? ', ชนะปีศาจรายวัน' : ''} — ใช้อัปเลเวล${S.pet.name}` },
+  { k:['อัป','เลเวล','lv','โต','อัพ'], a:() => `⬆️ แตะ${S.pet.name}ในฟาร์ม → "💗 อัปเลเวล" ตอนนี้ Lv.${S.pet.lv} ใช้ 💗 ${needPetExp(S.pet.lv)} (มี ${S.love||0}) ${petCanUp ? '— พอแล้ว อัปได้เลย! 🎉' : ''}\nน้องเลเวลสูงขึ้นช่วยงานฟาร์มได้มากขึ้น` },
+  { k:['แรง','เหนื่อย','หมดแรง','💪'], a:() => `💪 ตอนนี้แรง ${staminaNow()}% — ทุกงานในฟาร์มใช้แรง\nฟื้น: เองนาทีละ 1% • 🧘 พักสายตา/ขยับตัว = เต็มทันที • ออกจากเกมไป 15 นาที = เต็ม • เช็กอิน "ทำแล้ว" ข้อละ +10%` },
+  { k:['ปลูก','เมล็ด','ผัก','หว่าน'], a:'🌱 ใช้ 🪏 พลั่วขุดแปลงบนพื้นโล่ง → แตะแปลง เลือกเมล็ด แล้วลากนิ้วผ่านแปลงอื่นเพื่อหว่านต่อ → โตแล้วใช้เคียวลากเก็บ (เมล็ดซื้อที่ร้านค้า › เมล็ด)' },
+  { k:['เก็บเกี่ยว','เคียว','เก็บผัก'], a:'🌾 ผักโตแล้วจะมีป้ายเขียว "พร้อมเก็บ" — เลือกเคียวในกล่องเครื่องมือ แล้วลากผ่านแปลง หรือแตะทีละแปลงก็ได้' },
+  { k:['หญ้า','ต้นไม้','หิน','เคลียร์','ขวาน','ค้อน','เครื่องมือ'], a:'🧰 แตะกล่องเครื่องมือขวาล่าง เลือก 🪓 ขวาน (ต้นไม้/พุ่ม) ⛏️ ค้อน (หิน) หรือเคียว (หญ้า) แล้วลากนิ้วผ่านของที่อยากเก็บ ได้วัตถุดิบไว้สร้างของ' },
+  { k:['พื้นที่','ขยาย','ที่ดิน'], a:() => `🗺 พื้นที่ใหม่ปลดล็อกทุกครั้งที่เลเวลผู้เล่นขึ้น (ตอนนี้ Lv.${S.lv} มี ${S.farm.zones.length} พื้นที่) ใช้ปุ่ม − ＋ ด้านล่างเลื่อนดูพื้นที่` },
+  { k:['คลัง','เก็บของ','วางของ','ย้าย'], a:'📦 ของที่ได้ฟรีหรือเก็บไว้อยู่ที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → แตะเพื่อวาง • อยากย้ายของ กดค้างที่ของแล้วลาก' },
+  { k:['ขาย','เงิน','เหรียญ','รายได้'], a:'🪙 ขายของได้ที่ร้านค้า › ขาย หรือส่งของตามคำขอชาวเมือง (ได้เหรียญเยอะกว่า) • ของแปรรูปจากโรงงานขายได้ราคาดี' },
+  { k:['ตกปลา','ปลา','เบ็ด'], a:() => `🎣 แตะบ่อน้ำ → "ตกปลา" → เหวี่ยงเบ็ด (💪 −2) → ทุ่นจมแล้วจะขึ้นหลอด กดค้าง = ช่องเขียวขึ้น ปล่อย = ลง ให้ปลาอยู่ในช่องจนหลอดเต็ม\nเบ็ดตอนนี้: ${ROD_NAME[Math.min(3, upLv('rod'))]} (อัปเกรดที่ ⚒ โรงตีเหล็ก ช่องเขียวใหญ่ขึ้น)` },
+  { k:['เหมือง','แร่','ขุดแร่','อีเต้อ'], a:() => S.mineOpen ? `⛏ แตะทางเข้าเหมือง (พื้นที่ Lv.10) แล้วลากนิ้วทุบหิน • ทุบ 8 ก้อนมีบันไดลงชั้นถัดไป (ต้องอีเต้อขั้นสูงพอ) • อีเต้อตอนนี้ขั้น ${upLv('pick')}` : `⛏ เหมืองอยู่ในพื้นที่ที่ได้ตอน Lv.10 ตอนนี้ยังถล่มอยู่ — ลุงหินจะมาขอให้ช่วยซ่อม 3 ขั้น` },
+  { k:['ตีเหล็ก','หลอม','แท่ง','อัปเกรด'], a:'⚒ โรงตีเหล็กได้จากโครงการของพี่เหล็ก (Lv.12 หลังเหมืองเปิด) • หลอมแร่เป็นแท่ง แล้วอัปเกรดอีเต้อ ขวาน ค้อน เบ็ด และโรงงาน' },
+  { k:['ชาวเมือง','npc','ลุง','ป้า','โค้ช','คำขอ','ส่งของ'], a:() => { const p = Object.keys(NPCS).filter(npcPending); return `👥 ชาวเมืองที่มี "!" บนหัวมีคำขอ — แตะเพื่อดูว่าอยากได้อะไร ส่งครบได้เหรียญและหัวใจความสนิท ❤️ (สนิทแล้วได้ความสามารถพิเศษ)${p.length ? `\nตอนนี้มีคำขอจาก: ${p.map(id => NPCS[id].name).join(', ')}` : ''}`; } },
+  { k:['โรงงาน','โรงเลื่อย','โรงสี','ครัว','ทำของ','แปรรูป'], a:'🏭 แตะโรงงาน (โรงเลื่อย โรงสี ครัว ฯลฯ) จะเห็นสิ่งที่ทำได้ ใส่วัตถุดิบแล้วรอเวลา เสร็จแล้วแตะเก็บ • โรงเลื่อยแรกได้จากการช่วยลุงไม้' },
+  { k:['เควส','ทำอะไรต่อ','ต่อดี','ทำอะไรดี','ไม่รู้'], a:() => { const q = curQuest(); return q ? `📜 เควสตอนนี้: ${q.name}\n${fillPet(q.text)}` : '📜 เควสครบหมดแล้ว เก่งมาก! ลองดูแลสุขภาพทุกวัน ส่งของให้ชาวเมือง หรือแต่งฟาร์มให้สวย'; } },
+  { k:['ภารกิจ','ลุกนั่ง','บริหาร','พักจอ'], a:'🎯 หน้าภารกิจมีภารกิจสุขภาพ 3 ข้อต่อวัน ปรับตามอายุ ทำจริงแล้วกดบันทึก/จับเวลา หรือบอกเป็นสุขตอนเช็กอินก็ได้ ครบแล้วกดรับ 💗' },
+  { k:['น้ำ','ดื่ม'], a:() => `💧 วันนี้บันทึกแล้ว ${waterToday().n} แก้ว เป้าราว ${monTarget()} แก้ว (ประมาณ 33 มล. ต่อน้ำหนักตัว 1 กก.) — ดื่มทีละแก้ว ทั้งวัน ดีกว่าดื่มรวดเดียว` },
+  { k:['นอน','ง่วง','หลับ','ดึก'], a:'😴 ผู้ใหญ่ควรนอน 7–9 ชั่วโมง เข้านอนเวลาเดิมทุกวัน งดจอก่อนนอนสัก 30–60 นาที ห้องมืดและเย็นจะหลับง่ายขึ้น' },
+  { k:['กิน','อาหาร','ข้าว','มื้อ','หิว'], a:'🍽 จานสุขภาพ: ผักครึ่งจาน ข้าว/แป้งหนึ่งในสี่ โปรตีนหนึ่งในสี่ • เลือกผลไม้แทนขนมหวาน • ลดน้ำหวานและของทอด' },
+  { k:['ออกกำลัง','วิ่ง','เดิน','คาร์ดิโอ'], a:'🏃 ควรออกกำลังหนักปานกลาง (เดินเร็ว ปั่นจักรยาน) รวม 150 นาที/สัปดาห์ + เวทหรือบริหารกล้ามเนื้อ 2 วัน/สัปดาห์ เริ่มน้อย ๆ แล้วค่อยเพิ่ม' },
+  { k:['ปีศาจ','สู้','มอนสเตอร์'], a:() => monOn() ? `⚔️ ปีศาจรายวัน: 💧 ปีศาจแห้งผาก HP ${monState().hp}/${monState().max} — ดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง (ปุ่ม ⚔️ ในฟาร์ม)` : '⚔️ โหมดสู้ปีศาจยังเป็นการทดลอง เปิดได้ในกระเป๋า › "🧪 ทดลองโหมดสู้ปีศาจสุขภาพ"' },
+  { k:['เช็กอิน','คุย','แชท','ถามอะไร'], a:'💬 คุยกับเป็นสุขได้ 3 อย่าง: 1) เช็กอิน บอกว่าทำอะไรเพื่อสุขภาพไปแล้ว (ปุ่มนี้จะกะพริบทุก 2 ชม.) 2) ถามเรื่องเกม พิมพ์ถามได้เลย 3) รับคำแนะนำสุขภาพตามช่วงเวลา' } ];
+function faqReply(q){
+  const t = q.toLowerCase(); let best = null, bs = 0;
+  for (const f of FAQ){ const sc = f.k.reduce((n, k) => n + (t.includes(k.toLowerCase()) ? k.length : 0), 0); if (sc > bs){ bs = sc; best = f; } }
+  if (!best) return 'อืม… เป็นสุขยังไม่ค่อยเข้าใจ 🐶 ลองถามสั้น ๆ เช่น "แรงหมดทำไง" "ตกปลายังไง" "ทำอะไรต่อดี" หรือแตะคำถามด้านล่างได้เลย';
+  return typeof best.a === 'function' ? best.a() : best.a;
+}
+function askChips(){                                          // context-aware suggestions
+  const o = [];
+  if (petCanUp) o.push('อัปเลเวลน้องยังไง?'); if (staminaNow() < 30) o.push('แรงหมดทำไง?');
+  if (Object.keys(NPCS).some(npcPending)) o.push('ชาวเมืองอยากได้อะไร?');
+  o.push('ทำอะไรต่อดี?', 'ตกปลายังไง?', 'คุยอะไรกับเป็นสุขได้บ้าง?');
+  return o.slice(0, 4);
+}
+function askLoop(){
+  const box = $('chatIn'); box.innerHTML = '';
+  const c = document.createElement('div'); c.className = 'chips';
+  askChips().forEach(qs => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = qs; b.onclick = () => askSend(qs); c.appendChild(b); });
+  const row = document.createElement('div'); row.className = 'row';
+  const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'พิมพ์ถามเป็นสุขได้เลย…'; inp.maxLength = 80;
+  const ok = document.createElement('button'); ok.className = 'btn'; ok.textContent = 'ส่ง'; ok.style.flex = '0 0 72px';
+  const go = () => { const v = inp.value.trim(); if (v) askSend(v); }; ok.onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  row.append(inp, ok);
+  const back = document.createElement('button'); back.className = 'btn ghost'; back.style.cssText = 'width:100%;margin-top:6px';
+  back.textContent = ciHits ? '⚔️ ไปดูน้องโจมตี' : '🏡 กลับฟาร์ม';
+  back.onclick = () => { show('sMain'); refreshHeader(); renderMissions(); if (ciHits){ const h = ciHits; ciHits = 0; openBattle(h); } };
+  box.append(c, row, back); dockInput();
+}
+/* 💬 v0.28.2 เป็นสุขทักเข้ามาเอง (designer): a speech bubble next to the beagle button — tap it to open the chat.
+   • a greeting when a play session starts • then every 15 min of actual play time (app visible):
+     15 → rest the eyes • 30 → stand up / stretch • 45+ → take a real break • (other ticks: time-of-day health tip)
+   • waits while a modal / the reel / the mine / a room is open; auto-hides after 9 s */
+const GB_EVERY = 15*60*1000;
+let gbPlay = 0, gbNext = 4000, gbHideAt = 0, gbLast = 0, gbN = 0;
+function guideSay(text){
+  const b = $('gBub'); b.innerHTML = `<b>เป็นสุข:</b> ${text}`; b.style.display = 'block'; gbHideAt = Date.now() + 9000; sfx('pop');
+  b.onclick = () => { b.style.display = 'none'; openCheckin(false); };
+}
+function guideTick(){
+  const now = Date.now(), dt = gbLast ? Math.min(2000, now - gbLast) : 0; gbLast = now;
+  if (gbHideAt && now > gbHideAt){ $('gBub').style.display = 'none'; gbHideAt = 0; }
+  if (!S || !S.pet || document.visibilityState !== 'visible' || !$('sMain').classList.contains('on')) return;
+  gbPlay += dt; if (gbPlay < gbNext) return;
+  if ($('modal').classList.contains('on') || act || inMine || inRoom || (fishing && fishing.reel) || $('battle').style.display === 'block') return;   // wait for a calm moment
+  const min = Math.round(gbPlay/60000), h = new Date().getHours();
+  const msg = gbN === 0 ? `${h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดี' : 'สวัสดีตอนเย็น'}! ดีใจที่มาหานะ 🐶 ${ciDue ? 'มีเรื่องอยากถามนิดหน่อย แตะคุยกันได้เลย' : 'วันนี้เป็นยังไงบ้าง'}`
+    : min >= 45 ? `เล่นมา ${min} นาทีแล้วนะ 🐾 พักจอจริง ๆ สักหน่อยไหม ลุกเดิน ดื่มน้ำ แล้วค่อยกลับมา (ออกไป 15 นาที แรงเต็มด้วย!)`
+    : min >= 30 ? `เล่นมา ${min} นาทีแล้ว ลุกยืดเส้นยืดสายหรือเดินสัก 2 นาทีกันไหม 🚶`
+    : min >= 15 ? `เล่นมา ${min} นาทีแล้ว พักสายตามองไกล ๆ สัก 20 วินาทีนะ 👀`
+    : healthTip();
+  guideSay(msg); gbN++; gbNext = gbPlay + GB_EVERY;
+}
+function askSend(q){ $('chatIn').innerHTML = ''; bubble(q, 'me'); bump('guideAsk'); setTimeout(() => { bubble(faqReply(q), 'bot'); askLoop(); }, 400); }
 function openCheckin(auto){
   const c = ciState(); c.last = Date.now(); save(); bump('checkin');
   ciQ = ciTopics(); ciHits = 0; ciDone = [];
-  show('sChat'); $('chatStep').textContent = 'เช็กอิน'; const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
+  show('sChat'); $('chatStep').textContent = '🐶'; const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
   const h = new Date().getHours(), hi = h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
-  setTimeout(() => { bubble(`${hi}! ${auto ? 'มาเช็กอินกันหน่อยนะ ' : ''}เป็นสุขขอถามสั้น ๆ ${ciQ.length || 1} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก 🐶`, 'bot'); ciNext(); }, 200);
+  setTimeout(() => { bubble(`${hi}! 🐶 ${healthTip()}`, 'bot');
+    if (ciQ.length) setTimeout(() => { bubble(`เป็นสุขขอถามสั้น ๆ ${ciQ.length} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก`, 'bot'); ciNext(); }, 500);
+    else setTimeout(() => { bubble('วันนี้เช็กอินครบแล้ว เก่งมาก! มีอะไรอยากถามเรื่องเกมไหม พิมพ์ถามได้เลยนะ', 'bot'); askLoop(); }, 500); }, 200);
 }
 function ciChips(opts){
   const box = $('chatIn'); box.innerHTML = ''; const c = document.createElement('div'); c.className = 'chips';
@@ -4059,7 +4177,7 @@ function ciNext(){
 }
 function ciEnd(){
   bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}\n💪 ฟื้นแรง +${ciDone.length*10}%${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
-  ciChips([{ label:ciHits ? '⚔️ ไปดูน้องโจมตี' : '🏡 กลับฟาร์ม', fn:() => { show('sMain'); refreshHeader(); renderMissions(); if (ciHits) openBattle(ciHits); } }]);
+  setTimeout(() => { bubble('มีอะไรอยากถามเรื่องเกมไหม พิมพ์ถามได้เลย หรือแตะคำถามด้านล่าง 👇', 'bot'); askLoop(); }, 450);
 }
 /* log n glasses at once (from the check-in); timestamps spaced MON_GAP back so the 15-min guard stays meaningful */
 function monLogBatch(n){
@@ -4070,8 +4188,8 @@ function monLogBatch(n){
 }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
-  brkTick(); ciAuto(); renderSta();
-  { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); } if (S && S.farm) mineUnlockTick();
+  brkTick(); ciAuto(); renderSta(); guideTick();
+  { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); if (f.style.display === 'none') $('gBub').style.display = 'none'; } if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
