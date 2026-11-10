@@ -155,6 +155,20 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .mute{border:0;background:none;font-size:20px;min-width:40px;min-height:40px;padding:0}
 #evFab{position:absolute;left:10px;bottom:96px;width:54px;height:54px;border-radius:50%;border:3px solid #e86f8a;background:#fff5f7;font-size:26px;box-shadow:0 4px 12px #0003;display:none}
 #evFab.pulse{animation:pulse 1s infinite}
+#monFab{position:absolute;left:10px;bottom:160px;width:58px;height:58px;border-radius:50%;border:3px solid #3f8fd8;background:#eef6ff;font-size:28px;box-shadow:0 4px 12px #0003;display:none}
+#monFab.pulse{animation:pulse 1.2s infinite}
+#battle{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#cfe8ff,#fff6e6 70%);overflow:auto}
+#battle .bwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:10px}
+#battle .bhead{display:flex;align-items:center;justify-content:space-between;gap:8px}#battle .bhead b{font-size:18px}
+#battle .bhp{position:relative;height:22px;border-radius:11px;background:#0001;overflow:hidden}#battle .bhp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#e8734a,#f2b33d);border-radius:11px;transition:width .5s}
+#battle .bhp b{position:relative;display:block;text-align:center;font-size:13px;line-height:22px}
+#battle .bstage{position:relative;height:min(52vh,360px)}
+#bMon{position:absolute;left:50%;top:4%;width:62%;transform:translateX(-50%)}#bMon svg{width:100%;height:auto;display:block}
+#bMon.hit{animation:mshake .35s}@keyframes mshake{0%,100%{transform:translateX(-50%)}25%{transform:translateX(-56%) rotate(-4deg)}75%{transform:translateX(-44%) rotate(4deg)}}
+#bPet{position:absolute;left:8%;bottom:2%;font-size:64px;transition:transform .25s}#bPet.atk{transform:translate(90px,-70px) scale(1.15)}
+#bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
+#bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
+#bHit{min-height:60px;font-size:20px}#bLog{text-align:center;font-size:13px}
 #toolFab{position:absolute;right:10px;bottom:96px;width:58px;height:58px;border-radius:50%;border:3px solid var(--pri);background:#fff;font-size:28px;box-shadow:0 4px 12px #0003}
 #toolFab.on{background:var(--pri);color:#fff} #toolFab.pulse{animation:pulse 1s infinite}
 #toolBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:4px;background:#ffffffee;border-radius:18px;padding:8px;box-shadow:0 4px 16px #0002}
@@ -234,6 +248,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
       <button id="evFab" aria-label="อีเวนต์">🏮</button>
+      <button id="monFab" aria-label="สู้ปีศาจ">⚔️</button>
       <div id="toolBar"></div>
       <div id="seedBar"></div>
       <div id="mineBar"><div id="mineInfo"></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost" id="mineRest">🧘 พัก</button><button class="btn ghost" id="mineOut">ออกจากเหมือง</button></div></div>
@@ -246,6 +261,13 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   <div class="tab" id="tQuest"><div class="scroll" id="questList"></div></div>
   <div class="tab" id="tBag"><div class="scroll" id="bagList"></div></div>
 
+  <div id="battle"><div class="bwrap">
+    <div class="bhead"><b id="bTitle"></b><button class="btn ghost" id="bClose">ปิด</button></div>
+    <div class="bhp"><i id="bHp"></i><b id="bHpTxt"></b></div>
+    <div class="bstage"><div id="bMon"></div><div id="bPet"></div><div id="bDmg"></div></div>
+    <div id="bInfo" class="muted"></div>
+    <button class="btn ok" id="bHit">💧 ดื่มน้ำแล้ว 1 แก้ว</button>
+    <div id="bLog" class="muted"></div></div></div>
   <nav id="nav">
     <button data-t="tFarm" class="on"><b>🏡</b>ฟาร์ม</button>
     <button data-t="tMission"><b>🎯</b>ภารกิจ</button>
@@ -527,7 +549,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.24.1';
+const APP_VER = '0.25.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -3790,9 +3812,74 @@ const curQuest = () => { if (!S || !S.qDone) return null; const i = qIndex(); re
 const fillPet = s => s.replace(/\{pet\}/g, S.pet ? S.pet.name : 'น้อง')
   .replace(/\{plv\}/g, S.pet ? S.pet.lv : 1).replace(/\{plv1\}/g, S.pet ? S.pet.lv + 1 : 2).replace(/\{pcost\}/g, S.pet ? needPetExp(S.pet.lv) : 30);
 
+/* =====================================================================
+   ⚔️ v0.25 TRIAL — HEALTH MONSTERS (toggle in the bag: S.monTrial)
+   Idea (designer): health problems are the monsters, real healthy actions are the attacks.
+   Trial monster: 💧 ปีศาจแห้งผาก (dehydration), one per day.
+     HP = glasses for the day = clamp(6, 10, round(weight_kg × 0.033 L ÷ 0.25 L))   (≈ 33 ml/kg/day, 250 ml glass)
+     attack = log 1 glass (button, or the 💧 move-break) • logs ≥ 15 min apart (honest-play guard)
+     win = HP 0 → the monster is "purified" into a happy droplet: 💗 + 🪙, win streak
+     no penalty for a missed day — tomorrow is a new monster.
+   ===================================================================== */
+const MON_GAP = 15*60*1000, MON_LOVE = 30, MON_COIN = 300;
+const monTarget = () => Math.max(6, Math.min(10, Math.round(((S.profile && S.profile.w) || 60)*.033/.25)));
+function monState(){
+  const m = S.mon = S.mon || { streak:0 };
+  if (m.date !== todayKey()){
+    if (!(m.won && m.date === yesterdayKey())) m.streak = 0;   // streak survives only if yesterday's monster was beaten
+    Object.assign(m, { date:todayKey(), max:monTarget(), hp:monTarget(), logs:[], won:false }); }
+  return m;
+}
+const monOn = () => !!(S && S.monTrial && S.pet);
+/* SVG droplet monster: sandy & cracked when full HP → turns blue and smiles as it's purified (t = 1 − hp/max) */
+function monSvg(m){
+  const t = 1 - m.hp/m.max, mix = (a, b) => '#' + [0,2,4].map(i => Math.round(parseInt(a.substr(i,2),16)*(1-t) + parseInt(b.substr(i,2),16)*t).toString(16).padStart(2,'0')).join('');
+  const body = mix('d9a35c', '6fb7f2'), dark = mix('9c6a2e', '2f80d1'), crack = t < .99 ? `<path d="M70 120 l12 18 -8 14 14 16" stroke="${dark}" stroke-width="4" fill="none" opacity="${(1-t).toFixed(2)}"/><path d="M128 110 l-10 20 12 10" stroke="${dark}" stroke-width="4" fill="none" opacity="${(1-t).toFixed(2)}"/>` : '';
+  const brow = m.won ? '' : `<path d="M62 92 l26 10 M138 92 l-26 10" stroke="#3a2a1a" stroke-width="6" stroke-linecap="round"/>`;
+  const mouth = m.won ? '<path d="M78 150 q22 22 44 0" stroke="#24476e" stroke-width="6" fill="none" stroke-linecap="round"/>' : '<path d="M80 158 q20 -14 40 0" stroke="#3a2a1a" stroke-width="6" fill="none" stroke-linecap="round"/>';
+  const horns = m.won ? '' : `<path d="M60 70 l-10 -26 22 16z M140 70 l10 -26 -22 16z" fill="${dark}"/>`;
+  return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg"><ellipse cx="100" cy="212" rx="62" ry="8" fill="#0002"/>
+    ${horns}<path d="M100 8 C130 60 172 98 172 140 A72 72 0 0 1 28 140 C28 98 70 60 100 8Z" fill="${body}" stroke="${dark}" stroke-width="5"/>
+    <ellipse cx="72" cy="88" rx="10" ry="18" fill="#ffffff66"/>${crack}${brow}
+    <circle cx="78" cy="118" r="13" fill="#fff"/><circle cx="122" cy="118" r="13" fill="#fff"/><circle cx="80" cy="121" r="6" fill="#2b1a10"/><circle cx="120" cy="121" r="6" fill="#2b1a10"/>${mouth}
+    ${m.won ? '<text x="150" y="40" font-size="30">✨</text>' : ''}</svg>`;
+}
+function renderBattle(){
+  const m = monState(), next = m.logs.length ? m.logs[m.logs.length-1] + MON_GAP - Date.now() : 0;
+  $('bTitle').textContent = m.won ? '💧 ปีศาจแห้งผาก — ชำระล้างแล้ว!' : '💧 ปีศาจแห้งผาก (ปีศาจรายวัน)';
+  $('bHp').style.width = (m.hp/m.max*100) + '%'; $('bHpTxt').textContent = `HP ${m.hp}/${m.max}`;
+  $('bMon').innerHTML = monSvg(m); $('bPet').textContent = S.pet.emoji;
+  $('bInfo').innerHTML = m.won ? `เก่งมาก! วันนี้ดื่มน้ำครบ ${m.max} แก้ว 🎉<br>ชนะติดกัน ${m.streak} วัน • พรุ่งนี้ปีศาจตัวใหม่จะมา`
+    : `ปีศาจตัวนี้ดูดน้ำออกจากร่างกาย ทำให้อ่อนเพลีย ปวดหัว ไม่มีสมาธิ<br><b>โจมตี = ดื่มน้ำจริง 1 แก้ว</b> (≈250 มล.) • เป้าวันนี้ ${m.max} แก้ว (ตามน้ำหนักตัว)`;
+  const b = $('bHit'); b.disabled = m.won || next > 0;
+  b.textContent = m.won ? '✨ ชนะแล้ววันนี้' : next > 0 ? `⏳ แก้วถัดไปอีก ${Math.ceil(next/60000)} นาที` : `💧 ดื่มน้ำแล้ว 1 แก้ว (${S.pet.name}โจมตี!)`;
+  $('bLog').textContent = m.logs.length ? 'ดื่มแล้ว: ' + m.logs.map(t => new Date(t).toTimeString().slice(0,5)).join(' • ') : 'ยังไม่ได้ดื่มเลยวันนี้';
+}
+function openBattle(){ if (!monOn()) return; bump('battleOpen'); renderBattle(); $('battle').style.display = 'block'; }
+function closeBattle(){ $('battle').style.display = 'none'; refreshHeader(); }
+/* one glass = one hit; returns true if it counted */
+function monHit(src){
+  if (!monOn()) return false; const m = monState(), now = Date.now();
+  if (m.won || (m.logs.length && now - m.logs[m.logs.length-1] < MON_GAP)) return false;
+  m.logs.push(now); m.hp = Math.max(0, m.hp - 1); bump('monHit'); save();
+  if ($('battle').style.display === 'block'){
+    const pt = $('bPet'), mo = $('bMon'), dm = $('bDmg'); pt.classList.add('atk'); sfx('pop'); buzz(20);
+    setTimeout(() => { pt.classList.remove('atk'); mo.classList.remove('hit'); void mo.offsetWidth; mo.classList.add('hit'); dm.textContent = '−1 💧'; dm.classList.remove('on'); void dm.offsetWidth; dm.classList.add('on'); renderBattle(); }, 250);
+  }
+  if (!m.hp){ m.won = true; m.streak = (m.streak || 0) + 1; bump('monWin'); S.coins += MON_COIN; const lg = gainLove(MON_LOVE); save();
+    setTimeout(() => { renderBattle(); reward(`✨ ชำระล้างปีศาจแห้งผากแล้ว!
+ดื่มน้ำครบ ${m.max} แก้ววันนี้
+${loveTxt(MON_LOVE, lg)}
+🪙 ${MON_COIN} เหรียญทอง
+🔥 ชนะติดกัน ${m.streak} วัน`); }, 700); }
+  else if (src === 'brk') floatMsg(`💧 ${S.pet.name}โจมตีปีศาจแห้งผาก! HP ${m.hp}/${m.max}`);
+  return true;
+}
+function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
   brkTick(); if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
+  { const m = monOn() ? monState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won && (!m.logs.length || Date.now() - m.logs[m.logs.length-1] >= MON_GAP)); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
@@ -4024,7 +4111,10 @@ function renderBag(){
     sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\n⛏ ทางเข้าเหมืองอยู่ในพื้นที่ที่ 10 (เลื่อนจอไปหา)\n⚒ โรงตีเหล็ก: ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง' : '💪 แรงเต็ม + ได้แร่ชุดทดลอง', OK); });
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
   const sb = document.createElement('button'); sb.className = 'btn ok'; sb.textContent = '🧘 พักเองตอนนี้ (พักจอ / ขยับตัว)'; sb.onclick = () => brkChooser();
-  L.append(...(AVATAR_ON ? [wd] : []), sb, v3, mt, mv, out);
+  const mo = document.createElement('button'); mo.className = 'btn ghost';                 // ⚔️ v0.25 trial switch
+  mo.textContent = S.monTrial ? '🧪 โหมดสู้ปีศาจ (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ปีศาจสุขภาพ';
+  mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ปีศาจแล้ว!\nทุกวันจะมี 💧 ปีศาจแห้งผาก\nดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
+  L.append(...(AVATAR_ON ? [wd] : []), sb, mo, v3, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -4304,6 +4394,8 @@ function setHint(){
 }
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
+$('monFab').onclick = () => openBattle(); $('bClose').onclick = () => closeBattle();
+$('bHit').onclick = () => { if (!monHit('btn')) renderBattle(); };
 $('mineRest').onclick = () => brkChooser(() => exitMine());
 $('toolFab').onclick = () => {
   const open = $('toolBar').style.display === 'flex';
@@ -4500,6 +4592,9 @@ function claimBonus(){
 
 function renderMissions(){
   const L = $('missionList'); L.innerHTML = '';
+  if (monOn()){ const m = monState(), c = document.createElement('div'); c.className = 'card'; c.style.borderColor = '#3f8fd8';   // ⚔️ trial: today's monster on top
+    c.innerHTML = `<div class="mrow"><b>⚔️ ปีศาจวันนี้: 💧 ปีศาจแห้งผาก</b><b>${m.won ? '✨ ชนะ' : `HP ${m.hp}/${m.max}`}</b></div><div class="bar"><b style="width:${(1 - m.hp/m.max)*100}%;background:#3f8fd8"></b></div><div class="muted">ดื่มน้ำจริง 1 แก้ว = โจมตี 1 ครั้ง • ชนะติดกัน ${m.streak||0} วัน</div>`;
+    const g = document.createElement('button'); g.className = 'btn ok'; g.style.cssText = 'width:100%;margin-top:8px'; g.textContent = m.won ? 'ดูปีศาจที่ชำระล้างแล้ว' : '⚔️ ไปสู้ปีศาจ'; g.onclick = () => openBattle(); c.appendChild(g); L.appendChild(c); }
   renderBrkCard(L);
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
@@ -4840,7 +4935,7 @@ function brkStart(k){
    💪 stamina always refills; 🪙 / ❤️ / 💗 only while today's quota (BRK_MAX) lasts — no coin farming. */
 function brkDone(k){
   const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1);
-  const paid = b.count < BRK_MAX; bump('brkDone');
+  const paid = b.count < BRK_MAX; bump('brkDone'); if (k === 'water' && monOn()) monHit('brk');   // ⚔️ 💧 break = a hit on the dehydration monster
   const en = restTired(Infinity); let got = 0;
   if (paid){ b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); got = gainLove(LOVE_PER_BRK); }
   sfx('coin'); save(); refreshHeader(); markBrkNav(); renderMissions();
