@@ -512,7 +512,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.18.0';
+const APP_VER = '0.19.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1296,20 +1296,20 @@ function drawIco(c, name, x, y, size, fallback){
    A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
    ===================================================================== */
 const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
-  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond'];
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin'];
 const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
 /** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
 function icoCell(ref){
   const [k, id] = ref.includes(':') ? ref.split(':') : ['', ref];
   if (k === 'm'){ const n = SEED_PK[id] || id, i = ICO.indexOf(n); return i >= 0 ? [1, i] : null; }
-  const n2 = k === 'b' ? 'b_'+id : k === 'f' ? 'f_'+id : k === 'p' ? 'p_'+id : id, j = ICO2.indexOf(n2);
+  const n2 = k === 'b' ? 'b_'+id : k === 'f' ? 'f_'+id : k === 'p' ? 'p_'+id : k === 'npc' ? 'n_'+id : id, j = ICO2.indexOf(n2);
   if (j >= 0) return [2, j];
   const i = ICO.indexOf(id); return i >= 0 ? [1, i] : null;
 }
 function bigIco(ref, px, fallback){
   const c = icoCell(ref);
   if (!c) return `<span class="bico" style="width:${px}px;height:${px}px;font-size:${px*.62|0}px;line-height:${px}px">${fallback || '❔'}</span>`;
-  const [a, i] = c, rows = a === 1 ? 6 : 4, url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp';
+  const [a, i] = c, rows = Math.ceil((a === 1 ? ICO : ICO2).length / 8), url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp';
   return `<span class="bico" style="width:${px}px;height:${px}px;background-image:url(${url}?v=${APP_VER});background-size:${8*px}px ${rows*px}px;background-position:${-(i%8)*px}px ${-((i/8)|0)*px}px"></span>`;
 }
 const nm = s => String(s).replace(/^\S+\s+/, '');                 // drop the leading emoji from a display name
@@ -1402,6 +1402,137 @@ const floatsToday = () => evState().float[todayKey()] || 0;
 const canFloat = () => moonNight() || floatsToday() < FLOAT_PER_DAY;
 let KRATHONGS = [], krId = 0;                                  // floating right now (not saved): {id, gc, gr, t0}; r3d.js draws them
 const evClaimable = () => eventOn() && (EV_TASKS.some(t => t.goal() && !evState().tasks[t.id]) || (evState().candles >= CANDLE_COST && EV_DECOR.some(d => !evState().got[d])));
+
+/* =====================================================================
+   👥 TOWNSFOLK (v0.19) — 5 NPCs visit the farm; each has ONE request per day (deterministic from the date),
+   friendship ❤️ hearts = min(5, ⌊xp / 2⌋) where xp +1 per completed request ⚠️  → perks.
+   Live walkers: ≤ 3 at a time (NPC_LIVE, read by r3d.js), rotate every 3 min, pending requests first.
+   ===================================================================== */
+const NPCS = {
+  bua:   { name:'ป้าบัว', role:'แม่ค้าตลาด', lv:1, look:{ shirt:'#e8735a', apron:'#fff4dc', hair:'#6a4632', bun:1, hat:'straw', pants:'#7a5a8a' },
+           lines:['วันนี้ผักสดน่ากินจัง มีให้ป้าบ้างไหมจ๊ะ', 'ตลาดคึกคักมาก ช่วยป้าหน่อยนะหลาน', 'ขอบใจจ้ะหลาน ผักบ้านนี้ดีที่สุดเลย'], perk:h => `ออเดอร์ได้เงินเพิ่ม +${h*5}%` },
+  coach: { name:'โค้ชฟิต', role:'โค้ชออกกำลังกาย', lv:3, look:{ shirt:'#3fa7d6', pants:'#2d3e50', hair:'#2b1a0e', hat:'band', shoes:'#ffffff' },
+           lines:['มาขยับกันหน่อย! ร่างกายแข็งแรง น้องก็แฮปปี้', 'วันนี้พร้อมลุยไหม? สู้ ๆ!', 'เยี่ยมมาก! ทำได้ดีกว่าเมื่อวานอีก'], perk:h => `💗 จากชาเลนจ์ +${h*5}` },
+  mai:   { name:'ลุงไม้', role:'ช่างไม้', lv:4, need:() => ownsDone('sawmill'), needTxt:'มีโรงเลื่อย', look:{ shirt:'#8a9a5b', vest:'#a8743f', hair:'#d9d3c8', hat:'cap', pants:'#5a4a3a', tool:'saw' },
+           lines:['ไม้ดี ๆ ต้องค่อย ๆ ขัดนะหลาน', 'ลุงกำลังซ่อมบ้านคนในเมือง ขาดของนิดหน่อย', 'งานไม้ดีขนาดนี้ ลุงภูมิใจแทนเลย'], perk:h => `โรงเลื่อยทำของเร็วขึ้น ${h*2}%` },
+  khing: { name:'น้องขิง', role:'เด็กในเมือง', lv:5, look:{ shirt:'#ffd166', pants:'#4f7cac', hair:'#3b2a20', balloon:'#ff6b81' },
+           lines:['พี่ ๆ! เล่นด้วยกันหน่อยน้า', 'ขิงอยากเห็นปลาตัวใหญ่ ๆ!', 'เย้! พี่เก่งที่สุดเลย'], perk:h => `ของขวัญของตกแต่ง ${h}/5 ชิ้น` },
+  hin:   { name:'ลุงหิน', role:'คนงานเหมือง', lv:8, look:{ shirt:'#c46a3c', pants:'#4a4a52', hair:'#5a4a3a', hat:'hard', shoes:'#3a2a20' },
+           lines:['เหมืองเก่าทางเหนือพังมานาน ช่วยลุงซ่อมทีนะ', 'ข้างในมีแร่เยอะ แต่ระวังสไลม์ด้วยล่ะ', 'ขอบใจมาก! อีกไม่นานเหมืองก็เปิดได้'], perk:h => `ส่วนลดพลังงานลงเหมือง ${h*5}% (เหมืองเปิดอัปเดตหน้า)` }
+};
+const KHING_GIFT = ['flowerbed', 'bench', 'lamp', 'fountain', 'gazebo'];          // 🎁 one per new heart
+const MINE_PROJ = [ { give:{ stone:30, wood:20 }, title:'ขนหินกับไม้ไปเคลียร์ทางเข้า' }, { give:{ plank:6, stone:20 }, title:'ทำนั่งร้านไม้' },
+                    { give:{ beam:4, plank:4 }, title:'ค้ำยันอุโมงค์ด้วยไม้คาน' } ];        // ⛏ one stage per day → mine (phase 3)
+const npcUnlocked = id => { const n = NPCS[id]; return S.lv >= n.lv && (!n.need || n.need()); };
+function npcState(id){ S.npc = S.npc || {}; return S.npc[id] || (S.npc[id] = { xp:0 }); }
+const npcHearts = id => Math.min(5, Math.floor(npcState(id).xp/2));
+/** deterministic 0..1 from (date, npc, k) — FNV-1a, so a request stays the same all day */
+function dayRand(id, k){ let h = 2166136261; for (const ch of todayKey() + id + (k||0)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return ((h >>> 0) % 10000) / 10000; }
+function makeReq(id){
+  const h = npcHearts(id), r = k => dayRand(id, k);
+  if (id === 'bua'){ const crops = Object.values(CROPS).filter(c => S.lv >= c.lv), c = crops[(r(1)*crops.length)|0], n = 3 + ((r(2)*4)|0);
+    return { t:'give', title:`ขอ${c.name} ${n} ชิ้นไปขายที่ตลาด`, give:{ [c.prod]:n }, reward:{ coins:Math.round(SELL[c.prod]*n*1.6/10)*10, [c.seed === 'seed' ? 'sd_corn' : c.seed]:1 } }; }
+  if (id === 'coach'){ const o = [ ['squat', 10 + h*2, 'ลุกนั่ง (สควอต)'], ['neck', 2, 'บริหารคอ'], ['breath', 2, 'หายใจลึก ๆ'] ][(r(1)*3)|0];
+    return { t:'ex', key:o[0], target:o[1], title:`${o[2]} ${o[1]} ${BRK[o[0]].unit} กับโค้ช`, reward:{ love:20 + h*5, food:1 } }; }
+  if (id === 'mai'){ const o = [ [{ plank:2 }, null, 'ขอไม้กระดาน 2 แผ่น'], [{ beam:1 }, null, 'ขอไม้คาน 1 ท่อน'], [{}, { chair:1 }, 'ขอเก้าอี้ 1 ตัวไปให้ลูกค้า'], [{}, { table:1 }, 'ขอโต๊ะไม้ 1 ตัว'] ][(r(1)*4)|0];
+    return { t:'give', title:o[2], give:o[0], furn:o[1], reward:{ coins: o[1] ? 900 : 500, polish:1 } }; }
+  if (id === 'khing'){ const o = [ ['fish', 2, 'ตกปลาให้ขิงดู 2 ตัว'], ['sow', 4, 'หว่านเมล็ดด้วยกัน 4 แปลง'], ['harvest', 4, 'เก็บเกี่ยวผัก 4 แปลง'], ['collect_small', 10, 'ตัดหญ้า/ดอกไม้ป่า 10 ช่อง'] ][(r(1)*4)|0];
+    return { t:'act', stat:o[0], need:o[1], base:st(o[0]), title:o[2], reward:{ coins:300, flower:2 } }; }
+  const stg = S.mineStage || 0;                                 // hin
+  if (stg >= MINE_PROJ.length) return { t:'none', title:'ทางเข้าเหมืองซ่อมเสร็จแล้ว! รอเหมืองเปิดนะ' };
+  const m = MINE_PROJ[stg]; return { t:'give', proj:1, title:`ซ่อมเหมือง ${stg+1}/${MINE_PROJ.length}: ${m.title}`, give:m.give, reward:{ coins:600 + stg*300 } };
+}
+function npcReq(id){ const s = npcState(id); if (s.date !== todayKey()){ s.date = todayKey(); s.req = makeReq(id); s.done = false; } return s.req; }
+function reqReady(id){
+  const q = npcReq(id), s = npcState(id); if (s.done || !q || q.t === 'none') return false;
+  if (q.t === 'give') return canPay(q.give) && (!q.furn || Object.entries(q.furn).every(([k,v]) => ((S.furn||{})[k]||0) >= v));
+  if (q.t === 'act') return st(q.stat) - q.base >= q.need;
+  return !!q.ok;                                                // ex: set when the coach activity finishes
+}
+const npcPending = id => npcUnlocked(id) && !npcState(id).done && npcReq(id).t !== 'none';
+const rewardShort = r => Object.entries(r).map(([k,v]) => k === 'coins' ? `🪙${v}` : k === 'love' ? `💗${v}` : `${MAT[k].split(' ')[0]}${v}`).join(' ');
+function reqProgress(q){
+  if (q.t === 'give') return needMini(q.give) + (q.furn ? ' ' + Object.entries(q.furn).map(([k,v]) => `<span class="${((S.furn||{})[k]||0) >= v ? 'ok' : 'no'}">${FURN[k].name.split(' ')[0]}${(S.furn||{})[k]||0}/${v}</span>`).join(' ') : '');
+  if (q.t === 'act') return `ทำแล้ว ${Math.min(q.need, st(q.stat) - q.base)}/${q.need}`;
+  if (q.t === 'ex') return `เป้า ${q.target} ${BRK[q.key].unit}`;
+  return '';
+}
+const reqIco = (id, q) => q.t === 'give' ? (q.furn && Object.keys(q.furn).length ? 'f:' + Object.keys(q.furn)[0] : 'm:' + Object.keys(q.give)[0])
+  : q.t === 'act' ? ({ fish:'m:tilapia', sow:'m:seed', harvest:'reap', collect_small:'scissors' })[q.stat] : q.t === 'ex' ? 'missions' : 'npc:' + id;
+function npcComplete(id){
+  const q = npcReq(id), s = npcState(id), n = NPCS[id], h0 = npcHearts(id), msgs = [];
+  if (q.t === 'give'){ pay(q.give); if (q.furn) for (const [k,v] of Object.entries(q.furn)) S.furn[k] -= v; }
+  s.done = true; s.xp++; bump('npcDone'); if (id === 'coach') bump('coachDone');
+  for (const [k,v] of Object.entries(q.reward)){
+    if (k === 'coins'){ S.coins += v; msgs.push(`🪙 ${v.toLocaleString()} เหรียญทอง`); }
+    else if (k === 'love'){ msgs.push(loveTxt(v, gainLove(v))); }
+    else { invAdd(k, v); msgs.push(`${MAT[k]} +${v}`); }
+  }
+  if (q.proj){ S.mineStage = (S.mineStage||0) + 1;
+    msgs.push(S.mineStage >= MINE_PROJ.length ? '⛏ ทางเข้าเหมืองซ่อมเสร็จ! เหมืองจะเปิดในอัปเดตหน้า (Lv.10)' : `⛏ ซ่อมเหมืองคืบหน้า ${S.mineStage}/${MINE_PROJ.length} — พรุ่งนี้มาช่วยต่อนะ`); }
+  const h1 = npcHearts(id);
+  if (h1 > h0){ msgs.push(`❤️ สนิทกับ${n.name}ขึ้น ${h1}/5 • ${n.perk(h1)}`);
+    if (id === 'khing'){ const k = KHING_GIFT[h1-1]; S.store = S.store || {}; S.store[k] = (S.store[k]||0) + 1; msgs.push(`🎁 น้องขิงให้ ${FARM_ITEMS[k].name} (อยู่ใน 📦 คลัง)`); } }
+  gainExp(10); sfx('done'); save(); refreshHeader(); renderMats(); renderQuestsIfOpen();
+  reward(`${n.name}: "${n.lines[2]}"\n\n${msgs.join('\n')}\n⭐ Exp +10`);
+}
+function npcTalk(id){
+  const n = NPCS[id], s = npcState(id); bump('npcTalk'); if (id === 'bua') bump('talkBua');
+  if (!npcUnlocked(id)) return detailSheet('npc:'+id, `${n.name} — ${n.role}\n🔒 จะมาเยี่ยมเมื่อถึง Lv.${n.lv}${n.needTxt ? ' และ' + n.needTxt : ''}`, '', OK);
+  const q = npcReq(id), h = npcHearts(id), ready = reqReady(id);
+  detailSheet('npc:'+id, `${n.name} — ${n.role}\n${'❤️'.repeat(h)}${'🤍'.repeat(5-h)}  ความสนิท ${h}/5\n\n"${n.lines[s.done ? 2 : (dayRand(id, 9) < .5 ? 0 : 1)]}"`, '', [{ label:'ปิด', cls:'ghost' }]);
+  const w = document.createElement('div'); w.className = 'ws';
+  w.appendChild(cardGrid([{ ref:reqIco(id, q), name:q.title, sub:`${reqProgress(q)}${q.reward ? '<br>รางวัล ' + rewardShort(q.reward) : ''}`, dim:s.done || q.t === 'none',
+    dot:!s.done && q.t === 'give' && !ready, price: q.t === 'none' ? 'รอเหมืองเปิด' : s.done ? 'ทำแล้ว ✔ พรุ่งนี้มาใหม่' : q.t === 'ex' && !q.ok ? 'เริ่มกับโค้ช' : ready ? (q.t === 'give' ? 'ส่งของ' : 'รับรางวัล') : 'ยังไม่ครบ',
+    on:() => { if (s.done || q.t === 'none') return; closeModal();
+      if (q.t === 'ex' && !q.ok) return openAct({ ...BRK[q.key], label:q.title, target:q.target, progress:0, sec:0, npc:id });
+      if (!reqReady(id)) return npcTalk(id); npcComplete(id); } }], 64));
+  w.insertAdjacentHTML('beforeend', `<div class="muted" style="margin-top:6px">สิทธิพิเศษตอนนี้: ${n.perk(h)} • สนิทขึ้นทุก 2 คำขอ</div>`);
+  $('mbody').appendChild(w);
+}
+function renderQuestsIfOpen(){ if ($('tQuest') && $('tQuest').classList.contains('on')) renderQuests(); }
+/* ---- live walkers (global tile coords, 0.9 tiles/s, pause 2–6 s at each stop) ---- */
+let NPC_LIVE = [], npcRotAt = 0, npcRetry = false;
+function npcSpot(x0, y0, rad){
+  for (let k=0;k<30;k++){ const c = Math.floor(x0 + (Math.random()-.5)*rad*2), r = Math.floor(y0 + (Math.random()-.5)*rad*2);
+    if (walkable(tileAt(c, r))) return [c + .3 + Math.random()*.4, r + .3 + Math.random()*.4]; }
+  if (rad >= 5) for (let k=0;k<60;k++){ const z = S.farm.zones[(Math.random()*S.farm.zones.length)|0], i = (Math.random()*z.tiles.length)|0;   // fallback: anywhere on the farm
+    if (walkable(z.tiles[i])) return [z.cx*GRID + i%GRID + .5, z.cy*GRID + ((i/GRID)|0) + .5]; }
+  return null;
+}
+function npcTick(dt){
+  if (!S || !S.farm) return;
+  const now = Date.now();
+  if (now > npcRotAt || NPC_LIVE.some(n => !npcUnlocked(n.id))){
+    const retry = npcRetry; npcRetry = false; npcRotAt = now + 180000;
+    const ids = Object.keys(NPCS).filter(npcUnlocked).map(id => [id, (npcPending(id) ? 2 : 0) + (retry && NPC_LIVE.some(n => n.id === id) ? 4 : 0) + Math.random()]).sort((a,b) => b[1] - a[1]).map(e => e[0]).slice(0, 3);
+    NPC_LIVE = NPC_LIVE.filter(n => ids.includes(n.id));
+    for (const id of ids) if (!NPC_LIVE.some(n => n.id === id)){ const p = npcSpot(pet.x, pet.y, 5); if (p) NPC_LIVE.push({ id, x:p[0], y:p[1], tx:p[0], ty:p[1], wait:1 + Math.random()*3 }); }
+    if (NPC_LIVE.length < ids.length){ npcRotAt = now + 5000; npcRetry = true; }   // couldn't place everyone → retry soon, keep who is already here
+  }
+  for (const n of NPC_LIVE){
+    if (!walkAt(n.x, n.y)){ const p = npcSpot(n.x, n.y, 4); if (p){ n.x = n.tx = p[0]; n.y = n.ty = p[1]; } continue; }
+    if (n.wait > 0){ n.wait -= dt; continue; }
+    const dx = n.tx - n.x, dy = n.ty - n.y, d = Math.hypot(dx, dy);
+    if (d < .05){ n.wait = 2 + Math.random()*4; for (let k=0;k<12;k++){ const p = npcSpot(n.x, n.y, 3); if (p && pathClear(n.x, n.y, p[0], p[1])){ n.tx = p[0]; n.ty = p[1]; break; } } continue; }
+    const step = Math.min(d, .9*dt); n.x += dx/d*step; n.y += dy/d*step;
+  }
+}
+/** "!" (new request) / "✔" (ready to hand in) above walking NPCs — HUD layer */
+function drawNpcMarks(time){
+  for (const n of NPC_LIVE){
+    const pend = npcPending(n.id); if (!pend) continue;
+    const ready = reqReady(n.id), [x, y0] = P(n.x, n.y, TH*2.0), y = y0 + Math.sin(time*3 + n.x)*3;
+    ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.arc(x, y+2, 12, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = ready ? '#4caf6a' : '#f6c445'; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '800 15px Mali, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ready ? '✔' : '!', x, y + 1);
+  }
+}
+function npcAt(sx, sy){
+  for (const n of NPC_LIVE){ const [x, y] = P(n.x, n.y, TH*1.0), [mx, my] = P(n.x, n.y, TH*2.0);
+    if (Math.hypot(sx - x, sy - y) < Math.max(32, TW*.35) || Math.hypot(sx - mx, sy - my) < 22) return n.id; }
+  return null;
+}
 
 /* ---- natural resources: size class decides the collect cooldown ---- */
 const SIZE_TIME = { small:[15,30], medium:[60,120], large:[900,1800] };   // seconds (random in range)
@@ -2247,6 +2378,7 @@ function frame(now){
       else if (badges[k]===2) hpBadge(badges[k+3].tiles[badges[k+4]], badges[k+1], badges[k+2]);
       else buildBadge(objById(badges[k+3], badges[k+4]), badges[k+3], time, wall);
     }
+    npcTick(dt/1000); drawNpcMarks(time);                   // 👥 v0.19
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -2577,6 +2709,7 @@ cv.addEventListener('pointerup', e => {
     if (sx >= fishBtns[k] && sx <= fishBtns[k]+fishBtns[k+2] && sy >= fishBtns[k+1] && sy <= fishBtns[k+1]+fishBtns[k+3])
       return fishBtns[k+6] ? floatKrathong(fishBtns[k+4], fishBtns[k+5]) : startFishing(fishBtns[k+4], fishBtns[k+5]);
   const ps = petSize(), [px,py0] = P(pet.x, pet.y), py = py0 - ps*0.55 - pet.hopH*ps;
+  { const nid = npcAt(sx, sy); if (nid) return npcTalk(nid); }   // 👥 v0.19 tap a townsperson
   if (Math.hypot(sx-px, sy-py) < Math.max(30, ps*0.6)) return tapPet();
   tapTile(g.c, g.r);
 });
@@ -3153,6 +3286,12 @@ const QUESTS = [
     text:'ทำภารกิจให้ถึงเป้า 1 ข้อ แล้วกด "รับ 💗 30 + 🪙 100" — 💗 พลังใจใช้เลี้ยงน้อง ได้จากการดูแลสุขภาพจริงเท่านั้น ทำครบ 3 ข้อทุกวันได้โบนัสและ 🔥 ต่อเนื่อง', reward:{coins:200} },
   { id:'petup',   name:'ใช้ 💗 อัปเลเวลน้อง',       hl:'pet',    need:1, goal:() => st('petUp'),
     text:'แตะ {pet} → "💗 อัปเลเวล" — Lv.{plv}→{plv1} ใช้ 💗 {pcost} (ได้ 💗 จากภารกิจสุขภาพ) • น้องยิ่งเลเวลสูงยิ่งช่วยงานฟาร์มได้ (Lv.3 ขุดหาของ, Lv.5 คู่หูตกปลา…) • ร่างใหม่ต้องทำภารกิจครบติดกันหลายวัน', reward:{coins:100} },
+  { id:'npcTalk', name:'คุยกับป้าบัว',              need:1, goal:() => st('talkBua'),
+    text:'ป้าบัวแม่ค้าเดินเที่ยวในฟาร์ม (มี ! สีเหลืองเหนือหัว) → แตะที่ตัวป้า • หรือแท็บ 📜 เควส › 👥 ชาวเมือง › ป้าบัว', reward:{coins:100} },
+  { id:'npcReq',  name:'ทำคำขอชาวเมืองครั้งแรก',     need:1, goal:() => st('npcDone'),
+    text:'ทำคำขอของชาวเมืองคนไหนก็ได้ 1 อย่าง (ส่งของ/ทำกิจกรรม) — มีคำขอใหม่ทุกวัน ทำแล้วสนิทขึ้น ❤️ ได้สิทธิพิเศษ • ! เปลี่ยนเป็น ✔ สีเขียวเมื่อพร้อมส่ง', reward:{coins:200} },
+  { id:'npcCoach',name:'ชาเลนจ์กับโค้ชฟิต',          need:1, goal:() => st('coachDone'),
+    text:'(ถึง Lv.3 โค้ชจะมาเยี่ยม) แตะโค้ชฟิต → "เริ่มกับโค้ช" → ขยับตัวจนครบเป้า → ได้ 💗 พลังใจ', reward:{coins:100} },
   { id:'brk',     name:'ขยับตัวหน่อย!',          nav:'tMission', need:1, goal:() => st('brkDone'),
     text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 💗 10 + 🪙 25 (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
@@ -3256,7 +3395,11 @@ $('tut').onclick = () => { const q = curQuest(); if (!q) return;
 
 /* Quest log tab */
 function renderQuests(){
-  const L = $('questList'); L.innerHTML = '<b>📜 เควสสอนเล่น</b><div class="muted">ทำตามลำดับเพื่อเรียนรู้ทุกระบบของเกม • แตะกล่องเควสบนฟาร์มเพื่อย่อ/ขยาย</div>';
+  const L = $('questList'); L.innerHTML = '<b>👥 ชาวเมือง</b><div class="muted">คำขอใหม่ทุกวัน • ทำสำเร็จแล้วสนิทขึ้น ❤️ ได้สิทธิพิเศษ • แตะเพื่อคุย</div>';
+  L.appendChild(cardGrid(Object.keys(NPCS).map(id => { const n = NPCS[id], un = npcUnlocked(id), h = npcHearts(id), q = un ? npcReq(id) : null, s = npcState(id), ready = un && reqReady(id);
+    return { ref:'npc:'+id, name:n.name, sub: un ? `${q.title}<br>${'❤️'.repeat(h)}${'🤍'.repeat(5-h)}` : `${n.role}`, lock: un ? null : `Lv.${n.lv}${n.needTxt ? ' + ' + n.needTxt : ''}`, dim:!un,
+      dot:ready, price: !un ? null : q.t === 'none' ? 'รอเหมือง' : s.done ? '✔ วันนี้แล้ว' : ready ? 'พร้อมส่ง!' : 'มีคำขอ', on:() => npcTalk(id) }; }), 64));
+  L.insertAdjacentHTML('beforeend', '<b style="display:block;margin-top:10px">📜 เควสสอนเล่น</b><div class="muted">ทำตามลำดับเพื่อเรียนรู้ทุกระบบของเกม • แตะกล่องเควสบนฟาร์มเพื่อย่อ/ขยาย</div>');
   QUESTS.forEach((q,i) => {
     const state = S.qDone.includes(q.id) ? 'done' : i === qIndex() ? 'now' : 'lock';
     const c = document.createElement('div'); c.className = 'card' + (state==='now' ? ' tutGlow' : '');
@@ -3555,7 +3698,7 @@ function workshop(z, o){
   box.appendChild(cardGrid(list.map((r, i) => {
     const ok = canPay(r.in), f = r.furn && FURN[r.furn];
     const make = () => confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
-      pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; bump('procStart'); save(); renderMats(); sfx('pop'); markDirty(z); });
+      pay(r.in); o.pj = { i, end: Date.now() + r.sec*(o.type === 'sawmill' ? 1 - .02*npcHearts('mai') : 1)*1000 }; bump('procStart'); save(); renderMats(); sfx('pop'); markDirty(z); });   // 🪚 ลุงไม้ perk: sawmill −2%/❤️
     return { ref: f ? 'f:'+r.furn : 'm:'+r.out, name:nm(recName(r)), dot:!ok, dim:busy,
       sub:`⏱ ${fmt(r.sec)} • ${f ? `📐 ${f.w*f.h} ช่อง` : `ขาย ${sellPrice(r.out).toLocaleString()}`}<br>${needMini(r.in)}`,
       price: busy ? 'รอคิว' : ok ? 'ทำ' : 'ของไม่พอ', cnt: (f ? (S.furn||{})[r.furn] : inv(r.out)) || null,
@@ -3616,6 +3759,8 @@ const BEAUTY = { flowerbed:1, lamp:1, bench:1, fence:1, fountain:3, gazebo:3, la
 const beautyScore = () => S.farm.zones.reduce((s,z) => s + z.objs.reduce((t,o) => t + (o.done ? BEAUTY[o.type]||0 : 0), 0), 0);
 function renderOrders(L){
   ensureOrders();
+  { const h = npcHearts('bua'), c = document.createElement('div'); c.className = 'card mrow';   // 🧺 v0.19: orders come from ป้าบัว
+    c.innerHTML = `${bigIco('npc:bua', 48)}<div style="flex:1;margin-left:8px"><b>ออเดอร์จากป้าบัว</b><div class="muted">${'❤️'.repeat(h)}${'🤍'.repeat(5-h)} • ${NPCS.bua.perk(h)}</div></div>`; c.onclick = () => npcTalk('bua'); L.appendChild(c); }
   const b = beautyScore(), tip = Math.min(600, b*30), got = S.tipDate === todayKey();
   const tc = document.createElement('div'); tc.className = 'card';
   tc.innerHTML = `<div class="mrow"><b>💐 ทิปจากคนมาเที่ยวฟาร์ม</b><span>✨ ความสวย ${b}</span></div>
@@ -3634,7 +3779,7 @@ function renderOrders(L){
     const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
     const d = document.createElement('button'); d.className = 'btn ok'; d.textContent = 'ส่งของ'; d.disabled = !ok;
     d.onclick = () => confirmDo(`ส่งออเดอร์ ${i+1}?\nได้ 🪙 ${o.coins.toLocaleString()} และ ⭐ Exp ${o.exp}`, () => {
-      Object.entries(o.items).forEach(([k,v]) => S.inv[k] -= v); S.coins += o.coins; gainExp(o.exp); bump('order');
+      Object.entries(o.items).forEach(([k,v]) => S.inv[k] -= v); S.coins += Math.round(o.coins * (1 + .05*npcHearts('bua'))); gainExp(o.exp); bump('order');   // 🧺 ป้าบัว perk: orders +5%/❤️
       S.orders[i] = { wait: Date.now() + ORDER_WAIT }; sfx('coin'); save(); refreshHeader(); renderMats(); renderShop();
       reward(`📋 ส่งออเดอร์สำเร็จ!\n🪙 ${o.coins.toLocaleString()} เหรียญทอง\n⭐ Exp +${o.exp}`); });
     const s = document.createElement('button'); s.className = 'btn ghost'; s.textContent = 'ข้าม'; s.style.flex = '0 0 80px';
@@ -3958,6 +4103,7 @@ function openAct(m){
 function closeAct(){
   if (!act) return; act.stops.forEach(f => { try { f(); } catch(e){} }); const fin = act.m; act = null;
   if (fin.brk && fin.progress >= fin.target) setTimeout(() => brkDone(fin.brk), 50);   // 🔔 break finished → reward
+  if (fin.npc && fin.progress >= fin.target){ npcReq(fin.npc).ok = true; setTimeout(() => npcComplete(fin.npc), 50); }   // 👥 coach challenge done
   $('act').style.display = 'none'; $('act').innerHTML = '';
   if (S && $('sMain').classList.contains('on')){ startLoop(); renderMissions(); flushRewards(); }
 }

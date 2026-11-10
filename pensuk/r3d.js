@@ -326,6 +326,52 @@ export function start(){
     if (form >= 1) add(petG, new THREE.TorusGeometry(.26, .05, 8, 20), mat('#e5483e'), 0, .78, .32, null, null, null).rotation.x = Math.PI/2.4;
     if (form >= 2) CO(headG, .16, .22, '#f2c230', 0, .36, 0);
   }
+  /* =====================================================================
+     👥 TOWNSFOLK (v0.19) — clay people, ~1.75 units tall (a tile is 2), facing +Z.
+     Look comes from index.html NPCS[id].look; live positions from NPC_LIVE [{id, x, y}] (global tile coords).
+     Walk: yaw = atan2(dx, dz) of the frame-to-frame move, legs/arms swing with phase += distance·3.2
+     ===================================================================== */
+  function npcModel(id){
+    const L = (typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].look) || {}, g = new THREE.Group(), parts = { legs:[], arms:[] };
+    const skin = L.skin || '#f2c9a0';
+    for (const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.13, .62, 0); g.add(l);
+      CY(l, .085, .55, L.pants || '#5d6b84', 0, -.6, 0); BALL(l, .1, .07, .14, L.shoes || '#4a3a30', 0, -.6, .04); parts.legs.push(l); }
+    RB(g, .52, .62, .36, .16, L.shirt || '#e8735a', 0, .6, 0, true);                       // body
+    if (L.apron) RB(g, .4, .45, .05, .05, L.apron, 0, .62, .18);
+    if (L.vest) RB(g, .54, .4, .38, .14, L.vest, 0, .8, 0);
+    for (const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.33, 1.12, 0); g.add(a);
+      CY(a, .07, .45, L.shirt || '#e8735a', 0, -.45, 0); BALL(a, .08, .08, .08, skin, 0, -.48, 0); parts.arms.push(a); }
+    const h = new THREE.Group(); h.position.y = 1.48; g.add(h); parts.head = h;
+    BALL(h, .3, .3, .28, skin, 0, 0, 0, true);
+    for (const s of [-1,1]){ BALL(h, .035, .045, .02, '#2b1a0e', s*.1, .03, .26); BALL(h, .05, .03, .015, '#ff9fb0', s*.17, -.05, .24); }
+    BALL(h, .05, .02, .02, '#c0584a', 0, -.1, .26);                                          // smile
+    if (L.hair) BALL(h, .31, .2, .29, L.hair, 0, .12, -.03);
+    if (L.bun) BALL(h, .12, .12, .12, L.hair, 0, .28, -.15);
+    switch (L.hat){
+      case 'straw': CY(h, .5, .04, '#e9c46a', 0, .2, 0); CO(h, .25, .22, '#e9c46a', 0, .22, 0); CY(h, .26, .05, '#e8735a', 0, .22, 0); break;
+      case 'band':  CY(h, .31, .07, '#e5483e', 0, .1, 0); CY(g, .015, .3, '#d9d9d9', .05, 1.05, .2); BALL(g, .05, .03, .05, '#f6c445', .05, .9, .21); break;   // headband + whistle
+      case 'cap':   BALL(h, .31, .14, .3, '#4f7cac', 0, .17, 0); RB(h, .26, .03, .2, .02, '#4f7cac', 0, .16, .3); break;
+      case 'hard':  BALL(h, .33, .2, .32, '#f6c445', 0, .16, 0); CY(h, .36, .04, '#f6c445', 0, .14, 0); BALL(h, .07, .06, .04, '#fff6c0', 0, .26, .3); break;
+    }
+    if (L.balloon){ CY(g, .008, 1.1, '#ffffff', .4, .75, 0); BALL(g, .2, .25, .2, L.balloon, .4, 2.0, 0, true); }
+    if (L.tool === 'saw') { const t = RB(g, .06, .5, .02, .01, '#c9d1d8', -.42, .45, .1); t.rotation.z = .3; }
+    g.userData.parts = parts; g.scale.setScalar(.95); return g;
+  }
+  const npcG = new THREE.Group(), npcMap = new Map(); scene.add(npcG);
+  function syncNPCs(time){
+    const list = typeof NPC_LIVE !== 'undefined' ? NPC_LIVE : [];
+    for (const [id, m] of npcMap) if (!list.some(n => n.id === id)){ npcG.remove(m); npcMap.delete(id); }
+    for (const n of list){
+      let m = npcMap.get(n.id); if (!m){ m = npcModel(n.id); m.userData.lp = [n.x*2, n.y*2]; m.userData.ph = 0; npcG.add(m); npcMap.set(n.id, m); }
+      const x = n.x*2, z = n.y*2, [lx, lz] = m.userData.lp, dx = x - lx, dz = z - lz, d = Math.hypot(dx, dz), P2 = m.userData.parts;
+      if (d > .002 && d < 2){ m.rotation.y = Math.atan2(dx, dz); m.userData.ph += d*3.2; }
+      m.userData.lp = [x, z]; const mv = d > .002, ph = m.userData.ph;
+      m.position.set(x, mv ? Math.abs(Math.sin(ph))*.05 : 0, z);
+      P2.legs.forEach((l, i) => l.rotation.x = mv ? Math.sin(ph + i*Math.PI)*.55 : 0);
+      P2.arms.forEach((a, i) => a.rotation.x = mv ? Math.sin(ph + (1-i)*Math.PI)*.45 : Math.sin(time*1.5 + i)*.05);
+      P2.head.rotation.y = mv ? 0 : Math.sin(time*.7 + n.x)*.35;
+    }
+  }
   let petPhase = 0, lpx = 0, lpz = 0, petYaw = 0;
   function updatePet(time, src, sc3){
     if (!S.pet) return;
@@ -494,10 +540,11 @@ export function start(){
       RB(g, it.w*2 + .3, .25, it.h*2 + .3, .12, C.grass, 0, -.25, 0); g.add(objModel(o)); }
     else if (kind === 'path'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'path', p:id }, 1, 0)); }
     else if (kind === 'bridge'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'water', bridge:1 }, 7, 1, true)); }
+    else if (kind === 'npc'){ CY(g, .7, .1, C.grass, 0, -.1, 0); const m = npcModel(id); g.add(m); }
     else if (kind === 'furn'){ const f = FURN[id]; RB(g, f.w*2 + .2, .12, f.h*2 + .2, .06, '#e6d2b0', 0, -.12, 0); g.add(furnModel(id, f.w*2, f.h*2)); }
     curSway = keep; fishes = keepFish;
     const cam = new THREE.PerspectiveCamera(30, 1, .1, 200), sph = new THREE.Box3().setFromObject(g).getBoundingSphere(new THREE.Sphere());
-    const dir = new THREE.Vector3(.55, .6, 1).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
+    const dir = (kind === 'npc' ? new THREE.Vector3(.3, .22, 1) : new THREE.Vector3(.55, .6, 1)).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
     cam.position.copy(sph.center).addScaledVector(dir, dist); cam.lookAt(sph.center);
     thumbR.render(sc, cam); return thumbR.domElement.toDataURL('image/png');
   }
@@ -539,7 +586,7 @@ export function start(){
       for (let k=hits.length-2;k>=0;k-=2){ const m = hits[k], u = (performance.now() - hits[k+1])/350;
         if (u >= 1 || !m.parent){ m.scale.set(1,1,1); hits.splice(k, 2); continue; }
         const d = 1 - u; m.rotation.z = Math.sin(u*40)*.18*d; m.scale.set(1 + .08*d, 1 - .1*d, 1 + .08*d); }
-      inRoomNow = false; updatePet(time, pet, scene);
+      inRoomNow = false; updatePet(time, pet, scene); syncNPCs(time);
       const k = NIGHT || 0;                                     // day ↔ night from the real clock (same NIGHT as 2D)
       /* clouds live only BEHIND the island (away from the camera, which sits toward +x+z):
          pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */
