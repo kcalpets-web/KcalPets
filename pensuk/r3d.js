@@ -123,7 +123,7 @@ export function start(){
   function objModel(o){
     const it = FARM_ITEMS[o.type], g = new THREE.Group(), W = o.w*2, D = o.h*2, H = it.H;
     if (!o.done){                                              // construction site: pad + posts + ghost volume rising with progress
-      const p = 1 - Math.max(0, (o.end - Date.now())) / (buildSec(it)*1000);
+      const p = 1 - Math.max(0, (o.end - Date.now())) / ((typeof objBuildSec === 'function' ? objBuildSec(o) : buildSec(it))*1000);   // o.bsec = actual duration (first builds are faster)
       RB(g, W-.2, .15, D-.2, .05, '#e2d3b4', 0, 0, 0);
       for (const [x,z] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .06, H*.9, '#a8743f', x*(W/2-.3), .15, z*(D/2-.3), true);
       const gh = add(g, rb(W-.6, Math.max(.1, H*.85*p), D-.6, .1), new THREE.MeshStandardMaterial({ color:'#f3dfbd', transparent:true, opacity:.55, roughness:.9 }), 0, .15 + H*.85*p/2, 0);

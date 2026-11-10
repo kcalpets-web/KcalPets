@@ -115,6 +115,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #modal.on{display:flex}
 #mbox{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 #mbody{font-size:17px;line-height:1.5;white-space:pre-line}
+.ws{white-space:normal;margin-top:10px;font-size:15px;max-height:52vh;overflow-y:auto}.ws .card{margin:8px 0}.ws .wst{background:#fff7e6}.ws .wst .btn{width:100%;margin-top:8px}
 .needs{margin-top:10px;white-space:normal;font-size:15px}
 .needs .nd{display:flex;align-items:center;gap:8px;margin:6px 0}.needs .nd span{flex:0 0 92px}.needs .nd em{flex:0 0 30px;text-align:right;font-style:normal;font-weight:700}
 .needs .nd i{flex:1;height:12px;border-radius:8px;background:#0001;overflow:hidden}.needs .nd b{display:block;height:100%;border-radius:8px}
@@ -497,7 +498,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.17.0';
+const APP_VER = '0.17.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1292,30 +1293,39 @@ const RES = {
 const ECON = 20;                                             // v0.9: every coin price ×20 (missions pay 200)
 const FARM_ITEMS = {
   starter:   { name:'🏠 บ้านหลังแรก',  w:2, h:2, price:0,     cost:{grass:3, stone:1},            H:2.2, desc:'บ้านหลังแรกของคุณ สร้างฟรีได้ 1 หลัง (บทเรียน)', once:true, fixedSec:30 },
-  plot:      { name:'🥕 แปลงผัก',     w:1, h:1, price:300,   cost:{grass:3, stone:1},            H:.4,  hidden:true, desc:'ปลูกผักหลายชนิดไว้ขาย ส่งออเดอร์ หรือแปรรูป • ขุดเองได้ฟรีด้วย 🪏 พลั่ว' },
-  flowerbed: { name:'🌷 กระบะดอกไม้',  w:1, h:1, price:400,   cost:{grass:2, wood:1},             H:.7,  desc:'ความสวย +1 (ได้ทิปจากคนมาเที่ยว)' },
-  lamp:      { name:'🏮 โคมไฟสวน',    w:1, h:1, price:600,   cost:{stone:2, wood:1},             H:1.9, desc:'ส่องสว่างตอนกลางคืน • ความสวย +1' },
-  bench:     { name:'🪑 ม้านั่งไม้',   w:2, h:1, price:800,   cost:{wood:4},                      H:1,   desc:'มุมนั่งพัก • ความสวย +1' },
-  fence:     { name:'🪵 รั้วไม้',      w:2, h:1, price:500,   cost:{wood:3},                      H:.9,  desc:'รั้วแบ่งพื้นที่ • ความสวย +1' },
-  doghouse:  { name:'🛖 บ้านน้อง',     w:2, h:2, price:2400,  cost:{wood:8, grass:4},             H:2,   desc:'น้องได้ ❤️ +5 ทุกวัน' },
-  sawmill:   { name:'🪚 โรงเลื่อย',    w:2, h:2, price:1600,  cost:{wood:10, stone:4},            H:2,   lv:4,  desc:'แปรรูปไม้ → ไม้กระดาน/ไม้คาน/ไม้ขัดเงา และทำเฟอร์นิเจอร์ได้ถูกกว่าซื้อ' },
-  fountain:  { name:'⛲ น้ำพุ',        w:2, h:2, price:3600,  cost:{stone:12},                    H:1.6, desc:'น้ำพุหินกลางสวน • ความสวย +3' },
-  kitchen:   { name:'🍳 ครัวฟาร์ม',    w:2, h:2, price:3000,  cost:{plank:4, stone:6},            H:2,   lv:5,  desc:'ทำซุปผักและข้าวผัดปลา ขายได้ราคาดี หรือให้น้องกิน' },
-  gazebo:    { name:'🏯 ศาลาพักผ่อน',  w:2, h:3, price:6000,  cost:{plank:6, stone:8},            H:2.6, lv:4,  desc:'ศาลาไม้หลังคาเขียว • ความสวย +3' },
-  barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:7000,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
-  mill:      { name:'🏭 โรงสี',        w:2, h:2, price:2400,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
-  house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:12000, cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
-  jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:3600,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
+  plot:      { name:'🥕 แปลงผัก',     w:1, h:1, price:120,   cost:{grass:3, stone:1},            H:.4,  hidden:true, desc:'ปลูกผักหลายชนิดไว้ขาย ส่งออเดอร์ หรือแปรรูป • ขุดเองได้ฟรีด้วย 🪏 พลั่ว' },
+  flowerbed: { name:'🌷 กระบะดอกไม้',  w:1, h:1, price:150,   cost:{grass:2, wood:1},             H:.7,  desc:'ความสวย +1 (ได้ทิปจากคนมาเที่ยว)' },
+  lamp:      { name:'🏮 โคมไฟสวน',    w:1, h:1, price:250,   cost:{stone:2, wood:1},             H:1.9, desc:'ส่องสว่างตอนกลางคืน • ความสวย +1' },
+  bench:     { name:'🪑 ม้านั่งไม้',   w:2, h:1, price:300,   cost:{wood:4},                      H:1,   desc:'มุมนั่งพัก • ความสวย +1' },
+  fence:     { name:'🪵 รั้วไม้',      w:2, h:1, price:200,   cost:{wood:3},                      H:.9,  desc:'รั้วแบ่งพื้นที่ • ความสวย +1' },
+  doghouse:  { name:'🛖 บ้านน้อง',     w:2, h:2, price:1000,  cost:{wood:8, grass:4},             H:2,   desc:'น้องได้ ❤️ +5 ทุกวัน' },
+  sawmill:   { name:'🪚 โรงเลื่อย',    w:2, h:2, price:650,   cost:{wood:10, stone:4},            H:2,   lv:4,  desc:'แปรรูปไม้ → ไม้กระดาน/ไม้คาน/ไม้ขัดเงา และทำเฟอร์นิเจอร์ (เก้าอี้ โต๊ะ ชั้นหนังสือ เตียง โซฟา ที่นอนน้อง) — มีที่นี่ที่เดียว' },
+  fountain:  { name:'⛲ น้ำพุ',        w:2, h:2, price:1500,  cost:{stone:12},                    H:1.6, desc:'น้ำพุหินกลางสวน • ความสวย +3' },
+  kitchen:   { name:'🍳 ครัวฟาร์ม',    w:2, h:2, price:1200,  cost:{plank:4, stone:6},            H:2,   lv:5,  desc:'ทำซุปผักและข้าวผัดปลา ขายได้ราคาดี หรือให้น้องกิน' },
+  gazebo:    { name:'🏯 ศาลาพักผ่อน',  w:2, h:3, price:2500,  cost:{plank:6, stone:8},            H:2.6, lv:4,  desc:'ศาลาไม้หลังคาเขียว • ความสวย +3' },
+  barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:2800,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
+  mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
+  house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
+  jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:1500,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
 };
-const buildSec = it => it.fixedSec || (15*it.w*it.h + 2*it.price/ECON);   // build time unchanged by the ×20 price scale; starter fixed 30 s
+/* ⏱ v0.17.1 build time by footprint (cheaper prices, longer builds): 1 ช่อง 2 นาที • 2 ช่อง 10 นาที • 4 ช่อง 30 นาที • 6 ช่อง 2 ชม. • 8 ช่อง 4 ชม. ⚠️
+   first build of each type ≤ FIRST_BUILD s so tutorials never stall; the actual duration is stored on the object (o.bsec) */
+const SIZE_SEC = { 1:120, 2:600, 4:1800, 6:7200, 8:14400 }, FIRST_BUILD = 180;
+const buildSec = it => it.fixedSec || SIZE_SEC[it.w*it.h] || it.w*it.h*1800;      // starter fixed 30 s
+const firstBuild = type => !(S.builtOnce||{})[type] && !S.farm.zones.some(z => z.objs.some(o => o.type === type)) && !((S.store||{})[type] > 0);
+const placeSec = (type, it) => firstBuild(type) ? Math.min(FIRST_BUILD, buildSec(it)) : buildSec(it);
+function objBuildSec(o){ return o.bsec || buildSec(FARM_ITEMS[o.type]); }       // progress bars (2D + r3d.js)
+const fmtTime = it => it.fixedSec ? fmt(it.fixedSec) : fmt(buildSec(it));
 const starterOwned = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter')) || ((S.store||{}).starter > 0);
 const GROW_MS = 2*60*1000;      // demo: carrot ready in 2 minutes
 
 
-const speedCost = sec => Math.max(ECON, Math.ceil(sec/60)*ECON);   // ⚡ speed-up: 20 coins per remaining minute (v0.9)
+const SPEED_PER_MIN = 5;                                     // ⚠️ v0.17.1: ⚡ 5 coins per remaining minute (was 20), min 20
+const speedCost = sec => Math.max(20, Math.ceil(sec/60)*SPEED_PER_MIN);
 function fmt(sec){
   sec = Math.max(0, Math.ceil(sec));
   if (sec < 60) return sec+' วิ';
+  if (sec >= 3600){ const h = Math.floor(sec/3600), mm = Math.floor(sec%3600/60); return mm ? `${h} ชม. ${mm} นาที` : `${h} ชม.`; }   // v0.17.1: long builds
   const m = Math.floor(sec/60), s = sec%60;
   return s ? `${m} นาที ${s} วิ` : `${m} นาที`;
 }
@@ -1657,7 +1667,7 @@ function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in globa
   const cm = (c0+c1)/2, rm = (r0+r1)/2, night = NIGHT > .35;
   if (!o.done){                                   // construction site
     box(c0,r0,c1,r1,0,U*.12,'#d9c7a5','#bba380','#a38b67');
-    const H = FARM_ITEMS[o.type].H*U*.8, p = 1 - Math.max(0,(o.end-Date.now()))/(buildSec(FARM_ITEMS[o.type])*1000);
+    const H = FARM_ITEMS[o.type].H*U*.8, p = 1 - Math.max(0,(o.end-Date.now()))/(objBuildSec(o)*1000);
     ctx.globalAlpha = .25; box(c0+.05,r0+.05,c1-.05,r1-.05,U*.12,U*.12+H*p,'#e8d3ad','#d8b98a','#c09d6c'); ctx.globalAlpha = 1;
     ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = Math.max(2,TW/24);
     for (const [pc,pr] of [[c0,r0],[c1,r0],[c1,r1],[c0,r1]]){ const a = P(pc,pr,U*.12), b = P(pc,pr,U*.12+H); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
@@ -2152,7 +2162,7 @@ function jobBadge(t, gc, gr, time, wall){
 function buildBadge(o, z, time, wall){
   if (!o) return;
   const it = FARM_ITEMS[o.type], [x,y] = P(z.cx*GRID+o.c+o.w/2, z.cy*GRID+o.r+o.h/2, TH*it.H + 16);
-  if (!o.done){ const left = (o.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/buildSec(it), left, left <= 0, time, '🔨'); }
+  if (!o.done){ const left = (o.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/objBuildSec(o), left, left <= 0, time, '🔨'); }
   else if (o.pj){ const r = PROC[o.type][o.pj.i], left = (o.pj.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/r.sec, left, left <= 0, time, r.furn ? '🛠' : MAT[r.out].split(' ')[0]); }
   else { const c = cropOf(o), left = (o.plant + c.sec*1000 - wall)/1000; badge(x, y, 1 - Math.max(0,left)/c.sec, left, left <= 0, time, c.e); }
 }
@@ -2214,10 +2224,11 @@ $('pOk').onclick = () => {
   }
   if (it.once && starterOwned()) return sheet('สร้างบ้านหลังแรกไปแล้วครับ', OK);
   if (S.coins < it.price || !canPay(it.cost)) return sheet('เหรียญหรือวัตถุดิบไม่พอแล้ว', OK);
-  confirmDo(`สร้าง ${it.name} ที่นี่?\n🪙 ${it.price || 'ฟรี'} ${it.price ? 'เหรียญ' : ''}\n${costText(it.cost)}\n⏱ ใช้เวลาสร้าง ${fmt(buildSec(it))}`, () => {
+  const sec = placeSec(placing.type, it);
+  confirmDo(`สร้าง ${it.name} ที่นี่?\n🪙 ${it.price ? it.price.toLocaleString() + ' เหรียญ' : 'ฟรี'}\n${costText(it.cost)}\n📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง)\n⏱ ใช้เวลาสร้าง ${fmt(sec)}${sec < buildSec(it) ? ' (สร้างครั้งแรกเร็วพิเศษ)' : ''}`, () => {
     S.coins -= it.price; pay(it.cost);
     const o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, false);
-    o.end = Date.now() + buildSec(it)*1000;
+    o.bsec = sec; o.end = Date.now() + sec*1000; S.builtOnce = S.builtOnce || {}; S.builtOnce[placing.type] = 1;
     endPlacing(); save(); refreshHeader(); renderMats(); renderShop();
   });
 };
@@ -2413,7 +2424,7 @@ function speedBtn(leftSec, onDone){
   const cost = speedCost(leftSec);
   return { label:`⚡ เร่งให้เสร็จทันที (🪙 ${cost})`, cls:'ok', fn:() => {
     if (S.coins < cost) return sheet(`เหรียญไม่พอ (ต้องใช้ ${cost} มี ${S.coins})\nทำภารกิจสุขภาพเพื่อรับเหรียญเพิ่มนะครับ`, OK);
-    confirmDo(`ใช้ 🪙 ${cost} เหรียญ เร่งให้เสร็จทันที?\n(20 เหรียญ ต่อเวลาที่เหลือ 1 นาที)`, () => { S.coins -= cost; onDone(); bump('speed'); save(); refreshHeader(); });
+    confirmDo(`ใช้ 🪙 ${cost} เหรียญ เร่งให้เสร็จทันที?\n(${SPEED_PER_MIN} เหรียญ ต่อเวลาที่เหลือ 1 นาที)`, () => { S.coins -= cost; onDone(); bump('speed'); save(); refreshHeader(); });
   }};
 }
 function tapTile(gc, gr){
@@ -2591,14 +2602,14 @@ function drawBridge(gc, gr){
    ===================================================================== */
 const HOME_SIZE = { starter:6, house:8 };                    // room N×N per home type ⚠️
 const FURN = {
-  rug:      { name:'🟥 พรมผืนใหญ่',  w:2, h:2, price:20, flat:true },
+  rug:      { name:'🟥 พรมผืนใหญ่',  w:2, h:2, price:10, flat:true },
   bed:      { name:'🛏 เตียงนอน',     w:1, h:2, price:60 },
   table:    { name:'🪵 โต๊ะไม้',       w:1, h:1, price:30 },
   chair:    { name:'🪑 เก้าอี้',        w:1, h:1, price:15 },
   sofa:     { name:'🛋 โซฟา',          w:2, h:1, price:50 },
   shelf:    { name:'📚 ชั้นหนังสือ',    w:1, h:1, price:40 },
-  plant:    { name:'🪴 ต้นไม้ในกระถาง', w:1, h:1, price:15 },
-  lamp:     { name:'💡 โคมไฟตั้งพื้น',  w:1, h:1, price:20 },
+  plant:    { name:'🪴 ต้นไม้ในกระถาง', w:1, h:1, price:8 },
+  lamp:     { name:'💡 โคมไฟตั้งพื้น',  w:1, h:1, price:10 },
   petbed:   { name:'🐾 ที่นอนน้อง',     w:1, h:1, price:25, flat:true }
 };
 const WALLS  = [['ครีม','#f6e7c8','#e3d0aa'], ['ฟ้าพาสเทล','#d6ecf7','#b9d8ea'], ['ชมพูอ่อน','#f9dbe2','#ecbfca'], ['เขียวมิ้นต์','#d8f0e0','#b8dcc4']];
@@ -2607,6 +2618,8 @@ let inRoom = null;                                           // {z, o, N, saved:
 const roomPet = makePetAnim();
 let roomPlace = null;                                        // {type, w, h, c, r, valid, move}
 const isHome = type => !!HOME_SIZE[type];
+/** furniture the sawmill makes is NOT sold in the shop (v0.17.1) */
+const craftRecipe = id => (PROC.sawmill || []).find(r => r.furn === id);
 
 function enterHome(z, o){ $('toolFab').style.display = 'none'; if (typeof tool !== 'undefined' && tool) pickTool(null);
   o.room = o.room || { items:[], wall:0, floor:0, nextId:1 };
@@ -3022,7 +3035,7 @@ const QUESTS = [
   { id:'plank',   name:'ทำไม้กระดาน',             need:1, goal:() => st('proc_plank'),
     text:'แตะโรงเลื่อย → 🟫 ไม้กระดาน (ไม้ 3) → รอ 5 นาที → แตะรับ — ใช้สร้างครัว โรงสี ยุ้งฉาง บ้านไร่', reward:{coins:200} },
   { id:'craft',   name:'ทำเก้าอี้ตัวแรก',           need:1, goal:() => st('craft'),
-    text:'แตะโรงเลื่อย → 🪑 เก้าอี้ (ไม้กระดาน 1) — ทำเฟอร์นิเจอร์เองถูกกว่าซื้อในร้าน แล้วเอาไปวางในบ้าน', reward:{coins:300} }
+    text:'แตะโรงเลื่อย → 🪑 เก้าอี้ (ไม้กระดาน 1) — เตียง โซฟา โต๊ะ เก้าอี้ ชั้นหนังสือ ที่นอนน้อง ทำได้ที่โรงเลื่อยที่เดียว แล้วเอาไปวางในบ้าน', reward:{coins:300} }
 ];
 const SIZE_OF = k => RES[k] ? RES[k].size : null;
 let questDirty = true, questShown = '', questCollapsed = false;
@@ -3120,21 +3133,26 @@ function renderShop(){
   if (shopTab === 'order') return renderOrders(L);
   if (shopTab === 'home'){
     const info = document.createElement('div'); info.className = 'muted';
-    info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วเก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง • 💡 ทำเองที่ 🪚 โรงเลื่อยได้ถูกกว่า';
+    info.textContent = 'ของตกแต่งในบ้าน • ซื้อแล้วได้ทันที เก็บในกระเป๋า → เข้าบ้าน (แตะที่บ้าน) → 🛋 ของตกแต่ง → วาง';
     L.appendChild(info);
-    Object.entries(FURN).forEach(([id,f]) => {
+    Object.entries(FURN).filter(([id]) => !craftRecipe(id)).forEach(([id,f]) => {
       const c = document.createElement('div'); c.className = 'card mrow' + ((curQuest()||{}).id==='decor' ? ' tutGlow' : '');
-      c.innerHTML = `<div><b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} • มีในกระเป๋า ${(S.furn||{})[id]||0}</div></div>`;
-      const b = document.createElement('button'); b.className = 'btn'; b.textContent = `🪙 ${f.price.toLocaleString()}`; b.disabled = S.coins < f.price;
+      c.innerHTML = `<div><b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)${f.flat ? ' • ปูพื้น วางของทับได้' : ''} • ⏱ ได้ทันที • มีในกระเป๋า ${(S.furn||{})[id]||0}</div></div>`;
+      const b = document.createElement('button'); b.className = 'btn'; b.style.whiteSpace = 'nowrap'; b.textContent = `🪙 ${f.price.toLocaleString()}`; b.disabled = S.coins < f.price;
       b.onclick = () => confirmDo(`ซื้อ ${f.name} ราคา ${f.price} เหรียญ?`, () => { S.coins -= f.price; S.furn[id] = (S.furn[id]||0) + 1; save(); refreshHeader(); renderShop();
         reward(`${f.name} +1\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง`); });
       c.appendChild(b); L.appendChild(c);
     });
+    /* sawmill-only furniture: full recipe so players can plan */
+    const h = document.createElement('b'); h.textContent = '🪚 ทำได้ที่โรงเลื่อยเท่านั้น (ร้านไม่ขาย)'; h.style.marginTop = '8px'; L.appendChild(h);
+    Object.entries(FURN).filter(([id]) => craftRecipe(id)).forEach(([id,f]) => { const r = craftRecipe(id), c = document.createElement('div'); c.className = 'card';
+      c.innerHTML = `<b>${f.name}</b><div class="muted">📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง) • ⏱ ${fmt(r.sec)} • มีในกระเป๋า ${(S.furn||{})[id]||0}</div>${needLine(r.in)}`; L.appendChild(c); });
+    if (!ownsDone('sawmill')){ const e = document.createElement('div'); e.className = 'muted'; e.textContent = '🔓 สร้าง 🪚 โรงเลื่อย (Lv.4) เพื่อทำของเหล่านี้'; L.appendChild(e); }
     return;
   }
   if (shopTab === 'farm'){
     const info = document.createElement('div'); info.className = 'muted';
-    info.textContent = 'สิ่งปลูกสร้างและของตกแต่งบ้าน/ฟาร์ม • จ่ายเหรียญ + วัตถุดิบ • เวลาสร้างขึ้นกับขนาดและราคา';
+    info.textContent = 'สิ่งปลูกสร้างและของตกแต่งฟาร์ม • จ่ายเหรียญ + วัตถุดิบ • เวลาสร้างตามขนาด: 1 ช่อง 2 นาที • 2 ช่อง 10 นาที • 4 ช่อง 30 นาที • 6 ช่อง 2 ชม. • 8 ช่อง 4 ชม. (สร้างครั้งแรกของแต่ละอย่างไม่เกิน 3 นาที)';
     L.appendChild(info);
     const stored = Object.entries(S.store||{}).filter(([,n]) => n > 0);
     if (stored.length){
@@ -3149,7 +3167,7 @@ function renderShop(){
     [...Object.entries(PATHS).map(([k,pp]) => ['path', k, pp]), ['bridge', null, BRIDGE]].forEach(([kind, k, it]) => {
       const q = (curQuest()||{}).id, glow = (q==='path' && kind==='path') || (q==='bridge' && kind==='bridge');
       const c = document.createElement('div'); c.className = 'card mrow' + (glow ? ' tutGlow' : '');
-      c.innerHTML = `<div><b>${it.name}</b><div class="muted">🪙 ${it.price}${Object.keys(it.cost).length ? ' + ' + Object.entries(it.cost).map(([m,v]) => MAT[m]+' '+v).join(', ') : ''} ต่อช่อง${kind==='bridge' ? ' • วางบนน้ำ ข้ามบ่อได้' : ''}</div></div>`;
+      c.innerHTML = `<div><b>${it.name}</b><div class="muted">🪙 ${it.price}${Object.keys(it.cost).length ? ' + ' + Object.entries(it.cost).map(([m,v]) => MAT[m]+' '+v).join(', ') : ''} ต่อช่อง • 📐 1 ช่อง • ⏱ วางเสร็จทันที${kind==='bridge' ? ' • วางบนน้ำ ข้ามบ่อได้' : ''}</div></div>`;
       const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'วาง'; b.onclick = () => startPaint(kind, k);
       c.appendChild(b); L.appendChild(c);
     });
@@ -3161,9 +3179,8 @@ function renderShop(){
       const c = document.createElement('div'); c.className = 'card' + ((curQuest()||{}).id==='house' && it.once || (curQuest()||{}).id==='plot' && id==='plot' || (curQuest()||{}).id==='sawmill' && id==='sawmill' ? ' tutGlow' : '');
       c.innerHTML = `<div class="mrow"><b>${it.name}</b><span class="coin" style="padding:2px 10px">🪙 ${it.price ? it.price.toLocaleString() : 'ฟรี'}</span></div>
         <div class="muted">${it.desc}</div>
-        <div class="muted" style="margin-top:6px">📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง) • ⏱ ${fmt(buildSec(it))}</div>
-        <div style="margin-top:4px;font-size:14px">${Object.entries(it.cost).map(([k,v]) =>
-          `<span style="color:${inv(k)>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${inv(k)}/${v}</span>`).join(' • ')}</div>`;
+        <div class="muted" style="margin-top:6px">📐 ${it.w}×${it.h} (${it.w*it.h} ช่อง) • ⏱ ${fmt(buildSec(it))}${placeSec(id, it) < buildSec(it) ? ` (ครั้งแรก ${fmt(placeSec(id, it))})` : ''}${it.lv ? ` • 🔓 Lv.${it.lv}` : ''}</div>
+        ${needLine(it.cost)}`;
       const b = document.createElement('button'); b.className = 'btn' + (okCoin && okMat ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
       b.textContent = !okLv ? `🔒 ปลดล็อกที่ Lv.${it.lv}` : okCoin && okMat ? 'เลือกตำแหน่งสร้าง' : (okCoin ? 'วัตถุดิบไม่พอ' : 'เหรียญไม่พอ');
       if (!okLv) c.style.opacity = .6;
@@ -3175,7 +3192,7 @@ function renderShop(){
   const h1 = document.createElement('b'); h1.textContent = '🛒 ซื้อของ'; L.appendChild(h1);
   Object.keys(BUY).forEach(k => {
     const sc = seedCrop(k); if (sc && S.lv < sc.lv) return;              // seeds unlock with player level
-    L.appendChild(shopRow({k, p:BUY[k]}, 'ซื้อ', () => {
+    L.appendChild(shopRow({k, p:BUY[k], d:buyDetail(k)}, 'ซื้อ', () => {
       if (S.coins < BUY[k]) return sheet('เหรียญทองไม่พอ\nทำภารกิจสุขภาพหรือส่งคำสั่งซื้อเพื่อรับเหรียญเพิ่มนะครับ', OK);
       confirmDo(`ซื้อ ${MAT[k]} 1 ชิ้น ราคา ${BUY[k]} เหรียญ?`, () => { S.coins -= BUY[k]; invAdd(k, 1); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); });
     }));
@@ -3193,7 +3210,7 @@ function renderShop(){
 }
 function shopRow(it, verb, fn, sell){
   const c = document.createElement('div'); c.className='card mrow';
-  c.innerHTML = `<div><b>${MAT[it.k]}</b><div class="muted">${sell ? 'มี '+(S.inv[it.k]||0)+' • ' : ''}${it.p} เหรียญ</div></div>`;
+  c.innerHTML = `<div><b>${MAT[it.k]}</b><div class="muted">${sell ? 'มี '+(S.inv[it.k]||0)+' • ' : ''}🪙 ${it.p.toLocaleString()} เหรียญ${it.d ? '<br>' + it.d : ''}</div></div>`;
   const b = document.createElement('button'); b.className = 'btn' + (sell?' ghost':''); b.textContent = verb; b.onclick = fn;
   if (sell && !S.inv[it.k]) b.disabled = true;
   c.appendChild(b); return c;
@@ -3283,31 +3300,60 @@ const PROC = {
 const recName = r => r.furn ? FURN[r.furn].name : MAT[r.out];
 const inText = o => Object.entries(o).map(([k,v]) => `${MAT[k].split(' ')[0]}${v}`).join(' + ');
 
-function procTap(z, o){
-  const it = FARM_ITEMS[o.type], list = PROC[o.type];
-  if (o.pj){
-    const r = list[o.pj.i], left = (o.pj.end - Date.now())/1000;
-    if (left > 0) return sheet(`${it.name}\nกำลังทำ ${recName(r)}…\nเหลืออีก ${fmt(left)}`, [ speedBtn(left, () => { o.pj.end = Date.now(); }), {label:'ปิด', cls:'ghost'} ]);
-    return confirmDo(`${recName(r)} เสร็จแล้ว! รับเลยไหม?`, () => {
-      if (r.furn){ S.furn[r.furn] = (S.furn[r.furn]||0) + 1; bump('craft'); }
-      else { invAdd(r.out, 1); bump('proc_'+r.out); }
-      bump('proc'); delete o.pj; gainExp(8); sfx('done'); save(); refreshHeader(); renderMats();
-      reward(`${recName(r)} +1` + (r.furn ? '\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง' : '') + '\n⭐ Exp +8');
-    });
-  }
-  const btns = list.map((r, i) => {
-    const ok = canPay(r.in);
-    return { label:`${ok ? '' : '🔒 '}${recName(r)} ← ${inText(r.in)} • ⏱${fmt(r.sec)}`, cls: ok ? '' : 'ghost', fn:() => {
-      if (!canPay(r.in)) return sheet(`วัตถุดิบไม่พอสำหรับ ${recName(r)}\n${costText(r.in)}`, OK);
-      confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
-        pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; save(); renderMats(); sfx('pop');
-      });
-    }};
-  });
-  btns.push({ label:'ปิด', cls:'ghost' });
-  sheet(`${it.name}\n${it.desc}\nเลือกสิ่งที่จะทำ (ทำได้ทีละอย่าง)`, btns);
+/** 🧱 ingredient line: have/need, green when enough */
+function needLine(cost){ const e = Object.entries(cost||{}); if (!e.length) return '';
+  return `<div style="margin-top:4px;font-size:14px">🧱 ${e.map(([k,v]) => `<span style="color:${inv(k)>=v?'#2e7d32':'#c0392b'}">${MAT[k]} ${inv(k)}/${v}</span>`).join(' • ')}</div>`; }
+/* general-shop detail line for each buyable thing */
+function buyDetail(k){
+  const c = seedCrop(k);
+  if (c) return `🌱 ปลูกแล้วโตใน ${fmt(c.sec)} • ได้ ${c.yield[0]===c.yield[1] ? c.yield[0] : c.yield.join('–')} ${c.e} ต่อแปลง • ขายชิ้นละ ${SELL[c.prod]}${c.lv > 1 ? ` • 🔓 Lv.${c.lv}` : ''}`;
+  return { food:'อาหารน้อง: 🍖 อิ่ม +40 • ❤️ +3', stone:'วัตถุดิบก่อสร้าง / ทางเดิน', wood:'วัตถุดิบก่อสร้าง / แปรรูปที่โรงเลื่อย', grass:'วัตถุดิบก่อสร้าง', soil:'ใช้ถมบ่อน้ำ 1 ช่อง' }[k] || '';
 }
-
+/* =====================================================================
+   🏭 WORKSHOP SCREEN (v0.17.1) — tapping a processing building lists every recipe like a shop:
+   status bar (idle / making + ⚡ / ready → collect) then one card per recipe with
+   output • sell price or size • 🧱 have/need • ⏱ time • [ทำ]. One job at a time per building.
+   ===================================================================== */
+function procTap(z, o){ workshop(z, o); }
+function workshop(z, o){
+  const it = FARM_ITEMS[o.type], list = PROC[o.type], busy = !!o.pj, now = Date.now();
+  sheet(`${it.name}\n${it.desc}`, [{ label:'ปิด', cls:'ghost' }]);
+  const box = document.createElement('div'); box.className = 'ws';
+  const stEl = document.createElement('div'); stEl.className = 'card wst';
+  const close = () => $('modal').classList.remove('on');
+  if (busy){
+    const r = list[o.pj.i], left = (o.pj.end - now)/1000;
+    if (left <= 0){
+      stEl.innerHTML = `<b>✅ ${recName(r)} เสร็จแล้ว!</b>`;
+      const b = document.createElement('button'); b.className = 'btn ok'; b.textContent = 'รับของ'; b.onclick = () => { close(); collectJob(z, o); setTimeout(flushRewards, 150); };
+      stEl.appendChild(b);
+    } else {
+      stEl.innerHTML = `<b>⏳ กำลังทำ ${recName(r)}</b><div class="muted">เหลืออีก ${fmt(left)} • ทำได้ทีละ 1 อย่าง</div>`;
+      const sb = speedBtn(left, () => { o.pj.end = Date.now(); workshop(z, o); }), b = document.createElement('button');
+      b.className = 'btn ok'; b.textContent = sb.label; b.onclick = () => { close(); sb.fn(); }; stEl.appendChild(b);
+    }
+  } else stEl.innerHTML = `<b>● ว่าง</b><div class="muted">เลือกสิ่งที่จะทำด้านล่าง (ทำได้ทีละ 1 อย่าง)</div>`;
+  box.appendChild(stEl);
+  list.forEach((r, i) => {
+    const ok = canPay(r.in), f = r.furn && FURN[r.furn], c = document.createElement('div'); c.className = 'card';
+    const right = f ? `📐 ${f.w}×${f.h} (${f.w*f.h} ช่อง)` : `ขาย ${sellPrice(r.out).toLocaleString()}`;
+    c.innerHTML = `<div class="mrow"><b>${recName(r)}</b><span class="muted">${right}</span></div>
+      <div class="muted">⏱ ${fmt(r.sec)}${f ? ` • มีในกระเป๋า ${(S.furn||{})[r.furn]||0}` : ` • มีอยู่ ${inv(r.out)}`}</div>${needLine(r.in)}`;
+    const b = document.createElement('button'); b.className = 'btn' + (ok && !busy ? '' : ' ghost'); b.style.cssText = 'width:100%;margin-top:8px';
+    b.textContent = busy ? 'โรงงานกำลังทำอย่างอื่นอยู่' : ok ? `ทำ ${recName(r)}` : 'วัตถุดิบไม่พอ'; b.disabled = busy || !ok;
+    b.onclick = () => { close(); confirmDo(`ทำ ${recName(r)}?\nใช้ ${inText(r.in)}\n⏱ ${fmt(r.sec)}`, () => {
+      pay(r.in); o.pj = { i, end: Date.now() + r.sec*1000 }; bump('procStart'); save(); renderMats(); sfx('pop'); markDirty(z); }); };
+    c.appendChild(b); box.appendChild(c);
+  });
+  $('mbody').appendChild(box);
+}
+function collectJob(z, o){
+  const r = PROC[o.type][o.pj.i];
+  if (r.furn){ S.furn[r.furn] = (S.furn[r.furn]||0) + 1; bump('craft'); }
+  else { invAdd(r.out, 1); bump('proc_'+r.out); }
+  bump('proc'); delete o.pj; gainExp(8); sfx('done'); save(); refreshHeader(); renderMats(); markDirty(z);
+  reward(`${recName(r)} +1` + (r.furn ? '\nเข้าบ้านแล้วกด 🛋 ของตกแต่ง เพื่อวาง' : '') + '\n⭐ Exp +8');
+}
 /* ---------- vegetable plots: choose which seed to plant ---------- */
 function plotTap(z, o){
   if (!o.plant){
