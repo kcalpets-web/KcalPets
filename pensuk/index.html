@@ -55,7 +55,8 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 /* ---------- header ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
 .ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.22.0) no-repeat;background-size:10.4em 10.4em;
-  background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}                 /* clay icon atlas (8×5 cells), see tools/icons.html */
+  background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}
+.ico.i2{background-image:url(icons/atlas2.webp?v=0.45.3);background-size:10.4em 9.1em}   /* atlas 2 = 8 × 7 cells of 1.3em */                 /* clay icon atlas (8×5 cells), see tools/icons.html */
 #nav button b .ico{width:1.25em;height:1.25em;background-size:10em 10em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
 .coin i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe680,var(--gold) 60%,#b88600);display:inline-block}
@@ -719,7 +720,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.45.2';
+const APP_VER = '0.45.3';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1543,9 +1544,11 @@ const EMO = [['🌾(?=\\s?เคียว)','reap'],['💠','polish'],['🟫','p
   ['🪨','stone'],['🌿','grass'],['🪵','wood'],['🌱','seed'],['🥕','veg'],['🦴','food'],['🐟','tilapia'],['🐡','carp'],['🐠','goldfish'],['🦐','shrimp'],['👢','boot'],
   ['🌽','corn'],['🍅','tomato'],['🌾','rice'],['🎃','pumpkin'],['🍓','berry'],['📏','beam'],['🟤','soil'],['🍚','milled'],['🥣','soup'],['🍛','friedrice'],
   ['🫙','jam'],['🥫','sauce'],['📦','store'],['🗑','trash'],['🌸','flower'],['🪷','krathong'],['🕯','candle'],
+  ['🥚','m_egg'],['🥛','m_milk'],['🧈','m_butter'],['🧀','m_cheese'],['🍮','m_eggsteam'],['🥗','m_cheesesalad'],   // v0.45.3 → atlas 2
   ['🟠','ore_copper'],['🔘','ore_iron'],['⚪','ore_silver'],['🟡','ore_gold'],['⬛','coal'],['💎','gem'],['🥉','bar_copper'],['🔩','bar_iron'],['🥈','bar_silver'],['🏅','bar_gold'],['⚡','energy']];
 const EMO_RE = new RegExp(EMO.map(([e]) => '(' + e + ')\\uFE0F?').join('|'), 'gu');
-const icoSpan = name => { const i = ICO.indexOf(name), sp = document.createElement('span'); sp.className = 'ico'; sp.setAttribute('aria-hidden', 'true');
+const icoSpan = name => { const i2 = ICO.indexOf(name) < 0 ? ICO2.indexOf(name) : -1, i = i2 >= 0 ? i2 : ICO.indexOf(name), sp = document.createElement('span');
+  sp.className = i2 >= 0 ? 'ico i2' : 'ico'; sp.setAttribute('aria-hidden', 'true');   /* v0.45.3: names missing from atlas 1 come from atlas 2 (8×7) */
   sp.style.setProperty('--x', i % 8); sp.style.setProperty('--y', (i/8)|0); return sp; };
 const icoHTML = name => icoSpan(name).outerHTML;
 const SKIP_ICO = /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SELECT|CANVAS)$/;
@@ -1589,12 +1592,13 @@ function drawIco(c, name, x, y, size, fallback){
    A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
    ===================================================================== */
 const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
-  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin','p_asphalt','b_smithy','b_mine','n_lek','b_buahome','b_gymyard','b_salahouse'];
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin','p_asphalt','b_smithy','b_mine','n_lek','b_buahome','b_gymyard','b_salahouse',
+  'b_petshop','b_pier','b_playground','b_coop','b_cowshed','b_dairy','m_egg','m_milk','m_butter','m_cheese','m_eggsteam','m_cheesesalad'];   // v0.45.3 (8×7 grid)
 const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
 /** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
 function icoCell(ref){
   const [k, id] = ref.includes(':') ? ref.split(':') : ['', ref];
-  if (k === 'm'){ const n = SEED_PK[id] || id, i = ICO.indexOf(n); return i >= 0 ? [1, i] : null; }
+  if (k === 'm'){ const n = SEED_PK[id] || id, i = ICO.indexOf(n); if (i >= 0) return [1, i]; const j2 = ICO2.indexOf('m_' + id); return j2 >= 0 ? [2, j2] : null; }   // v0.45.3: new goods live in atlas 2
   const n2 = k === 'b' ? 'b_'+id : k === 'f' ? 'f_'+id : k === 'p' ? 'p_'+id : k === 'npc' ? 'n_'+id : id, j = ICO2.indexOf(n2);
   if (j >= 0) return [2, j];
   const i = ICO.indexOf(id); return i >= 0 ? [1, i] : null;

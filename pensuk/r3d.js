@@ -1028,6 +1028,35 @@ export function start(){
   /* ---------- 🖼 thumbnails (v0.17.2, used by tools/thumbs.html to bake icons/atlas2.webp) ----------
      Builds the REAL in-game model on a tiny grass/floor pad, same lights + tone mapping,
      camera = 3/4 view (dir (0.55, 0.6, 1)), framed by the bounding sphere:  dist = r / sin(fov/2) · 0.92 */
+  /* 🥚 v0.45.3 clay ITEM models for the icon atlas (same shading as the atlas-1 clay icons: no pad, 3/4 view) */
+  function itemModel(id){
+    const g = new THREE.Group();
+    switch (id){
+      case 'egg':                                                  // straw nest + 3 eggs
+        CY(g, .55, .14, '#c99a5a', 0, 0, 0); for (let k = 0; k < 10; k++){ const a = k/10*Math.PI*2; const st = add(g, CYL, mat(k%2 ? '#e0b56a' : '#b98a48'), Math.cos(a)*.5, .14, Math.sin(a)*.5, .04, .5, .04); st.rotation.set(Math.PI/2, 0, a + .4); }
+        for (const [x, z, r] of [[-.17, .05, .2], [.18, .02, -.3], [0, -.2, .4]]){ const e = BALL(g, .2, .27, .2, '#fbf1df', x, .36, z); e.rotation.z = r; } break;
+      case 'milk':                                                 // glass bottle, blue cap + label
+        CY(g, .26, .7, '#ffffff', 0, 0, 0); BALL(g, .26, .14, .26, '#ffffff', 0, .7, 0); CY(g, .13, .2, '#ffffff', 0, .76, 0);
+        CY(g, .145, .1, '#4f8fd8', 0, .94, 0); CY(g, .265, .22, '#8ec6e6', 0, .22, 0); break;
+      case 'butter':                                               // plate + butter block with a curl on top
+        CY(g, .58, .06, '#e9eef3', 0, 0, 0); RB(g, .72, .3, .46, .06, '#ffe08a', 0, .06, 0); BALL(g, .1, .05, .16, '#fff1b0', .1, .38, 0).rotation.y = .6; break;
+      case 'cheese':{                                              // wedge (3-sided prism) + holes
+        /* 3-sided cylinder turned on its side: rotateX(π/2) puts the triangle face toward +z with a vertex DOWN, rotateZ(π) flips it
+           so the flat side (at r·cos60° = .275 from the axis) is the bottom → lift by .275 */
+        const wg = geo('wedge', () => new THREE.CylinderGeometry(.55, .55, .5, 3).rotateX(Math.PI/2).rotateZ(Math.PI));
+        const w = add(g, wg, mat('#f7c948'), 0, .275, 0); w.rotation.y = -.5;
+        for (const [x, y, r] of [[.1, .35, .07], [-.15, .2, .05], [.2, .12, .06]]) BALL(g, r, r, r*.5, '#d9a62a', x*Math.cos(.5) + .25*Math.sin(-.5), y, .25*Math.cos(.5) - x*Math.sin(-.5)); break; }
+      case 'eggsteam':                                             // white bowl + custard top + spring onion
+        CY(g, .42, .3, '#ffffff', 0, 0, 0); CY(g, .38, .03, '#f6d06a', 0, .29, 0);
+        for (const [x, z] of [[.1, .05], [-.12, .1], [.05, -.15], [-.05, -.02]]) BALL(g, .04, .02, .04, '#4caf6a', x, .33, z); break;
+      case 'cheesesalad':                                          // bowl with lettuce, tomato, cheese cubes
+        CY(g, .45, .28, '#ffffff', 0, 0, 0);
+        for (let k = 0; k < 6; k++){ const a = k/6*Math.PI*2; BALL(g, .17, .1, .17, k%2 ? '#6fbf63' : '#8fd06a', Math.cos(a)*.22, .32, Math.sin(a)*.22); }
+        for (const [x, z] of [[.1, .12], [-.15, -.05]]) BALL(g, .09, .09, .09, '#e5483e', x, .42, z);
+        for (const [x, z] of [[-.05, .15], [.15, -.12], [0, -.02]]) RB(g, .11, .11, .11, .02, '#f7c948', x, .38, z); break;
+    }
+    return g;
+  }
   let thumbR = null;
   function thumb(kind, id, yaw, size){
     size = size || 128; if (thumbR && thumbR.domElement.width !== size) thumbR.setSize(size, size);
@@ -1036,16 +1065,17 @@ export function start(){
     const sc = new THREE.Scene(), g = new THREE.Group(); sc.add(g);
     sc.add(new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15)); const sl = new THREE.DirectionalLight(0xfff1dc, 2.3); sl.position.set(3, 6, 4); sc.add(sl);
     const keep = curSway; curSway = []; const keepFish = fishes; fishes = [];
-    if (kind === 'build'){ const it = FARM_ITEMS[id], o = { type:id, w:it.w, h:it.h, done:true, id:1, c:0, r:0, plant:0 };
+    if (kind === 'build'){ const it = FARM_ITEMS[id], o = { type:id, w:it.w, h:it.h, done:true, id:1, c:0, r:0, plant:0, live:{ n:id === 'coop' ? 3 : 2 } };   // live: animals in coop / shed thumbs
       RB(g, it.w*2 + .3, .25, it.h*2 + .3, .12, C.grass, 0, -.25, 0); g.add(objModel(o)); }
     else if (kind === 'path'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'path', p:id }, 1, 0)); }
     else if (kind === 'bridge'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'water', bridge:1 }, 7, 1, true)); }
     else if (kind === 'npc'){ CY(g, .7, .1, C.grass, 0, -.1, 0); const m = npcModel(id); g.add(m); }
     else if (kind === 'avatar'){ const m = personModel(id); m.rotation.y = yaw || 0; g.add(m); }   // id = look object
+    else if (kind === 'item') g.add(itemModel(id));
     else if (kind === 'furn'){ const f = FURN[id]; RB(g, f.w*2 + .2, .12, f.h*2 + .2, .06, '#e6d2b0', 0, -.12, 0); g.add(furnModel(id, f.w*2, f.h*2)); }
     curSway = keep; fishes = keepFish;
     const cam = new THREE.PerspectiveCamera(30, 1, .1, 200), sph = new THREE.Box3().setFromObject(g).getBoundingSphere(new THREE.Sphere());
-    const dir = (kind === 'npc' || kind === 'avatar' ? new THREE.Vector3(.3, .22, 1) : new THREE.Vector3(.55, .6, 1)).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
+    const dir = (kind === 'npc' || kind === 'avatar' ? new THREE.Vector3(.3, .22, 1) : kind === 'item' ? new THREE.Vector3(.45, .7, 1) : new THREE.Vector3(.55, .6, 1)).normalize(), dist = sph.radius / Math.sin(THREE.MathUtils.degToRad(15)) * .92;
     cam.position.copy(sph.center).addScaledVector(dir, dist); cam.lookAt(sph.center);
     thumbR.render(sc, cam); return thumbR.domElement.toDataURL('image/png');
   }
