@@ -252,8 +252,11 @@ export function start(){
         if (typeof PLA !== 'undefined'){ const u = personModel(PLA.look), P2 = u.userData.parts;
           u.position.set(x1 - .7, .25, .3); u.rotation.y = Math.PI/2;                                                       // sitting, facing the sea (+x)
           P2.legs.forEach(l => l.rotation.x = -1.45); P2.arms.forEach(a2 => a2.rotation.x = -1.1); g.add(u);
-          const rod = CY(g, .025, 2.6, '#6e4524', x1 + .2, 1.0, .3); rod.rotation.z = -1.05;                                // rod held out over the water
-          CY(g, .006, 1.3, '#f2f2f2', x1 + 1.4, .05, .3); BALL(g, .06, .06, .06, '#e5483e', x1 + 1.4, -.02, .3); }         // line + bobber
+          /* rod from the hands (hx, hy) out and up to the tip (tx, ty) — v0.40.3 fix: CY's y is the cylinder BASE (centre = y + h/2),
+             the old call put the whole rod above the hat. Centre = midpoint − h/2 in y; tilt = −atan2(dx, dy) about z. */
+          const hx = x1 - .25, hy = 1.05, tx = x1 + 1.6, ty = 1.8, rl = Math.hypot(tx - hx, ty - hy);
+          const rod = CY(g, .025, rl, '#6e4524', (hx + tx)/2, (hy + ty)/2 - rl/2, .3); rod.rotation.z = -Math.atan2(tx - hx, ty - hy);
+          CY(g, .006, ty + .1, '#f2f2f2', tx, -.1, .3); BALL(g, .06, .06, .06, '#e5483e', tx, -.12, .3); }               // line straight down + bobber
         break; }
       case 'gymyard': {
         const gl = o.gl|0, bw = W*.8, bd = D*.5, bz = -D*.2, wh = 1.7, fz = bz + bd/2;

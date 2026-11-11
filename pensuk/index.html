@@ -719,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.40.2';
+const APP_VER = '0.40.3';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -6518,7 +6518,7 @@ function actNeck(box, m){
   const c = document.createElement('div'); c.className = 'actc';
   c.innerHTML = `<div style="position:relative;width:260px;height:195px;border-radius:18px;overflow:hidden;background:#222">
       <video id="nVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
-      <div id="nArrow" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;color:#fff;text-shadow:0 2px 8px #000"></div></div>
+      <div id="nArrow" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:10px;font-size:44px;opacity:.9;color:#fff;text-shadow:0 2px 8px #000;pointer-events:none"></div></div>
     <svg viewBox="0 0 100 100" width="70" height="70"><circle cx="50" cy="50" r="42" fill="none" stroke="#f3e6d3" stroke-width="9"/>
       <circle id="nRing" cx="50" cy="50" r="42" fill="none" stroke="#4caf6a" stroke-width="9" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/></svg>
     <div id="nStep" style="font-size:22px;font-weight:700;text-align:center">มองตรงที่กล้อง</div>
@@ -6530,7 +6530,10 @@ function actNeck(box, m){
   let stream = null, raf3 = 0, lastDet = 0, base = null, calib = [], step = 0, holdT0 = 0, sideSign = 0;
   const STEPS = ['side1','side2','up','down'], ARROW = { side1:'⬅️', side2:'➡️', up:'⬆️', down:'⬇️' };
   const LABEL = { side1:'หันหน้าไปด้านข้าง (ซ้ายก่อน)', side2:'หันไปอีกด้าน', up:'เงยหน้าขึ้น', down:'ก้มหน้าลง' };
-  const setStep = () => { const s = STEPS[step]; $('nStep').textContent = LABEL[s]; $('nArrow').textContent = s==='side2' && sideSign ? (sideSign > 0 ? '⬅️' : '➡️') : ARROW[s]; holdT0 = 0; $('nRing').setAttribute('stroke-dashoffset', 264); };
+  /* v0.40.3 (designer: "ลูกศรบังหน้า") — the arrow sits at the camera-frame EDGE it points to, not over the face */
+  const nArrowEdge = () => { const a = $('nArrow'), t = a.textContent;
+    a.style.justifyContent = t === '⬅️' ? 'flex-start' : t === '➡️' ? 'flex-end' : 'center'; a.style.alignItems = t === '⬆️' ? 'flex-start' : t === '⬇️' ? 'flex-end' : 'center'; };
+  const setStep = () => { const s = STEPS[step]; $('nStep').textContent = LABEL[s]; $('nArrow').textContent = s==='side2' && sideSign ? (sideSign > 0 ? '⬅️' : '➡️') : ARROW[s]; nArrowEdge(); holdT0 = 0; $('nRing').setAttribute('stroke-dashoffset', 264); };
   function onFace(L){
     const l = L[33], r = L[263], n = L[1], ch = L[152], mx = (l.x+r.x)/2, my = (l.y+r.y)/2, ed = Math.hypot(r.x-l.x, r.y-l.y) || .01;
     const yaw = (n.x - mx)/ed, pr = (n.y - my)/Math.max(.01, ch.y - my);
