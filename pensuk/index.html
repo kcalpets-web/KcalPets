@@ -137,6 +137,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #avEd .avbot{display:flex;gap:10px}#avEd .avbot .btn{flex:1;min-height:52px}
 #mineBar{position:absolute;left:8px;right:8px;bottom:10px;z-index:5;display:none;align-items:center;justify-content:space-between;gap:8px;background:#2b2420e6;color:#fff;border-radius:16px;padding:8px 12px;font-weight:700}
 #mineBar small{font-weight:400;opacity:.85}#mineBar .stam{position:relative;height:16px;margin:3px 0;border-radius:8px;background:#ffffff33;overflow:hidden;min-width:130px}#mineBar .stam i{position:absolute;left:0;top:0;bottom:0;border-radius:8px}#mineBar .stam b{position:relative;font-size:11px;line-height:16px;padding-left:6px}#mineBar .btn{min-height:44px;background:#fff;color:var(--ink);white-space:nowrap;flex:none;padding:0 14px}
+.qty{margin-top:10px;display:flex;flex-direction:column;gap:8px}.qrow{display:flex;align-items:center;gap:8px}.qrow .btn{min-width:52px;min-height:52px;font-size:24px;padding:0}.qrow .qmax{font-size:14px;padding:0 12px;margin-left:auto}.qrow b{min-width:44px;text-align:center;font-size:26px}#qBuy{min-height:54px;font-size:18px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}   /* 🃏 v0.17.2 card grid: 2 cols on phones, 3+ on tablets */
 .gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 6px;font:inherit;color:var(--ink);text-align:center;box-shadow:0 2px 6px #0000000d;min-height:44px}
 .gcard b{font-size:14px;line-height:1.25}.gcard small{font-size:11.5px;color:var(--sub);line-height:1.35}
@@ -192,6 +193,8 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #xb .xhp{display:flex;align-items:center;gap:8px}#xb .xhp span{width:56px;font-size:13px;font-weight:700}#xb .xhp .bhp{flex:1}
 #xb .bhp.pet i{background:linear-gradient(90deg,#4caf6a,#8bd36b)}#xb .bstage{height:min(34vh,260px)}
 #xMon{position:absolute;left:50%;top:0;width:56%;transform:translateX(-50%)}#xMon svg{width:100%;height:auto;display:block}#xMon.hit{animation:mshake .35s}
+#xb.hurt{animation:xhurt .5s}@keyframes xhurt{0%,100%{box-shadow:inset 0 0 0 0 #d23c3c00}40%{box-shadow:inset 0 0 60px 18px #d23c3caa}}
+#xMon.hit::after{content:'';position:absolute;left:10%;top:40%;width:80%;height:8px;background:#fff;border-radius:4px;transform:rotate(-25deg);box-shadow:0 0 12px #fff;animation:slash .35s forwards}@keyframes slash{from{opacity:1;transform:rotate(-25deg) scaleX(.2)}to{opacity:0;transform:rotate(-25deg) scaleX(1.2)}}
 #xPet{position:absolute;left:6%;bottom:0;font-size:58px;transition:transform .25s}#xPet.atk{transform:translate(90px,-60px) scale(1.15)}#xPet.hurt{animation:mshake .35s}
 #xDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 32px Mali,sans-serif;color:#d2462e;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}#xDmg.on{animation:dmg .9s}
 #xBig{text-align:center;font:800 64px/1.1 Mali,sans-serif;color:#5b3fa0;min-height:72px}
@@ -300,7 +303,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   <div id="xb"><div class="xwrap">
     <div class="bhead"><b id="xTitle">🛋 อสูรนั่งนิ่ง</b><button class="btn ghost" id="xStop">⏸ หยุดพัก</button></div>
     <div class="xhp"><span>อสูร</span><div class="bhp"><i id="xHpM"></i><b id="xHpMT"></b></div></div>
-    <div class="xhp"><span id="xPetN">น้อง</span><div class="bhp pet"><i id="xHpP"></i><b id="xHpPT"></b></div></div>
+    <div class="xhp"><span id="xPetN">❤️ คุณ</span><div class="bhp pet"><i id="xHpP"></i><b id="xHpPT"></b></div></div>
     <div class="bstage"><div id="xMon"></div><div id="xPet"></div><div id="xDmg"></div></div>
     <div id="xBig"></div><div id="xGauge"><div class="gtrack"><i class="gtarget"></i><s id="xMark"></s></div><b id="xDist"></b></div><div id="xSay"></div><div id="xBtns"></div></div></div>
   <div id="battle"><div class="bwrap">
@@ -591,7 +594,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.29.1';
+const APP_VER = '0.30.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1407,7 +1410,7 @@ function drawIco(c, name, x, y, size, fallback){
    A cell i sits at column i%8, row ⌊i/8⌋ → background-position (−(i%8)·px, −⌊i/8⌋·px), background-size (8·px, rows·px).
    ===================================================================== */
 const ICO2 = ['b_starter','b_flowerbed','b_lamp','b_bench','b_fence','b_doghouse','b_sawmill','b_fountain','b_kitchen','b_gazebo','b_barn','b_mill','b_house','b_jamhouse',
-  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin','p_asphalt','b_smithy','b_mine','n_lek'];
+  'p_stone','p_wood','p_brick','bridge','f_rug','f_bed','f_table','f_chair','f_sofa','f_shelf','f_plant','f_lamp','f_petbed','b_lanna','b_lotuspond','n_bua','n_coach','n_mai','n_khing','n_hin','p_asphalt','b_smithy','b_mine','n_lek','b_buahome','b_gymyard','b_salahouse'];
 const SEED_PK = { seed:'pk_seed', sd_corn:'pk_corn', sd_tomato:'pk_tomato', sd_rice:'pk_rice', sd_pumpkin:'pk_pumpkin', sd_berry:'pk_berry' };
 /** ref → [atlas, index] ; ref forms: 'm:<MAT key>' • 'b:<farm item>' • 'f:<furniture>' • 'p:<path>' • 'bridge' • '<atlas-1 name>' */
 function icoCell(ref){
@@ -1643,13 +1646,45 @@ function npcSpot(x0, y0, rad){
 /* 🌙 v0.28.1 craftsmen go home at night: ลุงไม้ → 🪚 sawmill • ลุงหิน → ⛏ mine • พี่เหล็ก → ⚒ smithy.
    NIGHT ≥ .9 (≈ 19:30–05:00): they walk (A* gridPath) to the tile in front of their building and disappear inside;
    they don't rotate back in until morning, and the first one out appears at their own door. */
-const NPC_HOME = { mai:'sawmill', hin:'mine', lek:'smithy' };
+const NPC_HOME = { mai:'sawmill', hin:'mine', lek:'smithy', bua:'buahome', coach:'gymyard', khing:'salahouse' };
+/* 🏚 v0.30 ruined NPC homes (designer): reaching the level opens a new area WITH that NPC's broken house (zone index = lv − 1).
+   Tap it → repair stage by stage with coins + materials (never sold in the shop). Done → the NPC moves in (goes home at night). */
+const HOMES = {
+  buahome:   { npc:'bua',   lv:6,  stages:[ { coins:300, give:{ wood:10, stone:6 }, title:'ซ่อมผนังและหลังคา' }, { coins:500, give:{ plank:4, grass:10 }, title:'ทำครัวและแปลงผักหน้าบ้าน' } ] },
+  gymyard:   { npc:'coach', lv:8,  stages:[ { coins:400, give:{ stone:15, wood:10 }, title:'ปรับพื้นลาน' }, { coins:600, give:{ plank:6 }, title:'ตั้งราวโหนและม้านั่ง' }, { coins:800, give:{ beam:2, stone:10 }, title:'ทำชั้นวางดัมเบล' } ] },
+  salahouse: { npc:'khing', lv:12, stages:[ { coins:600, give:{ wood:15, grass:15 }, title:'ยกพื้นศาลา' }, { coins:900, give:{ plank:6, beam:2 }, title:'ตั้งเสาและหลังคา' }, { coins:1200, give:{ stone:20, polish:2 }, title:'ขัดเงาและตกแต่ง' } ] } };
+const homeObj = t => { for (const z of S.farm.zones) for (const o of z.objs) if (o.type === t) return [z, o]; return null; };
+function placeFixed(type, zi, closed){                       // first free 2×2 spot in zone zi (then any zone); clears nature underneath
+  const order = [zi].concat(S.farm.zones.map((_, i) => i).filter(i => i !== zi).reverse());
+  for (const pass of [0, 1]) for (const k of order){ const z = S.farm.zones[k]; if (!z) continue;
+    for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++){
+      const ts = [z.tiles[r*GRID+c], z.tiles[r*GRID+c+1], z.tiles[(r+1)*GRID+c], z.tiles[(r+1)*GRID+c+1]];
+      if (ts.some(t => t.k === 'obj' || (!pass && (t.k === 'water' || t.k === 'path')))) continue;
+      ts.forEach(t => { for (const q in t) delete t[q]; t.k = 'clear'; });
+      const o = addObj(z, type, c, r, 2, 2, true); o.closed = closed ? 1 : 0; markDirty(z); return o; } }
+  return null;
+}
+function ensureNpcHomes(){
+  S.homes = S.homes || {};
+  for (const [t, H] of Object.entries(HOMES)) if (S.farm.zones.length >= H.lv && !homeObj(t)){ placeFixed(t, H.lv - 1, (S.homes[t] || 0) < H.stages.length); save(); }
+}
+function homeTap(z, o){
+  const H = HOMES[o.type], n = NPCS[H.npc], k = S.homes[o.type] || 0;
+  if (k >= H.stages.length) return detailSheet('b:' + o.type, `${FARM_ITEMS[o.type].name}\nบ้านของ${n.name} ซ่อมเสร็จแล้ว 🏡\n${n.name}กลับบ้านตอนกลางคืน`, '', OK);
+  const st = H.stages[k], ok = S.coins >= st.coins && canPay(st.give);
+  detailSheet('b:' + o.type, `🏚 ${FARM_ITEMS[o.type].name} (ผุพัง)\n${n.name}: "บ้านพังหมดเลย ช่วยซ่อมหน่อยนะ"\nขั้น ${k+1}/${H.stages.length}: ${st.title}\n🪙 ${st.coins.toLocaleString()} • ${inText(st.give)}`, needLine(st.give),
+    [{ label: ok ? `🔨 ซ่อมขั้นที่ ${k+1}` : 'ของหรือเหรียญยังไม่พอ', cls: ok ? 'ok' : 'ghost', fn:() => { if (!ok) return;
+        S.coins -= st.coins; pay(st.give); S.homes[o.type] = k + 1; bump('homeFix'); sfx('chop'); burst(z.cx*GRID + o.c + 1, z.cy*GRID + o.r + 1, ['#c99a62', '#fff', '#7cae5a'], 14);
+        if (k + 1 >= H.stages.length){ o.closed = 0; bump('home_' + H.npc); const s2 = npcState(H.npc); s2.xp = (s2.xp||0) + 1; gainLove(10);
+          reward(`🏡 ซ่อม${FARM_ITEMS[o.type].name}เสร็จแล้ว!\n${n.name}: "ขอบคุณมาก ๆ เลยนะ!"\n❤️ สนิทกับ${n.name}ขึ้น • 💗 +10`); }
+        markDirty(z); save(); refreshHeader(); renderMats(); } }, { label:'ปิด', cls:'ghost' }]);
+}
 function npcDoor(id){
   const k = NPC_HOME[id]; if (!k) return null;
-  for (const z of S.farm.zones) for (const o of z.objs) if (o.type === k && o.done !== false && !(k === 'mine' && o.closed)){
+  for (const z of S.farm.zones) for (const o of z.objs) if (o.type === k && o.done !== false && !o.closed){
     const gx = z.cx*GRID + o.c, gy = z.cy*GRID + o.r, cx = gx + Math.floor(o.w/2), cy = gy + o.h;   // front-centre tile
     if (walkAt(cx + .5, cy + .5)) return [cx + .5, cy + .5];
-    const p = npcSpot(cx + .5, cy + .5, 3); return p; }
+    return npcSpot(cx + .5, cy + .5, 3) || [cx + .5, cy + .5]; }   // nothing walkable nearby → walk as close as possible
   return null;
 }
 const npcAsleep = id => NIGHT >= .9 && !!npcDoor(id);
@@ -2049,6 +2084,9 @@ const FARM_ITEMS = {
   barn:      { name:'🌾 ยุ้งฉาง',      w:2, h:3, price:2800,  cost:{plank:8, beam:2, stone:6},    H:3,   lv:5,  desc:'ขายของที่ร้านได้ราคาเพิ่ม 10%' },
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
+  buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
+  gymyard:   { name:'🏋️ ลานออกกำลังโค้ช', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลานออกกำลังกายของโค้ชฟิต' },
+  salahouse: { name:'🛕 ศาลาน้องขิง',    w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ศาลาพักผ่อนของน้องขิง' },
   smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, hidden:true, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
   mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ขุดได้เรื่อย ๆ แรง 💪 หมดก็พักจอ • สถานที่ถาวร' },
   lanna:     { name:'🏮 โคมไฟล้านนา',  w:1, h:1, price:0, cost:{}, H:2.3, hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • ส่องแสงตอนกลางคืน • ความสวย +2' },
@@ -2142,7 +2180,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24                            // 🏗 ⛏ v0.23
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes();   // 🏚 v0.30 if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24                            // 🏗 ⛏ v0.23
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
    asphalt → clear ground, auto bridges → water again. Runs once per save (S.roadsV = 2). */
@@ -3360,6 +3398,7 @@ function tapObj(z, o){
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
   if (PROC[o.type]) return procTap(z, o);
+  if (HOMES[o.type]) return homeTap(z, o);                   // 🏚 v0.30
   if (o.type === 'mine') return S.mineOpen ? enterMine()    // ⛏ v0.22 • v0.23: collapsed until ลุงหิน's repair
     : detailSheet('b:mine', `⛏ ทางเข้าเหมือง (ถล่มอยู่)\n${S.lv >= NPCS.hin.lv ? `ลุงหินกำลังรอความช่วยเหลือ — ซ่อมแล้ว ${S.mineStage||0}/${MINE_PROJ.length}\nแตะลุงหินในฟาร์มเพื่อส่งวัตถุดิบ` : `ลุงหินจะมาขอให้ช่วยซ่อมเมื่อถึง Lv.${NPCS.hin.lv}`}`, '', OK);
   sheet(`${it.name}\nขนาด ${o.w}×${o.h} (${o.w*o.h} ช่อง)\n${it.desc}\n\n💡 กดค้าง 1 วินาทีแล้วลากเพื่อย้าย • ลากไป 📦 เก็บเข้าคลัง • ลากไป 🗑️ ลบ`, [
@@ -3887,10 +3926,16 @@ const QUESTS = [
     text:'เลือกสีผิว ทรงผม สีเสื้อ-กางเกง ของประดับ แล้วกดบันทึก (เปิดได้ที่ 🎒 กระเป๋า › 👕 ตู้เสื้อผ้า หรือแตะรูปหน้าบนแถบด้านบน)', reward:{coins:100} },
   { id:'avWalk',  name:'แตะพื้นให้ตัวละครเดิน',      need:1, goal:() => st('avTap'),
     text:'ตอนไม่ได้ถือเครื่องมือ แตะพื้นหญ้าว่างหรือทางเดิน — ตัวละครจะเดินไปตรงนั้น (กดค้างที่ทางเดินยังรื้อได้เหมือนเดิม)', reward:{coins:100} },
+  { id:'buaHome', name:'ซ่อมบ้านป้าบัว',            need:1, goal:() => (S.homes||{}).buahome >= 2 ? 1 : 0,
+    text:'(Lv.6) พื้นที่ใหม่มีครัวป้าบัวที่ผุพัง → แตะบ้าน → หาเหรียญและวัตถุดิบมาซ่อมให้ครบ 2 ขั้น', reward:{coins:200} },
+  { id:'coachHome', name:'ซ่อมลานออกกำลังของโค้ช',   need:1, goal:() => (S.homes||{}).gymyard >= 3 ? 1 : 0,
+    text:'(Lv.8) พื้นที่ใหม่มีลานออกกำลังที่พังอยู่ → แตะ → ซ่อมให้ครบ 3 ขั้น โค้ชฟิตจะได้มีที่อยู่', reward:{coins:300} },
   { id:'mineSet', name:'ช่วยลุงหินซ่อมเหมือง',       need:1, goal:() => S.mineOpen ? 1 : 0,
     text:'ถึง Lv.10 พื้นที่ใหม่จะมี ⛏ ทางเข้าเหมืองที่ถล่มอยู่ และลุงหินจะมาขอให้ช่วย → แตะลุงหิน → ส่งวัตถุดิบครบ 3 ขั้น → เหมืองเปิด', reward:{coins:200} },
   { id:'mineDig', name:'ขุดแร่ครั้งแรก',              need:1, goal:() => st('oreGet'),
     text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — ขุดได้เรื่อย ๆ แรง 💪 หมดเมื่อไหร่ พักสายตา/ขยับตัวสั้น ๆ ก็แรงเต็ม', reward:{coins:100, coal:2} },
+  { id:'khingHome', name:'ซ่อมศาลาน้องขิง',          need:1, goal:() => (S.homes||{}).salahouse >= 3 ? 1 : 0,
+    text:'(Lv.12) พื้นที่ใหม่มีศาลาของน้องขิงที่ผุพัง → แตะ → ซ่อมให้ครบ 3 ขั้น', reward:{coins:400} },
   { id:'smelt',   name:'หลอมแท่งทองแดง',             need:1, goal:() => st('proc_bar_copper'),
     text:'(Lv.12) พี่เหล็กจะมาขอให้ช่วยสร้าง ⚒ โรงตีเหล็ก (3 ขั้น) → วางจาก 📦 คลัง → แตะ → 🥉 แท่งทองแดง (แร่ทองแดง 3 + ถ่านหิน 1)', reward:{coins:200} },
   { id:'pickUp',  name:'อัปเกรดอีเต้อ',               need:1, goal:() => st('up_pick'),
@@ -4241,10 +4286,10 @@ function exRender(){
   const x = exState(), mf = x.mhp/EX_MHP;
   $('xHpM').style.width = (mf*100) + '%'; $('xHpMT').textContent = `${x.mhp}/${EX_MHP}`;
   $('xHpP').style.width = (x.php/EX_PHP*100) + '%'; $('xHpPT').textContent = `${x.php}/${EX_PHP}`;
-  $('xMon').innerHTML = exMonSvg(mf); $('xPet').textContent = S.pet.emoji; $('xPetN').textContent = S.pet.name;
+  $('xMon').innerHTML = exMonSvg(mf); $('xPet').textContent = '';   // v0.30: the player fights in person — no pet on this screen
 }
 function exBtns(list){ const b = $('xBtns'); b.innerHTML = ''; list.forEach(o => { const e = document.createElement('button'); e.className = 'btn ' + (o.cls || 'ok'); e.textContent = o.label; e.onclick = o.fn; b.appendChild(e); }); }
-function exFx(who, txt){ const el = who === 'mon' ? $('xMon') : $('xPet'), dm = $('xDmg');
+function exFx(who, txt){ const el = who === 'mon' ? $('xMon') : $('xb'), dm = $('xDmg');   // mon: shake + slash • you: red edge flash
   el.classList.remove(who === 'mon' ? 'hit' : 'hurt'); void el.offsetWidth; el.classList.add(who === 'mon' ? 'hit' : 'hurt');
   dm.style.color = who === 'mon' ? '#d2462e' : '#5b3fa0'; dm.textContent = txt; dm.classList.remove('on'); void dm.offsetWidth; dm.classList.add('on'); sfx('pop'); buzz(25); }
 /* run a list of timed steps: {say, big, sec, voice}; real-time countdown, cancellable */
@@ -4258,7 +4303,8 @@ function exSteps(steps, done){
 function openEx(){
   if (!exOn()) return; const x = exState(); x.php = x.php || EX_PHP; bump('exOpen');
   $('xb').style.display = 'block'; exRender(); $('xBig').textContent = '';
-  if (x.won){ $('xSay').textContent = `ชนะอสูรนั่งนิ่งแล้ววันนี้! 🎉 ร่างกายได้ขยับไป ${x.reps} ครั้ง\nพรุ่งนี้อสูรตัวใหม่จะมา`; return exBtns([{ label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]); }
+  if (x.won){ $('xSay').textContent = `ชนะอสูรนั่งนิ่งแล้ววันนี้! 🎉 ร่างกายได้ขยับไป ${x.reps} ครั้ง\nพรุ่งนี้อสูรตัวใหม่จะมา`;
+    return exBtns([{ label:'🔁 สู้อีกรอบ (โหมดทดลอง ไม่ได้รางวัลซ้ำ)', fn:() => { Object.assign(x, { mhp:EX_MHP, php:EX_PHP, won:false, replay:true }); save(); openEx(); } }, { label:'📱 ทดสอบเซ็นเซอร์', cls:'ghost', fn:msTest }, { label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]); }
   const m = exMove();
   $('xSay').innerHTML = `🛋 อสูรนั่งนิ่งดูดแรงคนที่นั่งนานจนไม่อยากลุก!<br><small>ท่าวันนี้: <b>${m.name}</b> • เคลียร์พื้นที่รอบตัว • เจ็บหรือเวียนหัว กด ⏸ หยุดทันที</small>`;
   exBtns([{ label:'▶ เริ่มต่อสู้ (วอร์มอัพ 10 วิ)', fn:async () => {
@@ -4266,7 +4312,8 @@ function openEx(){
             const ok = await msStart();
             $('xSay').textContent = ok ? '✓ เซ็นเซอร์พร้อม! ระหว่างทำท่า ถือมือถือข้างหน้าด้วย 2 มือ เหยียดแขนระดับอก' : 'ใช้เซ็นเซอร์ไม่ได้ จะนับด้วยเวลาและถามตามจริงแทนนะ';
             setTimeout(() => exSteps([{ say:'วอร์มอัพ: ย่ำเท้าอยู่กับที่ แกว่งแขนเบา ๆ', sec:10, voice:'วอร์มอัพ ย่ำเท้าอยู่กับที่' }], exPlayerTurn), 1800); } },
-          { label:exEasy() ? '✓ ใช้ท่าง่ายอยู่ (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย (เก้าอี้ / พิงผนัง)', cls:'ghost', fn:() => { S.exEasy = !S.exEasy; save(); openEx(); } }]);
+          { label:exEasy() ? '✓ ใช้ท่าง่ายอยู่ (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย (เก้าอี้ / พิงผนัง)', cls:'ghost', fn:() => { S.exEasy = !S.exEasy; save(); openEx(); } },
+          { label:'📱 ทดสอบเซ็นเซอร์', cls:'ghost', fn:msTest }]);
 }
 /* =====================================================================
    📱 v0.29.1 MOTION-SENSOR REPS (designer: honest-answer counting can be cheated; with the sensor, even
@@ -4279,7 +4326,7 @@ function openEx(){
    Squat down = p ≤ −DEPTH (20 cm, easy 12 cm) • up again = p ≥ −0.06 m
    No events within 1.5 s or permission denied → falls back to the timer + honest answer flow.
    ===================================================================== */
-const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true };
+const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0 };
 const exDepth = () => exEasy() ? .12 : .20;   // phone travels ~30–45 cm in a real squat; thresholds leave room for sensor error
 function msHandler(e){
   const ag = e.accelerationIncludingGravity; if (!ag || ag.x == null) return;
@@ -4287,11 +4334,15 @@ function msHandler(e){
 }
 function msFeed(ag, lin, now){                                  // pure integration step (unit-testable with synthetic time)
   const dt = MS.last ? Math.min(.05, (now - MS.last)/1000) : 0; MS.last = now; MS.seen = now; const e = { acceleration:lin };
-  for (const [i, k] of [[0,'x'],[1,'y'],[2,'z']]) MS.g[i] += (ag[k] - MS.g[i])*.08;                 // low-pass ≈ gravity reading
+  const hasLin = e.acceleration && e.acceleration.x != null;
+  /* v0.30.0 fix: when the OS gives gravity-free acceleration, gravity = accIncl − acc EXACTLY (no low-pass lag when the wrist tilts) */
+  if (hasLin){ MS.g = [ag.x - e.acceleration.x, ag.y - e.acceleration.y, ag.z - e.acceleration.z]; }
+  else for (const [i, k] of [[0,'x'],[1,'y'],[2,'z']]) MS.g[i] += (ag[k] - MS.g[i])*.08;           // fallback: low-pass ≈ gravity
   const gl = Math.hypot(...MS.g) || 1, gu = MS.g.map(c => c/gl);
-  const la = e.acceleration && e.acceleration.x != null ? [e.acceleration.x, e.acceleration.y, e.acceleration.z] : [ag.x - MS.g[0], ag.y - MS.g[1], ag.z - MS.g[2]];
+  const la = hasLin ? [e.acceleration.x, e.acceleration.y, e.acceleration.z] : [ag.x - MS.g[0], ag.y - MS.g[1], ag.z - MS.g[2]];
   const a = la[0]*gu[0] + la[1]*gu[1] + la[2]*gu[2];
-  if (Math.abs(a) < .15){ MS.still += dt; if (MS.zupt && MS.still > .3) MS.v = 0; } else MS.still = 0;   // ZUPT only in phases where we expect stillness
+  MS.jit += (Math.abs(a) - MS.jit)*.1; MS.a = a;                   // smoothed hand jitter (shown in the sensor test)
+  if (MS.jit < .35){ MS.still += dt; if (MS.zupt && MS.still > .3) MS.v = 0; } else MS.still = 0;   // ZUPT only where stillness is expected • .35 tolerates hand shake
   MS.v = (MS.v + a*dt)*.997; MS.p += MS.v*dt;
 }
 async function msStart(){                                       // must run inside a tap (iOS permission prompt)
@@ -4318,7 +4369,7 @@ function msRun(mode, done){
     MS.zupt = st === 'cal' || st === 'hold';
     msGauge(st !== 'cal');
     if (st === 'cal'){ $('xBig').textContent = '📱'; $('xDist').textContent = '';
-      if (now - t0 > 1200 && MS.still > .3){ msZero(); st = 'down'; deadline = now + 15000; sfx('chop'); say(mode === 'attack' ? `ครั้งที่ ${rep+1}/3: ${m.down}` : `🛡 ${m.def}`, mode === 'attack' ? m.down : m.def); } return; }
+      if (now - t0 > 1200 && (MS.still > .3 || now - t0 > 3500)){ msZero(); st = 'down'; deadline = now + 15000; sfx('chop'); say(mode === 'attack' ? `ครั้งที่ ${rep+1}/3: ${m.down}` : `🛡 ${m.def}`, mode === 'attack' ? m.down : m.def); } return; }   // calm enough — or go anyway after 3.5 s
     if (now > deadline && st !== 'hold'){ if (mode === 'attack' && rep < 2){ rep++; st = 'cal'; t0 = now; say('ไม่เป็นไร ลองครั้งถัดไปนะ'); } else return finish(); return; }
     if (st === 'down'){ $('xBig').textContent = '⬇️'; $('xDist').textContent = need > 0 ? `↓ อีก ${need} ซม.` : '✓ ถึงแล้ว!';
       if (MS.p <= -d){ st = 'hold'; held = 0; sfx('pop'); say(`ค้างไว้! ${H} วินาที`, 'ค้างไว้'); } return; }
@@ -4332,6 +4383,20 @@ function msRun(mode, done){
       if (MS.p >= -.06){ reps++; rep++; sfx('coin'); if (rep >= 3) return finish(); st = 'cal'; t0 = now - 900; say(`เยี่ยม! ${reps} ครั้งแล้ว`); } }
   }, 50);
 }
+/* 📱 sensor test (designer asked to re-check the motion): live numbers while moving freely */
+async function msTest(){
+  clearInterval(exT); $('xb').style.display = 'block'; exRender(); $('xBig').textContent = '📱';
+  if (!MS.ok){ $('xSay').textContent = 'ขออนุญาตใช้เซ็นเซอร์…'; exBtns([]); if (!await msStart()){ $('xSay').textContent = '❌ ใช้เซ็นเซอร์ไม่ได้ (ไม่อนุญาต หรือเครื่องไม่รองรับ)'; return exBtns([{ label:'กลับ', cls:'ghost', fn:openEx }]); } }
+  msZero(); MS.zupt = true; let low = 0, reps = 0, wasDown = false;
+  exBtns([{ label:'⟲ ตั้งศูนย์ (ยืนตรงแล้วกด)', fn:() => { msZero(); low = 0; } }, { label:'กลับ', cls:'ghost', fn:() => { clearInterval(exT); msGauge(false); openEx(); } }]);
+  exT = setInterval(() => { const cm = -MS.p*100; low = Math.max(low, cm); const d = exDepth()*100;
+    if (cm >= d) wasDown = true; if (wasDown && cm < 6){ reps++; wasDown = false; sfx('coin'); }
+    msGauge(true); $('xDist').textContent = `${cm >= 0 ? '↓' : '↑'} ${Math.abs(cm).toFixed(0)} ซม.`;
+    $('xSay').textContent = `ลองย่อ-ยืนตามปกติ แล้วดูตัวเลข
+ลึกสุด ${low.toFixed(0)} ซม. • นับได้ ${reps} ครั้ง (เกณฑ์ ${d} ซม.)
+ความสั่นมือ ${MS.jit.toFixed(2)} ${MS.still > .3 ? '• นิ่ง ✓' : ''} • a↑ ${MS.a.toFixed(2)}`;
+    MS.zupt = !wasDown && cm < 6; }, 100);                      // stillness correction only when standing
+}
 function exPlayerTurn(){
   if (MS.ok){ const m = exMove(); $('xBig').textContent = '⚔️'; $('xSay').textContent = `ตาของเรา! ${m.name} 3 ครั้ง — เซ็นเซอร์จะนับให้เอง`;
     return exBtns([{ label:`🗡 โจมตี: ${m.name} × 3`, fn:() => msRun('attack', n => exHit(n)) }]); }
@@ -4344,7 +4409,7 @@ function exPlayerTurn(){
 function exHit(n){
   const x = exState(); let dmg = 0; for (let k=0;k<n;k++) dmg += 4 + (Math.random()*3|0);   // 4–6 per rep
   x.reps += n; S.exReps = (S.exReps||0) + n; const sq = S.missions.find(m => m.key === 'squat'); if (sq && n) addProgress(sq, n);
-  if (dmg){ const pt = $('xPet'); pt.classList.add('atk'); setTimeout(() => { pt.classList.remove('atk'); x.mhp = Math.max(0, x.mhp - dmg); exFx('mon', `−${dmg}`); exRender(); save();
+  if (dmg){ setTimeout(() => { x.mhp = Math.max(0, x.mhp - dmg); exFx('mon', `−${dmg}`); exRender(); save();
       setTimeout(() => x.mhp ? exEnemyTurn() : exWin(), 900); }, 250); }
   else { $('xSay').textContent = 'ไม่เป็นไร พักหายใจก่อน 🫁'; setTimeout(exEnemyTurn, 900); }
 }
@@ -4359,18 +4424,18 @@ function exEnemyTurn(){
 }
 function exBlock(dmg){
   const x = exState(); x.php = Math.max(0, x.php - dmg); exRender(); save();
-  if (dmg) exFx('pet', `−${dmg}`); $('xSay').textContent = dmg ? `${S.pet.name}โดนโจมตี −${dmg}` : 'ป้องกันได้สมบูรณ์! 🛡✨';
+  if (dmg) exFx('you', `−${dmg}`); $('xSay').textContent = dmg ? `คุณโดนโจมตี −${dmg}` : 'ป้องกันได้สมบูรณ์! 🛡✨';
   setTimeout(() => x.php ? exPlayerTurn() : exLose(), 1000);
 }
 function exWin(){
-  const x = exState(); x.won = true; bump('exWin'); S.coins += 300; const lg = gainLove(30); setTired(0); save(); refreshHeader();
+  const x = exState(), first = !x.replay; x.won = true; bump('exWin'); let lg = 0; if (first){ S.coins += 300; lg = gainLove(30); } setTired(0); save(); refreshHeader();
   $('xBig').textContent = '🏆'; exSpeak('ชนะแล้ว เก่งมาก');
-  $('xSay').textContent = `ชนะอสูรนั่งนิ่ง! ขยับไปทั้งหมด ${x.reps} ครั้ง\n${loveTxt(30, lg)} • 🪙 300 • 💪 แรงเต็ม`;
+  $('xSay').textContent = `ชนะอสูรนั่งนิ่ง! ขยับไปทั้งหมด ${x.reps} ครั้ง\n${first ? `${loveTxt(30, lg)} • 🪙 300 • ` : '(รอบทดลอง) '}💪 แรงเต็ม`;
   exBtns([{ label:'🏡 กลับฟาร์ม', fn:closeEx }]);
 }
 function exLose(){
   const x = exState(); x.php = EX_PHP; save();
-  $('xBig').textContent = '😮‍💨'; $('xSay').textContent = `${S.pet.name}เหนื่อยแล้ว ไปพักก่อนนะ ไม่เสียอะไรเลย\nอสูรเหลือ HP ${x.mhp} — กลับมาสู้ต่อเมื่อพร้อม`;
+  $('xBig').textContent = '😮‍💨'; $('xSay').textContent = `เหนื่อยแล้ว พักก่อนนะ ไม่เสียอะไรเลย\nอสูรเหลือ HP ${x.mhp} — กลับมาสู้ต่อเมื่อพร้อม`;
   exBtns([{ label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]);
 }
 function closeEx(){ clearInterval(exT); exT = null; msStop(); msGauge(false); try { speechSynthesis.cancel(); } catch(e){} $('xb').style.display = 'none'; refreshHeader(); renderMissions(); }
@@ -4531,13 +4596,24 @@ function renderShop(){
   }, true)));
   if (!Object.keys(SELL).some(k => inv(k) > 0)){ const e = document.createElement('div'); e.className = 'muted'; e.textContent = 'ยังไม่มีของให้ขาย'; L.appendChild(e); }
 }
+/* 🛒 v0.30 quantity stepper (designer): [ − ] n [ ＋ ] + one buy button showing the total. max = what the coins allow (≤ 99) */
 function buySheet(k){
-  const p = BUY[k], buy = n => { if (S.coins < p*n) return sheet('เหรียญทองไม่พอ\nทำภารกิจสุขภาพหรือส่งคำสั่งซื้อเพื่อรับเหรียญเพิ่มนะครับ', OK);
-    S.coins -= p*n; invAdd(k, n); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); };
-  detailSheet('m:'+k, `${MAT[k]}\n🪙 ${p} เหรียญ/ชิ้น • มีอยู่ ${inv(k)}\n${buyDetail(k)}`, '',
-    [ { label:`ซื้อ 1 ชิ้น (🪙 ${p})`, cls: S.coins >= p ? 'ok' : 'ghost', fn:() => buy(1) },
-      ...(S.coins >= p*5 ? [{ label:`ซื้อ 5 ชิ้น (🪙 ${(p*5).toLocaleString()})`, fn:() => buy(5) }] : []),
-      { label:'ปิด', cls:'ghost' } ]);
+  const p = BUY[k], max = () => Math.max(1, Math.min(99, Math.floor(S.coins/p)));
+  let n = 1;
+  detailSheet('m:'+k, `${MAT[k]}\n🪙 ${p} เหรียญ/ชิ้น • มีอยู่ ${inv(k)}\n${buyDetail(k)}`, '', [{ label:'ปิด', cls:'ghost' }]);
+  const w = document.createElement('div'); w.className = 'qty';
+  w.innerHTML = `<div class="qrow"><button class="btn ghost" data-d="-1">−</button><b id="qN">1</b><button class="btn ghost" data-d="1">＋</button><button class="btn ghost qmax">สูงสุด</button></div><button class="btn ok" id="qBuy"></button>`;
+  $('mbody').appendChild(w);
+  const upd = () => { const ok = S.coins >= p*n; $('qN').textContent = n;
+    $('qBuy').textContent = ok ? `ซื้อ ${n} ชิ้น • 🪙 ${(p*n).toLocaleString()}` : `เหรียญไม่พอ (ขาดอีก 🪙 ${(p*n - S.coins).toLocaleString()})`; $('qBuy').className = 'btn ' + (ok ? 'ok' : 'ghost'); };
+  w.querySelectorAll('[data-d]').forEach(b => { let t = null;
+    const step = () => { n = Math.max(1, Math.min(99, n + +b.dataset.d)); upd(); };
+    b.onpointerdown = () => { step(); t = setTimeout(function rep(){ step(); t = setTimeout(rep, 90); }, 400); };   // hold to repeat
+    b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(t); });
+  w.querySelector('.qmax').onclick = () => { n = max(); upd(); };
+  $('qBuy').onclick = () => { if (S.coins < p*n) return;
+    S.coins -= p*n; invAdd(k, n); if (k==='food') bump('buyFood'); sfx('coin'); save(); refreshHeader(); renderMats(); renderShop(); closeModal(); floatMsg && 0; };
+  upd();
 }
 function shopRow(it, verb, fn, sell){
   const c = document.createElement('div'); c.className='card mrow';

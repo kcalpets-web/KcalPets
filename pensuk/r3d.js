@@ -224,6 +224,21 @@ export function start(){
                        for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
       /* ⛏ v0.22 phase 3 */
+      /* 🏚 v0.30 NPC homes — ruined (o.closed) until the player repairs them */
+      case 'buahome': case 'gymyard': case 'salahouse':
+        if (o.closed){ RB(g, W-.3, .12, D-.3, .05, '#9c8f7e', 0, 0, 0);                       // cracked slab + rubble + leaning beams + torn roof sheet
+          BALL(g, .45, .35, .4, '#8f857a', -.6, .1, .4); BALL(g, .35, .3, .3, '#a39a8e', .55, .1, -.3); BALL(g, .25, .2, .25, '#7d746a', .2, .1, .6);
+          CY(g, .08, 1.5, '#7a5236', -.8, .12, -.7).rotation.z = .35; CY(g, .08, 1.1, '#6b4a30', .8, .12, -.6).rotation.x = -.5;
+          RB(g, 1.6, .06, .9, .02, o.type === 'buahome' ? '#7cae5a' : o.type === 'salahouse' ? '#c0603f' : '#5a6b7a', .1, .55, .1).rotation.z = .4; break; }
+        if (o.type === 'buahome'){ walls('#f6e2b8', '#7cae5a', 1.4, { chimney:true });          // ป้าบัว's healthy kitchen + veggie crates
+          for (const [x, c] of [[-.55, '#e84a3a'], [0, '#f2a33a'], [.55, '#4caf6a']]){ RB(g, .45, .25, .35, .04, '#c99a62', x, .12, D*.42); BALL(g, .16, .12, .12, c, x, .4, D*.42); } }
+        else if (o.type === 'gymyard'){ RB(g, W-.3, .1, D-.3, .05, '#d9c39a', 0, 0, 0);          // โค้ชฟิต's outdoor gym: mat, pull-up bar, dumbbells
+          RB(g, 1.2, .05, .7, .03, '#4f8fd8', -.4, .1, .4); for (const x of [-.8, .8]) CY(g, .07, 1.9, '#5a5f66', x, .1, -.6); CY(g, .05, 1.7, '#9aa1aa', 0, 1.95, -.6).rotation.z = Math.PI/2;
+          for (const z2 of [.1, .45]){ CY(g, .03, .5, '#5a5f66', .7, .2, z2).rotation.z = Math.PI/2; for (const x of [.48, .92]) CY(g, .1, .08, '#3b3f45', x, .2, z2).rotation.z = Math.PI/2; } }
+        else { RB(g, W-.4, .3, D-.4, .05, '#c99a62', 0, 0, 0);                                    // น้องขิง's Thai sala: raised floor, 4 posts, tall red gable
+          for (const [x, z2] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .08, 1.6, '#8a5a3b', x*(W/2-.45), .3, z2*(D/2-.45));
+          const rf = add(g, gable(W-.1, 1.1, D-.1), mat('#c0603f'), 0, 1.9, 0); RB(g, .7, .06, .5, .03, '#f2e6c9', 0, .32, 0); }
+        break;
       case 'smithy': { walls('#a9b0b8', '#5a5f66', 1.5, { chimney:true });   // blacksmith: grey stone house, forge glow, anvil
         const on = 1; add(g, CYL, mat('#ff7a2a', 0xff5a1a), W*.3, .5, D*.42, .32, .3, .1).rotation.x = Math.PI/2;
         RB(g, .55, .25, .3, .05, '#3e4248', -W*.3, 0, D*.55); RB(g, .7, .18, .32, .05, '#55606b', -W*.3, .25, D*.55); break; }
@@ -283,8 +298,15 @@ export function start(){
       if (t.bridge) g.add(bridgeModel(alongX));
     } else if (t.k === 'path' && t.p === 'asphalt'){         // 🛣 v0.21 asphalt: full-tile slab + dashed centre line along the road (none at junctions)
       RB(g, 2.0, .07, 2.0, .04, '#5b5f66', 0, 0, 0);
-      const rx = road ? road[0] : true, rz = road ? road[1] : false;
-      if (rx !== rz) for (const k of [-.5, .5]) RB(g, rx ? .45 : .09, .02, rx ? .09 : .45, .01, '#f2efe4', rx ? k : 0, .07, rx ? 0 : k);
+      // v0.30 road = { w, e, n, s } neighbours (w/e = ∓x, n/s = ∓z). Straight → 2 dashes; L-corner → dashes on a quarter arc; junction → none
+      const R = road || { w:true, e:true, n:false, s:false }, rx = R.w || R.e, rz = R.n || R.s, cnt = R.w + R.e + R.n + R.s;
+      if (cnt === 2 && rx && rz){
+        /* corner: centre-line arc of radius 1 (half a tile) centred on the tile corner between the two open sides:
+           centre (cx, cz) = (±1, ±1);  points (cx + cos θ, cz + sin θ) — θ sweeps the quarter facing the tile centre */
+        const cx = R.e ? 1 : -1, cz = R.s ? 1 : -1, a0 = Math.atan2(-cz, -cx);          // direction from arc centre to tile centre
+        for (const f of [-.5, .5]){ const th = a0 + f*Math.PI/4, d = RB(g, .38, .02, .09, .01, '#f2efe4', cx + Math.cos(th), .07, cz + Math.sin(th));
+          d.rotation.y = -(th + Math.PI/2); }                                              // dash tangent to the arc
+      } else if (rx !== rz) for (const k of [-.5, .5]) RB(g, rx ? .45 : .09, .02, rx ? .09 : .45, .01, '#f2efe4', rx ? k : 0, .07, rx ? 0 : k);
       if (t.main && rx !== rz) for (const s2 of [-1, 1]) RB(g, rx && !rz ? 2.0 : .06, .03, rx && !rz ? .06 : 2.0, .01, '#8d9199', rx && !rz ? 0 : s2*.97, .07, rx && !rz ? s2*.97 : 0);
     } else if (t.k === 'path'){
       RB(g, 1.5, .08, 1.5, .25, ({ stone:C.stone, wood:'#d8b48a', brick:'#d9917a' })[t.p] || C.stone, (hrnd(zseed,i,6)-.5)*.2, 0, (hrnd(zseed,i,7)-.5)*.2);
@@ -311,8 +333,8 @@ export function start(){
       else if (t.k !== 'obj'){
         const lob = (a, b) => { const n = tileAt(a, b); return !!n && (n.k !== 'water' || n.bridge); };          // land or bridge neighbour
         const ax = lob(gc-1, gr) || lob(gc+1, gr), az = lob(gc, gr-1) || lob(gc, gr+1);
-        const isR = (a, b) => { const n = tileAt(a, b); return !!n && ((n.k === 'path' && n.p === 'asphalt') || (n.bridge && n.main)); };
-        m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? [isR(gc-1, gr) || isR(gc+1, gr), isR(gc, gr-1) || isR(gc, gr+1)] : null); }
+        const isR = (a, b) => { const n = tileAt(a, b); return !!(n && ((n.k === 'path' && n.p === 'asphalt') || (n.bridge && n.main))); };   // strict boolean (undefined + true = NaN broke the corner count)
+        m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? { w:isR(gc-1, gr), e:isR(gc+1, gr), n:isR(gc, gr-1), s:isR(gc, gr+1) } : null); }
       if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
         if (RES[t.k]){ res[i] = m; const ph = (z.cx*GRID*2 + x + z.cy*GRID*2 + zz)*.35 + hrnd(z.seed, i, 98)*.6;   // phase from position → gusts roll across the farm
           if (t.k === 'grass') sway.push(m, ph, .14, 0); else if (t.k === 'sapling') sway.push(m, ph, .1, 0);
