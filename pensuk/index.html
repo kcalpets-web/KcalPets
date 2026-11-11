@@ -720,7 +720,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.47.0';
+const APP_VER = '0.47.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1916,9 +1916,22 @@ function npcTick(dt){
     if (n.wait > 0){ n.wait -= dt; continue; }
     const dx = n.tx - n.x, dy = n.ty - n.y, d = Math.hypot(dx, dy);
     if (d < .05 && n.homing){ if (n.path && n.path.length){ const f = n.path.shift(); n.tx = f[0]; n.ty = f[1]; } else n.gone = true; continue; }
-    if (d < .05){ n.wait = 2 + Math.random()*4; for (let k=0;k<12;k++){ const p = npcSpot(n.x, n.y, 3); if (p && pathClear(n.x, n.y, p[0], p[1])){ n.tx = p[0]; n.ty = p[1]; break; } } continue; }
+    if (d < .05 && n.stroll){ if (n.path && n.path.length){ const f = n.path.shift(); n.tx = f[0]; n.ty = f[1]; continue; } n.stroll = false; n.wait = 6 + Math.random()*8; continue; }   // 🏪 arrived: linger at the plaza
+    if (d < .05){ n.wait = 2 + Math.random()*4; if (npcStroll(n)) continue;
+      for (let k=0;k<12;k++){ const p = npcSpot(n.x, n.y, 3); if (p && pathClear(n.x, n.y, p[0], p[1])){ n.tx = p[0]; n.ty = p[1]; break; } } continue; }
     const step = Math.min(d, .9*dt); n.x += dx/d*step; n.y += dy/d*step;
   }
+}
+/* 🏪 v0.47.1 plaza strolls: at a stop, 1 in 4 townsfolk (not already near it) walks to a free tile beside the plaza
+   (A* gridPath over walkable tiles + smoothPath, same as heading home) and lingers 6–14 s. The plaza's own tiles are an object,
+   so the goal is npcSpot(centre, 2.6) = a walkable tile within ±2.6 of the 3×3 centre. */
+function npcStroll(n){
+  const h = typeof homeObj === 'function' && homeObj('plaza'); if (!h || Math.random() > .25) return false;
+  const [z, o] = h, cx = z.cx*GRID + o.c + 1.5, cy = z.cy*GRID + o.r + 1.5; if (Math.hypot(n.x - cx, n.y - cy) < 4) return false;
+  const g = npcSpot(cx, cy, 2.6); if (!g) return false; const [bx, by, W, H] = farmBox();
+  const res = gridPath(Math.floor(n.x), Math.floor(n.y), Math.floor(g[0]), Math.floor(g[1]), bx, by, W, H, (c, r) => walkable(tileAt(c, r)));
+  if (!res.pts.length) return false;                            // boxed in / standing on a door tile → try again at the next stop (partial paths are fine: they get closer)
+  n.path = smoothPath(n.x, n.y, res.pts, pathClear); n.stroll = true; const f = n.path.shift() || g; n.tx = f[0]; n.ty = f[1]; return true;
 }
 /** "!" (new request) / "✔" (ready to hand in) above walking NPCs — HUD layer */
 function drawNpcMarks(time){
@@ -4028,8 +4041,18 @@ const STRETCH = [
   { k:'time', n:20, name:'🦵 ยืดน่อง', tip:'ก้าวขาไปข้างหน้า เข่าหน้าย่อเล็กน้อย ขาหลังตึง สลับข้าง' },
   { k:'time', n:20, name:'🌬 หายใจลึก', tip:'หายใจเข้า 4 วิ กลั้น 2 วิ หายใจออก 6 วิ' } ];
 function ensurePlaza(){
-  if (S.farm.zones.length <= PLAZA_ZONE || homeObj('plaza')) return;
-  const o = placeFixed('plaza', PLAZA_ZONE, false, [2.5, 2.5]); if (o){ o.done = true; save(); }
+  if (S.farm.zones.length <= PLAZA_ZONE) return;
+  if (!homeObj('plaza')){ const o = placeFixed('plaza', PLAZA_ZONE, false, [2.5, 2.5]); if (o){ o.done = true; save(); } }
+  if (homeObj('plaza') && !S.plazaRing) plazaRing();
+}
+/* v0.47.1: the 1-tile ring around the plaza is cleared of nature (trees, rocks, tall grass → open ground) once,
+   so townsfolk and the avatar can actually reach it. Water, paths and objects are left alone. */
+function plazaRing(){
+  const [z, o] = homeObj('plaza'), c0 = z.cx*GRID + o.c - 1, r0 = z.cy*GRID + o.r - 1;
+  for (let r = r0; r <= r0 + o.h + 1; r++) for (let c = c0; c <= c0 + o.w + 1; c++){
+    if (r > r0 && r < r0 + o.h + 1 && c > c0 && c < c0 + o.w + 1) continue;   // inside = the plaza itself
+    const t = tileAt(c, r); if (t && RES[t.k]){ for (const k of Object.keys(t)) delete t[k]; t.k = 'clear'; } }
+  S.plazaRing = 1; save(); invalidateAll();
 }
 const mktLeft = () => { S.mkt = S.mkt && S.mkt.day === todayKey() ? S.mkt : { day:todayKey(), n:0 }; return MKT_CAP - S.mkt.n; };
 const stretchOpen = () => { const h = new Date().getHours(); return h >= STRETCH_FROM && h < STRETCH_TO; };
@@ -4878,10 +4901,13 @@ function openCheckin(auto){
   ciQ = ciTopics(); ciHits = 0; ciDone = [];
   show('sChat'); $('chatStep').textContent = '🐶'; renderChatQuest(); const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
   const h = new Date().getHours(), hi = h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
-  if (S.wkMsg){ const t = S.wkMsg; delete S.wkMsg; save(); setTimeout(() => { bubble(t, 'bot'); ciChips([{ label:'📊 ดูกราฟสัปดาห์ที่แล้ว', fn:() => openWeek(-1) }]); }, 200); }   // 📊 v0.47
-  setTimeout(() => { bubble(`${hi}! 🐶 ${healthTip()}`, 'bot');
+  /* 📊 v0.47.1: the Monday recap comes FIRST and the check-in waits for the player's tap, so its chips are never replaced */
+  const go = () => setTimeout(() => { bubble(`${hi}! 🐶 ${healthTip()}`, 'bot');
     if (ciQ.length) setTimeout(() => { bubble(`เป็นสุขขอถามสั้น ๆ ${ciQ.length} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก`, 'bot'); ciNext(); }, 500);
     else setTimeout(() => { bubble('วันนี้เช็กอินครบแล้ว เก่งมาก! มีอะไรอยากถามเรื่องเกมไหม พิมพ์ถามได้เลยนะ', 'bot'); askLoop(); }, 500); }, 200);
+  if (S.wkMsg){ const t = S.wkMsg; delete S.wkMsg; save(); setTimeout(() => { bubble(t, 'bot');
+      ciChips([{ label:'📊 ดูกราฟสัปดาห์ที่แล้ว', fn:() => { openWeek(-1); go(); } }, { label:'ไปเช็กอินกันต่อ', fn:go }]); }, 200); }
+  else go();
 }
 function ciChips(opts){
   const box = $('chatIn'); box.innerHTML = ''; const c = document.createElement('div'); c.className = 'chips';

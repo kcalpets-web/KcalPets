@@ -151,11 +151,13 @@ export function start(){
      → the canopy reads as round even in eco mode (no shadows). Geometries are generated ONCE per variant and
      shared by every tree (cache FOLG); one material VCM for all foliage + bark → no per-tree allocation. */
   const VCM = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.85, metalness:0 });
-  const FOLG = new Map();
+  /* v0.47.1: two caches — eco mode gets coarser blobs (16×10 instead of 24×16 ≈ 40 % of the vertices); setQuality() rebuilds zones,
+     so every tree is regenerated from the cache that matches the current mode. Key/merge logic is unchanged. */
+  const FOLGS = [new Map(), new Map()], FOLG = { has:k => FOLGS[+eco].has(k), get:k => FOLGS[+eco].get(k), set:(k, v) => FOLGS[+eco].set(k, v) };
   const lcg = s0 => { let s1 = s0 | 0 || 1; return () => (s1 = (s1*16807) % 2147483647) / 2147483647; };
   function blobGeo(key, lo, hi, A, f, sq, cone){
     if (FOLG.has(key)) return FOLG.get(key);
-    const r = lcg(strHash3(key)), g = new THREE.SphereGeometry(1, 24, 16), P = g.attributes.position, col = new Float32Array(P.count*3);
+    const r = lcg(strHash3(key)), g = new THREE.SphereGeometry(1, eco ? 16 : 24, eco ? 10 : 16), P = g.attributes.position, col = new Float32Array(P.count*3);
     const L = new THREE.Color(lo), H = new THREE.Color(hi), k = new THREE.Color(), v = new THREE.Vector3(), n = new THREE.Vector3(), ph = [r()*6, r()*6, r()*6];
     for (let i = 0; i < P.count; i++){
       n.fromBufferAttribute(P, i).normalize();
@@ -1157,7 +1159,8 @@ export function start(){
     renderMine, mineHit,
     /** ⚙️ graphics quality: true = eco (older phones), false = high */
     setQuality(e){ eco = !!e; const sg = sea.geometry; sea.geometry = new THREE.PlaneGeometry(360, 360, eco ? 48 : 96, eco ? 48 : 96); sg.dispose();   /* 🌊 v0.45 eco: ¼ of the sea vertices */ renderer.setPixelRatio(eco ? 1 : Math.min(2, devicePixelRatio || 1)); renderer.shadowMap.enabled = !eco;
-      lastW = 0; for (const sc of [scene, rscene]) sc.traverse(o => { if (o.material) o.material.needsUpdate = true; }); },
+      lastW = 0; for (const sc of [scene, rscene]) sc.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+      for (const e of zones.values()) e.dirty = true; },   // v0.47.1: rebuild → trees switch to the eco / high foliage cache
     /** draw the house interior in 3D; camera frames the whole N×N room */
     renderRoom(ir, rpet, rp, time){
       if (ctxLost) return;
