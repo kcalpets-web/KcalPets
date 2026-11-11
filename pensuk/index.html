@@ -606,8 +606,34 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.33.1';
+const APP_VER = '0.33.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
+/* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
+   Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
+   read its APP_VER and, if the server build is newer, show a one-tap reload bar.
+   Runs 3 s after start and whenever the app comes back to the foreground (throttled to once per 5 min). */
+const UPD_GAP = 5*60*1000;
+let updChkAt = 0;
+function verNum(v){ return String(v).split('.').concat(['0','0','0','0']).slice(0, 4).reduce((a, x) => a*1000 + (parseInt(x, 10) || 0), 0); }   // '0.33.10' > '0.33.9', '0.33' = '0.33.0'
+async function updCheck(){
+  if (location.protocol === 'file:' || Date.now() - updChkAt < UPD_GAP) return;
+  updChkAt = Date.now();
+  try {
+    const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) return;
+    const m = (await r.text()).match(/const APP_VER = '([\d.]+)'/);
+    if (m && verNum(m[1]) > verNum(APP_VER)) updBar(m[1]);
+  } catch(e){}   // offline or blocked: silently keep playing the current build
+}
+function updBar(v){
+  if ($('updBar')) return;
+  const e = document.createElement('button'); e.id = 'updBar';
+  e.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9999;min-height:48px;padding:10px 18px;border:0;border-radius:24px;background:#2f8f5b;color:#fff;font-family:inherit;font-size:15px;font-weight:600;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:92vw';
+  e.textContent = `🔄 มีเวอร์ชันใหม่ v${v} • แตะเพื่ออัปเดต`;
+  e.onclick = () => { try { if (S && S.pet) save(); } catch(_){} location.replace(location.pathname + '?v=' + v + location.hash); };   // new query string = fresh URL the cache has never seen
+  document.body.appendChild(e);
+}
+setTimeout(updCheck, 3000);
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
 async function initFirebase(){
@@ -681,7 +707,7 @@ function cloudFlush(){
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden'){ if (S && S.pet){ S.awayAt = Date.now(); try { save(); } catch(e){} } cloudFlush(); }
-  else awayCheck();
+  else { awayCheck(); updCheck(); }
 });
 /* 💪 v0.27.1 away rest (designer): leaving the game ≥ 15 min counts as a screen break → stamina back to 100%.
    It does NOT add minutes to the 📵 screen-rest mission and gives no break-quota rewards. */
@@ -4459,7 +4485,7 @@ function gymState(){ const g = S.gym = S.gym || {}; if (g.date !== todayKey()) O
 function openGym(){
   clearInterval(exT); G = null; bump('gymOpen'); $('gym').style.display = 'block'; $('gProg').style.width = '0%'; $('gProgT').textContent = '';
   const g = gymState(), b = $('gBody');
-  b.innerHTML = `<div class="gtip">🏋️ โค้ชฟิต: "เลือกส่วนที่อยากฝึกได้เลย ชุดละ 3–5 นาที ฝึกจบแรงเต็ม 100%!"<br><small>รางวัล 💗 วันนี้เหลือ ${Math.max(0, 3 - g.paid)}/3 ชุด • ${exEasy() ? '🪑 ท่าง่ายเปิดอยู่' : 'ท่าปกติ'} • เจ็บหรือเวียนหัวให้หยุดทันที</small></div><div class="gpick"></div>`;
+  b.innerHTML = `<div class="gtip">🏋️ โค้ชฟิต: "เลือกส่วนที่อยากฝึกได้เลย ชุดละ 3–5 นาที ฝึกจบแรงเต็ม 100%!"<br><small>รางวัล 💗 วันนี้เหลือ ${Math.max(0, 3 - g.paid)}/3 ชุด • ${exEasy() ? '🪑 ท่าง่ายเปิดอยู่' : 'ท่าปกติ'} • เจ็บหรือเวียนหัวให้หยุดทันที • v${APP_VER}</small></div><div class="gpick"></div>`;
   const pk = b.querySelector('.gpick');
   Object.entries(GYM).forEach(([id, P]) => { const e = document.createElement('button'); e.className = 'btn';
     e.textContent = `${P.name}\n${P.moves.map(m => m.name).filter((v, i, a) => a.indexOf(v) === i).join(' • ')}`; e.onclick = () => gymStart(id); pk.appendChild(e); });
@@ -4552,7 +4578,7 @@ function gymNext(){
   const g = G;
   if (g.i >= 0){ const pm = g.steps[g.i];                       // tally what the previous move achieved (for monster damage)
     if (pm && pm.k !== 'rest') g.total = (g.total || 0) + (g.timed ? pm.n : pm.k === 'hold' ? Math.min(pm.n, Math.floor(g.held)) : Math.min(g.count, pm.n)); }
-  g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length}`;
+  g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length} • v${APP_VER}`;
   if (g.i >= g.steps.length){ if (g.cb){ const cb = g.cb, tot = g.total || 0, reps = g.reps; clearInterval(exT); exT = null; G = null; $('gym').style.display = 'none'; return cb(tot, reps); } return gymDone(); }
   const m = g.steps[g.i], timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor;
   g.count = 0; g.r0 = null; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
