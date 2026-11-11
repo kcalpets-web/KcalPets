@@ -719,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.45.1';
+const APP_VER = '0.45.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -5970,22 +5970,14 @@ function renderBag(){
   v3.textContent = gfxEco() ? '⚙️ คุณภาพกราฟิก: ประหยัด (แตะเพื่อใช้แบบสูง)' : '⚙️ คุณภาพกราฟิก: สูง (แตะเพื่อใช้แบบประหยัด)';
   v3.onclick = () => confirmDo(gfxEco() ? 'เปลี่ยนเป็นคุณภาพสูง?\nภาพคมชัด มีเงาและหญ้าไหวตามลม' : 'เปลี่ยนเป็นโหมดประหยัด?\nภาพละเอียดลดลง ไม่มีเงา/หญ้าไหว\nลื่นขึ้นและประหยัดแบตบนเครื่องรุ่นเก่า', () => setGfx(!gfxEco()));
   renderBrkSettings(L);
-  /* 🧪 temporary mine test switch (v0.22.1) — remove together with the Loy Krathong switches */
-  const mt = document.createElement('button'); mt.className = 'btn ghost';
-  mt.textContent = S.mineOpen ? '🧪 ทดลองเหมือง: แรงเต็ม + แร่ชุดทดลอง' : '🧪 ทดลองเหมือง (ปลดล็อกทันที ไม่ต้องรอลุงหิน/Lv.10)';
-  mt.onclick = () => confirmDo(S.mineOpen ? 'แรงเต็มทันที และรับแร่ชุดทดลอง?' : 'ปลดล็อกเหมืองเพื่อทดลอง?\nทางเข้าเหมืองโผล่ในพื้นที่ที่ 10 + ⚒ โรงตีเหล็กในคลัง\nแร่ชุดทดลอง', () => {
-    S.store = S.store || {}; const first = !S.mineOpen;
-    if (first){ S.mineStage = Math.max(S.mineStage || 0, MINE_PROJ.length); while (S.farm.zones.length <= MINE_ZONE) S.farm.zones.push(genZone(S.farm.zones.length)); rebuildChunkMap();
-      mineUnlockTick(); S.proj = S.proj || {}; if (!projDone('lek')){ S.proj.lek = PROJ.lek.stages.length; S.store.smithy = (S.store.smithy||0) + 1; } }
-    setTired(0); [['ore_copper',9], ['coal',6], ['ore_iron',6], ['wood',5]].forEach(([k, n]) => invAdd(k, n)); save(); renderMats(); renderBag();
-    sheet(first ? '🧪 เหมืองปลดล็อกแล้ว!\n⛏ ทางเข้าเหมืองอยู่ในพื้นที่ที่ 10 (เลื่อนจอไปหา)\n⚒ โรงตีเหล็ก: ร้านค้า › ฟาร์ม › 📦 คลังของฉัน → วาง' : '💪 แรงเต็ม + ได้แร่ชุดทดลอง', OK); });
+  /* v0.45.2: 🧪 mine test switch removed (players unlock the mine through ลุงหิน's project, Lv.10) */
   const wd = document.createElement('button'); wd.className = 'btn'; wd.textContent = '👕 ตู้เสื้อผ้า / แก้ตัวละคร'; wd.onclick = () => openAvatarEd(S.avatar ? 'wardrobe' : 'create');
   const sb = document.createElement('button'); sb.className = 'btn ok'; sb.textContent = '🧘 พักเองตอนนี้ (พักจอ / ขยับตัว)'; sb.onclick = () => brkChooser();
   const mo = document.createElement('button'); mo.className = 'btn ghost';                 // ⚔️ v0.25 trial switch
   mo.textContent = S.monTrial ? '🧪 โหมดสู้ด้วยออกกำลังกาย (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ด้วยการออกกำลังกาย';
   mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ด้วยการออกกำลังกายแล้ว!\nอสูรนั่งนิ่งรออยู่ — โจมตีด้วยสควอทจริง ป้องกันด้วยการย่อค้าง\n(ท่าง่าย: ลุก-นั่งเก้าอี้ / พิงผนัง)\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
   const ck = document.createElement('button'); ck.className = 'btn ok'; ck.textContent = '💬 เช็กอินกับเป็นสุข'; ck.onclick = () => openCheckin(false);
-  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, v3, mt, mv, out);
+  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, v3, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
