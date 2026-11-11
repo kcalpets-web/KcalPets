@@ -290,6 +290,15 @@ nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
 #tut{left:12px;right:12px;padding:var(--sp1) 12px;box-shadow:var(--sh-2)} #tut svg{width:40px;height:40px}
 #tutStep{font-size:var(--fs-xs)} #tutText{font-size:var(--fs-sm);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #gBub{font-size:var(--fs-sm)}
+/* 📜 v0.39 quest lives in the guide chat (designer: the map card was too big and distracting) */
+#tut{display:none!important}
+#chatQuest{display:none;margin:var(--sp1) 12px 0;padding:10px 12px;background:#fffdf7;border:2px solid var(--pri);border-radius:var(--r-md);box-shadow:var(--sh-1)}
+#chatQuest.done{border-color:var(--ok);background:#f1fbf3}
+#chatQuest b{display:block;font-size:var(--fs-sm);color:var(--pri2)} #chatQuest.done b{color:#2e7d32}
+#chatQuest p{margin:4px 0 0;font-size:var(--fs-sm);line-height:1.45}
+#chatQuest .bar{height:6px;margin:8px 0 0} #chatQuest .btn{width:100%;margin-top:var(--sp1);min-height:var(--t-2)}
+#chatFab.qnew::before{content:'📜';position:absolute;top:-8px;left:-6px;font-size:18px;animation:pulse 1.2s infinite}
+#chatFab.qdone{border-color:var(--ok);animation:pulse 1.2s infinite}
 /* bottom bars over the map share one look */
 #placeBar,#fishBar,#toolBar,#seedBar{left:12px;right:12px;border-radius:var(--r-lg);box-shadow:var(--sh-2)}
 #toolBar .tb{min-height:64px;border-radius:var(--r-sm);font-size:var(--fs-xs)} #toolBar .tb b{font-size:26px}
@@ -331,6 +340,7 @@ nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
 <!-- ===== 2. CHAT WITH เป็นสุข ===== -->
 <section class="screen" id="sChat">
   <div class="top"><b>💬 คุยกับเป็นสุข</b><span class="muted" id="chatStep"></span></div>
+  <div id="chatQuest"></div>
   <div id="chatLog"></div>
   <div id="chatIn"></div>
 </section>
@@ -692,7 +702,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.38.0';
+const APP_VER = '0.39.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -4365,10 +4375,23 @@ function guideTick(){
   guideSay(msg); gbN++; gbNext = gbPlay + GB_EVERY;
 }
 function askSend(q){ $('chatIn').innerHTML = ''; bubble(q, 'me'); bump('guideAsk'); setTimeout(() => { bubble(faqReply(q), 'bot'); askLoop(); }, 400); }
+/* 📜 v0.39 pinned quest card at the top of the guide chat: step x/y, how-to, progress, claim or "go do it" */
+function renderChatQuest(){
+  const el = $('chatQuest'), q = S && S.pet ? curQuest() : null; if (!el) return;
+  if (!q){ el.style.display = 'none'; return; }
+  const prog = Math.min(q.need, q.goal()), done = prog >= q.need; S.qSeen = q.id;
+  el.style.display = 'block'; el.classList.toggle('done', done);
+  el.innerHTML = `<b>📜 เควส ${S.qDone.length + 1}/${QUESTS.length} · ${q.name}${q.need > 1 ? ` (${prog}/${q.need})` : ''}${done ? ' ✔' : ''}</b>
+    <p>${done ? 'สำเร็จแล้ว! กดรับรางวัลได้เลย 🎁' : fillPet(q.text)}</p><div class="bar"><b style="width:${prog/q.need*100}%"></b></div>`;
+  const b = document.createElement('button'); b.className = 'btn ' + (done ? 'ok' : 'ghost');
+  b.textContent = done ? '🎁 รับรางวัลเควส' : '🗺 ไปทำเลย';
+  b.onclick = done ? () => { claimQuest(); renderChatQuest(); } : () => { show('sMain'); refreshHeader(); renderMissions(); };
+  el.appendChild(b); questDirty = true;
+}
 function openCheckin(auto){
   const c = ciState(); c.last = Date.now(); save(); bump('checkin');
   ciQ = ciTopics(); ciHits = 0; ciDone = [];
-  show('sChat'); $('chatStep').textContent = '🐶'; const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
+  show('sChat'); $('chatStep').textContent = '🐶'; renderChatQuest(); const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
   const h = new Date().getHours(), hi = h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
   setTimeout(() => { bubble(`${hi}! 🐶 ${healthTip()}`, 'bot');
     if (ciQ.length) setTimeout(() => { bubble(`เป็นสุขขอถามสั้น ๆ ${ciQ.length} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก`, 'bot'); ciNext(); }, 500);
@@ -5342,8 +5365,12 @@ function questTick(){
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
   const q = curQuest(), navShop = document.querySelector('[data-t=tShop]'), navMis = document.querySelector('[data-t=tMission]');
-  if (!q){ $('tut').style.display = 'none'; navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
+  if (!q){ $('tut').style.display = 'none'; $('chatFab').classList.remove('qnew', 'qdone'); navShop.classList.remove('pulse'); navMis.classList.remove('pulse'); $('toolFab').classList.remove('pulse'); return; }
   const prog = Math.min(q.need, q.goal()), done = prog >= q.need;
+  { const f = $('chatFab'); f.classList.toggle('qdone', done); f.classList.toggle('qnew', !done && S.qSeen !== q.id);   // 📜 v0.39 quest cue on the beagle button
+    const calm = $('sMain').classList.contains('on') && !$('modal').classList.contains('on') && !act && !inMine && !inRoom && !fishing && f.style.display !== 'none';
+    if (calm && S.qSaid !== q.id + (done ? '!' : '')){ S.qSaid = q.id + (done ? '!' : '');
+      guideSay(done ? `🎁 เควส "${q.name}" สำเร็จแล้ว! แตะที่นี่เพื่อรับรางวัล` : `📜 เควสใหม่: ${q.name} — แตะคุยกับเป็นสุขดูวิธีทำนะ`); gbHideAt = Date.now() + 6000; } }
   const key = q.id + prog + questCollapsed;
   if (key === questShown && !questDirty) return;            // re-render only on change
   questShown = key; questDirty = false;
@@ -5374,7 +5401,7 @@ function renderQuests(){
   L.appendChild(cardGrid(Object.keys(NPCS).map(id => { const n = NPCS[id], un = npcUnlocked(id), h = npcHearts(id), q = un ? npcReq(id) : null, s = npcState(id), ready = un && reqReady(id);
     return { ref:'npc:'+id, name:n.name, sub: un ? `${q.title}<br>${'❤️'.repeat(h)}${'🤍'.repeat(5-h)}` : `${n.role}`, lock: un ? null : `Lv.${n.lv}${n.needTxt ? ' + ' + n.needTxt : ''}`, dim:!un,
       dot:ready, price: !un ? null : q.t === 'none' ? 'รอเหมือง' : s.done ? '✔ วันนี้แล้ว' : ready ? 'พร้อมส่ง!' : 'มีคำขอ', on:() => npcTalk(id) }; }), 64));
-  L.insertAdjacentHTML('beforeend', '<b style="display:block;margin-top:10px">📜 เควสสอนเล่น</b><div class="muted">ทำตามลำดับเพื่อเรียนรู้ทุกระบบของเกม • แตะกล่องเควสบนฟาร์มเพื่อย่อ/ขยาย</div>');
+  L.insertAdjacentHTML('beforeend', '<b style="display:block;margin-top:10px">📜 เควสสอนเล่น</b><div class="muted">ทำตามลำดับเพื่อเรียนรู้ทุกระบบของเกม • เควสปัจจุบันดูได้ในแชทเป็นสุข 🐶</div>');
   QUESTS.forEach((q,i) => {
     const state = S.qDone.includes(q.id) ? 'done' : i === qIndex() ? 'now' : 'lock';
     const c = document.createElement('div'); c.className = 'card' + (state==='now' ? ' tutGlow' : '');
