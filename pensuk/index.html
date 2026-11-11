@@ -185,6 +185,15 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
 #bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
 #bHit{min-height:60px;font-size:20px}
+/* 📷 v0.36 camera touch-target minigame — mirrored front camera, canvas targets on top, HUD readable from 2 m */
+#cam{position:fixed;inset:0;z-index:13;display:none;background:#111;overflow:hidden;touch-action:none}
+#camV{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}#camC{position:absolute;inset:0;width:100%;height:100%}
+#camHud{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px;background:linear-gradient(#000a,#0000);color:#fff;font:800 36px Mali,sans-serif;text-shadow:0 2px 4px #000}
+#camHud #camCombo{flex:1;font-size:24px;color:#ffd84d;text-align:center}#camHud #camTime{min-width:64px;text-align:right}
+#camX{width:48px;height:48px;border-radius:24px;border:0;background:#fff3;color:#fff;font-size:22px}
+#camMsg{white-space:pre-line;position:absolute;left:0;right:0;top:40%;text-align:center;color:#fff;font:800 40px Mali,sans-serif;text-shadow:0 3px 8px #000;pointer-events:none}
+#camPanel{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);max-height:78%;overflow:auto;background:#fffffff2;border-radius:20px;padding:16px;font-size:15px;color:#333;display:none}
+#camPanel h3{margin:0 0 6px;font-size:20px}#camPanel .btn{min-height:52px;width:100%;margin-top:8px}#camPanel .seg{display:flex;gap:6px;margin:8px 0}#camPanel .seg .btn{margin:0;flex:1;min-height:48px}
 #gym{position:fixed;inset:0;z-index:9;display:none;background:linear-gradient(#d9f0ff,#f4fbff 60%,#fff);overflow:auto}
 #gym .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:10px}
 #gym .bhead{display:flex;align-items:center;justify-content:space-between}#gym .bhead b{font-size:18px}
@@ -337,6 +346,9 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
     <div class="bhead"><b id="gTitle">🏋️ ยิมโค้ชฟิต</b><button class="btn ghost" id="gStop">⏸ หยุด</button></div>
     <div class="bhp"><i id="gProg"></i><b id="gProgT"></b></div>
     <div id="gBody"></div></div></div>
+  <div id="cam"><video id="camV" playsinline muted autoplay></video><canvas id="camC"></canvas>
+    <div id="camHud"><span id="camScore">0</span><span id="camCombo"></span><span id="camTime">60</span><button id="camX" aria-label="ปิด">✕</button></div>
+    <div id="camMsg"></div><div id="camPanel"></div></div>
   <div id="xb"><div class="xwrap">
     <div class="bhead"><b id="xTitle">🛋 อสูรนั่งนิ่ง</b><button class="btn ghost" id="xStop">⏸ หยุดพัก</button></div>
     <div class="xhp"><span>อสูร</span><div class="bhp"><i id="xHpM"></i><b id="xHpMT"></b></div></div>
@@ -631,7 +643,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.35.0';
+const APP_VER = '0.36.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -3991,6 +4003,8 @@ const QUESTS = [
     text:'แตะอาคาร 🏋️ ยิม → 📱 ทดสอบ / ปรับเทียบเซ็นเซอร์ → 🦵 ปรับเทียบท่าขา → ดูตัวอย่างแถบสี แล้วขยับให้แถบแตะพื้นล่าง 🟧 และเพดานบน 🟦 ครบ 4 รอบ (เครื่องไม่มีเซ็นเซอร์ก็ผ่านได้)', reward:{coins:100} },
   { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        hl:'gym', need:1, goal:() => st('gymDone'),
     text:'แตะอาคาร 🏋️ ยิม ข้างบ้าน (กรอบเหลือง) → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
+  { id:'camTry',  name:'ลองเล่นมินิเกมแตะเป้า',     hl:'gym', need:1, goal:() => st('camPlay'),
+    text:'แตะอาคาร 🏋️ ยิม → 📷 มินิเกมแตะเป้า → วางมือถือแนวตั้งห่าง 1.5–2 ม. ให้เห็นหัวถึงเข่า → กางแขนค้างไว้ → ใช้มือแตะเป้าให้ได้มากที่สุดใน 1 นาที (เครื่องที่ใช้กล้องไม่ได้ กดข้ามได้)', reward:{coins:150} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
@@ -4567,7 +4581,7 @@ function openGym(){
     pk.append(e, ed); });
   if ((S.gymCustom || []).length < 5){ const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = '➕ สร้างชุดของฉัน\nเลือกท่า จำนวน ลำดับเอง'; e.onclick = () => progEdit(-1); pk.appendChild(e); }
   const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px';
-  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], [`🎵 จังหวะ ${tpBeats()}/${tpBeats()} — ทางละ ${tpBeats()} วิ (แตะเพื่อเปลี่ยน)`, () => { S.tempo = tpBeats() === 2 ? 4 : 2; save(); openGym(); }], ['📱 ทดสอบ / ปรับเทียบเซ็นเซอร์', () => { closeGym(); msTest(); }]]
+  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📷 มินิเกมแตะเป้า (1 นาที)', () => { closeGym(); camOpen(); }], [`🎵 จังหวะ ${tpBeats()}/${tpBeats()} — ทางละ ${tpBeats()} วิ (แตะเพื่อเปลี่ยน)`, () => { S.tempo = tpBeats() === 2 ? 4 : 2; save(); openGym(); }], ['📱 ทดสอบ / ปรับเทียบเซ็นเซอร์', () => { closeGym(); msTest(); }]]
     .concat((S.homes||{}).gymyard >= 3 ? [] : [[`🔨 อัปเกรดลานหน้ายิม (${(S.homes||{}).gymyard|0}/3)`, () => { closeGym(); gymUpgrade(); }]])   // 🏋️ v0.33.3
     .concat([['🏡 กลับฟาร์ม', closeGym]])
     .forEach(([t, f]) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.onclick = f; row.appendChild(e); });
@@ -4846,6 +4860,178 @@ async function calRun(K){                                      // from the senso
   $('gym').style.display = 'block'; $('gTitle').textContent = '📏 ปรับเทียบเซ็นเซอร์';
   G = { id:'cal', name:'', steps:[m], i:-1, sensor:true, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0, cb:() => msTest() };
   gymNext(); exT = setInterval(gymTick, 50);
+}
+/* =====================================================================
+   📷 v0.36 TOUCH-TARGET MINIGAME (designer: "เปิดกล้อง มีอะไรวิ่งผ่านบนจอ ให้เอามือไปแตะ" • "ทำเป็นมินิเกม 1 นาที
+   ใครทำคะแนนได้เท่าไหร่ เผื่อแข่งกับเพื่อนในอนาคต").
+   Pose: MediaPipe Pose Landmarker (lite, VIDEO mode) — runs on the phone, frames never leave the device.
+   Screen mapping (video is object-fit:cover and mirrored):  k = max(cw/vw, ch/vh), dw = vw·k, dh = vh·k,
+     ox = (cw − dw)/2, oy = (ch − dh)/2  →  X = ox + (1 − x)·dw,  Y = oy + y·dh      (x, y = normalized landmarks)
+   Body frame from a 1.5 s arms-out pose: u = shoulder width (px), shoulder centre (cx, sy), hip y, knee y.
+   Targets live in body units so tall/short/near/far players reach the same thing; x follows the live shoulder centre.
+     mid  10  x = cx ± (0.9 + 0.7a)u, y = sy + (−0.3 + 0.9b)u          high 15  x = cx ± 1.2a·u, y = sy − (1.25 + 0.35b)u
+     low  20  x = cx ± (0.5 + 0.7a)u, y = knee − (0.15 + 0.2b)u  — counts only with hips ≥ 0.35u below standing (real squat)
+     gold 50  rare (8 %), on a high or low spot      easy: closer + 3-beat life • seat: mid/high only
+   Hit: a hand (mean of wrist + index tip) within 0.45u of the centre • combo ≥ 5 → ×2, ≥ 10 → ×3 • a target that times out
+   breaks the combo. Spawn every I = 1.0 − 0.25·t/60 s (seat 1.1 → 0.9, easy 1.2 → 1.0), life 2·I (easy 3·I), ≤ 3 at once.
+   Daily seed: mulberry32(hash(date + level)), exactly 3 draws per spawn → everyone gets the same pattern that day.
+   Rewards: 🪙 min(150, ⌊score/20⌋) for the first 3 rounds a day • first full round of the day refills 💪 • low hits → squat mission.
+   ===================================================================== */
+const POSE_MODEL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const CAM_LV = { normal:{ name:'ปกติ', i0:1.0, i1:.75, life:2 }, easy:{ name:'ง่าย', i0:1.2, i1:1.0, life:3 }, seat:{ name:'นั่ง', i0:1.1, i1:.9, life:2.5 } };
+const CAM_PTS = { mid:10, high:15, low:20, gold:50 };
+const CAM = { ph:'off', lv:'normal', lm:null, stream:null, raf:0, P:Array.from({ length:33 }, () => ({ x:0, y:0, v:0 })), seen:false,
+  body:null, tg:Array.from({ length:8 }, () => ({ on:false, x:0, y:0, type:'mid', born:0, life:0, hit:0, shape:'' })), fx:Array.from({ length:8 }, () => ({ t:0, x:0, y:0, s:'' })),
+  score:0, combo:0, maxC:0, hits:0, n:0, sq:0, el:0, last:0, next:0, rng:null, lost:0, poseT:0, hold:0, hud:'', msgT:0 };
+function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0)/4294967296; }; }
+function strHash(s){ let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+async function camLoad(){                                     // pinned build first, then latest; GPU then CPU
+  if (CAM.lm) return CAM.lm; let err;
+  for (const v of ['0.10.33', 'latest']) for (const delegate of ['GPU', 'CPU']) try {
+    const mod = await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${v}/vision_bundle.mjs`);
+    const fs = await mod.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${v}/wasm`);
+    CAM.lm = await mod.PoseLandmarker.createFromOptions(fs, { baseOptions:{ modelAssetPath:POSE_MODEL, delegate }, runningMode:'VIDEO', numPoses:1 });
+    return CAM.lm; } catch(e){ err = e; }
+  throw err;
+}
+function camDetect(now){ const r = CAM.lm.detectForVideo($('camV'), now); return r && r.landmarks && r.landmarks[0]; }   // tests replace this
+function camMap(L){                                           // normalized landmarks → mirrored screen px (see header), into the reused CAM.P
+  const v = $('camV'), cw = innerWidth, ch = innerHeight, vw = v.videoWidth || cw, vh = v.videoHeight || ch, k = Math.max(cw/vw, ch/vh), dw = vw*k, dh = vh*k, ox = (cw - dw)/2, oy = (ch - dh)/2;
+  for (let i = 0; i < 33; i++){ const a = L[i], q = CAM.P[i]; if (!a){ q.v = 0; continue; } q.x = ox + (1 - a.x)*dw; q.y = oy + a.y*dh; q.v = a.visibility == null ? 1 : a.visibility; }
+}
+const camVis = (...ids) => ids.every(i => CAM.P[i].v > .5);
+function camPanel(html, btns){ const p = $('camPanel'); p.style.display = 'block'; p.innerHTML = html;
+  (btns || []).forEach(([t, c, f]) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.onclick = f; p.appendChild(e); }); }
+function camSay(t, ms){ $('camMsg').textContent = t; CAM.msgT = ms ? performance.now() + ms : 0; }
+function camBest(){ return S.camBest = S.camBest || {}; }
+function camOpen(){
+  CAM.ph = 'intro'; $('cam').style.display = 'block'; $('camHud').style.visibility = 'hidden'; camSay('');
+  const b = camBest(), today = (S.camScores || []).filter(r => r.d === todayKey());
+  const seg = Object.entries(CAM_LV).map(([k, L]) => `<button class="btn ${CAM.lv === k ? 'ok' : 'ghost'}" onclick="CAM.lv='${k}';camOpen()">${L.name}</button>`).join('');
+  camPanel(`<h3>📷 มินิเกมแตะเป้า 1 นาที</h3>
+    ① วางมือถือ<b>แนวตั้ง</b> พิงของให้นิ่ง ห่าง 1.5–2 ม. ให้กล้องเห็น<b>ตั้งแต่หัวถึงเข่า</b><br>② เคลียร์พื้นที่รอบตัว 1 ม.<br>③ กางแขนค้างไว้ให้เกมวัดตัว แล้วใช้มือแตะเป้าให้ได้มากที่สุด<br>
+    🎯 10 • ⬆️ เหนือหัว 15 • ⬇️ ต่ำ ต้อง<b>ย่อเข่า</b> 20 • ⭐ 50 • ติดกัน 5 ลูก ×2 • 10 ลูก ×3<br>
+    <small>ภาพจากกล้องประมวลผลในเครื่องเท่านั้น ไม่บันทึก ไม่ส่งออก • ด่านวันนี้เหมือนกันทุกคน</small>
+    <div class="seg">${seg}</div>
+    🏆 สถิติ${CAM_LV[CAM.lv].name}: <b>${b[CAM.lv] || 0}</b> • วันนี้: <b>${today.filter(r => r.m === CAM.lv).reduce((m, r) => Math.max(m, r.s), 0)}</b>`,
+    [['▶️ เปิดกล้องแล้วเริ่ม', 'ok', camStart], ['ปิด', 'ghost', camClose]]);
+}
+async function camStart(){
+  camPanel('<h3>⏳ กำลังเตรียมกล้อง…</h3>ครั้งแรกต้องโหลดตัวจับท่าทาง (~5 MB) รอสักครู่นะ');
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
+    CAM.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ ideal:640 }, height:{ ideal:480 } }, audio:false });
+    const v = $('camV'); v.srcObject = CAM.stream; await v.play().catch(() => {});
+    await camLoad();
+  } catch(e){
+    camStop();
+    return camPanel(`<h3>❌ ใช้กล้องไม่ได้</h3>${e && e.message === 'nocam' ? 'เครื่องนี้ไม่รองรับกล้อง' : 'ไม่ได้อนุญาตกล้อง หรือโหลดตัวจับท่าทางไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต)'}<br>ลองใหม่ได้ หรือข้ามเควสนี้ไปก่อน`,
+      [['🔁 ลองใหม่', 'ok', camStart], ['ข้ามเควสนี้', 'ghost', () => { bump('camPlay'); save(); camClose(); }], ['ปิด', 'ghost', camClose]]); }
+  $('camPanel').style.display = 'none'; $('camHud').style.visibility = 'visible';
+  Object.assign(CAM, { ph:'setup', body:null, hold:0, last:performance.now(), poseT:0 }); camSay('ถอยให้เห็นหัวถึงเข่า\nแล้วกางแขนค้างไว้'); exSpeak('ถอยให้กล้องเห็นตัว แล้วกางแขนค้างไว้');
+  camHud(); cancelAnimationFrame(CAM.raf); CAM.raf = requestAnimationFrame(camLoop);
+}
+function camStop(){ cancelAnimationFrame(CAM.raf); CAM.raf = 0; if (CAM.stream){ CAM.stream.getTracks().forEach(t => t.stop()); CAM.stream = null; } $('camV').srcObject = null; }
+function camClose(){ camStop(); CAM.ph = 'off'; $('cam').style.display = 'none'; try { speechSynthesis.cancel(); } catch(e){} refreshHeader(); renderMissions(); }
+function camHud(){ const t = Math.max(0, Math.ceil(60 - CAM.el)), m = CAM.combo >= 10 ? 3 : CAM.combo >= 5 ? 2 : 1, key = CAM.score + '|' + t + '|' + CAM.combo;
+  if (key === CAM.hud) return; CAM.hud = key; $('camScore').textContent = CAM.score; $('camTime').textContent = t; $('camCombo').textContent = CAM.combo >= 2 ? `คอมโบ ${CAM.combo}${m > 1 ? ' ×' + m : ''}` : ''; }
+function camSpawn(now){
+  const B = CAM.body, P = CAM.P, u = B.u, L = CAM_LV[CAM.lv], r = CAM.rng, t = r(), side = r() < .5 ? -1 : 1, a = r(), b = r();   // exactly 3 draws
+  const seat = CAM.lv === 'seat', easy = CAM.lv === 'easy', cx = camVis(11, 12) ? (P[11].x + P[12].x)/2 : B.cx;
+  let type = t < .08 ? 'gold' : seat ? (t < .48 ? 'high' : 'mid') : t < (easy ? .33 : .36) ? 'low' : t < .6 ? 'high' : 'mid';
+  const shape = type === 'gold' ? (seat || b < .5 ? 'high' : 'low') : type;
+  let x, y;
+  if (shape === 'high'){ x = cx + side*(easy ? .8 : 1.2)*a*u; y = B.sy - (easy ? 1.0 + .2*b : 1.25 + .35*b)*u; }
+  else if (shape === 'low'){ x = cx + side*(.5 + .7*a)*u; y = easy ? B.hipY + (B.kneeY - B.hipY)*.4 : B.kneeY - (.15 + .2*b)*u; }
+  else { x = cx + side*(easy ? .8 + .4*a : .9 + .7*a)*u; y = B.sy + (easy ? -.2 + .6*b : seat ? -.3 + .7*b : -.3 + .9*b)*u; }
+  CAM.n++;
+  const g = CAM.tg.find(q => !q.on); if (!g || CAM.tg.filter(q => q.on && !q.hit).length >= 3) return;
+  const iv = L.i0 + (L.i1 - L.i0)*Math.min(1, CAM.el/60);
+  Object.assign(g, { on:true, hit:0, type, shape, born:now, life:L.life*iv*1000,
+    x:Math.max(innerWidth*.08, Math.min(innerWidth*.92, x)), y:Math.max(innerHeight*.14, Math.min(innerHeight*.95, y)) });
+}
+function camFx(x, y, s){ const f = CAM.fx.find(q => !q.t) || CAM.fx[0]; Object.assign(f, { t:performance.now(), x, y, s }); }
+function camLoop(now){
+  CAM.raf = requestAnimationFrame(camLoop);
+  const dt = Math.min(.1, (now - CAM.last)/1000); CAM.last = now; const v = $('camV');
+  if (CAM.lm && v.readyState >= 2 && now - CAM.poseT > 60){ CAM.poseT = now;   // ≈ 15 detections/s is plenty for touch targets
+    let L = null; try { L = camDetect(now); } catch(e){} CAM.seen = !!L; if (L) camMap(L); }
+  const P = CAM.P, ok = CAM.seen && camVis(11, 12);
+  if (CAM.msgT && now > CAM.msgT){ CAM.msgT = 0; camSay(''); }
+  if (CAM.ph === 'setup'){                                     // arms-out pose held 1.5 s → body frame
+    const u = ok ? Math.hypot(P[11].x - P[12].x, P[11].y - P[12].y) : 0, sy = ok ? (P[11].y + P[12].y)/2 : 0;
+    const legs = CAM.lv === 'seat' || camVis(23, 24, 25, 26), arms = ok && camVis(15, 16) && Math.abs(P[15].x - P[16].x) > 2.4*u && Math.abs(P[15].y - sy) < .6*u && Math.abs(P[16].y - sy) < .6*u;
+    CAM.hold = ok && legs && arms && u > 30 ? CAM.hold + dt : 0;
+    if (ok && !legs) camSay('ถอยอีกนิด ให้เห็นถึงเข่า');
+    else if (ok && !arms) camSay('กางแขนออกข้าง ๆ ค้างไว้');
+    else if (CAM.hold > 0) camSay('ค้างไว้… ' + Math.max(1, Math.ceil(1.5 - CAM.hold)));
+    if (CAM.hold >= 1.5){
+      const hipY = camVis(23, 24) ? (P[23].y + P[24].y)/2 : sy + 2*u, kneeY = camVis(25, 26) ? (P[25].y + P[26].y)/2 : hipY + 1.6*u;
+      CAM.body = { u, cx:(P[11].x + P[12].x)/2, sy, hipY, kneeY };
+      Object.assign(CAM, { ph:'count', el:0, cd:3.2, score:0, combo:0, maxC:0, hits:0, n:0, sq:0, next:0, lost:0, hud:'', rng:mulberry32(strHash(todayKey() + CAM.lv)) });
+      CAM.tg.forEach(q => q.on = false); sfx('coin'); exSpeak('พร้อม'); }
+  } else if (CAM.ph === 'count'){
+    const c0 = Math.ceil(CAM.cd); CAM.cd -= dt; const c1 = Math.ceil(CAM.cd);
+    if (c1 !== c0 && c1 > 0){ camSay(String(c1)); exSpeak(String(c1)); sfx('pop'); } else if (c0 === 4) camSay('3');
+    if (CAM.cd <= 0){ CAM.ph = 'play'; camSay('เริ่ม!', 700); exSpeak('เริ่ม'); CAM.next = 0; }
+  } else if (CAM.ph === 'play' || CAM.ph === 'pause'){
+    CAM.lost = ok ? 0 : CAM.lost + dt;
+    if (CAM.ph === 'play' && CAM.lost > 3){ CAM.ph = 'pause'; camSay('มองไม่เห็นตัวคุณ\nกลับมาหน้ากล้องนะ'); exSpeak('มองไม่เห็นตัว'); }
+    if (CAM.ph === 'pause' && ok){ CAM.ph = 'play'; camSay('ไปต่อ!', 700); CAM.tg.forEach(q => { if (q.on && !q.hit) q.born = now; }); CAM.next = CAM.el + .4; }
+    if (CAM.ph === 'play'){ CAM.el += dt;
+      if (CAM.el >= CAM.next){ camSpawn(now); const L = CAM_LV[CAM.lv]; CAM.next += L.i0 + (L.i1 - L.i0)*Math.min(1, CAM.el/60); }   // game-time schedule → same count of targets on every phone
+      camHits(now); if (CAM.el >= 60) return camEnd(); }
+  }
+  camDraw(now); camHud();
+}
+function camHits(now){
+  const P = CAM.P, B = CAM.body, u = B.u, R = .45*u;
+  const hands = [[15, 19], [16, 20]].map(([w, f]) => P[w].v > .4 ? (P[f].v > .4 ? [(P[w].x + P[f].x)/2, (P[w].y + P[f].y)/2] : [P[w].x, P[w].y]) : null);
+  const hipDrop = camVis(23, 24) ? (P[23].y + P[24].y)/2 - B.hipY : 0, squat = hipDrop >= (CAM.lv === 'easy' ? .2 : .35)*u;
+  for (const g of CAM.tg){ if (!g.on || g.hit) continue;
+    if (now > g.born + g.life){ g.on = false; if (CAM.combo >= 3) camSay('คอมโบหลุด!', 600); CAM.combo = 0; continue; }
+    const touch = hands.some(h => h && Math.hypot(h[0] - g.x, h[1] - g.y) < R); if (!touch) continue;
+    if (g.shape === 'low' && !squat){ if (!CAM.msgT) camSay('ย่อเข่าลงอีก!', 600); continue; }
+    CAM.combo++; CAM.maxC = Math.max(CAM.maxC, CAM.combo); CAM.hits++; if (g.shape === 'low') CAM.sq++;
+    const m = CAM.combo >= 10 ? 3 : CAM.combo >= 5 ? 2 : 1, pts = CAM_PTS[g.type]*m; CAM.score += pts;
+    g.hit = now; camFx(g.x, g.y, '+' + pts); sfx(g.type === 'gold' ? 'coin' : 'pop'); }
+}
+function camDraw(now){
+  const c = $('camC'), W = innerWidth, H = innerHeight, d = devicePixelRatio || 1;
+  if (c.width !== Math.round(W*d) || c.height !== Math.round(H*d)){ c.width = Math.round(W*d); c.height = Math.round(H*d); }
+  const x = c.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, W, H);
+  const P = CAM.P;
+  if (CAM.seen){ x.strokeStyle = '#ffffff88'; x.lineWidth = 4; x.lineCap = 'round';           // faint skeleton so players see themselves being tracked
+    for (const [a, b] of [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24], [23, 25], [24, 26]]) if (P[a].v > .5 && P[b].v > .5){ x.beginPath(); x.moveTo(P[a].x, P[a].y); x.lineTo(P[b].x, P[b].y); x.stroke(); }
+    for (const w of [15, 16]) if (P[w].v > .4){ x.fillStyle = '#4cd28acc'; x.beginPath(); x.arc(P[w].x, P[w].y, 14, 0, 7); x.fill(); } }
+  const u = CAM.body ? CAM.body.u : 80, r = Math.max(26, .3*u);
+  for (const g of CAM.tg){ if (!g.on) continue;
+    if (g.hit){ const k = (now - g.hit)/300; if (k >= 1){ g.on = false; continue; }      // pop: grow + fade
+      x.globalAlpha = 1 - k; x.strokeStyle = '#fff'; x.lineWidth = 6; x.beginPath(); x.arc(g.x, g.y, r*(1 + k), 0, 7); x.stroke(); x.globalAlpha = 1; continue; }
+    const left = 1 - (now - g.born)/g.life, col = { mid:'#3fa0ff', high:'#5fd38d', low:'#ff8a3d', gold:'#ffd84d' }[g.type];
+    x.fillStyle = col + 'cc'; x.beginPath(); x.arc(g.x, g.y, r, 0, 7); x.fill();
+    x.strokeStyle = '#fff'; x.lineWidth = 5; x.beginPath(); x.arc(g.x, g.y, r + 6, -Math.PI/2, -Math.PI/2 + 2*Math.PI*Math.max(0, left)); x.stroke();   // time ring
+    x.fillStyle = '#fff'; x.font = `800 ${Math.round(r*.8)}px Mali, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(g.type === 'gold' ? '⭐' : g.shape === 'low' ? '⬇' : g.shape === 'high' ? '⬆' : '●', g.x, g.y + 1); }
+  for (const f of CAM.fx){ if (!f.t) continue; const k = (now - f.t)/800; if (k >= 1){ f.t = 0; continue; }
+    x.globalAlpha = 1 - k; x.fillStyle = '#ffd84d'; x.font = '800 32px Mali, sans-serif'; x.textAlign = 'center'; x.fillText(f.s, f.x, f.y - 40 - 50*k); x.globalAlpha = 1; }
+}
+function camEnd(){
+  CAM.ph = 'result'; camStop(); camSay(''); const cv = $('camC'); cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); exSpeak('หมดเวลา เก่งมาก'); sfx('coin');
+  const b = camBest(), lv = CAM.lv, rec = { s:CAM.score, d:todayKey(), m:lv, h:CAM.hits, n:CAM.n, c:CAM.maxC, q:CAM.sq };
+  const isBest = CAM.score > (b[lv] || 0); if (isBest) b[lv] = CAM.score;
+  S.camScores = (S.camScores || []).concat([rec]).slice(-30);
+  const day = S.camDay = S.camDay && S.camDay.date === todayKey() ? S.camDay : { date:todayKey(), paid:0, full:false };
+  let extra = '';
+  if (day.paid < 3){ day.paid++; const c = Math.min(150, Math.floor(CAM.score/20)); /* ≈ a gym set (100) for a good round */ S.coins += c; extra += `<br>🪙 +${c} (วันนี้ ${day.paid}/3)`; }
+  if (!day.full){ day.full = true; setTired(0); extra += '<br>💪 แรงเต็ม 100% (ครั้งแรกของวัน)'; }
+  if (CAM.sq){ const m = S.missions.find(q => q.key === 'squat'); if (m) addProgress(m, CAM.sq); }
+  bump('camPlay'); save(); refreshHeader();
+  const todayBest = S.camScores.filter(r => r.d === todayKey() && r.m === lv).reduce((m, r) => Math.max(m, r.s), 0);
+  camPanel(`<h3>${isBest ? '🏆 สถิติใหม่!' : '⏱ หมดเวลา!'}</h3><div style="font:800 48px Mali,sans-serif;color:#3a7bd5;text-align:center">${CAM.score}</div>
+    ระดับ${CAM_LV[lv].name} • แตะได้ ${CAM.hits}/${CAM.n} ลูก • คอมโบสูงสุด ${CAM.maxC}${CAM.sq ? ` • ย่อจริง ${CAM.sq} ครั้ง` : ''}<br>
+    🏆 สถิติ ${b[lv]} • วันนี้สูงสุด ${todayBest} • ออกกำลังกาย 1 นาที${extra}`,
+    [['🔁 เล่นอีกครั้ง', 'ok', camOpen], ['🏡 กลับฟาร์ม', 'ghost', camClose]]);
 }
 function closeGym(){ clearInterval(exT); exT = null; if (G) G.tp = null; G = null; MS.freeze = false; MS.cal = false; MS.onSeg = null; msStop(); try { speechSynthesis.cancel(); } catch(e){} $('gym').style.display = 'none'; refreshHeader(); renderMissions(); }
 async function gymStart(id, custom){
@@ -5616,6 +5802,7 @@ function setHint(){
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
 $('monFab').onclick = () => openFmon();
+$('camX').onclick = () => camClose();   // 📷 quit any time (a round left early gives no reward)
 $('gStop').onclick = () => { const was = !!G; closeGym(); if (was) sheet('⏸ หยุดฝึกแล้ว ไม่เป็นไรเลย\nกลับมาฝึกต่อได้ทุกเมื่อ', OK); };
 $('xStop').onclick = () => { if (FM) return closeFmon(); const x = S.ex; closeEx(); if (x && !x.won) sheet('⏸ หยุดพักแล้ว ไม่เสียอะไร\nกลับมาสู้ต่อได้ทุกเมื่อ (เลือดอสูรยังอยู่เท่าเดิม)', OK); };
 { const rl = $('reel'), on = e => { e.preventDefault(); reelHold = true; }, off = () => { reelHold = false; };   // 🎣 hold anywhere
