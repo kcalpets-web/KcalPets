@@ -104,6 +104,7 @@ input[type=range]{min-height:36px;border:0;padding:0;accent-color:var(--pri)}
 #zLabel{cursor:pointer}
 #roomBar{position:absolute;left:8px;right:8px;bottom:28px;display:none;gap:6px}
 #roomBar .btn{flex:1;padding:0 6px;font-size:15px}
+#shopBar{position:absolute;left:12px;right:12px;bottom:28px;display:none;gap:6px}#shopBar .btn{flex:1;padding:0 6px;font-size:var(--fs-sm);box-shadow:var(--sh-1)}
 #roomTitle{position:absolute;left:8px;right:8px;top:8px;display:none;text-align:center;font-weight:700;color:#fff;background:#0004;border-radius:14px;padding:6px 10px}
 #zoneBar b{background:#ffffffd9;border-radius:14px;padding:6px 12px;font-size:15px}
 #zoneBar .btn{min-width:64px;background:#ffffffe6}
@@ -383,6 +384,7 @@ nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
       <div id="fishBar"><b id="fInfo"></b><div class="row"><button class="btn" id="fBtn" style="flex:2;min-height:56px;font-size:20px">🎣 เหวี่ยงเบ็ด</button><button class="btn ghost" id="fCancel">เลิกตก</button></div></div>
       <div id="placeBar"><b id="pInfo"></b><div class="row"><button class="btn ghost" id="pRot">⟲ หมุน</button><button class="btn ok" id="pOk">✔ วาง</button><button class="btn ghost" id="pCancel">✕ ยกเลิก</button></div></div>
       <div id="roomTitle"></div>
+      <div id="shopBar"></div>
       <div id="roomBar"><button class="btn" id="rFurn">🛋 ของตกแต่ง</button><button class="btn ghost" id="rStyle">🎨 ผนัง/พื้น</button><button class="btn ghost" id="rExit">🚪 ออกจากบ้าน</button></div>
       <button id="toolFab" aria-label="เครื่องมือ">🧰</button>
       <button id="evFab" aria-label="อีเวนต์">🏮</button>
@@ -703,7 +705,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.39.1';
+const APP_VER = '0.40.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -3609,6 +3611,7 @@ function tapObj(z, o){
   }
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
+  if (shopOpen(o)) return enterShop(z, o);                   // 🏪 v0.40 NPC workplaces / repaired homes / gym → interior
   if (PROC[o.type]) return procTap(z, o);
   if (HOMES[o.type]) return homeTap(z, o);                   // 🏚 v0.30
   if (o.type === 'mine') return S.mineOpen ? enterMine()    // ⛏ v0.22 • v0.23: collapsed until ลุงหิน's repair
@@ -3771,6 +3774,32 @@ function enterHome(z, o){ $('toolFab').style.display = 'none'; if (typeof tool !
   $('roomTitle').style.display = 'block'; $('mats').style.display = 'none'; $('hint').style.display = 'none';
   bump('enterHome'); save();
 }
+/* 🏪 v0.40 NPC INTERIORS (designer: "NPC อยู่ประจำบ้าน/ร้านของตัวเอง กดเข้าไปให้รู้สึกเหมือนอยู่ในบ้าน • NPC ทำงานตามหน้าที่ —
+   ช่างไม้เลื่อยไม้ ช่างเหล็กตีเหล็ก แม่ค้ายืนเคาน์เตอร์ โค้ชรอให้ออกกำลังกาย").
+   Reuses the house interior (R3D.renderRoom / 2D drawRoom) with a READ-ONLY preset room: inRoom.shop = SHOP_IN[type].
+   r3d.js adds the work props + the NPC looping its work pose. Tap anywhere inside = talk to the NPC; #shopBar has the old features.
+   items: [furniture, c, r] on the N×N floor (N = 6). */
+const SHOP_IN = {
+  sawmill:   { npc:'mai',   title:'🪚 โรงเลื่อยของลุงไม้',   wall:0, floor:0, work:'saw',     items:[['shelf',0,1],['shelf',0,2],['plant',5,0]] },
+  smithy:    { npc:'lek',   title:'⚒ โรงตีเหล็กของพี่เหล็ก', wall:3, floor:1, work:'hammer',  items:[['shelf',0,1],['lamp',5,0]] },
+  gymyard:   { npc:'coach', title:'🏋️ ยิมโค้ชฟิต',           wall:1, floor:2, work:'coach',   items:[['rug',3,3],['plant',5,0],['plant',0,5]] },
+  buahome:   { npc:'bua',   title:'🧺 ร้านของป้าบัว',         wall:2, floor:0, work:'counter', items:[['shelf',0,1],['shelf',0,2],['plant',5,0]] },
+  salahouse: { npc:'khing', title:'🎈 ศาลาของน้องขิง',        wall:0, floor:0, work:'play',    items:[['rug',2,3],['chair',5,1]] } };
+const shopOpen = o => !!SHOP_IN[o.type] && (PROC[o.type] ? o.done : o.type === 'gymyard' || (S.homes || {})[o.type] >= HOMES[o.type].stages.length);
+function enterShop(z, o){
+  const D = SHOP_IN[o.type], n = NPCS[D.npc]; if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
+  const room = { items:D.items.map(([type, c, r], k) => ({ id:k + 1, type, c, r, w:FURN[type].w, h:FURN[type].h })), wall:D.wall, floor:D.floor, nextId:99 };
+  inRoom = { z, o:{ type:o.type, room }, N:6, shop:{ ...D, obj:o }, saved:{ camX, camY, zoom } }; layoutRoom();
+  roomPet.x = roomPet.tx = 4.4; roomPet.y = roomPet.ty = 5.2; roomPet.state = 'idle'; roomPet.timer = 1;
+  $('toolFab').style.display = 'none'; $('zoneBar').style.display = 'none'; $('roomBar').style.display = 'none';
+  $('roomTitle').textContent = `${D.title} • แตะเพื่อคุย`; $('roomTitle').style.display = 'block'; $('mats').style.display = 'none'; $('hint').style.display = 'none';
+  const acts = { sawmill:[['🪚 โต๊ะช่าง', () => procTap(z, o)]], smithy:[['⚒ เตาตีเหล็ก', () => procTap(z, o)]],
+    gymyard:[['🏋️ ฝึกกับโค้ช', openGym], ['📷 มินิเกม', camOpen]], buahome:[['💬 คุยกับป้าบัว', () => npcTalk('bua')]], salahouse:[['💬 คุยกับน้องขิง', () => npcTalk('khing')]] }[o.type];
+  const bar = $('shopBar'); bar.innerHTML = '';
+  acts.concat(o.type === 'gymyard' || o.type === 'buahome' || o.type === 'salahouse' ? [] : [[`💬 คุยกับ${n.name}`, () => npcTalk(D.npc)]]).concat([['🚪 ออก', exitHome]])
+    .forEach(([t, f], i, a) => { const b = document.createElement('button'); b.className = 'btn' + (i === a.length - 1 ? ' ghost' : ''); b.textContent = t; b.onclick = f; bar.appendChild(b); });
+  bar.style.display = 'flex'; bump('enterShop'); bump('shop_' + o.type); sfx('pop');
+}
 function layoutRoom(){                                       // fit the N×N room in the portrait canvas
   const N = inRoom.N;
   TW = Math.min(110, (cssW - 24) / N); TH = TW/2; zoom = TW / TWBASE;
@@ -3781,7 +3810,7 @@ function exitHome(){ $('toolFab').style.display = ''; if (typeof tool !== 'undef
   if (roomPlace) endRoomPlace();
   const s = inRoom.saved; inRoom = null;
   zoom = s.zoom; TW = TWBASE*zoom; TH = TW/2; OY = cssH*.5 - GRID*TH/2; camX = s.camX; camY = s.camY;
-  $('roomBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; $('roomTitle').style.display = 'none';
+  $('roomBar').style.display = 'none'; $('shopBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; $('roomTitle').style.display = 'none';
   $('mats').style.display = ''; $('hint').style.display = '';
   renderZoneBar(); save();
 }
@@ -3998,6 +4027,9 @@ function openStyleMenu(){
     { label:'ปิด', cls:'ghost' } ]);
 }
 function roomTap(sx, sy){
+  if (inRoom.shop){ const ps = TW*.7*petStage(S.pet.lv).scale, [px, py0] = P(roomPet.x, roomPet.y);   // 🏪 pet → pat it • anything else → talk
+    if (Math.hypot(sx-px, sy-(py0-ps*.55)) < Math.max(30, ps*.6)){ petHappy(roomPet); bump('petTap'); return; }
+    return npcTalk(inRoom.shop.npc); }
   const g = pick(sx, sy);
   if (roomPlace) return roomPlaceAt(g.c, g.r);
   { const it = roomItemAt(g.c, g.r, true) || roomItemAt(g.c, g.r); const ps0 = TW*.7*petStage(S.pet.lv).scale, [qx,qy] = P(roomPet.x, roomPet.y);
@@ -4008,6 +4040,7 @@ function roomTap(sx, sy){
   if (it) sheet(`${FURN[it.type].name}\n💡 กดค้างเพื่อย้ายหรือเก็บ`, OK);
 }
 function roomLongPress(sx, sy){
+  if (inRoom.shop) return false;                               // 🏪 shop rooms are read-only
   const g = pick(sx, sy), it = roomItemAt(g.c, g.r); if (!it) return false;
   liftStartRoom(it); return true;
   sheet(`${FURN[it.type].name}\nจะทำอะไรดี?`, [
@@ -4113,9 +4146,11 @@ const QUESTS = [
   { id:'calTry',  name:'ดูตัวอย่างและปรับเทียบเซ็นเซอร์', hl:'gym', need:1, goal:() => st('calDone'),
     text:'แตะอาคาร 🏋️ ยิม → 📱 ทดสอบ / ปรับเทียบเซ็นเซอร์ → 🦵 ปรับเทียบท่าขา → ดูตัวอย่างแถบสี แล้วขยับให้แถบแตะพื้นล่าง 🟧 และเพดานบน 🟦 ครบ 4 รอบ (เครื่องไม่มีเซ็นเซอร์ก็ผ่านได้)', reward:{coins:100} },
   { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        hl:'gym', need:1, goal:() => st('gymDone'),
-    text:'แตะอาคาร 🏋️ ยิม ข้างบ้าน (กรอบเหลือง) → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
+    text:'แตะอาคาร 🏋️ ยิม ข้างบ้าน (กรอบเหลือง) → 🏋️ ฝึกกับโค้ช → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
   { id:'camTry',  name:'ลองเล่นมินิเกมแตะเป้า',     hl:'gym', need:1, goal:() => st('camPlay'),
     text:'แตะอาคาร 🏋️ ยิม → 📷 มินิเกมแตะเป้า → วางมือถือแนวตั้งห่าง 1.5–2 ม. ให้เห็นหัวถึงเข่า → กางแขนค้างไว้ → ใช้มือแตะเป้าให้ได้มากที่สุดใน 1 นาที (เครื่องที่ใช้กล้องไม่ได้ กดข้ามได้)', reward:{coins:150} },
+  { id:'shopIn',  name:'แวะไปหาลุงไม้ที่โรงเลื่อย',  need:1, goal:() => st('shop_sawmill'),
+    text:'แตะ 🪚 โรงเลื่อย → เข้าไปดูลุงไม้กำลังเลื่อยไม้ • แตะที่ไหนก็ได้ในร้านเพื่อคุย • ใช้โต๊ะช่างจากปุ่มด้านล่าง (ร้านอื่น ๆ ของชาวเมืองก็เข้าไปได้แบบเดียวกัน)', reward:{coins:100} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,

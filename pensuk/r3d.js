@@ -645,6 +645,44 @@ export function start(){
       if (it.w === 1 && it.h === 1 && it.c === 0 && (it.type === 'shelf' || it.type === 'chair')) m.rotation.y = Math.PI/2;   // against the left wall → face into the room
       markTile(m, it.c, it.r); roomG.add(m);
     }
+    shopNpc = null; if (ir.shop) shopProps(roomG, ir.shop, L);
+  }
+  /* 🏪 v0.40 NPC interiors: work props + the NPC (index.html SHOP_IN). The camera looks from +x+z toward −x−z, so the NPC stands
+     "behind" its prop at (0.38L, 0.38L) facing the camera (yaw π/4) and the prop sits between them at (0.56L, 0.56L). */
+  let shopNpc = null, shopWork = '';
+  function shopProps(g, D, L){
+    const px = L*.56, pz = L*.56, nx = L*.38, nz = L*.38;
+    const P = new THREE.Group(); P.position.set(px, 0, pz); P.rotation.y = Math.PI/4; g.add(P);   // prop axes: x = across the camera, z = toward it
+    switch (D.work){
+      case 'saw':                                               // workbench + log on it + sawdust
+        for (const x of [-1, 1]) for (const z of [-.4, .4]) CY(P, .07, .85, '#6e4524', x, 0, z, true);
+        RB(P, 2.4, .14, 1.0, .05, '#b98250', 0, .85, 0, true);
+        CY(P, .28, 1.6, '#a8703f', 0, 1.0 + .28, 0).rotation.z = Math.PI/2; BALL(P, .5, .12, .4, '#e9d3a3', .6, 0, .7); break;
+      case 'hammer':                                            // forge with glowing coals + anvil
+        RB(P, 1.4, 1.3, 1.0, .1, '#7a5a4a', -1.3, 0, -.3, true); add(P, rb(.9, .25, .5, .05), mat('#ff8a3d', 0xcc4400), -1.3, 1.3, -.1);
+        RB(P, .5, .5, .4, .05, '#3b3f45', .4, 0, 0, true); RB(P, 1.0, .25, .45, .05, '#5a6068', .4, .5, 0, true); break;
+      case 'coach':                                             // dumbbell rack + kettlebell
+        RB(P, 1.6, .7, .5, .05, '#7a5236', 0, 0, -.2, true);
+        for (const x of [-.5, 0, .5]){ CY(P, .03, .5, '#5a5f66', x, .82, -.2).rotation.z = Math.PI/2; for (const d of [-.2, .2]) CY(P, .1, .08, '#3b3f45', x + d, .82, -.2).rotation.z = Math.PI/2; }
+        BALL(P, .25, .25, .25, '#e5483e', 1.2, 0, .3); break;
+      case 'counter':                                           // shop counter + vegetable crates
+        RB(P, 3.4, 1.0, .9, .08, '#c48a52', 0, 0, 0, true); RB(P, 3.5, .1, 1.0, .04, '#e9d3a3', 0, 1.0, 0);
+        for (const [x, c] of [[-1.1, '#ff8a3d'], [0, '#6fbf63'], [1.1, '#e5483e']]){ RB(P, .8, .3, .6, .04, '#a8703f', x, 1.1, 0);
+          for (let k=0;k<5;k++) BALL(P, .13, .13, .13, c, x - .25 + (k%3)*.25, 1.45, -.12 + ((k/3)|0)*.24); } break;
+      case 'play':                                              // toy balls + a little slide
+        for (const [x, z, c] of [[-.8, .3, '#ff6b81'], [.2, .6, '#ffd166'], [.9, .1, '#4f7cac']]) BALL(P, .25, .25, .25, c, x, 0, z, true);
+        RB(P, .6, 1.2, .6, .05, '#4caf6a', -1.2, 0, -.5, true); RB(P, .5, .08, 1.6, .03, '#ffd166', -1.2, .7, .4).rotation.x = .55; break;
+    }
+    shopNpc = npcModel(D.npc); shopWork = D.work; shopNpc.position.set(nx, 0, nz); shopNpc.rotation.y = Math.PI/4; g.add(shopNpc);
+  }
+  function shopPose(t){                                          // loop the work pose (arms[1] = right arm)
+    if (!shopNpc) return; const A = shopNpc.userData.parts.arms, H = shopNpc.userData.parts.head;
+    shopNpc.position.y = 0; A.forEach(a => { a.rotation.x = 0; a.rotation.z = 0; }); H.rotation.y = 0;
+    if (shopWork === 'saw'){ A[1].rotation.x = -1.2 + Math.sin(t*7)*.35; A[0].rotation.x = -.9; H.rotation.x = .25; }
+    else if (shopWork === 'hammer'){ const k = Math.abs(Math.sin(t*3.2)); A[1].rotation.x = -.6 - k*1.8; A[0].rotation.x = -.7; H.rotation.x = .2; }
+    else if (shopWork === 'coach') poseEmote(shopNpc, 'squat', t*.8);
+    else if (shopWork === 'counter'){ if (Math.sin(t*.8) > .6){ A[1].rotation.z = 2.4 + Math.sin(t*14)*.35; } else A[0].rotation.x = -.4; }
+    else if (shopWork === 'play') poseEmote(shopNpc, 'cheer', t);
   }
 
   /* ---------- public API used by index.html ---------- */
@@ -798,10 +836,11 @@ export function start(){
     renderRoom(ir, rpet, rp, time){
       if (ctxLost) return;
       can.style.display = ''; resize(); inRoomNow = true; inMineNow = false;
-      const R = ir.o.room, key = ir.N + '|' + R.wall + '|' + R.floor + '|' + (NIGHT > .6 ? 2 : NIGHT > .2 ? 1 : 0) + '|' + JSON.stringify(R.items);
+      const R = ir.o.room, key = ir.N + '|' + R.wall + '|' + R.floor + '|' + (NIGHT > .6 ? 2 : NIGHT > .2 ? 1 : 0) + '|' + JSON.stringify(R.items) + '|' + (ir.shop ? ir.shop.npc : '');
       if (key !== roomKey){ roomKey = key; buildRoom(ir); }
+      shopPose(time);
       const L = ir.N*2, tgt = new THREE.Vector3(L*.52, 1.2, L*.52), half = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
-      const dist = Math.max(L*1.55/(2*half*Math.min(1, camera.aspect)), 12), cp = Math.cos(PITCH);
+      const dist = Math.max(L*(ir.shop ? 1.05 : 1.55)/(2*half*Math.min(1, camera.aspect)), ir.shop ? 9 : 12), cp = Math.cos(PITCH);
       camera.position.set(tgt.x + Math.sin(YAW)*cp*dist, tgt.y + Math.sin(PITCH)*dist, tgt.z + Math.cos(YAW)*cp*dist); camera.lookAt(tgt);
       rsun.position.set(L + 8, 16, L + 4); rsun.target.position.copy(tgt);
       Object.assign(rsun.shadow.camera, { left:-L, right:L, top:L, bottom:-L, near:1, far:80 }); rsun.shadow.camera.updateProjectionMatrix();
