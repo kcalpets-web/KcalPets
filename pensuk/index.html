@@ -719,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.45.0';
+const APP_VER = '0.45.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -2513,7 +2513,10 @@ function centerOn(gc, gr){ camX = -(gc-gr)*TW/2; camY = -((gc+gr)*TH/2 - GRID*TH
 function clampCam(){                                          // keep the view near the island
   let [c,r] = screenToWorld(cssW/2, cssH/2), mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
   for (const z of S.farm.zones){ mnx = Math.min(mnx, z.cx*GRID); mxx = Math.max(mxx, z.cx*GRID+GRID); mny = Math.min(mny, z.cy*GRID); mxy = Math.max(mxy, z.cy*GRID+GRID); }
-  const nc = Math.max(mnx-2, Math.min(mxx+2, c)), nr = Math.max(mny-2, Math.min(mxy+2, r));
+  /* v0.45.1 (designer: "ไม่ควรลากหรือซูมออกจนเห็นขอบดำ"): the screen centre must stay ≥ 1.5 tiles INSIDE the island's unlocked bounding box
+     (was ±2 tiles outside it). With ZMIN .65 the visible half-height is ≈ 10 tiles = 20 world units, well inside the sea's
+     70-unit fade radius (r3d.js), so the dark void behind the WebGL canvas can no longer appear. */
+  const m = Math.min(1.5, (mxx - mnx)/2, (mxy - mny)/2), nc = Math.max(mnx + m, Math.min(mxx - m, c)), nr = Math.max(mny + m, Math.min(mxy - m, r));   // 1.5 tiles inside the edge (less for a tiny island)
   if (nc !== c || nr !== r) centerOn(nc, nr);
 }
 /* Zoom about a screen anchor: the world point under (ax, ay) stays under the finger.
@@ -2953,7 +2956,11 @@ function updateSky(){
     : (h >= 5 && h < 7.5) ? 'linear-gradient(#f7c6a3,#cfe6f5 50%,#e6f6d6)'
     : 'linear-gradient(#8fd0f5,#cfeefc 40%,#e6f6d6 80%)';
 }
-function drawSunMoon(time){
+function drawSunMoon(time, in3D){
+  /* v0.45.1 (designer: "พระจันทร์แปลกๆ"): the 3D camera looks DOWN at the island — there is no sky in frame, so a sun/moon disc
+     painted on the HUD floated over the houses. In 3D the time of day is shown by the lights + sea colour only;
+     Loy Krathong nights keep just the rising sky lanterns (no moon disc). 2D fallback keeps the old sky arc. */
+  if (in3D){ if (NIGHT > .5 && moonNight()) drawLanterns(time); return; }
   /* real-time arc: sun 06:00→18:00, moon 18:00→06:00.  t ∈ [0,1] along the arc:
      x = 34 + t·(cssW − 68),   y = 150 − sin(t·π)·105   (rises left, peaks centre-top, sets right) */
   const hh = skyHours(), night = NIGHT > .5;
@@ -2979,6 +2986,9 @@ function drawFullMoon(x, y, time){
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 70, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#fff6d6'; ctx.beginPath(); ctx.arc(x, y, 24, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = 'rgba(220,210,170,.5)'; for (const [dx,dy,r] of [[-7,-5,5],[6,4,4],[-2,9,3]]){ ctx.beginPath(); ctx.arc(x+dx, y+dy, r, 0, Math.PI*2); ctx.fill(); }
+  drawLanterns(time);
+}
+function drawLanterns(time){
   if (!LANTERNS.length) for (let k=0;k<12;k++) LANTERNS.push({ x:Math.random()*cssW, y:cssH*(.3 + Math.random()*.8), ph:Math.random()*6, s:.7 + Math.random()*.5 });
   for (const L of LANTERNS){
     L.y -= 18*L.s/30; if (L.y < 40){ L.y = cssH + 20; L.x = Math.random()*cssW; }
@@ -3176,7 +3186,7 @@ function frame(now){
     updateFishing(wall);
     R3D.render(time, dt/1000);
     if ((skyAcc += dt) > 30000){ skyAcc = 0; updateSky(); }
-    drawSunMoon(time);                                      // HUD layer: real-time sun / moon / stars
+    drawSunMoon(time, true);                                // HUD layer: 3D → only Loy Krathong lanterns (v0.45.1)
     drawTutHighlight(time);
     badges.length = 0;
     for (const z of S.farm.zones){

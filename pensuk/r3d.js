@@ -113,7 +113,7 @@ export function start(){
       #include <dithering_fragment>`);
   };
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(360, 360, 96, 96), seaMat); sea.rotation.x = -Math.PI/2; sea.receiveShadow = true; sea.renderOrder = -1; scene.add(sea);
-  const SEA_DAY = new THREE.Color('#145a92'), SEA_NIGHT = new THREE.Color('#0b2340');   // dark base: sun + hemi + fill + rim lift it to a mid blue
+  const SEA_DAY = new THREE.Color('#145a92'), SEA_NIGHT = new THREE.Color('#1b3f6e'), SEA_GLOW = new THREE.Color('#0e2a4c');   // dark base: sun + hemi + fill + rim lift it to a mid blue
   /* surf: white strips hugging each REAL sea side of a zone (index.html seaSides = no island cell next door), shared pulsing material */
   const foamMat = new THREE.MeshBasicMaterial({ color:'#ffffff', transparent:true, opacity:.55, depthWrite:false }), foamMat2 = foamMat.clone(); foamMat2.opacity = .25;
   /* ---------- palette (Modern Clay) ---------- */
@@ -412,14 +412,35 @@ export function start(){
          posts every 1.2 units, a strip of sea under the overhang, ลุงปลา (index.html PLA.look) sitting at the end with a rod. */
       /* 🛝 v0.40.2 playground: sand pad, a slide (ladder + tilted chute) and an A-frame swing with two seats */
       case 'playground': {
-        RB(g, W - .3, .06, D - .3, .1, '#efe2c4', 0, 0, 0);
-        RB(g, .8, 1.5, .8, .06, '#4caf6a', -1.0, 0, -.9, true); for (const x of [-1.35, -.65]) CY(g, .04, 1.5, '#e5483e', x, 0, -.4);
-        const ch = RB(g, .6, .08, 2.0, .04, '#ffd166', -1.0, .75, .3, true); ch.rotation.x = .62;
-        for (const s2 of [-1, 1]){ const l = CY(g, .06, 2.0, '#4f7cac', .9 + s2*.85, 0, .9); l.rotation.x = s2*0; }
-        for (const z2 of [.5, 1.3]){ CY(g, .05, 1.9, '#4f7cac', .05, 0, z2).rotation.z = .25; CY(g, .05, 1.9, '#4f7cac', 1.75, 0, z2).rotation.z = -.25; }
-        RB(g, 1.9, .08, .08, .03, '#3b5f8a', .9, 1.85, .9);                                                      // top bar
-        for (const x of [.55, 1.25]){ CY(g, .01, 1.2, '#cfcfcf', x, .65, .9); RB(g, .4, .06, .25, .02, '#e5483e', x, .62, .9, true); }   // ropes + seats
-        BALL(g, .18, .18, .18, '#ff6b81', -.2, .06, 1.2); break; }
+        /* 🛝 v0.45.1 rebuilt (designer: "สนามเด็กเล่นดูแปลกๆ"). Footprint 2×2 → x, z ∈ [−2, 2].
+           Tilted parts use add() at their CENTRE (RB/CY take the bottom), rotation about the part's own centre:
+             slide chute  from (−1, 1.15, −.45) to (−1, .08, 1.05): L = hypot(1.5, 1.07), tilt rotation.x = +atan2(1.07, 1.5)
+                          (Rx(θ) maps +z → (0, −sinθ, cosθ), so θ > 0 lowers the +z end)
+             swing legs   top (x, 1.72, z0), feet (x, 0, z0 ± .5): L = hypot(1.72, .5), rotation.x = ∓atan2(.5, 1.72)
+                          (Rx(θ) maps +y → (0, cosθ, sinθ): the foot on the +z side needs the top leaning to −z → θ < 0) */
+        RB(g, W - .3, .06, D - .3, .25, '#ead7ae', 0, 0, 0);                                        // sand pad
+        /* slide tower: 4 posts, deck, red roof, ladder at the back */
+        const tx = -1.0, tz = -.85;
+        for (const [px, pz] of [[-.32, -.32], [.32, -.32], [-.32, .32], [.32, .32]]) CY(g, .05, 1.65, '#4f7cac', tx + px, 0, tz + pz, true);
+        RB(g, .8, .08, .8, .03, '#ffd166', tx, 1.12, tz, true);
+        const rf = add(g, gable(.95, .4, .95), mat('#e5483e'), tx, 1.65, tz, null, null, null, true); rf.rotation.y = Math.PI/2;
+        for (const px of [-.2, .2]) CY(g, .03, 1.15, '#ffffff', tx + px, 0, tz - .5);
+        for (let k = 1; k <= 4; k++){ const r2 = add(g, CYL, mat('#ffffff'), tx, k*.25, tz - .5, .025, .4, .025); r2.rotation.z = Math.PI/2; }
+        const cl = Math.hypot(1.5, 1.07), ct = Math.atan2(1.07, 1.5);
+        const chute = add(g, rb(.5, .06, cl, .03), mat('#ffd166'), tx, (1.15 + .08)/2, (-.45 + 1.05)/2, null, null, null, true); chute.rotation.x = ct;
+        for (const sx of [-.26, .26]){ const rail = add(g, rb(.05, .12, cl, .02), mat('#f2a33a'), tx + sx, (1.15 + .08)/2 + .07, (-.45 + 1.05)/2); rail.rotation.x = ct; }
+        /* swing: A-frame (2 legs per end), beam along x, two seats on ropes */
+        const sz0 = .7, x0 = .3, x1 = 1.7, top = 1.72, ll = Math.hypot(top, .5), lt = Math.atan2(.5, top);
+        for (const x of [x0, x1]) for (const sd of [-1, 1]){ const l = add(g, CYL, mat('#3b5f8a'), x, top/2, sz0 + sd*.25, .05, ll, .05, true); l.rotation.x = -sd*lt; }
+        const beam = add(g, CYL, mat('#4f7cac'), (x0 + x1)/2, top, sz0, .06, x1 - x0 + .2, .06, true); beam.rotation.z = Math.PI/2;
+        for (const [x, c] of [[.72, '#e5483e'], [1.28, '#4caf6a']]){
+          for (const dz of [-.11, .11]) CY(g, .012, top - .45, '#d9d3c8', x, .45, sz0 + dz);
+          RB(g, .38, .05, .26, .02, c, x, .42, sz0, true); }
+        /* seesaw: pivot + tilted plank (rotation.z = .16) + 2 handles */
+        RB(g, .2, .3, .2, .05, '#7a5236', 1.0, 0, -1.05, true);
+        const pl = add(g, rb(1.5, .07, .28, .03), mat('#4caf6a'), 1.0, .36, -1.05, null, null, null, true); pl.rotation.z = .16;
+        for (const sx of [-.55, .55]) CY(g, .025, .18, '#3b5f8a', 1.0 + sx, .36 + Math.sin(.16)*sx + .02, -1.05);
+        BALL(g, .16, .16, .16, '#ff6b81', -.3, .16, 1.4, true); break; }
       case 'pier': {
         const x0 = -W/2 + .2, x1 = W/2 + 3, len = x1 - x0, cx2 = (x0 + x1)/2;
         RB(g, 3.4, .12, D + .6, .03, '#2a6fa6', W/2 + 1.7, -.16, 0);                         // sea under the overhang (v0.44: sea colour)
@@ -1074,7 +1095,7 @@ export function start(){
         c.position.set(target.x - u.back*.707 + u.side*.707, u.y, target.z - u.back*.707 - u.side*.707); for (const m of c.children) m.material.emissive.setScalar(.19*(1-k)); }
       sun.intensity = 2.1*(1 - .8*k); hemi.intensity = .95*(1 - .55*k);   /* v0.45: a touch lower — fill + rim add light */ sun.color.setHSL(.09, .6, .92 - .25*k);
       fill.intensity = .45*(1 - .6*k); rim.intensity = .75*(1 - .7*k);
-      seaU.uTime.value = time; seaU.uNight.value = k; seaMat.color.copy(SEA_DAY).lerp(SEA_NIGHT, k);
+      seaU.uTime.value = time; seaU.uNight.value = k; seaMat.color.copy(SEA_DAY).lerp(SEA_NIGHT, k); seaMat.emissive.copy(SEA_GLOW).multiplyScalar(k);   // v0.45.1 moonlit sea: never pure black at night
       foamMat.opacity = .5 + .15*Math.sin(time*1.4); foamMat2.opacity = .22 + .12*Math.sin(time*1.4 - 1.2);   // surf breathes in & out
       /* 🎨 v0.45 outdoor exposure: up-facing ground gets ≈ sun·cosθ + hemi + ½fill + ½rim ≈ 3× albedo → ACES clipped it to pale mint.
          .8 brings grass/leaves back to their real clay greens (rooms + mine keep 1.05). */
