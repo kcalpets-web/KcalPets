@@ -192,6 +192,26 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 .gname{text-align:center;font-size:24px;font-weight:800;margin-top:10px}.gtip{text-align:center;font-size:15px;color:#555;line-height:1.5}
 .gbig{text-align:center;font:800 88px/1 Mali,sans-serif;color:#2f7fc0;margin:14px 0 4px}.gsub{text-align:center;font-size:22px;font-weight:700;color:#2f7fc0;min-height:30px}
 .gnext{text-align:center;font-size:14px;color:#777}
+/* 📊 v0.34 volume-style motion bar (designer: "เหมือนปุ่มเพิ่ม-ลดเสียง หลอดสี ๆ วิ่งขึ้นวิ่งลง") — fill driven by transform only */
+.mrow{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:6px}.mrow.h{flex-direction:column;gap:8px}.mrow .gbig{font-size:64px;margin:0}
+.mbar{position:relative;display:flex;justify-content:center;padding:0 46px}
+.mtrack{position:relative;width:72px;height:min(42vh,320px);border-radius:22px;background:#fff;border:4px solid #b9c7d6;overflow:hidden;transition:border-color .2s}
+.mbar.h .mtrack{width:min(74vw,320px);height:72px}.mtrack.dn{border-color:#ff8a3d}.mtrack.up{border-color:#3fa0ff}
+.mfill{position:absolute;left:0;right:0;bottom:0;height:100%;transform-origin:50% 100%;transform:scaleY(.03);transition:transform .08s linear;
+  background:linear-gradient(to top,#ff6b4a,#ffb347 30%,#ffe066 52%,#5fd38d 74%,#3fa0ff)}
+.mbar.h .mfill{left:50%;right:auto;top:0;bottom:0;width:50%;height:auto;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#ffe066,#5fd38d 50%,#3fa0ff)}
+.mceil,.mfloor{position:absolute;left:0;right:0;height:9px;z-index:2;background:#3fa0ff}.mceil{top:0}.mfloor{bottom:0;background:#ff8a3d}
+.mbar.h .mceil,.mbar.h .mfloor{top:0;bottom:0;width:9px;height:auto}.mbar.h .mceil{left:auto;right:0}.mbar.h .mfloor{right:auto;left:0}
+.mceil.hit,.mfloor.hit{animation:mhit .7s}@keyframes mhit{0%,100%{box-shadow:none;filter:none}30%{box-shadow:0 0 22px 12px #ffe066;filter:brightness(1.4)}}
+.mlab{position:absolute;right:0;font-size:12px;font-weight:700;color:#777;width:44px;text-align:left}.mlab.t{top:2px}.mlab.b{bottom:2px}
+.mbar.h{padding:0 0 22px}.mbar.h .mlab{top:auto;bottom:0;width:auto}.mbar.h .mlab.t{right:4px}.mbar.h .mlab.b{left:4px;right:auto}
+.mpop{position:absolute;left:50%;top:38%;font:800 40px Mali,sans-serif;color:#2e9e4f;opacity:0;pointer-events:none;transform:translateX(-50%);white-space:nowrap;z-index:3;text-shadow:0 2px 0 #fff}
+.mpop.on{animation:mpop .9s}@keyframes mpop{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}25%{opacity:1;transform:translate(-50%,-10px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-60px)}}
+.mbar.demo-down .mfill{transition:none;animation:dv 3s ease-in-out infinite}@keyframes dv{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.03)}}
+.mbar.demo-up .mfill{transition:none;animation:du 3s ease-in-out infinite}@keyframes du{0%,100%{transform:scaleY(.03)}50%{transform:scaleY(1)}}
+.mbar.demo-twist .mfill{transition:none;animation:dt 3s ease-in-out infinite}@keyframes dt{0%,100%{transform:scaleX(0)}25%{transform:scaleX(1)}75%{transform:scaleX(-1)}}
+.mbar.demo-steps .mfill{transition:none;animation:ds .6s ease-out infinite}@keyframes ds{0%{transform:scaleY(1)}100%{transform:scaleY(.15)}}
+.gbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}.gbtns .btn{min-height:52px}
 .gpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gpick .btn{min-height:96px;font-size:16px;line-height:1.4;white-space:pre-line}
 #xb{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#e6dcff,#fff6e6 70%);overflow:auto}
 #xb .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:8px}
@@ -606,7 +626,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.33.4';
+const APP_VER = '0.34.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -3962,6 +3982,8 @@ const QUESTS = [
     text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
   { id:'askGuide', name:'คุยกับเป็นสุข',          need:1, goal:() => st('guideAsk'),
     text:'แตะปุ่มหน้าบีเกิล 💬 ซ้ายล่างของฟาร์ม → คุยกับเป็นสุขได้ 3 อย่าง: ① เช็กอินว่าทำอะไรเพื่อสุขภาพไปแล้ว ② พิมพ์ถามเรื่องเกม (ลืมอะไรถามได้) ③ รับคำแนะนำสุขภาพตามเวลา — ลองถามอะไรสักข้อดูนะ', reward:{coins:100} },
+  { id:'calTry',  name:'ดูตัวอย่างและปรับเทียบเซ็นเซอร์', hl:'gym', need:1, goal:() => st('calDone'),
+    text:'แตะอาคาร 🏋️ ยิม → 📱 ทดสอบ / ปรับเทียบเซ็นเซอร์ → 🦵 ปรับเทียบท่าขา → ดูตัวอย่างแถบสี แล้วขยับให้แถบแตะพื้นล่าง 🟧 และเพดานบน 🟦 ครบ 4 รอบ (เครื่องไม่มีเซ็นเซอร์ก็ผ่านได้)', reward:{coins:100} },
   { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        hl:'gym', need:1, goal:() => st('gymDone'),
     text:'แตะอาคาร 🏋️ ยิม ข้างบ้าน (กรอบเหลือง) → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
@@ -4395,7 +4417,8 @@ function openEx(){
    No events within 1.5 s or permission denied → falls back to the timer + honest answer flow.
    ===================================================================== */
 const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0, yaw:0, steps:0, stepAt:0, armed:true,
-  seg:{ on:false, v:0, p:0, t:0, q:0 }, level:0, depth:.2, reps:0, repsUp:0, downs:0, ups:0, low:false, top:false };
+  seg:{ on:false, v:0, p:0, t:0, q:0 }, level:0, depth:.2, reps:0, repsUp:0, downs:0, ups:0, low:false, top:false,
+  startA:.4, segMax:2.5, maxAmp:.7, bias:0, af:0, a0:0, cal:false, onSeg:null, sess:{} };   // v0.34: per-player thresholds (msApply) • onSeg = calibration hook • sess = demo/cal done this app session
 const exDepth = () => exEasy() ? .12 : .20;   // phone travels ~30–45 cm in a real squat; thresholds leave room for sensor error
 function msHandler(e){
   const ag = e.accelerationIncludingGravity; if (!ag || ag.x == null) return;
@@ -4409,7 +4432,12 @@ function msFeed(ag, lin, now, rr){                                  // pure inte
   else for (const [i, k] of [[0,'x'],[1,'y'],[2,'z']]) MS.g[i] += (ag[k] - MS.g[i])*.08;           // fallback: low-pass ≈ gravity
   const gl = Math.hypot(...MS.g) || 1, gu = MS.g.map(c => c/gl);
   const la = hasLin ? [e.acceleration.x, e.acceleration.y, e.acceleration.z] : [ag.x - MS.g[0], ag.y - MS.g[1], ag.z - MS.g[2]];
-  const a = la[0]*gu[0] + la[1]*gu[1] + la[2]*gu[2];
+  const a0 = la[0]*gu[0] + la[1]*gu[1] + la[2]*gu[2];
+  /* v0.34 sensor offset: real phones report a small constant a↑ at rest; integrated it bends p by ½·b·t² (b = 0.08 → 25 cm in 2.5 s).
+     Track it only at rest (no segment and |a0 − b| < 0.25):  b += (a0 − b)·0.01 (≈ 1.7 s time constant)  →  a↑ = a0 − b.  af = short EMA of a↑ for the "quiet" test, so a single
+     noisy sample no longer keeps a finished segment open. */
+  if (!MS.seg.on && Math.abs(a0 - MS.bias) < .25) MS.bias += (a0 - MS.bias)*.01;
+  const a = a0 - MS.bias; MS.af += (a - MS.af)*.2; MS.a0 += (a0 - MS.a0)*.05;   // a0 EMA (≈ 0.3 s) → offset estimate while standing still
   MS.jit += (Math.abs(a) - MS.jit)*.1; MS.a = a;                   // smoothed hand jitter (shown in the sensor test)
   MS.still = MS.jit < .35 ? MS.still + dt : 0;
   /* v0.33.1 SEGMENT INTEGRATION (real iPhone: the old always-on integrator ran away to 500–1000 cm).
@@ -4419,15 +4447,24 @@ function msFeed(ag, lin, now, rr){                                  // pure inte
      MS.level = sum of finished Δ since the last completed rep (shown as the cm gauge, clamped to ±80 cm).
      reps (down kind) = DOWN then UP • repsUp (arm raises) = UP then DOWN • MS.low = currently in the bottom of a squat */
   const S2 = MS.seg;
-  if (!S2.on){ if (Math.abs(a) > .4){ S2.on = true; S2.v = a*dt; S2.p = 0; S2.t = 0; S2.q = 0; } }
-  else { S2.v += a*dt; S2.p += S2.v*dt; S2.t += dt; S2.q = Math.abs(a) < .3 ? S2.q + dt : 0;
-    if (S2.q > .25 || S2.t > 2.5){ S2.on = false; const D = MS.depth*.75, d = S2.t > 2.5 || Math.abs(S2.p) > .7 ? 0 : S2.p;   // too long / implausible (shaking) → ignored
+  /* v0.34: the fixed numbers became per-player fields (defaults = the v0.33.1 values):
+       start |a↑| > MS.startA (0.4) • end |a↑| < 0.75·startA (0.3) for 0.25 s AND |v| < min(0.1, 0.02 + 0.25·v_peak) (or quiet ≥ 1.5 s)
+       (a small, slow move must really stop before it closes — closing early leaves the next segment with a velocity offset)
+       • too long > MS.segMax (2.5 s) • implausible |Δ| > MS.maxAmp (0.7 m)
+       The |v| test keeps a slow squat in ONE segment: mid-move the acceleration is ~0 but the phone is still travelling.
+       Reversal split: |p| > 8 cm and v points back toward the start (v·p < 0, |v| > 15 cm/s, while still accelerating — a drifting v during a quiet hold never splits) → close the segment there and open
+       the next one at once with the current v (up-then-down with no pause at the top used to merge into Δ ≈ 0). */
+  if (!S2.on){ if (Math.abs(a) > MS.startA){ S2.on = true; S2.v = a*dt; S2.p = 0; S2.t = 0; S2.q = 0; S2.vm = 0; } }
+  else { S2.v += a*dt; S2.p += S2.v*dt; S2.t += dt; S2.vm = Math.max(S2.vm || 0, Math.abs(S2.v)); S2.q = Math.abs(MS.af) < MS.startA*.75 ? S2.q + dt : 0;
+    const rev = Math.abs(S2.p) > .08 && S2.v*S2.p < 0 && Math.abs(S2.v) > .15 && S2.q === 0 && S2.t <= MS.segMax;
+    if (rev || (S2.q > .25 && (Math.abs(S2.v) < Math.min(.1, .02 + .25*S2.vm) || S2.q > 1.5)) || S2.t > MS.segMax){ S2.on = false; const D = MS.depth*.75, bad = S2.t > MS.segMax || Math.abs(S2.p) > MS.maxAmp, d = bad ? 0 : S2.p;   // too long / implausible (shaking) → ignored
       MS.level = Math.max(-.8, Math.min(.8, MS.level + d));
       if (d <= -D){ MS.downs++; if (MS.top){ MS.repsUp++; MS.top = false; MS.level = 0; } else MS.low = true; }
       else if (d >= D){ MS.ups++; if (MS.low){ MS.reps++; MS.low = false; MS.level = 0; } else MS.top = true; }
-      S2.p = 0; S2.v = 0; } }
+      if (MS.onSeg) MS.onSeg(d, S2.t);                            // 📊 v0.34 calibration sees every finished segment (d = 0 when rejected)
+      if (rev){ S2.on = true; S2.p = 0; S2.t = 0; S2.q = 0; S2.vm = Math.abs(S2.v); } else { S2.p = 0; S2.v = 0; } } }   // reversal: keep moving with the real v
   MS.p = Math.max(-.8, Math.min(.8, MS.level + (S2.on ? S2.p : 0))); MS.v = S2.on ? S2.v : 0;
-  if (!S2.on && !MS.low && !MS.top && MS.still > .6) MS.level *= .9;   // standing still: let the gauge settle back to 0
+  if (!S2.on && !MS.low && !MS.top && !MS.cal && MS.still > .6) MS.level *= .9;   // standing still: let the gauge settle back to 0
   /* 🌀 v0.31 yaw about the vertical: ω·ĝ  (rotationRate: beta = x, gamma = y, alpha = z, deg/s); slow leak keeps the centre */
   if (rr && rr.alpha != null){ const w = (rr.beta||0)*gu[0] + (rr.gamma||0)*gu[1] + (rr.alpha||0)*gu[2]; MS.yaw = (MS.yaw + w*dt)*(1 - .25*dt); }
   /* 👣 steps: vertical acceleration peak > 1.6 m/s² after dipping below 0.4, at least 0.28 s apart */
@@ -4472,19 +4509,28 @@ function msRun(mode, done){
       if (MS.p >= -.06){ reps++; rep++; sfx('coin'); if (rep >= 3) return finish(); st = 'cal'; t0 = now - 900; say(`เยี่ยม! ${reps} ครั้งแล้ว`); } }
   }, 50);
 }
-/* 📱 sensor test (designer asked to re-check the motion): live numbers while moving freely */
+/* 📱 sensor test (designer asked to re-check the motion) — v0.34: lives in the gym screen with the same bar,
+   shows the saved calibration and live numbers (screenshot-friendly), and starts a re-calibration per kind */
 async function msTest(){
-  clearInterval(exT); $('xb').style.display = 'block'; exRender(); $('xBig').textContent = '📱';
-  if (!MS.ok){ $('xSay').textContent = 'ขออนุญาตใช้เซ็นเซอร์…'; exBtns([]); if (!await msStart()){ $('xSay').textContent = '❌ ใช้เซ็นเซอร์ไม่ได้ (ไม่อนุญาต หรือเครื่องไม่รองรับ)'; return exBtns([{ label:'กลับ', cls:'ghost', fn:openEx }]); } }
-  msZero(); MS.zupt = true; let low = 0, reps = 0, wasDown = false;
-  exBtns([{ label:'⟲ ตั้งศูนย์ (ยืนตรงแล้วกด)', fn:() => { msZero(); low = 0; } }, { label:'กลับ', cls:'ghost', fn:() => { clearInterval(exT); msGauge(false); openEx(); } }]);
-  exT = setInterval(() => { const cm = -MS.p*100; low = Math.max(low, cm); const d = exDepth()*100;
-    MS.depth = d/100; if (MS.reps + MS.repsUp !== reps){ reps = MS.reps + MS.repsUp; sfx('coin'); }
-    msGauge(true); $('xDist').textContent = `${cm >= 0 ? '↓' : '↑'} ${Math.abs(cm).toFixed(0)} ซม.`;
-    $('xSay').textContent = `ลองย่อ-ยืนตามปกติ แล้วดูตัวเลข
-ลึกสุด ${low.toFixed(0)} ซม. • นับได้ ${reps} ครั้ง (เกณฑ์ ${d} ซม.)
-ความสั่นมือ ${MS.jit.toFixed(2)} ${MS.still > .3 ? '• นิ่ง ✓' : ''} • a↑ ${MS.a.toFixed(2)} • ลง ${MS.downs} ขึ้น ${MS.ups}${MS.seg.on ? ' • กำลังขยับ…' : ''}`;
-  }, 100);                      // stillness correction only when standing
+  clearInterval(exT); exT = null; G = null; $('xb').style.display = 'none'; $('gym').style.display = 'block';
+  $('gTitle').textContent = '📱 ทดสอบ / ปรับเทียบเซ็นเซอร์'; $('gProg').style.width = '0%'; $('gProgT').textContent = 'v' + APP_VER;
+  const b = $('gBody'); b.innerHTML = '<div class="gname">📱 ขออนุญาตใช้เซ็นเซอร์…</div>';
+  if (!await msStart()){ bump('calDone');
+    b.innerHTML = '<div class="gname">❌ ใช้เซ็นเซอร์ไม่ได้</div><div class="gtip">ไม่ได้อนุญาต หรือเครื่องไม่รองรับ — ยิมจะนับด้วยเวลาแทน</div><div class="gbtns" id="gBtns"></div>';
+    return gBtns([['กลับ', 'ghost', openGym]]); }
+  const cal = S.msCal || {}, line = (K, n) => cal[K] ? `${n}: ระยะ ~${Math.round(cal[K].R*100)} ซม. • นับที่ ~${Math.round(cal[K].R*60)} ซม. • จังหวะ ${cal[K].sec} วิ` : `${n}: ยังไม่ได้ปรับเทียบ`;
+  msApply('down'); msZero(); let low = 0; const r0 = MS.reps;
+  b.innerHTML = `<div class="gtip">${line('down', '🦵 ขา')}<br>${line('up', '💪 แขน')}</div><div class="mrow">${barHtml('v')}</div>
+    <div class="gtip" id="gSub" style="font-size:13px;white-space:pre-line"></div><div class="gbtns" id="gBtns"></div>`;
+  barBind();
+  gBtns([['🦵 ปรับเทียบท่าขา (สควอท)', 'ok', () => calRun('down')], ['💪 ปรับเทียบท่าแขน (ยกแขน)', 'ok', () => calRun('up')],
+         ['⟲ ตั้งศูนย์ (ยืนตรงแล้วกด)', 'ghost', () => { msZero(); low = 0; }], ['กลับ', 'ghost', () => { clearInterval(exT); exT = null; openGym(); }]]);
+  exT = setInterval(() => { const cm = -MS.p*100; low = Math.max(low, cm); barSet(1 - Math.min(1, Math.max(0, -MS.p/MS.T))); barDir();
+    if (MS.downs !== MS._d){ MS._d = MS.downs; barHit('floor'); } if (MS.ups !== MS._u){ MS._u = MS.ups; barHit('ceil'); }
+    $('gSub').textContent = `ลองย่อ-ยืนตามปกติ แล้วดูแถบ
+ตอนนี้ ${cm >= 0 ? '↓' : '↑'} ${Math.abs(cm).toFixed(0)} ซม. • ลึกสุด ${low.toFixed(0)} • นับได้ ${MS.reps - r0} ครั้ง (นับที่ ${Math.round(MS.T*100)} ซม.)
+มือสั่น ${MS.jit.toFixed(2)} • เกณฑ์เริ่มขยับ ${MS.startA.toFixed(2)} • a↑ ${MS.a.toFixed(2)} • ลง ${MS.downs} ขึ้น ${MS.ups}${MS.seg.on ? ' • กำลังขยับ…' : ''}`;
+  }, 100);
 }
 /* =====================================================================
    🏋️ v0.31 COACH GYM (designer): open from the start — pick a body part → a 3–5 min set (warm-up, 3 moves, cool-down),
@@ -4502,7 +4548,7 @@ const GYM = {
 let G = null;
 function gymState(){ const g = S.gym = S.gym || {}; if (g.date !== todayKey()) Object.assign(g, { date:todayKey(), paid:0 }); return g; }
 function openGym(){
-  clearInterval(exT); G = null; bump('gymOpen'); $('gym').style.display = 'block'; $('gProg').style.width = '0%'; $('gProgT').textContent = '';
+  clearInterval(exT); G = null; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; bump('gymOpen'); $('gym').style.display = 'block'; $('gProg').style.width = '0%'; $('gProgT').textContent = '';
   const g = gymState(), b = $('gBody');
   b.innerHTML = `<div class="gtip">🏋️ โค้ชฟิต: "เลือกส่วนที่อยากฝึกได้เลย ชุดละ 3–5 นาที ฝึกจบแรงเต็ม 100%!"<br><small>รางวัล 💗 วันนี้เหลือ ${Math.max(0, 3 - g.paid)}/3 ชุด • ${exEasy() ? '🪑 ท่าง่ายเปิดอยู่' : 'ท่าปกติ'} • เจ็บหรือเวียนหัวให้หยุดทันที • v${APP_VER}</small></div><div class="gpick"></div>`;
   const pk = b.querySelector('.gpick');
@@ -4514,7 +4560,7 @@ function openGym(){
     pk.append(e, ed); });
   if ((S.gymCustom || []).length < 5){ const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = '➕ สร้างชุดของฉัน\nเลือกท่า จำนวน ลำดับเอง'; e.onclick = () => progEdit(-1); pk.appendChild(e); }
   const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px';
-  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบเซ็นเซอร์', () => { closeGym(); msTest(); }]]
+  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบ / ปรับเทียบเซ็นเซอร์', () => { closeGym(); msTest(); }]]
     .concat((S.homes||{}).gymyard >= 3 ? [] : [[`🔨 อัปเกรดลานหน้ายิม (${(S.homes||{}).gymyard|0}/3)`, () => { closeGym(); gymUpgrade(); }]])   // 🏋️ v0.33.3
     .concat([['🏡 กลับฟาร์ม', closeGym]])
     .forEach(([t, f]) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.onclick = f; row.appendChild(e); });
@@ -4584,7 +4630,128 @@ function progPick(){
     e.onclick = () => { PE.moves.push({ k:l.k, name:l.name, n:l.n, tip:l.tip }); progRender(); }; $('pePick').appendChild(e); });
   const back = document.createElement('button'); back.className = 'btn ghost'; back.textContent = 'กลับ'; back.style.marginTop = '8px'; back.onclick = progRender; b.appendChild(back);
 }
-function closeGym(){ clearInterval(exT); exT = null; G = null; msStop(); try { speechSynthesis.cancel(); } catch(e){} $('gym').style.display = 'none'; refreshHeader(); renderMissions(); }
+/* =====================================================================
+   📊 v0.34 MOVE DEMO + FLOOR/CEILING CALIBRATION (designer: "ให้เห็นก่อน มีคำอธิบายพร้อมภาพและเสียง" • "เพดานบน-ล่างชัดเจน
+   ขยับแตะให้ได้ 3–4 รอบก่อนนับจริง" • "หลอดสี ๆ วิ่งขึ้นลงแบบปุ่มเพิ่ม-ลดเสียง").
+   Once per app session per kind:  demo (bar animates by itself + text + voice) → [down/up only] still 2 s → 4 rounds.
+     still:   bias = EMA(a0) • startA = clamp(3 × mean(jit), 0.25, 1.2)                        (shaky hands need a harder push • steady hands catch slow moves)
+     rounds:  R starts at the saved R (else 30 cm squat / 35 cm arms). A finished segment in the expected direction with
+              |Δ| ≥ 0.6·R is accepted → R ← |Δ| if bigger, else R ← R + (|Δ| − R)/2 (clamped 10–60 cm); smaller = "อีกนิด".
+              A round = there and back (squat: floor then ceiling • arms: ceiling then floor).
+     result:  R = median(|Δ|) • count threshold T = 0.6·R  →  MS.depth = T/0.75 (msFeed counts at 0.75·depth)
+              segMax = max(2.5 s, 2 × median segment time) • maxAmp = max(0.7 m, 1.8·R)  → S.msCal[K]
+     25 s without progress = retry; 2nd failure → that kind is timed for the rest of the session.
+   ===================================================================== */
+const calKind = k => k === 'down' || k === 'hold' ? 'down' : k === 'up' ? 'up' : null;
+const demoKind = k => k === 'hold' ? 'down' : k;
+const DEMO = {
+  down:  [['⬇️ ย่อลง… ให้แถบสีลงไปแตะพื้นล่าง 🟧', 'ย่อลง'], ['⬆️ ยืนขึ้น… ให้แถบกลับขึ้นไปแตะเพดานบน 🟦', 'ยืนขึ้น']],
+  up:    [['⬆️ ยกขึ้น… ให้แถบสีขึ้นไปแตะเพดานบน 🟦', 'ยกขึ้น'], ['⬇️ ลดลง… ให้แถบกลับลงมาแตะพื้นล่าง 🟧', 'ลดลง']],
+  twist: [['↪️ บิดไปทางขวา… แถบวิ่งไปขวา', 'บิดขวา'], ['↩️ บิดไปทางซ้าย… แถบวิ่งไปซ้าย', 'บิดซ้าย']],
+  steps: [['👣 ย่ำเท้า… แถบเด้งขึ้นทุกก้าว', 'ย่ำเท้า'], ['👣 ยกเข่าสลับซ้าย-ขวา', 'ยกเข่าสลับ']] };
+function msApply(K){                                          // per-player thresholds for kind K (null = defaults)
+  const c = K && (S.msCal || {})[K], easy = exEasy(); MS.cal = false; MS.onSeg = null;
+  if (c){ MS.depth = c.D; MS.segMax = c.segMax; MS.startA = c.startA; MS.maxAmp = Math.max(.7, c.R*1.8); }
+  else { MS.depth = K === 'up' ? (easy ? .15 : .25) : (easy ? .12 : .20); MS.segMax = 2.5; MS.startA = .4; MS.maxAmp = .7; }   // the v0.33.1 numbers
+  MS.T = MS.depth*.75;                                         // the Δ that actually counts = the bar's floor/ceiling
+}
+/* ---- the bar (DOM refs cached once per render; per-tick work = one transform string) ---- */
+const BAR = { fill:null, track:null, ceil:null, floor:null, pop:null, h:false };
+function barHtml(mode, demo){ const h = mode === 'h';
+  return `<div class="mbar${h ? ' h' : ''}${demo ? ' ' + demo : ''}"><div class="mtrack" id="mTrack"><i class="mceil" id="mCeil"></i><i class="mfloor" id="mFloor"></i><b class="mfill" id="mFill"></b></div>` +
+    `<span class="mlab t">${h ? 'ขวา ▶' : '▲ เพดาน'}</span><span class="mlab b">${h ? '◀ ซ้าย' : '▼ พื้น'}</span><div class="mpop" id="mPop"></div></div>`; }
+function barBind(){ BAR.fill = $('mFill'); BAR.track = $('mTrack'); BAR.ceil = $('mCeil'); BAR.floor = $('mFloor'); BAR.pop = $('mPop'); BAR.h = !!(BAR.track && BAR.track.parentNode.classList.contains('h')); }
+function barSet(v){ if (!BAR.fill) return;                      // vertical: 0…1 fill from the floor • horizontal: −1…1 from the centre (negative = left)
+  BAR.fill.style.transform = BAR.h ? `scaleX(${Math.max(-1, Math.min(1, v)).toFixed(3)})` : `scaleY(${Math.max(.03, Math.min(1, v)).toFixed(3)})`; }
+function barDir(){ if (!BAR.track) return; const on = MS.seg.on; BAR.track.classList.toggle('dn', on && MS.seg.v < 0); BAR.track.classList.toggle('up', on && MS.seg.v > 0); }
+function barHit(which){ const e = which === 'ceil' ? BAR.ceil : BAR.floor; if (!e) return; e.classList.remove('hit'); void e.offsetWidth; e.classList.add('hit'); }
+function barPop(t){ const e = BAR.pop; if (!e) return; e.textContent = t; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); }
+function barEnds(g){ if (MS.downs !== g.dn0){ g.dn0 = MS.downs; barHit('floor'); } if (MS.ups !== g.up0){ g.up0 = MS.ups; barHit('ceil'); } }
+function gBtns(list){ const b = $('gBtns'); if (!b) return; b.innerHTML = '';
+  list.forEach(([t, c, f]) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.onclick = f; b.appendChild(e); }); }
+function calBegin(g, m, K){
+  const dk = demoKind(m.k), saved = K && (S.msCal || {})[K];
+  g.cal = { m, K, dk, ph:'', t0:0, lastPh:-1, jitSum:0, jitN:0, R: saved ? saved.R : (K === 'up' ? .35 : .30), amps:[], durs:[], round:0, half:0, att:0, prog:0 };
+  if (!MS.sess['demo_' + dk]) calDemo(g); else calStill(g);
+}
+function calDemo(g){
+  const c = g.cal; c.ph = 'demo'; c.t0 = performance.now(); c.lastPh = -1;
+  $('gBody').innerHTML = `<div class="gname">👀 ดูตัวอย่าง: ${c.m.name}</div><div class="gtip">แถบสีจะขยับตามมือถือของคุณ<br>${c.m.tip}</div>
+    <div class="mrow${c.dk === 'twist' ? ' h' : ''}">${barHtml(c.dk === 'twist' ? 'h' : 'v', 'demo-' + c.dk)}</div><div class="gsub" id="gSub"></div><div class="gbtns" id="gBtns"></div>`;
+  barBind();
+  gBtns([['▶️ เริ่มเลย', 'ok', () => { MS.sess['demo_' + c.dk] = 1; if (c.K && !MS.sess['cal_' + c.K]) calStill(g); else { g.cal = null; gymShow(g, c.m); } }],
+         ['🔁 ดูอีกครั้ง', 'ghost', () => { c.t0 = performance.now(); c.lastPh = -1; }]]);
+}
+function calStill(g){
+  const c = g.cal; if (!c.K){ g.cal = null; return gymShow(g, c.m); }
+  c.ph = 'still'; c.t0 = performance.now(); c.jitSum = 0; c.jitN = 0; msZero();
+  $('gBody').innerHTML = `<div class="gname">📏 ปรับเทียบ: ${c.m.name}</div><div class="gtip" id="gTip">ถือมือถือ 2 มือ ยืนตรงนิ่ง ๆ สักครู่…</div>
+    <div class="mrow">${barHtml('v')}<div class="gbig" id="gBig">✋</div></div><div class="gsub" id="gSub"></div><div class="gbtns" id="gBtns"></div>`;
+  barBind(); barSet(c.K === 'up' ? 0 : 1); exSpeak('ถือมือถือสองมือ ยืนนิ่ง ๆ');
+  gBtns([['ข้ามการปรับเทียบ (ใช้ค่าเดิม)', 'ghost', () => { MS.sess['cal_' + c.K] = 1; MS.cal = false; MS.onSeg = null; g.cal = null; gymShow(g, c.m); }]]);
+}
+function calTick(g, now){
+  const c = g.cal, el = now - c.t0, sub = $('gSub');
+  if (c.ph === 'demo'){ const u = (el/1000) % 3, ph = c.dk === 'twist' ? (u >= .75 && u < 2.25 ? 1 : 0) : u < 1.5 ? 0 : 1;   // matches the CSS keyframes (3 s loop)
+    if (ph !== c.lastPh){ c.lastPh = ph; const [t, v] = DEMO[c.dk][ph]; if (sub) sub.textContent = t; if (el < 6000) exSpeak(v); } return; }   // voice for the first 2 loops
+  if (c.ph === 'still'){ if (el > 500){ c.jitSum += MS.jit; c.jitN++; }
+    if (el > 2200){ MS.bias = MS.a0;   // standing still → the averaged a↑ IS the sensor offset
+      MS.startA = Math.max(.25, Math.min(1.2, 3*c.jitSum/Math.max(1, c.jitN)));   // steady hands may go below the 0.4 default → slow movers start a segment too
+      MS.cal = true; MS.depth = 99; MS.segMax = 4; MS.maxAmp = 1.2; msZero(); MS.onSeg = (d, t) => calSeg(g, d, t);   // depth 99 → no rep events while calibrating
+      c.ph = 'rounds'; c.prog = now; $('gTip').textContent = 'ขยับให้แถบแตะพื้นล่าง 🟧 และเพดานบน 🟦 ให้ครบ 4 รอบ (จังหวะสบาย ๆ)';
+      $('gBig').textContent = '0/4'; exSpeak(c.K === 'up' ? 'ยกขึ้นให้แตะเพดาน แล้วลดลงให้แตะพื้น สี่รอบ' : 'ย่อลงให้แตะพื้น แล้วยืนขึ้นให้แตะเพดาน สี่รอบ'); }
+    return; }
+  if (c.ph === 'rounds'){
+    barSet(c.K === 'up' ? MS.p/c.R : 1 + MS.p/c.R); barDir();
+    if (sub && !c.msgT) sub.textContent = (c.K === 'down') === (c.half === 0) ? '⬇️ ลงไปแตะพื้นล่าง' : '⬆️ ขึ้นไปแตะเพดานบน';
+    if (c.msgT && now > c.msgT) c.msgT = 0;
+    if (now - c.prog > 25000){ c.att++; c.prog = now;
+      if (c.att >= 2) return calFail(g);
+      c.amps = []; c.durs = []; c.round = 0; c.half = 0; msZero(); $('gBig').textContent = '0/4'; exSpeak('ลองใหม่อีกครั้งนะ ขยับให้สุดแบบสบาย ๆ'); }
+    return; }
+  if (c.ph === 'done' && el > 1800){ g.cal = null; gymShow(g, c.m); }
+}
+function calSeg(g, d, t){                                     // MS.onSeg hook: runs inside msFeed at the end of every movement segment
+  const c = g.cal; if (!c || c.ph !== 'rounds') return;
+  const want = (c.K === 'down') === (c.half === 0) ? -1 : 1, amp = Math.abs(d);   // squat: floor (−) then ceiling (+) • arms: ceiling then floor
+  const clampLv = () => { MS.level = c.K === 'down' ? Math.max(-c.R, Math.min(0, MS.level)) : Math.max(0, Math.min(c.R, MS.level)); };
+  if (!d || Math.sign(d) !== want){ clampLv(); return; }
+  if (amp < .6*c.R){ clampLv(); if (amp > .04){ const sub = $('gSub'); if (sub) sub.textContent = 'อีกนิด! ขยับให้สุดกว่านี้อีกหน่อย'; c.msgT = performance.now() + 1500; } return; }
+  c.amps.push(amp); c.durs.push(t); c.prog = performance.now();
+  c.R = amp > c.R ? Math.min(.6, amp) : Math.max(.10, c.R + (amp - c.R)/2);
+  barHit(want < 0 ? 'floor' : 'ceil');
+  MS.level = c.half === 0 ? (c.K === 'down' ? -c.R : c.R) : 0;   // snap the bar to the end that was just reached
+  c.half ^= 1;
+  if (c.half){ sfx('pop'); return; }
+  c.round++; sfx('coin'); $('gBig').textContent = `${c.round}/4`; barPop(`รอบ ${c.round}/4`); exSpeak(`รอบ ${c.round}`);
+  if (c.round >= 4) calDone(g);
+}
+const median = a => { const b = a.slice().sort((x, y) => x - y), n = b.length; return n ? (n % 2 ? b[(n-1)/2] : (b[n/2-1] + b[n/2])/2) : 0; };
+function calDone(g){
+  const c = g.cal, R = Math.max(.10, Math.min(.60, median(c.amps))), sec = median(c.durs), T = .6*R;
+  S.msCal = S.msCal || {};
+  S.msCal[c.K] = { R:+R.toFixed(3), D:+(T/.75).toFixed(3), sec:+sec.toFixed(2), segMax:+Math.max(2.5, 2*sec).toFixed(2), startA:+MS.startA.toFixed(2), at:Date.now() };
+  MS.sess['cal_' + c.K] = 1; MS.cal = false; MS.onSeg = null; bump('calDone'); save();
+  c.ph = 'done'; c.t0 = performance.now(); $('gBig').textContent = '✅';
+  $('gTip').textContent = `ปรับเทียบเสร็จ! ระยะของคุณประมาณ ${Math.round(R*100)} ซม. • นับเมื่อถึง ~${Math.round(T*100)} ซม.`;
+  const sub = $('gSub'); if (sub) sub.textContent = 'เริ่มนับจริงแล้วนะ'; exSpeak('ปรับเทียบเสร็จ เริ่มนับจริงได้เลย');
+}
+function calFail(g){
+  const c = g.cal; MS.cal = false; MS.onSeg = null; MS.sess['fail_' + c.K] = 1; bump('calDone');
+  g.timed = true; g.dur = c.m.k === 'hold' ? c.m.n : Math.max(30, c.m.n*3);
+  c.ph = 'done'; c.t0 = performance.now(); $('gBig').textContent = '⏱';
+  $('gTip').textContent = 'ปรับเทียบไม่สำเร็จ ไม่เป็นไรนะ รอบนี้นับด้วยเวลาแทน (ลองใหม่ได้ที่ 📱 ทดสอบ / ปรับเทียบเซ็นเซอร์)'; exSpeak('ไม่เป็นไร รอบนี้นับด้วยเวลาแทนนะ');
+}
+async function calRun(K){                                      // from the sensor-test screen: demo + calibration + 3 trial reps
+  clearInterval(exT); exT = null; if (!await msStart()) return msTest();
+  delete MS.sess['cal_' + K]; delete MS.sess['fail_' + K]; delete MS.sess['demo_' + K];
+  const m = K === 'up' ? { k:'up', n:3, name:'Front raise (ลองนับ)', tip:'ถือมือถือที่ระดับเอว แขนตรง ยกขึ้นถึงระดับไหล่ แล้วลดลง' }
+                       : { k:'down', n:3, name:'สควอท (ลองนับ)', tip:'ถือมือถือ 2 มือ เหยียดแขนระดับอก ย่อลงแล้วยืนขึ้น' };
+  $('gym').style.display = 'block'; $('gTitle').textContent = '📏 ปรับเทียบเซ็นเซอร์';
+  G = { id:'cal', name:'', steps:[m], i:-1, sensor:true, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0, cb:() => msTest() };
+  gymNext(); exT = setInterval(gymTick, 50);
+}
+function closeGym(){ clearInterval(exT); exT = null; G = null; MS.cal = false; MS.onSeg = null; msStop(); try { speechSynthesis.cancel(); } catch(e){} $('gym').style.display = 'none'; refreshHeader(); renderMissions(); }
 async function gymStart(id, custom){
   const P = custom || GYM[id], rest = (custom && custom.rest) || 15, b = $('gBody'); b.innerHTML = '<div class="gname">📱 เตรียมเซ็นเซอร์…</div>';
   const sensor = await msStart(), easy = exEasy();
@@ -4601,35 +4768,51 @@ function gymNext(){
     if (pm && pm.k !== 'rest') g.total = (g.total || 0) + (g.timed ? pm.n : pm.k === 'hold' ? Math.min(pm.n, Math.floor(g.held)) : Math.min(g.count, pm.n)); }
   g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length} • v${APP_VER}`;
   if (g.i >= g.steps.length){ if (g.cb){ const cb = g.cb, tot = g.total || 0, reps = g.reps; clearInterval(exT); exT = null; G = null; $('gym').style.display = 'none'; return cb(tot, reps); } return gymDone(); }
-  const m = g.steps[g.i], timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor;
+  const m = g.steps[g.i], K = calKind(m.k), timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor || !!(K && MS.sess['fail_' + K]);
   g.count = 0; g.r0 = null; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
-  msZero(); MS.yaw = 0; MS.steps = 0; g.yawSide = 0; g.down = false; MS.zupt = true;
-  const nx = g.steps[g.i+1];
-  $('gBody').innerHTML = `<div class="gname">${m.name}</div><div class="gtip">${m.tip}</div><div class="gbig" id="gBig"></div><div class="gsub" id="gSub"></div><div class="gnext">${nx ? 'ต่อไป: ' + nx.name : 'ท่าสุดท้าย!'}</div>`;
+  g.cal = null;
+  if (!timed && m.k !== 'time' && m.k !== 'rest' && (!MS.sess['demo_' + demoKind(m.k)] || (K && !MS.sess['cal_' + K]))) return calBegin(g, m, K);   // 📊 v0.34 demo + calibration first
+  gymShow(g, m);
+}
+/* 📊 v0.34 render + arm one move (also called after the demo/calibration finishes) */
+function gymShow(g, m){
+  const K = calKind(m.k); msApply(g.timed ? null : K); msZero(); MS.yaw = 0; MS.steps = 0; g.yawSide = 0; g.down = false; MS.zupt = true;
+  g.count = 0; g.r0 = null; g.t0 = performance.now(); g.held = 0; g.dn0 = MS.downs; g.up0 = MS.ups; g.pulse = 0; g.lastSteps = 0;
+  const nx = g.steps[g.i+1], bar = !g.timed && m.k !== 'time' && m.k !== 'rest', h = m.k === 'twist';
+  $('gBody').innerHTML = `<div class="gname">${m.name}</div><div class="gtip">${m.tip}</div>` +
+    (bar ? `<div class="mrow${h ? ' h' : ''}">${barHtml(h ? 'h' : 'v')}<div class="gbig" id="gBig"></div></div>` : '<div class="gbig" id="gBig"></div>') +
+    `<div class="gsub" id="gSub"></div><div class="gnext">${nx ? 'ต่อไป: ' + nx.name : 'ท่าสุดท้าย!'}</div>`;
+  barBind(); if (bar && !h) barSet(m.k === 'up' || m.k === 'steps' ? 0 : 1);   // squat starts full (standing) • arm raise starts empty (phone at the waist)
   exSpeak(m.k === 'rest' ? 'พัก' : m.name); sfx('chop');
 }
 function gymTick(){
   const g = G; if (!g) return; const m = g.steps[g.i]; if (!m) return; const now = performance.now(), el = (now - g.t0)/1000, easy = exEasy();
+  if (g.cal) return calTick(g, now);
   const big = $('gBig'), sub = $('gSub'); if (!big) return;
   if (g.timed){ const left = Math.max(0, Math.ceil(g.dur - el)); big.textContent = left; sub.textContent = m.k === 'rest' || m.k === 'time' ? 'วินาที' : `${m.n} ครั้ง ตามจังหวะตัวเอง`;
     if (left <= 3 && left > 0 && Math.floor(el*20) % 20 === 0) sfx('pop'); if (el >= g.dur){ if (m.k === 'down') g.reps += m.n; gymNext(); } return; }
   const target = m.n;
-  if (m.k === 'down' || m.k === 'hold'){ MS.depth = easy ? .12 : .20; const cm = Math.max(0, Math.round(-MS.p*100));
+  /* 📊 v0.34 the bar's floor/ceiling = T = the Δ that counts (msApply: calibrated 0.6·R, else 0.75 × the v0.33.1 depth).
+     squat/hold: fill = 1 − clamp(−p/T)  (full = standing, empty = deep enough) • arm raise: fill = clamp(p/T)  (empty = waist, full = high enough) */
+  if (m.k === 'down' || m.k === 'hold'){
     if (g.r0 == null){ g.r0 = MS.reps; MS.low = false; }
+    barSet(1 - Math.min(1, Math.max(0, -MS.p/MS.T))); barDir(); barEnds(g);
     if (m.k === 'hold'){ if (MS.low){ g.down = true; g.held += .05; }
-      big.textContent = Math.max(0, Math.ceil(target - g.held)); sub.textContent = MS.low ? 'ค้างไว้! 💪' : g.down ? '↓ ย่อลงอีกครั้ง แล้วค้างไว้' : '↓ ย่อลง แล้วค้างไว้';
+      big.textContent = Math.max(0, Math.ceil(target - g.held)); sub.textContent = MS.low ? 'ค้างไว้! 💪' : g.down ? '⬇ ย่อลงอีกครั้ง ให้แถบแตะพื้น แล้วค้างไว้' : '⬇ ย่อลงให้แถบแตะพื้น แล้วค้างไว้';
       if (g.held >= target || el > target + 25) gymNext(); return; }
-    const c = MS.reps - g.r0; if (c > g.count){ g.reps += c - g.count; g.count = c; exSpeak(String(g.count)); sfx('coin'); }
-    sub.textContent = MS.low ? '↑ ยืนขึ้น' : MS.seg.on ? `↓ ${cm} ซม.` : '↓ ย่อลง (จังหวะปกติ ไม่ช้าเกินไป)'; }
-  else if (m.k === 'up'){ MS.depth = easy ? .15 : .25; const cm = Math.max(0, Math.round(MS.p*100));
+    const c = MS.reps - g.r0; if (c > g.count){ g.reps += c - g.count; g.count = c; exSpeak(String(g.count)); sfx('coin'); barPop('+1'); }
+    sub.textContent = MS.low ? '⬆ ยืนขึ้น ให้แถบกลับขึ้นไป' : '⬇ ย่อลง ให้แถบแตะพื้นล่าง'; }
+  else if (m.k === 'up'){
     if (g.r0 == null){ g.r0 = MS.repsUp; MS.top = false; }
-    const c = MS.repsUp - g.r0; if (c > g.count){ g.count = c; exSpeak(String(g.count)); sfx('coin'); }
-    sub.textContent = MS.top ? '↓ ลดลง' : MS.seg.on ? `↑ ${cm} ซม.` : '↑ ยกขึ้น (จังหวะปกติ)'; }
+    barSet(Math.min(1, Math.max(0, MS.p/MS.T))); barDir(); barEnds(g);
+    const c = MS.repsUp - g.r0; if (c > g.count){ g.count = c; exSpeak(String(g.count)); sfx('coin'); barPop('+1'); }
+    sub.textContent = MS.top ? '⬇ ลดลง ให้แถบกลับลงมา' : '⬆ ยกขึ้น ให้แถบแตะเพดานบน'; }
   else if (m.k === 'twist'){ const th = easy ? 20 : 30, y = MS.yaw;
-    if (g.yawSide <= 0 && y > th){ g.yawSide = 1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
-    else if (g.yawSide >= 0 && y < -th){ g.yawSide = -1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
-    sub.textContent = `${y > 0 ? '↻' : '↺'} ${Math.abs(y).toFixed(0)}° • บิดให้เกิน ${th}° สลับข้าง`; }
-  else if (m.k === 'steps'){ g.count = MS.steps; sub.textContent = '👣 ก้าว'; }
+    barSet(y/th);                                                // horizontal bar: ±1 = the ±th° turn that counts
+    if (g.yawSide <= 0 && y > th){ g.yawSide = 1; g.count++; sfx('coin'); exSpeak(String(g.count)); barHit('ceil'); }
+    else if (g.yawSide >= 0 && y < -th){ g.yawSide = -1; g.count++; sfx('coin'); exSpeak(String(g.count)); barHit('floor'); }
+    sub.textContent = g.yawSide > 0 ? '↩️ บิดไปซ้าย ให้แถบวิ่งไปซ้ายสุด' : '↪️ บิดไปขวา ให้แถบวิ่งไปขวาสุด'; }
+  else if (m.k === 'steps'){ if (MS.steps !== g.lastSteps){ g.lastSteps = MS.steps; g.pulse = 1; } g.count = MS.steps; barSet(g.pulse); g.pulse *= .85; sub.textContent = '👣 ย่ำเท้า แถบเด้งทุกก้าว'; }
   big.textContent = `${Math.min(g.count, target)}/${target}`;
   if (g.count >= target){ exSpeak('เยี่ยม'); gymNext(); }
   else if (el > target*4 + 30){ sub.textContent = 'หมดเวลา ไปท่าต่อไปนะ'; gymNext(); }   // never get stuck
@@ -4794,7 +4977,7 @@ function drawGymSign(time){
 }
 /* 🏋️ v0.33.3 when the gym quest comes up, glide the camera to the building once (S.gymSeen) */
 function gymQuestFocus(){
-  const q = curQuest(); if (!q || q.id !== 'gymTry' || S.gymSeen || inRoom || inMine) return;
+  const q = curQuest(); if (!q || (q.id !== 'gymTry' && q.id !== 'calTry') || S.gymSeen || inRoom || inMine) return;
   const h = homeObj('gymyard'); if (!h) return; S.gymSeen = 1; const [z, o] = h; centerOn(z.cx*GRID + o.c + 1, z.cy*GRID + o.r + 1); save();
 }
 function drawFmon(time){                                      // 👾 marker on the farm where it woke up
