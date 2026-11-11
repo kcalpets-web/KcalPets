@@ -606,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.33.3';
+const APP_VER = '0.33.4';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -2983,7 +2983,7 @@ function frame(now){
         else buildBadge(o, badges[k+3], time, wall); }
     }
     if (!(fishing && fishing.reel)) drawCropGroups(time);   // nothing on top of the reel
-    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); drawFmon(time); drawGymSign(time); }  // 👥 v0.19 • 🧑 v0.20
+    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); drawGymSign(time); }   // 👾 v0.33.4 drawFmon removed from the loop: the pulsing ⚔️ button is the only monster cue (designer)  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
