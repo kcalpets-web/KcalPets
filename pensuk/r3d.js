@@ -43,7 +43,13 @@ export function start(){
 
   /* ---------- caches ---------- */
   const MATS = new Map(), GEOS = new Map();
-  const mat = (hex, emissive) => { const k = hex + (emissive || ''); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color:hex, roughness:.9, metalness:0, emissive: emissive || 0x000000 })); return MATS.get(k); };
+  /* 🎨 v0.45 softMode: while a CHARACTER (avatar, NPC, pet) is being built, mat() hands out a felt/clay material —
+     MeshPhysical with sheen (soft bright fuzz on grazing angles, style-lab B). Few meshes use it, so the extra cost is small. */
+  let softMode = false;
+  const mat = (hex, emissive) => { const k = (softMode ? 's' : '') + hex + (emissive || ''); if (!MATS.has(k)) MATS.set(k, softMode
+      ? new THREE.MeshPhysicalMaterial({ color:hex, roughness:.72, metalness:0, sheen:.6, sheenRoughness:.75, sheenColor:new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .55), emissive: emissive || 0x000000 })
+      : new THREE.MeshStandardMaterial({ color:hex, roughness:.9, metalness:0, emissive: emissive || 0x000000 })); return MATS.get(k); };
+  const soft = fn => function(...a){ const p = softMode; softMode = true; try { return fn.apply(this, a); } finally { softMode = p; } };
   const geo = (k, make) => { if (!GEOS.has(k)) GEOS.set(k, make()); return GEOS.get(k); };
   const rb = (w,h,d,r) => geo(`rb${w},${h},${d},${r}`, () => new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w/2-.001, h/2-.001, d/2-.001)));
   const SPH = new THREE.SphereGeometry(1, 18, 12), CONE = new THREE.ConeGeometry(1, 1, 14), CYL = new THREE.CylinderGeometry(1, 1, 1, 14);
@@ -545,8 +551,26 @@ export function start(){
     }
     return g;
   }
+  /* 🌿 v0.45 GRASS SKIN — one vertex-coloured mesh per zone laid 4 mm above the ground block, skipping water tiles
+     (their translucent box would show it). 4×4 quads per tile. Colour in WORLD coords so neighbouring zones join seamlessly:
+        n(wx, wz) = sin(.45wx + .2wz) + .7·sin(.6wz − .3wx) + .25·sin(1.3(wx + wz))         ∈ [−1.95, 1.95]
+        c = base · (.9 + .12·n/1.95), hue shifted toward warm (+) or cool (−) by .02·n/1.95, saturation +.06  → soft patches like brushed clay */
+  function grassSkin(z, baseHex){
+    const Q = 4, base = new THREE.Color(baseHex), k = new THREE.Color(), pos = [], col = [], idx = [], ox = z.cx*GRID*2, oz = z.cy*GRID*2;
+    for (let i = 0; i < z.tiles.length; i++){ if (z.tiles[i].k === 'water') continue;
+      const c = i%GRID, r = (i/GRID)|0, v0 = pos.length/3;
+      for (let a = 0; a <= Q; a++) for (let b = 0; b <= Q; b++){
+        const x = c*2 + b*2/Q, zz = r*2 + a*2/Q, wx = ox + x, wz = oz + zz;
+        const n = Math.sin(wx*.45 + wz*.2) + .7*Math.sin(wz*.6 - wx*.3) + .25*Math.sin((wx + wz)*1.3);
+        k.copy(base).multiplyScalar(.9 + .12*n/1.95); k.offsetHSL(.02*n/1.95, .06, 0);
+        pos.push(x, .004, zz); col.push(k.r, k.g, k.b); }
+      for (let a = 0; a < Q; a++) for (let b = 0; b < Q; b++){ const p0 = v0 + a*(Q+1) + b; idx.push(p0, p0 + Q + 1, p0 + 1, p0 + 1, p0 + Q + 1, p0 + Q + 2); } }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    gg.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(pos.length).map((_, j) => j%3 === 1 ? 1 : 0), 3)); gg.setIndex(idx);
+    const m = new THREE.Mesh(gg, VCM); m.receiveShadow = true; m.userData.skin = 1; return m;
+  }
   function buildZone(z){
-    let e = zones.get(z); if (e){ scene.remove(e.g); }
+    let e = zones.get(z); if (e){ scene.remove(e.g); for (const m of e.g.children) if (m.userData.skin) m.geometry.dispose(); }   // 🌿 grass skin is per-zone → free it (cached geos are shared)
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
     const S2 = GRID*2, ctr = S2/2, res = [], sway = [], rings = [];
     curSway = sway;                                               // flower() registers itself while this zone is built
@@ -555,6 +579,7 @@ export function start(){
        Coast / beach zones paint sand on land tiles within 1 tile of a sea side (seaSides = no blueprint cell next door). */
     const BIOG = { mount:'#a3ad93', peak:'#98a28c', pasture:'#a9d679', beach:'#e6d6a2' }, bio = z.bio || 'core';
     RB(g, S2, .5, S2, .1, BIOG[bio] || C.grass, ctr, -.5, ctr);   // model block: grass → soil → cream base → oak band
+    g.add(grassSkin(z, BIOG[bio] || C.grass));                      // 🌿 v0.45 painted clay meadow on top
     if ((bio === 'coast' || bio === 'beach') && typeof seaSides === 'function'){
       const sea = seaSides(z.cx, z.cy);
       for (let i=0;i<z.tiles.length;i++){ const c = i%GRID, r = (i/GRID)|0, t = z.tiles[i];
@@ -591,7 +616,8 @@ export function start(){
 
   /* ---------- pet (clay, coloured from the 2D SPECIES table) ---------- */
   let petG = null, petType = '', petForm = -1, petSkin = ''; const legs = []; let headG = null, tailG = null, bodyM = null;
-  function buildPet(){
+  const buildPet = soft(buildPet0);
+  function buildPet0(){
     if (petG) scene.remove(petG);
     const sp = (typeof mySp === 'function' && mySp()) || SPECIES[S.pet.type] || SPECIES.dog, form = petStage(S.pet.lv).form;   // 🐾 v0.41 skin
     petG = new THREE.Group(); legs.length = 0; petType = S.pet.type; petForm = form; petSkin = JSON.stringify(S.pet.skin || 0);
@@ -628,7 +654,8 @@ export function start(){
   /* 🧑 one clay person for NPCs and the player (v0.20). look:
        skin, hair, hairStyle(short|long|bun|spiky|bob|pony|none), shirt, pants, shoes, apron, vest,
        hat(straw|band|gold|cap|hard), glasses, balloon, tool, outfit(sport|thai|carpenter) */
-  function personModel(L){
+  const personModel = soft(personModel0);
+  function personModel0(L){
     L = L || {}; const g = new THREE.Group(), parts = { legs:[], arms:[] }, skin = L.skin || '#f2c9a0';
     let shirt = L.shirt || '#e8735a', pants = L.pants || '#5d6b84', shoes = L.shoes || '#4a3a30';
     if (L.outfit === 'sport'){ shirt = '#ff6b4a'; pants = '#2d3e50'; }
@@ -974,7 +1001,7 @@ export function start(){
       mineAx.children[0].rotation.z = u > 0 ? -1.1 + (1 - u)*1.9 : -.5;
     } else mineAx.visible = false;
     if (mineAv){ mscene.remove(mineAv); mineAv = null; }
-    renderer.render(mscene, camera);
+    renderer.toneMappingExposure = 1.05; renderer.render(mscene, camera);
   }
 
   /* ---------- 🖼 thumbnails (v0.17.2, used by tools/thumbs.html to bake icons/atlas2.webp) ----------
@@ -1045,16 +1072,18 @@ export function start(){
          pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */
       for (const c of clouds){ const u = c.userData; u.side += dt*u.sp; if (u.side > 50) u.side = -50;
         c.position.set(target.x - u.back*.707 + u.side*.707, u.y, target.z - u.back*.707 - u.side*.707); for (const m of c.children) m.material.emissive.setScalar(.19*(1-k)); }
-      sun.intensity = 2.3*(1 - .8*k); hemi.intensity = 1.05*(1 - .55*k); sun.color.setHSL(.09, .6, .92 - .25*k);
+      sun.intensity = 2.1*(1 - .8*k); hemi.intensity = .95*(1 - .55*k);   /* v0.45: a touch lower — fill + rim add light */ sun.color.setHSL(.09, .6, .92 - .25*k);
       fill.intensity = .45*(1 - .6*k); rim.intensity = .75*(1 - .7*k);
       seaU.uTime.value = time; seaU.uNight.value = k; seaMat.color.copy(SEA_DAY).lerp(SEA_NIGHT, k);
       foamMat.opacity = .5 + .15*Math.sin(time*1.4); foamMat2.opacity = .22 + .12*Math.sin(time*1.4 - 1.2);   // surf breathes in & out
-      renderer.render(scene, camera);
+      /* 🎨 v0.45 outdoor exposure: up-facing ground gets ≈ sun·cosθ + hemi + ½fill + ½rim ≈ 3× albedo → ACES clipped it to pale mint.
+         .8 brings grass/leaves back to their real clay greens (rooms + mine keep 1.05). */
+      renderer.toneMappingExposure = .8 + .2*k; renderer.render(scene, camera);   // night: lights are already dimmed → don't darken twice
     },
     hide(){ can.style.display = 'none'; },
     renderMine, mineHit,
     /** ⚙️ graphics quality: true = eco (older phones), false = high */
-    setQuality(e){ eco = !!e; renderer.setPixelRatio(eco ? 1 : Math.min(2, devicePixelRatio || 1)); renderer.shadowMap.enabled = !eco;
+    setQuality(e){ eco = !!e; const sg = sea.geometry; sea.geometry = new THREE.PlaneGeometry(360, 360, eco ? 48 : 96, eco ? 48 : 96); sg.dispose();   /* 🌊 v0.45 eco: ¼ of the sea vertices */ renderer.setPixelRatio(eco ? 1 : Math.min(2, devicePixelRatio || 1)); renderer.shadowMap.enabled = !eco;
       lastW = 0; for (const sc of [scene, rscene]) sc.traverse(o => { if (o.material) o.material.needsUpdate = true; }); },
     /** draw the house interior in 3D; camera frames the whole N×N room */
     renderRoom(ir, rpet, rp, time){
@@ -1077,7 +1106,7 @@ export function start(){
         roomGhost.position.set((rp.c + rp.w/2)*2, .02, (rp.r + rp.h/2)*2);
       } else if (roomGhost) roomGhost.visible = false;
       updatePet(time, rpet, rscene);
-      renderer.render(rscene, camera);
+      renderer.toneMappingExposure = 1.05; renderer.render(rscene, camera);
     },
     /** tool hit on tile (z, li) → wobble its model */
     hit(z, li){ const e = zones.get(z); const m = e && e.res[li]; if (m){ hits.push(m, performance.now()); } },
