@@ -18,6 +18,8 @@
 <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/" } }</script>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
+:root{--fs-xs:12px;--fs-sm:14px;--fs-md:16px;--fs-lg:20px;--fs-xl:28px;--t-min:44px;--t-2:48px;--t-1:52px;--t-fab:56px;
+  --sp1:8px;--sp2:16px;--sp3:24px;--r-sm:12px;--r-md:16px;--r-lg:22px;--sh-1:0 2px 6px #0000001a;--sh-2:0 4px 14px #0000002e}   /* 🎨 v0.38 design tokens (see the block at the end of <style>) */
 :root{--bg:#fff7ea;--card:#ffffff;--ink:#3b2a1a;--sub:#8a7560;--pri:#e0892f;--pri2:#c96f17;--ok:#4caf6a;--line:#f0e0c8;--gold:#f2b705}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
@@ -255,6 +257,53 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #act{position:fixed;inset:0;z-index:8;display:none;flex-direction:column;background:var(--bg);max-width:480px;margin:0 auto}
 #act.dark{background:#0b0d12}
 .actc{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px;overflow-y:auto}
+/* =====================================================================
+   🎨 v0.38 DESIGN SYSTEM (designer: "ปรับ UX/UI ให้น่าเล่น บางอันเล็กไป ใหญ่ไป ไม่เป็นมาตรฐาน")
+   One scale for everything — later rules above are overridden here on purpose so the whole UI snaps to it:
+     type   xs 12 (captions, nav) • sm 14 (body small, chips, card text) • md 16 (body, buttons, sheets) • lg 20 (titles, big prompts)
+            • xl 28 (screen titles) • display numbers (counters, timers) keep their own large sizes
+     touch  44 minimum (chips, small toggles) • 48 secondary buttons • 52 primary/sheet buttons • 56 floating round buttons
+     space  8-px grid (8 / 16 / 24) • radius 12 controls / 16 cards / 22 sheets & tracks / 50% round • shadow 1 cards / 2 floating
+   ===================================================================== */
+h1{font-size:var(--fs-xl)}
+.btn{min-height:var(--t-2);border-radius:var(--r-sm);font:600 var(--fs-md) 'Mali';padding:0 var(--sp2)}
+.mbtns .btn,.gbtns .btn,#xBtns .btn,#camPanel .btn,#avEd .avbot .btn,.qrow .btn{min-height:var(--t-1)}
+#xBtns .btn{font-size:var(--fs-md)} #bHit{min-height:var(--t-1);font-size:var(--fs-lg)}
+.chip{min-height:var(--t-min);font-size:var(--fs-sm);border-radius:999px} #avEd .chip{min-height:var(--t-min);font-size:var(--fs-sm);border-radius:var(--r-sm)}
+input,select{min-height:var(--t-2);border-radius:var(--r-sm);font-size:var(--fs-md)}
+.muted{font-size:var(--fs-sm)} .err{font-size:var(--fs-sm)}
+.card{border-radius:var(--r-md);padding:var(--sp2);box-shadow:var(--sh-1)}
+.scroll{padding:var(--sp2);gap:12px}
+.msg{font-size:var(--fs-md)}
+#mbox{border-radius:var(--r-lg) var(--r-lg) 0 0;padding:var(--sp2) var(--sp2) calc(var(--sp2) + env(safe-area-inset-bottom));gap:12px}
+#mbody{font-size:var(--fs-md);line-height:1.55}
+nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
+.top{padding:10px var(--sp2)}
+/* floating round buttons: one size, one shadow, one border */
+#chatFab,#monFab,#toolFab,#evFab{width:var(--t-fab);height:var(--t-fab);border-width:3px;box-shadow:var(--sh-2);font-size:26px}
+#chatFab{left:12px;bottom:96px} #monFab{left:12px;bottom:164px} #evFab{left:12px;bottom:232px} #toolFab{right:12px;bottom:96px}
+#zoneBar{left:12px;right:12px} #zoneBar .btn{min-width:var(--t-1);min-height:var(--t-2);font-size:var(--fs-lg);box-shadow:var(--sh-1)}
+#zoneBar b{font-size:var(--fs-sm);padding:var(--sp1) 14px;box-shadow:var(--sh-1)}
+#mats{left:12px;top:var(--sp1);gap:6px} #mats div{font-size:var(--fs-sm);padding:3px 10px;border-radius:999px;box-shadow:var(--sh-1)}
+#hint{font-size:var(--fs-xs)}
+/* quest card: 3 lines max on the map (full text lives in the 📜 เควส tab) */
+#tut{left:12px;right:12px;padding:var(--sp1) 12px;box-shadow:var(--sh-2)} #tut svg{width:40px;height:40px}
+#tutStep{font-size:var(--fs-xs)} #tutText{font-size:var(--fs-sm);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#gBub{font-size:var(--fs-sm)}
+/* bottom bars over the map share one look */
+#placeBar,#fishBar,#toolBar,#seedBar{left:12px;right:12px;border-radius:var(--r-lg);box-shadow:var(--sh-2)}
+#toolBar .tb{min-height:64px;border-radius:var(--r-sm);font-size:var(--fs-xs)} #toolBar .tb b{font-size:26px}
+#placeBar b,#fishBar b{font-size:var(--fs-sm)} #roomBar .btn{font-size:var(--fs-sm)}
+/* shop / inventory cards */
+.gcard{border-radius:var(--r-md);padding:10px var(--sp1)} .gcard b{font-size:var(--fs-sm)} .gcard small{font-size:var(--fs-xs)}
+.gcard .pr{font-size:var(--fs-sm);border-radius:999px} .gcard .cnt,.gcard .lk{font-size:var(--fs-xs)} #seedBar .gcard b{font-size:var(--fs-xs)}
+.ws,.needs{font-size:var(--fs-sm)}
+/* gym / battle / activity screens */
+.gname{font-size:var(--fs-lg)} .gtip{font-size:var(--fs-sm)} .gsub{font-size:var(--fs-lg)} .gnext{font-size:var(--fs-sm)}
+#gym .bhead b,#xb .bhead b{font-size:var(--fs-lg)} #xSay{font-size:var(--fs-lg)} #xb .xhp span{font-size:var(--fs-xs)}
+.gpick .btn{min-height:96px;font-size:var(--fs-md)} .mlab{font-size:var(--fs-xs)}
+#camPanel{font-size:var(--fs-sm);border-radius:var(--r-lg)} #camPanel h3{font-size:var(--fs-lg)}
+.mute{min-width:var(--t-min);min-height:var(--t-min)}
 </style>
 </head>
 <body>
@@ -643,7 +692,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.37.0';
+const APP_VER = '0.38.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -4636,7 +4685,7 @@ function progRender(){
     mk('🗑', () => { PE.moves.splice(i, 1); progRender(); }, 40);
     L.appendChild(r); });
   const R = $('peRest'); [10, 15, 30].forEach(v => { const e = document.createElement('button'); e.className = 'btn ' + (PE.rest === v ? 'ok' : 'ghost'); e.textContent = v + ' วิ';
-    e.style.cssText = 'min-height:40px;padding:0 14px;margin:0 3px'; e.onclick = () => { PE.rest = v; progRender(); }; R.appendChild(e); });
+    e.style.cssText = 'min-height:var(--t-min);padding:0 14px;margin:0 3px'; e.onclick = () => { PE.rest = v; progRender(); }; R.appendChild(e); });
   const B = $('peBtns'), btn = (t, c, f, dis) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.disabled = !!dis; e.onclick = f; B.appendChild(e); };
   if (PE.moves.length < 12) btn('➕ เพิ่มท่า', 'ghost', progPick);
   btn('💾 บันทึกชุดนี้', 'ok', () => { if (!PE.moves.length || over) return; const P = { name:PE.name, rest:PE.rest, moves:PE.moves };
@@ -6109,7 +6158,7 @@ function closeAct(){
 }
 function actHead(box, title, closeBtn){
   const h = document.createElement('div'); h.className = 'top'; h.innerHTML = `<b>${title}</b>`;
-  if (closeBtn){ const x = document.createElement('button'); x.className = 'btn ghost'; x.style.minHeight = '40px'; x.textContent = 'จบ'; x.onclick = closeAct; h.appendChild(x); }
+  if (closeBtn){ const x = document.createElement('button'); x.className = 'btn ghost'; x.style.minHeight = 'var(--t-min)'; x.textContent = 'จบ'; x.onclick = closeAct; h.appendChild(x); }
   box.appendChild(h);
 }
 const doneLine = m => m.progress >= m.target ? '✅ ครบเป้าแล้ว! กลับไปกดรับเหรียญได้เลย' : `เป้าหมาย ${m.target} ${m.unit}`;
@@ -6403,7 +6452,7 @@ function renderBrkCard(L){
     const go = document.createElement('button'); go.className = 'btn ok'; go.textContent = `${d.icon} ${d.label}`; go.onclick = () => brkStart(k);
     const sk = document.createElement('button'); sk.className = 'btn ghost'; sk.style.flex = '0 0 72px'; sk.textContent = 'ข้าม'; sk.onclick = () => confirmDo('ข้ามกิจกรรมนี้?\n(ไม่ได้รางวัล ไม่เสียอะไร)', () => brkSkip(k));
     r.append(go, sk); c.appendChild(r);
-    if (k !== 'water'){ const m = document.createElement('button'); m.className = 'btn ghost'; m.style.cssText = 'width:100%;margin-top:6px;min-height:40px;font-size:13px';
+    if (k !== 'water'){ const m = document.createElement('button'); m.className = 'btn ghost'; m.style.cssText = 'width:100%;margin-top:6px;min-height:var(--t-min);font-size:var(--fs-sm)';
       m.textContent = '✍️ ทำแล้ว (เครื่องนับให้ไม่ได้)'; m.onclick = () => confirmDo(`ทำ ${d.label} แล้วใช่ไหม?`, () => brkDone(k)); c.appendChild(m); } });
   const own = document.createElement('button'); own.className = 'btn'; own.style.cssText = 'width:100%;margin-top:8px'; own.textContent = '🧘 พักเองตอนนี้'; own.onclick = () => brkChooser();
   c.appendChild(own); L.appendChild(c);
