@@ -705,7 +705,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.40.0';
+const APP_VER = '0.40.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -2246,6 +2246,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
+  pier:      { name:'⚓ ท่าเรือ', w:2, h:2, price:0, cost:{}, H:1.6, hidden:true, fixed:true, desc:'ท่าเรือไม้ของลุงปลา ชาวประมงประจำเมือง' },   // ⚓ v0.40.1
   gymyard:   { name:'🏋️ ยิมโค้ชฟิต', w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ยิมของโค้ชฟิต แตะเพื่อเข้าไปออกกำลังกาย' },
   salahouse: { name:'🛕 ศาลาน้องขิง',    w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ศาลาพักผ่อนของน้องขิง' },
   smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, hidden:true, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
@@ -2391,7 +2392,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes();   // 🏗 ⛏ v0.23 • 🏚 v0.30
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
   if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24 (was swallowed by a comment until v0.33.3)
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
@@ -3611,6 +3612,7 @@ function tapObj(z, o){
   }
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
+  if (o.type === 'pier') return pierTap(z, o);                // ⚓ v0.40.1
   if (shopOpen(o)) return enterShop(z, o);                   // 🏪 v0.40 NPC workplaces / repaired homes / gym → interior
   if (PROC[o.type]) return procTap(z, o);
   if (HOMES[o.type]) return homeTap(z, o);                   // 🏚 v0.30
@@ -3786,6 +3788,34 @@ const SHOP_IN = {
   buahome:   { npc:'bua',   title:'🧺 ร้านของป้าบัว',         wall:2, floor:0, work:'counter', items:[['shelf',0,1],['shelf',0,2],['plant',5,0]] },
   salahouse: { npc:'khing', title:'🎈 ศาลาของน้องขิง',        wall:0, floor:0, work:'play',    items:[['rug',2,3],['chair',5,1]] } };
 const shopOpen = o => !!SHOP_IN[o.type] && (PROC[o.type] ? o.done : o.type === 'gymyard' || (S.homes || {})[o.type] >= HOMES[o.type].stages.length);
+/* ⚓ v0.40.1 PIER + ลุงปลา (designer: "ท่าเรือ มีลุงนั่งตกปลา เป็น NPC แจกเบ็ดและสอนตกปลา"). Blueprint spot: zone (2,0) = Lv11,
+   the east coast. The pier is a fixed 2×2 placed as close to the east edge as possible (near = [GRID−1, 2]); r3d draws its deck
+   running out to sea (+x) with ลุงปลา sitting at the end. He is not a walking townsperson — he lives on the pier.
+   Visit 1: gift = copper rod (rod Lv2) if the player still has the basic one • every visit: lesson (re-arms the reel tutorial),
+   fish from the pier (bobber 2 tiles east of the pier), daily tip line. */
+const PLA = { name:'ลุงปลา', look:{ shirt:'#4f8fd8', pants:'#6b5a45', hair:'#d9d3c8', hat:'straw', skin:'#d9a77a' },
+  lines:['ทะเลวันนี้เงียบดีนะหลาน ปลาชอบกินเหยื่อตอนเช้ากับตอนเย็น', 'ตกปลาต้องใจเย็น เหมือนดูแลสุขภาพนั่นแหละ ทำทีละนิดทุกวัน',
+         'นั่งนาน ๆ อย่าลืมลุกยืดหลังนะ ลุงเองก็ต้องลุกทุกครึ่งชั่วโมง', 'ปลาตัวใหญ่ดึงแรง ปล่อยให้มันวิ่งก่อน แล้วค่อยกดตามจังหวะ'] };
+const PIER_ZONE = 10;
+function ensurePier(){
+  if (S.farm.zones.length <= PIER_ZONE || homeObj('pier')) return;
+  const o = placeFixed('pier', PIER_ZONE, false, [GRID - 1, 2]); if (o){ o.done = true; save(); }
+}
+function pierTap(z, o){
+  const gc = z.cx*GRID + o.c + o.w + 1, gr = z.cy*GRID + o.r + 1, first = !S.plaMet, line = PLA.lines[(new Date().getDate()) % PLA.lines.length];
+  bump('pierVisit');
+  if (first){ S.plaMet = 1; let gift = '';
+    if (upLv('rod') < 2){ S.up = S.up || {}; S.up.rod = 2; gift = '\n🎁 ลุงให้ 🎣 เบ็ดทองแดง (ช่องดึงกว้างขึ้น)'; } else { S.coins += 150; gift = '\n🎁 ลุงให้ 🪙 150 ไว้ซื้อเหยื่อ'; }
+    save(); refreshHeader();
+    return sheet(`⚓ ${PLA.name} — ชาวประมงประจำเมือง\n"มาใหม่เหรอหลาน ลุงนั่งตกปลาที่ท่านี้ทุกวันเลย เอานี่ไปใช้นะ"${gift}`,
+      [{ label:'📖 ให้ลุงสอนตกปลา', cls:'ok', fn:() => pierLesson(gc, gr) }, { label:'🎣 ตกปลาที่ท่าเรือ', fn:() => startFishing(gc, gr) }, { label:'ไว้ก่อน', cls:'ghost' }]); }
+  sheet(`⚓ ${PLA.name}\n"${line}"`, [{ label:'🎣 ตกปลาที่ท่าเรือ', cls:'ok', fn:() => startFishing(gc, gr) }, { label:'📖 ให้ลุงสอนอีกครั้ง', fn:() => pierLesson(gc, gr) }, { label:'ปิด', cls:'ghost' }]);
+}
+function pierLesson(gc, gr){
+  S.reelTutDone = 0; save(); bump('pierLesson');                // next bite = the practice fish with on-screen coaching
+  sheet(`📖 ${PLA.name}สอนตกปลา\n① แตะ "เหวี่ยงเบ็ด" แล้วรอ\n② ทุ่นจม ❗ → แตะดึงทันที\n③ ตอนลากปลา: กดค้างให้แถบเขียวขึ้น ปล่อยให้ลง ให้ปลาอยู่ในแถบเขียว\n④ หลอดเต็ม = ได้ปลา • ปลาตัวแรกเป็นปลาฝึก ช้ากว่าปกติ`,
+    [{ label:'🎣 ลองเลย', cls:'ok', fn:() => startFishing(gc, gr) }, { label:'ไว้ก่อน', cls:'ghost' }]);
+}
 function enterShop(z, o){
   const D = SHOP_IN[o.type], n = NPCS[D.npc]; if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
   const room = { items:D.items.map(([type, c, r], k) => ({ id:k + 1, type, c, r, w:FURN[type].w, h:FURN[type].h })), wall:D.wall, floor:D.floor, nextId:99 };
@@ -4151,6 +4181,8 @@ const QUESTS = [
     text:'แตะอาคาร 🏋️ ยิม → 📷 มินิเกมแตะเป้า → วางมือถือแนวตั้งห่าง 1.5–2 ม. ให้เห็นหัวถึงเข่า → กางแขนค้างไว้ → ใช้มือแตะเป้าให้ได้มากที่สุดใน 1 นาที (เครื่องที่ใช้กล้องไม่ได้ กดข้ามได้)', reward:{coins:150} },
   { id:'shopIn',  name:'แวะไปหาลุงไม้ที่โรงเลื่อย',  need:1, goal:() => st('shop_sawmill'),
     text:'แตะ 🪚 โรงเลื่อย → เข้าไปดูลุงไม้กำลังเลื่อยไม้ • แตะที่ไหนก็ได้ในร้านเพื่อคุย • ใช้โต๊ะช่างจากปุ่มด้านล่าง (ร้านอื่น ๆ ของชาวเมืองก็เข้าไปได้แบบเดียวกัน)', reward:{coins:100} },
+  { id:'pierTry', name:'ไปหาลุงปลาที่ท่าเรือ',       need:1, goal:() => st('pierVisit'),
+    text:'(Lv.11) แตะป้าย 🏠 พื้นที่ เพื่อเปิดแผนที่เกาะ → แตะพื้นที่ ⚓ ฝั่งทะเลตะวันออก → แตะท่าเรือ คุยกับลุงปลา รับของขวัญ แล้วให้ลุงสอนตกปลา', reward:{coins:100} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,

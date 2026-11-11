@@ -229,6 +229,22 @@ export function start(){
          Footprint 2×2 tiles → W = D = 4 world units. Building fills the back half:  width bw = 0.8·W, depth bd = 0.5·D,
          centre z = bz = −0.2·D  → its front wall sits at z = bz + bd/2 = 0.05·D; the yard in front (z ∈ [0.05D, 0.5D]) holds
          the upgrade props, added per stage gl = o.gl (0–3): ① rubber floor ② pull-up bar + bench ③ dumbbell rack. */
+      /* ⚓ v0.40.1 pier: deck from the west edge of the 2×2 out past the east edge (+x = sea side, 3 units over the water),
+         posts every 1.2 units, a strip of sea under the overhang, ลุงปลา (index.html PLA.look) sitting at the end with a rod. */
+      case 'pier': {
+        const x0 = -W/2 + .2, x1 = W/2 + 3, len = x1 - x0, cx2 = (x0 + x1)/2;
+        RB(g, 3.4, .12, D + .6, .03, '#86c8ea', W/2 + 1.7, -.16, 0);                         // sea under the overhang
+        for (let k=0;k<Math.round(len/.42);k++) RB(g, .38, .12, 1.6, .02, k%2 ? '#b98250' : '#a8703f', x0 + .21 + k*.42, .32, 0, true);   // planks
+        for (let x = x0 + .3; x < x1; x += 1.2) for (const z of [-.75, .75]) CY(g, .09, .55, '#6e4524', x, -.2, z, true);       // posts
+        for (const z of [-.8, .8]) RB(g, len, .07, .07, .02, '#8a5a33', cx2, .75, z);                                          // rails
+        for (let x = x0 + .3; x < x1; x += 1.2) for (const z of [-.8, .8]) CY(g, .04, .45, '#8a5a33', x, .32, z);
+        RB(g, .7, .35, .5, .05, '#5a7a9a', x1 - 1.6, .44, -.35, true);                                                     // tackle box
+        if (typeof PLA !== 'undefined'){ const u = personModel(PLA.look), P2 = u.userData.parts;
+          u.position.set(x1 - .7, .25, .3); u.rotation.y = Math.PI/2;                                                       // sitting, facing the sea (+x)
+          P2.legs.forEach(l => l.rotation.x = -1.45); P2.arms.forEach(a2 => a2.rotation.x = -1.1); g.add(u);
+          const rod = CY(g, .025, 2.6, '#6e4524', x1 + .2, 1.0, .3); rod.rotation.z = -1.05;                                // rod held out over the water
+          CY(g, .006, 1.3, '#f2f2f2', x1 + 1.4, .05, .3); BALL(g, .06, .06, .06, '#e5483e', x1 + 1.4, -.02, .3); }         // line + bobber
+        break; }
       case 'gymyard': {
         const gl = o.gl|0, bw = W*.8, bd = D*.5, bz = -D*.2, wh = 1.7, fz = bz + bd/2;
         const HB = (r, len, hex, x, y, z) => { const m = add(g, CYL, mat(hex), x, y, z, r, len, r); m.rotation.z = Math.PI/2; return m; };   // horizontal bar centred at (x, y, z)
