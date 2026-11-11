@@ -343,7 +343,15 @@ export function start(){
     const S2 = GRID*2, ctr = S2/2, res = [], sway = [], rings = [];
     curSway = sway;                                               // flower() registers itself while this zone is built
     fishes = [];
-    RB(g, S2, .5, S2, .1, C.grass, ctr, -.5, ctr);              // model block: grass → soil → cream base → oak band
+    /* 🏝 v0.39.1 biome ground (index.html islandBio): mountains greyer, pasture brighter, beach sandy.
+       Coast / beach zones paint sand on land tiles within 1 tile of a sea side (seaSides = no blueprint cell next door). */
+    const BIOG = { mount:'#a3ad93', peak:'#98a28c', pasture:'#a9d679', beach:'#e6d6a2' }, bio = z.bio || 'core';
+    RB(g, S2, .5, S2, .1, BIOG[bio] || C.grass, ctr, -.5, ctr);   // model block: grass → soil → cream base → oak band
+    if ((bio === 'coast' || bio === 'beach') && typeof seaSides === 'function'){
+      const sea = seaSides(z.cx, z.cy);
+      for (let i=0;i<z.tiles.length;i++){ const c = i%GRID, r = (i/GRID)|0, t = z.tiles[i];
+        const d = Math.min(sea.n ? r : 9, sea.s ? GRID-1-r : 9, sea.w ? c : 9, sea.e ? GRID-1-c : 9);
+        if (d <= 1 && t.k !== 'water') RB(g, 2, .03, 2, .02, C.sand, c*2+1, 0, r*2+1); } }
     RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
     RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
     BALL(g, S2*.42, 1.6, S2*.42, '#8d7f70', ctr, -2.3, ctr);

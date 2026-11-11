@@ -575,6 +575,7 @@ function flushRewards(){ if (rewardQ.length && !$('modal').classList.contains('o
 
 /* ---------------- Modal (confirm before every action) ---------------- */
 function sheet(text, buttons){
+  document.querySelectorAll('#mbox .isleMap').forEach(e => e.remove());   // 🏝 extra content from the island map sheet
   $('mbody').textContent = text;
   const box = $('mbtns'); box.innerHTML = '';
   buttons.forEach(b => {
@@ -702,7 +703,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.39.0';
+const APP_VER = '0.39.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -2299,11 +2300,47 @@ const SPIRAL = (() => {
   }
   return out.slice(0, MAX_ZONES);
 })();
+/* 🏝 v0.39.1 ISLAND BLUEPRINT (designer: "แผนที่มีรูปแบบวางไว้ล่วงหน้าแล้วปลดล็อกมาเรื่อย ๆ", ref. an Animal Crossing island map).
+   Zone n (Lv n+1) sits at ISLAND[n]:
+     n 0–24  = the old SPIRAL core 5×5 (x, y ∈ −2…2) — unchanged, so every existing save keeps its zones where they are
+     n 25–32 = north mountains  (x −2…2, y −3) then (x −1…1, y −4)
+     n 33–40 = west pasture     (x −3, y −2…2) then (x −4, y −1…1)
+     n 41–48 = south beach      (x −2…2, y 3) then (x −1…1, y 4)
+     n 49    = the peak (−3, −3)
+   East of the core (x = 2) is open sea → the core's east column is the coast.
+   Biome per zone (islandBio) drives tile mix, ground colour and shoreline in r3d.js:
+     core • coast (x = 2 in the core) • mount • pasture • beach • peak
+   Sea sides = neighbour cell not in the blueprint; new zones there get a ragged shoreline:
+     edge row water with p = 0.45, next row 0.12 (sand is painted by r3d near sea sides on coast/beach zones).
+   River (new zones only, never the core): waterfall (0,−4) → (−1,−4) → (−1,−3) → (−2,−3) → (−3,−3) → (−3,−2) → sea (west).
+     Inside a zone it is one tile wide: entry side middle → centre (2,2) → exit side middle. */
+const ISLAND = SPIRAL.slice(0, 25).concat(
+  [[-2,-3],[-1,-3],[0,-3],[1,-3],[2,-3],[-1,-4],[0,-4],[1,-4]],
+  [[-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-4,-1],[-4,0],[-4,1]],
+  [[-2,3],[-1,3],[0,3],[1,3],[2,3],[-1,4],[0,4],[1,4]],
+  [[-3,-3]]);
+const ISLAND_SET = new Set(ISLAND.map(([x, y]) => x + ',' + y));
+function islandBio(x, y){
+  if (Math.abs(x) <= 2 && Math.abs(y) <= 2) return x === 2 ? 'coast' : 'core';
+  if (x === -3 && y === -3) return 'peak';
+  return y <= -3 ? 'mount' : x <= -3 ? 'pasture' : y >= 3 ? 'beach' : 'core';
+}
+const seaSides = (x, y) => ({ n:!ISLAND_SET.has(x + ',' + (y-1)), s:!ISLAND_SET.has(x + ',' + (y+1)), w:!ISLAND_SET.has((x-1) + ',' + y), e:!ISLAND_SET.has((x+1) + ',' + y) });
+const RIVER = [[0,-4],[-1,-4],[-1,-3],[-2,-3],[-3,-3],[-3,-2]];   // waterfall → west sea; entry of the first = its north (cliff) edge
+const ISLAND_MARKS = { '0,0':['🏠','บ้าน + ยิม'], '0,-1':['🏪','ลานกลางเมือง'], '2,-1':['⛏','เหมือง'], '2,0':['⚓','ท่าเรือ'], '0,2':['🛝','สนามเด็กเล่น'],
+  '-2,0':['🐾','ร้านสัตว์เลี้ยง'], '-1,-3':['💎','แร่หายาก'], '0,-4':['💧','น้ำตก'], '-3,0':['🐄','ทุ่งปศุสัตว์'], '0,4':['🌅','อ่าว'], '-3,-3':['🌄','จุดชมวิว'] };
+function riverCarve(t, x, y){                                   // one-tile river through this zone if it is on RIVER
+  const i = RIVER.findIndex(([a, b]) => a === x && b === y); if (i < 0) return;
+  const side = (p, q) => q[0] < p[0] ? 'w' : q[0] > p[0] ? 'e' : q[1] < p[1] ? 'n' : 's';
+  const ent = i ? side(RIVER[i], RIVER[i-1]) : 'n', ext = i < RIVER.length - 1 ? side(RIVER[i], RIVER[i+1]) : 'w', M = (GRID-1)/2;
+  for (const d of [ent, ext]) for (let k = 0; k <= M; k++){
+    const c = d === 'w' ? k : d === 'e' ? GRID-1-k : M, r = d === 'n' ? k : d === 's' ? GRID-1-k : M; t[r*GRID + c].k = 'water'; }
+}
 const ck = (cx,cy) => (cx+128)*512 + (cy+128);              // numeric map key (no string allocation)
 const chunkMap = new Map();
 function rebuildChunkMap(){
   chunkMap.clear();
-  S.farm.zones.forEach((z,i) => { if (z.cx == null){ z.cx = SPIRAL[i][0]; z.cy = SPIRAL[i][1]; } chunkMap.set(ck(z.cx,z.cy), z); });
+  S.farm.zones.forEach((z,i) => { if (z.cx == null){ z.cx = SPIRAL[i][0]; z.cy = SPIRAL[i][1]; } if (!z.bio) z.bio = islandBio(z.cx, z.cy); chunkMap.set(ck(z.cx,z.cy), z); });   // 🏝 old zones get a biome by position (colour/sand only)
   for (const z of S.farm.zones) markDirty(z);                // neighbours change → side walls change
 }
 let hitZone = null, hitLi = -1;
@@ -2315,10 +2352,17 @@ function tileAt(gc, gr){                                     // integer global c
 
 /* ---- zone generation ---- */
 function genZone(idx){
-  const t = [];
+  /* 🏝 v0.39.1 position from the blueprint */
+  /* past the core: first blueprint cell nobody holds (for new saves that is exactly ISLAND[idx]; old saves past Lv25 keep their spiral cells) */
+  const free = ([a, b]) => !(S && S.farm && S.farm.zones.some(z => z.cx === a && z.cy === b));
+  let pos = ISLAND[idx]; if (idx >= 25 || !free(pos)) pos = ISLAND.slice(idx >= 25 ? 25 : 0).find(free) || pos;
+  const bio = islandBio(pos[0], pos[1]), t = [];
+  /* tile mix per biome — cumulative thresholds for grass, wild, pebble, rock, bush, tree (rest = boulder); 'core' = the old mix */
+  const MIX = { core:[.26,.38,.48,.64,.77,.91], coast:[.30,.44,.56,.66,.80,.90], mount:[.10,.18,.38,.66,.72,.84], peak:[.08,.14,.34,.62,.66,.78],
+                pasture:[.46,.70,.76,.80,.88,.97], beach:[.30,.40,.62,.70,.82,.90] }[bio];
   for (let i=0;i<GRID*GRID;i++){
     const x = Math.random();
-    t.push({ k: x<.26?'grass' : x<.38?'wild' : x<.48?'pebble' : x<.64?'rock' : x<.77?'bush' : x<.91?'tree' : 'boulder' });
+    t.push({ k: x<MIX[0]?'grass' : x<MIX[1]?'wild' : x<MIX[2]?'pebble' : x<MIX[3]?'rock' : x<MIX[4]?'bush' : x<MIX[5]?'tree' : 'boulder' });
   }
   const pc = 2+Math.floor(Math.random()*2), pr = 2+Math.floor(Math.random()*2);
   t[pr*GRID+pc].k = 'water';
@@ -2330,8 +2374,15 @@ function genZone(idx){
     t[0].k = 'grass'; t[1].k = 'wild'; t[GRID].k = 'pebble'; t[GRID+1].k = 'grass';
     t[2].k = 'clear'; t[GRID+2].k = 'clear';
   } else { t[0].k = 'clear'; }
-  const [cx,cy] = SPIRAL[idx];
-  return { tiles:t, objs:[], seed:(Math.random()*1e9)|0, nextId:1, cx, cy };
+  const [cx,cy] = pos;
+  if (idx >= 25 || bio === 'coast'){                           // 🏝 ragged shoreline on sea sides (new zones only — genZone never touches old ones)
+    const sea = seaSides(cx, cy);
+    for (let r=0;r<GRID;r++) for (let c=0;c<GRID;c++){ const d = Math.min(sea.n ? r : 9, sea.s ? GRID-1-r : 9, sea.w ? c : 9, sea.e ? GRID-1-c : 9);
+      if ((d === 0 && Math.random() < .45) || (d === 1 && Math.random() < .12)) t[r*GRID+c].k = bio === 'mount' || bio === 'peak' ? 'boulder' : 'water'; }
+    riverCarve(t, cx, cy);
+    if (t[0].k === 'water' || t[0].k === 'boulder') t[0].k = 'clear';
+  }
+  return { tiles:t, objs:[], seed:(Math.random()*1e9)|0, nextId:1, cx, cy, bio };
 }
 function ensureZones(){
   let grew = false;
@@ -3402,7 +3453,7 @@ function renderZoneBar(){
 }
 $('zPrev').onclick = () => setZoom(1);                       // − zoom out
 $('zNext').onclick = () => setZoom(-1);                      // + zoom in
-$('zLabel').onclick = goHome;
+$('zLabel').onclick = openIslandMap;   // 🏝 v0.39.1 (was: goHome — now a button inside the map)
 
 /* --- touch: drag to pan (threshold 8 px), tap = act. Placement → pet → tile --- */
 let drag = null;
@@ -5356,6 +5407,26 @@ function drawFmon(time){                                      // 👾 marker on 
   ctx.fillStyle = '#d23c3c'; ctx.beginPath(); ctx.arc(x + 16, y - 18, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '800 14px Mali, sans-serif'; ctx.fillText('!', x + 16, y - 17);
 }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
+/* 🏝 v0.39.1 island overview: the whole 50-zone blueprint, unlocked zones in biome colours, locked ones faded with their Lv,
+   landmarks as icons. Tap an unlocked zone → the camera centres on it. Top-down (north up), 9 × 9 cells. */
+const BIO_COL = { core:'#8fd17a', coast:'#b9e08a', mount:'#9aa3ad', pasture:'#c9e27a', beach:'#f2dfa0', peak:'#7c8794' };
+function openIslandMap(){
+  const own = new Map(S.farm.zones.map((z, i) => [z.cx + ',' + z.cy, i])), cell = 34, O = 6, W = O*2 + cell*9;
+  let svg = `<svg viewBox="0 0 ${W} ${W}" style="width:100%;max-width:340px;display:block;margin:6px auto;background:#7fd4e6;border-radius:16px">`;
+  const rv = RIVER.map(([x, y]) => `${O + (x+4)*cell + cell/2},${O + (y+4)*cell + cell/2}`).join(' ');
+  ISLAND.forEach(([x, y], i) => { const k = x + ',' + y, mine = own.has(k), px = O + (x+4)*cell, py = O + (y+4)*cell, mk = ISLAND_MARKS[k];
+    svg += `<g data-z="${mine ? own.get(k) : ''}"><rect x="${px+1.5}" y="${py+1.5}" width="${cell-3}" height="${cell-3}" rx="6" fill="${BIO_COL[islandBio(x, y)]}" opacity="${mine ? 1 : .45}" stroke="${mine ? '#2e7d32' : '#ffffffaa'}" stroke-width="${mine ? 2 : 1}"/>`
+      + (mine ? '' : `<text x="${px + cell/2}" y="${py + cell - 6}" font-size="8" text-anchor="middle" fill="#334">Lv${i+1}</text>`)
+      + (mk ? `<text x="${px + cell/2}" y="${py + cell/2 + (mine ? 6 : 1)}" font-size="15" text-anchor="middle" opacity="${mine ? 1 : .6}">${mk[0]}</text>` : '') + '</g>'; });
+  svg += `<polyline points="${rv}" fill="none" stroke="#4aa3e0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".75" pointer-events="none"/></svg>`;
+  const legend = Object.values(ISLAND_MARKS).map(([e, n]) => `${e} ${n}`).join(' • ');
+  sheet(`🏝 แผนที่เกาะ • ปลดล็อกแล้ว ${S.farm.zones.length}/${MAX_ZONES}\nพื้นที่ใหม่เปิดทุกเลเวล (แกนเมือง → ภูเขาเหนือ → ทุ่งตะวันตก → หาดใต้ → ยอดเขา)`,
+    [{ label:'🏠 กลับบ้าน', cls:'ok', fn:goHome }, { label:'ปิด', cls:'ghost' }]);
+  const box = document.createElement('div'); box.innerHTML = svg + `<div class="muted" style="font-size:var(--fs-xs);text-align:center">${legend}<br>แตะพื้นที่ที่ปลดล็อกแล้วเพื่อไปดู</div>`;
+  $('mbody').after(box); box.className = 'isleMap';
+  box.querySelectorAll('g[data-z]').forEach(g => { const zi = g.getAttribute('data-z'); if (zi === '') return; g.style.cursor = 'pointer';
+    g.onclick = () => { const z = S.farm.zones[+zi]; closeModal(); centerOn(z.cx*GRID + 2.5, z.cy*GRID + 2.5); }; });
+}
 function questTick(){
   brkTick(); ciAuto(); renderSta(); guideTick(); gymQuestFocus();
   { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); if (f.style.display === 'none') $('gBub').style.display = 'none'; } if (S && S.farm) mineUnlockTick();
