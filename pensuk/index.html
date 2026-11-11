@@ -606,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.33.0';
+const APP_VER = '0.33.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -4349,7 +4349,8 @@ function openEx(){
    Squat down = p ≤ −DEPTH (20 cm, easy 12 cm) • up again = p ≥ −0.06 m
    No events within 1.5 s or permission denied → falls back to the timer + honest answer flow.
    ===================================================================== */
-const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0, yaw:0, steps:0, stepAt:0, armed:true };
+const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0, yaw:0, steps:0, stepAt:0, armed:true,
+  seg:{ on:false, v:0, p:0, t:0, q:0 }, level:0, depth:.2, reps:0, repsUp:0, downs:0, ups:0, low:false, top:false };
 const exDepth = () => exEasy() ? .12 : .20;   // phone travels ~30–45 cm in a real squat; thresholds leave room for sensor error
 function msHandler(e){
   const ag = e.accelerationIncludingGravity; if (!ag || ag.x == null) return;
@@ -4365,8 +4366,23 @@ function msFeed(ag, lin, now, rr){                                  // pure inte
   const la = hasLin ? [e.acceleration.x, e.acceleration.y, e.acceleration.z] : [ag.x - MS.g[0], ag.y - MS.g[1], ag.z - MS.g[2]];
   const a = la[0]*gu[0] + la[1]*gu[1] + la[2]*gu[2];
   MS.jit += (Math.abs(a) - MS.jit)*.1; MS.a = a;                   // smoothed hand jitter (shown in the sensor test)
-  if (MS.jit < .35){ MS.still += dt; if (MS.zupt && MS.still > .3) MS.v = 0; } else MS.still = 0;   // ZUPT only where stillness is expected • .35 tolerates hand shake
-  MS.v = (MS.v + a*dt)*.997; MS.p += MS.v*dt;
+  MS.still = MS.jit < .35 ? MS.still + dt : 0;
+  /* v0.33.1 SEGMENT INTEGRATION (real iPhone: the old always-on integrator ran away to 500–1000 cm).
+     A movement segment starts when |a↑| > 0.4 m/s² and ends after 0.25 s with |a↑| < 0.3; > 2.5 s or |Δ| > 70 cm = shaking → ignored.
+     Inside a segment: v, p integrate from 0 (short window → drift stays small); between segments v = 0 and nothing drifts.
+     Segment result Δ = p_end:  Δ ≤ −0.75·D → DOWN event • Δ ≥ +0.75·D → UP event   (D = depth threshold, set by the caller)
+     MS.level = sum of finished Δ since the last completed rep (shown as the cm gauge, clamped to ±80 cm).
+     reps (down kind) = DOWN then UP • repsUp (arm raises) = UP then DOWN • MS.low = currently in the bottom of a squat */
+  const S2 = MS.seg;
+  if (!S2.on){ if (Math.abs(a) > .4){ S2.on = true; S2.v = a*dt; S2.p = 0; S2.t = 0; S2.q = 0; } }
+  else { S2.v += a*dt; S2.p += S2.v*dt; S2.t += dt; S2.q = Math.abs(a) < .3 ? S2.q + dt : 0;
+    if (S2.q > .25 || S2.t > 2.5){ S2.on = false; const D = MS.depth*.75, d = S2.t > 2.5 || Math.abs(S2.p) > .7 ? 0 : S2.p;   // too long / implausible (shaking) → ignored
+      MS.level = Math.max(-.8, Math.min(.8, MS.level + d));
+      if (d <= -D){ MS.downs++; if (MS.top){ MS.repsUp++; MS.top = false; MS.level = 0; } else MS.low = true; }
+      else if (d >= D){ MS.ups++; if (MS.low){ MS.reps++; MS.low = false; MS.level = 0; } else MS.top = true; }
+      S2.p = 0; S2.v = 0; } }
+  MS.p = Math.max(-.8, Math.min(.8, MS.level + (S2.on ? S2.p : 0))); MS.v = S2.on ? S2.v : 0;
+  if (!S2.on && !MS.low && !MS.top && MS.still > .6) MS.level *= .9;   // standing still: let the gauge settle back to 0
   /* 🌀 v0.31 yaw about the vertical: ω·ĝ  (rotationRate: beta = x, gamma = y, alpha = z, deg/s); slow leak keeps the centre */
   if (rr && rr.alpha != null){ const w = (rr.beta||0)*gu[0] + (rr.gamma||0)*gu[1] + (rr.alpha||0)*gu[2]; MS.yaw = (MS.yaw + w*dt)*(1 - .25*dt); }
   /* 👣 steps: vertical acceleration peak > 1.6 m/s² after dipping below 0.4, at least 0.28 s apart */
@@ -4379,7 +4395,7 @@ async function msStart(){                                       // must run insi
   MS.seen = 0; await new Promise(r => setTimeout(r, 1500)); MS.ok = !!MS.seen && performance.now() - MS.seen < 1000; return MS.ok;
 }
 function msStop(){ MS.zupt = true; if (MS.on){ window.removeEventListener('devicemotion', msHandler); MS.on = false; } MS.ok = false; }
-const msZero = () => { MS.v = 0; MS.p = 0; };
+const msZero = () => { MS.v = 0; MS.p = 0; MS.level = 0; MS.low = false; MS.top = false; MS.seg.on = false; };
 function msGauge(show){ $('xGauge').style.display = show ? 'flex' : 'none'; if (!show) return;
   const d = exDepth(), H = 150 - 6, frac = Math.max(0, Math.min(1, -MS.p/(d*1.6)));      // gauge spans 0 … 1.6×depth downward
   $('xGauge').querySelector('.gtarget').style.height = ((1 - 1/1.6)*100) + '%';
@@ -4418,12 +4434,12 @@ async function msTest(){
   msZero(); MS.zupt = true; let low = 0, reps = 0, wasDown = false;
   exBtns([{ label:'⟲ ตั้งศูนย์ (ยืนตรงแล้วกด)', fn:() => { msZero(); low = 0; } }, { label:'กลับ', cls:'ghost', fn:() => { clearInterval(exT); msGauge(false); openEx(); } }]);
   exT = setInterval(() => { const cm = -MS.p*100; low = Math.max(low, cm); const d = exDepth()*100;
-    if (cm >= d) wasDown = true; if (wasDown && cm < 6){ reps++; wasDown = false; sfx('coin'); }
+    MS.depth = d/100; if (MS.reps + MS.repsUp !== reps){ reps = MS.reps + MS.repsUp; sfx('coin'); }
     msGauge(true); $('xDist').textContent = `${cm >= 0 ? '↓' : '↑'} ${Math.abs(cm).toFixed(0)} ซม.`;
     $('xSay').textContent = `ลองย่อ-ยืนตามปกติ แล้วดูตัวเลข
 ลึกสุด ${low.toFixed(0)} ซม. • นับได้ ${reps} ครั้ง (เกณฑ์ ${d} ซม.)
-ความสั่นมือ ${MS.jit.toFixed(2)} ${MS.still > .3 ? '• นิ่ง ✓' : ''} • a↑ ${MS.a.toFixed(2)}`;
-    MS.zupt = !wasDown && cm < 6; }, 100);                      // stillness correction only when standing
+ความสั่นมือ ${MS.jit.toFixed(2)} ${MS.still > .3 ? '• นิ่ง ✓' : ''} • a↑ ${MS.a.toFixed(2)} • ลง ${MS.downs} ขึ้น ${MS.ups}${MS.seg.on ? ' • กำลังขยับ…' : ''}`;
+  }, 100);                      // stillness correction only when standing
 }
 /* =====================================================================
    🏋️ v0.31 COACH GYM (designer): open from the start — pick a body part → a 3–5 min set (warm-up, 3 moves, cool-down),
@@ -4539,7 +4555,7 @@ function gymNext(){
   g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length}`;
   if (g.i >= g.steps.length){ if (g.cb){ const cb = g.cb, tot = g.total || 0, reps = g.reps; clearInterval(exT); exT = null; G = null; $('gym').style.display = 'none'; return cb(tot, reps); } return gymDone(); }
   const m = g.steps[g.i], timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor;
-  g.count = 0; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
+  g.count = 0; g.r0 = null; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
   msZero(); MS.yaw = 0; MS.steps = 0; g.yawSide = 0; g.down = false; MS.zupt = true;
   const nx = g.steps[g.i+1];
   $('gBody').innerHTML = `<div class="gname">${m.name}</div><div class="gtip">${m.tip}</div><div class="gbig" id="gBig"></div><div class="gsub" id="gSub"></div><div class="gnext">${nx ? 'ต่อไป: ' + nx.name : 'ท่าสุดท้าย!'}</div>`;
@@ -4551,19 +4567,17 @@ function gymTick(){
   if (g.timed){ const left = Math.max(0, Math.ceil(g.dur - el)); big.textContent = left; sub.textContent = m.k === 'rest' || m.k === 'time' ? 'วินาที' : `${m.n} ครั้ง ตามจังหวะตัวเอง`;
     if (left <= 3 && left > 0 && Math.floor(el*20) % 20 === 0) sfx('pop'); if (el >= g.dur){ if (m.k === 'down') g.reps += m.n; gymNext(); } return; }
   const target = m.n;
-  if (m.k === 'down' || m.k === 'hold'){ const d = easy ? .12 : .20, cm = Math.round(-MS.p*100);
-    MS.zupt = !g.down && cm < 6;
-    if (m.k === 'hold'){ if (MS.p <= -d) g.down = true; if (g.down && MS.p <= -d*.6) g.held += .05;
-      big.textContent = Math.max(0, Math.ceil(target - g.held)); sub.textContent = g.down ? (MS.p <= -d*.6 ? 'ค้างไว้! 💪' : '↓ ลงอีกนิด') : `↓ ย่อลงอีก ${Math.max(0, Math.round(d*100) - cm)} ซม.`;
+  if (m.k === 'down' || m.k === 'hold'){ MS.depth = easy ? .12 : .20; const cm = Math.max(0, Math.round(-MS.p*100));
+    if (g.r0 == null){ g.r0 = MS.reps; MS.low = false; }
+    if (m.k === 'hold'){ if (MS.low){ g.down = true; g.held += .05; }
+      big.textContent = Math.max(0, Math.ceil(target - g.held)); sub.textContent = MS.low ? 'ค้างไว้! 💪' : g.down ? '↓ ย่อลงอีกครั้ง แล้วค้างไว้' : '↓ ย่อลง แล้วค้างไว้';
       if (g.held >= target || el > target + 25) gymNext(); return; }
-    if (!g.down && MS.p <= -d){ g.down = true; sfx('pop'); }
-    if (g.down && MS.p >= -.06){ g.down = false; g.count++; g.reps++; exSpeak(String(g.count)); sfx('coin'); }
-    sub.textContent = g.down ? `↑ ยืนขึ้น (${cm} ซม.)` : `↓ ย่อลง ${Math.max(0, Math.round(d*100) - cm)} ซม.`; }
-  else if (m.k === 'up'){ const d = easy ? .15 : .25, cm = Math.round(MS.p*100);
-    MS.zupt = !g.down && Math.abs(cm) < 6;
-    if (!g.down && MS.p >= d){ g.down = true; sfx('pop'); }
-    if (g.down && MS.p <= .06){ g.down = false; g.count++; exSpeak(String(g.count)); sfx('coin'); }
-    sub.textContent = g.down ? `↓ ลดลง (${cm} ซม.)` : `↑ ยกขึ้นอีก ${Math.max(0, Math.round(d*100) - cm)} ซม.`; }
+    const c = MS.reps - g.r0; if (c > g.count){ g.reps += c - g.count; g.count = c; exSpeak(String(g.count)); sfx('coin'); }
+    sub.textContent = MS.low ? '↑ ยืนขึ้น' : MS.seg.on ? `↓ ${cm} ซม.` : '↓ ย่อลง (จังหวะปกติ ไม่ช้าเกินไป)'; }
+  else if (m.k === 'up'){ MS.depth = easy ? .15 : .25; const cm = Math.max(0, Math.round(MS.p*100));
+    if (g.r0 == null){ g.r0 = MS.repsUp; MS.top = false; }
+    const c = MS.repsUp - g.r0; if (c > g.count){ g.count = c; exSpeak(String(g.count)); sfx('coin'); }
+    sub.textContent = MS.top ? '↓ ลดลง' : MS.seg.on ? `↑ ${cm} ซม.` : '↑ ยกขึ้น (จังหวะปกติ)'; }
   else if (m.k === 'twist'){ const th = easy ? 20 : 30, y = MS.yaw;
     if (g.yawSide <= 0 && y > th){ g.yawSide = 1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
     else if (g.yawSide >= 0 && y < -th){ g.yawSide = -1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
