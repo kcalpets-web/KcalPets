@@ -185,6 +185,14 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
 #bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
 #bHit{min-height:60px;font-size:20px}
+#gym{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#d9f0ff,#f4fbff 60%,#fff);overflow:auto}
+#gym .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:10px}
+#gym .bhead{display:flex;align-items:center;justify-content:space-between}#gym .bhead b{font-size:18px}
+#gym .bhp{position:relative;height:18px;border-radius:9px;background:#0001;overflow:hidden}#gym .bhp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3f9fe0,#4caf6a);transition:width .4s}#gym .bhp b{position:relative;display:block;text-align:center;font-size:12px;line-height:18px}
+.gname{text-align:center;font-size:24px;font-weight:800;margin-top:10px}.gtip{text-align:center;font-size:15px;color:#555;line-height:1.5}
+.gbig{text-align:center;font:800 88px/1 Mali,sans-serif;color:#2f7fc0;margin:14px 0 4px}.gsub{text-align:center;font-size:22px;font-weight:700;color:#2f7fc0;min-height:30px}
+.gnext{text-align:center;font-size:14px;color:#777}
+.gpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gpick .btn{min-height:96px;font-size:16px;line-height:1.4;white-space:pre-line}
 #xb{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#e6dcff,#fff6e6 70%);overflow:auto}
 #xb .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:8px}
 #xb .bhead{display:flex;align-items:center;justify-content:space-between;gap:8px}#xb .bhead b{font-size:18px}
@@ -300,6 +308,10 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
   <div class="tab" id="tQuest"><div class="scroll" id="questList"></div></div>
   <div class="tab" id="tBag"><div class="scroll" id="bagList"></div></div>
 
+  <div id="gym"><div class="xwrap">
+    <div class="bhead"><b id="gTitle">🏋️ ยิมโค้ชฟิต</b><button class="btn ghost" id="gStop">⏸ หยุด</button></div>
+    <div class="bhp"><i id="gProg"></i><b id="gProgT"></b></div>
+    <div id="gBody"></div></div></div>
   <div id="xb"><div class="xwrap">
     <div class="bhead"><b id="xTitle">🛋 อสูรนั่งนิ่ง</b><button class="btn ghost" id="xStop">⏸ หยุดพัก</button></div>
     <div class="xhp"><span>อสูร</span><div class="bhp"><i id="xHpM"></i><b id="xHpMT"></b></div></div>
@@ -594,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.30.0';
+const APP_VER = '0.31.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1631,6 +1643,7 @@ function npcTalk(id){
       if (q.t === 'ex' && !q.ok) return openAct({ ...BRK[q.key], label:q.title, target:q.target, progress:0, sec:0, npc:id });
       if (!reqReady(id)) return npcTalk(id); npcComplete(id); } }], 64));
   w.insertAdjacentHTML('beforeend', `<div class="muted" style="margin-top:6px">สิทธิพิเศษตอนนี้: ${n.perk(h)} • สนิทขึ้นทุก 2 คำขอ</div>`);
+  if (id === 'coach'){ const gb = document.createElement('button'); gb.className = 'btn ok'; gb.style.cssText = 'width:100%;margin-top:8px'; gb.textContent = '🏋️ เข้ายิมกับโค้ช'; gb.onclick = () => { closeModal(); openGym(); }; w.appendChild(gb); }
   $('mbody').appendChild(w);
 }
 function renderQuestsIfOpen(){ if ($('tQuest') && $('tQuest').classList.contains('on')) renderQuests(); }
@@ -1670,7 +1683,8 @@ function ensureNpcHomes(){
 }
 function homeTap(z, o){
   const H = HOMES[o.type], n = NPCS[H.npc], k = S.homes[o.type] || 0;
-  if (k >= H.stages.length) return detailSheet('b:' + o.type, `${FARM_ITEMS[o.type].name}\nบ้านของ${n.name} ซ่อมเสร็จแล้ว 🏡\n${n.name}กลับบ้านตอนกลางคืน`, '', OK);
+  if (k >= H.stages.length){ if (o.type === 'gymyard') return openGym();   // 🏋️ the repaired yard is the gym's front door
+    return detailSheet('b:' + o.type, `${FARM_ITEMS[o.type].name}\nบ้านของ${n.name} ซ่อมเสร็จแล้ว 🏡\n${n.name}กลับบ้านตอนกลางคืน`, '', OK); }
   const st = H.stages[k], ok = S.coins >= st.coins && canPay(st.give);
   detailSheet('b:' + o.type, `🏚 ${FARM_ITEMS[o.type].name} (ผุพัง)\n${n.name}: "บ้านพังหมดเลย ช่วยซ่อมหน่อยนะ"\nขั้น ${k+1}/${H.stages.length}: ${st.title}\n🪙 ${st.coins.toLocaleString()} • ${inText(st.give)}`, needLine(st.give),
     [{ label: ok ? `🔨 ซ่อมขั้นที่ ${k+1}` : 'ของหรือเหรียญยังไม่พอ', cls: ok ? 'ok' : 'ghost', fn:() => { if (!ok) return;
@@ -1929,6 +1943,7 @@ function tiredSheet(){
   sheet(`💪 หมดแรงแล้ว พักกับน้องหน่อยนะ\nแรง ${staminaNow()}% (ฟื้นเองนาทีละ 1%)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วแรงเต็มทันที`, [
     { label:'📵 พักสายตา 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('rest'); } },
     { label:'🫁 หายใจลึก ๆ 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('breath'); } },
+    { label:'🏋️ เข้ายิม 3–5 นาที', cls:'ok', fn:() => { exitMine(); openGym(); } },
     { label:'ไว้ก่อน', cls:'ghost' } ]);
 }
 /* 💪 v0.27 STAMINA EVERYWHERE (designer: "every activity uses stamina, like real life")
@@ -3898,6 +3913,8 @@ const QUESTS = [
     text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
   { id:'askGuide', name:'คุยกับเป็นสุข',          need:1, goal:() => st('guideAsk'),
     text:'แตะปุ่มหน้าบีเกิล 💬 ซ้ายล่างของฟาร์ม → คุยกับเป็นสุขได้ 3 อย่าง: ① เช็กอินว่าทำอะไรเพื่อสุขภาพไปแล้ว ② พิมพ์ถามเรื่องเกม (ลืมอะไรถามได้) ③ รับคำแนะนำสุขภาพตามเวลา — ลองถามอะไรสักข้อดูนะ', reward:{coins:100} },
+  { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        need:1, goal:() => st('gymDone'),
+    text:'หน้าภารกิจ › 🏋️ เข้ายิมโค้ชฟิต → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
@@ -4153,6 +4170,7 @@ const FAQ = [
   { k:['กิน','อาหาร','ข้าว','มื้อ','หิว'], a:'🍽 จานสุขภาพ: ผักครึ่งจาน ข้าว/แป้งหนึ่งในสี่ โปรตีนหนึ่งในสี่ • เลือกผลไม้แทนขนมหวาน • ลดน้ำหวานและของทอด' },
   { k:['ออกกำลัง','วิ่ง','เดิน','คาร์ดิโอ'], a:'🏃 ควรออกกำลังหนักปานกลาง (เดินเร็ว ปั่นจักรยาน) รวม 150 นาที/สัปดาห์ + เวทหรือบริหารกล้ามเนื้อ 2 วัน/สัปดาห์ เริ่มน้อย ๆ แล้วค่อยเพิ่ม' },
   { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => exOn() ? `⚔️ อสูรนั่งนิ่ง HP ${exState().mhp}/${EX_MHP} — แตะ ⚔️ ในฟาร์ม • ตาเรา: ${exMove().name} 3 ครั้ง (ครั้งละ 4–6 ดาเมจ) • ตาอสูร: ${exMove().def} ${exMove().dsec} วิ เพื่อป้องกัน • แพ้ไม่เสียอะไร` : monOn() ? `⚔️ ปีศาจรายวัน: 💧 ปีศาจแห้งผาก HP ${monState().hp}/${monState().max} — ดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง (ปุ่ม ⚔️ ในฟาร์ม)` : '⚔️ โหมดสู้ปีศาจยังเป็นการทดลอง เปิดได้ในกระเป๋า › "🧪 ทดลองโหมดสู้ปีศาจสุขภาพ"' },
+  { k:['ยิม','ฝึก','เวท','แขน','เอว','ไหล่'], a:'🏋️ ยิมโค้ชฟิต: หน้าภารกิจ › "เข้ายิมโค้ชฟิต" หรือแตะโค้ช • เลือก ขา / แขนและไหล่ / เอว / คาร์ดิโอ / ยืดเหยียด ชุดละ 3–5 นาที ถือมือถือ 2 มือ เซ็นเซอร์นับให้ • จบชุดแรงเต็ม 100% (💗 วันละ 3 ชุดแรก)' },
   { k:['เช็กอิน','คุย','แชท','ถามอะไร'], a:'💬 คุยกับเป็นสุขได้ 3 อย่าง: 1) เช็กอิน บอกว่าทำอะไรเพื่อสุขภาพไปแล้ว (ปุ่มนี้จะกะพริบทุก 2 ชม.) 2) ถามเรื่องเกม พิมพ์ถามได้เลย 3) รับคำแนะนำสุขภาพตามช่วงเวลา' } ];
 function faqReply(q){
   const t = q.toLowerCase(); let best = null, bs = 0;
@@ -4326,13 +4344,13 @@ function openEx(){
    Squat down = p ≤ −DEPTH (20 cm, easy 12 cm) • up again = p ≥ −0.06 m
    No events within 1.5 s or permission denied → falls back to the timer + honest answer flow.
    ===================================================================== */
-const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0 };
+const MS = { on:false, ok:false, g:[0, 0, 0], v:0, p:0, still:0, last:0, seen:0, zupt:true, jit:0, a:0, yaw:0, steps:0, stepAt:0, armed:true };
 const exDepth = () => exEasy() ? .12 : .20;   // phone travels ~30–45 cm in a real squat; thresholds leave room for sensor error
 function msHandler(e){
   const ag = e.accelerationIncludingGravity; if (!ag || ag.x == null) return;
-  msFeed(ag, e.acceleration, performance.now());
+  msFeed(ag, e.acceleration, performance.now(), e.rotationRate);
 }
-function msFeed(ag, lin, now){                                  // pure integration step (unit-testable with synthetic time)
+function msFeed(ag, lin, now, rr){                                  // pure integration step (unit-testable with synthetic time)
   const dt = MS.last ? Math.min(.05, (now - MS.last)/1000) : 0; MS.last = now; MS.seen = now; const e = { acceleration:lin };
   const hasLin = e.acceleration && e.acceleration.x != null;
   /* v0.30.0 fix: when the OS gives gravity-free acceleration, gravity = accIncl − acc EXACTLY (no low-pass lag when the wrist tilts) */
@@ -4344,6 +4362,10 @@ function msFeed(ag, lin, now){                                  // pure integrat
   MS.jit += (Math.abs(a) - MS.jit)*.1; MS.a = a;                   // smoothed hand jitter (shown in the sensor test)
   if (MS.jit < .35){ MS.still += dt; if (MS.zupt && MS.still > .3) MS.v = 0; } else MS.still = 0;   // ZUPT only where stillness is expected • .35 tolerates hand shake
   MS.v = (MS.v + a*dt)*.997; MS.p += MS.v*dt;
+  /* 🌀 v0.31 yaw about the vertical: ω·ĝ  (rotationRate: beta = x, gamma = y, alpha = z, deg/s); slow leak keeps the centre */
+  if (rr && rr.alpha != null){ const w = (rr.beta||0)*gu[0] + (rr.gamma||0)*gu[1] + (rr.alpha||0)*gu[2]; MS.yaw = (MS.yaw + w*dt)*(1 - .25*dt); }
+  /* 👣 steps: vertical acceleration peak > 1.6 m/s² after dipping below 0.4, at least 0.28 s apart */
+  if (a > 1.6 && MS.armed && now - MS.stepAt > 280){ MS.steps++; MS.stepAt = now; MS.armed = false; } else if (a < .4) MS.armed = true;
 }
 async function msStart(){                                       // must run inside a tap (iOS permission prompt)
   try { if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission){ const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') return false; } } catch(e){ return false; }
@@ -4396,6 +4418,94 @@ async function msTest(){
 ลึกสุด ${low.toFixed(0)} ซม. • นับได้ ${reps} ครั้ง (เกณฑ์ ${d} ซม.)
 ความสั่นมือ ${MS.jit.toFixed(2)} ${MS.still > .3 ? '• นิ่ง ✓' : ''} • a↑ ${MS.a.toFixed(2)}`;
     MS.zupt = !wasDown && cm < 6; }, 100);                      // stillness correction only when standing
+}
+/* =====================================================================
+   🏋️ v0.31 COACH GYM (designer): open from the start — pick a body part → a 3–5 min set (warm-up, 3 moves, cool-down),
+   hands-free with voice + live counter. Ends with 💪 stamina 100%. Replay as often as you like (doubles as the sensor test).
+   Rewards: 💗 10 + 🪙 100 for the first 3 sets a day. Leg reps count toward the ลุกนั่ง mission.
+   kinds: down (squat reps) • up (arm raise/press: phone travels up) • hold (stay low N s) • twist (yaw ±30°) • steps • time
+   No sensor → every move becomes a timed move (honest play).
+   ===================================================================== */
+const GYM = {
+  legs:   { name:'🦵 ขา', easy:'ลุก-นั่งเก้าอี้ / ย่อตื้น', moves:[ { k:'down', n:8, name:'สควอท', tip:'ถือมือถือ 2 มือ เหยียดแขนระดับอก ย่อลงแล้วยืนขึ้น' }, { k:'hold', n:20, name:'ย่อค้าง', tip:'ย่อลงแล้วค้างไว้ หลังตรง' }, { k:'down', n:8, name:'สควอท', tip:'ช้า ๆ คุมจังหวะ' } ] },
+  arms:   { name:'💪 แขนและไหล่', easy:'ยกแค่ระดับไหล่', moves:[ { k:'up', n:10, name:'Front raise', tip:'ถือมือถือ 2 มือที่ระดับเอว แขนตรง ยกขึ้นถึงระดับไหล่ แล้วลดลง' }, { k:'up', n:10, name:'Shoulder press', tip:'ถือมือถือที่ระดับอก ดันขึ้นเหนือหัว แล้วลดลง' }, { k:'up', n:8, name:'Front raise', tip:'ช้า ๆ ไม่เหวี่ยง' } ] },
+  waist:  { name:'🌀 เอว', easy:'บิดช้า ๆ ไม่ต้องสุด', moves:[ { k:'twist', n:20, name:'Standing rotation', tip:'ยืนกางขาเท่าไหล่ ถือมือถือข้างหน้า บิดลำตัวซ้าย-ขวา (สะโพกนิ่ง)' }, { k:'twist', n:16, name:'บิดเอวช้า ๆ', tip:'บิดแล้วค้างข้างละ 1 วินาที' }, { k:'twist', n:20, name:'Standing rotation', tip:'หายใจออกตอนบิด' } ] },
+  cardio: { name:'❤️ คาร์ดิโอ', easy:'ย่ำเท้าแทนวิ่ง', moves:[ { k:'steps', n:60, name:'ย่ำเท้าอยู่กับที่', tip:'ถือมือถือไว้ที่อก ยกเข่าสลับ' }, { k:'steps', n:80, name:'วิ่งอยู่กับที่', tip:'วิ่งเบา ๆ เท้าลงนุ่ม ๆ' }, { k:'steps', n:60, name:'ย่ำเท้าเร็ว', tip:'แกว่งแขนด้วย' } ] },
+  stretch:{ name:'🧘 ยืดเหยียด', easy:'ยืดเท่าที่สบาย', moves:[ { k:'time', n:30, name:'ยืดคอ', tip:'เอียงศีรษะซ้าย 15 วิ ขวา 15 วิ' }, { k:'time', n:30, name:'ยืดไหล่', tip:'ดึงแขนข้ามอก ข้างละ 15 วิ' }, { k:'time', n:30, name:'บิดลำตัว', tip:'นั่งหรือยืน บิดตัวช้า ๆ ข้างละ 15 วิ' }, { k:'time', n:60, name:'หายใจลึก ๆ', tip:'เข้า 4 วิ • กลั้น 4 • ออก 6' } ] } };
+let G = null;
+function gymState(){ const g = S.gym = S.gym || {}; if (g.date !== todayKey()) Object.assign(g, { date:todayKey(), paid:0 }); return g; }
+function openGym(){
+  clearInterval(exT); G = null; bump('gymOpen'); $('gym').style.display = 'block'; $('gProg').style.width = '0%'; $('gProgT').textContent = '';
+  const g = gymState(), b = $('gBody');
+  b.innerHTML = `<div class="gtip">🏋️ โค้ชฟิต: "เลือกส่วนที่อยากฝึกได้เลย ชุดละ 3–5 นาที ฝึกจบแรงเต็ม 100%!"<br><small>รางวัล 💗 วันนี้เหลือ ${Math.max(0, 3 - g.paid)}/3 ชุด • ${exEasy() ? '🪑 ท่าง่ายเปิดอยู่' : 'ท่าปกติ'} • เจ็บหรือเวียนหัวให้หยุดทันที</small></div><div class="gpick"></div>`;
+  const pk = b.querySelector('.gpick');
+  Object.entries(GYM).forEach(([id, P]) => { const e = document.createElement('button'); e.className = 'btn';
+    e.textContent = `${P.name}\n${P.moves.map(m => m.name).filter((v, i, a) => a.indexOf(v) === i).join(' • ')}`; e.onclick = () => gymStart(id); pk.appendChild(e); });
+  const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบเซ็นเซอร์', () => { closeGym(); msTest(); }], ['🏡 กลับฟาร์ม', closeGym]]
+    .forEach(([t, f]) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.onclick = f; row.appendChild(e); });
+  b.appendChild(row);
+}
+function closeGym(){ clearInterval(exT); exT = null; G = null; msStop(); try { speechSynthesis.cancel(); } catch(e){} $('gym').style.display = 'none'; refreshHeader(); renderMissions(); }
+async function gymStart(id){
+  const P = GYM[id], b = $('gBody'); b.innerHTML = '<div class="gname">📱 เตรียมเซ็นเซอร์…</div>';
+  const sensor = await msStart(), easy = exEasy();
+  const steps = [{ k:'time', n:30, name:'วอร์มอัพ', tip:'ย่ำเท้าเบา ๆ แกว่งแขน หมุนไหล่' }]
+    .concat(...P.moves.map((m, i) => [i ? { k:'rest', n:15, name:'พัก', tip:'หายใจลึก ๆ จิบน้ำ' } : null, { ...m, n:easy && m.k !== 'time' ? Math.ceil(m.n*.7) : m.n }].filter(Boolean)))
+    .concat([{ k:'time', n:30, name:'คูลดาวน์', tip:'เดินช้า ๆ ยืดขาเบา ๆ หายใจลึก' }]);
+  G = { id, steps, i:-1, sensor, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0 };
+  gymNext();
+  exT = setInterval(gymTick, 50);
+}
+function gymNext(){
+  const g = G; g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length}`;
+  if (g.i >= g.steps.length) return gymDone();
+  const m = g.steps[g.i], timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor;
+  g.count = 0; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
+  msZero(); MS.yaw = 0; MS.steps = 0; g.yawSide = 0; g.down = false; MS.zupt = true;
+  const nx = g.steps[g.i+1];
+  $('gBody').innerHTML = `<div class="gname">${m.name}</div><div class="gtip">${m.tip}</div><div class="gbig" id="gBig"></div><div class="gsub" id="gSub"></div><div class="gnext">${nx ? 'ต่อไป: ' + nx.name : 'ท่าสุดท้าย!'}</div>`;
+  exSpeak(m.k === 'rest' ? 'พัก' : m.name); sfx('chop');
+}
+function gymTick(){
+  const g = G; if (!g) return; const m = g.steps[g.i]; if (!m) return; const now = performance.now(), el = (now - g.t0)/1000, easy = exEasy();
+  const big = $('gBig'), sub = $('gSub'); if (!big) return;
+  if (g.timed){ const left = Math.max(0, Math.ceil(g.dur - el)); big.textContent = left; sub.textContent = m.k === 'rest' || m.k === 'time' ? 'วินาที' : `${m.n} ครั้ง ตามจังหวะตัวเอง`;
+    if (left <= 3 && left > 0 && Math.floor(el*20) % 20 === 0) sfx('pop'); if (el >= g.dur){ if (m.k === 'down') g.reps += m.n; gymNext(); } return; }
+  const target = m.n;
+  if (m.k === 'down' || m.k === 'hold'){ const d = easy ? .12 : .20, cm = Math.round(-MS.p*100);
+    MS.zupt = !g.down && cm < 6;
+    if (m.k === 'hold'){ if (MS.p <= -d) g.down = true; if (g.down && MS.p <= -d*.6) g.held += .05;
+      big.textContent = Math.max(0, Math.ceil(target - g.held)); sub.textContent = g.down ? (MS.p <= -d*.6 ? 'ค้างไว้! 💪' : '↓ ลงอีกนิด') : `↓ ย่อลงอีก ${Math.max(0, Math.round(d*100) - cm)} ซม.`;
+      if (g.held >= target || el > target + 25) gymNext(); return; }
+    if (!g.down && MS.p <= -d){ g.down = true; sfx('pop'); }
+    if (g.down && MS.p >= -.06){ g.down = false; g.count++; g.reps++; exSpeak(String(g.count)); sfx('coin'); }
+    sub.textContent = g.down ? `↑ ยืนขึ้น (${cm} ซม.)` : `↓ ย่อลง ${Math.max(0, Math.round(d*100) - cm)} ซม.`; }
+  else if (m.k === 'up'){ const d = easy ? .15 : .25, cm = Math.round(MS.p*100);
+    MS.zupt = !g.down && Math.abs(cm) < 6;
+    if (!g.down && MS.p >= d){ g.down = true; sfx('pop'); }
+    if (g.down && MS.p <= .06){ g.down = false; g.count++; exSpeak(String(g.count)); sfx('coin'); }
+    sub.textContent = g.down ? `↓ ลดลง (${cm} ซม.)` : `↑ ยกขึ้นอีก ${Math.max(0, Math.round(d*100) - cm)} ซม.`; }
+  else if (m.k === 'twist'){ const th = easy ? 20 : 30, y = MS.yaw;
+    if (g.yawSide <= 0 && y > th){ g.yawSide = 1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
+    else if (g.yawSide >= 0 && y < -th){ g.yawSide = -1; g.count++; sfx('coin'); exSpeak(String(g.count)); }
+    sub.textContent = `${y > 0 ? '↻' : '↺'} ${Math.abs(y).toFixed(0)}° • บิดให้เกิน ${th}° สลับข้าง`; }
+  else if (m.k === 'steps'){ g.count = MS.steps; sub.textContent = '👣 ก้าว'; }
+  big.textContent = `${Math.min(g.count, target)}/${target}`;
+  if (g.count >= target){ exSpeak('เยี่ยม'); gymNext(); }
+  else if (el > target*4 + 30){ sub.textContent = 'หมดเวลา ไปท่าต่อไปนะ'; gymNext(); }   // never get stuck
+}
+function gymDone(){
+  clearInterval(exT); exT = null; const g = gymState(), G0 = G, P = GYM[G0.id]; G = null; msStop();
+  setTired(0); bump('gymDone'); bump('gym_' + G0.id); let extra = '';
+  if (G0.reps){ const sq = S.missions.find(m => m.key === 'squat'); if (sq) addProgress(sq, G0.reps); }
+  if (g.paid < 3){ g.paid++; S.coins += 100; const lg = gainLove(10); extra = `\n${loveTxt(10, lg)} • 🪙 100 (วันนี้ ${g.paid}/3)`; }
+  save(); refreshHeader(); exSpeak('จบชุดแล้ว เก่งมาก');
+  $('gProg').style.width = '100%'; $('gProgT').textContent = '✔';
+  $('gBody').innerHTML = `<div class="gname">🎉 จบชุด${P.name}แล้ว!</div><div class="gbig">💪</div><div class="gtip">แรงเต็ม 100%${extra.replace(/\n/g, '<br>')}${G0.reps ? `<br>สควอทนับเข้าภารกิจ ${G0.reps} ครั้ง` : ''}</div>`;
+  const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:12px';
+  [['🔁 เลือกชุดอื่น', openGym, 'ok'], ['🏡 กลับฟาร์ม', closeGym, 'ghost']].forEach(([t, f, c]) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.onclick = f; row.appendChild(e); });
+  $('gBody').appendChild(row);
 }
 function exPlayerTurn(){
   if (MS.ok){ const m = exMove(); $('xBig').textContent = '⚔️'; $('xSay').textContent = `ตาของเรา! ${m.name} 3 ครั้ง — เซ็นเซอร์จะนับให้เอง`;
@@ -4973,6 +5083,7 @@ function setHint(){
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
 $('monFab').onclick = () => openEx();
+$('gStop').onclick = () => { const was = !!G; closeGym(); if (was) sheet('⏸ หยุดฝึกแล้ว ไม่เป็นไรเลย\nกลับมาฝึกต่อได้ทุกเมื่อ', OK); };
 $('xStop').onclick = () => { const x = S.ex; closeEx(); if (x && !x.won) sheet('⏸ หยุดพักแล้ว ไม่เสียอะไร\nกลับมาสู้ต่อได้ทุกเมื่อ (เลือดอสูรยังอยู่เท่าเดิม)', OK); };
 { const rl = $('reel'), on = e => { e.preventDefault(); reelHold = true; }, off = () => { reelHold = false; };   // 🎣 hold anywhere
   rl.addEventListener('pointerdown', on); rl.addEventListener('pointerup', off); rl.addEventListener('pointercancel', off); rl.addEventListener('pointerleave', off); }
@@ -5186,7 +5297,8 @@ function renderMissions(){
   if (monOn()){ const m = monState(), c = document.createElement('div'); c.className = 'card'; c.style.borderColor = '#3f8fd8';   // ⚔️ trial: today's monster on top
     c.innerHTML = `<div class="mrow"><b>⚔️ ปีศาจวันนี้: 💧 ปีศาจแห้งผาก</b><b>${m.won ? '✨ ชนะ' : `HP ${m.hp}/${m.max}`}</b></div><div class="bar"><b style="width:${(1 - m.hp/m.max)*100}%;background:#3f8fd8"></b></div><div class="muted">ดื่มน้ำจริง 1 แก้ว = โจมตี 1 ครั้ง • ชนะติดกัน ${m.streak||0} วัน</div>`;
     const g = document.createElement('button'); g.className = 'btn ok'; g.style.cssText = 'width:100%;margin-top:8px'; g.textContent = m.won ? 'ดูปีศาจที่ชำระล้างแล้ว' : '⚔️ ไปสู้ปีศาจ'; g.onclick = () => openBattle(); c.appendChild(g); L.appendChild(c); }
-  { const cb = document.createElement('button'); cb.className = 'btn ok'; cb.style.cssText = 'width:100%;margin-bottom:10px'; cb.textContent = '💬 เช็กอินกับเป็นสุข (บอกว่าทำอะไรไปแล้ว)'; cb.onclick = () => openCheckin(false); L.appendChild(cb); }
+  { const cb = document.createElement('button'); cb.className = 'btn ok'; cb.style.cssText = 'width:100%;margin-bottom:10px'; cb.textContent = '💬 เช็กอินกับเป็นสุข (บอกว่าทำอะไรไปแล้ว)'; cb.onclick = () => openCheckin(false); L.appendChild(cb);
+    const gb = document.createElement('button'); gb.className = 'btn'; gb.style.cssText = 'width:100%;margin-bottom:10px;background:#3f9fe0;color:#fff'; gb.textContent = '🏋️ เข้ายิมโค้ชฟิต (ชุดละ 3–5 นาที • แรงเต็ม)'; gb.onclick = openGym; L.appendChild(gb); }
   renderBrkCard(L);
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
