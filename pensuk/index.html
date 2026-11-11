@@ -188,6 +188,18 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
 #bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
 #bHit{min-height:60px;font-size:20px}
+/* 🛝 v0.40.2 playground ball game */
+#pg{position:fixed;inset:0;z-index:12;display:none;background:linear-gradient(#bfe8ff,#e9f8d8 65%,#f6e7c8)}
+#pg .pgw{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 24px;display:flex;flex-direction:column;gap:12px;height:100%}
+#pgTitle{font-size:var(--fs-lg);text-align:center}
+#pgField{position:relative;flex:1;min-height:200px}
+#pgPet{position:absolute;right:12%;bottom:8%;font-size:72px;transition:transform .35s}#pgPet.jump{transform:translateY(-60px) rotate(-10deg)}#pgPet.sad{transform:rotate(12deg)}
+#pgBall{position:absolute;left:10%;bottom:10%;font-size:40px;opacity:0}
+#pgBall.fly{animation:pgfly .7s ease-out forwards}@keyframes pgfly{0%{opacity:1;transform:translate(0,0)}50%{transform:translate(32vw,-26vh)}100%{opacity:1;transform:translate(var(--bx,58vw),var(--by,-4vh))}}
+#pgMeter{position:relative;height:28px;border-radius:14px;background:#fff;border:3px solid #8a5a2b;overflow:hidden}
+#pgZone{position:absolute;top:0;bottom:0;background:#7ee08a}#pgNeedle{position:absolute;top:0;bottom:0;width:6px;margin-left:-3px;background:#e5483e;text-decoration:none;will-change:transform}
+#pgSay{text-align:center;font-size:var(--fs-lg);font-weight:700;min-height:30px}
+#pgBtns{display:flex;flex-direction:column;gap:8px}#pgBtns .btn{min-height:var(--t-1)}
 /* 📷 v0.36 camera touch-target minigame — mirrored front camera, canvas targets on top, HUD readable from 2 m */
 #cam{position:fixed;inset:0;z-index:13;display:none;background:#111;overflow:hidden;touch-action:none}
 #camV{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}#camC{position:absolute;inset:0;width:100%;height:100%}
@@ -407,6 +419,8 @@ nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
     <div class="bhead"><b id="gTitle">🏋️ ยิมโค้ชฟิต</b><button class="btn ghost" id="gStop">⏸ หยุด</button></div>
     <div class="bhp"><i id="gProg"></i><b id="gProgT"></b></div>
     <div id="gBody"></div></div></div>
+  <div id="pg"><div class="pgw"><b id="pgTitle"></b><div id="pgField"><span id="pgPet"></span><span id="pgBall">🎾</span></div>
+    <div id="pgMeter"><i id="pgZone"></i><s id="pgNeedle"></s></div><div id="pgSay"></div><div id="pgBtns"></div></div></div>
   <div id="cam"><video id="camV" playsinline muted autoplay></video><canvas id="camC"></canvas>
     <div id="camHud"><span id="camScore">0</span><span id="camCombo"></span><span id="camTime">60</span><button id="camX" aria-label="ปิด">✕</button></div>
     <div id="camMsg"></div><div id="camPanel"></div></div>
@@ -705,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.40.1';
+const APP_VER = '0.40.2';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -2246,6 +2260,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
+  playground:{ name:'🛝 สนามเด็กเล่น', w:2, h:2, price:0, cost:{}, H:1.8, hidden:true, fixed:true, desc:'สนามเด็กเล่นของเมือง พาน้องมาเล่นได้' },   // 🛝 v0.40.2
   pier:      { name:'⚓ ท่าเรือ', w:2, h:2, price:0, cost:{}, H:1.6, hidden:true, fixed:true, desc:'ท่าเรือไม้ของลุงปลา ชาวประมงประจำเมือง' },   // ⚓ v0.40.1
   gymyard:   { name:'🏋️ ยิมโค้ชฟิต', w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ยิมของโค้ชฟิต แตะเพื่อเข้าไปออกกำลังกาย' },
   salahouse: { name:'🛕 ศาลาน้องขิง',    w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ศาลาพักผ่อนของน้องขิง' },
@@ -2392,7 +2407,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier(); ensurePlayground();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
   if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24 (was swallowed by a comment until v0.33.3)
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
@@ -3612,7 +3627,8 @@ function tapObj(z, o){
   }
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
-  if (o.type === 'pier') return pierTap(z, o);                // ⚓ v0.40.1
+  if (o.type === 'pier') return pierTap(z, o);
+  if (o.type === 'playground') return playgroundTap();        // 🛝 v0.40.2                // ⚓ v0.40.1
   if (shopOpen(o)) return enterShop(z, o);                   // 🏪 v0.40 NPC workplaces / repaired homes / gym → interior
   if (PROC[o.type]) return procTap(z, o);
   if (HOMES[o.type]) return homeTap(z, o);                   // 🏚 v0.30
@@ -3801,6 +3817,53 @@ function ensurePier(){
   if (S.farm.zones.length <= PIER_ZONE || homeObj('pier')) return;
   const o = placeFixed('pier', PIER_ZONE, false, [GRID - 1, 2]); if (o){ o.done = true; save(); }
 }
+/* 🛝 v0.40.2 PLAYGROUND (designer: "สนามเด็กเล่นประจำเมือง ให้น้องเล่น เวลากดเข้าไปเป็นมินิเกมต่าง ๆ"). Blueprint zone (0,2) = Lv15.
+   🎾 Throw-the-ball: a needle sweeps a power meter, x(t) = (1 − cos(2πt/T))/2 with T = 1.6 s (eases at the ends);
+   tap "โยน!" while it is inside the green zone (width 22 %, random spot each throw) → the pet catches. 5 throws a round.
+   First round of the day: each catch = ❤️ +2 and 💗 +2. 📷 also links the camera touch-target minigame. */
+const PG_ZONE = 14, PG_T = 1.6, PG_W = .22;
+function ensurePlayground(){
+  if (S.farm.zones.length <= PG_ZONE || homeObj('playground')) return;
+  const o = placeFixed('playground', PG_ZONE, false, [2, 2]); if (o){ o.done = true; save(); }
+}
+function playgroundTap(){
+  bump('pgVisit');
+  sheet(`🛝 สนามเด็กเล่น\nพา${S.pet.name}มาเล่นด้วยกัน • เกมแรกของวันได้ ❤️ และ 💗`,
+    [{ label:`🎾 โยนบอลให้${S.pet.name}`, cls:'ok', fn:pgStart }, { label:'📷 มินิเกมแตะเป้า (ออกกำลังกาย)', fn:camOpen }, { label:'ปิด', cls:'ghost' }]);
+}
+const PG = { on:false, n:0, hit:0, t0:0, z0:0, raf:0, busy:false };
+function pgStart(){
+  Object.assign(PG, { on:true, n:0, hit:0, busy:false }); $('pg').style.display = 'block';
+  $('pgTitle').textContent = `🎾 โยนบอลให้${S.pet.name}`; $('pgPet').textContent = S.pet.emoji || '🐶'; $('pgPet').className = '';
+  pgNext(); cancelAnimationFrame(PG.raf); PG.raf = requestAnimationFrame(pgLoop);
+}
+function pgNext(){
+  PG.z0 = .1 + Math.random()*(.9 - PG_W - .1); PG.t0 = performance.now(); PG.busy = false;
+  $('pgZone').style.left = (PG.z0*100) + '%'; $('pgZone').style.width = (PG_W*100) + '%';
+  $('pgSay').textContent = `ลูกที่ ${PG.n + 1}/5 • แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว`;
+  const b = $('pgBtns'); b.innerHTML = ''; const t = document.createElement('button'); t.className = 'btn ok'; t.textContent = '🎾 โยน!'; t.onclick = pgThrow; b.appendChild(t);
+  const x = document.createElement('button'); x.className = 'btn ghost'; x.textContent = 'เลิกเล่น'; x.onclick = pgClose; b.appendChild(x);
+}
+const pgX = () => (1 - Math.cos(2*Math.PI*((performance.now() - PG.t0)/1000)/PG_T))/2;
+function pgLoop(){ if (!PG.on) return; PG.raf = requestAnimationFrame(pgLoop); if (!PG.busy) $('pgNeedle').style.transform = `translateX(${(pgX()*$('pgMeter').clientWidth).toFixed(1)}px)`; }
+function pgThrow(){
+  if (PG.busy) return; PG.busy = true; const x = pgX(), ok = x >= PG.z0 && x <= PG.z0 + PG_W, ball = $('pgBall'), pet = $('pgPet');
+  PG.n++; if (ok) PG.hit++; sfx('pop');
+  ball.style.setProperty('--bx', ok ? '58vw' : (x < PG.z0 ? '30vw' : '75vw')); ball.style.setProperty('--by', ok ? '-6vh' : '2vh');
+  ball.classList.remove('fly'); void ball.offsetWidth; ball.classList.add('fly');
+  setTimeout(() => { pet.className = ok ? 'jump' : 'sad'; $('pgSay').textContent = ok ? `${S.pet.name}งับได้! 🎉` : x < PG.z0 ? 'เบาไปนิด ลองใหม่!' : 'แรงไปหน่อย ลองใหม่!'; if (ok) sfx('coin'); }, 600);
+  setTimeout(() => { pet.className = ''; ball.classList.remove('fly'); PG.n >= 5 ? pgEnd() : pgNext(); }, 1500);
+}
+function pgEnd(){
+  const day = S.pgDay === todayKey(); let extra = '';
+  if (!day && PG.hit){ S.pgDay = todayKey(); S.pet.heart = Math.min(100, S.pet.heart + 2*PG.hit); const lg = gainLove(2*PG.hit); extra = `\n❤️ +${2*PG.hit} • ${loveTxt(2*PG.hit, lg)}`; }
+  bump('pgPlay'); save(); refreshHeader();
+  $('pgSay').textContent = `งับได้ ${PG.hit}/5 ลูก!${extra ? ' 🎁' : ''}`;
+  const b = $('pgBtns'); b.innerHTML = '';
+  [['🔁 เล่นอีกรอบ', 'ok', pgStart], ['🏡 กลับ', 'ghost', pgClose]].forEach(([t, c, f]) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.onclick = f; b.appendChild(e); });
+  if (extra) setTimeout(() => queueReward(`🛝 เล่นกับ${S.pet.name}ที่สนามเด็กเล่น\nงับบอลได้ ${PG.hit}/5${extra}`), 50);
+}
+function pgClose(){ PG.on = false; cancelAnimationFrame(PG.raf); $('pg').style.display = 'none'; flushRewards(); refreshHeader(); }
 function pierTap(z, o){
   const gc = z.cx*GRID + o.c + o.w + 1, gr = z.cy*GRID + o.r + 1, first = !S.plaMet, line = PLA.lines[(new Date().getDate()) % PLA.lines.length];
   bump('pierVisit');
@@ -4183,6 +4246,8 @@ const QUESTS = [
     text:'แตะ 🪚 โรงเลื่อย → เข้าไปดูลุงไม้กำลังเลื่อยไม้ • แตะที่ไหนก็ได้ในร้านเพื่อคุย • ใช้โต๊ะช่างจากปุ่มด้านล่าง (ร้านอื่น ๆ ของชาวเมืองก็เข้าไปได้แบบเดียวกัน)', reward:{coins:100} },
   { id:'pierTry', name:'ไปหาลุงปลาที่ท่าเรือ',       need:1, goal:() => st('pierVisit'),
     text:'(Lv.11) แตะป้าย 🏠 พื้นที่ เพื่อเปิดแผนที่เกาะ → แตะพื้นที่ ⚓ ฝั่งทะเลตะวันออก → แตะท่าเรือ คุยกับลุงปลา รับของขวัญ แล้วให้ลุงสอนตกปลา', reward:{coins:100} },
+  { id:'pgTry',   name:'พาน้องไปสนามเด็กเล่น',       need:1, goal:() => st('pgPlay'),
+    text:'(Lv.15) เปิดแผนที่เกาะ → พื้นที่ 🛝 ทางใต้ของบ้าน → แตะสนามเด็กเล่น → 🎾 โยนบอลให้น้อง แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว', reward:{coins:100} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,

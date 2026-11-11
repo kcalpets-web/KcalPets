@@ -231,6 +231,16 @@ export function start(){
          the upgrade props, added per stage gl = o.gl (0–3): ① rubber floor ② pull-up bar + bench ③ dumbbell rack. */
       /* ⚓ v0.40.1 pier: deck from the west edge of the 2×2 out past the east edge (+x = sea side, 3 units over the water),
          posts every 1.2 units, a strip of sea under the overhang, ลุงปลา (index.html PLA.look) sitting at the end with a rod. */
+      /* 🛝 v0.40.2 playground: sand pad, a slide (ladder + tilted chute) and an A-frame swing with two seats */
+      case 'playground': {
+        RB(g, W - .3, .06, D - .3, .1, '#efe2c4', 0, 0, 0);
+        RB(g, .8, 1.5, .8, .06, '#4caf6a', -1.0, 0, -.9, true); for (const x of [-1.35, -.65]) CY(g, .04, 1.5, '#e5483e', x, 0, -.4);
+        const ch = RB(g, .6, .08, 2.0, .04, '#ffd166', -1.0, .75, .3, true); ch.rotation.x = .62;
+        for (const s2 of [-1, 1]){ const l = CY(g, .06, 2.0, '#4f7cac', .9 + s2*.85, 0, .9); l.rotation.x = s2*0; }
+        for (const z2 of [.5, 1.3]){ CY(g, .05, 1.9, '#4f7cac', .05, 0, z2).rotation.z = .25; CY(g, .05, 1.9, '#4f7cac', 1.75, 0, z2).rotation.z = -.25; }
+        RB(g, 1.9, .08, .08, .03, '#3b5f8a', .9, 1.85, .9);                                                      // top bar
+        for (const x of [.55, 1.25]){ CY(g, .01, 1.2, '#cfcfcf', x, .65, .9); RB(g, .4, .06, .25, .02, '#e5483e', x, .62, .9, true); }   // ropes + seats
+        BALL(g, .18, .18, .18, '#ff6b81', -.2, .06, 1.2); break; }
       case 'pier': {
         const x0 = -W/2 + .2, x1 = W/2 + 3, len = x1 - x0, cx2 = (x0 + x1)/2;
         RB(g, 3.4, .12, D + .6, .03, '#86c8ea', W/2 + 1.7, -.16, 0);                         // sea under the overhang
