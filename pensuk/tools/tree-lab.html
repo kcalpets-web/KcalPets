@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>เป็นสุข — Tree Lab</title>
+<script type="importmap">{ "imports": { "three": "../lib/three.module.min.js", "three/addons/": "../lib/" } }</script>
+<style>body{margin:0;background:#1b2028}canvas{display:block;width:720px;height:960px}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+/* 🌳 TREE LAB — Claude's own style: "soft clay diorama".
+   Foliage = lumpy blobs: icosphere (detail 4) displaced along the normal by low-frequency noise
+       r' = r · (1 + A·n(p·f)),  n = Σ sin(p·k_i + φ_i)/3  (3 octave-free sine waves → smooth bumps, no texture)
+   Colour per vertex: c = mix(shadow, light, smoothstep(−.6, .9, n̂·up)) + tiny hue jitter → baked top-light gradient
+   that still reads under flat mobile lighting. Trunks = tapered cylinders bent by y² (x += b·y²).
+   One shared MeshStandardMaterial({vertexColors}) per family keeps draw calls low. */
+import * as THREE from 'three';
+
+const can = document.getElementById('c'), R = new THREE.WebGLRenderer({ canvas:can, antialias:true, preserveDrawingBuffer:true });
+R.setPixelRatio(1.5); R.setSize(720, 960, false); R.outputColorSpace = THREE.SRGBColorSpace;
+R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.shadowMap.enabled = true; R.shadowMap.type = THREE.VSMShadowMap;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 3/4, .1, 200);
+cam.position.set(21, 19, 27); cam.lookAt(0, 3.4, .5);
+
+/* sky: vertical gradient on a big back-sphere (no texture) */
+{ const g = new THREE.SphereGeometry(80, 32, 16), c = [], top = new THREE.Color('#9fd3f0'), bot = new THREE.Color('#fbe7c6');
+  const P = g.attributes.position; for (let i = 0; i < P.count; i++){ const t = THREE.MathUtils.smoothstep(P.getY(i), -25, 12); const k = bot.clone().lerp(top, t); c.push(k.r, k.g, k.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); scene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.BackSide, fog:false }))); }
+scene.fog = new THREE.Fog('#f3e6cf', 60, 120);
+scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x8a6a48, 1.1));
+const sun = new THREE.DirectionalLight(0xfff0d8, 2.6); sun.position.set(-10, 18, 8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.radius = 6; sun.shadow.blurSamples = 16; sun.shadow.bias = -.0004; Object.assign(sun.shadow.camera, { left:-14, right:14, top:14, bottom:-14, far:60 }); scene.add(sun);
+
+let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+const VC = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.85, metalness:0 });
+
+/** lumpy blob: radius r (sx,sy,sz squash), colours lo→hi, bump amplitude A, frequency f */
+function blob(r, lo, hi, A = .14, f = 1.6, sq = [1, 1, 1]){
+  const g = new THREE.SphereGeometry(r, 48, 32),   /* indexed → smooth normals after displacement */
+     P = g.attributes.position, c = [], L = new THREE.Color(lo), H = new THREE.Color(hi), v = new THREE.Vector3(), ph = [rnd()*6, rnd()*6, rnd()*6];
+  for (let i = 0; i < P.count; i++){
+    v.fromBufferAttribute(P, i); const n = v.clone().normalize();
+    const noise = (Math.sin(n.x*f*3 + ph[0]) + Math.sin(n.y*f*3.7 + ph[1]) + Math.sin(n.z*f*2.9 + n.x*2 + ph[2])) / 3;
+    v.multiplyScalar(1 + A*noise); v.set(v.x*sq[0], v.y*sq[1], v.z*sq[2]); P.setXYZ(i, v.x, v.y, v.z);
+    const t = THREE.MathUtils.smoothstep(n.y + noise*.25, -.6, .9), k = L.clone().lerp(H, t); k.offsetHSL((rnd()-.5)*.01, 0, (rnd()-.5)*.03); c.push(k.r, k.g, k.b);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, VC); m.castShadow = m.receiveShadow = true; return m;
+}
+/** tapered, bent trunk from y=0 to h: radius r0→r1, bend b (x += b·(y/h)²), bark colours lo→hi with soft rings */
+function trunk(h, r0, r1, b, lo, hi, rings = 0){
+  const g = new THREE.CylinderGeometry(r1, r0, h, 48, 24), P = g.attributes.position, c = [], L = new THREE.Color(lo), H = new THREE.Color(hi);
+  for (let i = 0; i < P.count; i++){ const y = P.getY(i) + h/2, u = y/h; P.setX(i, P.getX(i) + b*u*u); P.setY(i, y);
+    const k = L.clone().lerp(H, .35 + .65*Math.max(0, P.getX(i) - b*u*u + P.getZ(i)) / (r0*1.4)); if (rings && (y*rings % 1) < .18) k.multiplyScalar(.82); c.push(k.r, k.g, k.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, VC); m.castShadow = m.receiveShadow = true; return m;
+}
+const at = (m, x, y, z) => (m.position.set(x, y, z), m);
+
+/* ---------- ground: rounded island slab + grass tufts + pebbles ---------- */
+{ const top = blob(1, '#7fbf5a', '#a7d86e', .03, 1, [11, .5, 9]); at(top, 0, -.3, 0); scene.add(top);
+  const side = trunk(1.6, 10.6, 10.9, 0, '#9b7653', '#c49a6c'); side.scale.set(1, 1, 9/11); at(side, 0, -1.9, 0); scene.add(side);
+  const tuft = (x, z) => { for (let k = 0; k < 5; k++){ const b = new THREE.Mesh(new THREE.ConeGeometry(.06, .45 + rnd()*.25, 4), new THREE.MeshStandardMaterial({ color:k%2 ? '#6aa84f' : '#8ccf62', roughness:1 }));
+      b.position.set(x + (rnd()-.5)*.3, .35, z + (rnd()-.5)*.3); b.rotation.set((rnd()-.5)*.6, 0, (rnd()-.5)*.6); scene.add(b); } };
+  for (let k = 0; k < 40; k++){ const a = rnd()*6.28, r = 2 + rnd()*7.5; tuft(Math.cos(a)*r, Math.sin(a)*r*.78); }
+  for (let k = 0; k < 14; k++){ const a = rnd()*6.28, r = 3 + rnd()*7; const p = blob(.18 + rnd()*.2, '#9a948c', '#d8d2c8', .2, 2, [1, .6, 1]); at(p, Math.cos(a)*r, .2, Math.sin(a)*r*.78); scene.add(p); }
+  const path = blob(1, '#d9b98a', '#efd8ad', .02, 1, [1.4, .08, 6]); at(path, 1.6, .22, 3.8); path.rotation.y = .5; scene.add(path); }
+
+/* ① ต้นจามจุรี / ก้ามปู — wide umbrella canopy: 9 blobs on an ellipse + 3 on top, short bent trunk with 3 limbs */
+function rainTree(x, z){
+  const g = new THREE.Group(); g.position.set(x, .25, z);
+  g.add(trunk(2.6, .42, .26, .3, '#6b4a33', '#a07752'));
+  for (const [a, l] of [[.5, 1.8], [2.6, 1.6], [4.4, 1.7]]){ const b = trunk(l, .16, .08, .35, '#6b4a33', '#a07752'); b.position.set(.25, 2.0, 0); b.rotation.set(Math.sin(a)*.8, 0, Math.cos(a)*.8); g.add(b); }
+  for (let k = 0; k < 9; k++){ const a = k/9*Math.PI*2; g.add(at(blob(1.1 + rnd()*.3, '#3f7f3a', '#9fd26a', .16, 1.7, [1, .72, 1]), Math.cos(a)*1.9 + .3, 3.1 + rnd()*.3, Math.sin(a)*1.6)); }
+  for (let k = 0; k < 3; k++) g.add(at(blob(1.2, '#4f9a45', '#b7e07a', .14, 1.6, [1, .7, 1]), (k - 1)*1.1 + .3, 3.9, (rnd()-.5)*1));
+  scene.add(g);
+}
+/* ② สน — 4 stacked lumpy cones (blob squashed into a cone by y-scaling the lower half) */
+function pine(x, z, s = 1){
+  const g = new THREE.Group(); g.position.set(x, .25, z); g.scale.setScalar(s);
+  g.add(trunk(1.4, .22, .16, 0, '#5d3f2b', '#8a6142'));
+  for (let k = 0; k < 4; k++){ const r = 1.35 - k*.27, c = blob(r, '#24563a', '#5fa864', .1, 2.4, [1, .9, 1]);
+    const P = c.geometry.attributes.position; for (let i = 0; i < P.count; i++){ const y = P.getY(i); if (y > 0) { const t = y/r; P.setX(i, P.getX(i)*(1 - t*.85)); P.setZ(i, P.getZ(i)*(1 - t*.85)); P.setY(i, y*1.25); } }
+    c.geometry.computeVertexNormals(); g.add(at(c, 0, 1.4 + k*.85, 0)); }
+  scene.add(g);
+}
+/* ③ มะพร้าว — segmented curved trunk with rings, 8 drooping fronds (strip of leaflets along a quadratic curve), 3 coconuts */
+function coconut(x, z){
+  const g = new THREE.Group(); g.position.set(x, .25, z); const h = 5.2, b = -1.1;
+  g.add(trunk(h, .26, .18, b, '#8a6a4a', '#c8a77c', 2.2));
+  const top = new THREE.Vector3(b, h, 0), leafM = new THREE.MeshStandardMaterial({ color:'#5fae4a', roughness:.8, side:THREE.DoubleSide }), leafD = new THREE.MeshStandardMaterial({ color:'#3f8a3a', roughness:.8, side:THREE.DoubleSide });
+  /* frond = one ribbon mesh: centre line p(u) = dir·u·len + up·(.7u − 1.9u²) (rises then droops),
+     half-width w(u) = .62·sin(πu)^.6, serrated ×(1 | .55) on alternate rings, edges folded down .18·w (V-shaped midrib) */
+  const LG = new THREE.Color('#7cc456'), DG = new THREE.Color('#2f7a34');
+  for (let f = 0; f < 9; f++){ const a = f/9*Math.PI*2 + .2, dir = new THREE.Vector3(Math.cos(a), 0, Math.sin(a)), side = new THREE.Vector3(-dir.z, 0, dir.x), len = 2.7 + rnd()*.7, N = 28;
+    const pos = [], col = [], idx = [];
+    for (let k = 0; k <= N; k++){ const u = k/N, c = top.clone().addScaledVector(dir, u*len); c.y += .7*u - 1.9*u*u;
+      const w = .62*Math.pow(Math.sin(Math.PI*Math.min(.98, u + .02)), .6)*(k%2 ? 1 : .55);
+      for (const s2 of [-1, 0, 1]){ const v = c.clone().addScaledVector(side, s2*w); v.y -= s2 ? .18*w + .04 : 0; pos.push(v.x, v.y, v.z);
+        const t = s2 ? .25 : 1, k2 = DG.clone().lerp(LG, t*(1 - u*.3)); col.push(k2.r, k2.g, k2.b); }
+      if (k < N){ const o = k*3; idx.push(o, o+1, o+3, o+1, o+4, o+3, o+1, o+2, o+4, o+2, o+5, o+4); } }
+    const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); fg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); fg.setIndex(idx); fg.computeVertexNormals();
+    const fm = new THREE.Mesh(fg, new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.75, side:THREE.DoubleSide })); fm.castShadow = true; g.add(fm); }
+  for (let k = 0; k < 3; k++) g.add(at(blob(.2, '#4a6a2a', '#8aa84a', .05, 1), b + Math.cos(k*2.1)*.22, h - .25, Math.sin(k*2.1)*.22));
+  scene.add(g);
+}
+/* ④ ราชพฤกษ์ (golden shower) — airy green canopy + hanging yellow flower chains (catenary-ish, 7–10 beads each) */
+function goldenShower(x, z){
+  const g = new THREE.Group(); g.position.set(x, .25, z);
+  g.add(trunk(2.4, .3, .2, -.2, '#6b4a33', '#9d7450'));
+  const crown = []; for (let k = 0; k < 7; k++){ const a = k/7*6.28, p = new THREE.Vector3(Math.cos(a)*1.2 - .2, 3.2 + rnd()*.6, Math.sin(a)*1.1); crown.push(p);
+    g.add(at(blob(.95 + rnd()*.25, '#4e8a3a', '#a6cf62', .2, 2, [1, .8, 1]), p.x, p.y, p.z)); }
+  g.add(at(blob(1.1, '#5a9a44', '#b6db72', .18, 2, [1, .8, 1]), -.2, 4.1, 0));
+  const yel = [new THREE.MeshStandardMaterial({ color:'#ffd23f', roughness:.6, emissive:'#5a4200' }), new THREE.MeshStandardMaterial({ color:'#ffe680', roughness:.6, emissive:'#5a4a10' })], bead = new THREE.SphereGeometry(1, 10, 8);
+  for (let c = 0; c < 26; c++){ const p = crown[c % crown.length], a = rnd()*6.28, r = .7 + rnd()*.4, x0 = p.x + Math.cos(a)*r, z0 = p.z + Math.sin(a)*r, y0 = p.y - .55, n = 7 + (rnd()*4|0);
+    for (let k = 0; k < n; k++){ const s = .11*(1 - k/n*.6); const m = new THREE.Mesh(bead, yel[k%2]); m.scale.set(s, s*1.2, s); m.position.set(x0 + Math.sin(k*.7)*.04, y0 - k*.15, z0); m.castShadow = k%3 === 0; g.add(m); } }
+  scene.add(g);
+}
+rainTree(-3.6, -2.8); pine(4.2, -3.6, 1.05); pine(6.4, -1.2, .75); coconut(5.6, 3.2); goldenShower(-4.2, 3.4);
+/* a few bushes + flowers to show scale */
+for (const [x, z] of [[-0.5, -5.5], [2.2, -5.8], [-7.2, .4], [0.4, 1.4]]){ const b = blob(.55 + rnd()*.2, '#3f7f3a', '#9fd26a', .22, 2.2, [1.2, .8, 1]); at(b, x, .55, z); scene.add(b); }
+for (let k = 0; k < 18; k++){ const a = rnd()*6.28, r = 3 + rnd()*6, f = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6), new THREE.MeshStandardMaterial({ color:['#ff7a9a', '#ffffff', '#ffd23f', '#b78cf2'][k%4] })); f.position.set(Math.cos(a)*r, .55, Math.sin(a)*r*.78); scene.add(f); }
+
+R.render(scene, cam); window.READY = 1;
+</script></body></html>

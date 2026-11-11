@@ -101,20 +101,127 @@ export function start(){
   const pickables = [];                                        // meshes/groups with userData.tile
   function markTile(o, gc, gr){ o.userData.tile = [gc, gr]; o.traverse(m => { m.userData.tile = [gc, gr]; }); }
 
-  function resModel(k, seed, i){
+  /* ---------- 🌳 v0.43 SOFT-CLAY FOLIAGE (designer picked Claude's "soft clay diorama" tree style, tools/tree-lab.html) ----------
+     Blob = indexed sphere (smooth normals survive displacement), pushed along its normal by smooth sine noise:
+         r' = 1 + A·n,   n = ( sin(3f·n̂x + φ1) + sin(3.7f·n̂y + φ2) + sin(2.9f·n̂z + 2n̂x + φ3) ) / 3
+     then squashed by sq = [sx, sy, sz]; optional cone taper for pines: y > 0 → x,z ×(1 − .85t), y ×1.25 (t = y).
+     Vertex colour bakes a top light:  c = mix(lo, hi, smoothstep(−.6, .9, n̂y + .25n)) ± tiny jitter
+     → the canopy reads as round even in eco mode (no shadows). Geometries are generated ONCE per variant and
+     shared by every tree (cache FOLG); one material VCM for all foliage + bark → no per-tree allocation. */
+  const VCM = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.85, metalness:0 });
+  const FOLG = new Map();
+  const lcg = s0 => { let s1 = s0 | 0 || 1; return () => (s1 = (s1*16807) % 2147483647) / 2147483647; };
+  function blobGeo(key, lo, hi, A, f, sq, cone){
+    if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), g = new THREE.SphereGeometry(1, 24, 16), P = g.attributes.position, col = new Float32Array(P.count*3);
+    const L = new THREE.Color(lo), H = new THREE.Color(hi), k = new THREE.Color(), v = new THREE.Vector3(), n = new THREE.Vector3(), ph = [r()*6, r()*6, r()*6];
+    for (let i = 0; i < P.count; i++){
+      n.fromBufferAttribute(P, i).normalize();
+      const nz = (Math.sin(n.x*f*3 + ph[0]) + Math.sin(n.y*f*3.7 + ph[1]) + Math.sin(n.z*f*2.9 + n.x*2 + ph[2])) / 3;
+      v.copy(n).multiplyScalar(1 + A*nz); v.set(v.x*sq[0], v.y*sq[1], v.z*sq[2]);
+      if (cone && v.y > 0){ const t = Math.min(1, v.y); v.x *= 1 - t*.85; v.z *= 1 - t*.85; v.y *= 1.25; }
+      P.setXYZ(i, v.x, v.y, v.z);
+      k.copy(L).lerp(H, THREE.MathUtils.smoothstep(n.y + nz*.25, -.6, .9)); k.offsetHSL((r()-.5)*.01, 0, (r()-.5)*.03);
+      col[i*3] = k.r; col[i*3+1] = k.g; col[i*3+2] = k.b;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); FOLG.set(key, g); return g;
+  }
+  function strHash3(s){ let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) % 2147483646 + 1; }
+  /** tapered bent trunk, base at y = 0: radius r0 → r1, x += b·(y/h)²; bark lit side lighter; optional rings (palm) */
+  function trunkGeo(key, h, r0, r1, b, lo, hi, rings){
+    if (FOLG.has(key)) return FOLG.get(key);
+    const g = new THREE.CylinderGeometry(r1, r0, h, 14, 12), P = g.attributes.position, col = new Float32Array(P.count*3), L = new THREE.Color(lo), H = new THREE.Color(hi), k = new THREE.Color();
+    for (let i = 0; i < P.count; i++){ const x0 = P.getX(i), z0 = P.getZ(i), y = P.getY(i) + h/2, u = y/h;
+      P.setXYZ(i, x0 + b*u*u, y, z0);
+      k.copy(L).lerp(H, THREE.MathUtils.clamp(.35 + .65*(x0 + z0)/(r0*1.4), 0, 1)); if (rings && (y*rings % 1) < .2) k.multiplyScalar(.8);
+      col[i*3] = k.r; col[i*3+1] = k.g; col[i*3+2] = k.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); FOLG.set(key, g); return g;
+  }
+  /** palm frond ribbon along +x from the origin: centre p(u) = (u·len, .45u − 1.2u², 0), half-width w(u) = .38·sin(πu)^.6 ×(1 | .55) serrated, edges folded down .18w */
+  function frondGeo(){
+    if (FOLG.has('frond')) return FOLG.get('frond');
+    const N = 18, len = 1.6, pos = [], col = [], idx = [], LG = new THREE.Color('#7cc456'), DG = new THREE.Color('#2f7a34'), k = new THREE.Color();
+    for (let i = 0; i <= N; i++){ const u = i/N, cx = u*len, cy = .45*u - 1.2*u*u, w = .38*Math.pow(Math.sin(Math.PI*Math.min(.98, u + .02)), .6)*(i%2 ? 1 : .55);
+      for (const s2 of [-1, 0, 1]){ pos.push(cx, cy - (s2 ? .18*w + .03 : 0), s2*w); k.copy(DG).lerp(LG, (s2 ? .25 : 1)*(1 - u*.3)); col.push(k.r, k.g, k.b); }
+      if (i < N){ const o = i*3; idx.push(o, o+3, o+1, o+1, o+3, o+4, o+1, o+4, o+2, o+2, o+4, o+5); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals(); FOLG.set('frond', g); return g;
+  }
+  const VCM2 = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.8, metalness:0, side:THREE.DoubleSide });
+  /** merge [geometry, x, y, z, sx, sy, sz, rotY, rotZ, tint?] parts into ONE cached geometry (position, normal, color, index)
+      → each tree is 2 draw calls (bark + crown) whatever its leaf count. tint = solid colour for parts without vertex colours. */
+  const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _n3 = new THREE.Matrix3();
+  function mergeGeo(key, parts){
+    if (FOLG.has(key)) return FOLG.get(key);
+    let nv = 0, ni = 0; for (const [g] of parts){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+    const pos = new Float32Array(nv*3), nor = new Float32Array(nv*3), col = new Float32Array(nv*3), idx = new Uint32Array(ni), v = new THREE.Vector3(), tc = new THREE.Color();
+    let o = 0, oi = 0;
+    for (const [g, x, y, z, sx, sy, sz, ry = 0, rz = 0, tint] of parts){
+      _m4.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, ry, rz)), _s.set(sx, sy, sz)); _n3.getNormalMatrix(_m4);
+      const P = g.attributes.position, N = g.attributes.normal, Cc = g.attributes.color; if (tint) tc.set(tint);
+      for (let i = 0; i < P.count; i++){ v.fromBufferAttribute(P, i).applyMatrix4(_m4); pos.set([v.x, v.y, v.z], (o + i)*3);
+        v.fromBufferAttribute(N, i).applyMatrix3(_n3).normalize(); nor.set([v.x, v.y, v.z], (o + i)*3);
+        if (tint || !Cc) col.set([tc.r, tc.g, tc.b], (o + i)*3); else col.set([Cc.getX(i), Cc.getY(i), Cc.getZ(i)], (o + i)*3); }
+      if (g.index) for (let i = 0; i < g.index.count; i++) idx[oi++] = g.index.getX(i) + o; else for (let i = 0; i < P.count; i++) idx[oi++] = i + o;
+      o += P.count; }
+    const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(pos, 3)); m.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    m.setAttribute('color', new THREE.BufferAttribute(col, 3)); m.setIndex(new THREE.BufferAttribute(idx, 1)); m.computeBoundingSphere(); FOLG.set(key, m); return m;
+  }
+  const LEAF = ['#3f7f3a', '#9fd26a'], LEAF2 = ['#4f9a45', '#b7e07a'], PINE = ['#24563a', '#5fa864'], GOLDL = ['#4e8a3a', '#a6cf62'];
+  const BEAD = new THREE.SphereGeometry(1, 8, 6);
+  /* tree kinds (one tile = 2 units; canopy ≈ 2.4 wide, top ≈ 3.2 high, like the old trees so picking/shadows still fit):
+     round = จามจุรี-style umbrella • pine = 3 tapered tiers • palm = curved ringed trunk + 7 fronds • golden = ราชพฤกษ์ with hanging yellow chains.
+     Layout of each (kind, variant v ∈ 0..2) comes from lcg(key) → cached; per-tree variety = the tile's random yaw + scale .9–1.1. */
+  function crownGeo(kind, v){
+    const key = `crown_${kind}${v}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), parts = [];
+    if (kind === 'pine') [[.95, .9], [.75, 1.55], [.55, 2.15]].forEach(([s2, y], k) => parts.push([blobGeo(`p${v}${k}`, PINE[0], PINE[1], .1, 2.4, [1, .9, 1], true), 0, y, 0, s2, s2, s2]));
+    else if (kind === 'palm'){ const b = -.35 - v*.08, top = 2.7;
+      for (let f = 0; f < 7; f++) parts.push([frondGeo(), b, top, 0, 1, 1, 1, f/7*Math.PI*2 + r(), (r() - .5)*.25]);
+      for (let k = 0; k < 3; k++) parts.push([blobGeo('nut', '#4a6a2a', '#8aa84a', .05, 1, [1, 1, 1]), b + Math.cos(k*2.1)*.13, top - .14, Math.sin(k*2.1)*.13, .12, .12, .12]); }
+    else { const gold = kind === 'golden', P = gold ? GOLDL : LEAF, ring = gold ? 4 : 5, rad = gold ? .55 : .7, top = [], a0 = r()*6.28;
+      for (let k = 0; k < ring; k++){ const a = k/ring*Math.PI*2 + a0, x = Math.cos(a)*rad, z = Math.sin(a)*rad*.9, y = 1.95 + r()*.2, sc = .62 + r()*.12; top.push([x, y, z]);
+        parts.push([blobGeo(`r${gold ? 'g' : ''}${v}${k%3}`, P[0], P[1], gold ? .2 : .16, gold ? 2 : 1.7, [1, .74, 1]), x, y, z, sc, sc, sc]); }
+      parts.push([blobGeo(`rt${gold ? 'g' : ''}${v}`, LEAF2[0], LEAF2[1], .14, 1.6, [1, .72, 1]), 0, 2.5, 0, .72, .72, .72]);
+      if (gold) for (let c = 0; c < 8; c++){ const [x, y, z] = top[c % ring], a = r()*6.28, x0 = x + Math.cos(a)*.45, z0 = z + Math.sin(a)*.45;   // hanging chains: 5 beads, shrinking
+        for (let k = 0; k < 5; k++){ const s2 = .075*(1 - k*.12); parts.push([BEAD, x0, y - .3 - k*.11, z0, s2, s2*1.2, s2, 0, 0, k%2 ? '#ffe680' : '#ffd23f']); } } }
+    return mergeGeo(key, parts);
+  }
+  function clayTree(g, kind, h){
+    const v = (h(60)*3)|0;
+    const bark = kind === 'pine' ? trunkGeo('tp', .8, .16, .11, 0, '#5d3f2b', '#8a6142') : kind === 'palm' ? trunkGeo(`tc${v}`, 2.7, .17, .12, -.35 - v*.08, '#8a6a4a', '#c8a77c', 2.6)
+             : trunkGeo(`tr${v}`, 1.5, .2, .13, (v - 1)*.15, '#6b4a33', '#a07752');
+    const sc = .9 + h(61)*.2;                                    // size on the meshes, not the group (hit wobble resets group scale to 1)
+    add(g, bark, VCM, 0, 0, 0, sc, sc, sc, true);
+    add(g, crownGeo(kind, v), kind === 'palm' ? VCM2 : VCM, 0, 0, 0, sc, sc, sc, true);
+  }
+  function clayBush(g, h){ g.add(new THREE.Mesh(bushGeo((h(60)*3)|0), VCM)); g.children[0].castShadow = true; g.children[0].receiveShadow = true; }
+  function bushGeo(v){ return mergeGeo(`bush${v}`, [
+    [blobGeo(`b${v}0`, LEAF[0], LEAF[1], .22, 2.2, [1.2, .8, 1]), -.15, .45, 0, .5, .5, .5],
+    [blobGeo(`b${v}1`, LEAF2[0], LEAF2[1], .22, 2.2, [1, .8, 1]), .3, .38, .2, .4, .4, .4],
+    [blobGeo(`b${v}2`, LEAF2[0], LEAF2[1], .2, 2, [1, .85, 1]), 0, .72, .05, .32, .32, .32] ]); }
+  const saplingGeo = () => mergeGeo('sapling', [
+    [trunkGeo('ts', .55, .05, .035, .04, '#6b4a33', '#a07752'), 0, 0, 0, 1, 1, 1],
+    [blobGeo('s0', LEAF[0], LEAF[1], .18, 2, [1, .85, 1]), .04, .62, 0, .3, .3, .3],
+    [blobGeo('s1', LEAF2[0], LEAF2[1], .2, 2, [1, .85, 1]), -.12, .5, .08, .2, .2, .2] ]);
+  function resModel(k, seed, i, bio){
     const g = new THREE.Group(), h = n => hrnd(seed, i, n);
     switch (k){
       case 'grass': for (let n=0;n<6;n++) CO(g, .07, .45+h(n)*.35, n%2 ? C.grassD : '#7dbb69', (h(n+10)-.5)*1.1, 0, (h(n+20)-.5)*1.1); break;
       case 'wild':  for (let n=0;n<4;n++) CO(g, .06, .4+h(n)*.3, C.grassD, (h(n+10)-.5)*.9, 0, (h(n+20)-.5)*.9);
                     for (let n=0;n<3;n++) flower(g, (h(n+30)-.5)*1.1, (h(n+40)-.5)*1.1, FLOWER[(n+i)%5], 1 + h(n+50)*.3); break;
-      case 'sapling': CY(g, .05, .5, C.trunk, 0, 0, 0); CO(g, .35, .8, C.leaf, 0, .4, 0, true); break;
+      case 'sapling': add(g, saplingGeo(), VCM, 0, 0, 0, null, null, null, true); break;   // 🌱 v0.43 clay sapling (1 draw call)
       case 'pebble': for (let n=0;n<3;n++) BALL(g, .22, .14, .2, C.rock, (h(n)-.5)*.9, .08, (h(n+5)-.5)*.9); break;
       case 'rock':  BALL(g, .7, .5, .65, C.rock, -.1, .35, 0, true); BALL(g, .35, .26, .35, '#c9c3ba', .55, .2, .35, true); break;
-      case 'bush':  BALL(g, .55, .48, .55, C.leaf2, -.2, .45, 0, true); BALL(g, .45, .4, .45, C.leaf, .35, .38, .2, true); BALL(g, .35, .32, .35, '#7cc76a', 0, .75, .1, true); break;
+      case 'bush':  clayBush(g, h); break;                       // 🌳 v0.43
       case 'boulder': BALL(g, 1.05, .8, .95, '#aaa49b', 0, .7, 0, true); BALL(g, .55, .45, .5, C.rock, .7, .35, .6, true); break;
       case 'tree':
-        if (h(77) < .55){ CY(g, .16, 1.6, C.trunk, 0, 0, 0, true); BALL(g, 1.0, 1.0, 1.0, C.leaf, 0, 2.3, 0, true); BALL(g, .55, .55, .55, '#82cf71', .45, 2.75, .3, true); }
-        else { CY(g, .15, .9, C.trunk, 0, 0, 0, true); CO(g, 1.0, 1.4, C.pine, 0, .7, 0, true); CO(g, .8, 1.2, '#5aab70', 0, 1.5, 0, true); CO(g, .55, 1.0, '#68b87c', 0, 2.25, 0, true); }
+        { /* 🌳 v0.43 kind by island biome (index.html z.bio): beach/coast → mostly palms • mount/peak → mostly pines •
+             elsewhere: round 55 % • pine 25 % • golden 12 % • palm 8 %. Old saves keep their tiles; only the look changes. */
+          const u = h(77), K = bio === 'beach' || bio === 'coast' ? (u < .7 ? 'palm' : u < .9 ? 'round' : 'golden')
+                  : bio === 'mount' || bio === 'peak' ? (u < .7 ? 'pine' : 'round')
+                  : u < .55 ? 'round' : u < .8 ? 'pine' : u < .92 ? 'golden' : 'palm';
+          clayTree(g, K, h); }
         break;
     }
     return g;
@@ -424,7 +531,7 @@ export function start(){
     for (let i=0;i<z.tiles.length;i++){
       const t = z.tiles[i], c = i%GRID, r = (i/GRID)|0, x = c*2+1, zz = r*2+1, gc = z.cx*GRID+c, gr = z.cy*GRID+r;
       let m = null;
-      if (RES[t.k]) m = resModel(t.k, z.seed, i);
+      if (RES[t.k]) m = resModel(t.k, z.seed, i, z.bio);
       else if (t.k !== 'obj'){
         const lob = (a, b) => { const n = tileAt(a, b); return !!n && (n.k !== 'water' || n.bridge); };          // land or bridge neighbour
         const ax = lob(gc-1, gr) || lob(gc+1, gr), az = lob(gc, gr-1) || lob(gc, gr+1);
