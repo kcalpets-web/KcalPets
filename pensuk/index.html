@@ -720,7 +720,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.46.0';
+const APP_VER = '0.47.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -3954,6 +3954,66 @@ function pierLesson(gc, gr){
   sheet(`📖 ${PLA.name}สอนตกปลา\n① แตะ "เหวี่ยงเบ็ด" แล้วรอ\n② ทุ่นจม ❗ → แตะดึงทันที\n③ ตอนลากปลา: กดค้างให้แถบเขียวขึ้น ปล่อยให้ลง ให้ปลาอยู่ในแถบเขียว\n④ หลอดเต็ม = ได้ปลา • ปลาตัวแรกเป็นปลาฝึก ช้ากว่าปกติ`,
     [{ label:'🎣 ลองเลย', cls:'ok', fn:() => startFishing(gc, gr) }, { label:'ไว้ก่อน', cls:'ghost' }]);
 }
+/* =====================================================================
+   📊 v0.47 WEEKLY HEALTH SUMMARY (designer confirmed 23:32)
+   Daily log S.hlog['YYYY-MM-DD'] = { rest, squat, neck, brk, stretch, walk, fight, gym, cam, all3 } — kept 56 days.
+   Fed by: addProgress (mission keys) • bump() map (brkDone, plazaStretch, gymDone, coachDone, camPlay) • liveWalk steps • fight reps • claimBonus.
+   Care minutes (one comparable number per day, rough time-on-task estimates):
+       min = rest + squat·3s + neck·30s + brk·2min + stretch·2min + walk·0.5s + fight·3s + gym·5min + cam·1min
+   Active day = min ≥ 5 or all3.  Week = Monday→Sunday (local).  Monday (first open of a new week): the guide recaps
+   LAST week in chat; ≥ 4 active days → 💗 +30 once per week (S.wkPaid[weekKey]). Data starts with this update.
+   ===================================================================== */
+const HLOG_KEEP = 56, WEEK_LOVE = 30, WEEK_ACTIVE = 4;
+const HLOG_BUMP = { brkDone:'brk', plazaStretch:'stretch', gymDone:'gym', coachDone:'gym', camPlay:'cam' };
+const HL_NAMES = { rest:['📵','พักจอ','นาที'], squat:['🏋️','ลุกนั่ง','ครั้ง'], neck:['🙆','บริหารคอ','รอบ'], brk:['🧘','ลุกพักระหว่างวัน','ครั้ง'],
+  stretch:['🌅','ยืดเหยียดตอนเช้า','วัน'], walk:['🚶','พาสัตว์เดินเล่น','ก้าว'], fight:['⚔️','ท่าสู้อสูร','ครั้ง'], gym:['🏋️','ฝึกที่ยิม','รอบ'], cam:['📷','มินิเกมกล้อง','รอบ'] };
+const dKey = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+function hlogAdd(k, n){
+  S.hlog = S.hlog || {}; const d = dKey(new Date()), e = S.hlog[d] || (S.hlog[d] = {}); e[k] = (e[k] || 0) + (n == null ? 1 : n);
+  const keys = Object.keys(S.hlog); if (keys.length > HLOG_KEEP) keys.sort().slice(0, keys.length - HLOG_KEEP).forEach(x => delete S.hlog[x]);
+}
+const careMin = e => !e ? 0 : (e.rest||0) + (e.squat||0)*3/60 + (e.neck||0)*.5 + (e.brk||0)*2 + (e.stretch||0)*2 + (e.walk||0)*.5/60 + (e.fight||0)*3/60 + (e.gym||0)*5 + (e.cam||0);
+const activeDay = e => !!e && (careMin(e) >= 5 || !!e.all3);
+/** Monday of the week containing d (local), shifted by w weeks */
+function weekStart(w = 0, d = new Date()){ const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - (m.getDay() + 6) % 7 + 7*w); return m; }
+function weekData(w){
+  const s = weekStart(w), days = [];
+  for (let i = 0; i < 7; i++){ const d = new Date(s); d.setDate(s.getDate() + i); const k = dKey(d), e = (S.hlog || {})[k]; days.push({ k, d, e, min:careMin(e), act:activeDay(e) }); }
+  const tot = {}; for (const x of days) if (x.e) for (const [k, v] of Object.entries(x.e)) if (HL_NAMES[k]) tot[k] = (tot[k] || 0) + v;
+  return { key:dKey(s), days, tot, min:days.reduce((a, x) => a + x.min, 0), act:days.filter(x => x.act).length };
+}
+const DOW = ['จ','อ','พ','พฤ','ศ','ส','อา'], DOWF = ['จันทร์','อังคาร','พุธ','พฤหัสฯ','ศุกร์','เสาร์','อาทิตย์'];
+function openWeek(w = 0){
+  bump('weekOpen'); const W = weekData(w), P = weekData(w - 1), max = Math.max(5, ...W.days.map(x => x.min)), today = dKey(new Date());
+  const best = W.days.reduce((a, x) => x.min > a.min ? x : a, W.days[0]), diff = Math.round(W.min - P.min);
+  sheet(`📊 ${w ? 'สัปดาห์ก่อน' : 'สัปดาห์นี้'} (${W.days[0].d.getDate()}–${W.days[6].d.getDate()}/${W.days[6].d.getMonth()+1})\n` +
+    `ดูแลตัวเองรวม ${Math.round(W.min)} นาที • ขยับ ${W.act}/7 วัน` + (P.min || W.min ? `\n${diff >= 0 ? '↑' : '↓'} ${Math.abs(diff)} นาที เทียบสัปดาห์ก่อน` : ''),
+    [{ label: w ? 'ดูสัปดาห์นี้' : 'ดูสัปดาห์ก่อน', fn:() => openWeek(w ? 0 : -1) }, { label:'ปิด', cls:'ghost' }]);
+  const box = document.createElement('div'); box.className = 'isleMap';
+  /* bar chart: height = 100 px · min / max(5, busiest day); today outlined; active days filled green, others pale */
+  box.innerHTML = `<div style="display:flex;align-items:flex-end;gap:6px;height:130px;padding:8px 4px 0">${W.days.map((x, i) =>
+      `<div style="flex:1;text-align:center;font-size:var(--fs-xs)"><div style="font-weight:700">${x.min ? Math.round(x.min) : ''}</div>
+        <div style="height:${Math.max(4, 100*x.min/max)}px;border-radius:8px 8px 4px 4px;background:${x.act ? '#4caf6a' : '#d8e8d0'};${x.k === today ? 'outline:2px solid #e8913a;' : ''}"></div>
+        <div style="margin-top:4px">${DOW[i]}</div></div>`).join('')}</div>
+    <div class="muted" style="font-size:var(--fs-xs);text-align:center;margin:4px 0 8px">นาทีดูแลตัวเองต่อวัน • สีเขียว = วันที่ขยับ (≥ 5 นาที หรือครบ 3 ภารกิจ)${best.min ? ` • ดีที่สุด: วัน${DOWF[W.days.indexOf(best)]}` : ''}</div>
+    <div class="card" style="padding:10px">${Object.keys(HL_NAMES).filter(k => W.tot[k]).map(k => { const [ic, n, u] = HL_NAMES[k];
+      return `<div class="mrow" style="font-size:var(--fs-sm)"><span>${ic} ${n}</span><b>${Math.round(W.tot[k]).toLocaleString()} ${u}</b></div>`; }).join('') ||
+      '<div class="muted">ยังไม่มีข้อมูลสัปดาห์นี้ ลองทำภารกิจหรือลุกพักสักครั้งนะ</div>'}</div>`;
+  $('mbody').after(box);
+}
+/** Monday recap (first open in a new week): guide bubble + love bonus for ≥ WEEK_ACTIVE active days */
+function weekRecapTick(){
+  const wk = dKey(weekStart(0)); if (S.wkSeen === wk) return; const first = !S.wkSeen; S.wkSeen = wk; save();
+  if (first) return;                                            // first run after the update: nothing logged last week yet
+  const P = weekData(-1); if (!P.min && !P.act) return;
+  S.wkPaid = S.wkPaid || {}; let bonus = '';
+  if (P.act >= WEEK_ACTIVE && !S.wkPaid[P.key]){ S.wkPaid[P.key] = 1; bonus = ` รับ 💗 +${gainLove(WEEK_LOVE)} ไปเลย!`; save(); refreshHeader(); }
+  const best = P.days.reduce((a, x) => x.min > a.min ? x : a, P.days[0]), weak = Object.keys(HL_NAMES).filter(k => ['rest','squat','neck'].includes(k)).sort((a, b) => (P.tot[a]||0) - (P.tot[b]||0))[0];
+  const txt = `📊 สัปดาห์ที่แล้วเราขยับกัน ${P.act} วัน วัน${DOWF[P.days.indexOf(best)]}เยอะสุด!${bonus} สัปดาห์นี้ลอง${HL_NAMES[weak][1]}เพิ่มอีกวันนะ`;
+  S.wkMsg = txt; save();                                        // also kept for the next chat open (a quest bubble may replace this one)
+  guideSay(txt + ' — แตะดูกราฟ');
+  $('gBub').onclick = () => { $('gBub').style.display = 'none'; openWeek(-1); };
+}
 /* 🏪 v0.46 TOWN PLAZA (designer confirmed: "ลานปูอิฐ น้ำพุกลาง แผง 3 แผง • ตั้งแผงขายไข่ นม ผัก ได้ราคาดีกว่าร้าน •
    ทุกเช้ายืดเหยียดหมู่กับโค้ช"). Blueprint cell (0,−1) = SPIRAL index 7 → unlocks with zone 8 (Lv.8). 3×3, centred in the zone.
    🧺 market: any farm good at ⌊SELL·1.2⌋, at most MKT_CAP items per day (S.mkt = {day, n}) so the shop economy stays intact.
@@ -4059,7 +4119,9 @@ function petMakeover(){
 const LIVE = {
   coop:    { an:'ไก่', e:'🐔', cap:4, price:600,  out:'egg',  oe:'🥚', sec:7200,  walk:'พาไก่ออกไปคุ้ยดิน' },
   cowshed: { an:'วัว', e:'🐄', cap:2, price:2500, out:'milk', oe:'🥛', sec:14400, walk:'จูงวัวไปเล็มหญ้า' } };
-const LIVE_STEPS = 40;
+const LIVE_STEPS = 40, WALK_LOVE = 10;
+/* 🚶 v0.47 optional daily mission: first animal walk of the day → 💗 +WALK_LOVE (a real health action) */
+function walkBonus(){ if (S.walkBonusDay === todayKey()) return; S.walkBonusDay = todayKey(); const g = gainLove(WALK_LOVE); refreshHeader(); renderMissions(); queueReward(`🚶 ภารกิจเสริมสำเร็จ: พาสัตว์เดินเล่น\n💗 +${g}`); }
 const liveOf = o => (o.live = o.live || { n:0, end:0, boost:0, walk:'' });
 function liveStore(o){ if (!o.live || !o.live.n) return; S.liveKeep = S.liveKeep || {}; S.liveKeep[o.type] = (S.liveKeep[o.type] || 0) + o.live.n; }
 function liveUnstore(o){ const k = (S.liveKeep || {})[o.type]; if (!LIVE[o.type] || !k) return; const n = Math.min(k, LIVE[o.type].cap); liveOf(o).n = n; S.liveKeep[o.type] -= n; }
@@ -4092,7 +4154,7 @@ async function liveWalk(z, o){
   $('gym').style.display = 'block'; $('gTitle').textContent = `🚶 ${L.walk}`;
   G = { id:'live', name:'', steps:[{ k:'steps', n, name:`🚶 ${L.walk}`, tip:'ย่ำเท้าหรือเดินอยู่กับที่ ถือมือถือไว้ที่อก' }], i:-1, sensor:ok, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0,
     cb:tot => { $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; if (tot < n*.5) return sheet(`ยังเดินไม่ครบเลย (${tot}/${n} ก้าว) ลองใหม่อีกครั้งนะ`, OK);
-      v.walk = todayKey(); v.boost = 1; bump('liveWalk'); gainExp(EXP.harvest); save(); markDirty(z); sfx('coin');
+      v.walk = todayKey(); v.boost = 1; bump('liveWalk'); hlogAdd('walk', tot); walkBonus(); gainExp(EXP.harvest); save(); markDirty(z); sfx('coin');
       reward(`🚶 ${L.walk} ${tot} ก้าว\n${L.e} อารมณ์ดี! รอบนี้ได้${MAT[L.out].split(' ')[1]} ×2\n⭐ Exp +${EXP.harvest}`); } };
   gymNext(); clearInterval(exT); exT = setInterval(gymTick, 50);
 }
@@ -4451,7 +4513,7 @@ function petPlay(){
    so actions done early still count. Reward = coins (+Exp / items).
    ===================================================================== */
 const st = k => (S.stats && S.stats[k]) || 0;
-function bump(k, n){ S.stats = S.stats || {}; S.stats[k] = (S.stats[k]||0) + (n||1); questDirty = true; }
+function bump(k, n){ S.stats = S.stats || {}; S.stats[k] = (S.stats[k]||0) + (n||1); questDirty = true; if (HLOG_BUMP[k]) hlogAdd(HLOG_BUMP[k], n || 1); }   // 📊 v0.47 daily log
 const starterDone = () => S.farm.zones.some(z => z.objs.some(o => o.type==='starter' && o.done));
 const plotsDone   = () => S.farm.zones.reduce((n,z) => n + z.objs.filter(o => o.type==='plot' && o.done).length, 0);
 function has2x2Clear(){
@@ -4479,6 +4541,8 @@ const QUESTS = [
     text:'(Lv.15) เปิดแผนที่เกาะ → พื้นที่ 🛝 ทางใต้ของบ้าน → แตะสนามเด็กเล่น → 🎾 โยนบอลให้น้อง แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว', reward:{coins:100} },
   { id:'petShop', name:'แวะร้านสัตว์เลี้ยงป้านวล',    need:1, goal:() => st('petSkin'),
     text:'(Lv.19) เปิดแผนที่เกาะ → พื้นที่ 🐾 ทางตะวันตกของบ้าน → เข้าร้านสัตว์เลี้ยง → 🎨 แต่งน้องฟรี เลือกพันธุ์ สีขน และลาย', reward:{coins:150} },
+  { id:'weekTry', name:'ดูสรุปสุขภาพรายสัปดาห์',     need:1, goal:() => st('weekOpen') ? 1 : 0,
+    text:'หน้า 🎯 ภารกิจ → 📊 สรุปสุขภาพสัปดาห์นี้ (หรือในกระเป๋า) ดูกราฟ 7 วันว่าเราขยับไปเท่าไร • ทุกวันจันทร์เป็นสุขจะสรุปให้ฟังในแชท', reward:{coins:100} },
   { id:'plazaTry', name:'ตลาดนัดลานกลางเมือง',       need:1, goal:() => st('mktSell') || st('plazaStretch') ? 1 : 0,
     text:'(Lv.8) เปิดแผนที่เกาะ → 🏪 ลานกลางเมือง (เหนือบ้าน) → 🧺 ขายของที่แผงได้ราคาดีกว่าร้าน หรือ 🧘 ยืดเหยียดกับโค้ชตอนเช้า', reward:{coins:200} },
   { id:'liveTry', name:'ไข่ฟองแรกจากเล้าไก่',        need:1, goal:() => st('live_egg') ? 1 : 0,
@@ -4782,6 +4846,7 @@ function guideSay(text){
 }
 function guideTick(){
   const now = Date.now(), dt = gbLast ? Math.min(2000, now - gbLast) : 0; gbLast = now;
+  if (S && S.pet && S.missions && !gbHideAt) weekRecapTick();   // 📊 v0.47 Monday recap (no-op once seen this week)
   if (gbHideAt && now > gbHideAt){ $('gBub').style.display = 'none'; gbHideAt = 0; }
   if (!S || !S.pet || document.visibilityState !== 'visible' || !$('sMain').classList.contains('on')) return;
   gbPlay += dt; if (gbPlay < gbNext) return;
@@ -4813,6 +4878,7 @@ function openCheckin(auto){
   ciQ = ciTopics(); ciHits = 0; ciDone = [];
   show('sChat'); $('chatStep').textContent = '🐶'; renderChatQuest(); const box = $('chatIn'); box.innerHTML = ''; $('chatLog').innerHTML = ''; $('chatLog').appendChild(box);
   const h = new Date().getHours(), hi = h < 11 ? 'อรุณสวัสดิ์' : h < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+  if (S.wkMsg){ const t = S.wkMsg; delete S.wkMsg; save(); setTimeout(() => { bubble(t, 'bot'); ciChips([{ label:'📊 ดูกราฟสัปดาห์ที่แล้ว', fn:() => openWeek(-1) }]); }, 200); }   // 📊 v0.47
   setTimeout(() => { bubble(`${hi}! 🐶 ${healthTip()}`, 'bot');
     if (ciQ.length) setTimeout(() => { bubble(`เป็นสุขขอถามสั้น ๆ ${ciQ.length} ข้อ ตอบตามจริงได้เลย ไม่มีผิดถูก`, 'bot'); ciNext(); }, 500);
     else setTimeout(() => { bubble('วันนี้เช็กอินครบแล้ว เก่งมาก! มีอะไรอยากถามเรื่องเกมไหม พิมพ์ถามได้เลยนะ', 'bot'); askLoop(); }, 500); }, 200);
@@ -5730,6 +5796,7 @@ function fmHit(mv, tot, reps){
   const m = S.fmon; if (!m) return; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต';
   let dmg = 0; if (mv.per) dmg = Math.floor(tot/mv.per); else for (let k=0;k<tot;k++) dmg += mv.dmg[0] + (Math.random()*(mv.dmg[1] - mv.dmg[0] + 1)|0);
   if (reps){ const sq = S.missions.find(x => x.key === 'squat'); if (sq) addProgress(sq, reps); }
+  hlogAdd('fight', tot);   // 📊
   m.mhp = Math.max(0, m.mhp - dmg); save(); fmRender(); if (dmg) exFx('mon', `−${dmg}`);
   $('xSay').textContent = dmg ? `${mv.name} ${tot} ครั้ง → ${dmg} ดาเมจ!` : 'ยังไม่โดนเลย ลองท่าอื่นดูนะ';
   setTimeout(() => m.mhp ? fmEnemy() : fmWin(), 1100);
@@ -6045,7 +6112,8 @@ function renderBag(){
   mo.textContent = S.monTrial ? '🧪 โหมดสู้ด้วยออกกำลังกาย (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ด้วยการออกกำลังกาย';
   mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ด้วยการออกกำลังกายแล้ว!\nอสูรนั่งนิ่งรออยู่ — โจมตีด้วยสควอทจริง ป้องกันด้วยการย่อค้าง\n(ท่าง่าย: ลุก-นั่งเก้าอี้ / พิงผนัง)\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
   const ck = document.createElement('button'); ck.className = 'btn ok'; ck.textContent = '💬 เช็กอินกับเป็นสุข'; ck.onclick = () => openCheckin(false);
-  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, v3, mv, out);
+  const wk = document.createElement('button'); wk.className = 'btn'; wk.textContent = '📊 สรุปสุขภาพรายสัปดาห์'; wk.onclick = () => openWeek(0);   // 📊 v0.47
+  L.append(...(AVATAR_ON ? [wd] : []), ck, wk, sb, v3, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -6531,7 +6599,7 @@ function yesterdayKey(){ const d = new Date(); d.setDate(d.getDate()-1); return 
 const streakNow = () => (S.streakDate === todayKey() || S.streakDate === yesterdayKey()) ? (S.streak||0) : 0;
 function claimBonus(){
   const s = S.streakDate === yesterdayKey() ? (S.streak||0) + 1 : S.streakDate === todayKey() ? (S.streak||1) : 1;
-  S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true; S.bestStreak = Math.max(S.bestStreak||0, s);
+  S.streak = s; S.streakDate = todayKey(); S.bonusClaimed = true; hlogAdd('all3', 1); S.bestStreak = Math.max(S.bestStreak||0, s);
   const lg = gainLove(LOVE_ALL_BONUS); restTired(20);
   const candle = eventOn(); if (candle){ evState().candles++; bump('candle'); }   // 🏮 v0.18: 🕯 one lucky candle per completed day
   const extra = Math.min(6, s-1)*50, chest = s % 7 === 0;
@@ -6553,6 +6621,12 @@ function renderMissions(){
   { const cb = document.createElement('button'); cb.className = 'btn ok'; cb.style.cssText = 'width:100%;margin-bottom:10px'; cb.textContent = '💬 เช็กอินกับเป็นสุข (บอกว่าทำอะไรไปแล้ว)'; cb.onclick = () => openCheckin(false); L.appendChild(cb);
     const gb = document.createElement('button'); gb.className = 'btn'; gb.style.cssText = 'width:100%;margin-bottom:10px;background:#3f9fe0;color:#fff'; gb.textContent = '🏋️ เข้ายิมโค้ชฟิต (ชุดละ 3–5 นาที • แรงเต็ม)'; gb.onclick = openGym; L.appendChild(gb); }
   renderBrkCard(L);
+  { const wb = document.createElement('button'); wb.className = 'btn'; wb.style.cssText = 'width:100%;margin-bottom:10px'; const W = weekData(0);   // 📊 v0.47
+    wb.textContent = `📊 สรุปสุขภาพสัปดาห์นี้ • ขยับ ${W.act}/7 วัน`; wb.onclick = () => openWeek(0); L.appendChild(wb); }
+  if (Object.keys(LIVE).some(t => S.farm.zones.some(z => z.objs.some(o => o.type === t && o.done && o.live && o.live.n)))){   // 🚶 v0.47 optional walk mission
+    const ok = S.walkBonusDay === todayKey(), c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<div class="mrow"><b>🚶 ภารกิจเสริม: พาสัตว์เดินเล่น</b><b>${ok ? '✅' : '0/1'}</b></div><div class="muted">แตะเล้าไก่/คอกวัว → 🚶 ย่ำเท้า ${LIVE_STEPS} ก้าว • ได้ 💗 +${WALK_LOVE} และผลผลิต ×2</div>`;
+    L.appendChild(c); }
   const done = S.missions.filter(m => m.claimed).length, sk = streakNow();
   const head = document.createElement('div'); head.className = 'card';
   head.innerHTML = `<div class="mrow"><b>ภารกิจวันนี้</b><b>${done}/3</b></div><div class="bar"><b style="width:${done/3*100}%"></b></div>
@@ -6594,7 +6668,7 @@ function manualLog(m, card){
   r.append(inp, b); card.appendChild(r); inp.focus();
 }
 function addProgress(m, v){
-  const before = m.progress; m.progress = Math.min(m.target*5, m.progress + v); bump('missionLog');
+  const before = m.progress; m.progress = Math.min(m.target*5, m.progress + v); bump('missionLog'); hlogAdd(m.key, v);   // 📊
   if (before < m.target && m.progress >= m.target){ sfx('done'); }
   save();
 }
