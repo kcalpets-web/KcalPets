@@ -720,7 +720,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.45.3';
+const APP_VER = '0.46.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1846,14 +1846,18 @@ function placeFixed(type, zi, closed, near, skip){                 // free 2×2 
      squared distance between the 2×2 centre (c+1, r+1) and the anchor; without an anchor the old row-major scan order is kept.
      skip(c, r, zoneIndex) → true = never use that spot. */
   const order = [zi].concat(S.farm.zones.map((_, i) => i).filter(i => i !== zi).reverse());
-  const spots = []; for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++) spots.push([c, r]);
-  if (near) spots.sort((a, b) => ((a[0]+1-near[0])**2 + (a[1]+1-near[1])**2) - ((b[0]+1-near[0])**2 + (b[1]+1-near[1])**2));
-  for (const pass of [0, 1]) for (const k of order){ const z = S.farm.zones[k]; if (!z) continue;
+  const fw = (FARM_ITEMS[type] || {}).w || 2, fh = (FARM_ITEMS[type] || {}).h || 2;   // v0.46: footprint of the item (plaza = 3×3), was fixed 2×2
+  const spots = []; for (let r=0;r<=GRID-fh;r++) for (let c=0;c<=GRID-fw;c++) spots.push([c, r]);
+  if (near) spots.sort((a, b) => ((a[0]+fw/2-near[0])**2 + (a[1]+fh/2-near[1])**2) - ((b[0]+fw/2-near[0])**2 + (b[1]+fh/2-near[1])**2));
+  /* v0.46: big fixed footprints (plaza 3×3) must land in THEIR zone → try both passes in zone zi before any other zone;
+     2×2 keeps the old order (pass 0 everywhere first) so existing placements behave exactly as before */
+  const plan = fw*fh > 4 ? order.flatMap(k => [[0, k], [1, k]]) : [0, 1].flatMap(ps => order.map(k => [ps, k]));
+  for (const [pass, k] of plan){ const z = S.farm.zones[k]; if (!z) continue;
     for (const [c, r] of spots){ if (skip && skip(c, r, k)) continue;
-      const ts = [z.tiles[r*GRID+c], z.tiles[r*GRID+c+1], z.tiles[(r+1)*GRID+c], z.tiles[(r+1)*GRID+c+1]];
+      const ts = []; for (let dr=0;dr<fh;dr++) for (let dc=0;dc<fw;dc++) ts.push(z.tiles[(r+dr)*GRID + c+dc]);
       if (ts.some(t => t.k === 'obj' || (!pass && (t.k === 'water' || t.k === 'path')))) continue;
       ts.forEach(t => { for (const q in t) delete t[q]; t.k = 'clear'; });
-      const o = addObj(z, type, c, r, 2, 2, true); o.closed = closed ? 1 : 0; markDirty(z); return o; } }
+      const o = addObj(z, type, c, r, fw, fh, true); o.closed = closed ? 1 : 0; markDirty(z); return o; } }
   return null;
 }
 function ensureNpcHomes(){
@@ -2292,6 +2296,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
+  plaza:     { name:'🏪 ลานกลางเมือง', w:3, h:3, price:0, cost:{}, H:1.6, hidden:true, fixed:true, desc:'ตลาดนัดของเมือง • ยืดเหยียดตอนเช้ากับโค้ช' },   // 🏪 v0.46
   petshop:   { name:'🐾 ร้านสัตว์เลี้ยง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ร้านของป้านวล ขายอาหารสัตว์ แต่งน้องได้' },   // 🐾 v0.41
   playground:{ name:'🛝 สนามเด็กเล่น', w:2, h:2, price:0, cost:{}, H:1.8, hidden:true, fixed:true, desc:'สนามเด็กเล่นของเมือง พาน้องมาเล่นได้' },   // 🛝 v0.40.2
   pier:      { name:'⚓ ท่าเรือ', w:2, h:2, price:0, cost:{}, H:1.6, hidden:true, fixed:true, desc:'ท่าเรือไม้ของลุงปลา ชาวประมงประจำเมือง' },   // ⚓ v0.40.1
@@ -2443,7 +2448,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier(); ensurePlayground(); ensurePetShop();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier(); ensurePlayground(); ensurePetShop(); ensurePlaza();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
   if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24 (was swallowed by a comment until v0.33.3)
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
@@ -2886,6 +2891,11 @@ function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in globa
       const [hx,hy] = P((a0+a1)/2, b1+.02, U*2.1); ctx.save(); ctx.translate(hx,hy); ctx.rotate(time*1.2);
       for (let k=0;k<4;k++){ ctx.rotate(Math.PI/2); ctx.fillStyle = '#f7f0e2'; ctx.fillRect(TW*.02, -TW*.04, TW*.42, TW*.08); ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, -TW*.012, TW*.44, TW*.024); }
       ctx.fillStyle = '#5a3818'; ctx.beginPath(); ctx.arc(0,0,TW*.03,0,Math.PI*2); ctx.fill(); ctx.restore();
+      break; }
+    case 'plaza': {                                              // 🏪 v0.46 (2D fallback): brick pad + fountain + stall emoji
+      box(c0+.05,r0+.05,c1-.05,r1-.05,0,U*.08,'#e6a98f','#d9917a','#c47d66');
+      const [fx,fy] = P(cm, rm, U*.1); ctx.font = `${Math.round(TW*.5)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('⛲', fx, fy);
+      ctx.font = `${Math.round(TW*.3)}px serif`; for (const [dc, dr] of [[0,-1.1],[-1.1,0],[1.1,0]]){ const [sx2, sy2] = P(cm+dc, rm+dr, U*.1); ctx.fillText('🧺', sx2, sy2); }
       break; }
     case 'coop': case 'cowshed': {                               // 🐔🐄 v0.42 (2D fallback): wooden shed + fenced yard + animal emoji
       const cow = o.type === 'cowshed', a0 = c0+.1, b0 = r0+.1, a1 = c1-.1, b1 = r1-.1, mb = b0 + (b1-b0)*.45;
@@ -3689,6 +3699,7 @@ function tapObj(z, o){
   if (isHome(o.type)) return enterHome(z, o);              // homes open to their interior
   if (o.type==='plot') return plotTap(z, o);
   if (o.type === 'pier') return pierTap(z, o);
+  if (o.type === 'plaza') return plazaTap();                   // 🏪 v0.46
   if (o.type === 'playground') return playgroundTap();        // 🛝 v0.40.2                // ⚓ v0.40.1
   if (LIVE[o.type]) return liveTap(z, o);                    // 🐔 v0.42 coop / cow shed
   if (shopOpen(o)) return enterShop(z, o);                   // 🏪 v0.40 NPC workplaces / repaired homes / gym → interior
@@ -3942,6 +3953,57 @@ function pierLesson(gc, gr){
   S.reelTutDone = 0; save(); bump('pierLesson');                // next bite = the practice fish with on-screen coaching
   sheet(`📖 ${PLA.name}สอนตกปลา\n① แตะ "เหวี่ยงเบ็ด" แล้วรอ\n② ทุ่นจม ❗ → แตะดึงทันที\n③ ตอนลากปลา: กดค้างให้แถบเขียวขึ้น ปล่อยให้ลง ให้ปลาอยู่ในแถบเขียว\n④ หลอดเต็ม = ได้ปลา • ปลาตัวแรกเป็นปลาฝึก ช้ากว่าปกติ`,
     [{ label:'🎣 ลองเลย', cls:'ok', fn:() => startFishing(gc, gr) }, { label:'ไว้ก่อน', cls:'ghost' }]);
+}
+/* 🏪 v0.46 TOWN PLAZA (designer confirmed: "ลานปูอิฐ น้ำพุกลาง แผง 3 แผง • ตั้งแผงขายไข่ นม ผัก ได้ราคาดีกว่าร้าน •
+   ทุกเช้ายืดเหยียดหมู่กับโค้ช"). Blueprint cell (0,−1) = SPIRAL index 7 → unlocks with zone 8 (Lv.8). 3×3, centred in the zone.
+   🧺 market: any farm good at ⌊SELL·1.2⌋, at most MKT_CAP items per day (S.mkt = {day, n}) so the shop economy stays intact.
+   🧘 morning stretch: 05:00–11:00 local, once a day (S.plazaDay) — 5 timed moves × 20 s through the gym runner
+      (no sensor needed) → 💗 +25 via gainLove (health action) + 🪙 100. */
+const PLAZA_ZONE = 7, MKT_CAP = 20, MKT_MULT = 1.2, STRETCH_FROM = 5, STRETCH_TO = 11;
+const MKT_GOODS = ['egg','milk','butter','cheese','eggsteam','cheesesalad','veg','corn','tomato','rice','pumpkin','berry','milled','soup','friedrice','jam','sauce','tilapia','carp','shrimp'];
+const STRETCH = [
+  { k:'time', n:20, name:'🙆 ยืดแขนเหนือศีรษะ', tip:'ประสานมือ ดันขึ้นฟ้า หายใจเข้าลึก ๆ' },
+  { k:'time', n:20, name:'↔️ เอียงตัวซ้าย-ขวา', tip:'มือข้างหนึ่งเท้าเอว อีกข้างยกข้ามศีรษะ สลับข้างช้า ๆ' },
+  { k:'time', n:20, name:'🔄 หมุนไหล่', tip:'หมุนไหล่ไปข้างหลังช้า ๆ 5 รอบ แล้วไปข้างหน้า' },
+  { k:'time', n:20, name:'🦵 ยืดน่อง', tip:'ก้าวขาไปข้างหน้า เข่าหน้าย่อเล็กน้อย ขาหลังตึง สลับข้าง' },
+  { k:'time', n:20, name:'🌬 หายใจลึก', tip:'หายใจเข้า 4 วิ กลั้น 2 วิ หายใจออก 6 วิ' } ];
+function ensurePlaza(){
+  if (S.farm.zones.length <= PLAZA_ZONE || homeObj('plaza')) return;
+  const o = placeFixed('plaza', PLAZA_ZONE, false, [2.5, 2.5]); if (o){ o.done = true; save(); }
+}
+const mktLeft = () => { S.mkt = S.mkt && S.mkt.day === todayKey() ? S.mkt : { day:todayKey(), n:0 }; return MKT_CAP - S.mkt.n; };
+const stretchOpen = () => { const h = new Date().getHours(); return h >= STRETCH_FROM && h < STRETCH_TO; };
+function plazaTap(){
+  bump('plazaVisit'); const done = S.plazaDay === todayKey();
+  sheet(`🏪 ลานกลางเมือง\n🧺 ตลาดนัด: ขายได้ราคา ×${MKT_MULT} (เหลือวันนี้ ${mktLeft()}/${MKT_CAP} ชิ้น)\n🧘 ยืดเหยียดกับโค้ช ${STRETCH_FROM}:00–${STRETCH_TO}:00 ` + (done ? '✓ วันนี้ทำแล้ว' : stretchOpen() ? '• เปิดอยู่!' : '• มาใหม่ตอนเช้านะ'),
+    [{ label:'🧺 ตั้งแผงขายของ', cls:'ok', fn:marketSheet },
+     { label: done ? '🧘 ยืดเหยียดแล้ววันนี้ ✓' : '🧘 ยืดเหยียดตอนเช้ากับโค้ช', cls: !done && stretchOpen() ? 'ok' : 'ghost', fn:plazaStretch },
+     { label:'ปิด', cls:'ghost' }]);
+}
+function marketSheet(){
+  const left = mktLeft(), have = MKT_GOODS.filter(k => inv(k) > 0);
+  sheet(`🧺 ตลาดนัด • ขายได้อีก ${left}/${MKT_CAP} ชิ้นวันนี้\nราคา ×${MKT_MULT} ของร้านค้า • แตะของที่จะขาย`, [{ label:'ปิด', cls:'ghost' }]);
+  const box = document.createElement('div'); box.className = 'isleMap';
+  if (!have.length) box.innerHTML = '<div class="muted" style="padding:8px">ยังไม่มีของขาย ลองปลูกผัก เก็บไข่ หรือรีดนมดูนะ</div>';
+  else box.appendChild(cardGrid(have.map(k => ({ ref:'m:' + k, name:nm(MAT[k]), cnt:inv(k), dim:!left, sub:`🪙 ${Math.floor(SELL[k]*MKT_MULT).toLocaleString()} / ชิ้น`, price: left ? 'ขาย' : 'เต็มแล้ว',
+    on:() => { if (!mktLeft()) return; const max = Math.min(inv(k), mktLeft()), each = Math.floor(SELL[k]*MKT_MULT);
+      sheet(`ขาย ${MAT[k]} (มี ${inv(k)})\nชิ้นละ 🪙 ${each.toLocaleString()}`, [...new Set([1, 5, max])].filter(n => n >= 1 && n <= max)
+        .map(n => ({ label:`ขาย ${n} ชิ้น • 🪙 ${(n*each).toLocaleString()}`, cls:'ok', fn:() => mktSell(k, n) })).concat([{ label:'กลับ', cls:'ghost', fn:marketSheet }])); } })), 64));
+  $('mbody').after(box);
+}
+function mktSell(k, n){
+  n = Math.min(n, inv(k), mktLeft()); if (n <= 0) return; const c = n*Math.floor(SELL[k]*MKT_MULT);
+  S.inv[k] -= n; S.mkt.n += n; S.coins += c; bump('mktSell', n); save(); refreshHeader(); renderMats(); sfx('coin');
+  sheet(`🧺 ขาย ${MAT[k]} ${n} ชิ้น\n🪙 +${c.toLocaleString()}\nเหลือขายได้วันนี้ ${mktLeft()} ชิ้น`, [{ label:'ขายต่อ', cls:'ok', fn:marketSheet }, { label:'ปิด', cls:'ghost' }]);
+}
+function plazaStretch(){
+  if (S.plazaDay === todayKey()) return sheet('🧘 วันนี้ยืดเหยียดกับโค้ชแล้ว พรุ่งนี้เช้ามาใหม่นะ', OK);
+  if (!stretchOpen()) return sheet(`🧘 โค้ชฟิต: "ยืดเหยียดหมู่ที่ลานทุกเช้า ${STRETCH_FROM}:00–${STRETCH_TO}:00 นะ มาเจอกันพรุ่งนี้!"\nระหว่างวันลุกยืดเองได้ที่ 🧘 ในกระเป๋า`, OK);
+  closeModal(); $('gym').style.display = 'block'; $('gTitle').textContent = '🧘 ยืดเหยียดตอนเช้า';
+  G = { id:'plaza', name:'', steps:STRETCH.map(m => ({ ...m })), i:-1, sensor:false, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0,
+    cb:() => { $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; S.plazaDay = todayKey(); const lv = gainLove(25); S.coins += 100; bump('plazaStretch');
+      save(); refreshHeader(); sfx('coin'); reward(`🧘 ยืดเหยียดตอนเช้าครบ 5 ท่า!\n💗 พลังใจ +${lv} • 🪙 +100\nร่างกายตื่นตัว พร้อมลุยวันใหม่`); } };
+  gymNext(); clearInterval(exT); exT = setInterval(gymTick, 50);
 }
 /* 🐾 v0.41 PET SHOP of ป้านวล — blueprint zone (−2,0) = index 18 = Lv19. Not a walking townsperson (lives in her shop).
    🎨 makeover: breed / colour / pattern with a live preview; the first one is free (S.petSkinFree), then PET_SKIN_COST.
@@ -4417,6 +4479,8 @@ const QUESTS = [
     text:'(Lv.15) เปิดแผนที่เกาะ → พื้นที่ 🛝 ทางใต้ของบ้าน → แตะสนามเด็กเล่น → 🎾 โยนบอลให้น้อง แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว', reward:{coins:100} },
   { id:'petShop', name:'แวะร้านสัตว์เลี้ยงป้านวล',    need:1, goal:() => st('petSkin'),
     text:'(Lv.19) เปิดแผนที่เกาะ → พื้นที่ 🐾 ทางตะวันตกของบ้าน → เข้าร้านสัตว์เลี้ยง → 🎨 แต่งน้องฟรี เลือกพันธุ์ สีขน และลาย', reward:{coins:150} },
+  { id:'plazaTry', name:'ตลาดนัดลานกลางเมือง',       need:1, goal:() => st('mktSell') || st('plazaStretch') ? 1 : 0,
+    text:'(Lv.8) เปิดแผนที่เกาะ → 🏪 ลานกลางเมือง (เหนือบ้าน) → 🧺 ขายของที่แผงได้ราคาดีกว่าร้าน หรือ 🧘 ยืดเหยียดกับโค้ชตอนเช้า', reward:{coins:200} },
   { id:'liveTry', name:'ไข่ฟองแรกจากเล้าไก่',        need:1, goal:() => st('live_egg') ? 1 : 0,
     text:'(Lv.8) ร้านค้า › ฟาร์ม › 🐔 เล้าไก่ → ร้านป้านวล › 🐔 ซื้อไก่ → แตะเล้า › 🌿 ให้หญ้า → 🚶 พาไก่เดินเล่นให้ได้ไข่ ×2 → เก็บไข่ 🥚', reward:{coins:300} },
   { id:'dairyTry', name:'ทำชีสจากนมวัว',             need:1, goal:() => st('proc_cheese') ? 1 : 0,

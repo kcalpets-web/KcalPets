@@ -411,6 +411,28 @@ export function start(){
       /* ⚓ v0.40.1 pier: deck from the west edge of the 2×2 out past the east edge (+x = sea side, 3 units over the water),
          posts every 1.2 units, a strip of sea under the overhang, ลุงปลา (index.html PLA.look) sitting at the end with a rod. */
       /* 🛝 v0.40.2 playground: sand pad, a slide (ladder + tilted chute) and an A-frame swing with two seats */
+      case 'plaza': {
+        /* 🏪 v0.46 town plaza, footprint 3×3 → x, z ∈ [−3, 3]. Brick pad (alternating tones in a 6×6 grid of 1-unit pavers),
+           3-tier fountain at the centre, 3 market stalls on the back (−z) and side (±x) edges facing the centre
+           (stall yaw = atan2(−x, −z) so its counter faces the fountain), 2 benches + 2 lamps on the front edge,
+           ป้าบัว behind the vegetable stall and โค้ชฟิต beside the fountain for the morning stretch. */
+        for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) RB(g, .96, .06, .96, .05, (i + j) % 2 ? '#d9917a' : '#e6a98f', -2.5 + i, 0, -2.5 + j);
+        CY(g, 1.05, .35, '#d9d3c8', 0, .06, 0, true); CY(g, .92, .05, '#86c8ea', 0, .38, 0);                     // basin + water
+        CY(g, .16, .7, '#d9d3c8', 0, .4, 0, true); CY(g, .5, .1, '#d9d3c8', 0, 1.0, 0, true); CY(g, .42, .03, '#86c8ea', 0, 1.1, 0);
+        CY(g, .08, .35, '#d9d3c8', 0, 1.1, 0); BALL(g, .14, .14, .14, '#bfe6f7', 0, 1.55, 0);                    // top jet
+        const stall = (x, z, roof, goods) => { const sg = new THREE.Group(); sg.position.set(x, 0, z); sg.rotation.y = Math.atan2(-x, -z); g.add(sg);
+          RB(sg, 1.4, .7, .55, .05, '#c48a52', 0, .06, .1, true);                                                  // counter
+          for (const sx of [-.65, .65]) CY(sg, .04, 1.5, '#8a5a33', sx, .06, -.2);
+          for (let k = 0; k < 5; k++){ const st = RB(sg, .3, .05, .9, .02, k % 2 ? '#ffffff' : roof, -.6 + k*.3, 1.5, 0); st.rotation.x = -.3; }   // striped awning
+          goods.forEach((c, k) => BALL(sg, .12, .1, .12, c, -.45 + k*.3, .84, .15)); return sg; };
+        stall(0, -2.3, '#e5483e', ['#ff8a3d', '#6fbf63', '#e5483e', '#f2cf4a']);                                    // veg
+        stall(-2.3, 0, '#4f8fd8', ['#fbf1df', '#fbf1df', '#ffffff', '#f7c948']);                                    // eggs / milk / cheese
+        stall(2.3, 0, '#4caf6a', ['#e2364d', '#f0962f', '#c9a0dc', '#ffd166']);                                     // fruit & jam
+        for (const x of [-1.9, 1.9]){ RB(g, 1.1, .08, .38, .03, '#a8703f', x, .42, 2.4, true); for (const sx of [-.45, .45]) RB(g, .08, .4, .3, .02, '#6e4524', x + sx, .06, 2.4); }   // benches
+        for (const x of [-.7, .7]){ CY(g, .04, 1.9, '#3b3f45', x, .06, 2.7, true); BALL(g, .14, .16, .14, '#ffe9a8', x, 2.0, 2.7); }        // lamps
+        if (typeof NPCS !== 'undefined'){ const b = npcModel('bua'); b.position.set(0, .06, -2.75); g.add(b);
+          const c2 = npcModel('coach'); c2.position.set(1.15, .06, .9); c2.rotation.y = Math.PI/4; c2.userData.parts.arms.forEach((a2, k) => a2.rotation.z = (k ? 1 : -1)*2.6);   /* arms up: the stretch pose */ g.add(c2); }
+        break; }
       case 'playground': {
         /* 🛝 v0.45.1 rebuilt (designer: "สนามเด็กเล่นดูแปลกๆ"). Footprint 2×2 → x, z ∈ [−2, 2].
            Tilted parts use add() at their CENTRE (RB/CY take the bottom), rotation about the part's own centre:
