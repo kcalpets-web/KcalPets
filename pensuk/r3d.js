@@ -290,6 +290,12 @@ export function start(){
           for (const [x, z2] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .08, 1.6, '#8a5a3b', x*(W/2-.45), .3, z2*(D/2-.45));
           const rf = add(g, gable(W-.1, 1.1, D-.1), mat('#c0603f'), 0, 1.9, 0); RB(g, .7, .06, .5, .03, '#f2e6c9', 0, .32, 0); }
         break;
+      case 'petshop': { walls('#fde4ec', '#f29bb5', 1.4, {});          // 🐾 v0.41 ป้านวล's pet shop: pink walls, striped awning, paw sign, kibble sacks
+        for (let k=0;k<6;k++) RB(g, (W-.6)/6, .06, .55, .02, k%2 ? '#ffffff' : '#f29bb5', -W/2 + .3 + (k+.5)*(W-.6)/6, 1.25, D*.44).rotation.x = .35;
+        add(g, CYL, mat('#ffffff'), 0, 1.75, D*.37, .32, .06, .32).rotation.x = Math.PI/2;                     // round sign
+        BALL(g, .1, .09, .04, '#8a5a3b', 0, 1.68, D*.37 + .05); for (const [x, y] of [[-.13,.0],[-.05,.1],[.05,.1],[.13,0]]) BALL(g, .045, .045, .03, '#8a5a3b', x, 1.82 + y*.6, D*.37 + .05);
+        for (const [x, c] of [[-.6, '#e9c27a'], [.6, '#c9a0dc']]){ RB(g, .4, .5, .3, .08, c, x, 0, D*.5, true); BALL(g, .07, .05, .03, '#8a5a3b', x, .3, D*.5 + .16); }
+        break; }
       case 'smithy': { walls('#a9b0b8', '#5a5f66', 1.5, { chimney:true });   // blacksmith: grey stone house, forge glow, anvil
         const on = 1; add(g, CYL, mat('#ff7a2a', 0xff5a1a), W*.3, .5, D*.42, .32, .3, .1).rotation.x = Math.PI/2;
         RB(g, .55, .25, .3, .05, '#3e4248', -W*.3, 0, D*.55); RB(g, .7, .18, .32, .05, '#55606b', -W*.3, .25, D*.55); break; }
@@ -407,11 +413,11 @@ export function start(){
   }
 
   /* ---------- pet (clay, coloured from the 2D SPECIES table) ---------- */
-  let petG = null, petType = '', petForm = -1; const legs = []; let headG = null, tailG = null, bodyM = null;
+  let petG = null, petType = '', petForm = -1, petSkin = ''; const legs = []; let headG = null, tailG = null, bodyM = null;
   function buildPet(){
     if (petG) scene.remove(petG);
-    const sp = SPECIES[S.pet.type] || SPECIES.dog, form = petStage(S.pet.lv).form;
-    petG = new THREE.Group(); legs.length = 0; petType = S.pet.type; petForm = form;
+    const sp = (typeof mySp === 'function' && mySp()) || SPECIES[S.pet.type] || SPECIES.dog, form = petStage(S.pet.lv).form;   // 🐾 v0.41 skin
+    petG = new THREE.Group(); legs.length = 0; petType = S.pet.type; petForm = form; petSkin = JSON.stringify(S.pet.skin || 0);
     bodyM = BALL(petG, .42, .34, .52, sp.body, 0, .55, 0, true);
     if (sp.patch) BALL(petG, .34, .2, .38, sp.patch, 0, .78, -.05);
     headG = new THREE.Group(); headG.position.set(0, .95, .42); petG.add(headG);
@@ -530,7 +536,7 @@ export function start(){
   let petPhase = 0, lpx = 0, lpz = 0, petYaw = 0;
   function updatePet(time, src, sc3){
     if (!S.pet) return;
-    if (!petG || petType !== S.pet.type || petForm !== petStage(S.pet.lv).form) buildPet();
+    if (!petG || petType !== S.pet.type || petForm !== petStage(S.pet.lv).form || petSkin !== JSON.stringify(S.pet.skin || 0)) buildPet();   // 🐾 skin change → rebuild
     if (petG.parent !== sc3) sc3.add(petG);
     const pet = src, x = pet.x*2, z = pet.y*2, dx = x - lpx, dz = z - lpz, d = Math.hypot(dx, dz);
     if (d > .002 && d < 2){ petYaw = Math.atan2(dx, dz); petPhase += d*3.5; }
@@ -698,11 +704,15 @@ export function start(){
         RB(P, 3.4, 1.0, .9, .08, '#c48a52', 0, 0, 0, true); RB(P, 3.5, .1, 1.0, .04, '#e9d3a3', 0, 1.0, 0);
         for (const [x, c] of [[-1.1, '#ff8a3d'], [0, '#6fbf63'], [1.1, '#e5483e']]){ RB(P, .8, .3, .6, .04, '#a8703f', x, 1.1, 0);
           for (let k=0;k<5;k++) BALL(P, .13, .13, .13, c, x - .25 + (k%3)*.25, 1.45, -.12 + ((k/3)|0)*.24); } break;
+      case 'pets':                                              // 🐾 counter + kibble bowls + a cat tree
+        RB(P, 2.6, 1.0, .9, .08, '#e9a0b8', 0, 0, 0, true); RB(P, 2.7, .1, 1.0, .04, '#fff4dc', 0, 1.0, 0);
+        for (const x of [-.8, 0, .8]){ CY(P, .2, .1, '#4f7cac', x, 1.1, 0); BALL(P, .16, .05, .16, '#b07a45', x, 1.2, 0); }
+        CY(P, .1, 1.6, '#d9c3a0', -1.8, 0, -.4, true); RB(P, .7, .1, .7, .05, '#c9a0dc', -1.8, .8, -.4); RB(P, .8, .1, .8, .05, '#c9a0dc', -1.8, 1.6, -.4); break;
       case 'play':                                              // toy balls + a little slide
         for (const [x, z, c] of [[-.8, .3, '#ff6b81'], [.2, .6, '#ffd166'], [.9, .1, '#4f7cac']]) BALL(P, .25, .25, .25, c, x, 0, z, true);
         RB(P, .6, 1.2, .6, .05, '#4caf6a', -1.2, 0, -.5, true); RB(P, .5, .08, 1.6, .03, '#ffd166', -1.2, .7, .4).rotation.x = .55; break;
     }
-    shopNpc = npcModel(D.npc); shopWork = D.work; shopNpc.position.set(nx, 0, nz); shopNpc.rotation.y = Math.PI/4; g.add(shopNpc);
+    shopNpc = D.look ? personModel(D.look) : npcModel(D.npc); shopWork = D.work; shopNpc.position.set(nx, 0, nz); shopNpc.rotation.y = Math.PI/4; g.add(shopNpc);
   }
   function shopPose(t){                                          // loop the work pose (arms[1] = right arm)
     if (!shopNpc) return; const A = shopNpc.userData.parts.arms, H = shopNpc.userData.parts.head;

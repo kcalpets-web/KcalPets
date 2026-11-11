@@ -591,7 +591,7 @@ function flushRewards(){ if (rewardQ.length && !$('modal').classList.contains('o
 
 /* ---------------- Modal (confirm before every action) ---------------- */
 function sheet(text, buttons){
-  document.querySelectorAll('#mbox .isleMap').forEach(e => e.remove());   // 🏝 extra content from the island map sheet
+  document.querySelectorAll('#mbox .isleMap').forEach(e => e.remove());   // 🏝 🐾 extra content (island map, pet makeover)
   $('mbody').textContent = text;
   const box = $('mbtns'); box.innerHTML = '';
   buttons.forEach(b => {
@@ -719,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.40.3';
+const APP_VER = '0.41.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -937,6 +937,32 @@ for (const k in SPECIES){ const sp = SPECIES[k];
   sp.legFar = shadeHex(sp.legCol,-.22); sp.earLo = shadeHex(sp.earCol,-.25);
 }
 
+/* 🐾 v0.41 PET LOOKS (designer: "แม่ค้าให้เลือกสัตว์เลี้ยง — มีแค่หมากับแมว เลือกสีเลือกลายได้ สายพันธุ์ถ้าทำได้ก็ลุย" •
+   answered: "แต่งน้องเดิมฟรี" → the current pet keeps its level & love; the pet-shop lady restyles it once for free).
+   S.pet.skin = { b: breed id, c: colour id, p: pattern id } → mySp() merges it over SPECIES[type] (cached by key) for BOTH renderers.
+   Colour = [name, fur, darker patch]; breed may override ear / tail / leg length / muzzle and set "points" (dark ears, legs, tail). */
+const PET_BREEDS = {
+  dog: [ { id:'mutt', n:'พันธุ์ทาง', c:'brown', p:'patch' }, { id:'thai', n:'ไทยหลังอาน', ear:'tri', tail:'long', c:'brown', p:'plain' },
+         { id:'shiba', n:'ชิบะ', ear:'tri', tail:'curl', c:'orange', p:'socks' }, { id:'pug', n:'ปั๊ก', ear:'round', tail:'curl', legLen:.22, muzzle:'#4a3428', c:'cream', p:'plain' },
+         { id:'poodle', n:'พุดเดิ้ล', ear:'floppy', tail:'puff', c:'white', p:'plain' } ],
+  cat: [ { id:'mix', n:'พันธุ์ทาง', c:'orange', p:'stripes' }, { id:'siamese', n:'วิเชียรมาศ', c:'cream', p:'plain', points:'#5a3a2a' },
+         { id:'korat', n:'สีสวาด', c:'grey', p:'plain' }, { id:'khaomanee', n:'ขาวมณี', c:'white', p:'plain' }, { id:'persian', n:'เปอร์เซีย', ear:'round', tail:'puff', c:'white', p:'plain' } ] };
+const PET_COLS = { orange:['ส้ม','#f3a85c','#d9772e'], brown:['น้ำตาล','#c98a45','#7a4a24'], cream:['ครีม','#f4e6cf','#c9a77a'],
+                   black:['ดำ','#4a4040','#2a2424'], white:['ขาว','#fbf8f2','#d9d2c4'], grey:['เทา','#a9b0b8','#6f7780'] };
+const PET_PATS = { plain:'เรียบ', patch:'แต้ม', stripes:'ลายเสือ', socks:'ถุงเท้าขาว' };
+const spCache = new Map();
+function skinSp(type, k){                                     // SPECIES[type] + skin k → merged species with shading pre-computed
+  if (!k || !SPECIES[type]) return null; const key = type + '|' + k.b + '|' + k.c + '|' + k.p; if (spCache.has(key)) return spCache.get(key);
+  const B = (PET_BREEDS[type] || []).find(x => x.id === k.b) || {}, C = PET_COLS[k.c] || PET_COLS.brown, sp = { ...SPECIES[type] };
+  sp.body = sp.head = sp.earCol = sp.tailCol = sp.legCol = C[1]; sp.patch = C[2]; sp.stripes = k.p === 'stripes';
+  if (k.p === 'plain') sp.patch = null; if (k.p === 'socks'){ sp.patch = null; sp.legCol = '#fffaf2'; }
+  for (const f of ['ear', 'tail', 'legLen', 'muzzle']) if (B[f] != null) sp[f] = B[f];
+  if (B.points){ sp.earCol = sp.tailCol = sp.legCol = B.points; sp.muzzle = B.points; }
+  sp.bodyHi = shadeHex(sp.body,.45); sp.bodyLo = shadeHex(sp.body,-.28); sp.headHi = shadeHex(sp.head,.45); sp.headLo = shadeHex(sp.head,-.25);
+  sp.legFar = shadeHex(sp.legCol,-.22); sp.earLo = shadeHex(sp.earCol,-.25);
+  spCache.set(key, sp); return sp;
+}
+const mySp = () => S && S.pet ? skinSp(S.pet.type, S.pet.skin) : null;
 /* Sphere with volumetric shading (cx,cy centre; rx,ry radii) */
 function ball(g, cx, cy, rx, ry, hi, base, lo){
   const r = Math.max(rx,ry);
@@ -1033,7 +1059,7 @@ function petHappy(a){
 
 /* Draw the pet with feet at (sx,sy). s = size in px. */
 function drawPetModel(g, type, a, sx, sy, s, form){
-  const sp = SPECIES[type] || SPECIES.dog, F = FORMS[form||0];
+  const sp = (a && a.skin) || (a && a.mine && mySp()) || SPECIES[type] || SPECIES.dog, F = FORMS[form||0];   // 🐾 v0.41 a.mine = the player's pet • a.skin = preview
   // evolution glow (expanding light burst behind the pet)
   if (a.evolve > 0){
     const k = a.evolve/2.5, rr = s*(1.6-k*.8), gg = g.createRadialGradient(sx, sy-s*.5, 1, sx, sy-s*.5, rr);
@@ -1380,7 +1406,7 @@ let petSel = null;
 function openPet(){
   show('sPet'); const g = $('petGrid'); g.innerHTML = '';
   previews.length = 0;
-  PETS.forEach(p => { const b = document.createElement('button'); b.className='petc'; b.dataset.id=p.id;
+  PETS.filter(p => p.id === 'dog' || p.id === 'cat').forEach(p => { const b = document.createElement('button'); b.className='petc'; b.dataset.id=p.id;   // 🐾 v0.41 (designer): only dogs & cats are pets
     const c = document.createElement('canvas'); const dpr = Math.min(2, devicePixelRatio||1);
     c.width = 96*dpr; c.height = 84*dpr; const g2 = c.getContext('2d'); g2.setTransform(dpr,0,0,dpr,0,0);
     const a = makePetAnim(); a.timer = Math.random()*2;
@@ -2260,6 +2286,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
+  petshop:   { name:'🐾 ร้านสัตว์เลี้ยง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ร้านของป้านวล ขายอาหารสัตว์ แต่งน้องได้' },   // 🐾 v0.41
   playground:{ name:'🛝 สนามเด็กเล่น', w:2, h:2, price:0, cost:{}, H:1.8, hidden:true, fixed:true, desc:'สนามเด็กเล่นของเมือง พาน้องมาเล่นได้' },   // 🛝 v0.40.2
   pier:      { name:'⚓ ท่าเรือ', w:2, h:2, price:0, cost:{}, H:1.6, hidden:true, fixed:true, desc:'ท่าเรือไม้ของลุงปลา ชาวประมงประจำเมือง' },   // ⚓ v0.40.1
   gymyard:   { name:'🏋️ ยิมโค้ชฟิต', w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ยิมของโค้ชฟิต แตะเพื่อเข้าไปออกกำลังกาย' },
@@ -2407,7 +2434,7 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier(); ensurePlayground();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes(); ensurePier(); ensurePlayground(); ensurePetShop();   // 🏗 ⛏ v0.23 • 🏚 v0.30 • ⚓ v0.40.1
   if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24 (was swallowed by a comment until v0.33.3)
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
@@ -3059,7 +3086,7 @@ function natureTick(){
 }
 
 /* ---- pet (global tile coords) ---- */
-const pet = makePetAnim();
+const pet = makePetAnim(); pet.mine = true;   // 🐾 v0.41 skins apply to the player's own pet
 function walkable(t){ return !!t && (t.k==='clear' || t.k==='path' || (t.k==='water' && t.bridge)); }
 function walkAt(x, y){ return walkable(tileAt(Math.floor(x), Math.floor(y))); }
 function hasWalkable(){ for (const z of S.farm.zones) for (const t of z.tiles) if (walkable(t)) return true; return false; }
@@ -3775,7 +3802,7 @@ const FURN = {
 const WALLS  = [['ครีม','#f6e7c8','#e3d0aa'], ['ฟ้าพาสเทล','#d6ecf7','#b9d8ea'], ['ชมพูอ่อน','#f9dbe2','#ecbfca'], ['เขียวมิ้นต์','#d8f0e0','#b8dcc4']];
 const FLOORS = [['ไม้','#c99a62','#b48550'], ['กระเบื้อง','#e8e4dc','#d3cdc1'], ['พรมฟ้า','#9cc3e0','#88b2d2']];
 let inRoom = null;                                           // {z, o, N, saved:{camX,camY,zoom}}
-const roomPet = makePetAnim();
+const roomPet = makePetAnim(); roomPet.mine = true;
 let roomPlace = null;                                        // {type, w, h, c, r, valid, move}
 const isHome = type => !!HOME_SIZE[type];
 /** furniture the sawmill makes is NOT sold in the shop (v0.17.1) */
@@ -3802,8 +3829,10 @@ const SHOP_IN = {
   smithy:    { npc:'lek',   title:'⚒ โรงตีเหล็กของพี่เหล็ก', wall:3, floor:1, work:'hammer',  items:[['shelf',0,1],['lamp',5,0]] },
   gymyard:   { npc:'coach', title:'🏋️ ยิมโค้ชฟิต',           wall:1, floor:2, work:'coach',   items:[['rug',3,3],['plant',5,0],['plant',0,5]] },
   buahome:   { npc:'bua',   title:'🧺 ร้านของป้าบัว',         wall:2, floor:0, work:'counter', items:[['shelf',0,1],['shelf',0,2],['plant',5,0]] },
-  salahouse: { npc:'khing', title:'🎈 ศาลาของน้องขิง',        wall:0, floor:0, work:'play',    items:[['rug',2,3],['chair',5,1]] } };
-const shopOpen = o => !!SHOP_IN[o.type] && (PROC[o.type] ? o.done : o.type === 'gymyard' || (S.homes || {})[o.type] >= HOMES[o.type].stages.length);
+  salahouse: { npc:'khing', title:'🎈 ศาลาของน้องขิง',        wall:0, floor:0, work:'play',    items:[['rug',2,3],['chair',5,1]] },
+  petshop:   { npc:'nuan',  title:'🐾 ร้านสัตว์เลี้ยงป้านวล',   wall:3, floor:1, work:'pets',    items:[['shelf',0,1],['shelf',0,2],['petbed',4,4],['plant',5,0]],
+               name:'ป้านวล', look:{ shirt:'#f29bb5', apron:'#fff4dc', hair:'#8a6a52', hairStyle:'bob', pants:'#6b7fa8', glasses:1 }, talk:() => nuanTalk() } };
+const shopOpen = o => !!SHOP_IN[o.type] && (PROC[o.type] ? o.done : o.type === 'gymyard' || o.type === 'petshop' || (S.homes || {})[o.type] >= HOMES[o.type].stages.length);
 /* ⚓ v0.40.1 PIER + ลุงปลา (designer: "ท่าเรือ มีลุงนั่งตกปลา เป็น NPC แจกเบ็ดและสอนตกปลา"). Blueprint spot: zone (2,0) = Lv11,
    the east coast. The pier is a fixed 2×2 placed as close to the east edge as possible (near = [GRID−1, 2]); r3d draws its deck
    running out to sea (+x) with ลุงปลา sitting at the end. He is not a walking townsperson — he lives on the pier.
@@ -3879,17 +3908,63 @@ function pierLesson(gc, gr){
   sheet(`📖 ${PLA.name}สอนตกปลา\n① แตะ "เหวี่ยงเบ็ด" แล้วรอ\n② ทุ่นจม ❗ → แตะดึงทันที\n③ ตอนลากปลา: กดค้างให้แถบเขียวขึ้น ปล่อยให้ลง ให้ปลาอยู่ในแถบเขียว\n④ หลอดเต็ม = ได้ปลา • ปลาตัวแรกเป็นปลาฝึก ช้ากว่าปกติ`,
     [{ label:'🎣 ลองเลย', cls:'ok', fn:() => startFishing(gc, gr) }, { label:'ไว้ก่อน', cls:'ghost' }]);
 }
+/* 🐾 v0.41 PET SHOP of ป้านวล — blueprint zone (−2,0) = index 18 = Lv19. Not a walking townsperson (lives in her shop).
+   🎨 makeover: breed / colour / pattern with a live preview; the first one is free (S.petSkinFree), then PET_SKIN_COST.
+   🦴 pet food: 1 / 5 / 10 at PET_FOOD_COST each (×0.9 for 5, ×0.85 for 10). */
+const PETSHOP_ZONE = 18, PET_SKIN_COST = 500, PET_FOOD_COST = 40;
+function ensurePetShop(){
+  if (S.farm.zones.length <= PETSHOP_ZONE || homeObj('petshop')) return;
+  const o = placeFixed('petshop', PETSHOP_ZONE, false, [2, 2]); if (o){ o.done = true; save(); }
+}
+function nuanTalk(){
+  const first = !S.nuanMet; S.nuanMet = 1; save(); bump('nuanTalk');
+  sheet(first ? `🐾 ป้านวล\n"ยินดีต้อนรับจ้ะ ${S.pet.name}น่ารักจัง! ครั้งแรกป้าแต่งตัวให้ฟรีเลยนะ เลือกพันธุ์ สีขน ลายได้ตามใจ"`
+              : `🐾 ป้านวล\n"${['พาน้องไปเดินเล่นบ่อย ๆ นะ ทั้งน้องทั้งเราแข็งแรงไปด้วยกัน', 'อาหารสัตว์ป้าทำเองจากผักในเมืองเลยนะ', 'น้องอิ่ม สะอาด ได้เล่น ก็อารมณ์ดีทั้งวันจ้ะ'][new Date().getDate() % 3]}"`,
+    [{ label:S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', cls:'ok', fn:petMakeover }, { label:'🦴 อาหารสัตว์', fn:buyPetFood }, { label:'ปิด', cls:'ghost' }]);
+}
+function buyPetFood(){
+  const opt = [[1, 1], [5, .9], [10, .85]].map(([n, k]) => [n, Math.round(n*PET_FOOD_COST*k)]);
+  sheet(`🦴 อาหารสัตว์ (มีอยู่ ${inv('food')})\nอิ่ม +${PET_FOOD.food[0]} • ❤️ +${PET_FOOD.food[1]} ต่อชิ้น`,
+    opt.map(([n, c]) => ({ label:`${n} ชิ้น • 🪙 ${c}`, cls:'ok', fn:() => { if (S.coins < c) return sheet('🪙 เหรียญไม่พอนะจ๊ะ', OK);
+      S.coins -= c; invAdd('food', n); bump('buyPetFood', n); save(); refreshHeader(); renderMats(); sfx('coin'); reward(`🦴 อาหารสัตว์ +${n}`); } }))
+      .concat([{ label:'ปิด', cls:'ghost' }]));
+}
+function petMakeover(){
+  const type = S.pet.type; if (!PET_BREEDS[type]) return sheet(`ป้านวลแต่งได้เฉพาะน้องหมากับน้องแมวนะจ๊ะ 🐾`, OK);
+  const free = !S.petSkinFree, cur = S.pet.skin || { b:PET_BREEDS[type][0].id, c:PET_BREEDS[type][0].c, p:PET_BREEDS[type][0].p }, k = { ...cur };
+  sheet(`🎨 แต่ง${S.pet.name}${free ? ' (ฟรีครั้งแรก)' : ` • 🪙 ${PET_SKIN_COST}`}\nเลเวลและความสนิทเหมือนเดิมทุกอย่าง`,
+    [{ label:'✅ ยืนยัน', cls:'ok', fn:() => { if (!free && S.coins < PET_SKIN_COST) return sheet('🪙 เหรียญไม่พอนะจ๊ะ', OK);
+        if (!free) S.coins -= PET_SKIN_COST; S.petSkinFree = 1; S.pet.skin = { ...k }; bump('petSkin'); save(); refreshHeader(); sfx('coin');
+        const sb = [...$('shopBar').children].find(x => x.textContent.startsWith('🎨')); if (sb) sb.textContent = '🎨 แต่งน้อง';
+        reward(`✨ ${S.pet.name}โฉมใหม่! ${(PET_BREEDS[type].find(x => x.id === k.b) || {}).n} • ขน${PET_COLS[k.c][0]} • ${PET_PATS[k.p]}`); } },
+     { label:'ยกเลิก', cls:'ghost' }]);
+  const box = document.createElement('div'); box.className = 'isleMap';
+  box.innerHTML = `<canvas id="skPrev" width="360" height="300" style="width:180px;height:150px;display:block;margin:0 auto"></canvas>
+    <b style="font-size:var(--fs-sm)">พันธุ์</b><div class="chips" id="skB"></div><b style="font-size:var(--fs-sm)">สีขน</b><div class="chips" id="skC"></div>
+    <b style="font-size:var(--fs-sm)">ลาย</b><div class="chips" id="skP"></div>`;
+  $('mbody').after(box);
+  const a = makePetAnim(); a.timer = 1e9; let raf = 0, last = 0;
+  const chips = (id, list, key) => { const el = $(id); el.innerHTML = '';
+    list.forEach(([v, label]) => { const b = document.createElement('button'); b.className = 'chip' + (k[key] === v ? ' sel' : ''); b.textContent = label;
+      b.onclick = () => { k[key] = v; if (key === 'b'){ const B = PET_BREEDS[type].find(x => x.id === v); k.c = B.c; k.p = B.p; } draw(); }; el.appendChild(b); }); };
+  const draw = () => { chips('skB', PET_BREEDS[type].map(B => [B.id, B.n]), 'b'); chips('skC', Object.entries(PET_COLS).map(([v, C]) => [v, C[0]]), 'c');
+    chips('skP', Object.entries(PET_PATS).filter(([v]) => type === 'cat' || v !== 'stripes').map(([v, n]) => [v, n]), 'p'); a.skin = skinSp(type, k); petHappy(a); };
+  const loop = t => { const c = $('skPrev'); if (!c || !$('modal').classList.contains('on')){ cancelAnimationFrame(raf); return; }
+    const g = c.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, 180, 150); updatePetAnim(a, Math.min(.05, (t - (last || t))/1000), false, null); last = t;
+    drawPetModel(g, type, a, 90, 130, 90, petStage(S.pet.lv).form); raf = requestAnimationFrame(loop); };
+  draw(); raf = requestAnimationFrame(loop);
+}
 function enterShop(z, o){
-  const D = SHOP_IN[o.type], n = NPCS[D.npc]; if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
+  const D = SHOP_IN[o.type], n = D.name ? D : NPCS[D.npc]; if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
   const room = { items:D.items.map(([type, c, r], k) => ({ id:k + 1, type, c, r, w:FURN[type].w, h:FURN[type].h })), wall:D.wall, floor:D.floor, nextId:99 };
   inRoom = { z, o:{ type:o.type, room }, N:6, shop:{ ...D, obj:o }, saved:{ camX, camY, zoom } }; layoutRoom();
   roomPet.x = roomPet.tx = 4.4; roomPet.y = roomPet.ty = 5.2; roomPet.state = 'idle'; roomPet.timer = 1;
   $('toolFab').style.display = 'none'; $('zoneBar').style.display = 'none'; $('roomBar').style.display = 'none';
   $('roomTitle').textContent = `${D.title} • แตะเพื่อคุย`; $('roomTitle').style.display = 'block'; $('mats').style.display = 'none'; $('hint').style.display = 'none';
   const acts = { sawmill:[['🪚 โต๊ะช่าง', () => procTap(z, o)]], smithy:[['⚒ เตาตีเหล็ก', () => procTap(z, o)]],
-    gymyard:[['🏋️ ฝึกกับโค้ช', openGym], ['📷 มินิเกม', camOpen]], buahome:[['💬 คุยกับป้าบัว', () => npcTalk('bua')]], salahouse:[['💬 คุยกับน้องขิง', () => npcTalk('khing')]] }[o.type];
+    gymyard:[['🏋️ ฝึกกับโค้ช', openGym], ['📷 มินิเกม', camOpen]], petshop:[[S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', petMakeover], ['🦴 อาหารสัตว์', buyPetFood]], buahome:[['💬 คุยกับป้าบัว', () => npcTalk('bua')]], salahouse:[['💬 คุยกับน้องขิง', () => npcTalk('khing')]] }[o.type];
   const bar = $('shopBar'); bar.innerHTML = '';
-  acts.concat(o.type === 'gymyard' || o.type === 'buahome' || o.type === 'salahouse' ? [] : [[`💬 คุยกับ${n.name}`, () => npcTalk(D.npc)]]).concat([['🚪 ออก', exitHome]])
+  acts.concat(o.type === 'gymyard' || o.type === 'buahome' || o.type === 'salahouse' || o.type === 'petshop' ? [] : [[`💬 คุยกับ${n.name}`, () => npcTalk(D.npc)]]).concat([['🚪 ออก', exitHome]])
     .forEach(([t, f], i, a) => { const b = document.createElement('button'); b.className = 'btn' + (i === a.length - 1 ? ' ghost' : ''); b.textContent = t; b.onclick = f; bar.appendChild(b); });
   bar.style.display = 'flex'; bump('enterShop'); bump('shop_' + o.type); sfx('pop');
 }
@@ -4122,7 +4197,7 @@ function openStyleMenu(){
 function roomTap(sx, sy){
   if (inRoom.shop){ const ps = TW*.7*petStage(S.pet.lv).scale, [px, py0] = P(roomPet.x, roomPet.y);   // 🏪 pet → pat it • anything else → talk
     if (Math.hypot(sx-px, sy-(py0-ps*.55)) < Math.max(30, ps*.6)){ petHappy(roomPet); bump('petTap'); return; }
-    return npcTalk(inRoom.shop.npc); }
+    return inRoom.shop.talk ? inRoom.shop.talk() : npcTalk(inRoom.shop.npc); }
   const g = pick(sx, sy);
   if (roomPlace) return roomPlaceAt(g.c, g.r);
   { const it = roomItemAt(g.c, g.r, true) || roomItemAt(g.c, g.r); const ps0 = TW*.7*petStage(S.pet.lv).scale, [qx,qy] = P(roomPet.x, roomPet.y);
@@ -4248,6 +4323,8 @@ const QUESTS = [
     text:'(Lv.11) แตะป้าย 🏠 พื้นที่ เพื่อเปิดแผนที่เกาะ → แตะพื้นที่ ⚓ ฝั่งทะเลตะวันออก → แตะท่าเรือ คุยกับลุงปลา รับของขวัญ แล้วให้ลุงสอนตกปลา', reward:{coins:100} },
   { id:'pgTry',   name:'พาน้องไปสนามเด็กเล่น',       need:1, goal:() => st('pgPlay'),
     text:'(Lv.15) เปิดแผนที่เกาะ → พื้นที่ 🛝 ทางใต้ของบ้าน → แตะสนามเด็กเล่น → 🎾 โยนบอลให้น้อง แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว', reward:{coins:100} },
+  { id:'petShop', name:'แวะร้านสัตว์เลี้ยงป้านวล',    need:1, goal:() => st('petSkin'),
+    text:'(Lv.19) เปิดแผนที่เกาะ → พื้นที่ 🐾 ทางตะวันตกของบ้าน → เข้าร้านสัตว์เลี้ยง → 🎨 แต่งน้องฟรี เลือกพันธุ์ สีขน และลาย', reward:{coins:150} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
