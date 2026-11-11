@@ -643,7 +643,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.36.0';
+const APP_VER = '0.37.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -752,6 +752,7 @@ const AWAY_REST = 15*60*1000;
 function awayCheck(){
   if (!S || !S.pet || !S.awayAt) return; const away = Date.now() - S.awayAt; delete S.awayAt;
   if (away >= AWAY_REST){ gbPlay = 0; gbNext = 4000; gbN = 0; }   // 💬 a new session → greet again, restart the 15-min play clock
+  if (away >= AWAY_REST && monUp()) setTimeout(() => monRest(Math.min(MON_AWAY_CAP, Math.floor(away/60000)*MON_AWAY_PER), 'away', away), 900);   // 😌 v0.37
   if (away >= AWAY_REST && tiredNow() > 0){ setTired(0); save(); bump('awayRest');
     setTimeout(() => { const [x, y] = [cssW/2, 120]; fxSpawn(x, y, 0, -30, 2.2, '#2e9e4f', `💪 พักจอมา ${Math.round(away/60000)} นาที แรงเต็มแล้ว!`); }, 400); }
   else save();
@@ -2323,8 +2324,8 @@ function hrnd(seed, i, k){ let x = (seed ^ Math.imul(i+1, 374761393) ^ Math.imul
 /* ---- canvas, camera, zoom ---- */
 const cv = $('farm'), ctx = cv.getContext('2d');
 /* continuous zoom: pinch (2 fingers), ctrl/trackpad wheel, or −/＋ buttons (×1.3 steps) */
-const ZMIN = .4, ZMAX = 1.4;
-let zoom = .72, pinching = false, TWBASE = 64, TW = 64, TH = 32, OX = 0, OY = 0, DPR = 1, cssW = 0, cssH = 0, camX = 0, camY = 0;
+const ZMIN = .65, ZMAX = 1.4;   // v0.37 (designer, Animal-Crossing-like framing): no more far zoom-out (was .4)
+let zoom = 1.0, pinching = false, TWBASE = 64, TW = 64, TH = 32, OX = 0, OY = 0, DPR = 1, cssW = 0, cssH = 0, camX = 0, camY = 0;
 function resizeFarm(keepCenter){
   const r = cv.getBoundingClientRect(); if (!r.width) return;
   const ctr = keepCenter && cssW ? screenToWorld(cssW/2, cssH/2) : null;
@@ -4260,7 +4261,7 @@ const FAQ = [
   { k:['นอน','ง่วง','หลับ','ดึก'], a:'😴 ผู้ใหญ่ควรนอน 7–9 ชั่วโมง เข้านอนเวลาเดิมทุกวัน งดจอก่อนนอนสัก 30–60 นาที ห้องมืดและเย็นจะหลับง่ายขึ้น' },
   { k:['กิน','อาหาร','ข้าว','มื้อ','หิว'], a:'🍽 จานสุขภาพ: ผักครึ่งจาน ข้าว/แป้งหนึ่งในสี่ โปรตีนหนึ่งในสี่ • เลือกผลไม้แทนขนมหวาน • ลดน้ำหวานและของทอด' },
   { k:['ออกกำลัง','วิ่ง','เดิน','คาร์ดิโอ'], a:'🏃 ควรออกกำลังหนักปานกลาง (เดินเร็ว ปั่นจักรยาน) รวม 150 นาที/สัปดาห์ + เวทหรือบริหารกล้ามเนื้อ 2 วัน/สัปดาห์ เริ่มน้อย ๆ แล้วค่อยเพิ่ม' },
-  { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => monUp() ? `👾 ${FMON[S.fmon.kind].name} ยังอยู่ในฟาร์ม (HP ${S.fmon.mhp}/${S.fmon.max}) — แตะ ⚔️ แล้วเลือกท่าโจมตีที่ทำได้ ท่านั่ง 🪑 ก็มี • ระหว่างนี้ใช้ได้แค่ ยิม พักจอ แชท และภารกิจสุขภาพ` : '👾 ถางหญ้า ทุบหิน ตัดไม้ บางครั้งจะปลุกอสูรขึ้นมา ต้องกำจัดด้วยการออกกำลังกายจริงก่อนทำฟาร์มต่อ • ท่าโจมตีเลือกเอง ดาเมจตามท่า' },
+  { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => monUp() ? `👾 ${FMON[S.fmon.kind].name} ยังอยู่ในฟาร์ม (HP ${S.fmon.mhp}/${S.fmon.max}) — แตะ ⚔️ แล้วเลือกท่าโจมตีที่ทำได้ ท่านั่ง 🪑 ก็มี • หรือ 😌 พักจอ −2/นาที / ออกจากเกมไปทำงาน ≥ 15 นาที −1/นาที • ระหว่างนี้ใช้ได้แค่ ยิม พักจอ แชท และภารกิจสุขภาพ` : '👾 ถางหญ้า ทุบหิน ตัดไม้ บางครั้งจะปลุกอสูรขึ้นมา ต้องกำจัดด้วยการออกกำลังกายจริงก่อนทำฟาร์มต่อ • ท่าโจมตีเลือกเอง ดาเมจตามท่า' },
   { k:['ยิม','ฝึก','เวท','แขน','เอว','ไหล่'], a:'🏋️ ยิมโค้ชฟิต: หน้าภารกิจ › "เข้ายิมโค้ชฟิต" หรือแตะโค้ช • เลือก ขา / แขนและไหล่ / เอว / คาร์ดิโอ / ยืดเหยียด ชุดละ 3–5 นาที ถือมือถือ 2 มือ เซ็นเซอร์นับให้ • จบชุดแรงเต็ม 100% (💗 วันละ 3 ชุดแรก)' },
   { k:['เช็กอิน','คุย','แชท','ถามอะไร'], a:'💬 คุยกับเป็นสุขได้ 3 อย่าง: 1) เช็กอิน บอกว่าทำอะไรเพื่อสุขภาพไปแล้ว (ปุ่มนี้จะกะพริบทุก 2 ชม.) 2) ถามเรื่องเกม พิมพ์ถามได้เลย 3) รับคำแนะนำสุขภาพตามช่วงเวลา' } ];
 function faqReply(q){
@@ -5179,15 +5180,33 @@ const DEFS = [
   { k:'time', n:15, name:'🛡 ยกแขนเหนือหัวค้าง 15 วิ', base:2, tip:'ชูมือถือเหนือหัว แขนตรง ค้างไว้' },
   { k:'time', n:15, name:'🪑 นั่งหลังตรง เหยียดแขนค้าง 15 วิ', base:3, tip:'นั่งหลังตรง เหยียดแขนถือมือถือไปข้างหน้า' } ];
 const monUp = () => !!(S && S.fmon);
+/* 😌 v0.37 SCREEN BREAKS HURT FARM MONSTERS (designer: "อยากเล่นเบา ๆ ระหว่างพักสายตาจากงาน แต่เจอมอนสเตอร์ ลุกไม่ได้ —
+   ให้พักจอทำดาเมจ นาทีละ 1–2"). Slow but needs no standing up:
+     in-game 📵 eye rest: −MON_REST_PER (2) HP per full minute • leaving the app ≥ 15 min: −MON_AWAY_PER (1) per minute, ≤ MON_AWAY_CAP (30)
+   A monster beaten this way drops its loot + 🪙 MON_REST_COIN (75 — half of a fight). */
+const MON_REST_PER = 2, MON_AWAY_PER = 1, MON_AWAY_CAP = 30, MON_REST_COIN = 75;
+function monRest(dmg, src, away){
+  if (!monUp() || dmg <= 0) return; const m = S.fmon, T = FMON[m.kind], hit = Math.min(m.mhp, dmg);
+  m.mhp -= hit; bump('monRestDmg', hit);
+  if (m.mhp > 0){ save(); const t = src === 'away' ? `😌 พักจอมา ${Math.round(away/60000)} นาที\n${T.name} อ่อนแรง −${hit} (เหลือ ${m.mhp}/${m.max})` : `😌 ${T.name} −${hit} (เหลือ ${m.mhp}/${m.max})`;
+    if (src === 'away') fxSpawn(cssW/2, 160, 0, -30, 2.4, '#7a5bd5', `😌 ${T.name.trim()} −${hit} (${m.mhp}/${m.max})`); return t; }
+  S.fmon = null; bump('fmonWin'); bump('fmonRestWin'); bump('fmon_' + m.kind);
+  Object.entries(T.loot).forEach(([k, n]) => invAdd(k, n)); S.coins += MON_REST_COIN; save(); refreshHeader(); renderMats();
+  const msg = `😌 พักจอจน${T.name}หมดแรงหนีไปแล้ว!\nฟาร์มปลอดภัย ทำต่อได้เลย\n${inText(T.loot)} • 🪙 ${MON_REST_COIN}`;
+  if (src === 'away') reward(msg); else queueReward(msg);   // eye-rest screen still open → shown by closeAct → flushRewards
+  return msg;
+}
 function monSpawn(kind, gc, gr){
   const T = FMON[kind]; S.fmon = { kind, mhp:T.hp, max:T.hp, php:20, gc, gr, at:Date.now() }; bump('monSpawn'); save(); sfx('pop'); buzz(60);
   if (tool) pickTool(null);
-  setTimeout(() => sheet(`⚠️ ${T.name} โผล่มาจากที่เพิ่งเคลียร์!\nต้องกำจัดก่อนถึงจะทำงานฟาร์มต่อได้\n(ยิม • พักจอ • คุยกับเป็นสุข • ภารกิจสุขภาพ ใช้ได้ตามปกติ)`,
-    [{ label:'⚔️ สู้เลย!', cls:'ok', fn:openFmon }, { label:'ข้ามไปก่อน', cls:'ghost' }]), 350);
+  setTimeout(() => sheet(`⚠️ ${T.name} โผล่มาจากที่เพิ่งเคลียร์!\nต้องกำจัดก่อนถึงจะทำงานฟาร์มต่อได้\n⚔️ สู้ด้วยท่าออกกำลังกาย (เร็ว) หรือ 😌 พักจอให้อ่อนแรง −${MON_REST_PER}/นาที (ไม่ต้องลุก)`,
+    [{ label:'⚔️ สู้เลย!', cls:'ok', fn:openFmon }, { label:`😌 พักจอให้อ่อนแรง`, fn:monRestStart }, { label:'ข้ามไปก่อน', cls:'ghost' }]), 350);
 }
+function monRestStart(){ closeModal(); if (FM) closeFmon(); brkStart('rest'); }
 function monLock(){                                           // returns true (and explains) when a monster blocks the action
   if (!monUp()) return false; const T = FMON[S.fmon.kind];
-  sheet(`🔒 ${T.name} ยังอยู่ในฟาร์ม!\nกำจัดก่อนนะ แล้วค่อยทำต่อ\n(ใช้ท่าไหนก็ได้ ท่านั่ง 🪑 ก็มี)`, [{ label:'⚔️ ไปสู้', cls:'ok', fn:openFmon }, { label:'🏋️ เข้ายิมแทน', fn:openGym }, { label:'ปิด', cls:'ghost' }]);
+  sheet(`🔒 ${T.name} ยังอยู่ในฟาร์ม! (HP ${S.fmon.mhp}/${S.fmon.max})\nกำจัดก่อนนะ แล้วค่อยทำต่อ\n⚔️ สู้ (ท่านั่ง 🪑 ก็มี) • 😌 พักจอ −${MON_REST_PER}/นาที • ออกจากเกมไปทำงาน ≥ 15 นาที −${MON_AWAY_PER}/นาที`,
+    [{ label:'⚔️ ไปสู้', cls:'ok', fn:openFmon }, { label:'😌 พักจอให้อ่อนแรง', fn:monRestStart }, { label:'🏋️ เข้ายิมแทน', fn:openGym }, { label:'ปิด', cls:'ghost' }]);
   return true;
 }
 function fmonSvg(kind, f){
@@ -5207,7 +5226,7 @@ let FM = false;
 function fmAttackMenu(){
   $('xBig').textContent = '⚔️'; $('xSay').textContent = 'เลือกท่าโจมตี — ทำจริง เซ็นเซอร์นับให้ (ดาเมจตามท่า)';
   exBtns(MOVES.map(mv => ({ label:`${mv.name} × ${mv.n}  (${mv.per ? `1 ต่อ ${mv.per} ก้าว` : `${mv.dmg[0]}–${mv.dmg[1]}/ครั้ง`})`, cls:mv.seat ? 'ghost' : 'ok', fn:() => fmDo(mv, true) }))
-    .concat([{ label:'ข้ามไปก่อน (อสูรยังรออยู่)', cls:'ghost', fn:closeFmon }]));
+    .concat([{ label:`😌 พักจอแทน (−${MON_REST_PER}/นาที ไม่ต้องลุก)`, cls:'ghost', fn:monRestStart }, { label:'ข้ามไปก่อน (อสูรยังรออยู่)', cls:'ghost', fn:closeFmon }]));
 }
 async function fmDo(mv, attack){
   const ok = await msStart(); const m = { ...mv, n:exEasy() && mv.k !== 'time' && mv.k !== 'hold' ? Math.ceil(mv.n*.7) : mv.n };
@@ -6102,7 +6121,7 @@ function actRest(box, m){
       <canvas id="aPet" width="320" height="220" style="width:160px;height:110px"></canvas>
       <div id="aZz" class="muted" style="color:#9aa">💤 ${S.pet.name} หลับเป็นเพื่อน</div>
       <div id="aTime" style="font-size:56px;font-weight:700;color:#cfd8dc;letter-spacing:2px">00:00</div>
-      <div id="aGoal" class="muted" style="color:#889"></div>
+      <div id="aGoal" class="muted" style="color:#889"></div><div id="aMon" class="muted" style="color:#b9a3ff;text-align:center"></div>
       <div class="muted" style="color:#778;text-align:center;line-height:1.5;margin-top:10px">วางมือถือไว้ แล้วพักสายตา ยืดเส้นยืดสาย<br>ออกจากหน้านี้หรือปิดจอ เวลาจะหยุดนับ</div>
       <svg id="aHold" viewBox="0 0 100 100" width="96" height="96" style="margin-top:18px"><circle cx="50" cy="50" r="44" fill="none" stroke="#334" stroke-width="7"/>
         <circle id="aRing" cx="50" cy="50" r="44" fill="none" stroke="#e0892f" stroke-width="7" stroke-dasharray="276.5" stroke-dashoffset="276.5" transform="rotate(-90 50 50)"/>
@@ -6111,12 +6130,15 @@ function actRest(box, m){
   m.sec = m.sec || Math.round(m.progress*60);
   let last = performance.now(), saveAcc = 0, lock = null, hold = null, holdT0 = 0, raf2 = 0;
   const show = () => { const s = Math.floor(m.sec), mm = Math.floor(s/60), ss = s%60;
-    $('aTime').textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; $('aGoal').textContent = doneLine(m); };
+    $('aTime').textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; $('aGoal').textContent = doneLine(m);
+    $('aMon').textContent = monUp() ? `👾 ${FMON[S.fmon.kind].name} HP ${S.fmon.mhp}/${S.fmon.max} • อ่อนแรง −${MON_REST_PER} ทุก 1 นาทีที่พัก` : ''; };
+  let monMin = Math.floor(m.sec/60);                          // 😌 v0.37 every new full minute of rest → monRest
   show();
   const tick = setInterval(() => {
     const now = performance.now(), d = Math.min(1.5, (now-last)/1000); last = now;
     if (document.visibilityState !== 'visible') return;
     const was = m.progress; m.sec += d; m.progress = m.sec/60;
+    if (Math.floor(m.sec/60) > monMin){ monMin = Math.floor(m.sec/60); if (monUp()){ monRest(MON_REST_PER, 'rest'); sfx('pop'); } }
     if (was < m.target && m.progress >= m.target){ sfx('done'); buzz(200); }
     if ((saveAcc += d) >= 15){ saveAcc = 0; save(); }
     show();
