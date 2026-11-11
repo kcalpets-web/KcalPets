@@ -719,7 +719,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.41.0';
+const APP_VER = '0.42.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1526,7 +1526,8 @@ const COIN_PER_MISSION = 100, COIN_ALL_BONUS = 300;          // ⚠️ v0.17: mi
    ===================================================================== */
 const GRID = 5;
 const MAT = { stone:'🪨 หิน', grass:'🌿 หญ้า', wood:'🪵 ไม้', seed:'🌱 เมล็ด', veg:'🥕 แครอท', food:'🦴 อาหารสัตว์',
-              tilapia:'🐟 ปลานิล', carp:'🐡 ปลาตะเพียน', shrimp:'🦐 กุ้ง', goldfish:'🐠 ปลาทอง', boot:'👢 รองเท้าเก่า' };
+              tilapia:'🐟 ปลานิล', carp:'🐡 ปลาตะเพียน', shrimp:'🦐 กุ้ง', goldfish:'🐠 ปลาทอง', boot:'👢 รองเท้าเก่า',
+              egg:'🥚 ไข่ไก่', milk:'🥛 นมสด', cheese:'🧀 ชีส', butter:'🧈 เนย', eggsteam:'🍮 ไข่ตุ๋น', cheesesalad:'🥗 สลัดชีส' };   // 🐔 v0.42 livestock
 
 /* ---- 🎨 clay icons (v0.16): emoji in the DOM → <span class="ico"> cut from icons/atlas.webp ----
    atlas cell i → column i%8, row ⌊i/8⌋ ; order MUST match tools/icons.html ICONS.
@@ -1600,7 +1601,8 @@ function icoCell(ref){
 }
 function bigIco(ref, px, fallback){
   const c = icoCell(ref);
-  if (!c) return `<span class="bico" style="width:${px}px;height:${px}px;font-size:${px*.62|0}px;line-height:${px}px">${fallback || '❔'}</span>`;
+  if (!c){ const k = String(ref || ''), fb = fallback || (k.startsWith('m:') && MAT[k.slice(2)] ? MAT[k.slice(2)].split(' ')[0] : k.startsWith('b:') && FARM_ITEMS[k.slice(2)] ? FARM_ITEMS[k.slice(2)].name.split(' ')[0] : '❔');   // v0.42 emoji fallback
+    return `<span class="bico" style="width:${px}px;height:${px}px;font-size:${px*.62|0}px;line-height:${px}px">${fb}</span>`; }
   const [a, i] = c, rows = Math.ceil((a === 1 ? ICO : ICO2).length / 8), url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp';
   return `<span class="bico" style="width:${px}px;height:${px}px;background-image:url(${url}?v=${APP_VER});background-size:${8*px}px ${rows*px}px;background-position:${-(i%8)*px}px ${-((i/8)|0)*px}px"></span>`;
 }
@@ -2295,6 +2297,9 @@ const FARM_ITEMS = {
   mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ขุดได้เรื่อย ๆ แรง 💪 หมดก็พักจอ • สถานที่ถาวร' },
   lanna:     { name:'🏮 โคมไฟล้านนา',  w:1, h:1, price:0, cost:{}, H:2.3, hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • ส่องแสงตอนกลางคืน • ความสวย +2' },
   lotuspond: { name:'🪷 สระบัวกระทง',  w:2, h:2, price:0, cost:{}, H:.6,  hidden:true, event:true, desc:'ของตกแต่งพิเศษ อีเวนต์ลอยกระทง 2569 • สระบัวมีกระทงลอย • ความสวย +3' },
+  coop:      { name:'🐔 เล้าไก่',      w:2, h:2, price:1500,  cost:{plank:4, wood:4},             H:1.8, lv:8,  desc:'เลี้ยงไก่ได้ 4 ตัว • ให้หญ้า 🌿 แล้วได้ไข่ 🥚 ทุก 2 ชม.' },   // 🐔 v0.42
+  cowshed:   { name:'🐄 คอกวัว',       w:2, h:3, price:3500,  cost:{plank:8, beam:2, stone:6},    H:2.4, lv:12, desc:'เลี้ยงวัวได้ 2 ตัว • ให้หญ้า 🌿 แล้วได้นม 🥛 ทุก 4 ชม.' },
+  dairy:     { name:'🧀 โรงนม',        w:2, h:2, price:2000,  cost:{plank:6, stone:6},            H:2.2, lv:12, desc:'นมสด → เนย 🧈 / ชีส 🧀 วัตถุดิบครัวสุขภาพ' },
   jamhouse:  { name:'🫙 โรงทำแยม',     w:2, h:2, price:1500,  cost:{plank:6, beam:2},             H:2.2, lv:12, desc:'สตรอว์เบอร์รี → แยม • มะเขือเทศ → ซอส' }
 };
 /* ⏱ v0.17.1 build time by footprint (cheaper prices, longer builds): 1 ช่อง 2 นาที • 2 ช่อง 10 นาที • 4 ช่อง 30 นาที • 6 ช่อง 2 ชม. • 8 ช่อง 4 ชม. ⚠️
@@ -2305,7 +2310,7 @@ const firstBuild = type => !(S.builtOnce||{})[type] && !S.farm.zones.some(z => z
 const placeSec = (type, it) => firstBuild(type) ? Math.min(FIRST_BUILD, buildSec(it)) : buildSec(it);
 /* 🏘 build limits (v0.17.4) — homes/bonus buildings 1 each, factories 1→2 (Lv.15)→3 (Lv.30), big decor 3, small decor/paths unlimited ⚠️
    count = placed (built or under construction) + kept in 📦 storage; players already above a limit keep what they have */
-const LIMIT = { starter:1, house:1, doghouse:1, barn:1, fountain:3, gazebo:3, smithy:1, mine:1 }, FACTORY_LIM = [[1,1],[15,2],[30,3]];
+const LIMIT = { starter:1, house:1, doghouse:1, barn:1, fountain:3, gazebo:3, smithy:1, mine:1, coop:2, cowshed:2 }, FACTORY_LIM = [[1,1],[15,2],[30,3]];
 function buildLimit(type){
   if (PROC[type]) return FACTORY_LIM.reduce((n,[lv,c]) => S.lv >= lv ? c : n, 1);
   return LIMIT[type] || Infinity;
@@ -2875,6 +2880,20 @@ function drawStruct(o, time, ox, oy){          // ox, oy = chunk offset in globa
       for (let k=0;k<4;k++){ ctx.rotate(Math.PI/2); ctx.fillStyle = '#f7f0e2'; ctx.fillRect(TW*.02, -TW*.04, TW*.42, TW*.08); ctx.fillStyle = '#8a5a33'; ctx.fillRect(0, -TW*.012, TW*.44, TW*.024); }
       ctx.fillStyle = '#5a3818'; ctx.beginPath(); ctx.arc(0,0,TW*.03,0,Math.PI*2); ctx.fill(); ctx.restore();
       break; }
+    case 'coop': case 'cowshed': {                               // 🐔🐄 v0.42 (2D fallback): wooden shed + fenced yard + animal emoji
+      const cow = o.type === 'cowshed', a0 = c0+.1, b0 = r0+.1, a1 = c1-.1, b1 = r1-.1, mb = b0 + (b1-b0)*.45;
+      box(a0,b0,a1,mb,0,U*(cow ? 1.3 : 1),null,cow ? '#c9573f' : '#e9c27a',cow ? '#a8462f' : '#cfa75f');
+      roof(a0-.06,b0-.06,a1+.06,mb+.06,U*(cow ? 1.3 : 1),U*.6,'#8a5a33','#74492a','#5f3b21');
+      for (let k=0;k<5;k++) box(a0+k*(a1-a0)/4-.03,b1-.06,a0+k*(a1-a0)/4+.03,b1,0,U*.45,'#c99a62','#b48550','#9c7240');
+      const n = (o.live && o.live.n) || 0; ctx.font = `${Math.round(TW*(cow ? .3 : .2))}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      for (let k=0;k<n;k++){ const [ex,ey] = P(a0+.3+(k%2)*(a1-a0-.6), mb+.35+((k/2)|0)*.4 + Math.sin(time*2+k)*.03, 0); ctx.fillText(cow ? '🐄' : '🐔', ex, ey); }
+      break; }
+    case 'dairy': {
+      const a0 = c0+.12, b0 = r0+.12, a1 = c1-.12, b1 = r1-.12;
+      box(a0,b0,a1,b1,0,U*1.2,null,'#f4f7fb','#d9e2ec'); faceQuad('L', a0,b0,a1,b1, .4,.6, 0, U*.85, '#5f8fc9');
+      roof(a0-.08,b0-.08,a1+.08,b1+.08,U*1.2,U*.85,'#5f8fc9','#4f7cac','#3f6690');
+      const [jx,jy] = P(a0+.15, b1+.05, U*.15); ctx.font = `${Math.round(TW*.28)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('🧀', jx, jy);
+      break; }
     case 'jamhouse': {
       const a0 = c0+.12, b0 = r0+.12, a1 = c1-.12, b1 = r1-.12;
       box(a0,b0,a1,b1,0,U*1.2,null,'#fde2e4','#f2c4ca');
@@ -3162,7 +3181,7 @@ function frame(now){
     badges.length = 0;
     for (const z of S.farm.zones){
       for (let li=0; li<z.tiles.length; li++){ const t = z.tiles[li]; if (RES[t.k] && (t.job || t.hp != null)) badges.push(t.job ? 0 : 2, z.cx*GRID + li%GRID, z.cy*GRID + ((li/GRID)|0), z, li); }
-      for (const o of z.objs) if (!o.done || (o.type==='plot' && o.plant) || o.pj) badges.push(1, 0, 0, z, o.id);
+      for (const o of z.objs) if (!o.done || (o.type==='plot' && o.plant) || o.pj || (o.live && o.live.end)) badges.push(1, 0, 0, z, o.id);
     }
     R3D.ghost(placing, time);                                 // 3D placement ghost (translucent model)
     if (placing && placing.gc != null){ const col = placing.valid ? 'rgba(76,175,106,.45)' : 'rgba(220,60,60,.45)';
@@ -3217,7 +3236,7 @@ function frame(now){
       else if (t.k==='obj'){
         const o = objById(z, t.o), lc = li%GRID, lr = (li/GRID)|0;
         if (o && lc===o.c+o.w-1 && lr===o.r+o.h-1){ drawStruct(o, time, z.cx*GRID, z.cy*GRID);
-          if (!o.done || (o.type==='plot' && o.plant) || o.pj) badges.push(1, gc, gr, z, o.id); }
+          if (!o.done || (o.type==='plot' && o.plant) || o.pj || (o.live && o.live.end)) badges.push(1, gc, gr, z, o.id); }
       }
     }
     if (!petDrawn && petDepth < s+1.5){ drawPet(); drawFishLine(time); petDrawn = true; }
@@ -3279,6 +3298,7 @@ function buildBadge(o, z, time, wall){
   const it = FARM_ITEMS[o.type], [x,y] = P(z.cx*GRID+o.c+o.w/2, z.cy*GRID+o.r+o.h/2, TH*it.H + 16);
   if (!o.done){ const left = (o.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/objBuildSec(o), left, left <= 0, time, '🔨'); }
   else if (o.pj){ const r = PROC[o.type][o.pj.i], left = (o.pj.end-wall)/1000; badge(x, y, 1 - Math.max(0,left)/r.sec, left, left <= 0, time, r.furn ? '🛠' : MAT[r.out].split(' ')[0]); }
+  else if (o.live && o.live.end){ const L = LIVE[o.type], left = (o.live.end - wall)/1000; badge(x, y, 1 - Math.max(0,left)/L.sec, left, left <= 0, time, L.oe); }   // 🐔
   else { const c = cropOf(o), left = (o.plant + c.sec*1000 - wall)/1000; badge(x, y, 1 - Math.max(0,left)/c.sec, left, left <= 0, time, c.e); }
 }
 
@@ -3304,7 +3324,7 @@ function startPlacing(type, opts){
 }
 function endPlacing(){
   if (placing && placing.move){                              // cancelled move → put it back untouched
-    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room;
+    const m = placing.move, o = addObj(m.z, m.o.type, m.o.c, m.o.r, m.o.w, m.o.h, true); o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room; o.live = m.o.live;
   }
   placing = null; $('placeBar').style.display = 'none'; $('zoneBar').style.display = 'flex';
 }
@@ -3333,7 +3353,7 @@ $('pOk').onclick = () => {
   const it = FARM_ITEMS[placing.type], fz = footprintZone(placing); if (!fz) return;
   if (placing.move || placing.store){                        // move / place from storage: free & instant
     const m = placing.move, o = addObj(fz.z, placing.type, fz.lc, fz.lr, placing.w, placing.h, true);
-    if (m){ o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room; } else S.store[placing.type]--;
+    if (m){ o.plant = m.o.plant; o.crop = m.o.crop; o.pj = m.o.pj; o.room = m.o.room; o.live = m.o.live; } else { S.store[placing.type]--; liveUnstore(o); }
     placing.move = null; bump('moveStore'); endPlacing(); save(); renderShop();
     return;
   }
@@ -3656,6 +3676,7 @@ function tapObj(z, o){
   if (o.type==='plot') return plotTap(z, o);
   if (o.type === 'pier') return pierTap(z, o);
   if (o.type === 'playground') return playgroundTap();        // 🛝 v0.40.2                // ⚓ v0.40.1
+  if (LIVE[o.type]) return liveTap(z, o);                    // 🐔 v0.42 coop / cow shed
   if (shopOpen(o)) return enterShop(z, o);                   // 🏪 v0.40 NPC workplaces / repaired homes / gym → interior
   if (PROC[o.type]) return procTap(z, o);
   if (HOMES[o.type]) return homeTap(z, o);                   // 🏚 v0.30
@@ -3911,7 +3932,7 @@ function pierLesson(gc, gr){
 /* 🐾 v0.41 PET SHOP of ป้านวล — blueprint zone (−2,0) = index 18 = Lv19. Not a walking townsperson (lives in her shop).
    🎨 makeover: breed / colour / pattern with a live preview; the first one is free (S.petSkinFree), then PET_SKIN_COST.
    🦴 pet food: 1 / 5 / 10 at PET_FOOD_COST each (×0.9 for 5, ×0.85 for 10). */
-const PETSHOP_ZONE = 18, PET_SKIN_COST = 500, PET_FOOD_COST = 40;
+const PETSHOP_ZONE = 18, PET_SKIN_COST = 500, PET_FOOD_COST = 200;   // v0.42 fix (= BUY.food, BUY is declared later): same base price as the general shop (packs still discounted)
 function ensurePetShop(){
   if (S.farm.zones.length <= PETSHOP_ZONE || homeObj('petshop')) return;
   const o = placeFixed('petshop', PETSHOP_ZONE, false, [2, 2]); if (o){ o.done = true; save(); }
@@ -3920,7 +3941,7 @@ function nuanTalk(){
   const first = !S.nuanMet; S.nuanMet = 1; save(); bump('nuanTalk');
   sheet(first ? `🐾 ป้านวล\n"ยินดีต้อนรับจ้ะ ${S.pet.name}น่ารักจัง! ครั้งแรกป้าแต่งตัวให้ฟรีเลยนะ เลือกพันธุ์ สีขน ลายได้ตามใจ"`
               : `🐾 ป้านวล\n"${['พาน้องไปเดินเล่นบ่อย ๆ นะ ทั้งน้องทั้งเราแข็งแรงไปด้วยกัน', 'อาหารสัตว์ป้าทำเองจากผักในเมืองเลยนะ', 'น้องอิ่ม สะอาด ได้เล่น ก็อารมณ์ดีทั้งวันจ้ะ'][new Date().getDate() % 3]}"`,
-    [{ label:S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', cls:'ok', fn:petMakeover }, { label:'🦴 อาหารสัตว์', fn:buyPetFood }, { label:'ปิด', cls:'ghost' }]);
+    [{ label:S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', cls:'ok', fn:petMakeover }, { label:'🦴 อาหารสัตว์', fn:buyPetFood }, { label:'🐔 ไก่ / วัว สำหรับฟาร์ม', fn:() => buyLivestock() }, { label:'ปิด', cls:'ghost' }]);
 }
 function buyPetFood(){
   const opt = [[1, 1], [5, .9], [10, .85]].map(([n, k]) => [n, Math.round(n*PET_FOOD_COST*k)]);
@@ -3954,6 +3975,63 @@ function petMakeover(){
     drawPetModel(g, type, a, 90, 130, 90, petStage(S.pet.lv).form); raf = requestAnimationFrame(loop); };
   draw(); raf = requestAnimationFrame(loop);
 }
+/* 🐔🐄 v0.42 LIVESTOCK (designer: "เลี้ยงไก่เก็บไข่ เลี้ยงวัวเก็บนม แปรรูปเป็นชีส → วัตถุดิบร้านอาหาร"; roadmap: "พาสัตว์เดินเล่น = ก้าวเดินจริง").
+   o.live = { n: animals, end: ms when the fed batch is ready (0 = hungry), boost: 1 after a walk (next batch ×2), walk: day key }.
+   Cycle: 🌿 feed (grass 1 per animal) → wait L.sec → collect L.out × n (× 2 if boosted, 💪 −1 like a harvest).
+   🚶 walk: once a day per building, real steps (sensor) — 40 steps (28 in easy mode); counts as the "boost" for the CURRENT or NEXT batch.
+   Farm animals are bought from ป้านวล (pet shop) and delivered straight into a coop / shed with room. They are not pets (designer). */
+const LIVE = {
+  coop:    { an:'ไก่', e:'🐔', cap:4, price:600,  out:'egg',  oe:'🥚', sec:7200,  walk:'พาไก่ออกไปคุ้ยดิน' },
+  cowshed: { an:'วัว', e:'🐄', cap:2, price:2500, out:'milk', oe:'🥛', sec:14400, walk:'จูงวัวไปเล็มหญ้า' } };
+const LIVE_STEPS = 40;
+const liveOf = o => (o.live = o.live || { n:0, end:0, boost:0, walk:'' });
+function liveStore(o){ if (!o.live || !o.live.n) return; S.liveKeep = S.liveKeep || {}; S.liveKeep[o.type] = (S.liveKeep[o.type] || 0) + o.live.n; }
+function liveUnstore(o){ const k = (S.liveKeep || {})[o.type]; if (!LIVE[o.type] || !k) return; const n = Math.min(k, LIVE[o.type].cap); liveOf(o).n = n; S.liveKeep[o.type] -= n; }
+function liveTap(z, o){
+  const L = LIVE[o.type], it = FARM_ITEMS[o.type], v = liveOf(o), now = Date.now(), ready = v.end && now >= v.end, walked = v.walk === todayKey();
+  const head = `${it.name} • ${L.e} ${v.n}/${L.cap} ตัว${v.boost ? ' • 🚶 อารมณ์ดี ผลผลิต ×2' : ''}`;
+  if (!v.n) return sheet(`${head}\nยังไม่มี${L.an}เลย ซื้อได้ที่ร้านสัตว์เลี้ยงป้านวล`, [{ label:`🛒 ซื้อ${L.an} (🪙 ${L.price.toLocaleString()})`, cls:'ok', fn:() => buyLivestock(o.type) }, { label:'ปิด', cls:'ghost' }]);
+  const btn = [];
+  if (ready) btn.push({ label:`${L.oe} เก็บ${MAT[L.out].split(' ')[1]} ${v.n*(v.boost ? 2 : 1)} (💪 −1)`, cls:'ok', fn:() => liveCollect(z, o) });
+  else if (!v.end) btn.push({ label:`🌿 ให้หญ้า ${v.n} (มี ${inv('grass')})`, cls:'ok', fn:() => liveFeed(z, o) });
+  if (!walked) btn.push({ label:`🚶 ${L.walk} (ย่ำเท้า ${exEasy() ? Math.ceil(LIVE_STEPS*.7) : LIVE_STEPS} ก้าว → ×2)`, cls:ready || v.end ? 'ok' : '', fn:() => liveWalk(z, o) });
+  if (v.n < L.cap) btn.push({ label:`🛒 ซื้อ${L.an}เพิ่ม (🪙 ${L.price.toLocaleString()})`, fn:() => buyLivestock(o.type) });
+  btn.push({ label:'ปิด', cls:'ghost' });
+  sheet(`${head}\n` + (ready ? `${L.oe} พร้อมเก็บแล้ว!` : v.end ? `⏳ อิ่มแล้ว อีก ${fmt((v.end - now)/1000)} ได้${MAT[L.out]}` : `🌿 หิวแล้ว ให้หญ้าตัวละ 1 แล้วรอ ${fmt(L.sec)}`) +
+    (walked ? '\n🚶 วันนี้พาเดินเล่นแล้ว' : ''), btn);
+}
+function liveFeed(z, o){
+  const L = LIVE[o.type], v = liveOf(o); if (inv('grass') < v.n) return sheet(`🌿 หญ้าไม่พอ (ต้องใช้ ${v.n} มี ${inv('grass')})\nเกี่ยวหญ้าในฟาร์มด้วยเคียว หรือซื้อที่ร้านค้า`, OK);
+  S.inv.grass -= v.n; v.end = Date.now() + L.sec*1000; bump('liveFeed'); save(); renderMats(); markDirty(z); sfx('pop');
+  sheet(`${L.e} ${L.an}กินหญ้าอย่างมีความสุข\nอีก ${fmt(L.sec)} ได้${MAT[L.out]}`, OK);
+}
+function liveCollect(z, o){
+  const L = LIVE[o.type], v = liveOf(o), n = v.n*(v.boost ? 2 : 1); useSta(1);
+  invAdd(L.out, n); v.end = 0; v.boost = 0; bump('liveGet'); bump('live_' + L.out, n); gainExp(EXP.harvest); save(); refreshHeader(); renderMats(); markDirty(z); sfx('coin');
+  reward(`${MAT[L.out]} +${n}\n⭐ Exp +${EXP.harvest}\nให้หญ้ารอบใหม่ได้เลย`);
+}
+async function liveWalk(z, o){
+  const L = LIVE[o.type], v = liveOf(o); closeModal();
+  const ok = await msStart(), n = exEasy() ? Math.ceil(LIVE_STEPS*.7) : LIVE_STEPS;
+  $('gym').style.display = 'block'; $('gTitle').textContent = `🚶 ${L.walk}`;
+  G = { id:'live', name:'', steps:[{ k:'steps', n, name:`🚶 ${L.walk}`, tip:'ย่ำเท้าหรือเดินอยู่กับที่ ถือมือถือไว้ที่อก' }], i:-1, sensor:ok, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0,
+    cb:tot => { $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; if (tot < n*.5) return sheet(`ยังเดินไม่ครบเลย (${tot}/${n} ก้าว) ลองใหม่อีกครั้งนะ`, OK);
+      v.walk = todayKey(); v.boost = 1; bump('liveWalk'); gainExp(EXP.harvest); save(); markDirty(z); sfx('coin');
+      reward(`🚶 ${L.walk} ${tot} ก้าว\n${L.e} อารมณ์ดี! รอบนี้ได้${MAT[L.out].split(' ')[1]} ×2\n⭐ Exp +${EXP.harvest}`); } };
+  gymNext(); clearInterval(exT); exT = setInterval(gymTick, 50);
+}
+function buyLivestock(only){
+  const rows = Object.entries(LIVE).filter(([t]) => !only || t === only).map(([t, L]) => {
+    const homes = []; for (const z of S.farm.zones) for (const o of z.objs) if (o.type === t && o.done) homes.push([z, o]);
+    const room = homes.find(([, o]) => liveOf(o).n < L.cap), lock = S.lv < FARM_ITEMS[t].lv;
+    return { label: lock ? `🔒 ${L.e} ${L.an} (${FARM_ITEMS[t].name} ปลดล็อก Lv.${FARM_ITEMS[t].lv})` : !homes.length ? `${L.e} ${L.an} • ต้องสร้าง${FARM_ITEMS[t].name}ก่อน` : !room ? `${L.e} ${L.an} • ที่เต็มแล้ว`
+             : `${L.e} ซื้อ${L.an} 1 ตัว • 🪙 ${L.price.toLocaleString()}`, cls: room && !lock ? 'ok' : 'ghost',
+      fn: room && !lock ? () => { if (S.coins < L.price) return sheet('🪙 เหรียญไม่พอนะจ๊ะ', OK);
+        const [z, o] = room; S.coins -= L.price; liveOf(o).n++; bump('liveBuy'); bump('liveBuy_' + t); save(); refreshHeader(); markDirty(z); sfx('coin');
+        reward(`${L.e} ${L.an}ตัวใหม่ย้ายเข้า${FARM_ITEMS[t].name}แล้ว (${o.live.n}/${L.cap})\nแตะที่${FARM_ITEMS[t].name} → 🌿 ให้หญ้า`); } : () => { if (!homes.length && !lock) sheet(`สร้าง${FARM_ITEMS[t].name}ได้ที่ ร้านค้า › ฟาร์ม`, OK); } };
+  });
+  sheet(`🐔 สัตว์สำหรับฟาร์ม (ป้านวล)\n"ไก่ให้ไข่ วัวให้นม ไม่ใช่สัตว์เลี้ยงในบ้านนะจ๊ะ ต้องมีเล้าหรือคอกให้ก่อน"`, rows.concat([{ label:'ปิด', cls:'ghost' }]));
+}
 function enterShop(z, o){
   const D = SHOP_IN[o.type], n = D.name ? D : NPCS[D.npc]; if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
   const room = { items:D.items.map(([type, c, r], k) => ({ id:k + 1, type, c, r, w:FURN[type].w, h:FURN[type].h })), wall:D.wall, floor:D.floor, nextId:99 };
@@ -3962,7 +4040,7 @@ function enterShop(z, o){
   $('toolFab').style.display = 'none'; $('zoneBar').style.display = 'none'; $('roomBar').style.display = 'none';
   $('roomTitle').textContent = `${D.title} • แตะเพื่อคุย`; $('roomTitle').style.display = 'block'; $('mats').style.display = 'none'; $('hint').style.display = 'none';
   const acts = { sawmill:[['🪚 โต๊ะช่าง', () => procTap(z, o)]], smithy:[['⚒ เตาตีเหล็ก', () => procTap(z, o)]],
-    gymyard:[['🏋️ ฝึกกับโค้ช', openGym], ['📷 มินิเกม', camOpen]], petshop:[[S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', petMakeover], ['🦴 อาหารสัตว์', buyPetFood]], buahome:[['💬 คุยกับป้าบัว', () => npcTalk('bua')]], salahouse:[['💬 คุยกับน้องขิง', () => npcTalk('khing')]] }[o.type];
+    gymyard:[['🏋️ ฝึกกับโค้ช', openGym], ['📷 มินิเกม', camOpen]], petshop:[[S.petSkinFree ? '🎨 แต่งน้อง' : '🎨 แต่งน้องฟรี!', petMakeover], ['🦴 อาหารสัตว์', buyPetFood], ['🐔 สัตว์ฟาร์ม', () => buyLivestock()]], buahome:[['💬 คุยกับป้าบัว', () => npcTalk('bua')]], salahouse:[['💬 คุยกับน้องขิง', () => npcTalk('khing')]] }[o.type];
   const bar = $('shopBar'); bar.innerHTML = '';
   acts.concat(o.type === 'gymyard' || o.type === 'buahome' || o.type === 'salahouse' || o.type === 'petshop' ? [] : [[`💬 คุยกับ${n.name}`, () => npcTalk(D.npc)]]).concat([['🚪 ออก', exitHome]])
     .forEach(([t, f], i, a) => { const b = document.createElement('button'); b.className = 'btn' + (i === a.length - 1 ? ' ghost' : ''); b.textContent = t; b.onclick = f; bar.appendChild(b); });
@@ -4325,6 +4403,10 @@ const QUESTS = [
     text:'(Lv.15) เปิดแผนที่เกาะ → พื้นที่ 🛝 ทางใต้ของบ้าน → แตะสนามเด็กเล่น → 🎾 โยนบอลให้น้อง แตะ "โยน!" ตอนเข็มอยู่ในช่องเขียว', reward:{coins:100} },
   { id:'petShop', name:'แวะร้านสัตว์เลี้ยงป้านวล',    need:1, goal:() => st('petSkin'),
     text:'(Lv.19) เปิดแผนที่เกาะ → พื้นที่ 🐾 ทางตะวันตกของบ้าน → เข้าร้านสัตว์เลี้ยง → 🎨 แต่งน้องฟรี เลือกพันธุ์ สีขน และลาย', reward:{coins:150} },
+  { id:'liveTry', name:'ไข่ฟองแรกจากเล้าไก่',        need:1, goal:() => st('live_egg') ? 1 : 0,
+    text:'(Lv.8) ร้านค้า › ฟาร์ม › 🐔 เล้าไก่ → ร้านป้านวล › 🐔 ซื้อไก่ → แตะเล้า › 🌿 ให้หญ้า → 🚶 พาไก่เดินเล่นให้ได้ไข่ ×2 → เก็บไข่ 🥚', reward:{coins:300} },
+  { id:'dairyTry', name:'ทำชีสจากนมวัว',             need:1, goal:() => st('proc_cheese') ? 1 : 0,
+    text:'(Lv.12) สร้าง 🐄 คอกวัว + 🧀 โรงนม → ซื้อวัวจากป้านวล → ให้หญ้า เก็บนม 🥛 → โรงนม › ชีส (นม 3)', reward:{coins:500} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
@@ -5934,7 +6016,8 @@ const SELL = { veg:40, corn:100, tomato:160, rice:250, pumpkin:600, berry:400,
   tilapia:120, carp:200, shrimp:160, goldfish:800, boot:20,
   stone:20, grass:20, wood:40, soil:20, plank:160, beam:400, polish:450,
   ore_copper:40, ore_iron:70, ore_silver:120, ore_gold:200, coal:20, gem:500, bar_copper:160, bar_iron:280, bar_silver:450, bar_gold:750,   // ⚠️ v0.22
-  milled:1200, soup:300, friedrice:2000, jam:2200, sauce:900 };
+  milled:1200, soup:300, friedrice:2000, jam:2200, sauce:900,
+  egg:120, milk:300, cheese:1400, butter:900, eggsteam:600, cheesesalad:2600 };   // 🐔 v0.42
 const BUY = { food:200, stone:80, wood:100, grass:40, soil:60,
   seed:10, sd_corn:25, sd_tomato:40, sd_rice:60, sd_pumpkin:150, sd_berry:100 };
 const seedCrop = k => Object.values(CROPS).find(c => c.seed === k);
@@ -5950,7 +6033,9 @@ const PROC = {
               {furn:'chair', in:{plank:1}, sec:300}, {furn:'petbed', in:{plank:1, grass:3}, sec:300}, {furn:'table', in:{plank:2, beam:1}, sec:600},
               {furn:'shelf', in:{plank:3}, sec:600}, {furn:'bed', in:{plank:4, polish:1}, sec:900}, {furn:'sofa', in:{plank:3, polish:1, grass:4}, sec:900} ],
   mill:     [ {out:'milled', in:{rice:3}, sec:600} ],
-  kitchen:  [ {out:'soup', in:{corn:1, veg:1}, sec:900}, {out:'friedrice', in:{milled:1, tilapia:1}, sec:1200} ],
+  kitchen:  [ {out:'soup', in:{corn:1, veg:1}, sec:900}, {out:'friedrice', in:{milled:1, tilapia:1}, sec:1200},
+              {out:'eggsteam', in:{egg:2, veg:1}, sec:900}, {out:'cheesesalad', in:{cheese:1, tomato:2, veg:1}, sec:1500} ],   // 🐔 v0.42 healthy dishes
+  dairy:    [ {out:'butter', in:{milk:2}, sec:1200}, {out:'cheese', in:{milk:3}, sec:1800} ],                                // 🧀 v0.42 โรงนม
   jamhouse: [ {out:'jam', in:{berry:3}, sec:1200}, {out:'sauce', in:{tomato:3}, sec:1200} ],
   /* ⚒ v0.22 smithy: smelting + upgrades (r.up = upgrade key, r.lv = level it gives; only the next level is offered) ⚠️ */
   smithy:   [ {out:'bar_copper', in:{ore_copper:3, coal:1}, sec:300}, {out:'bar_iron', in:{ore_iron:3, coal:2}, sec:600},
@@ -6067,6 +6152,8 @@ function orderPool(){
   if (ownsDone('mill')) k.push('milled');
   if (ownsDone('kitchen')) k.push('soup');
   if (ownsDone('jamhouse')) k.push('sauce', 'jam');
+  if (ownsDone('coop')) k.push('egg'); if (ownsDone('cowshed')) k.push('milk');   // 🐔 v0.42
+  if (ownsDone('dairy')) k.push('butter', 'cheese'); if (ownsDone('kitchen') && (ownsDone('coop') || ownsDone('dairy'))) k.push('eggsteam');
   return k;
 }
 function newOrder(){
@@ -6844,7 +6931,7 @@ function liftDrop(){
   }
   const type = placing.type, it = FARM_ITEMS[type];
   if (toStore){
-    const m = placing.move; placing.move = null; endPlacing();
+    const m = placing.move; placing.move = null; endPlacing(); if (m) liveStore(m.o);   // 🐔 animals wait in the shop's pen
     S.store = S.store || {}; S.store[type] = (S.store[type]||0) + 1; bump('moveStore'); bump('dragStore'); sfx('pop'); save(); renderShop();
     return reward(`📦 เก็บ ${it.name} เข้าคลังแล้ว\nนำออกมาวางใหม่ได้ฟรีที่ ร้านค้า › ฟาร์ม › 📦 คลังของฉัน` + (m.o.plant ? '\n(ผักที่ปลูกอยู่หายไป)' : ''));
   }

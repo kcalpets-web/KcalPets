@@ -223,6 +223,36 @@ export function start(){
       case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true, box:true });
                        for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
+      /* 🐔🐄 v0.42 livestock: shed in the back third (z < −D/6), fenced yard in front, one model per animal (o.live.n).
+         Yard slots: k → x = (k%2 ? +1 : −1)·W/4, z = D/12 + ⌊k/2⌋·D/4 ; animals tilt gently via the zone sway list (kind 0). */
+      case 'coop': case 'cowshed': {
+        const cow = o.type === 'cowshed', sz = -D/3, sd = D/3 - .2, sh = cow ? 1.5 : 1.1, n = (o.live && o.live.n) || 0;
+        RB(g, W-.3, .05, D-.3, .05, cow ? '#b9d77a' : '#d9c08a', 0, 0, 0);                                     // yard: grass / dirt
+        RB(g, W-.5, sh, sd, .06, cow ? '#c9573f' : '#e9c27a', 0, 0, sz, true);                                   // shed
+        const rf = add(g, gable(sd + .3, cow ? .9 : .6, W - .3), mat('#8a5a33'), 0, sh, sz, null, null, null, true); rf.rotation.y = Math.PI/2;
+        RB(g, cow ? 1.0 : .5, cow ? 1.1 : .55, .06, .03, '#5a3a22', 0, 0, sz + sd/2 + .01);                       // dark doorway
+        if (cow) for (const r of [.7, -.7]){ const b = RB(g, .06, 1.1, .04, .02, '#fbf8f2', 0, .02, sz + sd/2 + .05); b.rotation.z = r; }
+        for (const x of [-(W/2 - .25), W/2 - .25]){ for (let zz = sz + sd/2; zz <= D/2 - .2; zz += .8) CY(g, .05, .55, '#c99a62', x, 0, zz);
+          RB(g, .05, .06, D/2 - .2 - (sz + sd/2), .02, '#c99a62', x, .42, (sz + sd/2 + D/2 - .2)/2); }
+        for (let xx = -(W/2 - .25); xx <= W/2 - .2; xx += .8) CY(g, .05, .55, '#c99a62', xx, 0, D/2 - .25);
+        RB(g, W - .5, .06, .05, .02, '#c99a62', 0, .42, D/2 - .25);
+        if (cow) RB(g, 1.0, .3, .4, .04, '#7a5236', W/4, 0, D/2 - .7);                                           // hay trough
+        else { RB(g, .6, .12, .35, .03, '#a8703f', W/4, 0, D/2 - .6); for (let k=0;k<3;k++) BALL(g, .07, .09, .07, '#fbf3e4', W/4 - .15 + k*.15, .12, D/2 - .6); }   // nest with eggs
+        for (let k=0;k<n;k++){
+          const a2 = new THREE.Group(); a2.position.set((k%2 ? 1 : -1)*W/4, 0, D/12 + ((k/2)|0)*D/4); a2.rotation.y = (k%2 ? -.6 : .6) + k; g.add(a2);
+          if (cow){ BALL(a2, .5, .38, .75, '#fbf8f2', 0, .55, 0, true); BALL(a2, .25, .2, .3, '#2f2a28', .2, .7, .1); BALL(a2, .2, .16, .22, '#2f2a28', -.25, .6, -.3);
+            for (const [lx, lz] of [[-.25,-.45],[.25,-.45],[-.25,.45],[.25,.45]]) CY(a2, .08, .5, '#fbf8f2', lx, 0, lz);
+            const h = BALL(a2, .26, .26, .3, '#fbf8f2', 0, .9, .8); BALL(a2, .2, .14, .14, '#f4b6b6', 0, .82, 1.05);
+            for (const sx of [-1, 1]){ CO(a2, .05, .18, '#e9dcc0', sx*.15, 1.08, .78); BALL(a2, .04, .04, .04, '#2a2424', sx*.12, .96, 1.0); } }
+          else { BALL(a2, .2, .18, .24, '#fbf8f2', 0, .22, 0, true); BALL(a2, .12, .12, .12, '#fbf8f2', 0, .42, .16);
+            BALL(a2, .04, .06, .05, '#e5483e', 0, .55, .16); CO(a2, .035, .08, '#f2a33a', 0, .4, .3).rotation.x = Math.PI/2;
+            BALL(a2, .1, .12, .06, '#f2ede2', 0, .3, -.22); for (const sx of [-.07, .07]) CY(a2, .015, .12, '#f2a33a', sx, 0, 0); }
+          if (curSway) curSway.push(a2, k*1.7, cow ? .04 : .12, 0);
+        }
+        break; }
+      case 'dairy': walls('#f4f7fb', '#5f8fc9', 1.5, { box:true });                                              // 🧀 dairy: white walls, blue roof, milk cans
+        for (const x of [-.5, -.15]){ CY(g, .14, .45, '#cfd6dc', W*.3 + x, 0, D*.45, true); CY(g, .08, .08, '#aeb6be', W*.3 + x, .45, D*.45); }
+        RB(g, .5, .3, .4, .04, '#f2c94c', -W*.3, 0, D*.45, true); break;
       /* ⛏ v0.22 phase 3 */
       /* 🏚 v0.30 NPC homes — ruined (o.closed) until the player repairs them */
       /* 🏋️ v0.33.3 โค้ชฟิต's gym — a real building, open from day one (o.closed only means "coach doesn't sleep here yet").
