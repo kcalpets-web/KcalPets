@@ -225,16 +225,38 @@ export function start(){
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
       /* ⛏ v0.22 phase 3 */
       /* 🏚 v0.30 NPC homes — ruined (o.closed) until the player repairs them */
-      case 'buahome': case 'gymyard': case 'salahouse':
+      /* 🏋️ v0.33.3 โค้ชฟิต's gym — a real building, open from day one (o.closed only means "coach doesn't sleep here yet").
+         Footprint 2×2 tiles → W = D = 4 world units. Building fills the back half:  width bw = 0.8·W, depth bd = 0.5·D,
+         centre z = bz = −0.2·D  → its front wall sits at z = bz + bd/2 = 0.05·D; the yard in front (z ∈ [0.05D, 0.5D]) holds
+         the upgrade props, added per stage gl = o.gl (0–3): ① rubber floor ② pull-up bar + bench ③ dumbbell rack. */
+      case 'gymyard': {
+        const gl = o.gl|0, bw = W*.8, bd = D*.5, bz = -D*.2, wh = 1.7, fz = bz + bd/2;
+        const HB = (r, len, hex, x, y, z) => { const m = add(g, CYL, mat(hex), x, y, z, r, len, r); m.rotation.z = Math.PI/2; return m; };   // horizontal bar centred at (x, y, z)
+        RB(g, bw+.2, .18, bd+.2, .06, '#d9d3c8', 0, 0, bz);                                              // stone foundation
+        add(g, rb(bw, wh, bd, .12), mat('#eef2f6'), 0, wh/2, bz, null, null, null, true);                 // walls
+        const rf = add(g, gable(bd+.3, bd*.42, bw+.3), mat('#e05a4a'), 0, wh, bz, null, null, null, true); rf.rotation.y = Math.PI/2;   // red gable roof along X
+        RB(g, bw+.45, .12, .16, .05, '#f7f3ea', 0, wh + bd*.42 + .02, bz).castShadow = false;            // ridge cap
+        RB(g, 1.0, 1.2, .08, .04, '#3a7bd5', 0, 0, fz); RB(g, .04, 1.0, .06, .02, '#2a5ca8', 0, .08, fz + .05);   // blue double door + centre seam
+        for (const x of [-.24, .24]) RB(g, .34, .8, .05, .03, '#8ec6e6', x, .3, fz + .04);               // door glass
+        for (const x of [-bw*.33, bw*.33]){ RB(g, .8, .62, .08, .04, '#ffffff', x, wh*.4, fz + .01); RB(g, .66, .48, .06, .03, '#8ec6e6', x, wh*.4 + .07, fz + .04); }   // big front windows
+        RB(g, 1.7, .6, .1, .05, '#2f3a4a', 0, wh - .12, fz + .12);                                       // sign board over the door
+        const sy = wh + .18, sz = fz + .2; HB(.035, .76, '#ffffff', 0, sy, sz);                           // 🏋️ dumbbell on the sign
+        for (const sx of [-1, 1]){ HB(.15, .09, '#ffd84d', sx*.3, sy, sz); HB(.11, .07, '#ffd84d', sx*.41, sy, sz); }
+        if (gl >= 1) RB(g, W-.4, .05, D*.42, .02, '#4f8fd8', 0, 0, fz + D*.23);                           // ① blue rubber floor
+        else { const cb = RB(g, .5, .62, .06, .03, '#2f3a4a', W*.32, .02, fz + D*.25); cb.rotation.x = -.25; }   // stage 0: chalkboard "OPEN"
+        if (gl >= 2){ for (const x of [-1.55, -.65]) CY(g, .07, 1.9, '#5a5f66', x, .05, fz + D*.2, true);      // ② pull-up bar
+          HB(.05, 1.0, '#9aa1aa', -1.1, 1.92, fz + D*.2);
+          RB(g, .9, .28, .3, .04, '#3b3f45', .25, .05, fz + D*.33); RB(g, 1.0, .1, .38, .05, '#d9534f', .25, .33, fz + D*.33); }   // bench
+        if (gl >= 3){ RB(g, .9, .5, .36, .04, '#7a5236', 1.3, .05, fz + D*.18);                          // ③ dumbbell rack
+          for (const dz of [-.08, .08]){ HB(.03, .5, '#5a5f66', 1.3, .64, fz + D*.18 + dz); for (const dx of [-.2, .2]) HB(.1, .08, '#3b3f45', 1.3 + dx, .64, fz + D*.18 + dz); } }
+        break; }
+      case 'buahome': case 'salahouse':
         if (o.closed){ RB(g, W-.3, .12, D-.3, .05, '#9c8f7e', 0, 0, 0);                       // cracked slab + rubble + leaning beams + torn roof sheet
           BALL(g, .45, .35, .4, '#8f857a', -.6, .1, .4); BALL(g, .35, .3, .3, '#a39a8e', .55, .1, -.3); BALL(g, .25, .2, .25, '#7d746a', .2, .1, .6);
           CY(g, .08, 1.5, '#7a5236', -.8, .12, -.7).rotation.z = .35; CY(g, .08, 1.1, '#6b4a30', .8, .12, -.6).rotation.x = -.5;
           RB(g, 1.6, .06, .9, .02, o.type === 'buahome' ? '#7cae5a' : o.type === 'salahouse' ? '#c0603f' : '#5a6b7a', .1, .55, .1).rotation.z = .4; break; }
         if (o.type === 'buahome'){ walls('#f6e2b8', '#7cae5a', 1.4, { chimney:true });          // ป้าบัว's healthy kitchen + veggie crates
           for (const [x, c] of [[-.55, '#e84a3a'], [0, '#f2a33a'], [.55, '#4caf6a']]){ RB(g, .45, .25, .35, .04, '#c99a62', x, .12, D*.42); BALL(g, .16, .12, .12, c, x, .4, D*.42); } }
-        else if (o.type === 'gymyard'){ RB(g, W-.3, .1, D-.3, .05, '#d9c39a', 0, 0, 0);          // โค้ชฟิต's outdoor gym: mat, pull-up bar, dumbbells
-          RB(g, 1.2, .05, .7, .03, '#4f8fd8', -.4, .1, .4); for (const x of [-.8, .8]) CY(g, .07, 1.9, '#5a5f66', x, .1, -.6); CY(g, .05, 1.7, '#9aa1aa', 0, 1.95, -.6).rotation.z = Math.PI/2;
-          for (const z2 of [.1, .45]){ CY(g, .03, .5, '#5a5f66', .7, .2, z2).rotation.z = Math.PI/2; for (const x of [.48, .92]) CY(g, .1, .08, '#3b3f45', x, .2, z2).rotation.z = Math.PI/2; } }
         else { RB(g, W-.4, .3, D-.4, .05, '#c99a62', 0, 0, 0);                                    // น้องขิง's Thai sala: raised floor, 4 posts, tall red gable
           for (const [x, z2] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .08, 1.6, '#8a5a3b', x*(W/2-.45), .3, z2*(D/2-.45));
           const rf = add(g, gable(W-.1, 1.1, D-.1), mat('#c0603f'), 0, 1.9, 0); RB(g, .7, .06, .5, .03, '#f2e6c9', 0, .32, 0); }

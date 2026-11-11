@@ -606,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.33.2';
+const APP_VER = '0.33.3';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1691,13 +1691,19 @@ const NPC_HOME = { mai:'sawmill', hin:'mine', lek:'smithy', bua:'buahome', coach
    Tap it → repair stage by stage with coins + materials (never sold in the shop). Done → the NPC moves in (goes home at night). */
 const HOMES = {
   buahome:   { npc:'bua',   lv:6,  stages:[ { coins:300, give:{ wood:10, stone:6 }, title:'ซ่อมผนังและหลังคา' }, { coins:500, give:{ plank:4, grass:10 }, title:'ทำครัวและแปลงผักหน้าบ้าน' } ] },
-  gymyard:   { npc:'coach', lv:8,  stages:[ { coins:400, give:{ stone:15, wood:10 }, title:'ปรับพื้นลาน' }, { coins:600, give:{ plank:6 }, title:'ตั้งราวโหนและม้านั่ง' }, { coins:800, give:{ beam:2, stone:10 }, title:'ทำชั้นวางดัมเบล' } ] },
+  /* 🏋️ v0.33.3 (designer): the gym is a real building on zone 0 from day one — tap = enter. The 3 stages are now yard upgrades (o.gl) */
+  gymyard:   { npc:'coach', lv:1,  stages:[ { coins:400, give:{ stone:15, wood:10 }, title:'ปูแผ่นยางลานหน้ายิม' }, { coins:600, give:{ plank:6 }, title:'ตั้งราวโหนและม้านั่ง' }, { coins:800, give:{ beam:2, stone:10 }, title:'ทำชั้นวางดัมเบล' } ] },
   salahouse: { npc:'khing', lv:12, stages:[ { coins:600, give:{ wood:15, grass:15 }, title:'ยกพื้นศาลา' }, { coins:900, give:{ plank:6, beam:2 }, title:'ตั้งเสาและหลังคา' }, { coins:1200, give:{ stone:20, polish:2 }, title:'ขัดเงาและตกแต่ง' } ] } };
 const homeObj = t => { for (const z of S.farm.zones) for (const o of z.objs) if (o.type === t) return [z, o]; return null; };
-function placeFixed(type, zi, closed){                       // first free 2×2 spot in zone zi (then any zone); clears nature underneath
+function placeFixed(type, zi, closed, near, skip){                 // free 2×2 spot in zone zi (then any zone); clears nature underneath
+  /* near = [c, r] zone-local anchor (v0.33.3 gym → next to the first house). Spots are tried nearest-first by
+     squared distance between the 2×2 centre (c+1, r+1) and the anchor; without an anchor the old row-major scan order is kept.
+     skip(c, r, zoneIndex) → true = never use that spot. */
   const order = [zi].concat(S.farm.zones.map((_, i) => i).filter(i => i !== zi).reverse());
+  const spots = []; for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++) spots.push([c, r]);
+  if (near) spots.sort((a, b) => ((a[0]+1-near[0])**2 + (a[1]+1-near[1])**2) - ((b[0]+1-near[0])**2 + (b[1]+1-near[1])**2));
   for (const pass of [0, 1]) for (const k of order){ const z = S.farm.zones[k]; if (!z) continue;
-    for (let r=0;r<GRID-1;r++) for (let c=0;c<GRID-1;c++){
+    for (const [c, r] of spots){ if (skip && skip(c, r, k)) continue;
       const ts = [z.tiles[r*GRID+c], z.tiles[r*GRID+c+1], z.tiles[(r+1)*GRID+c], z.tiles[(r+1)*GRID+c+1]];
       if (ts.some(t => t.k === 'obj' || (!pass && (t.k === 'water' || t.k === 'path')))) continue;
       ts.forEach(t => { for (const q in t) delete t[q]; t.k = 'clear'; });
@@ -1706,18 +1712,30 @@ function placeFixed(type, zi, closed){                       // first free 2×2 
 }
 function ensureNpcHomes(){
   S.homes = S.homes || {};
-  for (const [t, H] of Object.entries(HOMES)) if (S.farm.zones.length >= H.lv && !homeObj(t)){ placeFixed(t, H.lv - 1, (S.homes[t] || 0) < H.stages.length); save(); }
+  for (const [t, H] of Object.entries(HOMES)) if (S.farm.zones.length >= H.lv && !homeObj(t)){
+    let near = null;
+    if (t === 'gymyard'){ const z0 = S.farm.zones[0], h = z0 && z0.objs.find(o => o.type === 'starter' || o.type === 'house');   // 🏋️ beside the first house, else zone centre
+      near = h ? [h.c + h.w/2, h.r + h.h/2] : [1, 1]; }       // no house yet → hug the tutorial corner where the first house will go
+    const skip = t === 'gymyard' ? (c, r, k) => k === 0 && c <= 1 && r <= 1 : null;   // keep zone 0's 2×2 corner (0..1, 0..1) free for the starter house
+    placeFixed(t, H.lv - 1, (S.homes[t] || 0) < H.stages.length, near, skip); save(); }
+  const g = homeObj('gymyard'); if (g && (g[1].gl|0) !== (S.homes.gymyard|0)){ g[1].gl = S.homes.gymyard|0; markDirty(g[0]); }   // o.gl drives the 3D yard props
 }
+/* 🏋️ v0.33.3 upgrade sheet for the gym's front yard (opened from the gym screen) */
+function gymUpgrade(){ const h = homeObj('gymyard'); if (h) homeFix(h[0], h[1]); }
 function homeTap(z, o){
-  const H = HOMES[o.type], n = NPCS[H.npc], k = S.homes[o.type] || 0;
-  if (k >= H.stages.length){ if (o.type === 'gymyard') return openGym();   // 🏋️ the repaired yard is the gym's front door
+  if (o.type === 'gymyard') return openGym();                // 🏋️ v0.33.3 the gym building is always open — tap = walk in
+  return homeFix(z, o);
+}
+function homeFix(z, o){
+  const H = HOMES[o.type], n = NPCS[H.npc], k = S.homes[o.type] || 0, gym = o.type === 'gymyard';
+  if (k >= H.stages.length){ if (gym) return detailSheet('b:' + o.type, `${FARM_ITEMS[o.type].name}\nอัปเกรดครบทุกขั้นแล้ว 🎉\nโค้ชฟิตพักที่นี่ตอนกลางคืน`, '', OK);
     return detailSheet('b:' + o.type, `${FARM_ITEMS[o.type].name}\nบ้านของ${n.name} ซ่อมเสร็จแล้ว 🏡\n${n.name}กลับบ้านตอนกลางคืน`, '', OK); }
   const st = H.stages[k], ok = S.coins >= st.coins && canPay(st.give);
-  detailSheet('b:' + o.type, `🏚 ${FARM_ITEMS[o.type].name} (ผุพัง)\n${n.name}: "บ้านพังหมดเลย ช่วยซ่อมหน่อยนะ"\nขั้น ${k+1}/${H.stages.length}: ${st.title}\n🪙 ${st.coins.toLocaleString()} • ${inText(st.give)}`, needLine(st.give),
+  detailSheet('b:' + o.type, gym ? `🏋️ อัปเกรดลานหน้ายิม\n${n.name}: "ช่วยเพิ่มอุปกรณ์หน้ายิมหน่อยนะ ครบแล้วผมจะย้ายมาพักที่นี่"\nขั้น` : `🏚 ${FARM_ITEMS[o.type].name} (ผุพัง)\n${n.name}: "บ้านพังหมดเลย ช่วยซ่อมหน่อยนะ"\nขั้น ${k+1}/${H.stages.length}: ${st.title}\n🪙 ${st.coins.toLocaleString()} • ${inText(st.give)}`, needLine(st.give),
     [{ label: ok ? `🔨 ซ่อมขั้นที่ ${k+1}` : 'ของหรือเหรียญยังไม่พอ', cls: ok ? 'ok' : 'ghost', fn:() => { if (!ok) return;
-        S.coins -= st.coins; pay(st.give); S.homes[o.type] = k + 1; bump('homeFix'); sfx('chop'); burst(z.cx*GRID + o.c + 1, z.cy*GRID + o.r + 1, ['#c99a62', '#fff', '#7cae5a'], 14);
+        S.coins -= st.coins; pay(st.give); S.homes[o.type] = k + 1; if (gym) o.gl = k + 1; bump('homeFix'); sfx('chop'); burst(z.cx*GRID + o.c + 1, z.cy*GRID + o.r + 1, ['#c99a62', '#fff', '#7cae5a'], 14);
         if (k + 1 >= H.stages.length){ o.closed = 0; bump('home_' + H.npc); const s2 = npcState(H.npc); s2.xp = (s2.xp||0) + 1; gainLove(10);
-          reward(`🏡 ซ่อม${FARM_ITEMS[o.type].name}เสร็จแล้ว!\n${n.name}: "ขอบคุณมาก ๆ เลยนะ!"\n❤️ สนิทกับ${n.name}ขึ้น • 💗 +10`); }
+          reward(gym ? `🏋️ ลานหน้ายิมครบแล้ว!\n${n.name}: "ขอบคุณมาก ๆ เลยนะ!"\n❤️ สนิทกับ${n.name}ขึ้น • 💗 +10` : `🏡 ซ่อม${FARM_ITEMS[o.type].name}เสร็จแล้ว!\n${n.name}: "ขอบคุณมาก ๆ เลยนะ!"\n❤️ สนิทกับ${n.name}ขึ้น • 💗 +10`); }
         markDirty(z); save(); refreshHeader(); renderMats(); } }, { label:'ปิด', cls:'ghost' }]);
 }
 function npcDoor(id){
@@ -2128,7 +2146,7 @@ const FARM_ITEMS = {
   mill:      { name:'🏭 โรงสี',        w:2, h:2, price:1000,  cost:{plank:6, stone:8},            H:2.6, lv:7,  desc:'สีข้าวเปลือก 3 → ข้าวสาร 1 (ขาย 1,200)' },
   house:     { name:'🏡 บ้านไร่',      w:2, h:4, price:5000,  cost:{plank:10, beam:4, stone:16},  H:3.2, lv:6,  desc:'บ้านหลังใหญ่ประจำฟาร์ม (เข้าไปข้างในได้ ห้อง 8×8)' },
   buahome:   { name:'🥗 ครัวป้าบัว',     w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'บ้านและครัวสุขภาพของป้าบัว' },
-  gymyard:   { name:'🏋️ ลานออกกำลังโค้ช', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลานออกกำลังกายของโค้ชฟิต' },
+  gymyard:   { name:'🏋️ ยิมโค้ชฟิต', w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ยิมของโค้ชฟิต แตะเพื่อเข้าไปออกกำลังกาย' },
   salahouse: { name:'🛕 ศาลาน้องขิง',    w:2, h:2, price:0, cost:{}, H:2.6, hidden:true, fixed:true, desc:'ศาลาพักผ่อนของน้องขิง' },
   smithy:    { name:'⚒ โรงตีเหล็ก',   w:2, h:2, price:2000, cost:{stone:20, plank:6}, H:2.6, lv:12, hidden:true, desc:'หลอมแร่เป็นแท่งโลหะ • อัปเกรดอีเต้อ ขวาน ค้อน และโรงงาน' },
   mine:      { name:'⛏ ทางเข้าเหมือง', w:2, h:2, price:0, cost:{}, H:2.2, hidden:true, fixed:true, desc:'ลงเหมืองขุดแร่ • ขุดได้เรื่อย ๆ แรง 💪 หมดก็พักจอ • สถานที่ถาวร' },
@@ -2223,7 +2241,8 @@ function ensureZones(){
   while (S.farm.zones.length < zonesFor(S.lv)){ S.farm.zones.push(genZone(S.farm.zones.length)); grew = true; }
   if (grew || chunkMap.size !== S.farm.zones.length) rebuildChunkMap();
   if (S.roadsV !== 2) removeAutoRoads();
-  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes();   // 🏚 v0.30 if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24                            // 🏗 ⛏ v0.23
+  projMigrate(); ensureMineSite(); shrinkPetHouse(); ensureNpcHomes();   // 🏗 ⛏ v0.23 • 🏚 v0.30
+  if (S.mineEnergy != null){ delete S.mineEnergy; setTired(0); }   // ⚡ → 😮‍💨 v0.24 (was swallowed by a comment until v0.33.3)
 }
 /* 🛣 v0.21.1: roads are player-built only (designer's call). The v0.21 auto "main roads" (t.main) are removed:
    asphalt → clear ground, auto bridges → water again. Runs once per save (S.roadsV = 2). */
@@ -2964,7 +2983,7 @@ function frame(now){
         else buildBadge(o, badges[k+3], time, wall); }
     }
     if (!(fishing && fishing.reel)) drawCropGroups(time);   // nothing on top of the reel
-    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); drawFmon(time); }  // 👥 v0.19 • 🧑 v0.20
+    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); drawFmon(time); drawGymSign(time); }  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -3429,7 +3448,7 @@ function longPress(gc, gr){
   liftStartFarm(z, o); return true;                           // v0.14: no menu — the object follows the finger
 }
 function tapObj(z, o){
-  if (monUp() && !(o.type === 'gymyard' && (S.homes||{}).gymyard >= 3) && monLock()) return;   // 👾 the gym stays open
+  if (monUp() && !(o && o.type === 'gymyard') && monLock()) return;   // 👾 the gym building stays open
   if (!o) return;
   const it = FARM_ITEMS[o.type];
   if (!o.done){
@@ -3943,8 +3962,8 @@ const QUESTS = [
     text:'แตะที่ตัว {pet} 1 ครั้ง — แตะน้องได้ทุกเมื่อเพื่อดูข้อมูล เลเวล และให้อาหาร', reward:{coins:100} },
   { id:'askGuide', name:'คุยกับเป็นสุข',          need:1, goal:() => st('guideAsk'),
     text:'แตะปุ่มหน้าบีเกิล 💬 ซ้ายล่างของฟาร์ม → คุยกับเป็นสุขได้ 3 อย่าง: ① เช็กอินว่าทำอะไรเพื่อสุขภาพไปแล้ว ② พิมพ์ถามเรื่องเกม (ลืมอะไรถามได้) ③ รับคำแนะนำสุขภาพตามเวลา — ลองถามอะไรสักข้อดูนะ', reward:{coins:100} },
-  { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        need:1, goal:() => st('gymDone'),
-    text:'หน้าภารกิจ › 🏋️ เข้ายิมโค้ชฟิต → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
+  { id:'gymTry',  name:'เข้ายิมกับโค้ชฟิต',        hl:'gym', need:1, goal:() => st('gymDone'),
+    text:'แตะอาคาร 🏋️ ยิม ข้างบ้าน (กรอบเหลือง) → เลือกส่วนที่อยากฝึก (ลอง 🧘 ยืดเหยียด ก่อนก็ได้) → ทำตามเสียงจนจบชุด 3–5 นาที → แรงเต็ม 100%', reward:{coins:150} },
   { id:'small',   name:'ตัดหญ้าด้วยเครื่องมือ',     hl:'small',  tool:1, need:1, goal:() => st('collect_small'),
     text:'แตะ 🧰 (มุมขวาล่าง) → 🌾 เคียว → ลากนิ้วผ่านหญ้า/ดอกไม้ป่าที่กระพริบ — ของชิ้นเล็กเก็บได้ทันที และมีโอกาสได้เมล็ดฟรี', reward:{coins:100} },
   { id:'corner',  name:'เคลียร์พื้นที่ 2×2',       hl:'corner', tool:1, need:1, goal:() => (has2x2Clear() || starterOwned()) ? 1 : 0,
@@ -3975,8 +3994,8 @@ const QUESTS = [
     text:'ตอนไม่ได้ถือเครื่องมือ แตะพื้นหญ้าว่างหรือทางเดิน — ตัวละครจะเดินไปตรงนั้น (กดค้างที่ทางเดินยังรื้อได้เหมือนเดิม)', reward:{coins:100} },
   { id:'buaHome', name:'ซ่อมบ้านป้าบัว',            need:1, goal:() => (S.homes||{}).buahome >= 2 ? 1 : 0,
     text:'(Lv.6) พื้นที่ใหม่มีครัวป้าบัวที่ผุพัง → แตะบ้าน → หาเหรียญและวัตถุดิบมาซ่อมให้ครบ 2 ขั้น', reward:{coins:200} },
-  { id:'coachHome', name:'ซ่อมลานออกกำลังของโค้ช',   need:1, goal:() => (S.homes||{}).gymyard >= 3 ? 1 : 0,
-    text:'(Lv.8) พื้นที่ใหม่มีลานออกกำลังที่พังอยู่ → แตะ → ซ่อมให้ครบ 3 ขั้น โค้ชฟิตจะได้มีที่อยู่', reward:{coins:300} },
+  { id:'coachHome', name:'อัปเกรดลานหน้ายิม',        need:1, goal:() => (S.homes||{}).gymyard >= 3 ? 1 : 0,
+    text:'แตะอาคาร 🏋️ ยิม → ปุ่ม 🔨 อัปเกรดลานหน้ายิม → ใช้เหรียญและวัตถุดิบเพิ่มอุปกรณ์ให้ครบ 3 ขั้น โค้ชฟิตจะย้ายมาพักที่ยิม', reward:{coins:300} },
   { id:'mineSet', name:'ช่วยลุงหินซ่อมเหมือง',       need:1, goal:() => S.mineOpen ? 1 : 0,
     text:'ถึง Lv.10 พื้นที่ใหม่จะมี ⛏ ทางเข้าเหมืองที่ถล่มอยู่ และลุงหินจะมาขอให้ช่วย → แตะลุงหิน → ส่งวัตถุดิบครบ 3 ขั้น → เหมืองเปิด', reward:{coins:200} },
   { id:'mineDig', name:'ขุดแร่ครั้งแรก',              need:1, goal:() => st('oreGet'),
@@ -4495,7 +4514,9 @@ function openGym(){
     pk.append(e, ed); });
   if ((S.gymCustom || []).length < 5){ const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = '➕ สร้างชุดของฉัน\nเลือกท่า จำนวน ลำดับเอง'; e.onclick = () => progEdit(-1); pk.appendChild(e); }
   const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px';
-  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบเซ็นเซอร์', () => { closeGym(); msTest(); }], ['🏡 กลับฟาร์ม', closeGym]]
+  [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบเซ็นเซอร์', () => { closeGym(); msTest(); }]]
+    .concat((S.homes||{}).gymyard >= 3 ? [] : [[`🔨 อัปเกรดลานหน้ายิม (${(S.homes||{}).gymyard|0}/3)`, () => { closeGym(); gymUpgrade(); }]])   // 🏋️ v0.33.3
+    .concat([['🏡 กลับฟาร์ม', closeGym]])
     .forEach(([t, f]) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.onclick = f; row.appendChild(e); });
   b.appendChild(row);
 }
@@ -4764,6 +4785,18 @@ function fmLose(){
   exBtns([{ label:'⚔️ สู้ต่อ', fn:() => { fmRender(); fmAttackMenu(); } }, { label:'ข้ามไปก่อน', cls:'ghost', fn:closeFmon }]);
 }
 function closeFmon(){ FM = false; clearInterval(exT); exT = null; G = null; msStop(); msGauge(false); try { speechSynthesis.cancel(); } catch(e){} $('xb').style.display = 'none'; $('gym').style.display = 'none'; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; refreshHeader(); renderMissions(); }
+/* 🏋️ v0.33.3 floating "ยิม" sign above the gym building (screen-space pill, bobbing 3 px; P(gc, gr, lift) = iso screen point) */
+function drawGymSign(time){
+  if (inRoom || inMine) return; const h = homeObj('gymyard'); if (!h) return; const [z, o] = h;
+  const [x, y0] = P(z.cx*GRID + o.c + o.w/2, z.cy*GRID + o.r + o.h/2, TH*FARM_ITEMS.gymyard.H + 22), y = y0 + Math.sin(time*3)*3;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; pill(x, y, 70, 26, '#3a7bd5');
+  ctx.fillStyle = '#fff'; ctx.font = '700 14px Mali, sans-serif'; ctx.fillText('🏋️ ยิม', x, y + 1);
+}
+/* 🏋️ v0.33.3 when the gym quest comes up, glide the camera to the building once (S.gymSeen) */
+function gymQuestFocus(){
+  const q = curQuest(); if (!q || q.id !== 'gymTry' || S.gymSeen || inRoom || inMine) return;
+  const h = homeObj('gymyard'); if (!h) return; S.gymSeen = 1; const [z, o] = h; centerOn(z.cx*GRID + o.c + 1, z.cy*GRID + o.r + 1); save();
+}
 function drawFmon(time){                                      // 👾 marker on the farm where it woke up
   if (!monUp() || inRoom) return; const m = S.fmon, [x, y0] = P(m.gc + .5, m.gr + .5, TH*1.2), y = y0 + Math.sin(time*4)*4;
   ctx.font = '34px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(FMON[m.kind].name.split(' ')[0], x, y);
@@ -4771,7 +4804,7 @@ function drawFmon(time){                                      // 👾 marker on 
 }
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
-  brkTick(); ciAuto(); renderSta(); guideTick();
+  brkTick(); ciAuto(); renderSta(); guideTick(); gymQuestFocus();
   { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); if (f.style.display === 'none') $('gBub').style.display = 'none'; } if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
   { const m = monUp() ? S.fmon : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.add('pulse'); }
@@ -4838,7 +4871,7 @@ function drawTutHighlight(time){
       const t = z.tiles[i]; let on = false;
       if (q.hl==='small' || q.hl==='medium' || q.hl==='large') on = SIZE_OF(t.k)===q.hl;
       else if (q.hl==='water') on = t.k==='water';
-      else if (t.k==='obj'){ const o = objById(z, t.o); on = !!o && ((q.hl==='plot' && o.type==='plot') || (q.hl==='starter' && o.type==='starter')); }
+      else if (t.k==='obj'){ const o = objById(z, t.o); on = !!o && ((q.hl==='plot' && o.type==='plot') || (q.hl==='starter' && o.type==='starter') || (q.hl==='gym' && o.type==='gymyard')); }
       if (on){ const c = z.cx*GRID + i%GRID, r = z.cy*GRID + ((i/GRID)|0); quad(ctx, P(c,r), P(c+1,r), P(c+1,r+1), P(c,r+1), '#ffd84d'); }
     }
   }
@@ -6012,7 +6045,7 @@ let r3dLoading = false, r3dFailNote = false;
 function load3D(){
   if (R3D){ R3D.on = true; return; }
   if (r3dLoading) return; r3dLoading = true;
-  import('./r3d.js').then(m => { R3D = m.start(); R3D.on = true; R3D.setQuality(gfxEco()); invalidateAll(); updateAvaHead(); })
+  import('./r3d.js?v=' + APP_VER).then(m => { R3D = m.start(); R3D.on = true; R3D.setQuality(gfxEco()); invalidateAll(); updateAvaHead(); })
     .catch(e => { console.log('3D unavailable', e); r3dLoading = false;
       if (!r3dFailNote){ r3dFailNote = true; sheet('เครื่องนี้แสดงกราฟิก 3D ไม่ได้ 😢\nตอนนี้ใช้ภาพแบบสำรองไปก่อน\n\nลองเปิดเกมใน Safari หรือ Chrome โดยตรง (ไม่ใช่ในแอป LINE/Facebook) หรือรีสตาร์ตเบราว์เซอร์', OK); } });
 }
