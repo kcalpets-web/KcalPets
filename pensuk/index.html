@@ -606,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.31.0';
+const APP_VER = '0.32.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -4441,19 +4441,88 @@ function openGym(){
   const pk = b.querySelector('.gpick');
   Object.entries(GYM).forEach(([id, P]) => { const e = document.createElement('button'); e.className = 'btn';
     e.textContent = `${P.name}\n${P.moves.map(m => m.name).filter((v, i, a) => a.indexOf(v) === i).join(' • ')}`; e.onclick = () => gymStart(id); pk.appendChild(e); });
+  (S.gymCustom || []).forEach((P, ix) => { const e = document.createElement('button'); e.className = 'btn'; e.style.background = '#7b5bd0'; e.style.color = '#fff';
+    e.textContent = `⭐ ${P.name}\n${P.moves.length} ท่า • ~${Math.round(progSec(P)/60)} นาที`; e.onclick = () => gymStart('custom' + ix, { ...P, moves:P.moves.map(m => ({ ...m, tip:libOf(m).tip })) });
+    const ed = document.createElement('button'); ed.className = 'btn ghost'; ed.textContent = `✏️ แก้ "${P.name}"`; ed.style.minHeight = '44px'; ed.style.fontSize = '14px'; ed.onclick = () => progEdit(ix);
+    pk.append(e, ed); });
+  if ((S.gymCustom || []).length < 5){ const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = '➕ สร้างชุดของฉัน\nเลือกท่า จำนวน ลำดับเอง'; e.onclick = () => progEdit(-1); pk.appendChild(e); }
   const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px';
   [[exEasy() ? '✓ ท่าง่าย (แตะเพื่อใช้ท่าปกติ)' : '🪑 ใช้ท่าง่าย', () => { S.exEasy = !S.exEasy; save(); openGym(); }], ['📱 ทดสอบเซ็นเซอร์', () => { closeGym(); msTest(); }], ['🏡 กลับฟาร์ม', closeGym]]
     .forEach(([t, f]) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.onclick = f; row.appendChild(e); });
   b.appendChild(row);
 }
+/* 🛠 v0.32 CUSTOM PROGRAMS (designer): players build their own sets from the move library.
+   estimate (s) = 60 (warm-up + cool-down) + Σ move time + rest × (moves − 1)
+     move time: time/hold = n s • down/up reps ≈ 3 s each • twist ≈ 1.5 s each • steps ≈ 0.5 s each
+   cap 15 min per set (safety) • ≤ 12 moves • ≤ 5 saved sets • warm-up / cool-down always added (can't be removed) */
+const LIB = [
+  { k:'down', name:'สควอท', n:8, unit:'ครั้ง', st:1, min:3, max:40, tip:'ถือมือถือ 2 มือ เหยียดแขนระดับอก ย่อลงแล้วยืนขึ้น' },
+  { k:'hold', name:'ย่อค้าง', n:20, unit:'วิ', st:5, min:5, max:60, tip:'ย่อลงแล้วค้างไว้ หลังตรง' },
+  { k:'up', name:'Front raise', n:10, unit:'ครั้ง', st:1, min:3, max:40, tip:'ถือมือถือที่ระดับเอว แขนตรง ยกขึ้นถึงระดับไหล่' },
+  { k:'up', name:'Shoulder press', n:10, unit:'ครั้ง', st:1, min:3, max:40, tip:'ถือมือถือที่ระดับอก ดันขึ้นเหนือหัว' },
+  { k:'twist', name:'Standing rotation', n:20, unit:'ครั้ง', st:2, min:6, max:60, tip:'บิดลำตัวซ้าย-ขวา สะโพกนิ่ง' },
+  { k:'twist', name:'บิดเอวช้า ๆ', n:16, unit:'ครั้ง', st:2, min:6, max:60, tip:'บิดแล้วค้างข้างละ 1 วินาที' },
+  { k:'steps', name:'ย่ำเท้าอยู่กับที่', n:60, unit:'ก้าว', st:10, min:20, max:300, tip:'ยกเข่าสลับ ถือมือถือไว้ที่อก' },
+  { k:'steps', name:'วิ่งอยู่กับที่', n:80, unit:'ก้าว', st:10, min:20, max:300, tip:'วิ่งเบา ๆ เท้าลงนุ่ม ๆ' },
+  { k:'time', name:'ยืดคอ', n:30, unit:'วิ', st:10, min:10, max:120, tip:'เอียงศีรษะซ้าย-ขวา' },
+  { k:'time', name:'ยืดไหล่', n:30, unit:'วิ', st:10, min:10, max:120, tip:'ดึงแขนข้ามอก ข้างละครึ่ง' },
+  { k:'time', name:'บิดลำตัว', n:30, unit:'วิ', st:10, min:10, max:120, tip:'บิดช้า ๆ ข้างละครึ่ง' },
+  { k:'time', name:'หายใจลึก ๆ', n:60, unit:'วิ', st:10, min:20, max:180, tip:'เข้า 4 วิ • กลั้น 4 • ออก 6' } ];
+const libOf = m => LIB.find(l => l.name === m.name) || LIB[0];
+const moveSec = m => m.k === 'time' || m.k === 'hold' ? m.n : m.k === 'twist' ? m.n*1.5 : m.k === 'steps' ? m.n*.5 : m.n*3;
+const progSec = P => 60 + P.moves.reduce((t, m) => t + moveSec(m), 0) + (P.rest || 15)*Math.max(0, P.moves.length - 1);
+let PE = null;                                                // program being edited
+function progEdit(ix){
+  const src = ix >= 0 ? S.gymCustom[ix] : null;
+  PE = { ix, name: src ? src.name : `ชุดของฉัน ${(S.gymCustom || []).length + 1}`, rest: src ? src.rest : 15, moves: src ? src.moves.map(m => ({ ...m })) : [] };
+  progRender();
+}
+function progRender(){
+  const b = $('gBody'), sec = progSec(PE), over = sec > 900;
+  $('gProg').style.width = '0%'; $('gProgT').textContent = '';
+  b.innerHTML = `<div class="gname">🛠 ${PE.ix >= 0 ? 'แก้' : 'สร้าง'}ชุดของฉัน</div>
+    <input id="peName" maxlength="24" value="${PE.name.replace(/"/g, '')}" style="font-size:18px;padding:10px;border-radius:12px;border:2px solid #cfd8e3">
+    <div class="gtip">⏱ ประมาณ <b style="color:${over ? '#d23c3c' : '#2f7fc0'}">${Math.floor(sec/60)} นาที ${Math.round(sec%60)} วิ</b>${over ? ' — เกิน 15 นาที ลดท่าหรือจำนวนลงหน่อยนะ' : ''} • รวมวอร์มอัพ/คูลดาวน์แล้ว</div>
+    <div id="peList" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="gtip">พักระหว่างท่า <span id="peRest"></span></div>
+    <div id="peBtns" style="display:flex;flex-direction:column;gap:8px"></div>`;
+  $('peName').oninput = e => { PE.name = e.target.value.trim() || 'ชุดของฉัน'; };
+  const L = $('peList');
+  if (!PE.moves.length) L.innerHTML = '<div class="gtip">ยังไม่มีท่า — แตะ "➕ เพิ่มท่า"</div>';
+  PE.moves.forEach((m, i) => { const l = libOf(m), r = document.createElement('div'); r.className = 'card';
+    r.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px';
+    r.innerHTML = `<div style="flex:1;min-width:0"><b>${i+1}. ${m.name}</b><div class="muted">${m.n} ${l.unit}</div></div>`;
+    const mk = (t, f, w) => { const e = document.createElement('button'); e.className = 'btn ghost'; e.textContent = t; e.style.cssText = `min-width:${w||44}px;min-height:44px;padding:0;font-size:18px`; e.onclick = f; r.appendChild(e); };
+    mk('−', () => { m.n = Math.max(l.min, m.n - l.st); progRender(); }); mk('＋', () => { m.n = Math.min(l.max, m.n + l.st); progRender(); });
+    mk('↑', () => { if (i){ [PE.moves[i-1], PE.moves[i]] = [PE.moves[i], PE.moves[i-1]]; progRender(); } }, 36);
+    mk('↓', () => { if (i < PE.moves.length - 1){ [PE.moves[i+1], PE.moves[i]] = [PE.moves[i], PE.moves[i+1]]; progRender(); } }, 36);
+    mk('🗑', () => { PE.moves.splice(i, 1); progRender(); }, 40);
+    L.appendChild(r); });
+  const R = $('peRest'); [10, 15, 30].forEach(v => { const e = document.createElement('button'); e.className = 'btn ' + (PE.rest === v ? 'ok' : 'ghost'); e.textContent = v + ' วิ';
+    e.style.cssText = 'min-height:40px;padding:0 14px;margin:0 3px'; e.onclick = () => { PE.rest = v; progRender(); }; R.appendChild(e); });
+  const B = $('peBtns'), btn = (t, c, f, dis) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.disabled = !!dis; e.onclick = f; B.appendChild(e); };
+  if (PE.moves.length < 12) btn('➕ เพิ่มท่า', 'ghost', progPick);
+  btn('💾 บันทึกชุดนี้', 'ok', () => { if (!PE.moves.length || over) return; const P = { name:PE.name, rest:PE.rest, moves:PE.moves };
+    S.gymCustom = S.gymCustom || []; if (PE.ix >= 0) S.gymCustom[PE.ix] = P; else S.gymCustom.push(P); bump('gymCustom'); save(); sfx('coin'); openGym(); }, !PE.moves.length || over);
+  btn('▶ ลองเล่นเลย', 'ok', () => { if (PE.moves.length && !over) gymStart('custom', { name:PE.name, rest:PE.rest, moves:PE.moves.map(m => ({ ...m, tip:libOf(m).tip })) }); }, !PE.moves.length || over);
+  if (PE.ix >= 0) btn('🗑 ลบชุดนี้', 'ghost', () => confirmDo(`ลบชุด "${PE.name}"?`, () => { S.gymCustom.splice(PE.ix, 1); save(); openGym(); }));
+  btn('กลับ', 'ghost', openGym);
+}
+function progPick(){
+  const b = $('gBody'); b.innerHTML = '<div class="gname">➕ เลือกท่า</div><div class="gpick" id="pePick"></div>';
+  const groups = { down:'🦵', hold:'🦵', up:'💪', twist:'🌀', steps:'❤️', time:'🧘' };
+  LIB.forEach(l => { const e = document.createElement('button'); e.className = 'btn'; e.textContent = `${groups[l.k]} ${l.name}\n${l.n} ${l.unit}`;
+    e.onclick = () => { PE.moves.push({ k:l.k, name:l.name, n:l.n, tip:l.tip }); progRender(); }; $('pePick').appendChild(e); });
+  const back = document.createElement('button'); back.className = 'btn ghost'; back.textContent = 'กลับ'; back.style.marginTop = '8px'; back.onclick = progRender; b.appendChild(back);
+}
 function closeGym(){ clearInterval(exT); exT = null; G = null; msStop(); try { speechSynthesis.cancel(); } catch(e){} $('gym').style.display = 'none'; refreshHeader(); renderMissions(); }
-async function gymStart(id){
-  const P = GYM[id], b = $('gBody'); b.innerHTML = '<div class="gname">📱 เตรียมเซ็นเซอร์…</div>';
+async function gymStart(id, custom){
+  const P = custom || GYM[id], rest = (custom && custom.rest) || 15, b = $('gBody'); b.innerHTML = '<div class="gname">📱 เตรียมเซ็นเซอร์…</div>';
   const sensor = await msStart(), easy = exEasy();
   const steps = [{ k:'time', n:30, name:'วอร์มอัพ', tip:'ย่ำเท้าเบา ๆ แกว่งแขน หมุนไหล่' }]
-    .concat(...P.moves.map((m, i) => [i ? { k:'rest', n:15, name:'พัก', tip:'หายใจลึก ๆ จิบน้ำ' } : null, { ...m, n:easy && m.k !== 'time' ? Math.ceil(m.n*.7) : m.n }].filter(Boolean)))
+    .concat(...P.moves.map((m, i) => [i ? { k:'rest', n:rest, name:'พัก', tip:'หายใจลึก ๆ จิบน้ำ' } : null, { ...m, n:easy && !custom && m.k !== 'time' ? Math.ceil(m.n*.7) : m.n }].filter(Boolean)))
     .concat([{ k:'time', n:30, name:'คูลดาวน์', tip:'เดินช้า ๆ ยืดขาเบา ๆ หายใจลึก' }]);
-  G = { id, steps, i:-1, sensor, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0 };
+  G = { id, name:P.name, steps, i:-1, sensor, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0 };
   gymNext();
   exT = setInterval(gymTick, 50);
 }
@@ -4496,7 +4565,7 @@ function gymTick(){
   else if (el > target*4 + 30){ sub.textContent = 'หมดเวลา ไปท่าต่อไปนะ'; gymNext(); }   // never get stuck
 }
 function gymDone(){
-  clearInterval(exT); exT = null; const g = gymState(), G0 = G, P = GYM[G0.id]; G = null; msStop();
+  clearInterval(exT); exT = null; const g = gymState(), G0 = G, P = { name:G0.name }; G = null; msStop();
   setTired(0); bump('gymDone'); bump('gym_' + G0.id); let extra = '';
   if (G0.reps){ const sq = S.missions.find(m => m.key === 'squat'); if (sq) addProgress(sq, G0.reps); }
   if (g.paid < 3){ g.paid++; S.coins += 100; const lg = gainLove(10); extra = `\n${loveTxt(10, lg)} • 🪙 100 (วันนี้ ${g.paid}/3)`; }
