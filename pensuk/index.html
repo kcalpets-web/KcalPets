@@ -185,7 +185,7 @@ nav button.pulse b{animation:pulse 1s infinite} nav button.pulse{color:var(--pri
 #bDmg{position:absolute;left:50%;top:30%;transform:translateX(-50%);font:800 30px Mali,sans-serif;color:#2f80d1;text-shadow:0 2px 0 #fff;opacity:0;pointer-events:none}
 #bDmg.on{animation:dmg .9s}@keyframes dmg{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
 #bHit{min-height:60px;font-size:20px}
-#gym{position:fixed;inset:0;z-index:8;display:none;background:linear-gradient(#d9f0ff,#f4fbff 60%,#fff);overflow:auto}
+#gym{position:fixed;inset:0;z-index:9;display:none;background:linear-gradient(#d9f0ff,#f4fbff 60%,#fff);overflow:auto}
 #gym .xwrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 24px;display:flex;flex-direction:column;gap:10px}
 #gym .bhead{display:flex;align-items:center;justify-content:space-between}#gym .bhead b{font-size:18px}
 #gym .bhp{position:relative;height:18px;border-radius:9px;background:#0001;overflow:hidden}#gym .bhp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3f9fe0,#4caf6a);transition:width .4s}#gym .bhp b{position:relative;display:block;text-align:center;font-size:12px;line-height:18px}
@@ -606,7 +606,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.32.0';
+const APP_VER = '0.33.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 let fb = null, cloudTimer = 0;
 function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); }
@@ -1611,6 +1611,7 @@ function reqProgress(q){
 const reqIco = (id, q) => q.t === 'give' ? (q.furn && Object.keys(q.furn).length ? 'f:' + Object.keys(q.furn)[0] : 'm:' + Object.keys(q.give)[0])
   : q.t === 'act' ? ({ fish:'m:tilapia', sow:'m:seed', harvest:'reap', collect_small:'reap' })[q.stat] : q.t === 'ex' ? 'missions' : 'npc:' + id;
 function npcComplete(id){
+  if (monLock()) return;
   const q = npcReq(id), s = npcState(id), n = NPCS[id], h0 = npcHearts(id), msgs = [];
   if (q.t === 'give'){ pay(q.give); if (q.furn) for (const [k,v] of Object.entries(q.furn)) S.furn[k] -= v; }
   s.done = true; s.xp++; bump('npcDone'); if (id === 'coach'){ bump('coachDone'); const en = restTired(50); if (en) msgs.push(restTxt(en).trim()); }
@@ -2000,6 +2001,7 @@ function genMineFloor(f){
   return tiles;
 }
 function enterMine(){
+  if (monLock()) return;
   if (!use3D()) return sheet('เหมืองต้องใช้กราฟิก 3D\nลองเปิดใน Safari/Chrome หรือเปลี่ยนคุณภาพกราฟิกในกระเป๋า', OK);
   if (tool) pickTool(null); if (placing) endPlacing(); if (paint) endPaint(); if (fishing) endFishing();
   inMine = { N:MINE_N, floor:0, ver:1, tiles:genMineFloor(0), ax:.8, ay:MINE_N - .8, tx:.8, ty:MINE_N - .8, face:2.4, swing:0, broken:0, saved:{ camX, camY, zoom } };
@@ -2936,7 +2938,7 @@ function frame(now){
         else buildBadge(o, badges[k+3], time, wall); }
     }
     if (!(fishing && fishing.reel)) drawCropGroups(time);   // nothing on top of the reel
-    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); }  // 👥 v0.19 • 🧑 v0.20
+    npcTick(dt/1000); avTick(dt/1000); if (!(fishing && fishing.reel)){ drawNpcMarks(time); drawPetMark(time); drawFmon(time); }  // 👥 v0.19 • 🧑 v0.20
     drawFishLine(time); drawFishButtons(time); drawToolFx(time, dt/1000);
     return;
   }
@@ -3130,6 +3132,7 @@ const CATCH = [ {k:'tilapia', w:48, win:900, v:.55, exp:4, rk:2.2, rg:[1.2, 2.2]
 const fishPos = (f, now) => { const x = ((now - f.biteT)/1000*f.pick.v) % 2; return 1 - Math.abs(x - 1); };
 let fishing = null;                                          // {gc, gr, phase, t0, biteAt, winEnd, pick}
 function startFishing(gc, gr){
+  if (monLock()) return;
   fishPrompt = null;
   fishing = { gc, gr, phase:'ready', t0:0, biteAt:0, winEnd:0, pick:null, cool:0 };
   goTab('tFarm'); $('zoneBar').style.display = 'none'; $('toolFab').style.display = 'none'; $('fishBar').style.display = 'flex';
@@ -3400,6 +3403,7 @@ function longPress(gc, gr){
   liftStartFarm(z, o); return true;                           // v0.14: no menu — the object follows the finger
 }
 function tapObj(z, o){
+  if (monUp() && !(o.type === 'gymyard' && (S.homes||{}).gymyard >= 3) && monLock()) return;   // 👾 the gym stays open
   if (!o) return;
   const it = FARM_ITEMS[o.type];
   if (!o.done){
@@ -4021,6 +4025,7 @@ const QUESTS = [
     text:'แตะโรงเลื่อย → 🪑 เก้าอี้ (ไม้กระดาน 1) — เตียง โซฟา โต๊ะ เก้าอี้ ชั้นหนังสือ ที่นอนน้อง ทำได้ที่โรงเลื่อยที่เดียว แล้วเอาไปวางในบ้าน', reward:{coins:300} }
 ];
 if (!AVATAR_ON) for (const id of ['avMake', 'avWalk', 'avWear']){ const i = QUESTS.findIndex(q => q.id === id); if (i >= 0) QUESTS.splice(i, 1); }   // 🧑 v0.23
+Object.keys(RES).forEach(k => RES[k]._k = k);              // 👾 lets collectRes know which resource it was
 const SIZE_OF = k => RES[k] ? RES[k].size : null;
 let questDirty = true, questShown = '', questCollapsed = false;
 /* progress is stored as the list of finished quest ids (S.qDone) so the chain can be re-ordered safely */
@@ -4052,7 +4057,7 @@ function monState(){
   return m;
 }
 const monOn = () => false;                                     // 💧 v0.29: water monster parked — the trial now tests the exercise battle (code kept)
-const exOn = () => !!(S && S.monTrial && S.pet);
+const exOn = () => false;                                      // v0.33: daily trial monster retired — monsters now come from the farm (code kept)
 /* SVG droplet monster: sandy & cracked when full HP → turns blue and smiles as it's purified (t = 1 − hp/max) */
 function monSvg(m){
   const t = 1 - m.hp/m.max, mix = (a, b) => '#' + [0,2,4].map(i => Math.round(parseInt(a.substr(i,2),16)*(1-t) + parseInt(b.substr(i,2),16)*t).toString(16).padStart(2,'0')).join('');
@@ -4169,7 +4174,7 @@ const FAQ = [
   { k:['นอน','ง่วง','หลับ','ดึก'], a:'😴 ผู้ใหญ่ควรนอน 7–9 ชั่วโมง เข้านอนเวลาเดิมทุกวัน งดจอก่อนนอนสัก 30–60 นาที ห้องมืดและเย็นจะหลับง่ายขึ้น' },
   { k:['กิน','อาหาร','ข้าว','มื้อ','หิว'], a:'🍽 จานสุขภาพ: ผักครึ่งจาน ข้าว/แป้งหนึ่งในสี่ โปรตีนหนึ่งในสี่ • เลือกผลไม้แทนขนมหวาน • ลดน้ำหวานและของทอด' },
   { k:['ออกกำลัง','วิ่ง','เดิน','คาร์ดิโอ'], a:'🏃 ควรออกกำลังหนักปานกลาง (เดินเร็ว ปั่นจักรยาน) รวม 150 นาที/สัปดาห์ + เวทหรือบริหารกล้ามเนื้อ 2 วัน/สัปดาห์ เริ่มน้อย ๆ แล้วค่อยเพิ่ม' },
-  { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => exOn() ? `⚔️ อสูรนั่งนิ่ง HP ${exState().mhp}/${EX_MHP} — แตะ ⚔️ ในฟาร์ม • ตาเรา: ${exMove().name} 3 ครั้ง (ครั้งละ 4–6 ดาเมจ) • ตาอสูร: ${exMove().def} ${exMove().dsec} วิ เพื่อป้องกัน • แพ้ไม่เสียอะไร` : monOn() ? `⚔️ ปีศาจรายวัน: 💧 ปีศาจแห้งผาก HP ${monState().hp}/${monState().max} — ดื่มน้ำจริง 1 แก้ว = น้องโจมตี 1 ครั้ง (ปุ่ม ⚔️ ในฟาร์ม)` : '⚔️ โหมดสู้ปีศาจยังเป็นการทดลอง เปิดได้ในกระเป๋า › "🧪 ทดลองโหมดสู้ปีศาจสุขภาพ"' },
+  { k:['ปีศาจ','สู้','มอนสเตอร์','อสูร'], a:() => monUp() ? `👾 ${FMON[S.fmon.kind].name} ยังอยู่ในฟาร์ม (HP ${S.fmon.mhp}/${S.fmon.max}) — แตะ ⚔️ แล้วเลือกท่าโจมตีที่ทำได้ ท่านั่ง 🪑 ก็มี • ระหว่างนี้ใช้ได้แค่ ยิม พักจอ แชท และภารกิจสุขภาพ` : '👾 ถางหญ้า ทุบหิน ตัดไม้ บางครั้งจะปลุกอสูรขึ้นมา ต้องกำจัดด้วยการออกกำลังกายจริงก่อนทำฟาร์มต่อ • ท่าโจมตีเลือกเอง ดาเมจตามท่า' },
   { k:['ยิม','ฝึก','เวท','แขน','เอว','ไหล่'], a:'🏋️ ยิมโค้ชฟิต: หน้าภารกิจ › "เข้ายิมโค้ชฟิต" หรือแตะโค้ช • เลือก ขา / แขนและไหล่ / เอว / คาร์ดิโอ / ยืดเหยียด ชุดละ 3–5 นาที ถือมือถือ 2 มือ เซ็นเซอร์นับให้ • จบชุดแรงเต็ม 100% (💗 วันละ 3 ชุดแรก)' },
   { k:['เช็กอิน','คุย','แชท','ถามอะไร'], a:'💬 คุยกับเป็นสุขได้ 3 อย่าง: 1) เช็กอิน บอกว่าทำอะไรเพื่อสุขภาพไปแล้ว (ปุ่มนี้จะกะพริบทุก 2 ชม.) 2) ถามเรื่องเกม พิมพ์ถามได้เลย 3) รับคำแนะนำสุขภาพตามช่วงเวลา' } ];
 function faqReply(q){
@@ -4368,6 +4373,7 @@ function msFeed(ag, lin, now, rr){                                  // pure inte
   if (a > 1.6 && MS.armed && now - MS.stepAt > 280){ MS.steps++; MS.stepAt = now; MS.armed = false; } else if (a < .4) MS.armed = true;
 }
 async function msStart(){                                       // must run inside a tap (iOS permission prompt)
+  if (MS.on && MS.ok && performance.now() - MS.seen < 1000) return true;   // already streaming
   try { if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission){ const r = await DeviceMotionEvent.requestPermission(); if (r !== 'granted') return false; } } catch(e){ return false; }
   if (!MS.on){ window.addEventListener('devicemotion', msHandler); MS.on = true; }
   MS.seen = 0; await new Promise(r => setTimeout(r, 1500)); MS.ok = !!MS.seen && performance.now() - MS.seen < 1000; return MS.ok;
@@ -4527,8 +4533,11 @@ async function gymStart(id, custom){
   exT = setInterval(gymTick, 50);
 }
 function gymNext(){
-  const g = G; g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length}`;
-  if (g.i >= g.steps.length) return gymDone();
+  const g = G;
+  if (g.i >= 0){ const pm = g.steps[g.i];                       // tally what the previous move achieved (for monster damage)
+    if (pm && pm.k !== 'rest') g.total = (g.total || 0) + (g.timed ? pm.n : pm.k === 'hold' ? Math.min(pm.n, Math.floor(g.held)) : Math.min(g.count, pm.n)); }
+  g.i++; $('gProg').style.width = (g.i/g.steps.length*100) + '%'; $('gProgT').textContent = `${Math.min(g.i+1, g.steps.length)}/${g.steps.length}`;
+  if (g.i >= g.steps.length){ if (g.cb){ const cb = g.cb, tot = g.total || 0, reps = g.reps; clearInterval(exT); exT = null; G = null; $('gym').style.display = 'none'; return cb(tot, reps); } return gymDone(); }
   const m = g.steps[g.i], timed = m.k === 'time' || m.k === 'rest' || !g.sensor || m.k === 'hold' && !g.sensor;
   g.count = 0; g.t0 = performance.now(); g.st = 'go'; g.held = 0; g.timed = timed; g.dur = timed ? (m.k === 'time' || m.k === 'rest' || m.k === 'hold' ? m.n : Math.max(30, m.n*3)) : 0;
   msZero(); MS.yaw = 0; MS.steps = 0; g.yawSide = 0; g.down = false; MS.zupt = true;
@@ -4565,7 +4574,7 @@ function gymTick(){
   else if (el > target*4 + 30){ sub.textContent = 'หมดเวลา ไปท่าต่อไปนะ'; gymNext(); }   // never get stuck
 }
 function gymDone(){
-  clearInterval(exT); exT = null; const g = gymState(), G0 = G, P = { name:G0.name }; G = null; msStop();
+  clearInterval(exT); exT = null; const g = gymState(), G0 = G, P = { name:G0.name }; G = null; msStop();   // (gym only — battles keep the sensor between turns)
   setTired(0); bump('gymDone'); bump('gym_' + G0.id); let extra = '';
   if (G0.reps){ const sq = S.missions.find(m => m.key === 'squat'); if (sq) addProgress(sq, G0.reps); }
   if (g.paid < 3){ g.paid++; S.coins += 100; const lg = gainLove(10); extra = `\n${loveTxt(10, lg)} • 🪙 100 (วันนี้ ${g.paid}/3)`; }
@@ -4618,12 +4627,114 @@ function exLose(){
   exBtns([{ label:'🏡 กลับฟาร์ม', cls:'ghost', fn:closeEx }]);
 }
 function closeEx(){ clearInterval(exT); exT = null; msStop(); msGauge(false); try { speechSynthesis.cancel(); } catch(e){} $('xb').style.display = 'none'; refreshHeader(); renderMissions(); }
+/* =====================================================================
+   👾 v0.33 FARM MONSTERS (designer): clearing the farm (rock / tree / grass) can wake a monster. No caps, no cooldown
+   (stamina already paces farming). While it is out, every non-health action is locked — the gym, breaks, check-in chat
+   and health missions stay open. "ข้ามไปก่อน" closes the fight, but it is still waiting when you come back.
+   The player picks the attack move; damage follows the move:
+     squat 5 reps × 4–6 • shoulder press 6 × 3–4 • front raise 6 × 2–4 • twist 10 × 1–2 • run in place 30 steps × 1 per 3
+     🪑 seated arm raise 6 × 2–3 • 🪑 seated twist 10 × 1
+   Defence: squat hold 10 s (→ 0 dmg if held, scaled), arms-up hold 15 s (→ 2), 🪑 sit tall, arms out 15 s (→ 3); base hit 8.
+   Win: material bundle + 🪙 150 + 💗 10 + 💪 100%. Lose: catch your breath (HP refills), the monster stays.
+   Spawn chance per cleared item (player's own tool): MON_P.
+   ===================================================================== */
+const MON_P = .04;
+const FMON = {
+  rock:  { name:'🪨 อสูรหิน', hp:50, col:'#8f8a84', dark:'#5f5a55', from:['pebble', 'rock', 'boulder'], loot:{ stone:6 } },
+  tree:  { name:'🌳 ปีศาจกิ่งไม้', hp:45, col:'#7a5236', dark:'#4f3420', from:['tree', 'bush', 'sapling'], loot:{ wood:6 } },
+  grass: { name:'🌿 ภูตหญ้า', hp:40, col:'#6cbf5a', dark:'#3f8a33', from:['grass', 'wild'], loot:{ grass:8 } } };
+const MOVES = [
+  { k:'down',  n:5,  name:'🦵 สควอท', dmg:[4, 6], tip:'ถือมือถือ 2 มือ ย่อลงแล้วยืนขึ้น' },
+  { k:'up',    n:6,  name:'💪 Shoulder press', dmg:[3, 4], tip:'ดันมือถือจากระดับอกขึ้นเหนือหัว' },
+  { k:'up',    n:6,  name:'💪 Front raise', dmg:[2, 4], tip:'ยกมือถือจากเอวขึ้นถึงระดับไหล่ แขนตรง' },
+  { k:'twist', n:10, name:'🌀 บิดเอว', dmg:[1, 2], tip:'บิดลำตัวซ้าย-ขวา สะโพกนิ่ง' },
+  { k:'steps', n:30, name:'❤️ วิ่งอยู่กับที่', dmg:[1, 1], per:3, tip:'วิ่งเบา ๆ ถือมือถือไว้ที่อก' },
+  { k:'up',    n:6,  name:'🪑 ยกแขนขณะนั่ง', dmg:[2, 3], seat:1, tip:'นั่งหลังตรง ยกมือถือจากตักขึ้นระดับไหล่' },
+  { k:'twist', n:10, name:'🪑 บิดเอวขณะนั่ง', dmg:[1, 1], seat:1, tip:'นั่งหลังตรง บิดลำตัวซ้าย-ขวา' } ];
+const DEFS = [
+  { k:'hold', n:10, name:'🛡 ย่อค้าง 10 วิ', base:0, tip:'ย่อลงแล้วค้างไว้จนอสูรโจมตีเสร็จ' },
+  { k:'time', n:15, name:'🛡 ยกแขนเหนือหัวค้าง 15 วิ', base:2, tip:'ชูมือถือเหนือหัว แขนตรง ค้างไว้' },
+  { k:'time', n:15, name:'🪑 นั่งหลังตรง เหยียดแขนค้าง 15 วิ', base:3, tip:'นั่งหลังตรง เหยียดแขนถือมือถือไปข้างหน้า' } ];
+const monUp = () => !!(S && S.fmon);
+function monSpawn(kind, gc, gr){
+  const T = FMON[kind]; S.fmon = { kind, mhp:T.hp, max:T.hp, php:20, gc, gr, at:Date.now() }; bump('monSpawn'); save(); sfx('pop'); buzz(60);
+  if (tool) pickTool(null);
+  setTimeout(() => sheet(`⚠️ ${T.name} โผล่มาจากที่เพิ่งเคลียร์!\nต้องกำจัดก่อนถึงจะทำงานฟาร์มต่อได้\n(ยิม • พักจอ • คุยกับเป็นสุข • ภารกิจสุขภาพ ใช้ได้ตามปกติ)`,
+    [{ label:'⚔️ สู้เลย!', cls:'ok', fn:openFmon }, { label:'ข้ามไปก่อน', cls:'ghost' }]), 350);
+}
+function monLock(){                                           // returns true (and explains) when a monster blocks the action
+  if (!monUp()) return false; const T = FMON[S.fmon.kind];
+  sheet(`🔒 ${T.name} ยังอยู่ในฟาร์ม!\nกำจัดก่อนนะ แล้วค่อยทำต่อ\n(ใช้ท่าไหนก็ได้ ท่านั่ง 🪑 ก็มี)`, [{ label:'⚔️ ไปสู้', cls:'ok', fn:openFmon }, { label:'🏋️ เข้ายิมแทน', fn:openGym }, { label:'ปิด', cls:'ghost' }]);
+  return true;
+}
+function fmonSvg(kind, f){
+  const T = FMON[kind], eye = `<circle cx="78" cy="92" r="11" fill="#fff"/><circle cx="122" cy="92" r="11" fill="#fff"/><circle cx="80" cy="95" r="5" fill="#2b1a10"/><circle cx="120" cy="95" r="5" fill="#2b1a10"/><path d="M64 76 l24 9 M136 76 l-24 9" stroke="#2b1a10" stroke-width="5" stroke-linecap="round"/>`;
+  const body = kind === 'rock' ? `<path d="M30 150 L44 70 L80 40 L130 44 L166 78 L172 150 Z" fill="${T.col}" stroke="${T.dark}" stroke-width="5"/><path d="M60 60 l18 22 M140 70 l-14 16" stroke="${T.dark}" stroke-width="4"/>`
+    : kind === 'tree' ? `<rect x="64" y="56" width="72" height="96" rx="24" fill="${T.col}" stroke="${T.dark}" stroke-width="5"/><path d="M68 70 L30 40 M30 40 l-8 -14 M30 40 l-16 2 M132 70 L170 36 M170 36 l6 -16 M170 36 l16 4" stroke="${T.dark}" stroke-width="7" stroke-linecap="round"/><circle cx="30" cy="34" r="12" fill="#5fae4f"/><circle cx="172" cy="30" r="12" fill="#5fae4f"/>`
+    : `<path d="M40 150 C40 90 70 60 100 60 C130 60 160 90 160 150 Z" fill="${T.col}" stroke="${T.dark}" stroke-width="5"/><path d="M60 64 l-10 -34 l20 26 M100 58 l0 -40 l10 38 M140 64 l12 -34 l-4 32" fill="${T.col}" stroke="${T.dark}" stroke-width="4"/>`;
+  return `<svg viewBox="0 0 200 170" xmlns="http://www.w3.org/2000/svg"><ellipse cx="100" cy="158" rx="70" ry="8" fill="#0002"/>${body}${eye}<path d="M84 122 q16 ${f > .3 ? -10 : 8} 32 0" stroke="#2b1a10" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
+}
+function fmRender(){ const m = S.fmon, T = FMON[m.kind];
+  $('xTitle').textContent = T.name; $('xHpM').style.width = (m.mhp/m.max*100) + '%'; $('xHpMT').textContent = `${m.mhp}/${m.max}`;
+  $('xHpP').style.width = (m.php/20*100) + '%'; $('xHpPT').textContent = `${m.php}/20`; $('xMon').innerHTML = fmonSvg(m.kind, m.mhp/m.max); $('xPet').textContent = ''; }
+function openFmon(){
+  if (!monUp()) return; closeModal(); bump('fmonOpen'); FM = true; $('xb').style.display = 'block'; fmRender(); fmAttackMenu();
+}
+let FM = false;
+function fmAttackMenu(){
+  $('xBig').textContent = '⚔️'; $('xSay').textContent = 'เลือกท่าโจมตี — ทำจริง เซ็นเซอร์นับให้ (ดาเมจตามท่า)';
+  exBtns(MOVES.map(mv => ({ label:`${mv.name} × ${mv.n}  (${mv.per ? `1 ต่อ ${mv.per} ก้าว` : `${mv.dmg[0]}–${mv.dmg[1]}/ครั้ง`})`, cls:mv.seat ? 'ghost' : 'ok', fn:() => fmDo(mv, true) }))
+    .concat([{ label:'ข้ามไปก่อน (อสูรยังรออยู่)', cls:'ghost', fn:closeFmon }]));
+}
+async function fmDo(mv, attack){
+  const ok = await msStart(); const m = { ...mv, n:exEasy() && mv.k !== 'time' && mv.k !== 'hold' ? Math.ceil(mv.n*.7) : mv.n };
+  $('gym').style.display = 'block'; $('gTitle').textContent = FMON[S.fmon.kind].name;
+  G = { id:'fmon', name:'', steps:[m], i:-1, sensor:ok, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0, cb:(tot, reps) => attack ? fmHit(mv, tot, reps) : fmBlock(mv, tot) };
+  gymNext(); clearInterval(exT); exT = setInterval(gymTick, 50);
+}
+function fmHit(mv, tot, reps){
+  const m = S.fmon; if (!m) return; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต';
+  let dmg = 0; if (mv.per) dmg = Math.floor(tot/mv.per); else for (let k=0;k<tot;k++) dmg += mv.dmg[0] + (Math.random()*(mv.dmg[1] - mv.dmg[0] + 1)|0);
+  if (reps){ const sq = S.missions.find(x => x.key === 'squat'); if (sq) addProgress(sq, reps); }
+  m.mhp = Math.max(0, m.mhp - dmg); save(); fmRender(); if (dmg) exFx('mon', `−${dmg}`);
+  $('xSay').textContent = dmg ? `${mv.name} ${tot} ครั้ง → ${dmg} ดาเมจ!` : 'ยังไม่โดนเลย ลองท่าอื่นดูนะ';
+  setTimeout(() => m.mhp ? fmEnemy() : fmWin(), 1100);
+}
+function fmEnemy(){
+  $('xBig').textContent = '⚠️'; $('xSay').textContent = 'อสูรกำลังจะโจมตี! เลือกท่าป้องกัน';
+  exBtns(DEFS.map(d => ({ label:d.name, cls:d.base > 2 ? 'ghost' : 'ok', fn:() => fmDo(d, false) })));
+}
+function fmBlock(d, tot){
+  const m = S.fmon; if (!m) return; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต';
+  const frac = Math.min(1, tot/d.n), dmg = Math.round(d.base + (8 - d.base)*(1 - frac));
+  m.php = Math.max(0, m.php - dmg); save(); fmRender(); if (dmg) exFx('you', `−${dmg}`);
+  $('xSay').textContent = dmg ? `คุณโดนโจมตี −${dmg}` : 'ป้องกันได้สมบูรณ์! 🛡✨';
+  setTimeout(() => m.php ? fmAttackMenu() : fmLose(), 1100);
+}
+function fmWin(){
+  const m = S.fmon, T = FMON[m.kind]; S.fmon = null; bump('fmonWin'); bump('fmon_' + m.kind);
+  Object.entries(T.loot).forEach(([k, n]) => invAdd(k, n)); S.coins += 150; const lg = gainLove(10); setTired(0); save(); refreshHeader(); renderMats();
+  $('xBig').textContent = '🏆'; exSpeak('ชนะแล้ว เก่งมาก');
+  $('xSay').textContent = `กำจัด${T.name}แล้ว! ฟาร์มปลอดภัย\n${inText(T.loot)} • 🪙 150 • ${loveTxt(10, lg)} • 💪 แรงเต็ม`;
+  exBtns([{ label:'🏡 กลับไปทำฟาร์ม', fn:closeFmon }]);
+}
+function fmLose(){
+  const m = S.fmon; m.php = 20; save();
+  $('xBig').textContent = '😮‍💨'; $('xSay').textContent = `เหนื่อยแล้ว พักหายใจก่อนนะ (เลือดคุณเต็มแล้ว)\nอสูรเหลือ HP ${m.mhp} — สู้ต่อเมื่อพร้อม`;
+  exBtns([{ label:'⚔️ สู้ต่อ', fn:() => { fmRender(); fmAttackMenu(); } }, { label:'ข้ามไปก่อน', cls:'ghost', fn:closeFmon }]);
+}
+function closeFmon(){ FM = false; clearInterval(exT); exT = null; G = null; msStop(); msGauge(false); try { speechSynthesis.cancel(); } catch(e){} $('xb').style.display = 'none'; $('gym').style.display = 'none'; $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; refreshHeader(); renderMissions(); }
+function drawFmon(time){                                      // 👾 marker on the farm where it woke up
+  if (!monUp() || inRoom) return; const m = S.fmon, [x, y0] = P(m.gc + .5, m.gr + .5, TH*1.2), y = y0 + Math.sin(time*4)*4;
+  ctx.font = '34px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(FMON[m.kind].name.split(' ')[0], x, y);
+  ctx.fillStyle = '#d23c3c'; ctx.beginPath(); ctx.arc(x + 16, y - 18, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '800 14px Mali, sans-serif'; ctx.fillText('!', x + 16, y - 17);
+}
 function floatMsg(t){ try { queueReward(t); } catch(e){} }
 function questTick(){
   brkTick(); ciAuto(); renderSta(); guideTick();
   { const f = $('chatFab'); f.style.display = S && S.pet && !tool && !inMine && !inRoom && !fishing && !placing ? 'block' : 'none'; f.classList.toggle('pulse', ciDue); if (f.style.display === 'none') $('gBub').style.display = 'none'; } if (S && S.farm) mineUnlockTick();
   if (AVATAR_ON && S && S.pet && !S.avatar && $('avEd').style.display !== 'flex' && !$('modal').classList.contains('on') && !act && $('sMain').classList.contains('on')) openAvatarEd('create');   // 🧑 first time
-  { const m = exOn() ? exState() : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.toggle('pulse', !m.won); }
+  { const m = monUp() ? S.fmon : null; $('monFab').style.display = m && !tool && !inMine && !inRoom && !fishing ? 'block' : 'none'; if (m) $('monFab').classList.add('pulse'); }
   $('evFab').style.display = eventOn() && !tool && !inMine ? 'block' : 'none'; $('evFab').classList.toggle('pulse', evClaimable());
   if (KRATHONGS.length){ const now = performance.now()/1000; KRATHONGS = KRATHONGS.filter(k => now - k.t0 < 120); } if (S.pet && S.farm) petDailyFind();
   if ((curQuest()||{}).id === 'trash' && !S.trashGift){ S.trashGift = 1; S.store = S.store || {}; S.store.flowerbed = (S.store.flowerbed||0) + 1; save(); renderShop(); }
@@ -4706,6 +4817,8 @@ let shopTab = 'farm';
 function openShop(tab){ shopTab = tab; goTab('tShop'); }
 function renderShop(){
   const L = $('shopList'); L.innerHTML = '';
+  if (monUp()){ const c = document.createElement('div'); c.className = 'card'; c.innerHTML = `<b>🔒 ร้านปิดชั่วคราว</b><div class="muted">${FMON[S.fmon.kind].name} ยังอยู่ในฟาร์ม กำจัดก่อนนะ</div>`;
+    const b = document.createElement('button'); b.className = 'btn ok'; b.style.cssText = 'width:100%;margin-top:8px'; b.textContent = '⚔️ ไปสู้'; b.onclick = openFmon; c.appendChild(b); L.appendChild(c); return; }
   const tabs = document.createElement('div'); tabs.className = 'chips';
   [['farm','🏡 ฟาร์ม'],['order','📋 ออเดอร์'],['home','🛋 บ้าน'],['general','🛒 ทั่วไป']].forEach(([k,n]) => { const b = document.createElement('button');
     b.className = 'chip' + (shopTab===k ? ' sel' : ''); b.textContent = n; b.onclick = () => { shopTab = k; renderShop(); }; tabs.appendChild(b); });
@@ -4870,7 +4983,7 @@ function renderBag(){
   mo.textContent = S.monTrial ? '🧪 โหมดสู้ด้วยออกกำลังกาย (ทดลอง): เปิดอยู่ — แตะเพื่อปิด' : '🧪 ทดลองโหมดสู้ด้วยการออกกำลังกาย';
   mo.onclick = () => { S.monTrial = !S.monTrial; save(); renderBag(); renderMissions(); questTick(); if (S.monTrial) sheet('⚔️ เปิดโหมดสู้ด้วยการออกกำลังกายแล้ว!\nอสูรนั่งนิ่งรออยู่ — โจมตีด้วยสควอทจริง ป้องกันด้วยการย่อค้าง\n(ท่าง่าย: ลุก-นั่งเก้าอี้ / พิงผนัง)\n\nแตะปุ่ม ⚔️ ในฟาร์ม หรือการ์ดบนหน้าภารกิจ', OK); };
   const ck = document.createElement('button'); ck.className = 'btn ok'; ck.textContent = '💬 เช็กอินกับเป็นสุข'; ck.onclick = () => openCheckin(false);
-  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, mo, v3, mt, mv, out);
+  L.append(...(AVATAR_ON ? [wd] : []), ck, sb, v3, mt, mv, out);
 }
 function endPlacingSafe(){ if (placing) endPlacing(); }
 
@@ -5020,6 +5133,7 @@ function collectJob(z, o){
 }
 /* ---------- vegetable plots: choose which seed to plant ---------- */
 function plotTap(z, o){
+  if (monLock()) return;
   if (!o.plant){                                              // v0.17.2: pick a seed once, then drag to sow
     if (!Object.values(CROPS).some(c => inv(c.seed) > 0)) return sheet('ยังไม่มีเมล็ดพันธุ์\n• เคลียร์หญ้า/หิน/ต้นไม้ มีโอกาสได้เมล็ดฟรี\n• หรือซื้อที่ ร้านค้า › ทั่วไป',
       [{label:'ไปที่ร้านค้า', cls:'ok', fn:() => openShop('general')}, {label:'ปิด', cls:'ghost'}]);
@@ -5134,6 +5248,7 @@ function renderSeedBar(){
   TOOL_ICO.sow = SEED_PK[CROPS[sowSeed].seed];
 }
 function pickTool(id){
+  if (id && monLock()) return;                                // 👾 v0.33
   if (!id){ tool = null; $('toolBar').style.display = 'none'; $('zoneBar').style.display = 'flex'; setHint(); renderToolBar(); return; }
   const t = TOOLS[id];
   const go = () => { tool = id; renderToolBar(); setHint(); sfx('pop'); };
@@ -5151,9 +5266,9 @@ function setHint(){
 }
 $('evFab').onclick = () => eventSheet();
 $('mineOut').onclick = () => exitMine();
-$('monFab').onclick = () => openEx();
+$('monFab').onclick = () => openFmon();
 $('gStop').onclick = () => { const was = !!G; closeGym(); if (was) sheet('⏸ หยุดฝึกแล้ว ไม่เป็นไรเลย\nกลับมาฝึกต่อได้ทุกเมื่อ', OK); };
-$('xStop').onclick = () => { const x = S.ex; closeEx(); if (x && !x.won) sheet('⏸ หยุดพักแล้ว ไม่เสียอะไร\nกลับมาสู้ต่อได้ทุกเมื่อ (เลือดอสูรยังอยู่เท่าเดิม)', OK); };
+$('xStop').onclick = () => { if (FM) return closeFmon(); const x = S.ex; closeEx(); if (x && !x.won) sheet('⏸ หยุดพักแล้ว ไม่เสียอะไร\nกลับมาสู้ต่อได้ทุกเมื่อ (เลือดอสูรยังอยู่เท่าเดิม)', OK); };
 { const rl = $('reel'), on = e => { e.preventDefault(); reelHold = true; }, off = () => { reelHold = false; };   // 🎣 hold anywhere
   rl.addEventListener('pointerdown', on); rl.addEventListener('pointerup', off); rl.addEventListener('pointercancel', off); rl.addEventListener('pointerleave', off); }
 $('chatFab').innerHTML = `<svg viewBox="0 0 64 64">${BEAGLE}</svg>`; $('chatFab').onclick = () => { ciDue = false; openCheckin(false); }; $('bClose').onclick = () => closeBattle();
@@ -5243,6 +5358,7 @@ function collectRes(t, z, R, gc, gr){
   t.k = 'clear'; delete t.hp; delete t.shake; markDirty(z);
   bump('collect_'+R.size); bump('toolUse'); gainExp(SIZE_EXP[R.size]); if (tool) useSta(STA_RES[R.size]);   // 💪 (pet / timed jobs stay free)
   floatText(gc, gr, got.join(' '), '#2e7d32'); saveSoon();
+  if (tool && !monUp() && Math.random() < MON_P){ const kind = Object.keys(FMON).find(k => FMON[k].from.includes(R.key || R._k)); if (kind) monSpawn(kind, gc, gr); }   // 👾 v0.33
 }
 const CROPS_BY_SEED = Object.fromEntries(Object.values(CROPS).map(c => [c.seed, c]));
 function seedDrop(size){                                       // ⚠️ small 30% • medium/large 60%, cheaper crops more likely
