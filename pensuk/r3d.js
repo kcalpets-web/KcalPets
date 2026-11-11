@@ -61,7 +61,10 @@ export function start(){
   /* ---------- scene ---------- */
   const scene = new THREE.Scene();
   const DAY = new THREE.Color('#cfe6f3'), NIGHTC = new THREE.Color('#1d2948');
-  const hemi = new THREE.HemisphereLight(0xeef6ff, 0xb59a78, 1.15); scene.add(hemi);
+  const hemi = new THREE.HemisphereLight(0xeef6ff, 0xc9a27e, 1.05); scene.add(hemi);   /* 🎨 v0.44 warmer bounce from the ground */
+  /* 🎨 v0.44 Soft Clay+ lighting (style-lab B): key = sun (shadows) • fill = cool, from the camera's right, no shadow •
+     rim = warm, from BEHIND the scene (opposite the camera) so leaf blobs / roofs get a bright edge and separate from the ground */
+  const fill = new THREE.DirectionalLight(0xdfe8ff, .45), rim = new THREE.DirectionalLight(0xfff3e2, .75); scene.add(fill, fill.target, rim, rim.target);
   const sun = new THREE.DirectionalLight(0xfff1dc, 2.3); sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0006; sun.shadow.normalBias = .04; scene.add(sun, sun.target);
   const camera = new THREE.PerspectiveCamera(35, 1, .5, 600);
@@ -71,9 +74,42 @@ export function start(){
     const g = new THREE.Group(), n = 4 + (k%3);
     for (let b=0;b<n;b++){ const r = .9 + Math.random()*.9, m = new THREE.Mesh(SPH, new THREE.MeshStandardMaterial({ color:0xffffff, roughness:1, emissive:0x30343a }));
       m.scale.set(r*1.3, r, r); m.position.set((b - n/2)*1.3, Math.random()*.6, (Math.random()-.5)*1.4); g.add(m); }
-    g.userData = { side:(Math.random()-.5)*100, back: 22 + Math.random()*30, y: k%3 === 0 ? -9 - Math.random()*4 : 4 + Math.random()*8, sp:.4 + Math.random()*.5 };
+    g.userData = { side:(Math.random()-.5)*100, back: 22 + Math.random()*30, y: 4 + Math.random()*8,   /* v0.44: the island now sits in a sea → no clouds below the ground line */ sp:.4 + Math.random()*.5 };
     clouds.push(g); scene.add(g);
   }
+  /* ---------- 🌊 v0.44 SEA around the island (style-lab D) ----------
+     One 360×360 plane (96×96 quads) at SEA_Y, following the camera target. Everything is in the shader (no per-frame CPU work):
+       height  h(x,z,t) = .08·sin(.35x + 1.1t) + .06·sin(.5z + .2x − .8t)          (world coords)
+       normal  N = normalize(−∂h/∂x, 1, −∂h/∂z)  with  ∂h/∂x = .028·cos(a) + .012·cos(b),  ∂h/∂z = .03·cos(b)
+       sparkle: world grid 1/2.2 units drifting with t; cell hash h ≥ .9 → a small oval dot, twinkle .5 + .5·sin(3t + 40h),
+                brightness  (6·(N·H)^40 + .45),  H = normalize(L + V)  → dense glitter on the sun's reflection path, a few elsewhere
+       alpha   1 − smoothstep(70, 140, |xz − target|)  → the sea melts into the 2D sky behind the WebGL canvas.
+     Soil band of every zone is −1.4…−0.5, grass top 0 → SEA_Y = −0.8 leaves a 0.3 cliff + grass above the water. */
+  const SEA_Y = -.8;
+  const seaU = { uTime:{ value:0 }, uSun:{ value:new THREE.Vector3(.5, .8, .3) }, uNight:{ value:0 }, uCenter:{ value:new THREE.Vector2() } };
+  const seaMat = new THREE.MeshStandardMaterial({ color:'#145a92', roughness:1, metalness:0, transparent:true });   /* roughness 1: no broad sun glare washing the sea white — the shader sparkles do the shine */
+  seaMat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, seaU);
+    sh.vertexShader = 'uniform float uTime;\nvarying vec3 vSeaW;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 sw = modelMatrix * vec4(position, 1.0);
+      transformed.z += .08*sin(sw.x*.35 + uTime*1.1) + .06*sin(sw.z*.5 + sw.x*.2 - uTime*.8);
+      vSeaW = sw.xyz;`);
+    sh.fragmentShader = 'uniform float uTime;\nuniform vec3 uSun;\nuniform float uNight;\nuniform vec2 uCenter;\nvarying vec3 vSeaW;\n' +
+      sh.fragmentShader.replace('#include <dithering_fragment>', `
+      float a1 = vSeaW.x*.35 + uTime*1.1, b1 = vSeaW.z*.5 + vSeaW.x*.2 - uTime*.8;
+      vec3 Nw = normalize(vec3(-(.028*cos(a1) + .012*cos(b1)), 1.0, -.03*cos(b1)));
+      vec3 Vw = normalize(cameraPosition - vSeaW), Hw = normalize(uSun + Vw);
+      vec2 gp = vSeaW.xz*2.2 + vec2(uTime*.15, uTime*.05), cell = floor(gp), lp = fract(gp) - .5;
+      float hh = fract(sin(dot(cell, vec2(127.1, 311.7)))*43758.5453);
+      float dotS = smoothstep(.24, .0, length(lp*vec2(1.0, 2.4))) * step(.9, hh) * (.5 + .5*sin(uTime*3.0 + hh*40.0));
+      gl_FragColor.rgb += dotS*(6.0*pow(max(dot(Nw, Hw), 0.0), 40.0) + .45)*(1.0 - .75*uNight);
+      gl_FragColor.a *= 1.0 - smoothstep(70.0, 140.0, length(vSeaW.xz - uCenter));
+      #include <dithering_fragment>`);
+  };
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(360, 360, 96, 96), seaMat); sea.rotation.x = -Math.PI/2; sea.receiveShadow = true; sea.renderOrder = -1; scene.add(sea);
+  const SEA_DAY = new THREE.Color('#145a92'), SEA_NIGHT = new THREE.Color('#0b2340');   // dark base: sun + hemi + fill + rim lift it to a mid blue
+  /* surf: white strips hugging each REAL sea side of a zone (index.html seaSides = no island cell next door), shared pulsing material */
+  const foamMat = new THREE.MeshBasicMaterial({ color:'#ffffff', transparent:true, opacity:.55, depthWrite:false }), foamMat2 = foamMat.clone(); foamMat2.opacity = .25;
   /* ---------- palette (Modern Clay) ---------- */
   const C = { grass:'#8cc97a', grassD:'#6eab5f', soil:'#a87b55', base:'#f4ecdc', oak:'#d6b07f', water:'#86c8ea', sand:'#efe2c4',
               stone:'#e4dccd', rock:'#b9b3aa', leaf:'#6dbb5d', leaf2:'#58a24c', pine:'#4d9a63', trunk:'#9a6a45', white:'#fbf8f2' };
@@ -380,7 +416,7 @@ export function start(){
         BALL(g, .18, .18, .18, '#ff6b81', -.2, .06, 1.2); break; }
       case 'pier': {
         const x0 = -W/2 + .2, x1 = W/2 + 3, len = x1 - x0, cx2 = (x0 + x1)/2;
-        RB(g, 3.4, .12, D + .6, .03, '#86c8ea', W/2 + 1.7, -.16, 0);                         // sea under the overhang
+        RB(g, 3.4, .12, D + .6, .03, '#2a6fa6', W/2 + 1.7, -.16, 0);                         // sea under the overhang (v0.44: sea colour)
         for (let k=0;k<Math.round(len/.42);k++) RB(g, .38, .12, 1.6, .02, k%2 ? '#b98250' : '#a8703f', x0 + .21 + k*.42, .32, 0, true);   // planks
         for (let x = x0 + .3; x < x1; x += 1.2) for (const z of [-.75, .75]) CY(g, .09, .55, '#6e4524', x, -.2, z, true);       // posts
         for (const z of [-.8, .8]) RB(g, len, .07, .07, .02, '#8a5a33', cx2, .75, z);                                          // rails
@@ -524,6 +560,10 @@ export function start(){
       for (let i=0;i<z.tiles.length;i++){ const c = i%GRID, r = (i/GRID)|0, t = z.tiles[i];
         const d = Math.min(sea.n ? r : 9, sea.s ? GRID-1-r : 9, sea.w ? c : 9, sea.e ? GRID-1-c : 9);
         if (d <= 1 && t.k !== 'water') RB(g, 2, .03, 2, .02, C.sand, c*2+1, 0, r*2+1); } }
+    if (typeof seaSides === 'function'){ const sd = seaSides(z.cx, z.cy);                  // 🌊 v0.44 surf on real sea edges (two bands: tight + wider)
+      for (const [k, on] of Object.entries(sd)) if (on) for (const [off, w, op] of [[.25, .5, 1], [.85, .7, .5]]){
+        const along = k === 'n' || k === 's', L = S2 + off*2, x = k === 'w' ? -off : k === 'e' ? S2 + off : ctr, zz = k === 'n' ? -off : k === 's' ? S2 + off : ctr;
+        const f = add(g, rb(along ? L : w, .04, along ? w : L, .02), op < 1 ? foamMat2 : foamMat, x, SEA_Y + .1, zz); f.castShadow = false; f.receiveShadow = false; } }
     RB(g, S2-.04, .9, S2-.04, .05, C.soil, ctr, -1.4, ctr);    // floating island: soil → stone → rocky underside
     RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
     BALL(g, S2*.42, 1.6, S2*.42, '#8d7f70', ctr, -2.3, ctr);
@@ -699,6 +739,11 @@ export function start(){
     camera.position.set(target.x + Math.sin(YAW)*cp*dist, Math.sin(PITCH)*dist, target.z + Math.cos(YAW)*cp*dist);
     camera.lookAt(target);
     sun.position.set(target.x + 14, 26, target.z + 8); sun.target.position.copy(target);
+    /* camera sits toward (sin YAW, cos YAW) on the ground plane → fill from its right-hand side, rim from the opposite side */
+    fill.position.set(target.x + Math.cos(YAW)*20, 12, target.z - Math.sin(YAW)*20); fill.target.position.copy(target);
+    rim.position.set(target.x - Math.sin(YAW)*24, 14, target.z - Math.cos(YAW)*24); rim.target.position.copy(target);
+    sea.position.set(Math.round(target.x/4)*4, SEA_Y, Math.round(target.z/4)*4);   // snapped: waves are in world space, so moving the plane never "swims"
+    seaU.uCenter.value.set(target.x, target.z); seaU.uSun.value.copy(sun.position).sub(target).normalize();
     const half = Math.min(60, Math.max(14, dist*.55));
     if (Math.abs(half - lastHalf) > 1){ lastHalf = half; Object.assign(sun.shadow.camera, { left:-half, right:half, top:half, bottom:-half, near:1, far:120 }); sun.shadow.camera.updateProjectionMatrix(); }
   }
@@ -1000,7 +1045,10 @@ export function start(){
          pos = target + back·(−½√2, −½√2) + side·(½√2, −½√2); they drift sideways and wrap */
       for (const c of clouds){ const u = c.userData; u.side += dt*u.sp; if (u.side > 50) u.side = -50;
         c.position.set(target.x - u.back*.707 + u.side*.707, u.y, target.z - u.back*.707 - u.side*.707); for (const m of c.children) m.material.emissive.setScalar(.19*(1-k)); }
-      sun.intensity = 2.3*(1 - .8*k); hemi.intensity = 1.15*(1 - .55*k); sun.color.setHSL(.09, .6, .92 - .25*k);
+      sun.intensity = 2.3*(1 - .8*k); hemi.intensity = 1.05*(1 - .55*k); sun.color.setHSL(.09, .6, .92 - .25*k);
+      fill.intensity = .45*(1 - .6*k); rim.intensity = .75*(1 - .7*k);
+      seaU.uTime.value = time; seaU.uNight.value = k; seaMat.color.copy(SEA_DAY).lerp(SEA_NIGHT, k);
+      foamMat.opacity = .5 + .15*Math.sin(time*1.4); foamMat2.opacity = .22 + .12*Math.sin(time*1.4 - 1.2);   // surf breathes in & out
       renderer.render(scene, camera);
     },
     hide(){ can.style.display = 'none'; },
