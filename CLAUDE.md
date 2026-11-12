@@ -26,21 +26,42 @@ repo นี้มี 2 เกม **กำลังพัฒนาทั้งค
 9. ไฟล์ gift code (`lutonia-giftcode.py`) เป็นของเจ้าของเท่านั้น ห้ามใส่ใน repo
 10. ห้ามเปิดลิงก์/แชร์เดโม Fit and Pals เก่า (มีข้อมูลสุขภาพจริง)
 
-## โครงสร้าง (ตอนนี้)
-- `index.html` ~3.6 MB ตัวเกมทั้งหมดในไฟล์เดียว (เดิมสร้างจากไฟล์ย่อย `v2/*.js` + `v2/build.py` ซึ่งไม่ได้อยู่ใน repo)
-  - ฟังก์ชันที่ประกาศทีหลังทับของเดิม → แก้/เพิ่มระบบโดยต่อท้าย override ได้
-  - เซฟ: localStorage คีย์ `kpd_save_v1` · ก่อนอัปเดตเก็บสำเนาไว้ที่ `kpd_prev_save`
-  - น้องแบบใหม่ (ทรงหน้าปก) อยู่ในข้อมูล `NEWPET_HD3` · รูปแบบ Hd `{w,h,c,eyes,k,hb,fb,sx,sy,el,aq,frs,nw}`
-  - `spriteCache` เป็น const → ล้างด้วยการลบคีย์
+## โครงสร้าง (ตั้งแต่ v1.36 · เฟส 0)
+**แก้ที่ `src/` เท่านั้น แล้ว build** — `index.html` ที่รากเป็นไฟล์ที่ build ออกมา (ยังเป็นไฟล์เดียวบนเว็บและลิงก์ claude.ai)
+```
+src/manifest.txt     ลำดับไฟล์ที่ต่อกันเป็น index.html (ต่อกันตรงทุกไบต์)
+src/html/            หัว/ท้ายหน้า · src/css/main.css
+src/js/main/NNN-*.js  สคริปต์หลัก (ทั้งหมดอยู่ใน IIFE เดียว 'use strict' — 010 เปิด, 440 boot+ปิด) เรียงตามเลข
+src/js/farm/         ฉากฟาร์มเก่า (สคริปต์ที่ 2)
+src/data/            ข้อมูลก้อนใหญ่ (EN, NEWPET_HD3, PXART, PXREAL …) บรรทัดเดียวต่อไฟล์
+src/assets/          ภาพ/ฟอนต์จริง · ในโค้ดเขียน data:image/webp;base64,%%ASSET:assets/ชื่อ.webp%% แล้ว build ใส่ base64 ให้
+tools/build.py       python3 tools/build.py (เขียน index.html) · --check (เทียบว่าตรงกับ src/)
+tools/test/          check.sh · smoke.js · make-fixtures.js · fixtures/*.json
+tools/art/           ห้องทดลองดินปั้น (three.js เฉพาะตอนทำภาพ ไม่ขึ้นเกม): lab.html · clay.js · style-sheet.js
+```
+- ระบบใหม่: เพิ่มไฟล์ `src/js/main/NNN-ชื่อ.js` แล้วใส่ชื่อใน `src/manifest.txt` ตามลำดับ · ฟังก์ชันประกาศซ้ำทีหลังทับของเดิม (override)
+- ฟาร์มที่ผู้เล่นใช้จริงคือ `h2Farm` (ฟาร์มเกาะ) ไม่ใช่ `farmView` · วาด/แตะของในฉากฟาร์มเกาะ: ห่อ `brhDraw` / `brhHit` (ดู 430-economy-v135.js)
+- hook สำหรับทดสอบ: `window.__kpdTest` (435-test-hooks.js) — เปิดหน้า: `__kpdTest.pages.vault()` ฯลฯ
+- เซฟ: localStorage คีย์ `kpd_save_v1` · ก่อนอัปเดตเก็บสำเนาไว้ที่ `kpd_prev_save`
+- น้องแบบใหม่ (ทรงหน้าปก) อยู่ใน `src/data/400-newpet-hd3.js` · รูปแบบ Hd `{w,h,c,eyes,k,hb,fb,sx,sy,el,aq,frs,nw}`
+- `spriteCache` เป็น const → ล้างด้วย `for(const k in spriteCache)delete spriteCache[k]`
 - `sw.js` ระบบออฟไลน์ · ข้ามทุก path ที่มีคำว่า `pensuk`
-- งานถัดไป (อัปเดตใหญ่): ระบบเศรษฐกิจใหม่ (ฟาร์มเป็นคลังเงิน + เรือ), สกิล 4 ช่องต่อน้อง + เครื่องเทรนในบ้าน, หอคอยรางวัล, ต้นไม้ค่าพลัง, ขนสีพิเศษ + สกินสีสำหรับภาพใหม่, ชุดนักสำรวจสำหรับน้องมีปีก/สัตว์น้ำ
+- แผนงานทั้งหมดอยู่ใน `docs/luthonia/HANDOFF.md`
+
+## ทดสอบก่อน commit ทุกครั้ง
+```bash
+python3 tools/build.py && bash tools/test/check.sh          # build ตรง · ไวยากรณ์ · คอมเมนต์ // กลางบรรทัด · VER = sw.js · ไม่มีอีเมล
+NODE_PATH=$(npm root -g) node tools/test/smoke.js /tmp/smoke   # ~3 นาที: เซฟตัวอย่าง × ทุกหน้า · error · ไทยในโหมดอังกฤษ · ภาพหน้าจอ
+ONLY=vault,farm NODE_PATH=$(npm root -g) node tools/test/smoke.js   # เฉพาะบางหน้า
+```
+เปลี่ยนรูปแบบเซฟ → สร้างเซฟตัวอย่างใหม่: `NODE_PATH=$(npm root -g) node tools/test/make-fixtures.js`
 
 ## Git workflow
 ```bash
 git checkout main && git pull
 git checkout -b feature/luthonia-ชื่อสั้น   # หรือ fix/…
-# แก้ index.html (+ sw.js) → ทดสอบใน Chromium/Playwright ว่าเปิดได้ไม่มี error
+# แก้ src/ (+ sw.js) → build → check.sh → smoke.js
 git commit -m "feat(luthonia): v1.xx สรุป"
 git push origin feature/luthonia-ชื่อสั้น:main   # เว็บจริงอัปเดตจาก main (GitHub Pages)
 ```
-หลังปล่อย: อัปเดตลิงก์ผู้เล่นบน claude.ai ด้วย index.html ตัวใหม่ (ถ้าผู้ออกแบบขอ)
+หลังปล่อย: อัปเดตตารางสถานะใน `docs/luthonia/HANDOFF.md` · อัปเดตลิงก์ผู้เล่นบน claude.ai ด้วย index.html ตัวใหม่ (ถ้าผู้ออกแบบขอ)

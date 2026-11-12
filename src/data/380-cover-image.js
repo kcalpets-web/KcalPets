@@ -1,0 +1,1 @@
+  d.innerHTML='<img alt="Luthonia" src="data:image/png;base64,%%ASSET:assets/cover-luthonia.png%%">'+PETS.map((p,i)=>'<i data-i="'+i+'" style="left:'+(p.x/196*100)+'%;top:'+(p.y/426*100)+'%;width:'+(p.w/196*100)+'%;height:'+(p.h/426*100)+'%"></i>').join('')+'<b class="c2a">ENDLESS NIGHT</b><b class="c2b">ราตรีนิรันดร์</b>';

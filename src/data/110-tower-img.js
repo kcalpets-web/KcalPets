@@ -1,0 +1,1 @@
+const TOWER_IMG='data:image/webp;base64,%%ASSET:assets/tower-img.webp%%',TOWER_H=1672,TOWER_W=940,TOWER_Y=[[1,1400],[10,1276],[20,1163],[30,1050],[40,938],[50,825],[60,708],[70,593],[80,468],[90,270],[100,95]];

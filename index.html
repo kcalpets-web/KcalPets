@@ -3809,7 +3809,7 @@ function welcome(){
 function startGame(first){
   migrate();applyRead();capWeek();checkSeason();tickEnergy();if(S.detox)setTimeout(detoxScreen,50);else if(S.workout)setTimeout(workoutScreen,50);buildDock();{const g=evCheck(true);if(g.length)queuePopup(()=>accGotSheet(g))}renderEvBtn();$('aAdv').innerHTML=pxi('🏃',26)+' '+TL('บันทึกออกกำลังกาย');layout();renderTop();
   maybeIntro();
-  if(S.cocNews===1){S.cocNews=2;const out=S.cocOut;delete S.cocOut;save();queuePopup(()=>openSheet('<div style="display:flex;flex-direction:column;gap:10px;text-align:center;align-items:center"><h3>'+TL('ระบบเติบโตใหม่')+' ✨</h3><div class="row" style="justify-content:center;gap:2px">'+ELS.map(e=>sprImg('wisp_'+e,1,52)).join('')+'</div><div class="row" style="justify-content:center;gap:2px">'+ELS.map(e=>sprImg(e===SPECIES.fox.el?'fox':'fox@'+e,4,52)).join('')+'</div>'+
+  if(S.cocNews===1){S.cocNews=2;const out=S.cocOut;delete S.cocOut;save();queuePopup(()=>openSheet('<div style="display:flex;flex-direction:column;gap:10px;text-align:center;align-items:center"><h3>'+TL('ระบบเติบโตใหม่')+' ✨</h3><div class="row" style="justify-content:center;gap:2px">'+ELS.filter(e=>PXART['wisp_'+e]).map(e=>sprImg('wisp_'+e,1,52))/* v1.36: only the elements that have wisp art */.join('')+'</div><div class="row" style="justify-content:center;gap:2px">'+ELS.map(e=>sprImg(e===SPECIES.fox.el?'fox':'fox@'+e,4,52)).join('')+'</div>'+
     '<p style="text-align:left;font-size:13px;line-height:1.6">'+TL('🥚 ไข่ฟักเป็น<b>ภูตแสง</b> ธาตุตามกิจกรรมที่ทำ · 🦋 Lv 6 เข้าดักแด้ <b>แต้มค่าพลังที่จัด</b>กำหนดสาย ดาวการเลี้ยงกำหนดระดับ · Lv 9 และ 12 โตเองอัตโนมัติ · ทุกสายพันธุ์มีครบ 4 ธาตุ เปิดดูได้ใน 📖 สมุดสะสม')+'</p>'+
     '<p class="mut" style="font-size:12px;text-align:left">'+TL('น้องที่มีอยู่แล้วเป็นสายพันธุ์เดิม โตต่อถึง Lv 12 ได้เลย ไม่ต้องเข้าดักแด้')+(out?' · '+TL('น้องที่อยู่ในดักแด้ออกมาแล้ว'):'')+'</p>'+
     '<div class="row" style="width:100%"><button class="btn" id="cnCat" style="flex:1">'+pxi('📖',20)+' '+TL('สมุดสะสม')+'</button><button class="btn kcal" id="cnGo" style="flex:1">'+TL('ดูวิธีเล่น')+'</button></div></div>',(b,ov)=>{b.querySelector('#cnGo').onclick=()=>{closeSheet(ov);cocGuide()};b.querySelector('#cnCat').onclick=()=>{closeSheet(ov);catalogSheet()}}))}
@@ -6819,7 +6819,7 @@ try{window.__gis={gisCred,gisOk,gisPayload,GCID}}catch(e){}
    and hats / face items still sit by the eyes. Kinds not listed keep their old art. ==== */
 const NEWPET_HD={} /* v1.32: data moved to zzz_pets4.js */,NEWPET_OUTFIT=[[3,11,"#51604f"],[4,11,"#51604f"],[5,11,"#9fa97e"],[6,11,"#372017"],[7,11,"#434032"],[11,11,"#51604f"],[12,11,"#562e26"],[13,11,"#372017"],[14,11,"#9fa97e"],[15,11,"#727a4d"],[16,11,"#434032"],[17,11,"#434032"],[1,12,"#434032"],[2,12,"#578159"],[3,12,"#51604f"],[4,12,"#372017"],[5,12,"#b2a464"],[6,12,"#562e26"],[7,12,"#bb4c53"],[8,12,"#e17562"],[9,12,"#e17562"],[10,12,"#e17562"],[11,12,"#bb4c53"],[12,12,"#bb4c53"],[13,12,"#372017"],[14,12,"#727a4d"],[15,12,"#372017"],[16,12,"#51604f"],[17,12,"#578159"],[18,12,"#434032"],[2,13,"#578159"],[3,13,"#51604f"],[4,13,"#562e26"],[5,13,"#684230"],[6,13,"#372017"],[7,13,"#bb4c53"],[8,13,"#bb4c53"],[9,13,"#a23b41"],[10,13,"#a23b41"],[11,13,"#bb4c53"],[12,13,"#8c363d"],[13,13,"#372017"],[14,13,"#372017"],[15,13,"#562e26"],[16,13,"#578159"],[17,13,"#578159"],[18,13,"#578159"],[3,14,"#434032"],[4,14,"#965536"],[5,14,"#965536"],[6,14,"#727a4d"],[7,14,"#562e26"],[8,14,"#a23b41"],[9,14,"#bb4c53"],[10,14,"#bb4c53"],[11,14,"#8c363d"],[12,14,"#372017"],[13,14,"#727a4d"],[14,14,"#965536"],[15,14,"#562e26"],[16,14,"#434032"],[17,14,"#51604f"],[4,15,"#965536"],[5,15,"#372017"],[6,15,"#9fa97e"],[7,15,"#c0af7e"],[8,15,"#372017"],[9,15,"#8c363d"],[10,15,"#562e26"],[11,15,"#562e26"],[12,15,"#d7bf7f"],[13,15,"#727a4d"],[14,15,"#372017"],[15,15,"#684230"],[4,16,"#684230"],[5,16,"#434032"],[6,16,"#9fa97e"],[7,16,"#d7bf7f"],[8,16,"#d7bf7f"],[9,16,"#a3895a"],[10,16,"#372017"],[11,16,"#d7bf7f"],[12,16,"#d7bf7f"],[13,16,"#727a4d"],[14,16,"#727a4d"],[15,16,"#684230"],[18,16,"#9fa97e"],[4,17,"#434032"],[5,17,"#727a4d"],[6,17,"#727a4d"],[7,17,"#d7bf7f"],[8,17,"#e7cfa7"],[9,17,"#434032"],[10,17,"#c0af7e"],[11,17,"#f5e5d0"],[12,17,"#d7bf7f"],[13,17,"#c0af7e"],[14,17,"#51604f"],[15,17,"#434032"],[16,17,"#434032"],[18,17,"#434032"],[5,18,"#c0af7e"],[6,18,"#d7bf7f"],[7,18,"#f5e5d0"],[8,18,"#f5e5d0"],[9,18,"#f5e5d0"],[10,18,"#f5e5d0"],[11,18,"#f5e5d0"],[12,18,"#f5e5d0"],[13,18,"#d7bf7f"],[14,18,"#b2a464"],[15,18,"#727a4d"],[16,18,"#434032"],[17,18,"#372017"],[6,19,"#e7cfa7"],[7,19,"#f5e5d0"],[8,19,"#f5e5d0"],[9,19,"#f5e5d0"],[10,19,"#f5e5d0"],[11,19,"#f5e5d0"],[12,19,"#e7cfa7"],[13,19,"#d7bf7f"],[14,19,"#a3895a"],[15,19,"#a3895a"],[16,19,"#684230"],[17,19,"#684230"]];
 (function(){try{for(const k in NEWPET_HD){const Q=NEWPET_HD[k],H={w:Q.w,h:Q.h,eyes:Q.eyes,k:Q.k,hb:Q.hb,fb:Q.fb,sx:Q.sx,sy:Q.sy,c:Q.R.map(r=>[...r].map(ch=>ch==='.'?null:Q.P[ch.charCodeAt(0)-0x4E00]))};
-    if(!/^CH:|#t$/.test(k)&&SPECIES[k])H.el=SPECIES[k].el||'normal';PXART[k]={r:[],p:{},_hd:H,_new:1}}spriteCache={}}catch(e){}})();
+    if(!/^CH:|#t$/.test(k)&&SPECIES[k])H.el=SPECIES[k].el||'normal';PXART[k]={r:[],p:{},_hd:H,_new:1}}for(const _k in spriteCache)delete spriteCache[_k]}catch(e){}})();
 /* explorer outfit = skin */
 try{SKINS.sk_explorer={n:'ชุดนักสำรวจ',c:{}};if(ITEM_ORDER.indexOf('sk_explorer')<0)ITEM_ORDER.splice(ITEM_ORDER.indexOf('sk_pumpkin'),0,'sk_explorer');if(typeof EN==='object')EN['ชุดนักสำรวจ']='Explorer outfit'}catch(e){}
 function hdDress(Hd){const c=Hd.c.map(r=>r.slice());for(const[x,y,v]of NEWPET_OUTFIT){const X=x+Hd.sx,Y=y+Hd.sy;if(c[Y]&&c[Y][X])c[Y][X]=v}return Object.assign({},Hd,{c})}
@@ -6858,9 +6858,9 @@ const NEWPET_HD3={"CH:shiba":{"w":25,"h":28,"P":["#44190c","#e2893b","#d8601e","
   for(const k in NEWPET_HD3){const Q=NEWPET_HD3[k],RQ=typeof Q.R==='string'?NEWPET_HD3[Q.R]:Q,H={w:Q.w,h:Q.h,eyes:Q.eyes,k:Q.k,hb:Q.hb,fb:Q.fb,sx:Q.sx,sy:Q.sy,aq:Q.aq,
     c:RQ.R.map(r=>[...r].map(ch=>ch==='.'?null:RQ.P[ch.charCodeAt(0)-0x4E00]))};
     if(RQ.frs)H.frs=RQ.frs.map(F=>({w:F.w,h:F.h,eyes:F.eyes,k:F.k,hb:F.hb,fb:F.fb,sx:F.sx,sy:F.sy,aq:1,el:H.el,c:F.R.map(r=>[...r].map(ch=>ch==='.'?null:F.P[ch.charCodeAt(0)-0x4E00]))}));
-    if(!/^CH:|#t$/.test(k)&&SPECIES[k]){H.el=SPECIES[k].el||'normal';if(H.frs)H.frs.forEach(F=>F.el=H.el)}PXART[k]={r:[],p:{},_hd:H,_new:1,_aq:(Q.aq||Q.wg)?1:0}}spriteCache={}}catch(e){console.warn('pets4',e)}})();
+    if(!/^CH:|#t$/.test(k)&&SPECIES[k]){H.el=SPECIES[k].el||'normal';if(H.frs)H.frs.forEach(F=>F.el=H.el)}PXART[k]={r:[],p:{},_hd:H,_new:1,_aq:(Q.aq||Q.wg)?1:0}}for(const _k in spriteCache)delete spriteCache[_k]}catch(e){console.warn('pets4',e)}})();
 /* tree pets -> wolf (same element, level, stars) */
-setInterval(()=>{try{if(!S||!S.pets)return;let ch=0;S.pets.forEach(p=>{if(p&&typeof p.sp==='string'&&/^tree(@|$)/.test(p.sp)){p.sp=p.sp.replace(/^tree/,'wolf');ch=1}});if(ch){save();spriteCache={}}}catch(e){}},1500);
+setInterval(()=>{try{if(!S||!S.pets)return;let ch=0;S.pets.forEach(p=>{if(p&&typeof p.sp==='string'&&/^tree(@|$)/.test(p.sp)){p.sp=p.sp.replace(/^tree/,'wolf');ch=1}});if(ch){save();for(const _k in spriteCache)delete spriteCache[_k]}}catch(e){}},1500);
 
 /* ==== v1.32 fixes from the owner's preview test (3 Nov 15:30) ====
    · event pets hatched with their default name keep it in the player's language (Pumpkin Bat / Lantern Jellyfish)
@@ -6869,7 +6869,7 @@ const EVPET_NAMES=[['ค้างคาวฟักทอง','Pumpkin Bat'],['�
 function evNameFix(){try{if(!S||!S.pets)return;const en=LANG==='en';let ch=0;S.pets.forEach(p=>{EVPET_NAMES.forEach(([th,e])=>{if(en&&p.name===th){p.name=e;ch=1}else if(!en&&p.name===e){p.name=th;ch=1}})});if(ch)save()}catch(e){}}
 setTimeout(evNameFix,800);setInterval(evNameFix,4000);
 const NP_WINGED=['parrot','eagle','pigeon','swan','phoenix','griffin','pegasus','pumpbat'];
-(function(){try{for(const k in PXART){const b=k.replace(/^CH:/,'').replace(/#t$/,'').split('@')[0];if(PXART[k]&&PXART[k]._new&&NP_WINGED.indexOf(b)>=0)PXART[k]._aq=1}spriteCache={}}catch(e){}})();
+(function(){try{for(const k in PXART){const b=k.replace(/^CH:/,'').replace(/#t$/,'').split('@')[0];if(PXART[k]&&PXART[k]._new&&NP_WINGED.indexOf(b)>=0)PXART[k]._aq=1}for(const _k in spriteCache)delete spriteCache[_k]}catch(e){}})();
 
 /* ==== v1.31 (owner 2 Nov): Bag › Pets › my pets — every pet stands on a pedestal coloured by rarity
    (Basic silver · Rare blue · Epic purple · Legend gold), R/E/L get a light column and rising sparkles,
@@ -7253,7 +7253,6 @@ farmView=(orig=>function(){const r=orig.apply(this,arguments);try{if(FV&&FV.el&&
     row.innerHTML='<button class="btn" id="fvBk">'+pxi('🏦',20)+' '+ecoT('คลัง','Vault')+' <span class="tag num" id="fvBkN"></span></button><button class="btn" id="fvBt">'+pxi('⛵',20)+' '+ecoT('ท่าเรือ','Harbor')+' <span class="tag num" id="fvBtN" hidden></span></button>';
     const first=FV.el.querySelector('.fvb');first.after(row);row.querySelector('#fvBk').onclick=()=>{SND.play('tap');bankSheet()};row.querySelector('#fvBt').onclick=()=>{SND.play('tap');boatSheet()};ecoBadges();
     if(boatDone())toast(ecoT('⛵ เรือกลับมาแล้ว! แตะท่าเรือเพื่อรับของ','⛵ The boat is back! Tap Harbor to unload'))}}catch(e){console.warn('eco fv',e)}return r})(farmView);
-window.__kpdEco={farmView:()=>farmView(),h2Farm:()=>h2Farm(),amb:()=>ambInit(),ffZone:(x,y)=>ffZone(x,y),ffU:(x,y)=>ffU(x,y),bankTick,bankSt,bankCollect,boatSt,boatGo,boatCollect,boatDone,bankSheet,boatSheet,newPet,fresh,pxi,onEx,get S(){return S}};
 
 /* ==== v1.34 update mail ==== */
 (function(){try{
@@ -7277,6 +7276,13 @@ window.__kpdEco={farmView:()=>farmView(),h2Farm:()=>h2Farm(),amb:()=>ambInit(),f
   M.forEach(m=>{if(!MAIL_FIX.find(x=>x.id===m.id))MAIL_FIX.push(m)});
   let tries=0;const iv=setInterval(()=>{try{tries++;if(tries>40)clearInterval(iv);if(!S)return;let ch=false;M.forEach(m=>{if(mailAdd({id:m.id,fix:1}))ch=true});if(ch){save();try{mailDot&&mailDot()}catch(e){}}clearInterval(iv)}catch(e){}},1500);
 }catch(e){console.warn('v135 mail',e)}})();
+/* ==== test hooks (tools/test/smoke.js) — read-only helpers + the pages a player can open from the home menu ==== */
+window.__kpdTest={get S(){return S},set S(v){S=v},save,fresh,newPet,VER,
+  pages:{farm:()=>h2Farm(),bag:()=>h2Bag(),shop:()=>h2Hub('shop'),exercise:()=>exerciseSheet(),adventure:()=>adventureSheet(),
+    collection:()=>h2ColSheet(),breed:()=>h2Breed(),quests:()=>boardSheet(),mail:()=>mailSheet(),settings:()=>settingsSheet(),
+    tower:()=>towerView(),vault:()=>bankSheet(),harbor:()=>boatSheet(),pet:()=>petMenu(S.main)},
+  petURL:sp=>{const p=newPet(sp);return spriteURL(pspr(p),pform(p),p.acc)},iconURL:e=>{const m=/src="([^"]+)"/.exec(pxi(e,16));return m?m[1]:null},
+  bankTick,bankSt,bankCollect,boatSt,boatGo,boatCollect,boatDone,onEx,pxi,closeAll};
 function boot(data){if(data&&data.S){S=data.S}else S=load();showCover();requestAnimationFrame(loop)}
 const hot=window.claude&&window.claude.hot;
 if(hot&&hot.snapshot)try{hot.snapshot(()=>({S}))}catch(e){}

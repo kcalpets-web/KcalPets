@@ -1,0 +1,42 @@
+</style>
+
+<div id="app">
+  <div class="top">
+    <button class="pill who" id="whoBtn" aria-label="ดูข้อมูลน้อง">
+      <div class="nm"><span class="lv num" id="tLv">Lv1</span><span id="tName">น้อง</span></div>
+      <div class="bar"><i id="tExp"></i></div>
+    </button>
+    <button class="pill kc" id="kcBtn" aria-label="เหรียญของฉัน">
+      <b id="tKcal">0</b><small>🪙 เหรียญ</small>
+    </button>
+    <button class="pill kc" id="alBtn" aria-label="วันนี้น้องย่อยได้อีก">
+      <b id="tAllow" style="color:var(--good)">0</b><small>ย่อยได้อีกวันนี้</small>
+    </button>
+  </div>
+  <div id="stage">
+    <canvas id="room"></canvas>
+    <div id="roam"></div>
+    <button id="goal" hidden></button>
+    <div class="bubble" id="bubble" style="opacity:0"></div>
+    <button id="evBtn" aria-label="อีเวนต์" hidden></button>
+    <button id="questBtn" aria-label="ภารกิจ"><span class="qic"></span><span class="qn num" id="qN">0/3</span></button>
+    <div id="menuBack" hidden></div>
+    <div id="dock" hidden></div>
+  </div>
+  <div class="actions">
+    <button class="btn go" id="aAdv">🗺️ ผจญภัย</button>
+    <button id="menuBtn" aria-label="เมนู" aria-expanded="false" aria-controls="dock"><i></i><i></i><i></i></button>
+  </div>
+</div>
+<div id="cover">
+  <canvas class="bgc" id="coverBg"></canvas>
+  <div class="logo"><canvas id="logoCv" aria-label="Luthonia"></canvas><span class="ep">ENDLESS NIGHT</span><small>ราตรีนิรันดร์</small></div>
+  <canvas id="coverPet" class="spr" width="48" height="48" style="position:relative;width:144px;height:144px"></canvas>
+  <div class="tap">แตะเพื่อเริ่ม</div>
+  <div class="copy">© 2026 Luthonia · ต้นแบบ v<span id="cVer"></span></div>
+</div>
+<div id="toast" hidden></div>
+<div id="rotateMsg"><i>📱</i><b>หมุนจอเป็นแนวตั้งนะ · Please rotate to portrait</b><small style="opacity:.7">มือถือเล่นแนวตั้ง · iPad เล่นได้ทั้งสองแนว</small></div>
+<div id="ovRoot"></div>
+
+<script>
