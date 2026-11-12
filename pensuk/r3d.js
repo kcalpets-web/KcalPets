@@ -1162,7 +1162,7 @@ export function start(){
       return P; })());
     for (const s2 of [-1, 1]){ const l = new THREE.Group(); l.position.set(s2*.13, .62, 0); g.add(l); mesh(l, legG, true); parts.legs.push(l); }
     /* body: bean torso, hem + collar, neck, buttons, outfit extras, held items (balloon, saw, whistle) */
-    const bodyG = mergeGeo(`pBody_${shirt}_${pants}_${skin}_${L.outfit || ''}_${L.apron || ''}_${L.vest || ''}_${L.balloon || ''}_${L.tool || ''}_${L.hat === 'band' ? 1 : 0}`, (() => { const P = [];
+    const bodyG = mergeGeo(`pBody_${shirt}_${pants}_${skin}_${L.outfit || ''}_${L.apron || ''}_${L.vest || ''}_${L.balloon || ''}_${L.tool || ''}`, (() => { const P = [];
       if (L.outfit === 'thai') P.push([geo('sarong', () => new THREE.CylinderGeometry(.26, .3, .62, 20)), 0, .33, 0, 1, 1, .8, 0, 0, '#8c2f39']);   // pha nung
       P.push([torsoGeo(), 0, .6, 0, 1, 1, .72, 0, 0, shirt]);
       P.push([geo('hemT', () => new THREE.TorusGeometry(.215, .025, 6, 22).rotateX(Math.PI/2)), 0, .62, 0, 1, 1, .74, 0, 0, shade(shirt, .82)]);
@@ -1170,12 +1170,13 @@ export function start(){
       if (L.outfit === 'sport') P.push([geo('chestB', () => new THREE.CylinderGeometry(.272, .276, .07, 22)), 0, .99, 0, 1, 1, .73, 0, 0, '#ffffff']);
       else if (L.outfit !== 'thai'){ for (const sd of [-1, 1]) P.push([SPH24, sd*.06, 1.2, .13, .07, .03, .05, 0, sd*.5, lighten(shirt, .35)]);   // collar
         for (const y of [.92, 1.06]) P.push([BEAD, 0, y, .195, .022, .022, .012, 0, 0, lighten(shirt, .55)]); }   // buttons
-      if (L.outfit === 'thai') P.push([RBG(.12, .8, .4, .04), 0, .95, 0, 1, 1, 1, 0, .6, '#e0a92e']);           // sabai sash
+      if (L.outfit === 'thai') P.push([geo('hemT', () => new THREE.TorusGeometry(.215, .025, 6, 22).rotateX(Math.PI/2)), 0, .6, 0, 1.25, 1.4, .95, 0, 0, '#e0a92e']);   // gold waist band (v0.52: the flat diagonal sash looked odd → removed)
       if (L.vest){ P.push([torsoGeo(), 0, .86, 0, 1.05, .58, .77, 0, 0, L.vest]); P.push([RBG(.07, .34, .02, .01), 0, 1.03, .205, 1, 1, 1, 0, 0, shirt]); }
+      /* apron (v0.52): a front-only slice of the torso lathe (phi −.95 … +.95), radius +4 %, from the hem up to the chest → it hugs the body
+         instead of a flat board; a waist tie in a darker tone. */
       if (L.apron || L.outfit === 'carpenter'){ const ac = L.apron || '#a8743f';
-        P.push([RBG(.4, .47, .05, .05), 0, .85, .2, 1, 1, 1, 0, 0, ac]); P.push([RBG(.18, .1, .03, .02), 0, .76, .23, 1, 1, 1, 0, 0, shade(ac, .88)]);   // apron + pocket
-        P.push([RBG(.46, .03, .3, .01), 0, 1.04, .03, 1, 1, 1, 0, 0, shade(ac, .9)]); }                         // tie band
-      if (L.hat === 'band'){ P.push([CYL, .05, 1.2, .2, .012, .3, .012, 0, 0, '#d9d9d9']); P.push([BEAD, .05, 1.04, .215, .05, .03, .05, 0, 0, '#f6c445']); }   // whistle
+        P.push([geo('apronL', () => new THREE.LatheGeometry([[.205, 0], [.27, .08], [.276, .3], [.258, .48]].map(([x, y]) => new THREE.Vector2(x, y)), 12, -.95, 1.9)), 0, .6, 0, 1.04, 1, .76, 0, 0, ac]);
+        P.push([geo('apronTie', () => new THREE.TorusGeometry(.27, .016, 6, 24).rotateX(Math.PI/2)), 0, .98, 0, 1.0, 1, .74, 0, 0, shade(ac, .85)]); }
       if (L.balloon){ const bc = L.balloon === true ? '#ff6b81' : L.balloon; P.push([CYL, .4, 1.3, 0, .008, 1.1, .008, 0, 0, '#ffffff']);
         P.push([SPH24, .4, 2.0, 0, .2, .25, .2, 0, 0, bc]); P.push([SPH24, .34, 2.08, .12, .05, .07, .03, 0, 0, lighten(bc, .6)]); P.push([CONE, .4, 1.74, 0, .04, .05, .04, 0, Math.PI, bc]); }
       if (L.tool === 'saw'){ P.push([RBG(.06, .5, .02, .01), -.34, .7, .1, 1, 1, 1, 0, .3, '#c9d1d8']); P.push([RBG(.08, .14, .05, .02), -.27, .92, .1, 1, 1, 1, 0, .3, '#8a5a33']); }
@@ -1196,10 +1197,10 @@ export function start(){
       P.push([SPH24, 0, -.025, .285, .032, .026, .025, 0, 0, shade(skin, .93)]);                                  // nose
       P.push([geo('smileT', () => new THREE.TorusGeometry(.05, .012, 6, 12, Math.PI)), 0, -.085, .262, 1, 1, 1, 0, Math.PI, '#c0584a']);   // smile ∪
       /* hair: crown shell tilted back rx −.6 → front hairline ≈ y .18 (above the brows at .115), nape ≈ y −.18, sides at ear level */
-      if (hs !== 'none'){ const lit = lighten(hc, .08), lump = (x, y, z, sx, sy, sz, rx = 0, rz = 0, c = hc) => P.push([SPH24, x, y, z, sx, sy, sz, 0, rz, c, rx]);
+      if (hs !== 'none'){ const lit = hc, lump = (x, y, z, sx, sy, sz, rx = 0, rz = 0, c = hc) => P.push([SPH24, x, y, z, sx, sy, sz, 0, rz, c, rx]);
         P.push([hairShellGeo('crown', hc, Math.PI*.5), 0, .01, -.01, .318, .322, .305, 0, 0, null, -.6]);
         if (hs === 'bob' || hs === 'long') P.push([hairShellGeo('sides', hc, Math.PI*.7, Math.PI/2 + .62, Math.PI*2 - 1.24), 0, 0, -.01, .33, .33, .315, 0, 0, null]);   // falls past the ears, face left open
-        if (hs !== 'spiky') for (const [x, r2] of [[-.12, .35], [0, 0], [.12, -.35]]) lump(x, .2 - Math.abs(x)*.25, .225, .11, .065, .07, .5, r2, lit);   // soft fringe on the hairline
+        if (hs !== 'spiky') for (const [x, r2] of [[-.12, .35], [0, 0], [.12, -.35]]) lump(x, .2 - Math.abs(x)*.25, .222, .1, .055, .06, .5, r2, lit);   // soft fringe on the hairline
         if (hs === 'bun'){ lump(0, .27, -.17, .13, .13, .13); P.push([geo('bunT', () => new THREE.TorusGeometry(.09, .02, 6, 16)), 0, .2, -.12, 1, 1, 1, 0, 0, '#e8735a', -.9]); }
         if (hs === 'long'){ lump(0, -.2, -.2, .29, .32, .13); for (const sd of [-1, 1]) lump(sd*.25, -.22, -.04, .08, .2, .09); }
         if (hs === 'bob') lump(0, -.08, -.2, .31, .2, .12);
