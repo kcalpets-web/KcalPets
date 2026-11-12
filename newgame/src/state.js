@@ -5,20 +5,21 @@ import { SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_R
 export let S = null;
 export function fresh() {
   return {
-    v: 2, created: Date.now(), profile: null,                // profile: { name, pic, sub, guest }
+    v: 3, created: Date.now(), profile: null,                // profile: { name, pic, sub, guest }
+    story: {}, area: 'farm', shops: {},                      // story flags (intro, built, slept, howsif, fishGiven, boatFixed, town, sword, …) · where the camera is · repaired shops
     lv: 1, exp: 0, pts: 0, hp: null, mp: null,               // player level · tree points (rules TBD) · current HP / Mana (null = full)
     coin: 2000, gem: 500,
     pets: STARTERS.map(p => ({ ...p, lv: 1, exp: 0, hp: null, mp: null, down: 0 })), team: STARTERS.slice(0, TEAM_MAX).map(p => p.id),
-    tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 },
-    mats: {}, potions: { hpS: 2, mpS: 1 }, food: { snack: 3 }, fish: {},
+    tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
+    mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
     cleared: {}, mon: null,
-    boat: { lv: 1, c: 0, t: Date.now() },
-    cam: [0, -2], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
+    boat: { lv: 1, c: 0, t: Date.now() },                    // the vault works once the boat is repaired (story)
+    cam: [-1, 0], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
   };
 }
 export function load() {
-  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 2) { S = Object.assign(fresh(), o); return S } } catch (e) { }
+  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); return S } } catch (e) { }
   S = fresh(); return S;
 }
 export function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)) } catch (e) { } }
@@ -53,7 +54,7 @@ export function gainPetExp(p, n) {
 
 /* boat vault: every pet on the farm makes COIN_PER_PET_H an hour, even offline · stops at the cap · time only moves forward */
 export function boatTick() {
-  const B = S.boat, now = Date.now(); if (now < B.t) return B.c;
+  const B = S.boat, now = Date.now(); if (now < B.t) return B.c; if (!S.story.boatFixed) { B.t = now; return B.c }
   const h = (now - B.t) / 3600e3; B.t = now;
   B.c = Math.min(BOAT_CAP(B.lv), B.c + S.pets.length * COIN_PER_PET_H * h); return B.c;
 }

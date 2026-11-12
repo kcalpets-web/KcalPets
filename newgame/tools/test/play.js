@@ -1,6 +1,7 @@
-/* New Game play-test (v0.3): serves the repo, opens newgame/, plays the core loop with real mouse swipes and takes screenshots.
+/* New Game play-test (v0.4 story start): serves the repo, opens newgame/, plays the opening cutscene and the first story quests
+   (shelter → sleep → Uncle Howsif → fish → boat → town: sword, slimes, Slime King, a shop) with real mouse swipes, and takes screenshots.
    NODE_PATH=$(npm root -g) node newgame/tools/test/play.js outDir      (GFX=high for the pretty mode)
-   Fails (exit 1) on any page error. */
+   Fails (exit 1) on any page error or if the story does not reach the forest quest. */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const path = require('path'), fs = require('fs');
@@ -11,45 +12,69 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
   await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-  const errs = [], log = (...a) => console.log(...a);
+  const errs = [], log = (...a) => console.log(...a); let ok = false;
   try {
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx) }, process.env.GFX || 'eco'); await pg.reload();
-    await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2000);
+    await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(1500);
     const shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
-    const E = (f, a) => pg.evaluate(f, a);
-    await shot('00-login'); await pg.click('#lGuest'); await wait(800);
-    log('fps', await E(() => new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 3000) requestAnimationFrame(f); else r((n / 3).toFixed(1)) }; requestAnimationFrame(f) })));
-    await shot('01-start'); await E(() => { window.__ng.speed = 3 });
+    const E = (f, a) => pg.evaluate(f, a), N = f => E(f);
+    const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    const clickAll = async sel => { for (let i = 0; i < 8; i++) { const el = await pg.$(sel); if (!el) break; await el.click(); await wait(250) } };
+    await shot('00-login'); await pg.click('#lGuest'); await wait(1500);
+    /* cutscene: a few beats, then skip → name */
+    for (let i = 0; i < 3; i++) { await wait(1800); await shot('01-cut-' + i); await E(() => { window.__cut.advance(); window.__cut.advance() }); await wait(900) }
+    await E(() => window.__cut.skip()); await wait(1200); await shot('02-name');
+    await E(() => window.__cut.setName('ทดสอบ')); await wait(2500); await shot('02b-dark'); await E(() => window.__cut.skip()); await wait(1500);
+    log('name', await N(() => window.__ng.S.profile.name), 'cut', await N(() => window.__ng.cut));
+    await clickAll('#tN'); await wait(500); await shot('03-night');
     const swipeAt = async (x, y, dx = 55) => { await pg.mouse.move(x - dx, y); await pg.mouse.down(); await pg.mouse.move(x + dx, y + 6, { steps: 7 }); await pg.mouse.up() };
-    /* sickle on grass, axe on trees — no walking: the finger is the player */
-    for (const [tool, type, n] of [['sickle', 'grass', 3], ['axe', 'tree', 2]]) for (let i = 0; i < n * 4 && !(await E(() => !!window.__ng.M)); i++) {
-      const g = await E(([tool, type]) => { const N = window.__ng; N.setTool(tool); const o = N.nearestClear(o => o.t === type); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, type]); if (!g) break; await wait(500);
-      const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, g); if (p) await swipeAt(p.x, p.y); await wait(250);
-    }
-    log('cleared', await E(() => window.__ng.S.clearCount), 'exp', await E(() => window.__ng.S.exp)); await shot('02-cleared');
-    for (let i = 0; i < 30 && !(await E(() => !!window.__ng.M)); i++) { const p = await E(() => { const N = window.__ng; N.setTool('sickle'); const o = N.nearestClear(o => o.t === 'grass' || o.t === 'bush'); if (!o) return null; N.setTool(o.t === 'grass' ? 'sickle' : 'axe'); N.look(o.x, o.z); return o.id }); await wait(500);
-      const q = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, p); if (q) await swipeAt(q.x, q.y); await wait(200) }
-    log('kills so far (pets help)', await E(() => window.__ng.S.stat.kills || 0));
-    await E(() => { const N = window.__ng, p = N.PA.get('p1').A.root.position; N.spawnMon('branchImp', p.x + 2, p.z + 1) }); await wait(300);
-    log('monster', await E(() => window.__ng.M && window.__ng.M.T.name), 'tool', await E(() => window.__ng.tool));
-    await E(() => { window.__ng.speed = 1.2; const m = window.__ng.M.A.root.position; window.__ng.look(m.x, m.z) }); await wait(1600); await shot('03-monster-pets');
-    for (let i = 0; i < 80 && (await E(() => !!window.__ng.M)); i++) { const m = await E(() => { const N = window.__ng; if (!N.M) return null; const q = N.M.A.root.position; N.look(q.x, q.z); return N.project(q.x, .6, q.z) }); if (!m) break; await swipeAt(m.x, m.y, 70); if (i === 3) await shot('04-fight'); await wait(300) }
-    log('kills', await E(() => window.__ng.S.stat.kills), 'pet exp', await E(() => window.__ng.S.pets.map(p => p.lv + ':' + p.exp).join(' ')));
-    await wait(2200); await shot('05-after-fight');
-    /* fishing: cast, wait for the bite, hold to reel but let go when the line gets tight */
-    await E(() => { window.__ng.speed = 3; const N = window.__ng; N.setTool('rod'); N.look(-4.5, 1) }); await wait(600);
-    await E(() => window.__ng.castAt(-5.5, 1)); let caught = false;
-    for (let i = 0; i < 160; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) { caught = true; break }
-      if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'reel') { await E(t => window.__ng.hold(t < .6), f.ten); if (i % 12 === 0) await shot('06-reel') } await wait(120) }
-    log('fishing done', caught, 'fish', JSON.stringify(await E(() => window.__ng.S.fish)), 'stat', await E(() => window.__ng.S.stat.fish || 0), 'lost', await E(() => window.__ng.S.stat.fishLost || 0));
-    /* feeding: buy food and feed the shiba until it evolves */
-    await E(() => { const N = window.__ng; N.S.coin += 20000; N.S.food.feast = 4; const p = N.S.pets[0]; for (let i = 0; i < 4; i++) N.feed(p, 'food', 'feast') });
-    log('shiba', await E(() => { const p = window.__ng.S.pets[0]; return 'Lv' + p.lv }));
-    await E(() => window.__ng.openPet(window.__ng.S.pets[0])); await wait(1200); await shot('07-pet-sheet');
-    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openProfile() }); await wait(500); await shot('08-profile');
-    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const p = window.__ng.PA.get('p1').A.root.position; window.__ng.look(p.x, p.z) }); await wait(1500); await shot('09-evolved');
+    const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
+      const id = await E(([tool, pred]) => { const N = window.__ng; N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
+      const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
+    await E(() => { window.__ng.speed = 3 });
+    /* quest 0: wood 10 + stone 5 → build → sleep */
+    await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
+    await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 5);
+    log('mats', JSON.stringify(await N(() => window.__ng.S.mats)), 'quest', await N(() => window.__ng.S.quest));
+    await E(() => window.__ng.quest()); await wait(600); await shot('04-site');
+    await E(() => window.__ng.openSite()); await wait(400); await pg.click('#sB'); await wait(800);
+    await E(() => window.__ng.sleepNight()); await wait(4500); await shot('05-morning');
+    /* quest 1: clear the wreck → Howsif → rod → 2 fish */
+    await clearSome('axe', "o => o.t === 'debris'", () => !!window.__ng.S.story.howsif, 30);
+    await wait(500); await shot('06-howsif'); await clickAll('#tN');
+    log('howsif', await N(() => window.__ng.S.story.howsif), 'rod', await N(() => window.__ng.S.has.rod));
+    for (let k = 0; k < 6 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
+      await E(() => { const N = window.__ng; N.setTool('rod'); N.look(-4.5, 1); N.castAt(-5.5, 1) });
+      for (let i = 0; i < 160; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) break;
+        if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'reel') { await E(t => window.__ng.hold(t < .6), f.ten); if (k === 0 && i % 15 === 0) await shot('07-reel') } await wait(120) } }
+    log('fish', JSON.stringify(await N(() => window.__ng.S.fish)));
+    await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN');
+    /* quest 2: repair the boat */
+    await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 15);
+    await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 8);
+    await E(() => window.__ng.openWreck()); await wait(400); await pg.click('#wB'); await wait(600); await clickAll('#tN');
+    await E(() => window.__ng.look(window.__ng.W.boat.position.x + 1, window.__ng.W.boat.position.z)); await wait(1200); await shot('08-boat');
+    log('story', JSON.stringify(await N(() => window.__ng.S.story)), 'quest', await N(() => window.__ng.S.quest));
+    /* quest 3: the town */
+    await E(() => window.__ng.goTown()); await wait(2000); await shot('09-town'); await clickAll('#tN');
+    await E(() => window.__ng.pickSword()); await wait(400); await clickAll('#tN'); await E(() => { window.__ng.speed = 1.5 });
+    for (let i = 0; i < 160 && !(await N(() => window.__ng.S.story.townClear)); i++) {
+      const m = await E(() => { const N = window.__ng, M = N.mons.find(m => m.area === 'town'); if (!M) return null; const q = M.A.root.position; N.look(q.x, q.z); return N.project(q.x, .6, q.z) });
+      if (!m) { await wait(300); continue } await wait(250); const p = await E(() => { const N = window.__ng, M = N.mons.find(m => m.area === 'town'); if (!M) return null; const q = M.A.root.position; return N.project(q.x, .6, q.z) });
+      if (p) await swipeAt(p.x, p.y, 70); if (i === 4) await shot('10-fight'); if (await N(() => window.__ng.mons.some(m => m.kind === 'slimeKing')) && !fs.existsSync(path.join(OUT, '11-king.png'))) await shot('11-king');
+      if (await N(() => window.__ng.S.hp < 15)) await E(() => { window.__ng.S.hp = null }); await wait(250) }
+    log('kills', JSON.stringify(await N(() => window.__ng.S.stat)), 'lv', await N(() => window.__ng.S.lv));
+    await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(800);
+    await E(() => window.__ng.look(window.__ng.TW.shops[0].x, window.__ng.TW.shops[0].z + 2)); await wait(1500); await shot('12-shop-fixed');
+    await E(() => window.__ng.openShopKind('potion')); await wait(500); await shot('13-potion-shop'); await closeAll();
+    await E(() => window.__ng.openForest()); await wait(300); await clickAll('#cfY'); await wait(300); await clickAll('#tN');
+    log('quest', await N(() => window.__ng.S.quest), '/', 12, 'story', JSON.stringify(await N(() => window.__ng.S.story)));
+    ok = (await N(() => window.__ng.S.quest)) >= 12;
+    await E(() => window.__ng.openTown()); await wait(400); await shot('14-town-list'); await closeAll();
+    log('perf', JSON.stringify(await N(() => window.__ng.info())));
   } finally { await b.close(); srv.kill() }
+  if (!ok) errs.push('story did not reach the end of v0.4');
   console.log(errs.length ? 'ERRORS\n' + errs.join('\n') : 'no page errors'); process.exit(errs.length ? 1 : 0);
 })();

@@ -1,16 +1,17 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const SAVE_KEY = 'ng_save_v2';                 // v0.3: new save (the player has no body any more; pets have their own bars)
+export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
 /* ---- clearables: size → hits with a tier-0 tool (Pen Suk: small 1 · medium 3 · large 6) ---- */
 export const CLEAR = {
+  debris:  { tool: 'axe',    size: 'm', mat: { wood: 2 }, mon: null, name: 'ซากเรือ' },     // story: the wreck over Uncle Howsif
   grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3 },
   bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3 },
-  tree:    { tool: 'axe',    size: 'm', mat: { wood: 3 }, mon: 'branchImp', name: 'ต้นไม้' },
+  tree:    { tool: 'axe',    size: 'm', mat: { wood: 3 }, mon: 'branchImp', name: 'ต้นไม้', regrow: 20 * 60e3 },
   bigtree: { tool: 'axe',    size: 'l', mat: { wood: 6 }, mon: 'branchImp', name: 'ต้นไม้ใหญ่', minTier: 1 },
-  pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด' },
-  rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน' },
+  pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด', regrow: 15 * 60e3 },
+  rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน', regrow: 20 * 60e3 },
   boulder: { tool: 'hammer', size: 'l', mat: { stone: 6, ore: 1 }, mon: 'rockGolem', name: 'หินก้อนใหญ่', minTier: 1 },
 };
 export const HITS = { s: 1, m: 3, l: 6 };
@@ -29,6 +30,8 @@ export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, s
 
 /* ---- monsters (no legs) ---- */
 export const MON = {
+  slime:       { name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
+  slimeKing:   { name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
   grassSprite: { name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
   branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'barkArmor'], tier: 'normal' },
   rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'normal' },
@@ -103,24 +106,33 @@ export const SHOP = [
 ];
 export const SELL_RATE = .5;
 
-/* ---- starter pets on the farm (all make coins; the first three are the team) ---- */
-export const STARTERS = [
-  { id: 'p1', kind: 'shiba', name: 'คุโมะ', el: '🔥', rar: 'R' },
-  { id: 'p2', kind: 'chick', name: 'พิพิ', el: '⚡', rar: 'B' },
-  { id: 'p3', kind: 'bunny', name: 'โมโมะ', el: '🌱', rar: 'B' },
-  { id: 'p4', kind: 'penguin', name: 'เพนกุ', el: '❄️', rar: 'B' },
+/* ---- story (docs/STORY.md): no pets until the forest · build a shelter · rescue Uncle Howsif · fix his boat · the ruined town ---- */
+export const STARTERS = [];
+export const BUILD = { house: { wood: 10, stone: 5 }, boat: { wood: 15, stone: 8 } };
+export const HOWSIF_FISH = 2;
+export const TOWN_SLIMES = 5;
+export const SHOPS = [
+  { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'ป้าสมุนไพร', cost: { wood: 6, stone: 4, coin: 300 } },
+  { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'ลุงแป้ง', cost: { wood: 8, stone: 4, coin: 400 } },
+  { k: 'tools', name: 'ช่างอุปกรณ์', icon: '🛠️', owner: 'ช่างตุ้ม', cost: { wood: 10, stone: 6, coin: 600 } },
+  { k: 'smith', name: 'ช่างตีเหล็ก', icon: '⚒️', owner: 'ช่างเหล็ก', cost: { wood: 10, stone: 10, coin: 800 } },
+  { k: 'market', name: 'ตลาด', icon: '🧺', owner: 'แม่ค้าส้ม', cost: { wood: 6, stone: 6, coin: 300 } },
+  { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
+  { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: '', cost: null },
 ];
-
-/* ---- tutorial quests (tap the card → the camera goes there and the right tool is picked) ---- */
+export const SMITH = [{ t: 'branchSword', r: 'B', price: 600 }, { t: 'leafVest', r: 'B', price: 500 }, { t: 'stoneClub', r: 'B', price: 1400 }, { t: 'barkArmor', r: 'B', price: 1100 }];
+/* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
-  { id: 'q1', text: 'เคลียร์หญ้ารก 3 กอ', icon: '🌾', goal: 3, stat: 'clr_grass', go: 'grass', reward: { coin: 500 } },
-  { id: 'q2', text: 'ตัดต้นไม้ 2 ต้น', icon: '🪓', goal: 2, stat: 'clr_tree', go: 'tree', reward: { coin: 800 } },
-  { id: 'q3', text: 'กำจัดมอนสเตอร์ 1 ตัว', icon: '⚔️', goal: 1, stat: 'kills', go: 'monster', reward: { coin: 1000 } },
-  { id: 'q4', text: 'ป้อนอาหารน้อง 1 ครั้ง', icon: '🍖', goal: 1, stat: 'feeds', go: 'pets', reward: { coin: 500 } },
-  { id: 'q5', text: 'สวมอุปกรณ์ 1 ชิ้น', icon: '🎒', goal: 1, stat: 'equips', go: 'bag', reward: { gem: 100 } },
-  { id: 'q6', text: 'เก็บเงินจากเรือ', icon: '⛵', goal: 1, stat: 'boatCollect', go: 'boat', reward: { gem: 100 } },
-  { id: 'q7', text: 'ตกปลา 1 ตัว', icon: '🎣', goal: 1, stat: 'fish', go: 'fish', reward: { coin: 800 } },
-  { id: 'q8', text: 'อัปเกรดอุปกรณ์ 1 ครั้ง', icon: '⬆️', goal: 1, stat: 'toolUp', go: 'tools', reward: { coin: 2000 } },
-  { id: 'q9', text: 'ทุบหินก้อนใหญ่ 1 ก้อน', icon: '⛏️', goal: 1, stat: 'clr_boulder', go: 'boulder', reward: { gem: 200 } },
-  { id: 'q10', text: 'ไปเมืองทางรั้วด้านขวา', icon: '🏘️', goal: 1, stat: 'townTry', go: 'exit', reward: { coin: 1000 } },
+  { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },
+  { id: 's0b', icon: '🏠', text: 'สร้างที่พัก (บ้านต้นไม้)', flag: 'built', go: 'house' },
+  { id: 's0c', icon: '😴', text: 'เข้าบ้านแล้วนอนพักให้ถึงเช้า', flag: 'slept', go: 'house' },
+  { id: 's1a', icon: '⛵', text: 'มีเสียงครางจากซากเรือริมหาด… เคลียร์ซากเรือ', flag: 'howsif', go: 'wreck' },
+  { id: 's1b', icon: '🎣', text: `ตกปลา ${2} ตัวไปให้ลุงฮาวซิฟ`, flag: 'fishGiven', go: 'howsif' },
+  { id: 's2', icon: '🔨', text: 'ซ่อมเรือของลุงฮาวซิฟ', flag: 'boatFixed', go: 'boat' },
+  { id: 's3a', icon: '🏘️', text: 'ไปเมืองทางซุ้มประตูด้านขวา', flag: 'town', go: 'exit' },
+  { id: 's3b', icon: '⚔️', text: 'หยิบดาบที่ตกอยู่บนพื้น', flag: 'sword', go: 'sword' },
+  { id: 's3c', icon: '🟢', text: `กำจัดสไลม์ในเมือง ${5} ตัว`, stat: 'kill_slime', goal: 5, go: 'slime' },
+  { id: 's3d', icon: '👑', text: 'กำจัดราชาสไลม์', stat: 'kill_slimeKing', goal: 1, go: 'slime' },
+  { id: 's3e', icon: '🏚️', text: 'ซ่อมร้านในเมือง 1 ร้าน', stat: 'shopFix', goal: 1, go: 'shops', reward: { coin: 500 } },
+  { id: 's3f', icon: '🌲', text: 'ทางไปป่าเปิดแล้ว (การผจญภัยต่อไปกำลังมา)', flag: 'forestTry', go: 'forest' },
 ];
