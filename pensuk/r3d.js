@@ -623,7 +623,7 @@ export function start(){
   function tileModel(t, zseed, i, alongX, road, bank){                              // flat ground pieces: water / bridge / path stones / meadow flowers
     const g = new THREE.Group();
     if (t.k === 'water'){
-      add(g, rb(2, .1, 2, .02), waterMat, 0, -.02, 0);
+      /* v0.48.1 (designer: "ตรงน้ำไม่มีเส้นเชื่อมน่าจะดี"): the surface is no longer one rounded box per tile — see waterSheet() */
       if (hrnd(zseed, i, 30) < .5){                             // 🐟 a small fish circling under the surface (r 0.45, own phase & direction)
         const f = new THREE.Group(); f.position.y = .03; g.add(f);
         add(f, SPH, mat(hrnd(zseed,i,31) < .5 ? '#f08a3c' : '#9aa7b3'), 0, 0, 0, .16, .06, .07);
@@ -670,6 +670,16 @@ export function start(){
     gg.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(pos.length).map((_, j) => j%3 === 1 ? 1 : 0), 3)); gg.setIndex(idx);
     const m = new THREE.Mesh(gg, VCM); m.receiveShadow = true; m.userData.skin = 1; return m;
   }
+  /* 💧 v0.48.1 seamless water: all water tiles of a zone become ONE flat sheet at y = .03 built on the shared tile-corner grid
+     (vertex (c, r) at (2c, .03, 2r), index r·(GRID+1) + c), so neighbouring water tiles share edges → no rounded-box seams
+     and no double-blended overlap lines. Picking still works through the ground-plane fallback. Freed on zone rebuild (userData.skin). */
+  function waterSheet(wet){
+    if (!wet.length) return null; const N = GRID + 1, pos = new Float32Array(N*N*3), idx = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) pos.set([c*2, .03, r*2], (r*N + c)*3);
+    for (const i of wet){ const c = i%GRID, r = (i/GRID)|0, a = r*N + c; idx.push(a, a + N, a + 1, a + 1, a + N, a + N + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, waterMat); m.receiveShadow = true; m.userData.skin = 1; return m;
+  }
   function buildZone(z){
     let e = zones.get(z); if (e){ scene.remove(e.g); for (const m of e.g.children) if (m.userData.skin) m.geometry.dispose(); }   // 🌿 grass skin is per-zone → free it (cached geos are shared)
     const g = new THREE.Group(); g.position.set(z.cx*GRID*2, 0, z.cy*GRID*2); scene.add(g);
@@ -694,6 +704,7 @@ export function start(){
     RB(g, S2-.3, .7, S2-.3, .2, '#9c9488', ctr, -2.1, ctr);
     BALL(g, S2*.42, 1.6, S2*.42, '#8d7f70', ctr, -2.3, ctr);
     BALL(g, S2*.22, 1.4, S2*.2, '#7d6f62', ctr + hrnd(z.seed,1,1)*2-1, -3.3, ctr + hrnd(z.seed,1,2)*2-1);
+    const wet = [];                                              // water tile indices → one seamless sheet after the loop
     for (let i=0;i<z.tiles.length;i++){
       const t = z.tiles[i], c = i%GRID, r = (i/GRID)|0, x = c*2+1, zz = r*2+1, gc = z.cx*GRID+c, gr = z.cy*GRID+r;
       let m = null;
@@ -705,12 +716,14 @@ export function start(){
         const isL = (a, b) => { const n = tileAt(a, b); return !!n && n.k !== 'water'; };   // land neighbour → bank on that side
         m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? { w:isR(gc-1, gr), e:isR(gc+1, gr), n:isR(gc, gr-1), s:isR(gc, gr+1) } : null,
           t.k === 'water' && !t.bridge ? { w:isL(gc-1, gr), e:isL(gc+1, gr), n:isL(gc, gr-1), s:isL(gc, gr+1) } : null); }
+      if (t.k === 'water') wet.push(i);
       if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
         if (RES[t.k]){ res[i] = m; const ph = (z.cx*GRID*2 + x + z.cy*GRID*2 + zz)*.35 + hrnd(z.seed, i, 98)*.6;   // phase from position → gusts roll across the farm
           if (t.k === 'grass') sway.push(m, ph, .14, 0); else if (t.k === 'sapling') sway.push(m, ph, .1, 0);
           else if (t.k === 'tree') sway.push(m, ph, .035, 0); else if (t.k === 'bush') sway.push(m, ph, .05, 2); }
         if (t.k === 'water'){ const ring = add(m, RING, ringMat, (hrnd(z.seed,i,20)-.5)*.8, .06, (hrnd(z.seed,i,21)-.5)*.8); ring.rotation.x = -Math.PI/2; ring.userData.ph = hrnd(z.seed, i, 22); rings.push(ring); } }
     }
+    { const ws = waterSheet(wet); if (ws) g.add(ws); }               // 💧 v0.48.1 one seamless water sheet per zone
     curSway = sway;
     for (const o of z.objs){ const m = objModel(o); m.position.set((o.c + o.w/2)*2, 0, (o.r + o.h/2)*2); markTile(m, z.cx*GRID+o.c, z.cy*GRID+o.r); g.add(m); }
     curSway = null;
