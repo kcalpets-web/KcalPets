@@ -56,7 +56,7 @@ input,select{width:100%;min-height:48px;border:2px solid var(--line);border-radi
 .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:2px solid var(--line);gap:8px}
 .ico{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;background:url(icons/atlas.webp?v=0.22.0) no-repeat;background-size:10.4em 10.4em;
   background-position:calc(var(--x)*-1.3em) calc(var(--y)*-1.3em)}
-.ico.i2{background-image:url(icons/atlas2.webp?v=0.45.3);background-size:10.4em 9.1em}   /* atlas 2 = 8 × 7 cells of 1.3em */                 /* clay icon atlas (8×5 cells), see tools/icons.html */
+.ico.i2{background-image:url(icons/atlas2.webp?v=0.53.1);background-size:10.4em 9.1em}   /* atlas 2 = 8 × 7 cells of 1.3em */                 /* clay icon atlas (8×5 cells), see tools/icons.html */
 #nav button b .ico{width:1.25em;height:1.25em;background-size:10em 10em;background-position:calc(var(--x)*-1.25em) calc(var(--y)*-1.25em);vertical-align:-.15em}
 .coin{display:flex;align-items:center;gap:6px;font-weight:700;background:#fff4cc;border-radius:20px;padding:4px 12px}
 .coin i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe680,var(--gold) 60%,#b88600);display:inline-block}
@@ -720,7 +720,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.53.0';
+const APP_VER = '0.53.1';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -1607,7 +1607,7 @@ function bigIco(ref, px, fallback){
   const c = icoCell(ref);
   if (!c){ const k = String(ref || ''), fb = fallback || (k.startsWith('m:') && MAT[k.slice(2)] ? MAT[k.slice(2)].split(' ')[0] : k.startsWith('b:') && FARM_ITEMS[k.slice(2)] ? FARM_ITEMS[k.slice(2)].name.split(' ')[0] : '❔');   // v0.42 emoji fallback
     return `<span class="bico" style="width:${px}px;height:${px}px;font-size:${px*.62|0}px;line-height:${px}px">${fb}</span>`; }
-  const [a, i] = c, rows = Math.ceil((a === 1 ? ICO : ICO2).length / 8), url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp';
+  const [a, i] = c, rows = Math.ceil((a === 1 ? ICO : ICO2).length / 8), url = a === 1 ? 'icons/atlas.webp' : 'icons/atlas2.webp?v=0.53.1';   // v0.53.1 cache-bust the re-baked atlas (bump with each re-bake, same as the .ico.i2 CSS)
   return `<span class="bico" style="width:${px}px;height:${px}px;background-image:url(${url}?v=${APP_VER});background-size:${8*px}px ${rows*px}px;background-position:${-(i%8)*px}px ${-((i/8)|0)*px}px"></span>`;
 }
 const nm = s => String(s).replace(/^\S+\s+/, '');                 // drop the leading emoji from a display name

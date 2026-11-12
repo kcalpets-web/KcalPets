@@ -7,6 +7,7 @@
   - `pensuk-v051-clay-buildings-2.md`: ช่วง C รอบ 2 (อาคารที่ไม่ใช้ walls(), ของหน้าร้าน, บ้านพังซ่อมตามขั้น, ไซต์ก่อสร้าง)
   - `pensuk-v052-clay-people.md`: ช่วง D1 คน (ผู้เล่น ชาวเมือง)
   - `pensuk-v053-clay-pets-animals.md`: ช่วง D2 น้อง + ไก่ วัว
+  - `pensuk-v0531-icons-rebake.md`: อบไอคอน atlas2 ใหม่ + สคริปต์อ่าน ICO2
 - **ฉบับเต็มทุกเวอร์ชัน:** อยู่ใน claude.ai Project "Board game" (`claude/…`)
   - ถ้าต้องการไฟล์ใด ขอให้ผู้ออกแบบดาวน์โหลดแล้ววางไว้ที่นี่
   - แนะนำให้ตั้งชื่อตามเดิม เช่น `docs/pensuk-v042-livestock.md`
