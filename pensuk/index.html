@@ -383,7 +383,7 @@ nav button{min-height:60px;font-size:var(--fs-xs)} nav button b{font-size:24px}
 <section class="screen" id="sMain">
   <div class="top">
     <div style="display:flex;align-items:center;gap:8px"><img id="hAva" alt="" style="width:40px;height:40px;border-radius:50%;background:#fff4dc;border:2px solid var(--line);display:none" onclick="openAvatarEd('wardrobe')"><div><b id="hName" onclick="xpSheet()" style="cursor:pointer"></b><div class="muted" id="hPet"></div></div></div>
-    <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="coin">🪙 <span id="hCoin">0</span></div><div id="hSta" title="แรง"><i></i><b></b></div></div></div>
+    <div style="display:flex;align-items:center;gap:4px"><button id="bMute" class="mute" aria-label="เปิด/ปิดเสียง">🔊</button><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="coin">🪙 <span id="hCoin">0</span></div><div id="hSta" title="พลังงาน" onclick="tiredSheet()" style="cursor:pointer"><i></i><b></b></div></div></div>
   </div>
 
   <div class="tab on" id="tFarm">
@@ -740,7 +740,7 @@ const FIREBASE_CONFIG = {
 const FB_VER = '10.12.2';
 /* Game build shown on the login screen so testers can see which update they are running.
    Bump on every deploy (matches pensuk-design.md §12). */
-const APP_VER = '0.54.0';
+const APP_VER = '0.55.0';
 $('lVer').textContent = 'เวอร์ชัน v' + APP_VER;
 /* 🔄 v0.33.2 stale-build check (designer: a tester ran cached v0.33 after v0.33.1 shipped).
    Phones (esp. iOS Safari) may keep serving an old index.html. We re-fetch the page with cache:'no-store',
@@ -844,14 +844,19 @@ document.addEventListener('visibilitychange', () => {
   else { awayCheck(); updCheck(); }
 });
 /* 💪 v0.27.1 away rest (designer): leaving the game ≥ 15 min counts as a screen break → stamina back to 100%.
-   It does NOT add minutes to the 📵 screen-rest mission and gives no break-quota rewards. */
+   It does NOT add minutes to the 📵 screen-rest mission and gives no break-quota rewards.
+   ⚡ v0.55 ENERGY LOOP (designer confirmed 12 พ.ย.): replaced by a rate — energy refills 1 %/min while playing (tiredNow's base drain,
+   unchanged) and 2 %/min while the app is hidden: on return, extra = +1 × away minutes  →  e.g. 25 min away = +50, 50 min = full.
+   (It was: ≥ 15 min away → 100 %.)  The monster rest on return stays as it was (v0.56 reworks monsters). */
+const AWAY_EXTRA = 1;                                          // ⚡ extra %/min while hidden (total 2 %/min)
 const AWAY_REST = 15*60*1000;
 function awayCheck(){
   if (!S || !S.pet || !S.awayAt) return; const away = Date.now() - S.awayAt; delete S.awayAt;
   if (away >= AWAY_REST){ gbPlay = 0; gbNext = 4000; gbN = 0; }   // 💬 a new session → greet again, restart the 15-min play clock
   if (away >= AWAY_REST && monUp()) setTimeout(() => monRest(Math.min(MON_AWAY_CAP, Math.floor(away/60000)*MON_AWAY_PER), 'away', away), 900);   // 😌 v0.37
-  if (away >= AWAY_REST && tiredNow() > 0){ setTired(0); save(); bump('awayRest');
-    setTimeout(() => { const [x, y] = [cssW/2, 120]; fxSpawn(x, y, 0, -30, 2.2, '#2e9e4f', `💪 พักจอมา ${Math.round(away/60000)} นาที แรงเต็มแล้ว!`); }, 400); }
+  const got = tiredNow() > 0 && away >= 60000 ? restTired(AWAY_EXTRA*away/60000) : 0;   // ⚡ v0.55 +1 %/min extra while away
+  if (got >= 1){ save(); bump('awayRest');
+    setTimeout(() => { const [x, y] = [cssW/2, 120]; fxSpawn(x, y, 0, -30, 2.2, '#2e9e4f', `⚡ พักจอมา ${Math.round(away/60000)} นาที พลังงาน${tiredNow() <= 0 ? 'เต็มแล้ว!' : ` +${Math.min(100, Math.round(away/60000*(1 + AWAY_EXTRA)))}%`}`); }, 400); }
   else save();
 }
 
@@ -2163,15 +2168,24 @@ const TIRED_ADD = { stone:2, coal:4, ore_copper:4, ore_iron:4, ore_silver:4, ore
 function tiredNow(){ const t = (S.mineTired || 0) - (Date.now() - (S.tiredAt || Date.now()))/60000; return Math.max(0, t); }
 function setTired(v){ S.mineTired = Math.max(0, Math.min(TIRED_MAX, v)); S.tiredAt = Date.now(); if (typeof renderSta === 'function') renderSta(); }
 function restTired(n){ const b = tiredNow(); setTired(n === Infinity ? 0 : b - n); return Math.round(b - tiredNow()); }   // returns how much was rested
-const restTxt = n => !n ? '' : tiredNow() <= 0 ? '\n💪 แรงเต็มแล้ว!' : `\n💪 ฟื้นแรง +${n}%`;
+const restTxt = n => !n ? '' : tiredNow() <= 0 ? '\n⚡ พลังงานเต็มแล้ว!' : `\n⚡ ฟื้นพลังงาน +${n}%`;
 /* 💪 v0.24.1 display: players see STAMINA that starts full and drains (designer: 0→100 tiredness was confusing).
    stamina% = 100 − tiredNow()  (same fatigue math underneath) */
 const staminaNow = () => Math.round(TIRED_MAX - tiredNow());
+/* ⚡ v0.55 "พักกับน้อง" — the one refill menu (opened when energy runs out, from the ⚡ bar, or any time).
+   Refill per choice = ERG[k]: moving 1 min (stand-sit, walk for water, neck & shoulders) +50 • eyes 20 s face-down / water / breathing +15
+   • gym session / monster win = full (unchanged) • screen break = close the app, 2 %/min. No daily cap (monsters pace play, v0.56). */
+const ERG = { squat:50, walk:50, neck:50, eye:15, water:15, breath:15, rest:15 };
 function tiredSheet(){
-  sheet(`💪 หมดแรงแล้ว พักกับน้องหน่อยนะ\nแรง ${staminaNow()}% (ฟื้นเองนาทีละ 1%)\n\nพักจอหรือขยับตัวสั้น ๆ แล้วแรงเต็มทันที`, [
-    { label:'📵 พักสายตา 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('rest'); } },
-    { label:'🫁 หายใจลึก ๆ 1 นาที', cls:'ok', fn:() => { exitMine(); brkStart('breath'); } },
-    { label:'🏋️ เข้ายิม 3–5 นาที', cls:'ok', fn:() => { exitMine(); openGym(); } },
+  const need = Math.ceil(tiredNow()), mins = Math.ceil(need/(1 + AWAY_EXTRA)); bump('ergMenu');
+  const go = f => () => { if (inMine) exitMine(); f(); };
+  sheet(`⚡ ${staminaNow() <= 0 ? 'พลังงานหมดแล้ว ' : ''}พักกับน้องหน่อยนะ\nพลังงาน ${staminaNow()}% • ฟื้นเองนาทีละ 1% (ปิดแอปพักจอ นาทีละ 2%)\n\nเลือกวิธีฟื้นพลังงาน:`, [
+    { label:`🦵 ยืน-นั่ง 5 ครั้ง • ⚡ +${ERG.squat}`, cls:'ok', fn:go(() => brkStart('squat')) },
+    { label:`🚶 ลุกเดินไปดื่มน้ำ ${brkWalkN()} ก้าว • ⚡ +${ERG.walk}`, cls:'ok', fn:go(() => brkStart('walk')) },
+    { label:`🙆 บริหารคอ-บ่า • ⚡ +${ERG.neck}`, cls:'ok', fn:go(() => brkStart('neck')) },
+    { label:`👀 พักสายตา 20 วิ (คว่ำมือถือ) • ⚡ +${ERG.eye}`, cls:'ok', fn:go(() => brkStart('eye')) },
+    { label:`💧 ดื่มน้ำ 1 แก้ว • ⚡ +${ERG.water}`, cls:'ok', fn:go(() => brkStart('water')) },
+    { label:`📵 พักจอ ปิดแอปไปทำงาน${need ? ` (เต็มในอีก ~${mins} นาที)` : ''}`, cls:'ghost' },
     { label:'ไว้ก่อน', cls:'ghost' } ]);
 }
 /* 💪 v0.27 STAMINA EVERYWHERE (designer: "every activity uses stamina, like real life")
@@ -2182,13 +2196,13 @@ const STA_RES = { small:1, medium:2, large:3 };
 let staMsgAt = 0;
 function staOk(cost, gc, gr){
   if (TIRED_MAX - tiredNow() >= cost - 1e-6) return true;           // raw value (the % shown is rounded)
-  if (Date.now() - staMsgAt > 2500){ staMsgAt = Date.now(); if (gc != null) floatText(gc, gr, '💪 หมดแรง', '#e0892f'); setTimeout(tiredSheet, 250); }
+  if (Date.now() - staMsgAt > 2500){ staMsgAt = Date.now(); if (gc != null) floatText(gc, gr, '⚡ พลังงานหมด', '#e0892f'); setTimeout(tiredSheet, 250); }
   return false;
 }
 function useSta(cost){ setTired(tiredNow() + cost); renderSta();
-  if (!S.staIntro){ S.staIntro = 1; save(); setTimeout(() => sheet('💪 แรง (มุมขวาบน)\nทุกงานในฟาร์มใช้แรงเหมือนชีวิตจริง — ตัดหญ้า ตัดไม้ ทุบหิน ขุด ปลูก เก็บผัก ตกปลา ขุดแร่\n\n• ฟื้นเองนาทีละ 1%\n• พักสายตา / ขยับตัว / หายใจลึก ๆ → แรงเต็มทันที\n• เช็กอินกับเป็นสุขว่าทำอะไรไปแล้ว → ฟื้นแรงด้วย\n\nแรงหมดเมื่อไหร่ ได้เวลาพักกับน้องแล้ว 🐶', OK), 300); } }
+  if (!S.staIntro){ S.staIntro = 1; save(); setTimeout(() => sheet('⚡ พลังงาน (มุมขวาบน)\nทุกงานในฟาร์มใช้พลังงาน — ตัดหญ้า ตัดไม้ ทุบหิน ขุด ปลูก เก็บผัก ตกปลา ขุดแร่\n\n• ฟื้นเองนาทีละ 1% • ปิดแอปพักจอ นาทีละ 2%\n• ขยับ 1 นาที (ยืน-นั่ง ลุกเดินดื่มน้ำ บริหารคอ) +50\n• พักสายตา 20 วิ / ดื่มน้ำ +15 • ภารกิจสุขภาพข้อละ +30\n\nแตะหลอด ⚡ เพื่อเลือกวิธีฟื้นได้ทุกเมื่อ 🐶', OK), 300); } }
 function renderSta(){ const el = $('hSta'); if (!el || !S) return; const v = staminaNow();
-  el.firstElementChild.style.width = v + '%'; el.firstElementChild.style.background = v < 30 ? '#ff9f43' : '#6cc56f'; el.lastElementChild.textContent = `💪 ${v}%`;
+  el.firstElementChild.style.width = v + '%'; el.firstElementChild.style.background = v < 30 ? '#ff9f43' : '#6cc56f'; el.lastElementChild.textContent = `⚡ ${v}%`;
   if (inMine) renderMineBar(); }
 const MINE_ZONE = 9;                                          // ⛏ v0.23: the area unlocked at Lv.10 (zone index 9) comes with the mine entrance
 const mineObj = () => { for (const z of S.farm.zones) for (const o of z.objs) if (o.type === 'mine') return [z, o]; return null; };
@@ -2244,7 +2258,7 @@ function exitMine(){
 function renderMineBar(){
   if (!inMine) return;
   const st = staminaNow(), col = st < 30 ? '#ff9f43' : '#6cc56f';   // 💪 green → orange under 30%
-  $('mineInfo').innerHTML = `⛏ ${MINE_FLOORS[inMine.floor].name}<div class="stam"><i style="width:${st}%;background:${col}"></i><b>💪 ${st}%</b></div><small>อีเต้อขั้น ${upLv('pick')} • ทุบแล้ว ${inMine.broken}</small>`;
+  $('mineInfo').innerHTML = `⛏ ${MINE_FLOORS[inMine.floor].name}<div class="stam"><i style="width:${st}%;background:${col}"></i><b>⚡ ${st}%</b></div><small>อีเต้อขั้น ${upLv('pick')} • ทุบแล้ว ${inMine.broken}</small>`;
 }
 let mineDrag = null;
 function mineStroke(x0, y0, x1, y1){
@@ -2259,7 +2273,7 @@ function mineHitAt(c, r){
   if (t.k === 'floor') return;
   if (t.k === 'ladder'){ mineDrag = null; return mineLadder(); }
   const ore = t.k !== 'stone';
-  if (tiredNow() >= TIRED_MAX){ mineDrag = null; if (Date.now() - toolMsgAt > 1500){ toolMsgAt = Date.now(); floatText(c, r, '💪 หมดแรง', '#e0892f'); setTimeout(tiredSheet, 250); } return; }
+  if (tiredNow() >= TIRED_MAX){ mineDrag = null; if (Date.now() - toolMsgAt > 1500){ toolMsgAt = Date.now(); floatText(c, r, '⚡ พลังงานหมด', '#e0892f'); setTimeout(tiredSheet, 250); } return; }
   M.hx = c + .5; M.hy = r + .5; M.swing = performance.now() + 300;   // ⛏ v0.23: the pickaxe swings at the rock under the finger
   t.hp -= upLv('pick'); R3D.mineHit(key); sfx('clink'); buzz(12); burst(c, r, ['#a39f99', '#7d7a75', '#ffffff'], 6);
   if (t.hp > 0) return;
@@ -2267,7 +2281,7 @@ function mineHitAt(c, r){
   const n = t.k === 'stone' || t.k === 'coal' ? 1 + (Math.random()*2|0) : 1 + (Math.random() < .15 ? 1 : 0), got = t.k === 'stone' ? 'stone' : t.k;
   invAdd(got, n); bump(ore ? 'oreGet' : 'mineStone'); if (ore) bump('ore_' + t.k);
   floatText(c, r, `+${n}${MAT[got].split(' ')[0]}`, ore ? '#e0892f' : '#6b625a');
-  if (tiredNow() >= TIRED_MAX) setTimeout(tiredSheet, 400); else if (tiredNow() >= 70 && tiredNow() - tAdd < 70) floatText(c, r - 1, '💪 แรงเหลือน้อยแล้ว', '#e0892f');
+  if (tiredNow() >= TIRED_MAX) setTimeout(tiredSheet, 400); else if (tiredNow() >= 70 && tiredNow() - tAdd < 70) floatText(c, r - 1, '⚡ พลังงานเหลือน้อยแล้ว', '#e0892f');
   t.k = 'floor'; delete t.hp; M.broken++; M.ver++; gainExp(ore ? 3 : 1);
   if (M.broken === 8){ const fl = M.tiles.map((x, i) => [x, i]).filter(([x, i]) => x.k === 'floor' && i !== key && !(i % M.N <= 1 && ((i / M.N)|0) >= M.N - 2));
     const pick1 = fl[(Math.random()*fl.length)|0]; if (pick1){ pick1[0].k = 'ladder'; M.ver++; floatText(pick1[1] % M.N, (pick1[1] / M.N)|0, '🪜 บันไดลงชั้นถัดไป!', '#2e7d32'); } }
@@ -4173,7 +4187,7 @@ function liveTap(z, o){
   const head = `${it.name} • ${L.e} ${v.n}/${L.cap} ตัว${v.boost ? ' • 🚶 อารมณ์ดี ผลผลิต ×2' : ''}`;
   if (!v.n) return sheet(`${head}\nยังไม่มี${L.an}เลย ซื้อได้ที่ร้านสัตว์เลี้ยงป้านวล`, [{ label:`🛒 ซื้อ${L.an} (🪙 ${L.price.toLocaleString()})`, cls:'ok', fn:() => buyLivestock(o.type) }, { label:'ปิด', cls:'ghost' }]);
   const btn = [];
-  if (ready) btn.push({ label:`${L.oe} เก็บ${MAT[L.out].split(' ')[1]} ${v.n*(v.boost ? 2 : 1)} (💪 −1)`, cls:'ok', fn:() => liveCollect(z, o) });
+  if (ready) btn.push({ label:`${L.oe} เก็บ${MAT[L.out].split(' ')[1]} ${v.n*(v.boost ? 2 : 1)} (⚡ −1)`, cls:'ok', fn:() => liveCollect(z, o) });
   else if (!v.end) btn.push({ label:`🌿 ให้หญ้า ${v.n} (มี ${inv('grass')})`, cls:'ok', fn:() => liveFeed(z, o) });
   if (!walked) btn.push({ label:`🚶 ${L.walk} (ย่ำเท้า ${exEasy() ? Math.ceil(LIVE_STEPS*.7) : LIVE_STEPS} ก้าว → ×2)`, cls:ready || v.end ? 'ok' : '', fn:() => liveWalk(z, o) });
   if (v.n < L.cap) btn.push({ label:`🛒 ซื้อ${L.an}เพิ่ม (🪙 ${L.price.toLocaleString()})`, fn:() => buyLivestock(o.type) });
@@ -4627,7 +4641,7 @@ const QUESTS = [
   { id:'mineSet', name:'ช่วยลุงหินซ่อมเหมือง',       need:1, goal:() => S.mineOpen ? 1 : 0,
     text:'ถึง Lv.10 พื้นที่ใหม่จะมี ⛏ ทางเข้าเหมืองที่ถล่มอยู่ และลุงหินจะมาขอให้ช่วย → แตะลุงหิน → ส่งวัตถุดิบครบ 3 ขั้น → เหมืองเปิด', reward:{coins:200} },
   { id:'mineDig', name:'ขุดแร่ครั้งแรก',              need:1, goal:() => st('oreGet'),
-    text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — ขุดได้เรื่อย ๆ แรง 💪 หมดเมื่อไหร่ พักสายตา/ขยับตัวสั้น ๆ ก็แรงเต็ม', reward:{coins:100, coal:2} },
+    text:'แตะทางเข้าเหมือง → ลากนิ้วให้ ⛏ อีเต้อทุบหินที่มีแร่ — ขุดได้เรื่อย ๆ พลังงาน ⚡ หมดเมื่อไหร่ พักสายตา/ขยับตัวสั้น ๆ ก็ฟื้นพลังงาน', reward:{coins:100, coal:2} },
   { id:'khingHome', name:'ซ่อมศาลาน้องขิง',          need:1, goal:() => (S.homes||{}).salahouse >= 3 ? 1 : 0,
     text:'(Lv.12) พื้นที่ใหม่มีศาลาของน้องขิงที่ผุพัง → แตะ → ซ่อมให้ครบ 3 ขั้น', reward:{coins:400} },
   { id:'smelt',   name:'หลอมแท่งทองแดง',             need:1, goal:() => st('proc_bar_copper'),
@@ -4642,6 +4656,8 @@ const QUESTS = [
     text:'เปิด 🎯 ภารกิจ › 🔔 ขยับตัวหน่อย! แล้วทำกิจกรรมสั้น ๆ 1 อย่าง — ระหว่างวันจะมีกิจกรรมใหม่ทุก 60 นาที ครั้งละ 💗 10 + 🪙 25 (ตั้งค่าได้ในกระเป๋า)', reward:{coins:100} },
   { id:'xpInfo',  name:'เลเวลมาจากการดูแลตัวเอง',   need:1, goal:() => st('xpInfo'),   // 📈 v0.54 teaches health-driven levels
     text:'แตะชื่อและเลเวลของคุณบนหัวจอ → ดูว่าวันนี้ได้ Exp จากไหน — ภารกิจสุขภาพ ลุกพัก และดื่มน้ำให้ Exp เป็นหลัก ส่วนงานฟาร์มได้วันละไม่เกิน 60', reward:{coins:100} },
+  { id:'ergMenu', name:'พลังงานหมด เลือกวิธีฟื้น',   need:1, goal:() => st('ergMenu'),   // ⚡ v0.55 teaches the energy loop
+    text:'แตะหลอด ⚡ มุมขวาบน → เลือกวิธีฟื้นพลังงาน: ขยับ 1 นาที +50 • พักสายตา 20 วิ (คว่ำมือถือ) / ดื่มน้ำ +15 • หรือปิดแอปไปพักจอ (นาทีละ 2%) — ทุกงานในฟาร์มใช้พลังงาน หมดเมื่อไหร่ได้เวลาพักกับน้อง', reward:{coins:100} },
   { id:'buyFood', name:'ซื้ออาหารสัตว์',          nav:'tShop', shop:'general', need:1, goal:() => st('buyFood'),
     text:'ไปที่ 🛒 ร้านค้า › ทั่วไป › ซื้อ 🦴 อาหารสัตว์ 1 ชิ้น', reward:{coins:100} },
   { id:'feed',    name:'ให้อาหารน้อง',            hl:'pet',    need:1, goal:() => st('feed'),
@@ -4832,7 +4848,7 @@ const FAQ = [
   { k:['💗','พลังใจ','หัวใจชมพู','ใจ'], a:() => `💗 พลังใจได้จากการดูแลสุขภาพจริงเท่านั้น: ภารกิจสุขภาพ 3 ข้อ (หน้าภารกิจ), ครบ 3 ข้อได้โบนัส, 🔔 ขยับตัว/พักจอ, ชาเลนจ์โค้ชฟิต${monOn() ? ', ชนะปีศาจรายวัน' : ''} — ใช้อัปเลเวล${S.pet.name}` },
   { k:['เลเวลผู้เล่น','เลเวลฉัน','เลเวลเรา','exp','ประสบการณ์','เลเวลขึ้นช้า'], a:() => { const X = xpDay(); return `⭐ เลเวลผู้เล่นมาจากการดูแลสุขภาพเป็นหลัก: ภารกิจข้อละ ${EXP.mission} • ครบ 3 ข้อ +${XP_ALL3} • ลุกพัก/ดื่มน้ำ ครั้งละ ${XP_BRK} • สรุปสัปดาห์ +${XP_WEEK}\n🌾 งานฟาร์มได้ Exp วันละไม่เกิน ${FARM_XP_CAP} (วันนี้ ${X.f}/${FARM_XP_CAP}) • วันนี้จากสุขภาพ ${X.h}\nแตะชื่อบนหัวจอเพื่อดูสรุปได้ทุกเมื่อ`; } },
   { k:['อัป','เลเวล','lv','โต','อัพ'], a:() => `⬆️ แตะ${S.pet.name}ในฟาร์ม → "💗 อัปเลเวล" ตอนนี้ Lv.${S.pet.lv} ใช้ 💗 ${needPetExp(S.pet.lv)} (มี ${S.love||0}) ${petCanUp ? '— พอแล้ว อัปได้เลย! 🎉' : ''}\nน้องเลเวลสูงขึ้นช่วยงานฟาร์มได้มากขึ้น` },
-  { k:['แรง','เหนื่อย','หมดแรง','💪'], a:() => `💪 ตอนนี้แรง ${staminaNow()}% — ทุกงานในฟาร์มใช้แรง\nฟื้น: เองนาทีละ 1% • 🧘 พักสายตา/ขยับตัว = เต็มทันที • ออกจากเกมไป 15 นาที = เต็ม • เช็กอิน "ทำแล้ว" ข้อละ +10%` },
+  { k:['พลังงาน','แรง','เหนื่อย','หมดแรง','💪','⚡','ฟื้น'], a:() => `⚡ ตอนนี้พลังงาน ${staminaNow()}% — ทุกงานในฟาร์มใช้พลังงาน\nฟื้น: เองนาทีละ 1% • ปิดแอปพักจอ นาทีละ 2% • ขยับ 1 นาที (ยืน-นั่ง ลุกเดินดื่มน้ำ บริหารคอ) +${ERG.squat} • พักสายตา 20 วิ/ดื่มน้ำ +${ERG.eye} • ภารกิจข้อละ +30 • เช็กอิน "ทำแล้ว" ข้อละ +10%\nแตะหลอด ⚡ มุมขวาบนเพื่อเลือกวิธีฟื้น` },
   { k:['ปลูก','เมล็ด','ผัก','หว่าน'], a:'🌱 ใช้ 🪏 พลั่วขุดแปลงบนพื้นโล่ง → แตะแปลง เลือกเมล็ด แล้วลากนิ้วผ่านแปลงอื่นเพื่อหว่านต่อ → โตแล้วใช้เคียวลากเก็บ (เมล็ดซื้อที่ร้านค้า › เมล็ด)' },
   { k:['เก็บเกี่ยว','เคียว','เก็บผัก'], a:'🌾 ผักโตแล้วจะมีป้ายเขียว "พร้อมเก็บ" — เลือกเคียวในกล่องเครื่องมือ แล้วลากผ่านแปลง หรือแตะทีละแปลงก็ได้' },
   { k:['หญ้า','ต้นไม้','หิน','เคลียร์','ขวาน','ค้อน','เครื่องมือ'], a:'🧰 แตะกล่องเครื่องมือขวาล่าง เลือก 🪓 ขวาน (ต้นไม้/พุ่ม) ⛏️ ค้อน (หิน) หรือเคียว (หญ้า) แล้วลากนิ้วผ่านของที่อยากเก็บ ได้วัตถุดิบไว้สร้างของ' },
@@ -4856,12 +4872,12 @@ const FAQ = [
 function faqReply(q){
   const t = q.toLowerCase(); let best = null, bs = 0;
   for (const f of FAQ){ const sc = f.k.reduce((n, k) => n + (t.includes(k.toLowerCase()) ? k.length : 0), 0); if (sc > bs){ bs = sc; best = f; } }
-  if (!best) return 'อืม… เป็นสุขยังไม่ค่อยเข้าใจ 🐶 ลองถามสั้น ๆ เช่น "แรงหมดทำไง" "ตกปลายังไง" "ทำอะไรต่อดี" หรือแตะคำถามด้านล่างได้เลย';
+  if (!best) return 'อืม… เป็นสุขยังไม่ค่อยเข้าใจ 🐶 ลองถามสั้น ๆ เช่น "พลังงานหมดทำไง" "ตกปลายังไง" "ทำอะไรต่อดี" หรือแตะคำถามด้านล่างได้เลย';
   return typeof best.a === 'function' ? best.a() : best.a;
 }
 function askChips(){                                          // context-aware suggestions
   const o = [];
-  if (petCanUp) o.push('อัปเลเวลน้องยังไง?'); if (staminaNow() < 30) o.push('แรงหมดทำไง?');
+  if (petCanUp) o.push('อัปเลเวลน้องยังไง?'); if (staminaNow() < 30) o.push('พลังงานหมดทำไง?');
   if (Object.keys(NPCS).some(npcPending)) o.push('ชาวเมืองอยากได้อะไร?');
   o.push('ทำอะไรต่อดี?', 'ตกปลายังไง?', 'คุยอะไรกับเป็นสุขได้บ้าง?');
   return o.slice(0, 4);
@@ -4963,7 +4979,7 @@ function ciNext(){
   }, 300);
 }
 function ciEnd(){
-  bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}\n💪 ฟื้นแรง +${ciDone.length*10}%${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
+  bubble(ciDone.length ? `สรุปเช็กอินรอบนี้:\n${ciDone.join('\n')}\n⚡ ฟื้นพลังงาน +${ciDone.length*10}%${ciHits ? `\n\n⚔️ ${S.pet.name}จะโจมตีปีศาจ ${ciHits} ครั้ง!` : ''}` : 'ขอบคุณที่ตอบตามจริงนะ ค่อย ๆ ไปด้วยกัน 🐶', 'bot');
   setTimeout(() => { bubble('มีอะไรอยากถามเรื่องเกมไหม พิมพ์ถามได้เลย หรือแตะคำถามด้านล่าง 👇', 'bot'); askLoop(); }, 450);
 }
 /* log n glasses at once (from the check-in); timestamps spaced MON_GAP back so the 15-min guard stays meaningful */
@@ -5632,7 +5648,7 @@ function camEnd(){
   const day = S.camDay = S.camDay && S.camDay.date === todayKey() ? S.camDay : { date:todayKey(), paid:0, full:false };
   let extra = '';
   if (day.paid < 3){ day.paid++; const c = Math.min(150, Math.floor(CAM.score/20)); /* ≈ a gym set (100) for a good round */ S.coins += c; extra += `<br>🪙 +${c} (วันนี้ ${day.paid}/3)`; }
-  if (!day.full){ day.full = true; setTired(0); extra += '<br>💪 แรงเต็ม 100% (ครั้งแรกของวัน)'; }
+  if (!day.full){ day.full = true; setTired(0); extra += '<br>⚡ พลังงานเต็ม 100% (ครั้งแรกของวัน)'; }
   if (CAM.sq){ const m = S.missions.find(q => q.key === 'squat'); if (m) addProgress(m, CAM.sq); }
   bump('camPlay'); save(); refreshHeader();
   const todayBest = S.camScores.filter(r => r.d === todayKey() && r.m === lv).reduce((m, r) => Math.max(m, r.s), 0);
@@ -5711,7 +5727,7 @@ function gymDone(){
   if (g.paid < 3){ g.paid++; S.coins += 100; const lg = gainLove(10); extra = `\n${loveTxt(10, lg)} • 🪙 100 (วันนี้ ${g.paid}/3)`; }
   save(); refreshHeader(); exSpeak('จบชุดแล้ว เก่งมาก');
   $('gProg').style.width = '100%'; $('gProgT').textContent = '✔';
-  $('gBody').innerHTML = `<div class="gname">🎉 จบชุด${P.name}แล้ว!</div><div class="gbig">💪</div><div class="gtip">แรงเต็ม 100%${extra.replace(/\n/g, '<br>')}${G0.reps ? `<br>สควอทนับเข้าภารกิจ ${G0.reps} ครั้ง` : ''}</div>`;
+  $('gBody').innerHTML = `<div class="gname">🎉 จบชุด${P.name}แล้ว!</div><div class="gbig">⚡</div><div class="gtip">พลังงานเต็ม 100%${extra.replace(/\n/g, '<br>')}${G0.reps ? `<br>สควอทนับเข้าภารกิจ ${G0.reps} ครั้ง` : ''}</div>`;
   const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:12px';
   [['🔁 เลือกชุดอื่น', openGym, 'ok'], ['🏡 กลับฟาร์ม', closeGym, 'ghost']].forEach(([t, f, c]) => { const e = document.createElement('button'); e.className = 'btn ' + c; e.textContent = t; e.onclick = f; row.appendChild(e); });
   $('gBody').appendChild(row);
@@ -5865,7 +5881,7 @@ function fmWin(){
   const m = S.fmon, T = FMON[m.kind]; S.fmon = null; bump('fmonWin'); bump('fmon_' + m.kind);
   Object.entries(T.loot).forEach(([k, n]) => invAdd(k, n)); S.coins += 150; const lg = gainLove(10); setTired(0); save(); refreshHeader(); renderMats();
   $('xBig').textContent = '🏆'; exSpeak('ชนะแล้ว เก่งมาก');
-  $('xSay').textContent = `กำจัด${T.name}แล้ว! ฟาร์มปลอดภัย\n${inText(T.loot)} • 🪙 150 • ${loveTxt(10, lg)} • 💪 แรงเต็ม`;
+  $('xSay').textContent = `กำจัด${T.name}แล้ว! ฟาร์มปลอดภัย\n${inText(T.loot)} • 🪙 150 • ${loveTxt(10, lg)} • ⚡ พลังงานเต็ม`;
   exBtns([{ label:'🏡 กลับไปทำฟาร์ม', fn:closeFmon }]);
 }
 function fmLose(){
@@ -6324,7 +6340,7 @@ function plotTap(z, o){
   const c = cropOf(o), left = cropLeft(o);
   if (left > 0) return sheet(`${c.e} ${c.name} กำลังโต… อีก ${fmt(left)}`, [ speedBtn(left, () => { o.plant = Date.now() - c.sec*1000; }), {label:'ปิด', cls:'ghost'} ]);
   if (!staOk(1)) return;
-  return confirmDo(`เก็บเกี่ยว${c.name}? (💪 −1)`, () => { useSta(1);
+  return confirmDo(`เก็บเกี่ยว${c.name}? (⚡ −1)`, () => { useSta(1);
     const n = rnd(c.yield); invAdd(c.prod, n); o.plant = 0; delete o.crop; o.idle = Date.now(); bump('harvest'); gainExp(EXP.harvest); sfx('coin');
     save(); refreshHeader(); renderMats(); reward(`${MAT[c.prod]} +${n}\n⭐ Exp +${EXP.harvest}`);
   });
@@ -6723,7 +6739,7 @@ function addProgress(m, v){
 }
 function claim(i){
   S.missions[i].claimed = true; S.coins += COIN_PER_MISSION; bump('missionClaim');
-  const got = gainLove(LOVE_PER_MISSION); gainExp(EXP.mission, 'h'); sfx('coin'); petHappy(pet); const en = restTired(20);
+  const got = gainLove(LOVE_PER_MISSION); gainExp(EXP.mission, 'h'); sfx('coin'); petHappy(pet); const en = restTired(30);   // ⚡ v0.55 mission +30 (was +20)
   save(); refreshHeader(); renderMissions();
   reward(`${loveTxt(LOVE_PER_MISSION, got)}\n🪙 ${COIN_PER_MISSION} เหรียญทอง${restTxt(en)}\n⭐ Exp +${EXP.mission}\n(แตะ ${S.pet.name} เพื่อใช้ 💗 อัปเลเวล)`);
 }
@@ -6765,6 +6781,12 @@ function actRest(box, m){
       <div class="muted" style="color:#667">กดค้าง 3 วินาทีที่ใดก็ได้เพื่อออก</div></div>`;
   m.sec = m.sec || Math.round(m.progress*60);
   let last = performance.now(), saveAcc = 0, lock = null, hold = null, holdT0 = 0, raf2 = 0;
+  /* 👀 v0.55 eye card: time counts only while the phone lies face-down (|β| > 150° ⇒ screen towards the desk) — if no orientation event
+     ever arrives (desktop, permission refused) it counts like the normal rest timer. Done at 20 s → buzz + finish by itself. */
+  let fdSeen = false, fd = false; const ori = e => { if (e.beta == null) return; fdSeen = true; fd = Math.abs(e.beta) > 150; };
+  if (m.eye){ if (m.progress >= m.target) m.sec = 0, m.progress = 0;
+    try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) DeviceOrientationEvent.requestPermission().catch(() => {}); } catch(e){}
+    window.addEventListener('deviceorientation', ori); $('aZz').textContent = '👀 คว่ำมือถือลงบนโต๊ะ แล้วมองไกล ๆ (หน้าต่าง ต้นไม้) 20 วินาที — สั่นเมื่อครบ'; }
   const show = () => { const s = Math.floor(m.sec), mm = Math.floor(s/60), ss = s%60;
     $('aTime').textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; $('aGoal').textContent = doneLine(m);
     $('aMon').textContent = monUp() ? `👾 ${FMON[S.fmon.kind].name} HP ${S.fmon.mhp}/${S.fmon.max} • อ่อนแรง −${MON_REST_PER} ทุก 1 นาทีที่พัก` : ''; };
@@ -6773,7 +6795,9 @@ function actRest(box, m){
   const tick = setInterval(() => {
     const now = performance.now(), d = Math.min(1.5, (now-last)/1000); last = now;
     if (document.visibilityState !== 'visible') return;
+    if (m.eye && fdSeen && !fd){ $('aGoal').textContent = '⏸ คว่ำมือถือลงเพื่อเริ่มนับ'; return; }
     const was = m.progress; m.sec += d; m.progress = m.sec/60;
+    if (m.eye && was < m.target && m.progress >= m.target){ sfx('done'); buzz([200, 100, 200]); setTimeout(closeAct, 600); return; }
     if (Math.floor(m.sec/60) > monMin){ monMin = Math.floor(m.sec/60); if (monUp()){ monRest(MON_REST_PER, 'rest'); sfx('pop'); } }
     if (was < m.target && m.progress >= m.target){ sfx('done'); buzz(200); }
     if ((saveAcc += d) >= 15){ saveAcc = 0; save(); }
@@ -6794,7 +6818,7 @@ function actRest(box, m){
       if (p >= 1){ clearInterval(hold); m.progress = m.sec/60; if (m.sec >= 30) bump('missionLog'); save(); closeAct(); } }, 50); };
   const up = () => { clearInterval(hold); ring.setAttribute('stroke-dashoffset', 276.5); };
   box.addEventListener('pointerdown', down); box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up); box.addEventListener('pointerleave', up);
-  act.stops.push(() => { clearInterval(tick); clearInterval(hold); cancelAnimationFrame(raf2); document.removeEventListener('visibilitychange', vis);
+  act.stops.push(() => { clearInterval(tick); clearInterval(hold); cancelAnimationFrame(raf2); document.removeEventListener('visibilitychange', vis); window.removeEventListener('deviceorientation', ori);
     box.removeEventListener('pointerdown', down); box.removeEventListener('pointerup', up); box.removeEventListener('pointercancel', up); box.removeEventListener('pointerleave', up);
     try { lock && lock.release(); } catch(e){} m.progress = m.sec/60; save(); });
 }
@@ -6981,8 +7005,21 @@ const BRK = {
   neck:   { icon:'🙆', label:'บริหารคอ 1 รอบ',       key:'neck',   unit:'รอบ',  target:1 },
   rest:   { icon:'📵', label:'พักสายตา 1 นาที',       key:'rest',   unit:'นาที', target:1 },   // v0.24.1: 2 → 1 min (designer: 2 felt too long)
   breath: { icon:'🫁', label:'หายใจลึก ๆ 1 นาที',     key:'breath', unit:'นาที', target:1 },
-  water:  { icon:'💧', label:'ดื่มน้ำ 1 แก้ว',         key:'water',  unit:'แก้ว', target:1 }
+  water:  { icon:'💧', label:'ดื่มน้ำ 1 แก้ว',         key:'water',  unit:'แก้ว', target:1 },
+  eye:    { icon:'👀', label:'พักสายตา 20 วิ (คว่ำมือถือ)', key:'rest', unit:'นาที', target:1/3, eye:1 },   // ⚡ v0.55 counts only while the phone lies face-down (if the sensor reports)
+  walk:   { icon:'🚶', label:'ลุกเดินไปดื่มน้ำ',       key:'walk',   unit:'ก้าว', target:1 }                // ⚡ v0.55 step counter (same as the livestock walk)
 };
+const BRK_CARDS = ['squat', 'neck', 'rest', 'breath', 'water'];   // the hourly reminder rotation stays as before (eye / walk are menu cards)
+const brkWalkN = () => exEasy() ? 28 : 40;
+/** ⚡ v0.55 walk card: stand up and walk to get water — counted with the motion step counter (gym engine), honour button without a sensor */
+async function brkWalk(){
+  closeModal(); const ok = await msStart(), n = brkWalkN();
+  $('gym').style.display = 'block'; $('gTitle').textContent = '🚶 ลุกเดินไปดื่มน้ำ';
+  G = { id:'brkwalk', name:'', steps:[{ k:'steps', n, name:'🚶 ลุกเดินไปดื่มน้ำ', tip:'ลุกจากโต๊ะ เดินไปดื่มน้ำ ถือมือถือไว้ในมือหรือกระเป๋าเสื้อ' }], i:-1, sensor:ok, count:0, reps:0, t0:0, st:'', held:0, last:0, yawSide:0,
+    cb:tot => { $('gTitle').textContent = '🏋️ ยิมโค้ชฟิต'; if (tot < n*.5) return sheet(`ยังเดินไม่ครบเลย (${tot}/${n} ก้าว) ลองใหม่อีกครั้งนะ`, OK);
+      hlogAdd('walk', tot); brkDone('walk'); } };
+  gymNext(); clearInterval(exT); exT = setInterval(gymTick, 50);
+}
 const BRK_COIN = 25, BRK_MAX = 6;                          // ⚠️ v0.17: 💗 10 + 🪙 25 (was 🪙 50)
 const brkCfg = () => (S.brkCfg = S.brkCfg || { on:true, every:60, quiet:true });
 function brkState(){
@@ -6991,7 +7028,7 @@ function brkState(){
   return b;
 }
 const quietNow = () => { const h = new Date().getHours(); return brkCfg().quiet && (h >= 22 || h < 7); };
-function brkNew(){ const ks = Object.keys(BRK), b = brkState(); let k;
+function brkNew(){ const ks = BRK_CARDS, b = brkState(); let k;   // ⚡ v0.55 eye / walk are menu-only cards
   do { k = ks[(Math.random()*ks.length)|0]; } while (b.pending.includes(k) && b.pending.length < ks.length); return k; }
 function brkTick(){
   if (!S || !S.pet || !S.farm) return;
@@ -7015,6 +7052,7 @@ function brkPrompt(k){
 function brkStart(k){
   const d = BRK[k];
   if (k === 'water') return confirmDo('💧 ดื่มน้ำ 1 แก้วแล้วใช่ไหม?', () => brkDone(k));
+  if (k === 'walk') return brkWalk();
   openAct({ ...d, brk:k, progress:0, sec:0 });
 }
 /* v0.24.1: a break can be a reminder (pending) OR started by the player any time.
@@ -7022,14 +7060,14 @@ function brkStart(k){
 function brkDone(k){
   const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1);
   const paid = b.count < BRK_MAX; bump('brkDone'); if (k === 'water' && monOn()) monHit('brk');   // ⚔️ 💧 break = a hit on the dehydration monster
-  const en = restTired(Infinity); let got = 0;
+  const en = restTired(ERG[k] || 15); let got = 0;   // ⚡ v0.55 per-card refill (was: always full)
   if (paid){ b.count++; S.coins += BRK_COIN; S.pet.heart = Math.min(100, S.pet.heart + 2); got = gainLove(LOVE_PER_BRK); gainExp(XP_BRK, 'h'); }   // 📈 v0.54 +5 Exp per paid break (≤ BRK_MAX a day)
   sfx('coin'); save(); refreshHeader(); markBrkNav(); renderMissions();
-  reward(`👏 พักแล้ว เก่งมาก!${en ? '\n💪 แรงเต็มแล้ว!' : ''}` + (paid ? `\n${loveTxt(LOVE_PER_BRK, got)}\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2 • ⭐ Exp +${XP_BRK}\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)` : `\n(รางวัลวันนี้ครบ ${BRK_MAX} ครั้งแล้ว — แต่ร่างกายได้พักจริง 👍)`));
+  reward(`👏 พักแล้ว เก่งมาก!${restTxt(en)}` + (paid ? `\n${loveTxt(LOVE_PER_BRK, got)}\n🪙 ${BRK_COIN} เหรียญทอง • ❤️ +2 • ⭐ Exp +${XP_BRK}\n(วันนี้ ${b.count}/${BRK_MAX} ครั้ง)` : `\n(รางวัลวันนี้ครบ ${BRK_MAX} ครั้งแล้ว — แต่ร่างกายได้พักจริง 👍)`));
 }
 function brkChooser(after){
   const b = brkState();
-  sheet(`🧘 พักเองตอนนี้\nเลือกกิจกรรมสั้น ๆ — 💪 แรงในเหมืองเต็มทุกครั้ง\nรางวัลวันนี้ ${Math.max(0, BRK_MAX - b.count)}/${BRK_MAX} ครั้ง`,
+  sheet(`🧘 พักเองตอนนี้\nเลือกกิจกรรมสั้น ๆ — ⚡ ฟื้นพลังงานทุกครั้ง (ขยับ +50 • พักสายตา/ดื่มน้ำ +15)\nรางวัลวันนี้ ${Math.max(0, BRK_MAX - b.count)}/${BRK_MAX} ครั้ง`,
     Object.keys(BRK).map(k => ({ label:`${BRK[k].icon} ${BRK[k].label}`, cls:'ok', fn:() => { if (after) after(); brkStart(k); } })).concat([{ label:'ไว้ก่อน', cls:'ghost' }]));
 }
 function brkSkip(k){ const b = brkState(), i = b.pending.indexOf(k); if (i >= 0) b.pending.splice(i, 1); save(); markBrkNav(); renderMissions(); }

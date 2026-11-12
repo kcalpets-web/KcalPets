@@ -9,6 +9,7 @@
   - `pensuk-v053-clay-pets-animals.md`: ช่วง D2 น้อง + ไก่ วัว
   - `pensuk-v0531-icons-rebake.md`: อบไอคอน atlas2 ใหม่ + สคริปต์อ่าน ICO2
   - `pensuk-v054-health-levels.md`: เลเวลผู้เล่นมาจากสุขภาพ (EXP สุขภาพ/เพดานฟาร์ม)
+  - `pensuk-v055-energy-loop.md`: ⚡ พลังงาน + เมนูพักกับน้อง (ลูปหลัก)
 - **ฉบับเต็มทุกเวอร์ชัน:** อยู่ใน claude.ai Project "Board game" (`claude/…`)
   - ถ้าต้องการไฟล์ใด ขอให้ผู้ออกแบบดาวน์โหลดแล้ววางไว้ที่นี่
   - แนะนำให้ตั้งชื่อตามเดิม เช่น `docs/pensuk-v042-livestock.md`
