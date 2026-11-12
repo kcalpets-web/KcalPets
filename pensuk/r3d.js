@@ -656,14 +656,20 @@ export function start(){
      (their translucent box would show it). 4×4 quads per tile. Colour in WORLD coords so neighbouring zones join seamlessly:
         n(wx, wz) = sin(.45wx + .2wz) + .7·sin(.6wz − .3wx) + .25·sin(1.3(wx + wz))         ∈ [−1.95, 1.95]
         c = base · (.9 + .12·n/1.95), hue shifted toward warm (+) or cool (−) by .02·n/1.95, saturation +.06  → soft patches like brushed clay */
-  function grassSkin(z, baseHex){
-    const Q = 4, base = new THREE.Color(baseHex), k = new THREE.Color(), pos = [], col = [], idx = [], ox = z.cx*GRID*2, oz = z.cy*GRID*2;
+  /* sand (v0.48.2): distance d (world units, local to the zone) to the nearest REAL sea edge (w: x=0, e: x=2·GRID, n: z=0, s: z=2·GRID)
+       w = 1 − smoothstep(2.6, 4.4, d + .35·n)   (noise n wobbles the tide line)  →  c = mix(meadow, sand, w)
+     the old slabs covered tiles with d ≤ 1 tile (≤ 4 units), so the sandy strip keeps the same width but now fades out softly. */
+  const SAND = new THREE.Color('#efe2c4');
+  function grassSkin(z, baseHex, sea){
+    const Q = 4, base = new THREE.Color(baseHex), k = new THREE.Color(), pos = [], col = [], idx = [], ox = z.cx*GRID*2, oz = z.cy*GRID*2, S2g = GRID*2;
     for (let i = 0; i < z.tiles.length; i++){ if (z.tiles[i].k === 'water') continue;
       const c = i%GRID, r = (i/GRID)|0, v0 = pos.length/3;
       for (let a = 0; a <= Q; a++) for (let b = 0; b <= Q; b++){
         const x = c*2 + b*2/Q, zz = r*2 + a*2/Q, wx = ox + x, wz = oz + zz;
         const n = Math.sin(wx*.45 + wz*.2) + .7*Math.sin(wz*.6 - wx*.3) + .25*Math.sin((wx + wz)*1.3);
         k.copy(base).multiplyScalar(.9 + .12*n/1.95); k.offsetHSL(.02*n/1.95, .06, 0);
+        if (sea){ const d = Math.min(sea.w ? x : 99, sea.e ? S2g - x : 99, sea.n ? zz : 99, sea.s ? S2g - zz : 99);
+          if (d < 5){ const w = 1 - THREE.MathUtils.smoothstep(d + .35*n, 2.6, 4.4); k.lerp(SAND, w); } }
         pos.push(x, .004, zz); col.push(k.r, k.g, k.b); }
       for (let a = 0; a < Q; a++) for (let b = 0; b < Q; b++){ const p0 = v0 + a*(Q+1) + b; idx.push(p0, p0 + Q + 1, p0 + 1, p0 + 1, p0 + Q + 1, p0 + Q + 2); } }
     const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -690,12 +696,9 @@ export function start(){
        Coast / beach zones paint sand on land tiles within 1 tile of a sea side (seaSides = no blueprint cell next door). */
     const BIOG = { mount:'#a3ad93', peak:'#98a28c', pasture:'#a9d679', beach:'#e6d6a2' }, bio = z.bio || 'core';
     RB(g, S2, .5, S2, .1, BIOG[bio] || C.grass, ctr, -.5, ctr);   // model block: grass → soil → cream base → oak band
-    g.add(grassSkin(z, BIOG[bio] || C.grass));                      // 🌿 v0.45 painted clay meadow on top
-    if ((bio === 'coast' || bio === 'beach') && typeof seaSides === 'function'){
-      const sea = seaSides(z.cx, z.cy);
-      for (let i=0;i<z.tiles.length;i++){ const c = i%GRID, r = (i/GRID)|0, t = z.tiles[i];
-        const d = Math.min(sea.n ? r : 9, sea.s ? GRID-1-r : 9, sea.w ? c : 9, sea.e ? GRID-1-c : 9);
-        if (d <= 1 && t.k !== 'water') RB(g, 2, .03, 2, .02, C.sand, c*2+1, 0, r*2+1); } }
+    /* v0.48.2 (designer: "เรื่องทราย ถ้าไม่มีขีดกั้นน่าจะดี"): the beach is no longer one rounded slab per tile (visible seams) —
+       grassSkin blends sand into the meadow colours by distance to the sea edges, so the shore is one soft gradient */
+    g.add(grassSkin(z, BIOG[bio] || C.grass, (bio === 'coast' || bio === 'beach') && typeof seaSides === 'function' ? seaSides(z.cx, z.cy) : null));
     if (typeof seaSides === 'function'){ const sd = seaSides(z.cx, z.cy);                  // 🌊 v0.44 surf on real sea edges (two bands: tight + wider)
       for (const [k, on] of Object.entries(sd)) if (on) for (const [off, w, op] of [[.25, .5, 1], [.85, .7, .5]]){
         const along = k === 'n' || k === 's', L = S2 + off*2, x = k === 'w' ? -off : k === 'e' ? S2 + off : ctr, zz = k === 'n' ? -off : k === 's' ? S2 + off : ctr;
