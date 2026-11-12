@@ -807,13 +807,7 @@ export function start(){
         add(g, bldGeo(o.type, W, D, 0), VCM2, 0, 0, 0, null, null, null, true);
         for (let k=0;k<n;k++){
           const a2 = new THREE.Group(); a2.position.set((k%2 ? 1 : -1)*W/4, 0, D/12 + ((k/2)|0)*D/4); a2.rotation.y = (k%2 ? -.6 : .6) + k; g.add(a2);
-          if (cow){ BALL(a2, .5, .38, .75, '#fbf8f2', 0, .55, 0, true); BALL(a2, .25, .2, .3, '#2f2a28', .2, .7, .1); BALL(a2, .2, .16, .22, '#2f2a28', -.25, .6, -.3);
-            for (const [lx, lz] of [[-.25,-.45],[.25,-.45],[-.25,.45],[.25,.45]]) CY(a2, .08, .5, '#fbf8f2', lx, 0, lz);
-            const h = BALL(a2, .26, .26, .3, '#fbf8f2', 0, .9, .8); BALL(a2, .2, .14, .14, '#f4b6b6', 0, .82, 1.05);
-            for (const sx of [-1, 1]){ CO(a2, .05, .18, '#e9dcc0', sx*.15, 1.08, .78); BALL(a2, .04, .04, .04, '#2a2424', sx*.12, .96, 1.0); } }
-          else { BALL(a2, .2, .18, .24, '#fbf8f2', 0, .22, 0, true); BALL(a2, .12, .12, .12, '#fbf8f2', 0, .42, .16);
-            BALL(a2, .04, .06, .05, '#e5483e', 0, .55, .16); CO(a2, .035, .08, '#f2a33a', 0, .4, .3).rotation.x = Math.PI/2;
-            BALL(a2, .1, .12, .06, '#f2ede2', 0, .3, -.22); for (const sx of [-.07, .07]) CY(a2, .015, .12, '#f2a33a', sx, 0, 0); }
+          add(a2, cow ? cowGeo() : chickGeo(), CLAYP, 0, 0, 0, null, null, null, true);   // 🐄🐔 v0.53 one merged clay mesh per animal (was 10–20 meshes, rebuilt every 3 s)
           if (curSway) curSway.push(a2, k*1.7, cow ? .04 : .12, 0);
         }
         break; }
@@ -1083,35 +1077,83 @@ export function start(){
 
   /* ---------- pet (clay, coloured from the 2D SPECIES table) ---------- */
   let petG = null, petType = '', petForm = -1, petSkin = ''; const legs = []; let headG = null, tailG = null, bodyM = null;
-  const buildPet = soft(buildPet0);
-  function buildPet0(){
+  /* 🐾 v0.53 CLAY PET (phase D2). Rig and anchors unchanged, so updatePet's walk / sleep / sit / sniff / tail-wag still drive it:
+       bodyM = body mesh (its y is animated: centre .55, sleep .38) • headG at (0, .95, .42) • tailG at (0, .7, −.5) • legs at (±.22, .42, ±.28/−.3) (2 legs for the chick)
+     Each rig part is ONE merged geometry cached per (type, skin, form) with the shared clay material CLAYP → 7 draw calls (was ~25).
+     New details already in the SPECIES / skin tables but never drawn in 3D: inner ears (earIn), cat stripes (body arcs + forehead marks),
+     pig snout + nostrils, hamster belly, cheek fluff, paws (socks = white legCol), collar tag (form ≥ 1), crown with points (form ≥ 2). */
+  /* 🐄 v0.53 clay cow (same pose / anchors as v0.42: body centre y .55, head (0, .9, .8), legs (±.25, ±.45)) — black spots, pink muzzle + udder, horns, ears, tail tuft */
+  const cowGeo = () => mergeGeo('animal_cow', (() => { const W2 = '#fbf8f2', B2 = '#2f2a28', PK = '#f4b6b6', P = [[SPH24, 0, .58, 0, .5, .4, .75, 0, 0, W2]];
+    P.push([SPH24, .24, .72, .1, .26, .21, .3, 0, 0, B2]); P.push([SPH24, -.27, .62, -.32, .2, .17, .22, 0, 0, B2]); P.push([SPH24, .05, .5, .5, .14, .12, .14, 0, 0, B2]);   // spots
+    P.push([SPH24, 0, .26, -.2, .15, .08, .15, 0, 0, PK]);                                                                     // udder
+    for (const [lx, lz] of [[-.25, -.45], [.25, -.45], [-.25, .45], [.25, .45]]){ P.push([capsG(.085, .3), lx, .27, lz, 1, 1, 1, 0, 0, W2]); P.push([CYL, lx, .04, lz, .09, .08, .09, 0, 0, '#5a4a40']); }
+    P.push([capsG(.025, .4), 0, .48, -.76, 1, 1, 1, 0, 0, W2, .25]); P.push([SPH24, 0, .26, -.82, .06, .09, .06, 0, 0, B2]);   // tail + tuft
+    P.push([SPH24, 0, .9, .8, .26, .26, .3, 0, 0, W2]); P.push([SPH24, .12, 1.03, .85, .1, .08, .07, 0, 0, B2]);              // head + spot
+    P.push([SPH24, 0, .8, 1.04, .21, .15, .14, 0, 0, PK]); for (const sd of [-1, 1]) P.push([SPH24, sd*.06, .8, 1.17, .025, .035, .012, 0, 0, '#c97a7a']);   // muzzle + nostrils
+    for (const sd of [-1, 1]){ P.push([CONE, sd*.15, 1.17, .78, .05, .18, .05, 0, -sd*.25, '#e9dcc0']);                      // horns, ears (+ pink inside), eyes, blush
+      P.push([SPH24, sd*.28, .98, .74, .11, .05, .07, 0, sd*.4, W2]); P.push([SPH24, sd*.29, .985, .765, .07, .03, .04, 0, sd*.4, PK]);
+      P.push([SPH24, sd*.12, .97, 1.02, .045, .05, .03, 0, 0, '#2a2424']); P.push([SPH24, sd*.12 + .015, .99, 1.045, .014, .014, .008, 0, 0, '#ffffff']);
+      P.push([SPH24, sd*.19, .87, .99, .05, .03, .02, 0, 0, '#ff9fb0']); }
+    return P; })());
+  /* 🐔 v0.53 clay chicken (v0.42 anchors: body centre y .22, head (0, .42, .16)) — wings, 3-feather tail, comb, wattle, beak, legs + feet */
+  const chickGeo = () => mergeGeo('animal_chick', (() => { const W2 = '#fbf8f2', R = '#e5483e', O = '#f2a33a', P = [[SPH24, 0, .24, 0, .21, .19, .25, 0, 0, W2]];
+    for (const sd of [-1, 1]) P.push([SPH24, sd*.19, .25, -.01, .06, .12, .16, 0, sd*.25, '#efe8da']);                     // wings
+    for (const k of [-1, 0, 1]) P.push([SPH24, k*.05, .36, -.22, .05, .12, .04, 0, -k*.35, '#f2ede2', -.45]);                // tail fan
+    P.push([SPH24, 0, .44, .15, .12, .12, .12, 0, 0, W2]);
+    for (const [y, z] of [[.56, .1], [.58, .15], [.56, .2]]) P.push([SPH24, 0, y, z, .03, .045, .035, 0, 0, R]);            // comb
+    P.push([SPH24, 0, .35, .25, .025, .045, .025, 0, 0, R]); P.push([CONE, 0, .42, .29, .035, .08, .035, 0, 0, O, Math.PI/2]);   // wattle + beak
+    for (const sd of [-1, 1]){ P.push([SPH24, sd*.075, .46, .24, .02, .025, .015, 0, 0, '#2a2424']); P.push([CYL, sd*.07, .07, 0, .015, .14, .015, 0, 0, O]); P.push([SPH24, sd*.07, .01, .03, .04, .012, .06, 0, 0, O]); }
+    return P; })());
+  function buildPet(){
     if (petG) scene.remove(petG);
     const sp = (typeof mySp === 'function' && mySp()) || SPECIES[S.pet.type] || SPECIES.dog, form = petStage(S.pet.lv).form;   // 🐾 v0.41 skin
     petG = new THREE.Group(); legs.length = 0; petType = S.pet.type; petForm = form; petSkin = JSON.stringify(S.pet.skin || 0);
-    bodyM = BALL(petG, .42, .34, .52, sp.body, 0, .55, 0, true);
-    if (sp.patch) BALL(petG, .34, .2, .38, sp.patch, 0, .78, -.05);
+    const K = `${petType}_${petSkin}_${form}`, mammal = sp.legs !== 2, light = c => lighten(c, .3);
+    const mk = (parent, gg, x, y, z, sh) => { const m = new THREE.Mesh(gg, CLAYP); m.position.set(x, y, z); m.castShadow = !!sh; m.receiveShadow = true; parent.add(m); return m; };
+    /* body: ellipsoid (.42, .34, .52) + belly + back patch / stripes + collar (form ≥ 1) — coordinates relative to the body centre */
+    bodyM = mk(petG, mergeGeo(`petB_${K}`, (() => { const P = [[SPH24, 0, 0, 0, .42, .34, .52, 0, 0, sp.body]];
+      if (mammal) P.push([SPH24, 0, -.13, .06, .33, .22, .42, 0, 0, sp.belly || light(sp.body)]);
+      if (sp.stripes && sp.patch){ for (const z of [-.26, 0, .24]){ const f = Math.sqrt(1 - (z/.54)**2) + .03;   // half-ring arcs over the back, sized to the ellipsoid at z
+          P.push([geo('stripeT', () => new THREE.TorusGeometry(1, .07, 6, 18, Math.PI)), 0, 0, z, .42*f, .34*f, .5, 0, 0, sp.patch]); } }
+      else if (sp.patch) P.push([SPH24, 0, .23, -.05, .34, .2, .38, 0, 0, sp.patch]);
+      if (form >= 1){ P.push([geo('collarT', () => new THREE.TorusGeometry(.26, .05, 8, 20)), 0, .23, .32, 1, 1, 1, 0, 0, '#e5483e', Math.PI/2.4]);
+        P.push([SPH24, 0, .1, .5, .055, .055, .02, 0, 0, '#f6c445']); }
+      return P; })()), 0, .55, 0, true);
+    /* head: skull + cheek fluff, muzzle/beak/snout, eyes with sparkles, blush, little mouth, ears (+ inner colour), crown */
     headG = new THREE.Group(); headG.position.set(0, .95, .42); petG.add(headG);
-    BALL(headG, .37, .34, .35, sp.head, 0, 0, 0, true);
-    if (sp.muzzle) BALL(headG, .2, .15, .18, sp.muzzle, 0, -.1, .26);
-    if (sp.beak) CO(headG, .1, .22, sp.beak, 0, -.08, .38).rotation.x = Math.PI/2;
-    if (sp.nose) BALL(headG, .07, .06, .06, sp.nose, 0, -.04, .43);
-    for (const s of [-1,1]){
-      BALL(headG, .05, .06, .04, '#2b1a0e', s*.13, .06, .31);
-      BALL(headG, .018, .018, .01, '#ffffff', s*.13 + .015, .085, .345);                 // eye sparkle
-      BALL(headG, .06, .035, .02, '#ff9fb0', s*.2, -.06, .29);                           // blush
-      const ec = sp.earCol || sp.head;
-      if (sp.ear === 'floppy'){ const e = BALL(headG, .12, .27, .07, ec, s*.35, -.08, 0); e.rotation.z = s*.25; }
-      else if (sp.ear === 'tri') CO(headG, .13, .3, ec, s*.2, .22, 0);
-      else if (sp.ear === 'long') BALL(headG, .09, .38, .07, ec, s*.13, .5, -.05);
-      else if (sp.ear === 'round') BALL(headG, .1, .1, .05, ec, s*.22, .27, 0);
-      else if (sp.ear === 'tuft' && s > 0) CO(headG, .08, .2, ec, 0, .3, 0);
-    }
+    mk(headG, mergeGeo(`petH_${K}`, (() => { const P = [[SPH24, 0, 0, 0, .37, .34, .35, 0, 0, sp.head]], ec = sp.earCol || sp.head, ei = sp.earIn || shade(ec, .9);
+      if (mammal) for (const sd of [-1, 1]) P.push([SPH24, sd*.24, -.12, .12, .15, .12, .13, 0, 0, sp.head]);         // cheek fluff
+      if (sp.muzzle) P.push([SPH24, 0, -.1, .26, .2, .15, .18, 0, 0, sp.muzzle]);
+      if (sp.snout){ P.push([CYL, 0, -.08, .35, .12, .09, .1, 0, 0, sp.snout, Math.PI/2]); for (const sd of [-1, 1]) P.push([SPH24, sd*.04, -.08, .4, .022, .03, .01, 0, 0, '#9a4a5a']); }
+      if (sp.beak) P.push([CONE, 0, -.08, .38, .1, .22, .1, 0, 0, sp.beak, Math.PI/2]);
+      if (sp.nose) P.push([SPH24, 0, -.04, .43, .07, .055, .055, 0, 0, sp.nose]);
+      for (const sd of [-1, 1]){
+        P.push([SPH24, sd*.13, .06, .305, .06, .075, .04, 0, 0, '#2b1a0e']); P.push([SPH24, sd*.13 + .018, .09, .34, .02, .022, .01, 0, 0, '#ffffff']);   // eyes + sparkle
+        P.push([SPH24, sd*.2, -.06, .29, .065, .036, .02, 0, 0, '#ff9fb0']);                                         // blush
+        if (sp.ear === 'floppy') P.push([SPH24, sd*.35, -.08, 0, .12, .27, .08, 0, sd*.25, ec]);
+        else if (sp.ear === 'tri'){ P.push([CONE, sd*.2, .37, 0, .13, .3, .1, 0, 0, ec]); P.push([CONE, sd*.2, .35, .045, .075, .2, .03, 0, 0, ei]); }
+        else if (sp.ear === 'long'){ P.push([SPH24, sd*.13, .5, -.05, .09, .38, .07, 0, 0, ec]); P.push([SPH24, sd*.13, .5, -.005, .05, .28, .03, 0, 0, ei]); }
+        else if (sp.ear === 'round'){ P.push([SPH24, sd*.22, .27, 0, .1, .1, .05, 0, 0, ec]); P.push([SPH24, sd*.22, .27, .03, .06, .06, .03, 0, 0, ei]); }
+        else if (sp.ear === 'tuft' && sd > 0) P.push([CONE, 0, .4, 0, .08, .2, .08, 0, 0, ec]); }
+      if (!sp.beak) P.push([geo('smileT', () => new THREE.TorusGeometry(.05, .012, 6, 12, Math.PI)), 0, sp.muzzle ? -.17 : -.13, sp.muzzle ? .425 : .335, .55, .55, .55, 0, Math.PI, '#5a3a2a']);
+      if (sp.stripes && sp.patch) for (const x of [-.07, 0, .07]) P.push([SPH24, x, .22, .27, .018, .065, .02, 0, -x*3, sp.patch, -.6]);   // forehead marks
+      if (form >= 2){ P.push([CYL, 0, .38, 0, .15, .07, .15, 0, 0, '#f2c230']);                                       // crown: band + 5 points + ruby
+        for (let k = 0; k < 5; k++){ const a = k/5*Math.PI*2; P.push([CONE, Math.sin(a)*.13, .46, Math.cos(a)*.13, .04, .11, .04, 0, 0, '#f2c230']); P.push([SPH24, Math.sin(a)*.13, .52, Math.cos(a)*.13, .02, .02, .02, 0, 0, '#fff3b0']); }
+        P.push([SPH24, 0, .38, .155, .035, .035, .02, 0, 0, '#e5483e']); }
+      return P; })()), 0, 0, 0, true);
+    /* legs: rounded leg + lighter paw (chick: thin orange leg + flat foot) */
+    const legG = mergeGeo(`petL_${K}`, mammal ? [[capsG(.095, .2), 0, -.18, 0, 1, 1, 1, 0, 0, sp.legCol], [SPH24, 0, -.38, .03, .11, .07, .13, 0, 0, lighten(sp.legCol, .15)]]
+      : [[CYL, 0, -.2, 0, .03, .32, .03, 0, 0, sp.legCol], [SPH24, 0, -.37, .05, .07, .025, .1, 0, 0, sp.legCol]]);
     const nl = sp.legs === 2 ? [[-.14,0],[.14,0]] : [[-.22,.28],[.22,.28],[-.22,-.3],[.22,-.3]];
-    for (const [lx,lz] of nl){ const l = new THREE.Group(); l.position.set(lx, .42, lz); petG.add(l); BALL(l, sp.legs === 2 ? .05 : .1, .24, sp.legs === 2 ? .05 : .1, sp.legCol, 0, -.2, 0); legs.push(l); }
+    for (const [lx, lz] of nl){ const l = new THREE.Group(); l.position.set(lx, .42, lz); petG.add(l); mk(l, legG, 0, 0, 0, false); legs.push(l); }
+    /* tail by type: wag (capsule + light tip) • long (2 bent segments) • puff (ball) • feather (3-feather fan) • curl (ring) • none */
     tailG = new THREE.Group(); tailG.position.set(0, .7, -.5); petG.add(tailG);
-    if (sp.tail !== 'none') BALL(tailG, sp.tail === 'puff' ? .14 : .07, sp.tail === 'puff' ? .14 : .26, sp.tail === 'puff' ? .14 : .07, sp.tailCol, 0, .18, -.05).rotation.x = -.6;
-    if (form >= 1) add(petG, new THREE.TorusGeometry(.26, .05, 8, 20), mat('#e5483e'), 0, .78, .32, null, null, null).rotation.x = Math.PI/2.4;
-    if (form >= 2) CO(headG, .16, .22, '#f2c230', 0, .36, 0);
+    const tc = sp.tailCol, tP = { wag:[[capsG(.06, .24), 0, .12, -.1, 1, 1, 1, 0, 0, tc, -.9], [SPH24, 0, .21, -.2, .065, .065, .065, 0, 0, light(tc)]],
+      long:[[capsG(.055, .22), 0, .08, -.1, 1, 1, 1, 0, 0, tc, -1.1], [capsG(.05, .2), 0, .25, -.24, 1, 1, 1, 0, 0, tc, -.45], [SPH24, 0, .35, -.3, .055, .06, .055, 0, 0, sp.patch || tc]],   // S-curve back, tip below the head line
+      puff:[[SPH24, 0, .12, -.05, .14, .14, .14, 0, 0, tc]],
+      feather:[-1, 0, 1].map(k => [SPH24, k*.06, .14, -.05, .05, .15, .035, 0, -k*.4, tc, -.5]),
+      curl:[[geo('curlT', () => new THREE.TorusGeometry(.08, .03, 6, 16)), 0, .12, -.06, 1, 1, 1, Math.PI/2, 0, tc]] }[sp.tail];
+    if (tP) mk(tailG, mergeGeo(`petT_${sp.tail}_${tc}_${sp.patch || ''}`, tP), 0, 0, 0, false);
   }
   /* =====================================================================
      👥 TOWNSFOLK (v0.19) — clay people, ~1.75 units tall (a tile is 2), facing +Z.
@@ -1572,6 +1614,10 @@ export function start(){
     else if (kind === 'bridge'){ RB(g, 2.2, .25, 2.2, .12, C.grass, 0, -.25, 0); g.add(tileModel({ k:'water', bridge:1 }, 7, 1, true)); }
     else if (kind === 'npc'){ CY(g, .7, .1, C.grass, 0, -.1, 0); const m = npcModel(id); g.add(m); }
     else if (kind === 'avatar'){ const m = personModel(id); m.rotation.y = yaw || 0; g.add(m); }   // id = look object
+    else if (kind === 'pet'){                                   // 🐾 v0.53 id = { type, lv, skin } → builds that pet with buildPet(), then the live pet is rebuilt on the next frame
+      const live = S.pet, old = petG; if (old && old.parent) old.parent.remove(old);
+      S.pet = { ...live, type:id.type, lv:id.lv || 1, skin:id.skin }; try { buildPet(); } finally { S.pet = live; }
+      scene.remove(petG); petG.rotation.y = yaw || 0; g.add(petG); petG = null; }
     else if (kind === 'item') g.add(itemModel(id));
     else if (kind === 'furn'){ const f = FURN[id]; RB(g, f.w*2 + .2, .12, f.h*2 + .2, .06, '#e6d2b0', 0, -.12, 0); g.add(furnModel(id, f.w*2, f.h*2)); }
     curSway = keep; fishes = keepFish;

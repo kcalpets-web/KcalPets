@@ -1,4 +1,4 @@
-# เป็นสุข — งานภาพ "soft clay diorama" v0.43–v0.52 (สรุปสูตรและค่า)
+# เป็นสุข — งานภาพ "soft clay diorama" v0.43–v0.53 (สรุปสูตรและค่า)
 
 ฉบับเต็มต่อเวอร์ชันอยู่ใน claude.ai Project (`pensuk-art-style-lab.md`, `pensuk-v043`…`pensuk-v050`) — ไฟล์นี้รวมสิ่งที่ต้องรู้เพื่อทำงานต่อ
 
@@ -64,6 +64,11 @@
 - จุดหมุนเดิม หัว ×1.1
 - rig ละ 1 geometry (`pBody_` `pHead_` `pArm_` `pLeg_`) + วัสดุ `CLAYP` → 6 draw call/คน
 
+## น้อง + สัตว์ฟาร์ม (v0.53)
+- รายละเอียด: `pensuk-v053-clay-pets-animals.md`
+- rig เดิม
+- น้อง 7 draw call, ไก่/วัวตัวละ 1
+- `R3D.thumb('pet', …)`
+
 ## ถัดไป
-- D2: น้อง + สัตว์ฟาร์ม
 - อบ atlas2 ใหม่
