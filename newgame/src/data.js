@@ -1,12 +1,13 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '0.5.3';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
+export const APP_VER = '0.6.0';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
 /* ---- clearables: size → hits with a tier-0 tool (Pen Suk: small 1 · medium 3 · large 6) ---- */
 export const CLEAR = {
-  herb:    { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'สมุนไพรเรืองแสง' },                    // chapter 2: for Uncle Howsif
+  herb:    { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'สมุนไพรเรืองแสง', ingr: ['glowherb', 1], regrow: 40 * 60e3 },   // chapter 2: for Uncle Howsif · later a rare cooking ingredient
+  mushroom:{ tool: 'sickle', size: 's', mat: {}, mon: null, name: 'เห็ดป่า', ingr: ['mushroom', 1], regrow: 12 * 60e3 }, // forest floor
   debris:  { tool: 'axe',    size: 'm', mat: { wood: 2 }, mon: null, name: 'ซากเรือ' },     // story: the wreck over Uncle Howsif
   grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3 },
   bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3 },
@@ -32,11 +33,11 @@ export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, s
 
 /* ---- monsters (no legs) ---- */
 export const MON = {
-  slime:       { name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
-  slimeKing:   { name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
-  goblin:      { name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
-  goblinChief: { name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
-  grassSprite: { name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
+  slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
+  slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
+  goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
+  goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
+  grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
   branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'barkArmor'], tier: 'normal' },
   rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'normal' },
 };
@@ -157,4 +158,49 @@ export const QUESTS = [
   { id: 's5b', icon: '🧪', text: 'ซ่อมร้านยาของ Sberh', check: S => !!S.shops.potion, go: 'potionShop', reward: { coin: 500 } },
   { id: 's5c', icon: '💊', text: 'นำยารักษาไปให้ลุงฮาวซิฟ', flag: 'cured', go: 'howsif2', reward: { coin: 1000, gem: 100 } },
   { id: 's6', icon: '🌲', text: 'บทที่ 2 จบแล้ว · การผจญภัยต่อไปกำลังมา', flag: 'ch3', go: 'none' },
+];
+
+/* ================= v0.6: time of day (Zelda-like) · camp pots · cooking · journal ================= */
+/* 1 game minute = 1 real second → a day is 24 real minutes · day 06:00–22:00 (16 min) · night 22:00–06:00 (8 min) · no forced sleep */
+export const DAY = { dawn: 6 * 60, dusk: 22 * 60, first: 21 * 60 + 30 };     // the story's first night is frozen at 21:30 until you sleep
+export const NIGHT = { atk: 1.2, drop: 1.3 };                                  // monsters hit harder at night and drop items more often
+export const CHASE = 6;                                                        // monsters only chase you inside this range — explore freely
+export const AREA_TEMP = { farm: 0, town: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
+/* cooking ingredients (fish come from S.fish) · tag = what recipes ask for */
+export const INGR = {
+  apple:    { icon: '🍎', name: 'แอปเปิ้ลป่า', tag: 'fruit', price: 15 },
+  berry:    { icon: '🫐', name: 'เบอร์รี่', tag: 'fruit', price: 10 },
+  mushroom: { icon: '🍄', name: 'เห็ดป่า', tag: 'veg', price: 15 },
+  jelly:    { icon: '🟢', name: 'เจลลี่สไลม์', tag: 'monster', price: 20 },
+  meat:     { icon: '🍖', name: 'เนื้อดิบ', tag: 'meat', price: 30 },
+  glowherb: { icon: '🌿', name: 'สมุนไพรเรืองแสง', tag: 'herb', price: 120 },
+};
+export const CLEAR_INGR = { tree: ['apple', .35], bush: ['berry', .5], grass: ['berry', .12] };   // chance to find an ingredient while clearing
+/* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
+   the most specific matching recipe wins · undiscovered recipes show as ??? with a hint in the journal */
+export const RECIPES = [
+  { k: 'grillfish', icon: '🍢', name: 'ปลาย่าง', need: { fish: 2 }, only: 1, eff: { hp: 45 }, hint: 'ปลาล้วนๆ ย่างไฟ' },
+  { k: 'fruitbake', icon: '🍎', name: 'ผลไม้อบน้ำผึ้ง', need: { fruit: 2 }, only: 1, eff: { hp: 25, en: 25 }, hint: 'ผลไม้ล้วน 2 อย่างขึ้นไป' },
+  { k: 'grillmeat', icon: '🍖', name: 'เนื้อย่างถ่าน', need: { meat: 2 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อล้วนๆ' },
+  { k: 'mushsoup', icon: '🫕', name: 'ซุปเห็ด', need: { mushroom: 2 }, only: 1, eff: { hp: 30, en: 40 }, hint: 'เห็ดล้วน' },
+  { k: 'fishstew', icon: '🍲', name: 'สตูว์ปลาเห็ดหอม', need: { fish: 1, mushroom: 1 }, eff: { hp: 80, en: 20 }, hint: 'ของจากทะเล + ของจากป่า' },
+  { k: 'meatstew', icon: '🥘', name: 'สตูว์เนื้อนักรบ', need: { meat: 1, mushroom: 1 }, eff: { hp: 60, buff: { atk: 4, min: 5 } }, hint: 'เนื้อ + เห็ด = แรงขึ้นชั่วคราว' },
+  { k: 'jellypud', icon: '🍮', name: 'พุดดิ้งสไลม์', need: { jelly: 1, fruit: 1 }, eff: { en: 60 }, hint: 'ของหนึบๆ จากมอนสเตอร์ + ผลไม้' },
+  { k: 'seafeast', icon: '🍛', name: 'แกงทะเลรวมมิตร', need: { fish: 3 }, eff: { hp: 110 }, hint: 'ปลาหลายตัวในหม้อเดียว' },
+  { k: 'glowtonic', icon: '🍵', name: 'ยาบำรุงเรืองแสง', need: { glowherb: 1, fruit: 1 }, eff: { hp: 150, en: 80 }, hint: 'สมุนไพรหายากจากป่า + ผลไม้', secret: 1 },
+  { k: 'bento', icon: '🍱', name: 'ข้าวกล่องนักผจญภัย', need: { fish: 1, meat: 1, mushroom: 1, fruit: 1 }, eff: { hp: 140, en: 60, buff: { def: 4, min: 10 } }, hint: 'ทะเล + เนื้อ + ป่า + ผลไม้ ครบในกล่องเดียว', secret: 1 },
+  { k: 'mystery', icon: '❓', name: 'อาหารปริศนา', need: {}, eff: { hp: 8 }, hint: 'ผสมมั่วๆ ก็ได้อันนี้…' },
+];
+export const POTS = { home: 'แคมป์ที่พัก', forest: 'แคมป์ก็อบลิน (ร้าง)' };
+/* journal achievements · check(S) → progress number · goal · reward */
+export const ACH = [
+  { k: 'cook1', icon: '🍳', name: 'เชฟมือใหม่', text: 'ปรุงอาหารครั้งแรก', stat: 'cooked', goal: 1, reward: { coin: 200 } },
+  { k: 'recipe5', icon: '📖', name: 'นักสะสมสูตร', text: 'ค้นพบสูตรอาหาร 5 สูตร', f: S => Object.keys(S.journal.recipes).filter(k => k !== 'mystery').length, goal: 5, reward: { gem: 50 } },
+  { k: 'secret', icon: '🔮', name: 'สูตรลับ', text: 'ค้นพบสูตรลับ 1 สูตร', f: S => RECIPES.filter(r => r.secret && S.journal.recipes[r.k]).length, goal: 1, reward: { gem: 80 } },
+  { k: 'draw1', icon: '✏️', name: 'นักวาดฝึกหัด', text: 'วาดภาพลงสมุด 1 ภาพ', f: S => Object.keys(S.journal.sketch).length, goal: 1, reward: { coin: 200 } },
+  { k: 'draw5', icon: '🖼️', name: 'ศิลปินพเนจร', text: 'วาดภาพลงสมุด 5 ภาพ', f: S => Object.keys(S.journal.sketch).length, goal: 5, reward: { gem: 60 } },
+  { k: 'drawmon', icon: '👹', name: 'นักวาดมอนสเตอร์', text: 'วาดมอนสเตอร์ 4 ชนิด', f: S => Object.keys(S.journal.sketch).filter(k => MON[k]).length, goal: 4, reward: { gem: 80 } },
+  { k: 'hunt50', icon: '⚔️', name: 'นักล่า', text: 'กำจัดมอนสเตอร์ 50 ตัว', stat: 'kills', goal: 50, reward: { coin: 1500 } },
+  { k: 'gear5', icon: '🛡️', name: 'นักสะสมอุปกรณ์', text: 'สะสมอุปกรณ์ 5 แบบ', f: S => Object.keys(S.journal.gear).length, goal: 5, reward: { gem: 50 } },
+  { k: 'night', icon: '🌙', name: 'นกฮูก', text: 'กำจัดมอนสเตอร์ตอนกลางคืน 10 ตัว', stat: 'nightKills', goal: 10, reward: { coin: 800 } },
 ];

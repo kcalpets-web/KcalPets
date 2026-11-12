@@ -39,7 +39,7 @@
   #tools #tBox{width:62px;height:66px;font-size:28px;border-radius:18px}#tools #tBox small{font-size:11px}#tools #tBox.on{background:#ffd23f}#tools #tBox.sw{background:#ff8a7a}
   .swing{position:fixed;left:0;top:0;display:none;pointer-events:none;font-size:42px;line-height:1;margin:-30px 0 0 -10px;transform-origin:20% 85%;filter:drop-shadow(0 3px 0 #0005);z-index:15}
   #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
-  #fps{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 84px);background:#2a2030b3;color:#9effa8;border-radius:8px;padding:1px 7px;font:700 11px ui-monospace,monospace;pointer-events:none}
+  #fps{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 172px);background:#2a2030b3;color:#9effa8;border-radius:8px;padding:1px 7px;font:700 11px ui-monospace,monospace;pointer-events:none}
   .bot{position:fixed;left:0;right:0;bottom:0;padding:0 8px max(14px,env(safe-area-inset-bottom));display:flex;gap:6px}
   .bb{flex:1;min-width:0;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:4px 2px;text-align:center;box-shadow:0 4px 0 #0003;font:700 11px inherit;font-family:inherit;color:var(--ink);white-space:nowrap}
   .bb b{display:block;font-size:22px;line-height:1.15}.bb small{font-size:10px;color:var(--mut)}.bb.dim{opacity:.45}.bb.auto{background:#ffd23f}.bb.auto::after{content:'AUTO';display:block;font-size:9px;line-height:1;color:#2a2030}
@@ -74,6 +74,12 @@
   @keyframes qa{50%{transform:translateY(-12px)}}
   #updBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9999;min-height:46px;padding:10px 18px;border:3px solid var(--ink);border-radius:24px;background:#2f8f5b;color:#fff;font:700 14px inherit;font-family:inherit;box-shadow:0 4px 0 #0004;white-space:nowrap}
   .up{color:#2f9a4a}.dn{color:#d8404a}.cmp{font-size:12px;margin-top:2px}
+  .clock{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}.clock small{font-size:9px;color:var(--mut)}
+  .sq.dot{position:relative}.sq.dot::after{content:'';position:absolute;right:-3px;top:-3px;width:10px;height:10px;border-radius:50%;background:#ff4a5a;border:2px solid var(--paper)}
+  .tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:6px}.tabs button{flex:none;border:2px solid var(--ink);background:#fff;border-radius:10px;padding:5px 9px;font:700 12px inherit;font-family:inherit;color:var(--ink)}.tabs button.on{background:#ffd23f}
+  .card.lock{opacity:.6;background:#f2ece2}.jrow{display:flex;gap:10px;align-items:center}.gem{display:inline-block;width:18px;height:18px;border-radius:5px;margin-left:3px;color:#fff;font-size:10px;text-align:center;line-height:18px}
+  .sk{width:76px;height:76px;flex:none;border-radius:8px;border:2px solid #0002;object-fit:cover;background:#f8f0de}.sk.e{display:grid;place-items:center;font-size:22px;color:#a89a80;text-align:center;line-height:1}.sk.e small{display:block;font-size:9px}.sk.big{width:220px;height:220px;display:block;margin:6px auto}
+  .pot{display:flex;gap:6px;justify-content:center;margin:8px 0}.slot{width:52px;height:60px;border-radius:12px;border:2px solid var(--ink);background:#fff8e8;font-size:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}.slot small{font-size:8px;max-width:48px;overflow:hidden;white-space:nowrap}.slot.e{border-style:dashed;color:#c8b8a0;background:transparent}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
 <body>
@@ -82,13 +88,14 @@
   <div class="pf" id="pf"><div class="av" id="pfAv">🙂</div><div><div><span id="hLv">Lv 1</span> · <span id="hName"></span></div><div class="bar" style="width:96px"><i id="hXp" style="background:var(--xp)"></i></div></div></div>
   <div class="cur"><div class="rt"><div class="pill">🪙 <span id="hCoin">0</span></div><div class="pill">💎 <span id="hGem">0</span></div></div>
     <div class="rt"><div class="pill" id="hMats"></div></div>
-    <div class="rt"><div class="pill">🕐 <span id="hClock"></span></div><button class="sq" id="bMenu" aria-label="เมนู">☰</button></div></div>
+    <div class="rt"><div class="pill clock"><span id="hClock"></span><small id="hSun"></small></div><button class="sq" id="hTemp" aria-label="อุณหภูมิ">🙂</button></div>
+    <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button></div></div>
 </div>
 <div class="vit"><div class="row"><span>👤 ❤️ HP</span><span id="hHpT"></span></div><div class="bar"><i id="hHp" style="background:var(--hp)"></i></div>
   <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar"><i id="hMp" style="background:#9ad03a"></i></div></div>
 <div id="quest"></div>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
-<div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
+<div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>
 <div class="bot">
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bPets"><b>🐾</b>น้อง</button><button class="bb" id="bTool"><b>🛠️</b>ช่าง</button>

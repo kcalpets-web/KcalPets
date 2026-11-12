@@ -1,6 +1,6 @@
 /* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
    The player has ⚡ energy (tools), not Mana. Pets have their own level / HP / Mana / Exp and grow by eating. */
-import { SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
+import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
 
 export let S = null;
 export function fresh() {
@@ -13,13 +13,15 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
     mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
+    time: DAY.first, ingr: {}, meals: {}, buff: null, ach: {},                // v0.6: game clock (minutes 0–1439) · cooking ingredients · cooked dishes · food buff · claimed achievements
+    journal: { recipes: {}, mons: {}, gear: {}, sketch: {} },               // the notebook: discovered recipes · monsters seen/killed · gear collected · sketches drawn (images in localStorage ng_sk_<key>)
     cleared: {}, mon: null, jobs: {},                       // jobs: build/repair → finish time (ms)
     boat: { lv: 1, c: 0, t: Date.now() },                    // the vault works once the boat is repaired (story)
     cam: [-1, 0], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
   };
 }
 export function load() {
-  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); return S } } catch (e) { }
+  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); S.journal = Object.assign(fresh().journal, S.journal); if (o.time == null && o.story && o.story.slept) S.time = 8 * 60; return S } } catch (e) { }
   S = fresh(); return S;
 }
 export function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)) } catch (e) { } }
@@ -29,6 +31,7 @@ export function itemStats(it) { const T = ITEMS[it.t], m = RAR_MUL[it.r]; return
 /* player = base + growth per level + equipment */
 export function pStats() {
   const L = S.lv - 1, s = { hp: PLAYER_BASE.hp + PLAYER_GROW.hp * L, en: PLAYER_BASE.en + PLAYER_GROW.en * L, atk: PLAYER_BASE.atk + PLAYER_GROW.atk * L, def: PLAYER_BASE.def + PLAYER_GROW.def * L };
+  if (S.buff && S.buff.until > Date.now()) { s.atk += S.buff.atk || 0; s.def += S.buff.def || 0 }
   for (const slot in S.eq) { const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def; s.hp += st.hp } }
   return s;
 }

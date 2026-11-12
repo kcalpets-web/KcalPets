@@ -122,11 +122,25 @@ const PICK_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, de
 export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
 const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
+/* a cooking pot on a camp fire (tap = cook or sleep) */
+export function cookPot(W, key, x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); W.scene.add(g);
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .5, .1, Math.sin(a) * .5], [.16, .11, .14], [0, a, 0], { A: .2 }) }
+  for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#7a4a28', [0, .1, 0], [.42, .05, .05], [0, i * 1.05, .15], { A: 0 });
+  const fire = new THREE.Group(); cone(fire, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95); cone(fire, '#ff8a2a', '#fff2a0', [.08, .22, .05], [.1, .22, .1], [0, 0, 0], .95); g.add(fire);
+  for (const s2 of [-1, 1]) { part(g, '#3a2418', '#6a4028', [s2 * .55, .5, 0], [.04, .5, .04], [0, 0, s2 * .12], { A: 0 }) } part(g, '#3a2418', '#6a4028', [0, .98, 0], [.62, .035, .035], [0, 0, 0], { A: 0 });   // tripod bar
+  part(g, '#22222a', '#5a5a68', [0, .62, 0], [.32, .26, .32], [0, 0, 0], { A: .03 }); part(g, '#a86a3a', '#e8a860', [0, .82, 0], [.27, .04, .27], [0, 0, 0], { A: .1 });   // the pot · stew inside
+  part(g, '#22222a', '#5a5a68', [0, .9, 0], [.2, .01, .01], [0, 0, 0], { A: 0 });
+  const steam = []; for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); g.add(m); steam.push(m) }
+  const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light);
+  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }); return { g, fire, steam, light, x, z };
+}
 /* show / hide one clearable */
 export function spawnClear(W, o) {
   if (o.g) return; const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
   const seg0 = Q.seg; Q.seg = W.eco ? 10 : 14;
-  ({ herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
+  ({ mushroom: () => { for (const [dx, dz, k] of [[0, 0, 1], [.16, .1, .7], [-.12, .14, .55]]) { part(g, '#e8dcc8', '#fff8ec', [dx, .1 * k, dz], [.05 * k, .1 * k, .05 * k], [0, 0, 0], { A: 0 }); part(g, '#a8301e', '#e8604a', [dx, .2 * k, dz], [.16 * k, .09 * k, .16 * k], [0, 0, 0], { A: .04 }); part(g, '#fff4e0', '#ffffff', [dx + .05 * k, .27 * k, dz + .04 * k], [.03 * k, .015, .03 * k], [0, 0, 0], { A: 0 }) } },
+     herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
        part(g, '#3f8a3a', '#7ac860', [0, .3, 0], [.025, .22, .025], [0, 0, 0], { A: 0 }); const f = new THREE.Mesh(new THREE.SphereGeometry(.11, 14, 10), GLOW); f.position.y = .55; g.add(f);
        for (let i = 0; i < 4; i++) { const p2 = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), GLOW2); p2.position.set(Math.cos(i * 1.57) * .1, .55, Math.sin(i * 1.57) * .1); p2.scale.set(1, .5, 1); g.add(p2) } },
      debris: () => { part(g, '#3a2418', '#7a4a30', [0, .12, 0], [.6, .12, .25], [0, 0, .2], { A: .05 }); part(g, '#4a2a18', '#8a5a30', [.2, .3, .1], [.45, .05, .1], [0, .6, .4], { A: 0 }) }, grass: () => PROPS.grassClump(g, 1.1), bush: () => PROPS.bush(g, .7), tree: () => PROPS.tree(g, .8, o.x > 4 ? 1 : 0), bigtree: () => PROPS.tree(g, 1.25, 1),
@@ -192,6 +206,7 @@ export function buildForest(W, eco) {
   at(g => { for (const s2 of [-1, 1]) part(g, '#5a3420', '#a8703e', [0, 1.1, s2 * 1.15], [.18, 1.1, .18], [0, 0, 0], { A: .04 }); part(g, '#2a5a2a', '#4a8a5a', [0, 2.25, 0], [.26, .16, 1.55], [0, 0, 0], { A: .03 }) }, FOREST.gateW.x, FOREST.gateW.z);
   addPick(W, FOREST.gateW.x, FOREST.gateW.z, 1.4, 2.6, { kind: 'gateF' });
   /* glowing herbs (sickle) */
+  [[FX - 9, 3.6], [FX - 4.2, -6.2], [FX - .5, -2.4], [FX + 1.8, 6.8], [FX + 4.6, -7.4], [FX - 7.6, -2.2]].forEach(([x, z], i) => W.clear.set('m' + (i + 1), { id: 'm' + (i + 1), t: 'mushroom', x, z, ry: i, g: null, pick: null, left: 0 }));
   [[FX - 6.5, -4.6], [FX - 1.2, 5.2], [FX + 2.6, -5.6]].forEach(([x, z], i) => W.clear.set('h' + (i + 1), { id: 'h' + (i + 1), t: 'herb', x, z, ry: i, g: null, pick: null, left: 0 }));
   scene.add(mergeStatic(ST)); Q.seg = 32; return F;
 }

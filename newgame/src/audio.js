@@ -60,6 +60,7 @@ const FX = {
   level: t => [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, 0, .25, .09, t + i * .09)),
   done: t => [659, 988].forEach((f, i) => tone('triangle', f, 0, .3, .1, t + i * .12)),
   tap: t => tone('sine', 880, 660, .05, .05, t),
+  sketch: t => { for (let i = 0; i < 6; i++) noise('bandpass', 3500 + Math.random() * 2500, .07, .12, t + i * .09, 2) },
   thunder: t => { noise('lowpass', 900, .25, .9, t, .7, 200); noise('lowpass', 220, 2.8, .7, t + .1, 1); tone('sine', 50, 30, 2.4, .5, t + .1, .2) },
   boom: t => { noise('lowpass', 300, 2, .8, t, 1); tone('sine', 60, 28, 1.8, .6, t) },
   dive: t => { noise('lowpass', 2500, .6, .7, t, .6, 200); noise('lowpass', 400, 1.2, .3, t + .2) },

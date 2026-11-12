@@ -98,6 +98,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('potions', JSON.stringify(await N(() => window.__ng.S.potions)), 'medicine', await N(() => window.__ng.S.story.medicine));
     await pg.mouse.move(250, 815); await pg.mouse.down(); await wait(900); await pg.mouse.up(); await wait(400); log('auto potion', await N(() => window.__ng.autoPot)); await shot('24-auto');
     await E(() => window.__ng.goFarm()); await wait(2500); await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN'); await wait(800); await shot('25-cured');
+    /* v0.6: recipes · cooking at the home pot · sketching · journal · day → night */
+    log('recipes', JSON.stringify(await N(() => { const m = window.__ng.matchRecipe, F = k => ({ k, fish: 1 }), I = k => ({ k });
+      return [m([F('minnow'), F('tilapia')]).k, m([F('minnow'), I('mushroom')]).k, m([I('meat'), I('mushroom')]).k, m([I('glowherb'), I('apple')]).k, m([F('minnow'), I('meat'), I('mushroom'), I('berry')]).k, m([I('apple'), I('jelly'), I('meat')]).k, m([I('apple'), I('berry')]).k] })));
+    await closeAll(); await E(() => { const N = window.__ng; N.S.ingr = { mushroom: 2, apple: 2, meat: 1 }; N.S.fish.minnow = (N.S.fish.minnow || 0) + 2; const p = N.POT.home; N.look(p.x, p.z) }); await wait(1500); await shot('26-pot');
+    await E(() => window.__ng.openPot('home')); await wait(400); await pg.click('#pC'); await wait(300);
+    await pg.click('[data-i="minnow"]'); await pg.click('[data-i="mushroom"]'); await wait(300); await shot('27-cook'); await pg.click('#cGo'); await wait(600); await shot('28-dish');
+    log('cooked', JSON.stringify(await N(() => window.__ng.S.journal.recipes)), 'meals', JSON.stringify(await N(() => window.__ng.S.meals))); await pg.click('#eN'); await wait(300); await closeAll();
+    await E(() => { window.__ng.setTool('sketch'); window.__ng.sketchPick({ kind: 'howsif' }) }); await wait(2500); await shot('29-sketch'); await closeAll();
+    log('sketch', JSON.stringify(Object.keys(await N(() => window.__ng.S.journal.sketch))), 'bytes', await N(() => (localStorage.getItem('ng_sk_howsif') || '').length));
+    for (const t of ['recipes', 'mons', 'ach']) { await E(t => window.__ng.openJournal(t), t); await wait(500); await shot('30-journal-' + t); await closeAll() }
+    await E(() => { window.__ng.setTool(''); window.__ng.S.time = 21 * 60 + 57 }); await wait(5000); await shot('31-dusk-night'); log('time', await N(() => document.getElementById('hClock').textContent), 'night', await N(() => document.body.classList.contains('night')));
     const st = await N(() => ({ q: window.__ng.S.quest, story: window.__ng.S.story })); log('quest', st.q, 'story', JSON.stringify(st.story));
     ok = st.story.cured && st.q >= 18;
     log('perf', JSON.stringify(await N(() => window.__ng.info())));
