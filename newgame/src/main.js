@@ -3,7 +3,7 @@
    he gives the rod → bring him fish → repair his boat (it becomes the coin vault) → the ruined town: pick up the sword,
    clear the slimes and the Slime King → repair the shops → the way to the forest opens (next update).
    No pets yet: the first pet arrives in the forest. Farm monsters only wake once the player has a sword. */
-import { THREE, C, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook } from './clay.js';
+import { THREE, C, part, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook } from './clay.js';
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats } from './state.js';
 import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot } from './world.js';
@@ -118,7 +118,7 @@ function buildPet(p, x, z) {
 S.pets.forEach((p, i) => buildPet(p, -.5 + (i % 2) * 2.4, -1 + Math.floor(i / 2) * 2.2));
 
 /* ---------- the player's character (v0.7): tap the ground to walk · tap a thing to walk over and use it · the camera follows ---------- */
-let PL = null, walkT = null, swingT = 0;
+let PL = null, walkT = null, swingT = 0, work = null;
 function buildPlayer() {
   const at = PL ? PL.root.position.clone() : null; if (PL) scene.remove(PL.root);
   PL = rigOf(makeActor(g => playerLook(g, S.avatar || {}), .82)); const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar;
@@ -130,13 +130,28 @@ function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9,
 function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; S.pos = [x, z] }
 function walkTick(dt, now) {
   let mv = false;
+  if (joy.on) { const q = me(), sp = 3.8 * Math.hypot(joy.x, joy.z), nx = q.x + joy.x * sp * dt, nz = q.z + joy.z * sp * dt;
+    if (sp > .3) { if (WALK[S.area](nx, nz)) { q.x = nx; q.z = nz } else if (WALK[S.area](nx, q.z)) q.x = nx; else if (WALK[S.area](q.x, nz)) q.z = nz; PL.yawT = Math.atan2(joy.x, joy.z); mv = true } }
   if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, 3.6, dt); mv = d > w.near;
     if (d < w.best - .01) { w.best = d; w.stuck = 0 } else w.stuck += dt;
     if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
   animate(PL, mv, dt, now, 12); PL.body.position.y = PL.bob;
   if (swingT > 0) { swingT -= dt; const a = PL.rig.armR; if (a) a.rotation.x = -2.4 * Math.sin((1 - swingT / .28) * Math.PI) }   // tool / sword swing
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
-  if (mv || walkT) { camT.x += (me().x - camT.x) * Math.min(1, dt * 4); camT.z += (me().z + 1 - camT.z) * Math.min(1, dt * 4); clampCam() }   // the camera follows while walking (drag the map to look around)
+  if (mv || walkT || now > peekT) { camT.x += (me().x - camT.x) * Math.min(1, dt * 5); camT.z += (me().z + 1 - camT.z) * Math.min(1, dt * 5) }   // the character stays in the middle of the screen
+  workTick(now);
+}
+/* tap a thing = walk over and do the job: trees → chop, rocks → break, grass → cut, monsters → fight (picks the right tool by itself) */
+function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!WALK[S.area](px, pz)) break; bx = px; bz = pz } return [bx, bz] }
+function workOn(o) { const T = D.CLEAR[o.t]; if (!T) return; if (S.mon && !o.mon) { hint(`🔒 ต้องกำจัด <b>${D.MON[S.mon.kind].name}</b> ก่อน`); return }
+  setTool(T.tool); const go = () => { work = { o, t: 0 } }; dist(me().x, me().z, o.x, o.z) < 1.5 ? go() : walkTo(o.x, o.z, go, 1.1) }
+function fight(m) { if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } setTool('sword'); work = { m, t: 0 } }
+function workTick(now) {
+  if (!work || now < work.t) return; work.t = now + 380 / speed;
+  if (work.o) { const o = work.o; if (!o.g) { work = null; return } if (dist(me().x, me().z, o.x, o.z) > 1.7) { if (!walkT) walkTo(o.x, o.z, null, 1.1); return }
+    const en0 = pEn(), left0 = o.left; toolHit({ kind: 'clear', id: o.id }); if (o.g && pEn() === en0 && o.left === left0) work = null }    // stopped (no energy / tool tier / wrong tool)
+  else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
+    if (d > 1.4) { stepTo(PL, q.x, q.z, 3.8, .2); work.t = now + 60; return } toolHit({ kind: 'mon', m }) }
 }
 function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .28 }
 
@@ -348,17 +363,18 @@ function openWreck() {
 }
 /* ---------- building jobs: pay → a clay hammer knocks on the site with a countdown → done (keeps counting while the game is closed) ---------- */
 const jobs = new Map();
-function jobAt(k) { if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
+function jobAt(k) { if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, k === 'cook:home' ? 'farm' : 'forest'] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
   const sh = TW.shops[D.SHOPS.findIndex(s => 'shop:' + s.k === k)]; return [sh.x, sh.z + (sh.z < 0 ? 1.3 : -1.3), 'town'] }
 function startJob(k, secs) { S.jobs[k] = Date.now() + secs * 1000; save(); jobView(k); questCheck() }
 function jobView(k) {
-  if (jobs.has(k)) return; const [x, z, area] = jobAt(k), g = new THREE.Group(), pv = new THREE.Group(), h = new THREE.Group(); TOOLMESH.hammer(h, 1); h.position.y = .15; pv.add(h); g.add(pv); g.scale.setScalar(3.2); g.position.set(x + .6, 1.5, z); scene.add(g);
+  if (jobs.has(k)) return; const [x, z, area] = jobAt(k), g = new THREE.Group(), pv = new THREE.Group(), h = new THREE.Group(); if (k.startsWith('cook:')) { part(h, '#6a4024', '#a8703e', [0, .1, 0], [.03, .3, .03], [0, 0, 0], { A: 0 }); part(h, '#8a8fa8', '#eef2ff', [0, -.24, .05], [.09, .05, .09], [0, 0, 0], { A: 0 }) } else TOOLMESH.hammer(h, 1); h.position.y = .15; pv.add(h); g.add(pv); g.scale.setScalar(3.2); g.position.set(x + .6, 1.5, z); scene.add(g);
   const tag = document.createElement('div'); tag.className = 'mtag jtag'; document.body.appendChild(tag); jobs.set(k, { g, pv, tag, x, z, area, hit: 0 });
 }
-const jobLeft = k => { const e = S.jobs[k]; if (!e) return 0; const s = Math.ceil((e - Date.now()) / 1000); if (s > 0) hint(`🔨 กำลังสร้าง… อีก ${s} วินาที`); return Math.max(0, s) };
+const jobLeft = k => { const e = S.jobs[k]; if (!e) return 0; const s = Math.ceil((e - Date.now()) / 1000); if (s > 0) hint(`${k.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… อีก ${s} วินาที`); return Math.max(0, s) };
 const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 function jobDone(k) {
   const j = jobs.get(k); if (j) { scene.remove(j.g); j.tag.remove(); jobs.delete(k) } delete S.jobs[k];
+  if (k.startsWith('cook:')) { finishCook(k.slice(5)); return }
   if (k === 'house') { S.story.built = 1; storyProps(); toast('🏠 สร้างบ้านต้นไม้เสร็จแล้ว! แตะที่บ้านเพื่อเข้าไปนอนพัก', 3200) }
   else if (k === 'boat') { S.story.boatFixed = 1; S.boat.t = Date.now(); storyProps();
     talk([['👴 ลุงฮาวซิฟ', 'เรือกลับมาลอยได้แล้ว! เก่งมาก'], ['👴 ลุงฮาวซิฟ', 'ต่อไปไปดูที่เมืองทางขวามือหน่อยนะ ลุงเป็นห่วงคนในเมือง… เดินผ่านซุ้มประตูไม้ไปได้เลย']], questCheck) }
@@ -369,10 +385,10 @@ function jobsTick(now) {
   for (const k in S.jobs) { if (!jobs.has(k)) jobView(k); const j = jobs.get(k), left = Math.ceil((S.jobs[k] - Date.now()) / 1000);
     if (left <= 0) { jobDone(k); continue }
     const ph = (now / 520) % 1, sw = ph < .75 ? -1.3 + Math.pow(ph / .75, 2.2) * 1.9 : .6 - (ph - .75) / .25 * 1.9; j.pv.rotation.z = sw;   // lift … slam … lift
-    const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { sfx('knock'); floater(n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
+    const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { const ck = k.startsWith('cook:'); sfx(ck ? 'tap' : 'knock'); floater(ck ? (n % 2 ? 'คน~' : '🫧') : n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
     j.g.visible = j.area === S.area; const q = project(j.x, 3.3, j.z);
     j.tag.style.display = j.area === S.area && !CUT && q.z < 1 ? 'block' : 'none'; j.tag.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
-    j.tag.innerHTML = `🔨 ${k === 'house' ? 'สร้างบ้าน' : 'ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
+    j.tag.innerHTML = `${k.startsWith('cook:') ? '🍳 กำลังปรุง' : k === 'house' ? '🔨 สร้างบ้าน' : '🔨 ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k.startsWith('cook:') ? D.COOK_TIME : k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
 }
 function openSite() {
   if (jobLeft('house')) return;
@@ -479,7 +495,6 @@ document.querySelectorAll('#tools [data-tool]').forEach(b => b.onclick = () => {
   if (k && !S.stat['tip_' + k]) { S.stat['tip_' + k] = 1; toast(tips[k] + (k !== 'rod' && k !== 'sword' ? '<br>ลากผ่าน 1 ครั้ง = 1 ที · ของใหญ่ลากหลายรอบ' : ''), 3000) } });
 cv.addEventListener('pointerdown', e => {
   if (CUT) return; $('tools').classList.remove('open'); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-  camV.x = camV.z = 0;
   if (ptrs.size === 2) { const a = [...ptrs.values()]; pinch = { d: Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), z: zoom, cx: (a[0][0] + a[1][0]) / 2, cy: (a[0][1] + a[1][1]) / 2 }; stroke = null; down = null; trail.length = 0; return }
   down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), moved: false };
   if (tool && tool !== 'rod' && tool !== 'sketch') stroke = { x: e.clientX, y: e.clientY, last: null, lock: false, go: 0 };
@@ -487,19 +502,20 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
   if (pinch && ptrs.size >= 2) { const a = [...ptrs.values()], d = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), cx = (a[0][0] + a[1][0]) / 2, cy = (a[0][1] + a[1][1]) / 2;   // 2 fingers: pinch = zoom · move = pan
-    zoom = Math.max(.55, Math.min(1.7, pinch.z * pinch.d / Math.max(20, d))); /* spread = closer · pinch = farther */ localStorage.setItem('ng_zoom', zoom); pan(cx - pinch.cx, cy - pinch.cy); pinch.cx = cx; pinch.cy = cy; return }
+    zoom = Math.max(.55, Math.min(1.7, pinch.z * pinch.d / Math.max(20, d))); /* spread = closer · pinch = farther */ localStorage.setItem('ng_zoom', zoom); return }
   if (!down) return; if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) down.moved = true;
   /* holding a tool: a drag that crosses something the tool works on (within the first ~70 px) becomes a swipe;
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
-    if (stroke.go < 70) return; stroke = null; trail.length = 0; down.lx = e.clientX; down.ly = e.clientY; return }
-  if (down.moved) { pan(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY }
+    if (stroke.go < 70) return; stroke = null; trail.length = 0 }
+  if (down.moved && S.avatar) joyMove(down.x, down.y, e.clientX, e.clientY);              // drag anywhere = a floating stick: the character walks that way
 });
-/* map panning with a little glide after letting go */
-const camV = { x: 0, z: 0, t: 0 };
-function pan(dx, dy) { const k = .045 * zoom, now = performance.now(), ddt = Math.max(8, now - camV.t); camT.x -= dx * k; camT.z -= dy * k; clampCam();
-  camV.x = camV.x * .5 + (-dx * k / ddt * 1000) * .5; camV.z = camV.z * .5 + (-dy * k / ddt * 1000) * .5; camV.t = now }
-const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (performance.now() - camV.t > 90) camV.x = camV.z = 0; if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
+/* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
+const joy = { x: 0, z: 0, on: false }, camV = { x: 0, z: 0, t: 0 };
+function joyMove(ox, oy, x, y) { const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), k = Math.min(1, d / 55); joy.on = true; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false;
+  const J = $('joy'); J.style.display = 'block'; J.style.left = ox + 'px'; J.style.top = oy + 'px'; $('joyK').style.transform = `translate(${dx / (d || 1) * Math.min(d, 42)}px,${dy / (d || 1) * Math.min(d, 42)}px)` }
+function joyEnd() { joy.on = false; $('joy').style.display = 'none' }
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; joyEnd(); if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.55, Math.min(1.7, zoom * (e.deltaY > 0 ? 1.1 : 1 / 1.1))); localStorage.setItem('ng_zoom', zoom) }, { passive: false });
 const fx = $('fx'), fxc = fx.getContext('2d'), trail = [];
@@ -523,10 +539,13 @@ function tap(x, y) {
   if (tool === 'sketch') { const k = (rayAt(x, y).intersectObjects(W.picks, false)[0] || {}).object?.userData.pick; sketchPick(k); return }
   if (tool === 'rod') { rayAt(x, y); if (ray.ray.intersectPlane(seaPlane, hitV)) { const k = (rayAt(x, y).intersectObjects(W.picks, false)[0] || {}).object?.userData.pick; if (k && k.kind === 'howsif') return openHowsif(); castAt(hitV.x, hitV.z) } return }
   const h0 = rayAt(x, y).intersectObjects(W.picks, false)[0], k = tool ? pickForTool(x, y) : h0 && h0.object.userData.pick;
-  if (!k) { if (S.avatar && ray.ray.intersectPlane(groundPlane, hitV) && WALK[S.area](hitV.x, hitV.z)) { walkTo(hitV.x, hitV.z); sfx('tap') } return }   // tap the ground = walk there
+  work = null;
+  if (!k) { if (S.avatar && rayAt(x, y).ray.intersectPlane(groundPlane, hitV)) { const [wx, wz] = clampWalk(hitV.x, hitV.z); walkTo(wx, wz); ring.position.set(hitV.x, .04, hitV.z); sfx('tap') } return }   // tap the ground = walk there (as far as you can)
+  if (S.avatar && k.kind === 'clear') { const o = W.clear.get(k.id); if (o && o.g) workOn(o); return }
+  if (S.avatar && k.kind === 'mon' && k.m) { fight(k.m); return }
   if (tool && (k.kind === 'clear' || k.kind === 'mon')) { toolHit(k); return }
-  const far = h0 && S.avatar && WALK[S.area](h0.point.x, h0.point.z) !== undefined && dist(me().x, me().z, h0.point.x, h0.point.z) > 2.6 && !['pet', 'mon', 'clear'].includes(k.kind);
-  if (far) { walkTo(h0.point.x, h0.point.z, () => useThing(k), 1.6); return }                                   // walk over, then use it
+  const p = h0 ? h0.object.position : null;
+  if (S.avatar && p && k.kind !== 'pet' && dist(me().x, me().z, p.x, p.z) > 2) { const [wx, wz] = clampWalk(p.x, p.z); walkTo(wx, wz, () => useThing(k), 1.7); return }   // walk over, then use it
   useThing(k);
 }
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -614,7 +633,6 @@ function frame(now) {
   fishTick(dt, now); jobsTick(now); potTick(now); timeTick(dt); walkTick(dt, now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   if (S.autoPot && now > potT && pHp() < pStats().hp * D.AUTO_POT && (S.potions.hpS || S.potions.hpL)) { potT = now + 1500; usePotion(S.potions.hpS ? 'hpS' : 'hpL'); floater('🧪 AUTO', 'heal', me().x, 2, me().z) }
   if (now - lastHurt > 4000) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt); S.en = performance.now() - enT > 4000 ? Math.min(st.en, pEn() + st.en * D.EN_REGEN * dt) : pEn() }
-  if (!down && !pinch && (camV.x || camV.z)) { camT.x += camV.x * dt / speed; camT.z += camV.z * dt / speed; clampCam(); const f = Math.pow(.04, dt / speed); camV.x *= f; camV.z *= f; if (Math.hypot(camV.x, camV.z) < .05) camV.x = camV.z = 0 }
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
@@ -666,7 +684,8 @@ function questCheck() {
     toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null }
   hud(); save();
 }
-const look = (x, z) => { camT.x = x; camT.z = z + 1; clampCam() };
+let peekT = 0;
+const look = (x, z) => { camT.x = x; camT.z = z + 1; peekT = performance.now() + 3000 };   // a short peek; then the camera returns to the character
 const goNear = (x, z) => { look(x, z); if (S.avatar && dist(me().x, me().z, x, z) > 2.2) walkTo(x, z, null, 1.6) };   // quest card: run there automatically
 function nearestClear(pred) { let best = null, bd = 1e9; for (const o of W.clear.values()) if (o.g && pred(o)) { const d = dist(me().x, me().z, o.x, o.z); if (d < bd) { bd = d; best = o } } return best }
 const GO_AREA = { sword: 'town', slime: 'town', shops: 'town', forest: 'town', town: 'town', potionShop: 'town', herb: 'forest', camp: 'forest', cage: 'forest', none: '' };
@@ -690,20 +709,20 @@ function questGo(q) {
   }
   switch (q.go) {
     case 'home': case 'howsif2': goNear(HOWSIF.x, HOWSIF.z); point(HOWSIF.x, HOWSIF.z, 1.6); setTool(''); toast(S.story.medicine ? '💊 แตะที่ลุงฮาวซิฟเพื่อให้ยา' : '👴 แตะที่ลุงฮาวซิฟ'); return;
-    case 'herb': { const o = nearestClear(o => o.t === 'herb'); if (o) { goNear(o.x, o.z); point(o.x, o.z, 1.2); setTool('sickle'); toast('🌾 ลากนิ้วผ่านสมุนไพรเรืองแสง') } return }
+    case 'herb': { const o = nearestClear(o => o.t === 'herb'); if (o) { point(o.x, o.z, 1.2); workOn(o); toast('🌾 ลากนิ้วผ่านสมุนไพรเรืองแสง') } return }
     case 'camp': { const m = mons.filter(m => m.area === 'forest' && /goblin/.test(m.kind)).sort((a, b) => dist(camT.x, camT.z, a.A.root.position.x, a.A.root.position.z) - dist(camT.x, camT.z, b.A.root.position.x, b.A.root.position.z))[0];
-      if (m) { goNear(m.A.root.position.x, m.A.root.position.z); point(0, 0, 2, m); setTool('sword'); toast('⚔️ ลากนิ้วผ่านก็อบลิน!') } else forestSpawn(); return }
+      if (m) { point(0, 0, 2, m); fight(m); toast('⚔️ ลากนิ้วผ่านก็อบลิน!') } else forestSpawn(); return }
     case 'cage': goNear(FOREST.cage.x, FOREST.cage.z); point(FOREST.cage.x, FOREST.cage.z, 2.1); setTool(''); toast('🔓 แตะที่กรงเพื่อปล่อยตัว'); return;
     case 'potionShop': { const sh = TW.shops[0]; goNear(sh.x, sh.z); point(sh.x, sh.z, 3.4); setTool(''); toast(S.shops.potion ? '🧪 ร้านยาเปิดแล้ว' : '🏚️ แตะที่ร้านยาเพื่อซ่อม'); return }
     case 'gather': { const needWood = (S.mats.wood || 0) < 10, tl = needWood ? 'axe' : 'hammer', o = nearestClear(o => needWood ? (o.t === 'tree' || o.t === 'bush') : o.t === 'rock');
-      if (o) { goNear(o.x, o.z); point(o.x, o.z, 1.3); setTool(tl); toast(`${D.TOOLS[tl][0]} ลากนิ้วผ่าน${D.CLEAR[o.t].name}`) } else toast('ไม่เจอเป้าหมาย ลองเลื่อนดูรอบเกาะ'); return }
+      if (o) { point(o.x, o.z, 1.3); workOn(o); toast(`${D.TOOLS[tl][0]} ลากนิ้วผ่าน${D.CLEAR[o.t].name}`) } else toast('ไม่เจอเป้าหมาย ลองเลื่อนดูรอบเกาะ'); return }
     case 'house': goNear(HOUSE.x, HOUSE.z); point(HOUSE.x, HOUSE.z + .4, S.story.built ? 4.4 : 1.2); setTool(''); toast(S.story.built ? '🏠 แตะที่บ้านต้นไม้เพื่อนอน' : '🏠 แตะที่กองไม้ใต้ต้นไม้ใหญ่เพื่อสร้าง'); return;
-    case 'wreck': goNear(WRECK.x, WRECK.z); point(WRECK.x, WRECK.z, 1.4); setTool('axe'); toast('🪓 ลากนิ้วผ่านซากไม้รอบเรือ'); return;
+    case 'wreck': { point(WRECK.x, WRECK.z, 1.4); const o = nearestClear(o => o.t === 'debris'); if (o) workOn(o); else goNear(WRECK.x, WRECK.z); toast('🪓 เคลียร์ซากไม้รอบเรือ'); return }
     case 'howsif': { const n = Object.values(S.fish).reduce((a, v) => a + v, 0); if (n < D.HOWSIF_FISH) { goNear(HOWSIF.x - 2, HOWSIF.z + 1); point(HOWSIF.x - 3.2, HOWSIF.z + .5, .4); setTool('rod'); toast('🎣 แตะที่น้ำทะเลเพื่อเหวี่ยงเบ็ด') } else { goNear(HOWSIF.x, HOWSIF.z); point(HOWSIF.x, HOWSIF.z, 2.1); setTool(''); toast('👴 แตะที่ลุงฮาวซิฟ') } return }
     case 'boat': goNear(WRECK.x, WRECK.z); point(WRECK.x, WRECK.z, 1.4); setTool(''); toast('🔨 แตะที่ซากเรือเพื่อซ่อม'); return;
     case 'exit': goNear(EXIT.x - 1.5, EXIT.z); point(EXIT.x, EXIT.z, 2.9); setTool(''); toast('🏘️ แตะที่ซุ้มประตูไม้'); return;
     case 'sword': goNear(TOWN.sword.x, TOWN.sword.z); point(TOWN.sword.x, TOWN.sword.z, .9); setTool(''); toast('⚔️ แตะที่ดาบบนพื้น'); return;
-    case 'slime': { const m = mons.find(m => m.area === 'town'); if (m) { goNear(m.A.root.position.x, m.A.root.position.z); point(0, 0, 1.9, m); setTool('sword'); toast('⚔️ ลากนิ้วผ่านสไลม์!') } else townSpawn(); return }
+    case 'slime': { const m = mons.find(m => m.area === 'town'); if (m) { point(0, 0, 1.9, m); fight(m); toast('⚔️ ลากนิ้วผ่านสไลม์!') } else townSpawn(); return }
     case 'shops': { const sh = TW.shops.find(s => D.SHOPS[s.i].cost && !S.shops[D.SHOPS[s.i].k]); if (sh) { goNear(sh.x, sh.z); point(sh.x, sh.z, 3.4); setTool(''); toast('🏚️ แตะที่ร้านที่พังเพื่อซ่อม') } return }
     case 'forest': goNear(TOWN.gateE.x - 1.5, TOWN.gateE.z); point(TOWN.gateE.x, TOWN.gateE.z, 2.9); setTool(''); toast('🌲 แตะที่ประตูด้านตะวันออก'); return;
   }
@@ -856,7 +875,7 @@ function openPot(key) {
     b.innerHTML = `<p class="mut">${isNight() ? '🌙' : '☀️'} ตอนนี้ ${hhmm(S.time)}</p>
       <div class="card"><b>🍳 ทำอาหาร</b><p class="mut">ใส่วัตถุดิบ 2–5 อย่างลงหม้อ · ลองผสมแบบใหม่ๆ เพื่อค้นพบสูตรลับในสมุดบันทึก 📓</p><button class="btn go wide" id="pC">🍳 ทำอาหาร</button></div>
       <div class="card"><b>😴 นอนพัก</b><p class="mut">HP + ⚡ พลังงานเต็ม · น้องฟื้นตัว · เวลาเดินไปข้างหน้า</p><div class="row2"><button class="btn" id="pN">🌙 ถึงค่ำ (20:00)</button><button class="btn go" id="pM">🌅 ถึงเช้า (06:00)</button></div></div>`;
-    b.querySelector('#pC').onclick = () => openCook();
+    b.querySelector('#pC').onclick = () => { if (!jobLeft('cook:' + key)) openCook(key) };
     b.querySelector('#pM').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(D.DAY.dawn) };
     b.querySelector('#pN').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(20 * 60) };
   });
@@ -880,7 +899,7 @@ function matchRecipe(pot) {
 }
 const effTxt = e => [e.hp ? `❤️ +${e.hp}` : '', e.en ? `⚡ +${e.en}` : '', e.buff ? `${e.buff.atk ? '⚔️ +' + e.buff.atk : '🛡️ +' + e.buff.def} (${e.buff.min} นาที)` : ''].filter(Boolean).join(' · ');
 const needTxt = r => Object.keys(r.need).map(k => `${({ fish: '🐟 ปลา', fruit: '🍎 ผลไม้', veg: '🥬 ผัก', meat: '🍖 เนื้อ', monster: '👾 ของมอนสเตอร์', herb: '🌿 สมุนไพร' })[k] || (D.INGR[k] ? D.INGR[k].icon + ' ' + D.INGR[k].name : k)} ×${r.need[k]}`).join(' + ') + (r.only ? ' (ล้วน)' : '');
-function openCook() {
+function openCook(key = 'home') {
   const pot = [];
   sheet('🍳 ทำอาหาร', (b, redraw, close) => {
     const left = ingrList().map(x => ({ ...x, n: x.n - pot.filter(p => p.k === x.k).length })).filter(x => x.n > 0);
@@ -891,12 +910,15 @@ function openCook() {
     b.querySelectorAll('[data-o]').forEach(x => x.onclick = () => { pot.splice(+x.dataset.o, 1); redraw() });
     b.querySelector('#cGo').onclick = () => {
       const r = matchRecipe(pot); for (const it of pot) { if (it.fish) S.fish[it.k]--; else S.ingr[it.k]-- }
-      const first = !S.journal.recipes[r.k]; S.journal.recipes[r.k] = (S.journal.recipes[r.k] || 0) + 1; S.meals[r.k] = (S.meals[r.k] || 0) + 1; bump('cooked'); sfx(first ? 'level' : 'done'); playerExp(5);
-      close(); save(); hud(); achCheck();
-      sheet(first ? '📖 ค้นพบสูตรใหม่!' : '🍳 ปรุงเสร็จแล้ว', (b2, r2, c2) => { b2.innerHTML = `<div class="card" style="text-align:center"><div style="font-size:56px">${r.icon}</div><b style="font-size:18px">${r.name}</b>${r.secret && first ? '<p class="up">🔮 สูตรลับ!</p>' : ''}<p>${effTxt(r.eff)}</p><p class="mut">มี ${S.meals[r.k]} จาน · เก็บไว้ในกระเป๋า</p></div><button class="btn go wide" id="eN">😋 กินเลย</button>`;
-        b2.querySelector('#eN').onclick = () => { eatMeal(r.k); c2() } });
+      S.cooking = Object.assign(S.cooking || {}, { [key]: r.k }); closeSheets(); look(POT[key].x, POT[key].z); hud(); startJob('cook:' + key, D.COOK_TIME); sfx('splash'); toast(`🍳 ใส่หม้อแล้ว! รอ ${D.COOK_TIME} วินาที…`, 2200);
     };
   });
+}
+function finishCook(key) {
+  const rk = (S.cooking || {})[key]; if (!rk) return; delete S.cooking[key]; const r = D.RECIPES.find(x => x.k === rk);
+  const first = !S.journal.recipes[r.k]; S.journal.recipes[r.k] = (S.journal.recipes[r.k] || 0) + 1; S.meals[r.k] = (S.meals[r.k] || 0) + 1; bump('cooked'); sfx(first ? 'level' : 'done'); playerExp(5); save(); hud(); achCheck();
+  sheet(first ? '📖 ค้นพบสูตรใหม่!' : '🍳 ปรุงเสร็จแล้ว', (b2, r2, c2) => { b2.innerHTML = `<div class="dish"><div class="plate">${r.icon}</div>${first ? `<div class="ribbon">${r.secret ? '🔮 สูตรลับ!' : '✨ สูตรใหม่!'}</div>` : ''}<b>${r.name}</b><p class="mut">${r.desc || ''}</p><div class="card">${effTxt(r.eff)}<div class="mut">วัตถุดิบ: ${needTxt(r)}</div></div><p class="mut">มี ${S.meals[r.k]} จาน · เก็บไว้ในกระเป๋า 🎒</p></div><div class="row2"><button class="btn" id="eK">เก็บไว้</button><button class="btn go" id="eN">😋 กินเลย</button></div>`;
+    b2.querySelector('#eN').onclick = () => { eatMeal(r.k); c2() }; b2.querySelector('#eK').onclick = c2 });
 }
 function eatMeal(k) {
   const r = D.RECIPES.find(x => x.k === k); if (!r || !(S.meals[k] > 0)) return; S.meals[k]--; const e = r.eff, st = pStats();
@@ -993,7 +1015,7 @@ function openCreator(first) {
   return new Promise(done => {
     const a = Object.assign({ hair: 'short', hairCol: LOOK.hairCol[0], skin: LOOK.skin[0], top: LOOK.top[0], bottom: 'pants' }, S.avatar || {});
     const el = document.createElement('div'); el.id = 'maker'; document.body.appendChild(el); CUT = true;
-    el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><canvas id="mkCv"></canvas><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
+    el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><canvas id="mkCv"></canvas><button class="btn sm" id="mkR">🎲 สุ่ม</button><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
     const cv3 = el.querySelector('#mkCv'), r3 = new THREE.WebGLRenderer({ canvas: cv3, antialias: true, alpha: true }); r3.setPixelRatio(Math.min(devicePixelRatio, 2)); r3.setSize(220, 250, false); r3.outputColorSpace = THREE.SRGBColorSpace; r3.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', 1.1)); const kl = new THREE.DirectionalLight('#fff1dc', 2); kl.position.set(-2, 4, 5); sc.add(kl); const rl = new THREE.DirectionalLight('#ffd7a8', .8); rl.position.set(2, 3, -4); sc.add(rl);
     const c3 = new THREE.PerspectiveCamera(30, 220 / 250, .1, 30); c3.position.set(0, 1.2, 5.2); c3.lookAt(0, 1, 0); let doll = null, spin = .3, alive = true;
@@ -1005,6 +1027,7 @@ function openCreator(first) {
       row('สีผิว', LOOK.skin.map(c => ({ c: c[1], k: c })), it => it.k[0] === a.skin[0], 'skin') + row('เสื้อ', LOOK.top.map(c => ({ c, k: c })), it => it.k === a.top, 'top') +
       row('ท่อนล่าง', LOOK.bottom.map(([k, t]) => ({ k, t })), it => it.k === a.bottom, 'bottom');
       el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k, i = +b.dataset.i, src = { hair: LOOK.hair.map(x => x[0]), hairCol: LOOK.hairCol, skin: LOOK.skin, top: LOOK.top, bottom: LOOK.bottom.map(x => x[0]) }[k]; a[k] = src[i]; sfx('tap'); rebuild(); draw() }) };
+    el.querySelector('#mkR').onclick = () => { const pick = arr => arr[Math.floor(Math.random() * arr.length)]; a.hair = pick(LOOK.hair)[0]; a.hairCol = pick(LOOK.hairCol); a.skin = pick(LOOK.skin); a.top = pick(LOOK.top); a.bottom = pick(LOOK.bottom)[0]; sfx('tap'); rebuild(); draw() };
     rebuild(); draw(); loop();
     el.querySelector('#mkOk').onclick = () => { alive = false; r3.dispose(); el.remove(); CUT = false; last = performance.now(); S.avatar = a; buildPlayer(); save(); done() };
     window.__mk = { ok: () => el.querySelector('#mkOk').click(), set: (k, v) => { a[k] = v; rebuild(); draw() } };

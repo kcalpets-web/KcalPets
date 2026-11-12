@@ -42,12 +42,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     { await E(() => window.__ng.setTool('')); const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); await pg.mouse.click(250, 470); await wait(3000); const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z }));
       log('walk', JSON.stringify(m0), '→', JSON.stringify(m1)); if (Math.hypot(m1.x - m0.x, m1.z - m0.z) < .5) errs.push('tap to walk did not move the character'); await shot('03c-walk') }
     /* holding a tool, a drag over open water moves the map (no ✋ needed) */
-    { await E(() => { window.__ng.setTool('axe'); window.__ng.look(-2, 0) }); await wait(1500); const c0 = await N(() => window.__ng.cam);
-      await pg.mouse.move(60, 600); await pg.mouse.down(); await pg.mouse.move(60, 380, { steps: 8 }); await pg.mouse.up(); await wait(400); const c1 = await N(() => window.__ng.cam);
-      log('pan with axe', (c1.z - c0.z).toFixed(2)); if (!(c1.z - c0.z > 3)) errs.push('drag with a tool did not pan the map') }
+    /* drag anywhere = floating stick (even holding a tool, when the drag crosses nothing) · the camera stays on the character */
+    { await closeAll(); await E(() => window.__ng.setTool('')); await wait(800); const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z }));
+      await pg.mouse.move(80, 640); await pg.mouse.down(); await pg.mouse.move(80, 560, { steps: 6 }); await wait(1200); await shot('03d-stick'); await pg.mouse.up(); await wait(400);
+      const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); log('stick', (m1.z - m0.z).toFixed(2)); if (!(m0.z - m1.z > .3)) errs.push('dragging did not walk the character north') }
+    /* tap a tree → walk over and chop it (picks the axe by itself) */
+    { await E(() => { window.__ng.setTool(''); window.__ng.placeMe(0, -4) }); await wait(1500); const t = await E(() => { const N = window.__ng, o = N.nearestClear(o => o.t === 'tree'); return o ? { id: o.id, n: N.S.stat.clr_tree || 0 } : null });
+      if (t) { await wait(800); const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return N.project(o.x, .6, o.z) }, t.id); await pg.mouse.click(p.x, p.y);
+        await pg.waitForFunction(id => !window.__ng.W.clear.get(id).g, t.id, { timeout: 40000 }).catch(() => errs.push('tap-to-chop did not finish the tree')); log('tap-chop', t.id, await N(() => window.__ng.S.stat.clr_tree || 0)) } }
     await E(() => { window.__ng.speed = 3 });
     /* quest 0: wood 10 + stone 5 → build → sleep */
-    await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
+    await closeAll(); await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
     await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 5);
     log('mats', JSON.stringify(await N(() => window.__ng.S.mats)), 'quest', await N(() => window.__ng.S.quest));
     await E(() => window.__ng.quest()); await wait(600); await shot('04-site');
@@ -108,7 +113,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       return [m([F('minnow'), F('tilapia')]).k, m([F('minnow'), I('mushroom')]).k, m([I('meat'), I('mushroom')]).k, m([I('glowherb'), I('apple')]).k, m([F('minnow'), I('meat'), I('mushroom'), I('berry')]).k, m([I('apple'), I('jelly'), I('meat')]).k, m([I('apple'), I('berry')]).k] })));
     await closeAll(); await E(() => { const N = window.__ng; N.S.ingr = { mushroom: 2, apple: 2, meat: 1 }; N.S.fish.minnow = (N.S.fish.minnow || 0) + 2; const p = N.POT.home; N.look(p.x, p.z) }); await wait(1500); await shot('26-pot');
     await E(() => window.__ng.openPot('home')); await wait(400); await pg.click('#pC'); await wait(300);
-    await pg.click('[data-i="minnow"]'); await pg.click('[data-i="mushroom"]'); await wait(300); await shot('27-cook'); await pg.click('#cGo'); await wait(600); await shot('28-dish');
+    await pg.click('[data-i="minnow"]'); await pg.click('[data-i="mushroom"]'); await wait(300); await shot('27-cook'); await pg.click('#cGo'); await wait(2500); await shot('27b-cooking'); await E(() => window.__ng.finishJobs()); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(700); await shot('28-dish');
     log('cooked', JSON.stringify(await N(() => window.__ng.S.journal.recipes)), 'meals', JSON.stringify(await N(() => window.__ng.S.meals))); await pg.click('#eN'); await wait(300); await closeAll();
     await E(() => { window.__ng.setTool('sketch'); window.__ng.sketchPick({ kind: 'howsif' }) }); await wait(2500); await shot('29-sketch'); await closeAll();
     log('sketch', JSON.stringify(Object.keys(await N(() => window.__ng.S.journal.sketch))), 'bytes', await N(() => (localStorage.getItem('ng_sk_howsif') || '').length));
