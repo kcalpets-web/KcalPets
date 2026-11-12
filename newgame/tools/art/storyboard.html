@@ -4,7 +4,7 @@
 <body><div id="out"></div>
 <script type="module">
 /* Opening cutscene storyboard (docs/STORY.md). The camera is the player's eyes (the player has no body). */
-import { THREE, C, part, cone, PETS, PROPS, HUMANS, shadowBeast, smoke } from '../../src/clay.js';
+import { THREE, C, part, cone, PETS, PROPS, HUMANS, smoke } from '../../src/clay.js';
 const W = 390, H = 560, DPR = 2;
 const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(DPR); r.setSize(W, H);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -86,14 +86,14 @@ function shot(S, cam, title, say, who) {
   const fire = new THREE.PointLight('#ff9a4a', 25, 9); fire.position.set(0, .9, 0); fire.castShadow = true; S.add(fire);
   at(HUMANS.kealee, -.9, -1.4, .55, .95);
   shot(S, cam, '6 · ถ้ำหลังน้ำตก · ผิงไฟ', 'ยังหนาวอยู่เลย… ขอบคุณนะที่กระโดดตามมา', 'คีลี') }
-/* 7 · the black shadow in the giant smoke cloud takes Kealee */
-{ const { S, cam, at } = stage({ sky: skyTex('#3a2a5a', '#b08ac8', '#7a5a9a'), hemi: '#c8b8e8', hi: .8, si: 1.2, sp: [0, 10, 8], cam: [0, 2, 9], at: [0, 4.2, -3], fov: 55 }); ground(S, '#2a2228', '#3a3036');
-  at(g => smoke(g, 30, 1.4, 7), 0, -8, 0, 1, 5);
-  const b = at(shadowBeast, 0, -3.5, 0, 1.4, 5); b.rotation.x = -.4;
-  const k = at(HUMANS.kealee, .15, -2.2, Math.PI + .2, .7, 3.6); k.rotation.z = .5;
-  const ff = new THREE.DirectionalLight('#ffe0f0', 1.4); ff.position.set(0, 3, 10); S.add(ff);
-  for (let i = 0; i < 4; i++) at(g => part(g, '#08060c', '#2a2438', [0, 0, 0], [1.4, .9, 1.2], [0, 0, 0], { A: .15, shadow: false }), -5 + i * 3.4, -1, 0, 1, .6);   // dust at the cave mouth
-  shot(S, cam, '7 · เงาดำในเมฆควันคว้าคีลีไป', 'คีลี!!!', 'ผู้เล่น') }
+/* 7 · a formless shadow inside the giant black smoke cloud (no Kealee — the cloud alone tells it) */
+{ const { S, cam, at } = stage({ sky: skyTex('#2a1e44', '#a07ab8', '#6a4a8a'), hemi: '#c8b8e8', hi: .7, si: 1, sp: [0, 10, 8], cam: [0, 1.8, 9], at: [0, 4.6, -3], fov: 58 }); ground(S, '#2a2228', '#3a3036');
+  at(g => smoke(g, 40, 1.5, 7), 0, -9, 0, 1, 5.5); at(g => smoke(g, 22, 1.1, 19), 0, -5, .6, 1, 4.6);
+  at(g => smoke(g, 10, .7, 31), -3.5, -2, 0, 1, 2.4); at(g => smoke(g, 10, .7, 41), 3.8, -2.5, 0, 1, 2.8);     // tendrils reaching down
+  const core = new THREE.PointLight('#6a2a9a', 18, 10); core.position.set(0, 5, -5); S.add(core);
+  const ff = new THREE.DirectionalLight('#ffe0f0', .9); ff.position.set(0, 3, 10); S.add(ff);
+  for (let i = 0; i < 4; i++) at(g => part(g, '#08060c', '#2a2438', [0, 0, 0], [1.4, .9, 1.2], [0, 0, 0], { A: .15, shadow: false }), -5 + i * 3.4, -1, 0, 1, .6);
+  shot(S, cam, '7 · เงาดำในเมฆควันพุ่งออกจากถ้ำ', 'คีลี!!!', 'ผู้เล่น') }
 /* 8 · the island at night: ruins, the broken boat on the beach (someone is under it) */
 { const { S, cam, at } = stage({ sky: skyTex('#0a1030', '#3a4a8a'), hemi: '#a8b8ff', hi: 1.1, sun: '#c8d8ff', si: 1.8, sp: [-8, 12, 6], cam: [-.6, 6.2, 11.5], at: [-2.2, .2, 1.4], fov: 52 }); ground(S, '#2e5040', '#3a6048');
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(40, 60), new THREE.MeshStandardMaterial({ color: '#1e4478', roughness: .3 })); sea.rotation.x = -Math.PI / 2; sea.position.set(-26, .03, 0); S.add(sea);

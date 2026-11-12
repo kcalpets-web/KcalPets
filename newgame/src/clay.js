@@ -149,21 +149,23 @@ export const ACC = {
 };
 
 /* ---- people (chibi, head ×1.1 like Pen Suk's clay people) · same rig roles as pets so the walk animation works ---- */
+/* k.adult → taller, slimmer, smaller head (a young adult instead of a chibi kid) */
 function human(g, k) {
-  const sk = ['#e8b48a', '#ffd9bc'];
-  role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.12, .22, 0], [.1, .22, .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.12, .22, 0], [.1, .22, .1]), 'footR');
-  part(g, k.clD, k.cl, [0, .66, 0], [.3, .32, .24]);                                     // body / clothes
-  if (k.skirt) cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55);  // dress hem
-  for (const s of [-1, 1]) role(part(g, k.clD, k.cl, [s * .33, .7, 0], [.08, .2, .08], [0, 0, s * .25]), s < 0 ? 'armL' : 'armR');
-  part(g, sk[0], sk[1], [0, 1.22, 0], [.36, .36, .34]);                                  // head
-  part(g, k.hairD, k.hair, [0, 1.36, -.05], [.39, .3, .36], [0, 0, 0], { A: .08, f: 1.5 }); // hair cap
-  if (k.fringe) part(g, k.hairD, k.hair, [0, 1.42, .2], [.3, .12, .14], [0, 0, 0], { A: .06 });
-  eyes(g, 1.2, .3, .13, .06); cheeks(g, 1.1, .3, .21);
+  const sk = ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
+  role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footR');
+  const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.24, .36, .18] : [.3, .32, .24]);   // body / clothes
+  if (k.skirt) cone(g, k.skD, k.sk, [0, A ? .62 : .42, 0], A ? [.34, .36, .28] : [.36, .26, .3], [Math.PI, 0, 0], .55);  // skirt
+  for (const s of [-1, 1]) role(part(g, k.clD, k.cl, [s * (A ? .27 : .33), A ? 1.0 : .7, 0], A ? [.065, .3, .065] : [.08, .2, .08], [0, 0, s * .2]), s < 0 ? 'armL' : 'armR');
+  if (A) part(g, sk[0], sk[1], [0, hy - .3, 0], [.08, .1, .08], [0, 0, 0], { A: 0 });           // neck
+  part(g, sk[0], sk[1], [0, hy, 0], [hr, hr * 1.05, hr * .95]);                                   // head
+  part(g, k.hairD, k.hair, [0, hy + hr * .38, -.05], [hr * 1.08, hr * .85, hr], [0, 0, 0], { A: .08, f: 1.5 }); // hair cap
+  if (k.fringe) part(g, k.hairD, k.hair, [0, hy + hr * .55, hr * .55], [hr * .85, hr * .32, hr * .38], [0, 0, 0], { A: .06 });
+  if (k.longHair) part(g, k.hairD, k.hair, [0, hy - hr * .5, -hr * .55], [hr * .95, hr * 1.5, hr * .45], [0, 0, 0], { A: .08, f: 1.4 });  // long hair down the back
+  eyes(g, hy - hr * .05, hr * .84, hr * .36, A ? .05 : .06); cheeks(g, hy - hr * .3, hr * .84, hr * .58);
 }
 export const HUMANS = {
-  kealee(g) { human(g, { cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, leg: '#ffe0c8', legD: '#e8b48a' });
-    for (const s of [-1, 1]) part(g, '#5a3018', '#8a5030', [s * .38, 1.2, -.08], [.11, .2, .11], [0, 0, s * .3], { A: .06 });   // pigtails
-    part(g, '#c0303a', '#ff5a5a', [.2, 1.55, .05], [.1, .07, .05], [0, 0, .4], { A: 0 }) },                                    // red ribbon
+  kealee(g) { human(g, { adult: 1, cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, longHair: 1, leg: '#ffe0c8', legD: '#e8b48a' });
+    part(g, '#c0303a', '#ff5a5a', [.18, 1.88, .06], [.09, .06, .05], [0, 0, .4], { A: 0 }) },                                  // red hair clip
   villager(g, v = 0) { const C2 = [['#e0a040', '#b07020'], ['#6aa0e0', '#3a6aa8'], ['#d06a8a', '#a04060']][v % 3];
     human(g, { cl: C2[0], clD: C2[1], hair: ['#3a2418', '#c8a060', '#1e1520'][v % 3], hairD: '#1e1410', leg: '#4a3a5a' });
     part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },                                         // apron
