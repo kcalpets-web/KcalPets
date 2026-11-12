@@ -1132,6 +1132,19 @@ export function start(){
   const torsoGeo = () => geo('torsoL', () => new THREE.LatheGeometry([[0, -.001], [.2, 0], [.265, .08], [.27, .3], [.25, .5], [.2, .6], [.08, .64], [0, .645]].map(([x, y]) => new THREE.Vector2(x, y)), 22));
   const capsG = (r, l) => geo(`cap${r}_${l}`, () => new THREE.CapsuleGeometry(r, l, 4, 12));
   const SPH24 = geo('sph24', () => new THREE.SphereGeometry(1, 24, 18));
+  /** 💇 v0.52.1 hair shell: part of a sphere (theta 0 → tL from the crown, phi from p0 over pL — a gap at phi = π/2 leaves the face open)
+      laid OVER the head (scale ≈ 1.06 × head) so no scalp can show through. Gentle clay noise r' = 1 + .025·n (n as blobGeo) — small
+      enough to stay outside the head; vertex colour mix(hc·.72, hc, smoothstep(−.3, .9, ŷ)) → darker nape, lighter crown. */
+  function hairShellGeo(key, hc, tL, p0 = 0, pL = Math.PI*2){
+    key = `hs_${key}_${hc}`; if (FOLG.has(key)) return FOLG.get(key);
+    const g = new THREE.SphereGeometry(1, eco ? 20 : 28, eco ? 10 : 16, p0, pL, 0, tL), P = g.attributes.position, col = new Float32Array(P.count*3);
+    const L = new THREE.Color(hc).multiplyScalar(.72), H = new THREE.Color(hc), k = new THREE.Color(), n = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++){ n.fromBufferAttribute(P, i).normalize();
+      const nz = (Math.sin(n.x*9 + 1) + Math.sin(n.y*11 + 2) + Math.sin(n.z*8.7 + n.x*2 + 3)) / 3;
+      P.setXYZ(i, n.x*(1 + .025*nz), n.y*(1 + .025*nz), n.z*(1 + .025*nz));
+      k.copy(L).lerp(H, THREE.MathUtils.smoothstep(n.y + nz*.2, -.3, .9)); col[i*3] = k.r; col[i*3+1] = k.g; col[i*3+2] = k.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); FOLG.set(key, g); return g;
+  }
   function personModel(L){
     L = L || {}; const g = new THREE.Group(), parts = { legs:[], arms:[] }, skin = L.skin || '#f2c9a0';
     let shirt = L.shirt || '#e8735a', pants = L.pants || '#5d6b84', shoes = L.shoes || '#4a3a30';
@@ -1174,8 +1187,7 @@ export function start(){
     for (const s2 of [-1, 1]){ const a = new THREE.Group(); a.position.set(s2*.33, 1.12, 0); g.add(a); mesh(a, armG, false); parts.arms.push(a); }
     /* head (×1.1): face (eyes + sparkles, brows, nose, blush, smile arc), ears, textured clay hair, hat, glasses */
     const h = new THREE.Group(); h.position.y = 1.5; h.scale.setScalar(1.1); g.add(h); parts.head = h;
-    const headG = mergeGeo(`pHead_${skin}_${hc}_${hs}_${L.hat || ''}_${L.capCol || ''}_${L.glasses ? 1 : 0}`, (() => { const P = [], hair = (k, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) =>
-        P.push([blobGeo(`hair${k}${hc}`, shade(hc, .72), hc, .06, 3, [1, 1, 1]), x, y, z, sx, sy, sz, ry, rz, null, rx]);
+    const headG = mergeGeo(`pHead_${skin}_${hc}_${hs}_${L.hat || ''}_${L.capCol || ''}_${L.glasses ? 1 : 0}`, (() => { const P = [];
       P.push([SPH24, 0, 0, 0, .3, .3, .28, 0, 0, skin]);
       for (const sd of [-1, 1]){ P.push([SPH24, sd*.29, -.01, -.02, .055, .075, .045, 0, 0, shade(skin, .96)]);   // ears
         P.push([SPH24, sd*.1, .03, .262, .04, .055, .025, 0, 0, '#2b1a0e']); P.push([SPH24, sd*.1 + .013, .052, .283, .014, .014, .008, 0, 0, '#ffffff']);   // eyes + sparkle
@@ -1183,20 +1195,23 @@ export function start(){
         P.push([SPH24, sd*.17, -.05, .238, .055, .03, .015, 0, 0, '#ff9fb0']); }                                 // blush
       P.push([SPH24, 0, -.025, .285, .032, .026, .025, 0, 0, shade(skin, .93)]);                                  // nose
       P.push([geo('smileT', () => new THREE.TorusGeometry(.05, .012, 6, 12, Math.PI)), 0, -.085, .262, 1, 1, 1, 0, Math.PI, '#c0584a']);   // smile ∪
-      if (hs !== 'none'){
-        if (hs === 'bob') hair(0, 0, .04, -.06, .34, .26, .29); else hair(0, 0, .12, -.03, .31, .2, .29);       // hair cap
-        if (hs !== 'spiky') for (const [x, k] of [[-.13, 1], [0, 2], [.13, 1]]) hair(k, x, .2 - Math.abs(x)*.2, .19, .1, .07, .07, .3);   // fringe
-        if (hs === 'bun'){ hair(3, 0, .28, -.15, .12, .12, .12); P.push([geo('bunT', () => new THREE.TorusGeometry(.09, .02, 6, 16)), 0, .2, -.1, 1, 1, 1, 0, 0, '#e8735a', -.9]); }
-        if (hs === 'long'){ hair(1, 0, -.12, -.2, .3, .4, .14); for (const sd of [-1, 1]) hair(2, sd*.26, -.12, -.05, .08, .3, .08); }
-        if (hs === 'pony'){ hair(2, 0, -.07, -.32, .09, .25, .09, .5); P.push([SPH24, 0, .08, -.27, .04, .04, .04, 0, 0, '#e8735a']); }
+      /* hair: crown shell tilted back rx −.6 → front hairline ≈ y .18 (above the brows at .115), nape ≈ y −.18, sides at ear level */
+      if (hs !== 'none'){ const lit = lighten(hc, .08), lump = (x, y, z, sx, sy, sz, rx = 0, rz = 0, c = hc) => P.push([SPH24, x, y, z, sx, sy, sz, 0, rz, c, rx]);
+        P.push([hairShellGeo('crown', hc, Math.PI*.5), 0, .01, -.01, .318, .322, .305, 0, 0, null, -.6]);
+        if (hs === 'bob' || hs === 'long') P.push([hairShellGeo('sides', hc, Math.PI*.7, Math.PI/2 + .62, Math.PI*2 - 1.24), 0, 0, -.01, .33, .33, .315, 0, 0, null]);   // falls past the ears, face left open
+        if (hs !== 'spiky') for (const [x, r2] of [[-.12, .35], [0, 0], [.12, -.35]]) lump(x, .2 - Math.abs(x)*.25, .225, .11, .065, .07, .5, r2, lit);   // soft fringe on the hairline
+        if (hs === 'bun'){ lump(0, .27, -.17, .13, .13, .13); P.push([geo('bunT', () => new THREE.TorusGeometry(.09, .02, 6, 16)), 0, .2, -.12, 1, 1, 1, 0, 0, '#e8735a', -.9]); }
+        if (hs === 'long'){ lump(0, -.2, -.2, .29, .32, .13); for (const sd of [-1, 1]) lump(sd*.25, -.22, -.04, .08, .2, .09); }
+        if (hs === 'bob') lump(0, -.08, -.2, .31, .2, .12);
+        if (hs === 'pony'){ lump(0, -.08, -.34, .09, .25, .09, .5); P.push([SPH24, 0, .07, -.29, .045, .045, .045, 0, 0, '#e8735a']); }
         if (hs === 'spiky') for (let k = 0; k < 5; k++){ const a = (k - 2)*.4; P.push([CONE, Math.sin(a)*.18, .39, -.02 - Math.cos(a)*.05, .08, .2, .08, 0, -a*.6, hc]); } }
       switch (L.hat){
         case 'straw': P.push([CYL, 0, .22, 0, .5, .04, .5, 0, 0, '#e9c46a']); P.push([geo('brimT', () => new THREE.TorusGeometry(1, .06, 6, 28).rotateX(Math.PI/2)), 0, .22, 0, .5, .6, .5, 0, 0, '#d9b45a']);
           P.push([CONE, 0, .33, 0, .25, .22, .25, 0, 0, '#e9c46a']); P.push([CYL, 0, .245, 0, .26, .05, .26, 0, 0, '#e8735a']); break;
-        case 'band': case 'redband': P.push([CYL, 0, .135, 0, .31, .07, .31, 0, 0, '#e5483e']); break;
-        case 'gold': P.push([CYL, 0, .135, 0, .31, .07, .31, 0, 0, '#f6c445']); P.push([SPH24, 0, .14, .3, .05, .05, .03, 0, 0, '#fff3b0']); break;
-        case 'cap': { const cc = L.capCol || '#4f7cac'; P.push([SPH24, 0, .17, 0, .31, .14, .3, 0, 0, cc]); P.push([RBG(.26, .03, .2, .02), 0, .175, .3, 1, 1, 1, 0, 0, shade(cc, .85)]); P.push([BEAD, 0, .31, 0, .03, .02, .03, 0, 0, shade(cc, .85)]); break; }
-        case 'hard': P.push([SPH24, 0, .16, 0, .33, .2, .32, 0, 0, '#f6c445']); P.push([CYL, 0, .16, 0, .36, .04, .36, 0, 0, '#e8b530']); P.push([SPH24, 0, .26, .3, .07, .06, .04, 0, 0, '#fff6c0']); break;
+        case 'band': case 'redband': P.push([CYL, 0, .135, 0, .335, .075, .335, 0, 0, '#e5483e']); break;
+        case 'gold': P.push([CYL, 0, .135, 0, .335, .075, .335, 0, 0, '#f6c445']); P.push([SPH24, 0, .14, .33, .05, .05, .03, 0, 0, '#fff3b0']); break;
+        case 'cap': { const cc = L.capCol || '#4f7cac'; P.push([SPH24, 0, .16, 0, .34, .2, .33, 0, 0, cc]); P.push([RBG(.28, .03, .22, .02), 0, .165, .33, 1, 1, 1, 0, 0, shade(cc, .85)]); P.push([BEAD, 0, .36, 0, .03, .02, .03, 0, 0, shade(cc, .85)]); break; }
+        case 'hard': P.push([SPH24, 0, .16, 0, .35, .23, .34, 0, 0, '#f6c445']); P.push([CYL, 0, .16, 0, .38, .04, .38, 0, 0, '#e8b530']); P.push([SPH24, 0, .26, .32, .07, .06, .04, 0, 0, '#fff6c0']); break;
       }
       if (L.glasses){ for (const sd of [-1, 1]) P.push([geo('glassT', () => new THREE.TorusGeometry(.065, .015, 6, 16)), sd*.1, .03, .275, 1, 1, 1, 0, 0, '#2b2b2b']);
         P.push([RBG(.06, .015, .015, .005), 0, .03, .275, 1, 1, 1, 0, 0, '#2b2b2b']); }
