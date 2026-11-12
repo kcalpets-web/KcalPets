@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE kingdom map (draft)</title><style>body{margin:0;background:#222}</style></head><body>
+<canvas id="c" width="1100" height="1500"></canvas>
+<script>
+/* Draft kingdom map for planning (docs/WORLD.md) — 2D, not in the game. North = ice & river · middle = sand / earth / forest · south = volcano & storm. */
+const c = document.getElementById('c'), g = c.getContext('2d'), W = 1100, H = 1500; let seed = 7; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const F = (s, w = 'bold') => `${w} ${s}px Loma, "Noto Sans Thai", sans-serif`;
+/* parchment */
+g.fillStyle = '#e9d9b4'; g.fillRect(0, 0, W, H); for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(120,90,50,${R() * .05})`; g.fillRect(R() * W, R() * H, 2, 2) }
+const blob = (cx, cy, rx, ry, col, n = 28, j = .18) => { g.beginPath(); for (let i = 0; i <= n; i++) { const a = i / n * 6.283, r = 1 + (R() - .5) * j; const x = cx + Math.cos(a) * rx * r, y = cy + Math.sin(a) * ry * r; i ? g.lineTo(x, y) : g.moveTo(x, y) } g.closePath(); g.fillStyle = col; g.fill() };
+/* sea on the west + south-west */
+g.fillStyle = '#9cc8d8'; g.beginPath(); g.moveTo(0, 0); g.lineTo(150, 0); for (let y = 0; y <= H; y += 50) g.lineTo(150 + Math.sin(y / 140) * 40 + (y > 1100 ? (y - 1100) * .5 : 0), y); g.lineTo(0, H); g.closePath(); g.fill();
+for (let i = 0; i < 40; i++) { g.strokeStyle = '#ffffff88'; g.lineWidth = 2; const x = 30 + R() * 110, y = R() * H; g.beginPath(); g.arc(x, y, 8, Math.PI * 1.1, Math.PI * 1.9); g.stroke() }
+/* regions */
+blob(620, 260, 430, 230, '#e8f2fa'); blob(760, 170, 250, 120, '#d4e6f4');                          // ❄️ north ice
+blob(600, 760, 470, 300, '#c8d8a0'); blob(840, 760, 190, 210, '#e4cc92'); blob(820, 900, 140, 110, '#d8b07a');   // middle: plains · 🏜️ sand · 🪨 canyon
+blob(470, 720, 170, 130, '#7aa860'); blob(560, 820, 120, 100, '#6a9a52');                             // 🌲 forest
+blob(640, 1230, 420, 240, '#b88a6a'); blob(520, 1300, 220, 150, '#8a5a4a');                           // 🔥 volcano lands
+blob(830, 1180, 200, 140, '#a8a0b8');                                                                  // ⚡ storm plateau
+/* river from the northern lake to the sea */
+g.strokeStyle = '#7ab4d4'; g.lineWidth = 14; g.lineCap = 'round'; g.beginPath(); g.moveTo(700, 330); g.bezierCurveTo(600, 420, 420, 430, 360, 520); g.bezierCurveTo(300, 600, 220, 590, 170, 620); g.stroke();
+blob(720, 320, 80, 45, '#8ac0dc');
+/* mountains, trees, volcano, clouds */
+const mount = (x, y, s, col, snow) => { g.fillStyle = col; g.beginPath(); g.moveTo(x - s, y); g.lineTo(x, y - s * 1.3); g.lineTo(x + s, y); g.fill(); if (snow) { g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(x - s * .35, y - s * .85); g.lineTo(x, y - s * 1.3); g.lineTo(x + s * .35, y - s * .85); g.fill() } };
+for (let i = 0; i < 9; i++) mount(420 + i * 70 + R() * 20, 200 + R() * 60, 38 + R() * 20, '#9ab0c8', 1);
+for (let i = 0; i < 40; i++) { const x = 380 + R() * 260, y = 640 + R() * 260; if (Math.hypot((x - 500) / 1.2, y - 760) > 150) continue; g.fillStyle = '#3d6a32'; g.beginPath(); g.moveTo(x, y - 22); g.lineTo(x - 11, y + 4); g.lineTo(x + 11, y + 4); g.fill() }
+for (let i = 0; i < 6; i++) mount(780 + R() * 120, 900 + R() * 60, 26, '#b07a4a', 0);
+mount(520, 1330, 110, '#5a2a22', 0); g.fillStyle = '#ff6a2a'; g.beginPath(); g.moveTo(500, 1192); g.lineTo(540, 1192); g.lineTo(560, 1250); g.lineTo(480, 1250); g.fill();
+for (let i = 0; i < 5; i++) blob(790 + i * 30, 1110 + (i % 2) * 20, 50, 26, '#6a6280', 16, .3);
+blob(820, 480, 70, 50, '#3a2a4a', 18, .5); blob(850, 450, 50, 36, '#2a1e38', 16, .5);              // the black cloud
+/* places */
+const pin = (x, y, ico, name, sub, done) => { g.font = '34px sans-serif'; g.textAlign = 'center'; g.fillText(ico, x, y + 12); g.font = F(19); g.fillStyle = '#2a2030'; g.strokeStyle = '#e9d9b4'; g.lineWidth = 5; g.strokeText(name, x, y + 40); g.fillText(name, x, y + 40);
+  if (sub) { g.font = F(14, 'normal'); g.strokeText(sub, x, y + 58); g.fillStyle = done ? '#2f7a3a' : '#6a5a48'; g.fillText(sub, x, y + 58) } g.fillStyle = '#2a2030' };
+pin(230, 720, '🏝️', 'เกาะบ้านเกิด', 'บทที่ 1 ✓', 1); pin(330, 800, '🏘️', 'เมืองร้าง', 'บทที่ 1 ✓', 1); pin(520, 700, '🌲', 'ป่าตะวันออก', 'บทที่ 2 ✓', 1);
+pin(860, 790, '🏜️', 'ทะเลทรายสีทอง', 'บทที่ 3 · 🥵 ร้อน'); pin(820, 960, '🪨', 'หุบเขาดินแดง', 'บทที่ 3 · ศาลหินปริศนา');
+pin(520, 470, '🛶', 'แม่น้ำใหญ่ & ท่าเรือ', 'บทที่ 4 · เรือลุงฮาวซิฟ'); pin(720, 330, '💧', 'ทะเลสาบหมอก', 'บทที่ 4');
+pin(560, 160, '❄️', 'ลานน้ำแข็ง', 'บทที่ 5 · 🥶 หนาว'); pin(520, 1240, '🌋', 'ภูเขาไฟ', 'บทที่ 6 · 🥵 ร้อนจัด'); pin(840, 1200, '⚡', 'ที่ราบสายฟ้า', 'บทที่ 7');
+pin(835, 480, '☁️', 'หอคอยเมฆดำ', 'บทสุดท้าย · คีลีอยู่ที่นี่?');
+/* camps = cooking pots = warp points */
+for (const [x, y] of [[268, 690], [560, 760], [900, 850], [600, 420], [600, 230], [600, 1180], [880, 1140]]) { g.font = '20px sans-serif'; g.fillText('🍲', x, y) }
+/* title + legend */
+g.font = F(46); g.textAlign = 'center'; g.fillStyle = '#4a2a18'; g.fillText('อาณาจักร ??? · แผนที่ (ร่าง)', W / 2, 62);
+g.font = F(18, 'normal'); g.fillText('เหนือ 💧❄️ แม่น้ำ น้ำแข็ง · กลาง 🪨🌱 ทราย ดิน ป่า · ใต้ 🔥⚡ ภูเขาไฟ เมฆสายฟ้า', W / 2, 92);
+g.textAlign = 'left'; g.font = F(16, 'normal'); g.fillText('🍲 = แคมป์ (ทำอาหาร · นอน · จุดวาร์ป)   ✓ = ทำแล้ว', 190, H - 30);
+g.font = '40px sans-serif'; g.fillText('🧭', W - 80, H - 40);
+window.__done = 1;
+</script></body></html>
