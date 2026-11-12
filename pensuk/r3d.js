@@ -1121,48 +1121,87 @@ export function start(){
   /* 🧑 one clay person for NPCs and the player (v0.20). look:
        skin, hair, hairStyle(short|long|bun|spiky|bob|pony|none), shirt, pants, shoes, apron, vest,
        hat(straw|band|gold|cap|hard), glasses, balloon, tool, outfit(sport|thai|carpenter) */
-  const personModel = soft(personModel0);
-  function personModel0(L){
+  /* 🧑 v0.52 CLAY PEOPLE (phase D1 — designer: "ปรับตามที่ถนัด"). Same look keys, colours, rig and pivots as v0.20:
+       legs pivot (±.13, .62, 0) • arms pivot (±.33, 1.12, 0) • head pivot y 1.5 (was 1.48) • whole model ×.95
+     → walk / wave / cheer / squat / shop-work poses are unchanged. Each rig part is ONE merged vertex-coloured geometry cached by
+       the colours it uses (body, head, arm, leg = 6 draw calls per person instead of ~30) with one shared clay material CLAYP
+       (MeshPhysical sheen, like softMode). Head ×1.1 (bigger, friendlier face on a phone; overall height ≈ +.05).
+     Torso = lathe "bean": r(y) through (.2, 0) (.265, .08) (.27, .3) (.25, .5) (.2, .6) (.08, .64), depth ×.72. */
+  const CLAYP = new THREE.MeshPhysicalMaterial({ vertexColors:true, roughness:.72, metalness:0, sheen:.5, sheenRoughness:.75, sheenColor:new THREE.Color('#8f8a84') });   // mid-grey sheen: soft fuzz without greying dark hair
+  const lighten = (hex, k) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), k).getHexString();
+  const torsoGeo = () => geo('torsoL', () => new THREE.LatheGeometry([[0, -.001], [.2, 0], [.265, .08], [.27, .3], [.25, .5], [.2, .6], [.08, .64], [0, .645]].map(([x, y]) => new THREE.Vector2(x, y)), 22));
+  const capsG = (r, l) => geo(`cap${r}_${l}`, () => new THREE.CapsuleGeometry(r, l, 4, 12));
+  const SPH24 = geo('sph24', () => new THREE.SphereGeometry(1, 24, 18));
+  function personModel(L){
     L = L || {}; const g = new THREE.Group(), parts = { legs:[], arms:[] }, skin = L.skin || '#f2c9a0';
     let shirt = L.shirt || '#e8735a', pants = L.pants || '#5d6b84', shoes = L.shoes || '#4a3a30';
     if (L.outfit === 'sport'){ shirt = '#ff6b4a'; pants = '#2d3e50'; }
     if (L.outfit === 'thai'){ shirt = '#f4e4c1'; pants = '#8c2f39'; }
     if (L.runShoes) shoes = '#ffffff';
-    const shorts = L.outfit === 'sport';
-    for (const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.13, .62, 0); g.add(l);
-      if (shorts){ CY(l, .095, .25, pants, 0, -.25, 0); CY(l, .075, .32, skin, 0, -.57, 0); } else CY(l, .085, .55, pants, 0, -.6, 0);
-      BALL(l, .1, .07, .14, shoes, 0, -.6, .04); if (L.runShoes) BALL(l, .1, .02, .14, '#ff9f5a', 0, -.64, .04); parts.legs.push(l); }
-    if (L.outfit === 'thai') CY(g, .3, .62, '#8c2f39', 0, .02, 0);                         // sarong (pha nung) over the legs
-    RB(g, .52, .62, .36, .16, shirt, 0, .6, 0, true);                                    // body
-    if (L.outfit === 'sport') RB(g, .53, .08, .37, .03, '#ffffff', 0, .95, 0);
-    if (L.outfit === 'thai'){ const sb = RB(g, .12, .8, .4, .04, '#e0a92e', 0, .55, 0); sb.rotation.z = .6; }   // sabai sash
-    if (L.apron || L.outfit === 'carpenter') RB(g, .4, .45, .05, .05, L.apron || '#a8743f', 0, .62, .18);
-    if (L.vest) RB(g, .54, .4, .38, .14, L.vest, 0, .8, 0);
-    for (const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.33, 1.12, 0); g.add(a);
-      CY(a, .07, .45, shirt, 0, -.45, 0); BALL(a, .08, .08, .08, skin, 0, -.48, 0); parts.arms.push(a); }
-    const h = new THREE.Group(); h.position.y = 1.48; g.add(h); parts.head = h;
-    BALL(h, .3, .3, .28, skin, 0, 0, 0, true);
-    for (const s of [-1,1]){ BALL(h, .035, .045, .02, '#2b1a0e', s*.1, .03, .26); BALL(h, .05, .03, .015, '#ff9fb0', s*.17, -.05, .24); }
-    BALL(h, .05, .02, .02, '#c0584a', 0, -.1, .26);                                          // smile
-    const hc = L.hair || '#3b2a20', hs = L.hairStyle || (L.bun ? 'bun' : 'short');
-    if (hs !== 'none') BALL(h, .31, .2, .29, hc, 0, .12, -.03);
-    if (hs === 'bun') BALL(h, .12, .12, .12, hc, 0, .28, -.15);
-    if (hs === 'long') BALL(h, .3, .4, .14, hc, 0, -.12, -.2);
-    if (hs === 'bob'){ BALL(h, .34, .24, .3, hc, 0, .02, -.04); }
-    if (hs === 'pony'){ BALL(h, .09, .25, .09, hc, 0, -.05, -.32).rotation.x = .5; }
-    if (hs === 'spiky') for (let k=0;k<5;k++){ const a = (k-2)*.4; const c = CO(h, .08, .2, hc, Math.sin(a)*.18, .3, -.02 - Math.cos(a)*.05); c.rotation.z = -a*.6; }
-    if (L.glasses){ for (const s of [-1,1]){ const r = add(h, new THREE.TorusGeometry(.065, .015, 6, 16), mat('#2b2b2b'), s*.1, .03, .27); }
-      RB(h, .06, .015, .015, .005, '#2b2b2b', 0, .03, .27); }
-    switch (L.hat){
-      case 'straw': CY(h, .5, .04, '#e9c46a', 0, .2, 0); CO(h, .25, .22, '#e9c46a', 0, .22, 0); CY(h, .26, .05, '#e8735a', 0, .22, 0); break;
-      case 'band':  CY(h, .31, .07, '#e5483e', 0, .1, 0); CY(g, .015, .3, '#d9d9d9', .05, 1.05, .2); BALL(g, .05, .03, .05, '#f6c445', .05, .9, .21); break;   // headband + whistle
-      case 'redband': CY(h, .31, .07, '#e5483e', 0, .1, 0); break;
-      case 'gold':  CY(h, .31, .07, '#f6c445', 0, .1, 0); BALL(h, .05, .05, .03, '#fff3b0', 0, .14, .3); break;
-      case 'cap':   BALL(h, .31, .14, .3, L.capCol || '#4f7cac', 0, .17, 0); RB(h, .26, .03, .2, .02, L.capCol || '#4f7cac', 0, .16, .3); break;
-      case 'hard':  BALL(h, .33, .2, .32, '#f6c445', 0, .16, 0); CY(h, .36, .04, '#f6c445', 0, .14, 0); BALL(h, .07, .06, .04, '#fff6c0', 0, .26, .3); break;
-    }
-    if (L.balloon){ CY(g, .008, 1.1, '#ffffff', .4, .75, 0); BALL(g, .2, .25, .2, L.balloon === true ? '#ff6b81' : L.balloon, .4, 2.0, 0, true); }
-    if (L.tool === 'saw') { const t = RB(g, .06, .5, .02, .01, '#c9d1d8', -.42, .45, .1); t.rotation.z = .3; }
+    const shorts = L.outfit === 'sport', hc = L.hair || '#3b2a20', hs = L.hairStyle || (L.bun ? 'bun' : 'short');
+    const mesh = (parent, gg, sh) => { const m = new THREE.Mesh(gg, CLAYP); m.castShadow = !!sh; m.receiveShadow = true; parent.add(m); return m; };
+    /* legs: trouser capsule (or shorts + bare shin), rounded shoe + darker sole (+ running stripe) */
+    const legG = mergeGeo(`pLeg_${pants}_${shoes}_${skin}_${shorts ? 1 : 0}${L.runShoes ? 1 : 0}`, (() => { const P = [];
+      if (shorts){ P.push([capsG(.095, .12), 0, -.15, 0, 1, 1, 1, 0, 0, pants]); P.push([capsG(.072, .3), 0, -.42, 0, 1, 1, 1, 0, 0, skin]); }
+      else P.push([capsG(.088, .36), 0, -.3, 0, 1, 1, 1, 0, 0, pants]);
+      P.push([SPH24, 0, -.6, .05, .105, .075, .155, 0, 0, shoes]); P.push([RBG(.2, .03, .29, .012), 0, -.655, .04, 1, 1, 1, 0, 0, shade(shoes, .7)]);
+      if (L.runShoes) P.push([SPH24, 0, -.625, .05, .107, .02, .157, 0, 0, '#ff9f5a']);
+      return P; })());
+    for (const s2 of [-1, 1]){ const l = new THREE.Group(); l.position.set(s2*.13, .62, 0); g.add(l); mesh(l, legG, true); parts.legs.push(l); }
+    /* body: bean torso, hem + collar, neck, buttons, outfit extras, held items (balloon, saw, whistle) */
+    const bodyG = mergeGeo(`pBody_${shirt}_${pants}_${skin}_${L.outfit || ''}_${L.apron || ''}_${L.vest || ''}_${L.balloon || ''}_${L.tool || ''}_${L.hat === 'band' ? 1 : 0}`, (() => { const P = [];
+      if (L.outfit === 'thai') P.push([geo('sarong', () => new THREE.CylinderGeometry(.26, .3, .62, 20)), 0, .33, 0, 1, 1, .8, 0, 0, '#8c2f39']);   // pha nung
+      P.push([torsoGeo(), 0, .6, 0, 1, 1, .72, 0, 0, shirt]);
+      P.push([geo('hemT', () => new THREE.TorusGeometry(.215, .025, 6, 22).rotateX(Math.PI/2)), 0, .62, 0, 1, 1, .74, 0, 0, shade(shirt, .82)]);
+      P.push([CYL, 0, 1.27, 0, .09, .12, .08, 0, 0, skin]);                                                   // neck
+      if (L.outfit === 'sport') P.push([geo('chestB', () => new THREE.CylinderGeometry(.272, .276, .07, 22)), 0, .99, 0, 1, 1, .73, 0, 0, '#ffffff']);
+      else if (L.outfit !== 'thai'){ for (const sd of [-1, 1]) P.push([SPH24, sd*.06, 1.2, .13, .07, .03, .05, 0, sd*.5, lighten(shirt, .35)]);   // collar
+        for (const y of [.92, 1.06]) P.push([BEAD, 0, y, .195, .022, .022, .012, 0, 0, lighten(shirt, .55)]); }   // buttons
+      if (L.outfit === 'thai') P.push([RBG(.12, .8, .4, .04), 0, .95, 0, 1, 1, 1, 0, .6, '#e0a92e']);           // sabai sash
+      if (L.vest){ P.push([torsoGeo(), 0, .86, 0, 1.05, .58, .77, 0, 0, L.vest]); P.push([RBG(.07, .34, .02, .01), 0, 1.03, .205, 1, 1, 1, 0, 0, shirt]); }
+      if (L.apron || L.outfit === 'carpenter'){ const ac = L.apron || '#a8743f';
+        P.push([RBG(.4, .47, .05, .05), 0, .85, .2, 1, 1, 1, 0, 0, ac]); P.push([RBG(.18, .1, .03, .02), 0, .76, .23, 1, 1, 1, 0, 0, shade(ac, .88)]);   // apron + pocket
+        P.push([RBG(.46, .03, .3, .01), 0, 1.04, .03, 1, 1, 1, 0, 0, shade(ac, .9)]); }                         // tie band
+      if (L.hat === 'band'){ P.push([CYL, .05, 1.2, .2, .012, .3, .012, 0, 0, '#d9d9d9']); P.push([BEAD, .05, 1.04, .215, .05, .03, .05, 0, 0, '#f6c445']); }   // whistle
+      if (L.balloon){ const bc = L.balloon === true ? '#ff6b81' : L.balloon; P.push([CYL, .4, 1.3, 0, .008, 1.1, .008, 0, 0, '#ffffff']);
+        P.push([SPH24, .4, 2.0, 0, .2, .25, .2, 0, 0, bc]); P.push([SPH24, .34, 2.08, .12, .05, .07, .03, 0, 0, lighten(bc, .6)]); P.push([CONE, .4, 1.74, 0, .04, .05, .04, 0, Math.PI, bc]); }
+      if (L.tool === 'saw'){ P.push([RBG(.06, .5, .02, .01), -.34, .7, .1, 1, 1, 1, 0, .3, '#c9d1d8']); P.push([RBG(.08, .14, .05, .02), -.27, .92, .1, 1, 1, 1, 0, .3, '#8a5a33']); }
+      return P; })());
+    mesh(g, bodyG, true);
+    /* arms: shoulder ball + sleeve capsule + cuff, round hand with a thumb */
+    const armG = mergeGeo(`pArm_${shirt}_${skin}`, [[SPH24, 0, -.02, 0, .085, .085, .085, 0, 0, shirt], [capsG(.072, .28), 0, -.22, 0, 1, 1, 1, 0, 0, shirt],
+      [CYL, 0, -.4, 0, .078, .04, .078, 0, 0, shade(shirt, .85)], [SPH24, 0, -.49, 0, .085, .09, .08, 0, 0, skin], [SPH24, 0, -.46, .06, .03, .04, .03, 0, 0, skin]]);
+    for (const s2 of [-1, 1]){ const a = new THREE.Group(); a.position.set(s2*.33, 1.12, 0); g.add(a); mesh(a, armG, false); parts.arms.push(a); }
+    /* head (×1.1): face (eyes + sparkles, brows, nose, blush, smile arc), ears, textured clay hair, hat, glasses */
+    const h = new THREE.Group(); h.position.y = 1.5; h.scale.setScalar(1.1); g.add(h); parts.head = h;
+    const headG = mergeGeo(`pHead_${skin}_${hc}_${hs}_${L.hat || ''}_${L.capCol || ''}_${L.glasses ? 1 : 0}`, (() => { const P = [], hair = (k, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) =>
+        P.push([blobGeo(`hair${k}${hc}`, shade(hc, .72), hc, .06, 3, [1, 1, 1]), x, y, z, sx, sy, sz, ry, rz, null, rx]);
+      P.push([SPH24, 0, 0, 0, .3, .3, .28, 0, 0, skin]);
+      for (const sd of [-1, 1]){ P.push([SPH24, sd*.29, -.01, -.02, .055, .075, .045, 0, 0, shade(skin, .96)]);   // ears
+        P.push([SPH24, sd*.1, .03, .262, .04, .055, .025, 0, 0, '#2b1a0e']); P.push([SPH24, sd*.1 + .013, .052, .283, .014, .014, .008, 0, 0, '#ffffff']);   // eyes + sparkle
+        P.push([RBG(.07, .016, .02, .008), sd*.1, .115, .262, 1, 1, 1, 0, -sd*.12, hs === 'none' ? '#6a4a3a' : shade(hc, .85)]);   // brows
+        P.push([SPH24, sd*.17, -.05, .238, .055, .03, .015, 0, 0, '#ff9fb0']); }                                 // blush
+      P.push([SPH24, 0, -.025, .285, .032, .026, .025, 0, 0, shade(skin, .93)]);                                  // nose
+      P.push([geo('smileT', () => new THREE.TorusGeometry(.05, .012, 6, 12, Math.PI)), 0, -.085, .262, 1, 1, 1, 0, Math.PI, '#c0584a']);   // smile ∪
+      if (hs !== 'none'){
+        if (hs === 'bob') hair(0, 0, .04, -.06, .34, .26, .29); else hair(0, 0, .12, -.03, .31, .2, .29);       // hair cap
+        if (hs !== 'spiky') for (const [x, k] of [[-.13, 1], [0, 2], [.13, 1]]) hair(k, x, .2 - Math.abs(x)*.2, .19, .1, .07, .07, .3);   // fringe
+        if (hs === 'bun'){ hair(3, 0, .28, -.15, .12, .12, .12); P.push([geo('bunT', () => new THREE.TorusGeometry(.09, .02, 6, 16)), 0, .2, -.1, 1, 1, 1, 0, 0, '#e8735a', -.9]); }
+        if (hs === 'long'){ hair(1, 0, -.12, -.2, .3, .4, .14); for (const sd of [-1, 1]) hair(2, sd*.26, -.12, -.05, .08, .3, .08); }
+        if (hs === 'pony'){ hair(2, 0, -.07, -.32, .09, .25, .09, .5); P.push([SPH24, 0, .08, -.27, .04, .04, .04, 0, 0, '#e8735a']); }
+        if (hs === 'spiky') for (let k = 0; k < 5; k++){ const a = (k - 2)*.4; P.push([CONE, Math.sin(a)*.18, .39, -.02 - Math.cos(a)*.05, .08, .2, .08, 0, -a*.6, hc]); } }
+      switch (L.hat){
+        case 'straw': P.push([CYL, 0, .22, 0, .5, .04, .5, 0, 0, '#e9c46a']); P.push([geo('brimT', () => new THREE.TorusGeometry(1, .06, 6, 28).rotateX(Math.PI/2)), 0, .22, 0, .5, .6, .5, 0, 0, '#d9b45a']);
+          P.push([CONE, 0, .33, 0, .25, .22, .25, 0, 0, '#e9c46a']); P.push([CYL, 0, .245, 0, .26, .05, .26, 0, 0, '#e8735a']); break;
+        case 'band': case 'redband': P.push([CYL, 0, .135, 0, .31, .07, .31, 0, 0, '#e5483e']); break;
+        case 'gold': P.push([CYL, 0, .135, 0, .31, .07, .31, 0, 0, '#f6c445']); P.push([SPH24, 0, .14, .3, .05, .05, .03, 0, 0, '#fff3b0']); break;
+        case 'cap': { const cc = L.capCol || '#4f7cac'; P.push([SPH24, 0, .17, 0, .31, .14, .3, 0, 0, cc]); P.push([RBG(.26, .03, .2, .02), 0, .175, .3, 1, 1, 1, 0, 0, shade(cc, .85)]); P.push([BEAD, 0, .31, 0, .03, .02, .03, 0, 0, shade(cc, .85)]); break; }
+        case 'hard': P.push([SPH24, 0, .16, 0, .33, .2, .32, 0, 0, '#f6c445']); P.push([CYL, 0, .16, 0, .36, .04, .36, 0, 0, '#e8b530']); P.push([SPH24, 0, .26, .3, .07, .06, .04, 0, 0, '#fff6c0']); break;
+      }
+      if (L.glasses){ for (const sd of [-1, 1]) P.push([geo('glassT', () => new THREE.TorusGeometry(.065, .015, 6, 16)), sd*.1, .03, .275, 1, 1, 1, 0, 0, '#2b2b2b']);
+        P.push([RBG(.06, .015, .015, .005), 0, .03, .275, 1, 1, 1, 0, 0, '#2b2b2b']); }
+      return P; })());
+    mesh(h, headG, true);
     g.userData.parts = parts; g.scale.setScalar(.95); return g;
   }
   const npcModel = id => personModel((typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].look) || {});

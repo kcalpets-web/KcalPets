@@ -1,4 +1,4 @@
-# เป็นสุข — งานภาพ "soft clay diorama" v0.43–v0.51 (สรุปสูตรและค่า)
+# เป็นสุข — งานภาพ "soft clay diorama" v0.43–v0.52 (สรุปสูตรและค่า)
 
 ฉบับเต็มต่อเวอร์ชันอยู่ใน claude.ai Project (`pensuk-art-style-lab.md`, `pensuk-v043`…`pensuk-v050`) — ไฟล์นี้รวมสิ่งที่ต้องรู้เพื่อทำงานต่อ
 
@@ -59,6 +59,11 @@
 - บ้าน NPC พังแสดงภาพตามขั้นซ่อม `S.homes[type]`
 - ไซต์ก่อสร้าง: เงาอาคารใช้กล่องหน่วยเดียว (cache) × scale.y และวัสดุร่วม `GHOST` ทำให้ rebuild ทุก 3 วิไม่สร้าง geometry/วัสดุใหม่
 
+## คน (v0.52) — `personModel(L)`
+- รายละเอียด: `pensuk-v052-clay-people.md`
+- จุดหมุนเดิม หัว ×1.1
+- rig ละ 1 geometry (`pBody_` `pHead_` `pArm_` `pLeg_`) + วัสดุ `CLAYP` → 6 draw call/คน
+
 ## ถัดไป
-- D: ตัวละคร
+- D2: น้อง + สัตว์ฟาร์ม
 - อบ atlas2 ใหม่
