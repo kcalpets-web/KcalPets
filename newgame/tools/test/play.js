@@ -24,7 +24,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const clickAll = async sel => { for (let i = 0; i < 8; i++) { const el = await pg.$(sel); if (!el) break; await el.click(); await wait(250) } };
     await shot('00-login'); await pg.click('#lGuest'); await wait(1500);
     /* cutscene: a few beats, then skip → name */
-    for (let i = 0; i < 3; i++) { await wait(1800); await shot('01-cut-' + i); await E(() => { window.__cut.advance(); window.__cut.advance() }); await wait(900) }
+    for (let i = 0; i < 6; i++) { await wait(2600); await shot('01-cut-' + i); log('beat', await N(() => window.__cut.beat)) }
     await E(() => window.__cut.skip()); await wait(1200); await shot('02-name');
     await E(() => window.__cut.setName('ทดสอบ')); await wait(2500); await shot('02b-dark'); await E(() => window.__cut.skip()); await wait(1500);
     log('name', await N(() => window.__ng.S.profile.name), 'cut', await N(() => window.__ng.cut));
@@ -39,7 +39,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 5);
     log('mats', JSON.stringify(await N(() => window.__ng.S.mats)), 'quest', await N(() => window.__ng.S.quest));
     await E(() => window.__ng.quest()); await wait(600); await shot('04-site');
-    await E(() => window.__ng.openSite()); await wait(400); await pg.click('#sB'); await wait(800);
+    await E(() => window.__ng.openSite()); await wait(400); await pg.click('#sB'); await E(() => { window.__ng.speed = 1; window.__ng.look(3.2, -7) }); await wait(2600); await shot('04b-building'); log('job', JSON.stringify(await N(() => window.__ng.jobs))); await E(() => window.__ng.finishJobs()); await wait(900); await E(() => { window.__ng.speed = 3 });
     await E(() => window.__ng.sleepNight()); await wait(4500); await shot('05-morning');
     /* quest 1: clear the wreck → Howsif → rod → 2 fish */
     await clearSome('axe', "o => o.t === 'debris'", () => !!window.__ng.S.story.howsif, 30);
@@ -54,7 +54,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* quest 2: repair the boat */
     await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 15);
     await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 8);
-    await E(() => window.__ng.openWreck()); await wait(400); await pg.click('#wB'); await wait(600); await clickAll('#tN');
+    await E(() => window.__ng.openWreck()); await wait(400); await pg.click('#wB'); await wait(600); await E(() => window.__ng.finishJobs()); await wait(900); await clickAll('#tN');
     await E(() => window.__ng.look(window.__ng.W.boat.position.x + 1, window.__ng.W.boat.position.z)); await wait(1200); await shot('08-boat');
     log('story', JSON.stringify(await N(() => window.__ng.S.story)), 'quest', await N(() => window.__ng.S.quest));
     /* quest 3: the town */
@@ -66,7 +66,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       if (p) await swipeAt(p.x, p.y, 70); if (i === 4) await shot('10-fight'); if (await N(() => window.__ng.mons.some(m => m.kind === 'slimeKing')) && !fs.existsSync(path.join(OUT, '11-king.png'))) await shot('11-king');
       if (await N(() => window.__ng.S.hp < 15)) await E(() => { window.__ng.S.hp = null }); await wait(250) }
     log('kills', JSON.stringify(await N(() => window.__ng.S.stat)), 'lv', await N(() => window.__ng.S.lv));
-    await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(800);
+    await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(1500); await shot('12a-repairing'); await E(() => window.__ng.finishJobs()); await wait(900);
     await E(() => window.__ng.look(window.__ng.TW.shops[0].x, window.__ng.TW.shops[0].z + 2)); await wait(1500); await shot('12-shop-fixed');
     await E(() => window.__ng.openShopKind('potion')); await wait(500); await shot('13-potion-shop'); await closeAll();
     await E(() => window.__ng.openForest()); await wait(300); await clickAll('#cfY'); await wait(300); await clickAll('#tN');

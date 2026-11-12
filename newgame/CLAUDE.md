@@ -13,13 +13,13 @@ RPG ดินปั้น 3D (three.js) มือถือแนวตั้ง 
 ## โครงสร้าง (ES modules ไม่ต้อง build — GitHub Pages เสิร์ฟตรง)
 ```
 index.html        HUD + CSS · โหลด src/main.js
-lib/              three.module.min.js (r170)
+lib/              three.module.min.js (r170) · pp/ = postprocessing ของ three r170 (ใช้เฉพาะฉากเปิด)
 src/data.js       ตัวเลขทั้งหมด: ของที่เคลียร์ อุปกรณ์ มอนสเตอร์ ดรอป ไอเทม เรือ ร้าน เควส
 src/state.js      เซฟ (localStorage `ng_save_v3` · `S.story` ธงเนื้อเรื่อง · `S.area` farm/town · `S.shops`) · ค่าพลัง · Exp · เรือคลังเงิน
 src/world.js      เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
 src/clay.js       ชุดปั้นดิน: น้อง มอนสเตอร์ ของในฉาก อุปกรณ์ · Q.seg = ความละเอียดก้อนดิน
 src/ui.js         ป๊อปอัป (ปุ่มกลับมาก่อน) · toast · ตัวเลขลอย
-src/cutscene.js   ฉากเปิด (ฉากของตัวเอง · `playIntro(R)` → ชื่อผู้เล่น · hook `window.__cut`)
+src/cutscene.js   ฉากเปิด (เล่นเองตามเวลา · bloom/เงา/เกรนเฉพาะช่วงนี้ แล้วคืนค่าเดิมให้ renderer · ฉากของตัวเอง · `playIntro(R)` → ชื่อผู้เล่น · hook `window.__cut`)
 src/main.js       ลูปเกม: เนื้อเรื่อง (QUESTS ใน data.js: flag/stat/check) เมือง (world.js `buildTown`, x≈46) เดิน เคลียร์ มอนสเตอร์ ต่อสู้ ดรอป กระเป๋า เรือ บ้าน ร้าน อุปกรณ์ เควส
 tools/art/        ห้องทดลองภาพตัวอย่าง (mock.html + shoot.js)
 tools/test/play.js  เล่นเนื้อเรื่อง v0.4 ตั้งแต่ฉากเปิดถึงประตูป่าอัตโนมัติ + ภาพหน้าจอ · ล้มถ้ามี error

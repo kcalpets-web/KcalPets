@@ -109,6 +109,7 @@ export const SELL_RATE = .5;
 /* ---- story (docs/STORY.md): no pets until the forest · build a shelter · rescue Uncle Howsif · fix his boat · the ruined town ---- */
 export const STARTERS = [];
 export const BUILD = { house: { wood: 10, stone: 5 }, boat: { wood: 15, stone: 8 } };
+export const BUILD_TIME = { house: 30, boat: 30, shop: 20 };          // seconds a build / repair takes (a clay hammer knocks meanwhile)
 export const HOWSIF_FISH = 2;
 export const TOWN_SLIMES = 5;
 export const SHOPS = [

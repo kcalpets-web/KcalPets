@@ -13,7 +13,7 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
     mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
-    cleared: {}, mon: null,
+    cleared: {}, mon: null, jobs: {},                       // jobs: build/repair → finish time (ms)
     boat: { lv: 1, c: 0, t: Date.now() },                    // the vault works once the boat is repaired (story)
     cam: [-1, 0], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
   };
