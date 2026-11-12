@@ -137,3 +137,13 @@ export const TOOLMESH = {
   sickle(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .22, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [.08, .24, 0], [.14, .03, .03], [0, 0, .6], { A: 0, mat: MAT_GOLD }) },
   sword(g) { part(g, '#8a8fa8', '#eef2ff', [0, .32, 0], [.04, .34, .015], [0, 0, 0], { A: 0, mat: MAT_GOLD }); part(g, '#7a4422', '#c8843a', [0, 0, 0], [.04, .1, .04], [0, 0, 0], { A: 0 }) },
 };
+
+/* ---- evolution accessories (form 1: gold collar + tag · form 2: + crown) and the fishing float ---- */
+export const ACC = {
+  collar(g, y = .95) { const m = new THREE.Mesh(new THREE.TorusGeometry(.36, .05, 8, 28), MAT_GOLD.clone()); m.material.vertexColors = false; m.material.color = C('#ffcf40'); m.rotation.x = Math.PI / 2; m.position.y = y; g.add(m);
+    part(g, '#d99a26', '#fff0a8', [0, y - .1, .36], [.08, .08, .03], [0, 0, 0], { A: 0, mat: MAT_GOLD }) },
+  crown(g, y = 1.78) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.22, .24, .12, 12, 1, true), new THREE.MeshPhysicalMaterial({ color: '#ffcf40', roughness: .3, metalness: .3, clearcoat: 1, side: THREE.DoubleSide })); m.position.y = y; g.add(m);
+    for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; cone(g, '#d99a26', '#fff0a8', [Math.cos(a) * .2, y + .13, Math.sin(a) * .2], [.05, .09, .05], [0, 0, 0], .9) }
+    part(g, '#b0182a', '#ff5a6a', [0, y, .23], [.05, .05, .03], [0, 0, 0], { A: 0 }) },
+  float(g) { part(g, '#c0303a', '#ff6a6a', [0, .06, 0], [.12, .1, .12], [0, 0, 0], { A: 0 }); part(g, '#e8e8f0', '#ffffff', [0, .16, 0], [.09, .06, .09], [0, 0, 0], { A: 0 }) },
+};

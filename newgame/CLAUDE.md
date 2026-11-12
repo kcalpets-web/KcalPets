@@ -23,8 +23,9 @@ src/main.js       ลูปเกม: เดิน เคลียร์ มอ�
 tools/art/        ห้องทดลองภาพตัวอย่าง (mock.html + shoot.js)
 tools/test/play.js  เล่นลูปหลักอัตโนมัติ + ภาพหน้าจอ · ล้มถ้ามี error
 ```
-- การควบคุม: ✋ แตะ = เดิน/ใช้อุปกรณ์อัตโนมัติ · ลากค้าง = จอยสติก · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · สองนิ้ว = ซูม
-- ท่าเดิน: `rigOf` + `animate` ใน main.js อ่าน `userData.role` (armL/armR/footL/footR) ที่ clay.js ติดไว้
+- **ผู้เล่นไม่มีตัวบนจอ (v0.3)**: ✋ ลาก = เลื่อนกล้อง · แตะ = น้อง/เรือ/บ้าน/ประตู · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · 🎣 แตะน้ำ = ตกปลา (`castAt` / `fishTick`) · สองนิ้ว = ซูม
+- น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
+- ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v2` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม
 - hook ทดสอบ: `window.__ng` (S, W, M, startClear, target, useSkill, openBag … info())
 

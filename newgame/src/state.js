@@ -1,49 +1,54 @@
-/* Save state (localStorage) + derived stats. Everything the player owns lives in S. */
-import { SAVE_KEY, STARTERS, PET_BASE, PET_GROW, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP } from './data.js';
+/* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
+   Pets have their own level / HP / Mana / Exp and grow by eating. */
+import { SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
 
 export let S = null;
 export function fresh() {
   return {
-    v: 1, created: Date.now(),
-    lv: 1, exp: 0, pts: 0,                                   // player level (from hunting) · tree points (rules TBD)
+    v: 2, created: Date.now(), profile: null,                // profile: { name, pic, sub, guest }
+    lv: 1, exp: 0, pts: 0, hp: null, mp: null,               // player level · tree points (rules TBD) · current HP / Mana (null = full)
     coin: 2000, gem: 500,
-    pets: STARTERS.map(p => ({ ...p, lv: 1, exp: 0 })), main: 'p1',
-    hp: null, mp: null,                                      // current HP / Mana of the main pet (null = full)
-    pos: [0, -4],                                            // main pet position on the farm
-    tools: { sickle: 0, axe: 0, hammer: 0 },
-    mats: {}, potions: { hpS: 2, mpS: 1 },
+    pets: STARTERS.map(p => ({ ...p, lv: 1, exp: 0, hp: null, mp: null, down: 0 })), team: STARTERS.slice(0, TEAM_MAX).map(p => p.id),
+    tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 },
+    mats: {}, potions: { hpS: 2, mpS: 1 }, food: { snack: 3 }, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
-    cleared: {},                                             // clearable id → time it was cleared
-    mon: null,                                               // the farm monster that is awake (blocks clearing)
+    cleared: {}, mon: null,
     boat: { lv: 1, c: 0, t: Date.now() },
-    stat: {}, quest: 0, clearCount: 0, monSeen: 0,
+    cam: [0, -2], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
   };
 }
 export function load() {
-  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 1) { S = Object.assign(fresh(), o); return S } } catch (e) { }
+  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 2) { S = Object.assign(fresh(), o); return S } } catch (e) { }
   S = fresh(); return S;
 }
 export function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)) } catch (e) { } }
 export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 
-export const mainPet = () => S.pets.find(p => p.id === S.main);
 export function itemStats(it) { const T = ITEMS[it.t], m = RAR_MUL[it.r]; return { atk: Math.round((T.atk || 0) * m), def: Math.round((T.def || 0) * m), hp: Math.round((T.hp || 0) * m) } }
-/* main pet stats = base + level growth + equipment */
-export function stats() {
-  const p = mainPet(), L = p.lv - 1, s = { hp: PET_BASE.hp + PET_GROW.hp * L, mp: PET_BASE.mp + PET_GROW.mp * L, atk: PET_BASE.atk + PET_GROW.atk * L, def: PET_BASE.def + PET_GROW.def * L };
+/* player = base + growth per level + equipment */
+export function pStats() {
+  const L = S.lv - 1, s = { hp: PLAYER_BASE.hp + PLAYER_GROW.hp * L, mp: PLAYER_BASE.mp + PLAYER_GROW.mp * L, atk: PLAYER_BASE.atk + PLAYER_GROW.atk * L, def: PLAYER_BASE.def + PLAYER_GROW.def * L };
   for (const slot in S.eq) { const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def; s.hp += st.hp } }
   return s;
 }
-export function curHp() { const m = stats().hp; if (S.hp == null || S.hp > m) S.hp = m; return S.hp }
-export function curMp() { const m = stats().mp; if (S.mp == null || S.mp > m) S.mp = m; return S.mp }
+export function pHp() { const m = pStats().hp; if (S.hp == null || S.hp > m) S.hp = m; return S.hp }
+export function pMp() { const m = pStats().mp; if (S.mp == null || S.mp > m) S.mp = m; return S.mp }
+/* pet = (base + growth per level) × rarity × form */
+export const formOf = p => p.lv >= FORMS[2].lv ? 2 : p.lv >= FORMS[1].lv ? 1 : 0;
+export function petStats(p) {
+  const L = p.lv - 1, k = PET_RAR_MUL[p.rar] * FORMS[formOf(p)].mul, r = v => Math.round(v * k);
+  return { hp: r(PET_BASE.hp + PET_GROW.hp * L), mp: r(PET_BASE.mp + PET_GROW.mp * L), atk: r(PET_BASE.atk + PET_GROW.atk * L), def: r(PET_BASE.def + PET_GROW.def * L) };
+}
+export function petHp(p) { const m = petStats(p).hp; if (p.hp == null || p.hp > m) p.hp = m; return p.hp }
+export function petMp(p) { const m = petStats(p).mp; if (p.mp == null || p.mp > m) p.mp = m; return p.mp }
 
-/* exp → levels for both the player and the main pet; returns what levelled up */
-export function gainExp(n) {
-  const out = { player: 0, pet: 0 }, p = mainPet();
-  S.exp += n; while (S.exp >= expNeed(S.lv)) { S.exp -= expNeed(S.lv); S.lv++; S.pts++; out.player++ }
-  p.exp += n; while (p.exp >= expNeed(p.lv) && p.lv < 15) { p.exp -= expNeed(p.lv); p.lv++; out.pet++ }
-  if (out.pet) { S.hp = null; S.mp = null }
-  return out;
+export function gainPlayerExp(n) { let up = 0; S.exp += n; while (S.exp >= expNeed(S.lv)) { S.exp -= expNeed(S.lv); S.lv++; S.pts++; up++ } if (up) { S.hp = null; S.mp = null } return up }
+/* returns { up: levels gained, evolved: true if the form changed } */
+export function gainPetExp(p, n) {
+  const f0 = formOf(p); let up = 0; if (p.lv >= PET_LV_MAX) return { up, evolved: false };
+  p.exp += n; while (p.lv < PET_LV_MAX && p.exp >= expNeed(p.lv)) { p.exp -= expNeed(p.lv); p.lv++; up++ }
+  if (p.lv >= PET_LV_MAX) p.exp = 0; if (up) { p.hp = null; p.mp = null }
+  return { up, evolved: formOf(p) !== f0 };
 }
 
 /* boat vault: every pet on the farm makes COIN_PER_PET_H an hour, even offline · stops at the cap · time only moves forward */

@@ -1,6 +1,7 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const SAVE_KEY = 'ng_save_v1';
+export const SAVE_KEY = 'ng_save_v2';                 // v0.3: new save (the player has no body any more; pets have their own bars)
+export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
 /* ---- clearables: size → hits with a tier-0 tool (Pen Suk: small 1 · medium 3 · large 6) ---- */
 export const CLEAR = {
@@ -21,7 +22,8 @@ export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared obje
 export const MATS = { grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60] };  // [icon, name, sell price]
 
 /* ---- farm tools: tier 0 wood · 1 stone · 2 iron · 3 crystal ---- */
-export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'] };
+export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], rod: ['🎣', 'เบ็ด'] };
+export const CLEAR_EXP = { s: 2, m: 4, l: 8 };          // player exp per cleared thing
 export const TIER = ['ไม้', 'หิน', 'เหล็ก', 'คริสตัล'];
 export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, stone: 30, ore: 3, coin: 15000 }, { wood: 80, stone: 80, ore: 12, coin: 60000 }];
 
@@ -51,13 +53,43 @@ export const ITEMS = {
 };
 export const SLOT_NAME = { weapon: 'อาวุธ', armor: 'ชุดเกราะ' };
 
-/* ---- the main pet: base + per pet level ---- */
-export const PET_BASE = { hp: 60, mp: 30, atk: 8, def: 2 };
-export const PET_GROW = { hp: 8, mp: 3, atk: 2, def: 1 };
-export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pet use the same curve)
-export const REGEN = { hpPerSec: 1 / 180, mpPerSec: 1 / 180 };             // share of max per second on the farm out of combat → full in ~3 min
-export const SKILL = { name: 'ฟาดแรง', mp: 10, mul: 2.2, cd: 4000 };
-export const ATK_CD = 900, MON_ATK_CD = 1400, ATK_RANGE = 1.15, AGGRO = 3.2;
+/* ---- the player (no body on screen: the finger is the player) ---- */
+export const PLAYER_BASE = { hp: 80, mp: 40, atk: 10, def: 2 };
+export const PLAYER_GROW = { hp: 6, mp: 2, atk: 2, def: 1 };
+export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pets)
+export const REGEN = { perSec: 1 / 150 };                                 // share of max HP/Mana per second when not hurt for 4 s → full in 2.5 min
+export const SLASH_CD = 220;                                              // ms between two sword hits
+export const MON_ATK_CD = 1400, AGGRO = 3.2;
+export const MON_HIT_PLAYER = .25;                                        // share of monster attacks that hit the player (screen shake)
+
+/* ---- pets: stats = base × rarity × form + growth per level · they grow by eating ---- */
+export const PET_BASE = { hp: 50, mp: 30, atk: 6, def: 2 };
+export const PET_GROW = { hp: 7, mp: 3, atk: 2, def: 1 };
+export const PET_RAR_MUL = { B: 1, R: 1.15, E: 1.35, L: 1.6 };
+export const PET_LV_MAX = 15;
+export const FORMS = [{ lv: 1, name: 'ร่างเด็ก', mul: 1, scale: .6 }, { lv: 5, name: 'ร่างโต', mul: 1.25, scale: .7 }, { lv: 10, name: 'ร่างสุดยอด', mul: 1.55, scale: .8 }];
+export const ELEM_SKILL = { '🔥': 'ลูกไฟ', '⚡': 'สายฟ้าฟาด', '🌱': 'ใบไม้คม', '💧': 'น้ำกระแทก', '❄️': 'เกล็ดน้ำแข็ง', '🪨': 'หินถล่ม' };
+export const PET_SKILL = { mp: 12, mul: 2, cd: 5000, basicMul: .4 };       // Basic: any element at −60% · Legendary: any element at full power
+export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;
+export const FOODS = [
+  { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },
+  { k: 'meal', icon: '🍗', name: 'อาหารชุดใหญ่', exp: 120, price: 700 },
+  { k: 'feast', icon: '🍱', name: 'อาหารพิเศษ', exp: 400, price: 2000 },
+];
+export const FEED_PLAYER_EXP = 3;                                         // raising pets also grows the player
+
+/* ---- fishing (like Pen Suk): cast on the water · wait for the bite · hold to reel, keep the tension below the top ---- */
+export const FISH = {
+  minnow:  { name: 'ปลาซิว', r: 'B', sta: 40, pull: .5, price: 20, exp: 15 },
+  tilapia: { name: 'ปลานิล', r: 'B', sta: 55, pull: .6, price: 40, exp: 25 },
+  mackerel:{ name: 'ปลาทู', r: 'R', sta: 70, pull: .8, price: 120, exp: 60 },
+  seabass: { name: 'ปลากะพง', r: 'R', sta: 85, pull: .9, price: 180, exp: 90 },
+  tuna:    { name: 'ปลาทูน่า', r: 'E', sta: 110, pull: 1.15, price: 600, exp: 250 },
+  goldeel: { name: 'ปลาไหลทอง', r: 'L', sta: 140, pull: 1.4, price: 2500, exp: 800 },
+};
+export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'], E: ['tuna'], L: ['goldeel'] };
+export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
+export const REEL = { up: 1.25, down: 1.0, base: 32, perTier: 10 };       // tension/s while holding · release · fish stamina dmg/s at rod tier 0 · +per tier
 
 /* ---- economy: pets → boat vault ---- */
 export const COIN_PER_PET_H = 1000;
@@ -71,21 +103,24 @@ export const SHOP = [
 ];
 export const SELL_RATE = .5;
 
-/* ---- starter pets on the farm (all make coins; the first is the one you control) ---- */
+/* ---- starter pets on the farm (all make coins; the first three are the team) ---- */
 export const STARTERS = [
   { id: 'p1', kind: 'shiba', name: 'คุโมะ', el: '🔥', rar: 'R' },
   { id: 'p2', kind: 'chick', name: 'พิพิ', el: '⚡', rar: 'B' },
   { id: 'p3', kind: 'bunny', name: 'โมโมะ', el: '🌱', rar: 'B' },
+  { id: 'p4', kind: 'penguin', name: 'เพนกุ', el: '❄️', rar: 'B' },
 ];
 
-/* ---- tutorial quests (tap the card → the pet runs there and does it) ---- */
+/* ---- tutorial quests (tap the card → the camera goes there and the right tool is picked) ---- */
 export const QUESTS = [
   { id: 'q1', text: 'เคลียร์หญ้ารก 3 กอ', icon: '🌾', goal: 3, stat: 'clr_grass', go: 'grass', reward: { coin: 500 } },
   { id: 'q2', text: 'ตัดต้นไม้ 2 ต้น', icon: '🪓', goal: 2, stat: 'clr_tree', go: 'tree', reward: { coin: 800 } },
   { id: 'q3', text: 'กำจัดมอนสเตอร์ 1 ตัว', icon: '⚔️', goal: 1, stat: 'kills', go: 'monster', reward: { coin: 1000 } },
-  { id: 'q4', text: 'สวมอุปกรณ์ 1 ชิ้น', icon: '🎒', goal: 1, stat: 'equips', go: 'bag', reward: { gem: 100 } },
-  { id: 'q5', text: 'เก็บเงินจากเรือ', icon: '⛵', goal: 1, stat: 'boatCollect', go: 'boat', reward: { gem: 100 } },
-  { id: 'q6', text: 'อัปเกรดอุปกรณ์ทำฟาร์ม 1 ครั้ง', icon: '⬆️', goal: 1, stat: 'toolUp', go: 'tools', reward: { coin: 2000 } },
-  { id: 'q7', text: 'ทุบหินก้อนใหญ่ 1 ก้อน', icon: '⛏️', goal: 1, stat: 'clr_boulder', go: 'boulder', reward: { gem: 200 } },
-  { id: 'q8', text: 'ไปผจญภัยทางป่าด้านขวา', icon: '⚔️', goal: 1, stat: 'advTry', go: 'exit', reward: { coin: 1000 } },
+  { id: 'q4', text: 'ป้อนอาหารน้อง 1 ครั้ง', icon: '🍖', goal: 1, stat: 'feeds', go: 'pets', reward: { coin: 500 } },
+  { id: 'q5', text: 'สวมอุปกรณ์ 1 ชิ้น', icon: '🎒', goal: 1, stat: 'equips', go: 'bag', reward: { gem: 100 } },
+  { id: 'q6', text: 'เก็บเงินจากเรือ', icon: '⛵', goal: 1, stat: 'boatCollect', go: 'boat', reward: { gem: 100 } },
+  { id: 'q7', text: 'ตกปลา 1 ตัว', icon: '🎣', goal: 1, stat: 'fish', go: 'fish', reward: { coin: 800 } },
+  { id: 'q8', text: 'อัปเกรดอุปกรณ์ 1 ครั้ง', icon: '⬆️', goal: 1, stat: 'toolUp', go: 'tools', reward: { coin: 2000 } },
+  { id: 'q9', text: 'ทุบหินก้อนใหญ่ 1 ก้อน', icon: '⛏️', goal: 1, stat: 'clr_boulder', go: 'boulder', reward: { gem: 200 } },
+  { id: 'q10', text: 'ไปเมืองทางรั้วด้านขวา', icon: '🏘️', goal: 1, stat: 'townTry', go: 'exit', reward: { coin: 1000 } },
 ];
