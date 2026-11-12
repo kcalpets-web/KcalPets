@@ -1,10 +1,11 @@
 # KcalPets repo
 
-repo นี้มี 2 เกม **กำลังพัฒนาทั้งคู่**:
+repo นี้มี 3 เกม:
 - **ราก (`index.html`, `sw.js`, ไอคอน):** Luthonia: Endless Night — อ่านส่วน "Luthonia" ด้านล่างก่อนแก้
 - **`pensuk/`:** เป็นสุข (Pen Suk) → อ่าน `pensuk/CLAUDE.md` ก่อนเริ่มงานทุกครั้ง
+- **`newgame/`:** เกมใหม่ (ชื่อชั่วคราว · RPG ดินปั้น แยกจาก Luthonia · ลิงก์ใหม่) → สเปกที่ `newgame/docs/SPEC.md`
 
-งานของเกมหนึ่งห้ามแตะไฟล์ของอีกเกม (Luthonia = ไฟล์ที่ราก · เป็นสุข = `pensuk/`)
+งานของเกมหนึ่งห้ามแตะไฟล์ของอีกเกม (Luthonia = ไฟล์ที่ราก · เป็นสุข = `pensuk/` · เกมใหม่ = `newgame/`)
 
 ---
 
