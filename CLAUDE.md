@@ -12,7 +12,7 @@ repo นี้มี 2 เกม **กำลังพัฒนาทั้งค
 
 เกมสัตว์เลี้ยงพิกเซลที่โตจากการออกกำลังกายจริง (kcal) · มือถือแนวตั้ง · ภาษาไทย/อังกฤษ
 ผู้ออกแบบ: Pasakorn · เว็บจริง: https://kcalpets-web.github.io/KcalPets/
-เอกสารออกแบบอยู่ใน claude.ai Project "Board game" (`claude/lutonia-*.md`, `claude/luthonia-character-standard.md`)
+**เริ่มงานทุกครั้ง อ่าน `docs/luthonia/HANDOFF.md`** (สถานะ แผนงาน งานค้าง) และ `docs/luthonia/economy-design.md` (สเปกเศรษฐกิจ) · ต้นฉบับอยู่ใน claude.ai Project "Board game" · ปล่อยเวอร์ชันแล้วอัปเดตตารางสถานะใน HANDOFF.md
 
 ## กฎการทำงาน
 1. ตอบภาษาไทย สั้น ตรง อ่านบนมือถือ · ผู้ออกแบบให้ช่วย: ตรวจกติกา ทดสอบเบื้องต้น เสนอทางแก้
