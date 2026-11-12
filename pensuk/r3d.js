@@ -248,17 +248,72 @@ export function start(){
     [trunkGeo('ts', .55, .05, .035, .04, '#6b4a33', '#a07752'), 0, 0, 0, 1, 1, 1],
     [blobGeo('s0', LEAF[0], LEAF[1], .18, 2, [1, .85, 1]), .04, .62, 0, .3, .3, .3],
     [blobGeo('s1', LEAF2[0], LEAF2[1], .2, 2, [1, .85, 1]), -.12, .5, .08, .2, .2, .2] ]);
+  /* ---------- 🪨🌾 v0.48 CLAY NATURE KIT (phase A of the full farm redraw, designer confirmed 07:28) ----------
+     Everything here is merged per (kind, variant) into ONE cached vertex-coloured geometry (mergeGeo) → 1 draw call per tile.
+     Rocks   = blobGeo in stone greys (A .18, f 1.3, squashed y .6) + an optional moss cap (green blob, y-squash .35).
+     Blade   = curved tapered strip: centre (b·u², h·u, 0), half-width w(u) = .06·(1 − u)^.8, colour dark base → light tip.
+     Tuft    = 9 blades fanned around y: yaw = k·2π/7 + jitter, height .45–.75, bend .18–.32.
+     Flower  = stem (thin cylinder) + 5 flat petals (BEAD .11×.035×.07 at radius .1) + yellow centre, tilted 20° to the camera.
+     Paths   = stepping stones (flattened blobs) / planks / brick pavers instead of one slab. */
+  function bladeGeo(){
+    if (FOLG.has('blade')) return FOLG.get('blade');
+    const N = 5, pos = [], col = [], idx = [], D = new THREE.Color('#4f9a45'), L = new THREE.Color('#c2e88a'), k = new THREE.Color();
+    for (let s2 = 0; s2 <= N; s2++){ const u = s2/N, w = .06*Math.pow(1 - u, .8) + .004;
+      for (const sd of [-1, 1]){ pos.push(.3*u*u, u, sd*w); k.copy(D).lerp(L, u); col.push(k.r, k.g, k.b); }
+      if (s2 < N){ const o = s2*2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals(); FOLG.set('blade', g); return g;
+  }
+  /** tuft parts at (x, z): 7 blades (unit blade scaled to height h, bend via x-scale) */
+  function tuftParts(r, x, z, s = 1){ const P = []; for (let k = 0; k < 9; k++){ const h = (.4 + r()*.32)*s, b = .7 + r()*.6;   // 9 blades: fuller tuft
+      P.push([bladeGeo(), x + (r() - .5)*.12, 0, z + (r() - .5)*.12, b, h, 1, k/7*Math.PI*2 + r()*.5, 0]); } return P; }
+  /** flower parts: stem + 5 petals + centre; head tilted toward the camera (rz) */
+  function flowerParts(r, x, z, col, s = 1){
+    const P = [], hy = (.5 + r()*.15)*s;
+    P.push([CYL, x, hy/2, z, .025*s, hy, .025*s, 0, 0, '#4f9a45']);
+    for (let k = 0; k < 5; k++){ const a = k/5*Math.PI*2; P.push([BEAD, x + Math.cos(a)*.1*s, hy + Math.sin(a)*.03*s, z + Math.sin(a)*.08*s, .11*s, .035*s, .07*s, -a, .35, col]); }
+    P.push([BEAD, x, hy + .02*s, z, .055*s, .045*s, .055*s, 0, 0, '#ffd23f']); return P;
+  }
+  const STONE = ['#7f7a74', '#e0dbd2'];
+  function natureGeo(kind, v){
+    const key = `nat_${kind}${v}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = [];
+    const stone = (k2, x, y, z, s, sq = [1, .62, .9], moss = false) => { P.push([blobGeo(`st${v}${k2}`, STONE[0], STONE[1], .18, 1.3, sq), x, y, z, s, s, s, r()*6.28, 0]);
+      if (moss) P.push([blobGeo(`ms${v}${k2}`, '#5f9a4a', '#a6d27a', .35, 2.6, [1, .22, .8]), x + s*.12, y + s*sq[1]*.86, z - s*.08, s*.42, s*.42, s*.42, r()*6.28, 0]); };   // small moss patch, sunk into the crown
+    switch (kind){
+      case 'grass':  P.push(...tuftParts(r, -.3 + r()*.2, -.2 + r()*.2), ...tuftParts(r, .3 - r()*.2, .25 - r()*.2, .85)); break;
+      case 'wild':   P.push(...tuftParts(r, 0, 0, .8)); for (let k = 0; k < 3; k++) P.push(...flowerParts(r, (r() - .5)*1.0, (r() - .5)*1.0, FLOWER[(k + v*2) % 5])); break;
+      case 'meadow': for (let k = 0; k < 2; k++) P.push(...flowerParts(r, (r() - .5)*1.3, (r() - .5)*1.3, FLOWER[(k + v) % 5], .8)); break;
+      case 'pebble': for (let k = 0; k < 3; k++) stone(k, (r() - .5)*.9, .05, (r() - .5)*.9, .16 + r()*.06, [1, .45, .85]); break;
+      case 'rock':   stone(0, -.1, .3, 0, .62, [1, .62, .9], v === 0); stone(1, .55, .14, .35, .3); P.push(...tuftParts(r, -.6, .45, .6)); break;
+      case 'boulder':stone(0, 0, .62, 0, 1.0, [1, .7, .92], true); stone(1, .75, .3, .55, .48); stone(2, -.7, .12, .6, .22, [1, .5, .9]); P.push(...tuftParts(r, .2, .9, .7)); break;
+      case 'stone':  for (let k = 0; k < 5; k++){ const a = k/5*Math.PI*2 + r(); P.push([blobGeo(`ps${v}${k%3}`, '#a7a199', '#e8e3da', .12, 1.4, [1, .22, .85]), Math.cos(a)*.48*(k ? 1 : 0), .02, Math.sin(a)*.48*(k ? 1 : 0), .36 + r()*.08, .36, .36, r()*6.28, 0]); } break;
+      case 'wood':   for (const z of [-.6, 0, .6]) P.push([RBG(1.7, .1, .48, .05), (r() - .5)*.1, .05, z, 1, 1, 1, (r() - .5)*.06, 0, ['#d8b48a', '#c99e72', '#e2c29a'][(r()*3)|0]]); break;
+      case 'brick':  for (const x of [-.45, .45]) for (const z of [-.45, .45]) P.push([RBG(.84, .08, .84, .06), x, .04, z, 1, 1, 1, 0, 0, (x + z) % .9 ? '#d9917a' : '#e6a98f']); break;
+    }
+    return mergeGeo(key, P);
+  }
+  const RBG = (w, h, d, rr) => geo(`rbg${w}_${h}_${d}_${rr}`, () => new RoundedBoxGeometry(w, h, d, 2, rr));
+  /** 🪷 pond bank: soft sand lip + 3 pebbles along each side whose neighbour is land (side ∈ w/e/n/s = −x/+x/−z/+z) */
+  function bankGeo(sides, v){
+    const key = `bank${v}${sides.w ? 1 : 0}${sides.e ? 1 : 0}${sides.n ? 1 : 0}${sides.s ? 1 : 0}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = [];
+    for (const [sd, on] of Object.entries(sides)) if (on){ const along = sd === 'n' || sd === 's', o = sd === 'w' || sd === 'n' ? -.92 : .92;
+      for (let k = 0; k < 4; k++){ const t = -.75 + k*.5 + (r() - .5)*.2, sz = .38 + r()*.16;      // organic bank: 4 overlapping flat sand blobs
+        P.push([blobGeo(`sd${v}${k%2}`, '#cdb07a', '#ead7a8', .22, 1.8, [1, .18, .7]), along ? t : o*.98, .0, along ? o*.98 : t, sz, sz, sz, r()*6.28, 0]); }
+      for (let k = 0; k < 3; k++){ const t = (r() - .5)*1.6; P.push([blobGeo(`st${v}${k}`, STONE[0], STONE[1], .18, 1.3, [1, .55, .9]), along ? t : o*.95, .06, along ? o*.95 : t, .1 + r()*.06, .1, .1, r()*6.28, 0]); } }
+    return P.length ? mergeGeo(key, P) : null;
+  }
   function resModel(k, seed, i, bio){
     const g = new THREE.Group(), h = n => hrnd(seed, i, n);
     switch (k){
-      case 'grass': for (let n=0;n<6;n++) CO(g, .07, .45+h(n)*.35, n%2 ? C.grassD : '#7dbb69', (h(n+10)-.5)*1.1, 0, (h(n+20)-.5)*1.1); break;
-      case 'wild':  for (let n=0;n<4;n++) CO(g, .06, .4+h(n)*.3, C.grassD, (h(n+10)-.5)*.9, 0, (h(n+20)-.5)*.9);
-                    for (let n=0;n<3;n++) flower(g, (h(n+30)-.5)*1.1, (h(n+40)-.5)*1.1, FLOWER[(n+i)%5], 1 + h(n+50)*.3); break;
+      case 'grass': case 'wild':                                  // 🌾 v0.48 clay blade tufts (+ flowers) — 1 draw call, double-sided
+        add(g, natureGeo(k, (h(60)*3)|0), VCM2, 0, 0, 0, null, null, null, true); break;
       case 'sapling': add(g, saplingGeo(), VCM, 0, 0, 0, null, null, null, true); break;   // 🌱 v0.43 clay sapling (1 draw call)
-      case 'pebble': for (let n=0;n<3;n++) BALL(g, .22, .14, .2, C.rock, (h(n)-.5)*.9, .08, (h(n+5)-.5)*.9); break;
-      case 'rock':  BALL(g, .7, .5, .65, C.rock, -.1, .35, 0, true); BALL(g, .35, .26, .35, '#c9c3ba', .55, .2, .35, true); break;
+      case 'pebble': case 'rock':                                // 🪨 v0.48 clay stones (+ moss caps)
+        add(g, natureGeo(k, (h(60)*3)|0), k === 'rock' ? VCM2 : VCM, 0, 0, 0, null, null, null, true); break;
       case 'bush':  clayBush(g, h); break;                       // 🌳 v0.43
-      case 'boulder': BALL(g, 1.05, .8, .95, '#aaa49b', 0, .7, 0, true); BALL(g, .55, .45, .5, C.rock, .7, .35, .6, true); break;
+      case 'boulder': add(g, natureGeo('boulder', (h(60)*3)|0), VCM2, 0, 0, 0, null, null, null, true); break;
       case 'tree':
         { /* 🌳 v0.43 kind by island biome (index.html z.bio): beach/coast → mostly palms • mount/peak → mostly pines •
              elsewhere: round 55 % • pine 25 % • golden 12 % • palm 8 %. Old saves keep their tiles; only the look changes. */
@@ -331,7 +386,7 @@ export function start(){
           const lim = typeof plotIdleMs === 'function' ? plotIdleMs() : 24*3600e3;      // 24 h (48 h with the pet's Lv.12 skill)
           const u = Math.max(0, Math.min(1, (Date.now() - o.idle - (lim - 6*3600e3)) / (6*3600e3)));
           for (let k=0;k<Math.round(u*9);k++) CO(g, .07, .35 + (k%3)*.1, '#7dbb69', ((k*37)%9/9 - .5)*1.4, .3, ((k*53)%9/9 - .5)*1.4); }
-        for (let k=-1;k<=1;k++) RB(g, W-.5, .06, .18, .04, '#6a4630', 0, .3, k*.5);
+        for (let k=-1;k<=1;k++){ const fr = add(g, geo('furrow' + W, () => new THREE.CapsuleGeometry(.11, W - .75, 4, 10)), mat('#8a5c3c'), 0, .3, k*.5, 1, .55, 1); fr.rotation.z = Math.PI/2; }   // 🟫 v0.48 rounded furrows
         if (o.plant){ const cp = CROPS[o.crop || 'carrot'], p = Math.min(1, (Date.now()-o.plant)/(cp.sec*1000)), col = CROPC[o.crop || 'carrot'];
           for (const [x,z] of [[-.45,-.45],[.45,-.45],[-.45,.45],[.45,.45]]){
             CO(g, .14+.1*p, .3+.5*p, '#6dbb5d', x, .3, z);
@@ -565,7 +620,7 @@ export function start(){
     for (const x of [-.95, .95]) for (const z of [-.78, .78]) CY(g, .06, .62, '#6e4524', x, deck(x) - .05, z, true);   // corner posts
     return g;
   }
-  function tileModel(t, zseed, i, alongX, road){                              // flat ground pieces: water / bridge / path stones / meadow flowers
+  function tileModel(t, zseed, i, alongX, road, bank){                              // flat ground pieces: water / bridge / path stones / meadow flowers
     const g = new THREE.Group();
     if (t.k === 'water'){
       add(g, rb(2, .1, 2, .02), waterMat, 0, -.02, 0);
@@ -576,6 +631,7 @@ export function start(){
         f.userData.fish = [hrnd(zseed,i,32)*6.28, hrnd(zseed,i,33) < .5 ? 1 : -1]; fishes.push(f);
       }
       if (hrnd(zseed, i, 3) < .35) add(g, CYL, mat('#6fbf63'), (hrnd(zseed,i,4)-.5), .05, (hrnd(zseed,i,5)-.5), .3, .02, .3);
+      if (bank){ const bg = bankGeo(bank, (hrnd(zseed, i, 34)*3)|0); if (bg) add(g, bg, VCM, 0, 0, 0); }   // 🪷 v0.48 sandy pond banks
       if (t.bridge) g.add(bridgeModel(alongX));
     } else if (t.k === 'path' && t.p === 'asphalt'){         // 🛣 v0.21 asphalt: full-tile slab + dashed centre line along the road (none at junctions)
       RB(g, 2.0, .07, 2.0, .04, '#5b5f66', 0, 0, 0);
@@ -590,9 +646,9 @@ export function start(){
       } else if (rx !== rz) for (const k of [-.5, .5]) RB(g, rx ? .45 : .09, .02, rx ? .09 : .45, .01, '#f2efe4', rx ? k : 0, .07, rx ? 0 : k);
       if (t.main && rx !== rz) for (const s2 of [-1, 1]) RB(g, rx && !rz ? 2.0 : .06, .03, rx && !rz ? .06 : 2.0, .01, '#8d9199', rx && !rz ? 0 : s2*.97, .07, rx && !rz ? s2*.97 : 0);
     } else if (t.k === 'path'){
-      RB(g, 1.5, .08, 1.5, .25, ({ stone:C.stone, wood:'#d8b48a', brick:'#d9917a' })[t.p] || C.stone, (hrnd(zseed,i,6)-.5)*.2, 0, (hrnd(zseed,i,7)-.5)*.2);
+      add(g, natureGeo(t.p === 'wood' || t.p === 'brick' ? t.p : 'stone', (hrnd(zseed, i, 6)*3)|0), VCM, 0, 0, 0, null, null, null, false);   // 🪨 v0.48 stepping stones / planks / pavers
     } else if ((t.k === 'clear') && hrnd(zseed, i, 8) < .3){
-      for (let n=0;n<2;n++) flower(g, (hrnd(zseed,i,9+n)-.5)*1.4, (hrnd(zseed,i,12+n)-.5)*1.4, FLOWER[(i+n)%5], .75);
+      add(g, natureGeo('meadow', (hrnd(zseed, i, 9)*3)|0), VCM2, 0, 0, 0);   // 🌼 v0.48 merged meadow flowers
     }
     return g;
   }
@@ -646,7 +702,9 @@ export function start(){
         const lob = (a, b) => { const n = tileAt(a, b); return !!n && (n.k !== 'water' || n.bridge); };          // land or bridge neighbour
         const ax = lob(gc-1, gr) || lob(gc+1, gr), az = lob(gc, gr-1) || lob(gc, gr+1);
         const isR = (a, b) => { const n = tileAt(a, b); return !!(n && ((n.k === 'path' && n.p === 'asphalt') || (n.bridge && n.main))); };   // strict boolean (undefined + true = NaN broke the corner count)
-        m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? { w:isR(gc-1, gr), e:isR(gc+1, gr), n:isR(gc, gr-1), s:isR(gc, gr+1) } : null); }
+        const isL = (a, b) => { const n = tileAt(a, b); return !!n && n.k !== 'water'; };   // land neighbour → bank on that side
+        m = tileModel(t, z.seed, i, ax || !az, t.p === 'asphalt' ? { w:isR(gc-1, gr), e:isR(gc+1, gr), n:isR(gc, gr-1), s:isR(gc, gr+1) } : null,
+          t.k === 'water' && !t.bridge ? { w:isL(gc-1, gr), e:isL(gc+1, gr), n:isL(gc, gr-1), s:isL(gc, gr+1) } : null); }
       if (m && m.children.length){ m.position.set(x, 0, zz); m.rotation.y = RES[t.k] ? hrnd(z.seed, i, 99)*Math.PI*2 : 0; markTile(m, gc, gr); g.add(m);
         if (RES[t.k]){ res[i] = m; const ph = (z.cx*GRID*2 + x + z.cy*GRID*2 + zz)*.35 + hrnd(z.seed, i, 98)*.6;   // phase from position → gusts roll across the farm
           if (t.k === 'grass') sway.push(m, ph, .14, 0); else if (t.k === 'sapling') sway.push(m, ph, .1, 0);
