@@ -27,6 +27,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     for (let i = 0; i < 6; i++) { await wait(2600); await shot('01-cut-' + i); log('beat', await N(() => window.__cut.beat)) }
     await E(() => window.__cut.skip()); await wait(1200); await shot('02-name');
     await E(() => window.__cut.setName('ทดสอบ')); await wait(2500); await shot('02b-dark'); await E(() => window.__cut.skip()); await wait(1500);
+    await pg.waitForFunction(() => window.__mk && document.getElementById('maker'), null, { timeout: 60000 }); await wait(1200); await shot('02c-maker');
+    await E(() => { window.__mk.set('hair', 'pony'); window.__mk.set('top', '#4a8ad8') }); await wait(600); await shot('02d-maker2'); await E(() => window.__mk.ok()); await wait(1500);
     log('name', await N(() => window.__ng.S.profile.name), 'cut', await N(() => window.__ng.cut));
     await clickAll('#tN'); await wait(500); await shot('03-night');
     const swipeAt = async (x, y, dx = 55) => { await pg.mouse.move(x - dx, y); await pg.mouse.down(); await pg.mouse.move(x + dx, y + 6, { steps: 7 }); await pg.mouse.up() };
@@ -36,6 +38,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* 🧰 toolbox: one button opens the tray, picking a tool closes it */
     await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
     { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed') }
+    /* tap the ground → the character walks there */
+    { await E(() => window.__ng.setTool('')); const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); await pg.mouse.click(250, 470); await wait(3000); const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z }));
+      log('walk', JSON.stringify(m0), '→', JSON.stringify(m1)); if (Math.hypot(m1.x - m0.x, m1.z - m0.z) < .5) errs.push('tap to walk did not move the character'); await shot('03c-walk') }
     /* holding a tool, a drag over open water moves the map (no ✋ needed) */
     { await E(() => { window.__ng.setTool('axe'); window.__ng.look(-2, 0) }); await wait(1500); const c0 = await N(() => window.__ng.cam);
       await pg.mouse.move(60, 600); await pg.mouse.down(); await pg.mouse.move(60, 380, { steps: 8 }); await pg.mouse.up(); await wait(400); const c1 = await N(() => window.__ng.cam);

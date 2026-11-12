@@ -186,7 +186,7 @@ export const ACC = {
 /* ---- people (chibi, head ×1.1 like Pen Suk's clay people) · same rig roles as pets so the walk animation works ---- */
 /* k.adult → taller, slimmer, smaller head (a young adult instead of a chibi kid) */
 function human(g, k) {
-  const sk = ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
+  const sk = k.skin || ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
   role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footR');
   const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.24, .36, .18] : [.3, .32, .24]);   // body / clothes
   if (k.skirt) { if (A) cone(g, k.skD, k.sk, [0, .5, 0], [.36, .44, .3], [0, 0, 0], .5); else cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55) }  // adult: long skirt, wide at the hem  // skirt
@@ -196,7 +196,26 @@ function human(g, k) {
   part(g, k.hairD, k.hair, [0, hy + hr * .38, -.05], [hr * 1.08, hr * .85, hr], [0, 0, 0], { A: .08, f: 1.5 }); // hair cap
   if (k.fringe) part(g, k.hairD, k.hair, [0, hy + hr * .55, hr * .55], [hr * .85, hr * .32, hr * .38], [0, 0, 0], { A: .06 });
   if (k.longHair) part(g, k.hairD, k.hair, [0, hy - hr * .5, -hr * .55], [hr * .95, hr * 1.5, hr * .45], [0, 0, 0], { A: .08, f: 1.4 });  // long hair down the back
+  if (k.bun) part(g, k.hairD, k.hair, [0, hy + hr * .95, -hr * .25], [hr * .42, hr * .38, hr * .42], [0, 0, 0], { A: .08 });                  // top bun
+  if (k.pony) { part(g, k.hairD, k.hair, [0, hy + hr * .3, -hr * .95], [hr * .22, hr * .22, hr * .22], [0, 0, 0], { A: .05 }); part(g, k.hairD, k.hair, [0, hy - hr * .35, -hr * 1.1], [hr * .28, hr * .8, hr * .26], [.25, 0, 0], { A: .08 }) }   // ponytail
+  if (k.spiky) for (let i = 0; i < 5; i++) cone(g, k.hairD, k.hair, [(i - 2) * hr * .32, hy + hr * .78, -.02 - Math.abs(i - 2) * .02], [hr * .2, hr * .38, hr * .2], [-.25, 0, (i - 2) * -.3], .9);   // spiky tips
+  if (k.pants) for (const s of [-1, 1]) part(g, k.pantsD || k.legD, k.pants, [s * .11, .4 * (A ? 1.45 : 1) * .62, 0], [A ? .1 : .12, .2 * (A ? 1.45 : 1), A ? .1 : .12]);   // trouser legs (static, over the walking feet)
+  if (k.belt) part(g, '#5a3420', '#9a6238', [0, A ? .66 : .45, 0], [A ? .25 : .3, .04, A ? .19 : .25], [0, 0, 0], { A: 0 });
   eyes(g, hy - hr * .05, hr * .84, hr * .36, A ? .05 : .06); cheeks(g, hy - hr * .3, hr * .84, hr * .58);
+}
+/* the player's own character (character creator · v0.7) */
+export const LOOK = {
+  hair: [['short', 'สั้น'], ['long', 'ยาว'], ['bun', 'มวยจุก'], ['pony', 'หางม้า'], ['spiky', 'ชี้ฟู']],
+  hairCol: ['#3a2418', '#8a5030', '#c8803a', '#e8c86a', '#2a2a3a', '#c85a8a'],
+  skin: [['#e8b48a', '#ffd9bc'], ['#c8946a', '#ecbc94'], ['#a06a48', '#d0966e'], ['#6e4630', '#9a6a4c']],
+  top: ['#e8604a', '#4a8ad8', '#4aa86a', '#f0c040', '#8a5ac8', '#f4f0e8'],
+  bottom: [['pants', 'กางเกง'], ['skirt', 'กระโปรงยาว']],
+};
+const shade = (h, k) => { const c = new THREE.Color(h); c.multiplyScalar(k); return '#' + c.getHexString() };
+export function playerLook(g, a = {}) {
+  const hc = a.hairCol || LOOK.hairCol[0], top = a.top || LOOK.top[0], h = a.hair || 'short';
+  human(g, { adult: 1, skin: a.skin || LOOK.skin[0], cl: top, clD: shade(top, .7), hair: hc, hairD: shade(hc, .65), fringe: 1, longHair: h === 'long', bun: h === 'bun', pony: h === 'pony', spiky: h === 'spiky',
+    skirt: a.bottom === 'skirt', sk: shade(top, .55), skD: shade(top, .4), leg: a.bottom === 'skirt' ? a.skin ? a.skin[1] : LOOK.skin[0][1] : '#4a5a7a', legD: a.bottom === 'skirt' ? a.skin ? a.skin[0] : LOOK.skin[0][0] : '#2a3450', belt: a.bottom !== 'skirt' });
 }
 export const HUMANS = {
   kealee(g) { human(g, { adult: 1, cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, longHair: 1, leg: '#ffe0c8', legD: '#e8b48a' });
