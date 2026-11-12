@@ -147,3 +147,37 @@ export const ACC = {
     part(g, '#b0182a', '#ff5a6a', [0, y, .23], [.05, .05, .03], [0, 0, 0], { A: 0 }) },
   float(g) { part(g, '#c0303a', '#ff6a6a', [0, .06, 0], [.12, .1, .12], [0, 0, 0], { A: 0 }); part(g, '#e8e8f0', '#ffffff', [0, .16, 0], [.09, .06, .09], [0, 0, 0], { A: 0 }) },
 };
+
+/* ---- people (chibi, head ×1.1 like Pen Suk's clay people) · same rig roles as pets so the walk animation works ---- */
+function human(g, k) {
+  const sk = ['#e8b48a', '#ffd9bc'];
+  role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.12, .22, 0], [.1, .22, .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.12, .22, 0], [.1, .22, .1]), 'footR');
+  part(g, k.clD, k.cl, [0, .66, 0], [.3, .32, .24]);                                     // body / clothes
+  if (k.skirt) cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55);  // dress hem
+  for (const s of [-1, 1]) role(part(g, k.clD, k.cl, [s * .33, .7, 0], [.08, .2, .08], [0, 0, s * .25]), s < 0 ? 'armL' : 'armR');
+  part(g, sk[0], sk[1], [0, 1.22, 0], [.36, .36, .34]);                                  // head
+  part(g, k.hairD, k.hair, [0, 1.36, -.05], [.39, .3, .36], [0, 0, 0], { A: .08, f: 1.5 }); // hair cap
+  if (k.fringe) part(g, k.hairD, k.hair, [0, 1.42, .2], [.3, .12, .14], [0, 0, 0], { A: .06 });
+  eyes(g, 1.2, .3, .13, .06); cheeks(g, 1.1, .3, .21);
+}
+export const HUMANS = {
+  kealee(g) { human(g, { cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, leg: '#ffe0c8', legD: '#e8b48a' });
+    for (const s of [-1, 1]) part(g, '#5a3018', '#8a5030', [s * .38, 1.2, -.08], [.11, .2, .11], [0, 0, s * .3], { A: .06 });   // pigtails
+    part(g, '#c0303a', '#ff5a5a', [.2, 1.55, .05], [.1, .07, .05], [0, 0, .4], { A: 0 }) },                                    // red ribbon
+  villager(g, v = 0) { const C2 = [['#e0a040', '#b07020'], ['#6aa0e0', '#3a6aa8'], ['#d06a8a', '#a04060']][v % 3];
+    human(g, { cl: C2[0], clD: C2[1], hair: ['#3a2418', '#c8a060', '#1e1520'][v % 3], hairD: '#1e1410', leg: '#4a3a5a' });
+    part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },                                         // apron
+  howsif(g) { human(g, { cl: '#4a6a8a', clD: '#2a3a5a', hair: '#e8e8f0', hairD: '#b8b8c8', leg: '#5a4a3a' });
+    part(g, '#d8d8e0', '#ffffff', [0, 1.06, .26], [.2, .18, .1], [0, 0, 0], { A: .1 });          // white beard
+    part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }); cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6) },  // straw hat
+};
+/* the shadow that takes Kealee: a black winged shape inside a huge black smoke cloud */
+export function shadowBeast(g) {
+  const B = ['#0e0a14', '#2a2238'];
+  part(g, B[0], B[1], [0, 0, 0], [.8, .5, 1.2], [0, 0, 0], { A: .15 });
+  for (const s of [-1, 1]) { part(g, B[0], B[1], [s * 1.6, .2, 0], [1.5, .08, .7], [0, 0, s * .25], { A: .2, f: 2 }); part(g, B[0], B[1], [s * 2.8, .55, -.2], [.7, .06, .4], [0, s * .3, s * .5], { A: .2 }) }
+  part(g, B[0], B[1], [0, .3, 1.2], [.4, .35, .45]); for (const s of [-1, 1]) cone(g, B[0], '#3a2a48', [s * .18, .7, 1.15], [.07, .25, .07], [0, 0, -s * .3]);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), new THREE.MeshBasicMaterial({ color: '#ff3a3a' })); e.position.set(s * .17, .38, 1.58); g.add(e) }
+}
+export function smoke(g, n = 14, s = 1, seed = 3) { let r = seed; const R = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) part(g, '#08060c', '#3a3448', [(R() - .5) * 5 * s, (R() - .2) * 2.2 * s, (R() - .5) * 3 * s], [(.8 + R()) * s, (.6 + R() * .6) * s, (.8 + R()) * s], [0, 0, 0], { A: .15, f: 1.2, shadow: false }) }

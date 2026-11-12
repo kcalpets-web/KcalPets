@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><title>New Game storyboard</title>
+<style>body{margin:0;background:#1d1830;color:#fff;font:14px system-ui}#out{display:flex;flex-wrap:wrap;gap:8px;padding:8px}canvas{width:390px;height:560px;border-radius:10px}</style></head>
+<body><div id="out"></div>
+<script type="module">
+/* Opening cutscene storyboard (docs/STORY.md). The camera is the player's eyes (the player has no body). */
+import { THREE, C, part, cone, PETS, PROPS, HUMANS, shadowBeast, smoke } from '../../src/clay.js';
+const W = 390, H = 560, DPR = 2;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(DPR); r.setSize(W, H);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+const skyTex = (top, bot, mid) => { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, top); if (mid) gr.addColorStop(.55, mid); gr.addColorStop(1, bot); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t };
+function stage(o) {
+  const S = new THREE.Scene(); S.background = o.sky; S.fog = o.fog || null;
+  S.add(new THREE.HemisphereLight(o.hemi || '#fff6ec', '#7a6050', o.hi ?? .9));
+  const sun = new THREE.DirectionalLight(o.sun || '#fff1dc', o.si ?? 2); sun.position.set(...(o.sp || [-6, 12, 8])); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 60 }); sun.shadow.bias = -.0004; S.add(sun);
+  const cam = new THREE.PerspectiveCamera(o.fov || 45, W / H, .1, 200); cam.position.set(...o.cam); cam.lookAt(...o.at);
+  const at = (fn, x, z, ry = 0, s = 1, y = 0) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); S.add(g); return g };
+  return { S, cam, at, sun };
+}
+function ground(S, lo, hi, w = 60, d = 60, y = 0) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d, 40, 40), new THREE.MeshStandardMaterial({ color: hi, roughness: .95 })); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true; S.add(m); return m }
+const WALL_M = new THREE.MeshStandardMaterial({ color: '#d8bf98', roughness: .9 });
+function ruin(g) {
+  const wall = (x, z, w, h, ry, rz = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w * 2, h, .18), WALL_M); m.position.set(x, h / 2, z); m.rotation.set(0, ry, rz); m.castShadow = m.receiveShadow = true; g.add(m) };
+  wall(-.6, -.8, .9, 1.4, 0); wall(.9, -.4, .6, .8, 1.4, .1); wall(-1.1, .4, .5, .6, 1.6, -.15);
+  cone(g, '#5a2a1a', '#a84a30', [.4, .35, .6], [1.1, .4, .9], [.5, .6, .9], .98);                         // fallen roof
+  for (let i = 0; i < 6; i++) part(g, '#6a6460', '#b8b0a6', [-.8 + (i % 3) * .7, .12, .9 + Math.floor(i / 3) * .4], [.22, .15, .18], [0, i, 0], { A: .2 });   // rubble
+  part(g, '#3a2418', '#6a4028', [.2, .5, .2], [.06, .5, .06], [.6, 0, .4], { A: 0 });                      // broken beam
+}
+function house(g, broken = 0, roof = '#c0503a') {
+  part(g, '#c8a070', '#f0d8b0', [0, .8, 0], [1.2, .8, 1], [0, 0, 0], { A: .03 });
+  if (!broken) { cone(g, '#8a3020', roof, [0, 2.0, 0], [1.6, .7, 1.4], [0, Math.PI / 4, 0], .98); part(g, '#5a3420', '#8a5a30', [0, .55, 1.0], [.25, .45, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.65, 1.0, 1.0], [.2, .2, .04], [0, 0, 0], { A: 0 }) }
+  else { cone(g, '#3a2018', '#6a3a28', [.4, 1.7, 0], [1.1, .5, 1.0], [.3, Math.PI / 4, .5], .98); for (let i = 0; i < 5; i++) part(g, '#5a3420', '#8a5a30', [-1.2 + i * .5, .08, 1.3 + (i % 2) * .4], [.4, .05, .1], [0, i, 0], { A: 0 }) }
+}
+const frames = [];
+function shot(S, cam, title, say, who) {
+  r.render(S, cam); const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR; const g = c.getContext('2d'); g.drawImage(r.domElement, 0, 0); g.scale(DPR, DPR);
+  g.fillStyle = '#000a'; g.fillRect(0, 0, W, 34); g.fillStyle = '#fff'; g.font = 'bold 15px sans-serif'; g.fillText(title, 10, 23);
+  if (say) { g.fillStyle = '#fff8eef0'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; const y = H - 96; g.beginPath(); g.roundRect(12, y, W - 24, 80, 14); g.fill(); g.stroke();
+    if (who) { g.fillStyle = '#2a2030'; g.beginPath(); g.roundRect(24, y - 14, g.measureText(who).width + 34, 26, 8); g.fill(); g.fillStyle = '#fff'; g.font = 'bold 14px sans-serif'; g.fillText(who, 36, y + 4) }
+    g.fillStyle = '#2a2030'; g.font = '16px sans-serif'; say.split('\n').forEach((l, i) => g.fillText(l, 26, y + 36 + i * 22)) }
+  frames.push(c); document.getElementById('out').appendChild(c);
+}
+/* 1 · the peaceful village */
+{ const { S, cam, at } = stage({ sky: skyTex('#7ec4ee', '#d8f0ff'), cam: [0, 7, 15], at: [0, 1, 0] }); ground(S, '#5a9a44', '#7cc060');
+  [[-4, -3, 0], [3.5, -4, .4], [-1, -7, -.2], [6, -1, -.5]].forEach(([x, z, ry], i) => at(g => house(g, 0, ['#c0503a', '#4a7ac0', '#d08a30', '#8a4ac0'][i]), x, z, ry, 1.1));
+  for (let i = 0; i < 9; i++) { const x = -9 + i * 2.2; at(g => PROPS.tree(g, .9 + (i % 3) * .15), x, -10 - (i % 2) * 1.5) }
+  at(g => HUMANS.villager(g, 0), -1.5, 1.5, .4, 1.3); at(g => HUMANS.villager(g, 1), 2.4, 2, -.5, 1.3); at(g => HUMANS.villager(g, 2), .5, -1.5, .2, 1.3);
+  at(PETS.shiba, -.5, 2.6, .5, .7); at(PETS.chick, 3.4, 2.8, -.3, .6); at(PETS.bunny, 1.2, 3.5, .2, .6); at(g => PROPS.bush(g, .8), -4, 3); at(g => PROPS.bush(g, .7), 5, 3.5);
+  shot(S, cam, '1 · หมู่บ้านที่สงบสุข', 'ผู้คนและสัตว์เลี้ยงใช้ชีวิตกันอย่างสดใส…', null) }
+/* 2 · walking in the forest (first person, Kealee ahead) */
+{ const { S, cam, at } = stage({ sky: skyTex('#9fd0e8', '#e8f4e0'), fog: new THREE.Fog('#cfe6d8', 10, 34), cam: [0, 1.5, 6], at: [0, 1.1, -4], fov: 55, sp: [4, 14, -6] }); ground(S, '#4a8a3c', '#5e9e48');
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 40), new THREE.MeshStandardMaterial({ color: '#c8a070' })); path.rotation.x = -Math.PI / 2; path.position.set(0, .01, -10); path.receiveShadow = true; S.add(path);
+  for (let i = 0; i < 26; i++) { const s = i % 2 ? 1 : -1, z = 4 - i * 1.6; at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, 1.1 + (i % 4) * .15), s * (2.2 + (i % 3) * 1.2), z) }
+  for (let i = 0; i < 10; i++) at(g => PROPS.bush(g, .6), (i % 2 ? 1 : -1) * 1.5, 2 - i * 2.5);
+  at(HUMANS.kealee, .2, -1.2, Math.PI, 1.25);
+  shot(S, cam, '2 · เดินในป่า (มุมมองผู้เล่น)', 'มาทางนี้สิ! ใกล้ถึงแล้ว', 'คีลี') }
+/* 3 · the cliff at sunset, Kealee turns to the screen */
+{ const { S, cam, at } = stage({ sky: skyTex('#3a2a6a', '#ffb060', '#ff7a5a'), hemi: '#ffd8b0', hi: .8, sun: '#ffb070', si: 2.4, sp: [0, 3, -20], cam: [0, 1.7, 4.5], at: [0, 1.3, -2], fov: 50 });
+  const cliff = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#6a8a4a', roughness: 1 })); cliff.position.set(0, -3, 1); cliff.receiveShadow = true; S.add(cliff);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#5a4a8a', roughness: .3, metalness: .2 })); sea.rotation.x = -Math.PI / 2; sea.position.y = -14; S.add(sea);
+  const sunD = new THREE.Mesh(new THREE.CircleGeometry(4, 40), new THREE.MeshBasicMaterial({ color: '#ffe0a0' })); sunD.position.set(-3, -2, -60); S.add(sunD);
+  at(HUMANS.kealee, 0, -2.2, 0, 1.3); at(g => PROPS.tree(g, 1.4), 4.5, -1); at(g => PROPS.bush(g, .8), -3.5, -2);
+  const ff = new THREE.DirectionalLight('#ffd0b0', 1.6); ff.position.set(1, 3, 8); S.add(ff);
+  shot(S, cam, '3 · หน้าผายามอาทิตย์ตก', 'สวยงามจังเลย…', 'คีลี') }
+/* 4 · lightning strikes right beside her; she loses her footing at the edge */
+{ const { S, cam, at } = stage({ sky: skyTex('#120c26', '#5a4a8a'), hemi: '#c8c8ff', hi: .7, si: .8, sp: [3, 8, 6], cam: [0, 1.7, 4.5], at: [0, 1.2, -2], fov: 50 });
+  const cliff = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#4a5a3a', roughness: 1 })); cliff.position.set(0, -3, 1); cliff.receiveShadow = true; S.add(cliff);
+  const k = at(HUMANS.kealee, -.2, -2.7, .4, 1.3); k.rotation.x = -.55; k.rotation.z = .25;
+  const pts = []; for (let i = 0; i <= 8; i++) pts.push(new THREE.Vector3(1.7 + (i % 2 ? .45 : -.35) * (i < 8 ? 1 : 0), 10 - i * 1.25, -2.4)); S.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), 40, .09, 6), new THREE.MeshBasicMaterial({ color: '#fff8c0' })));
+  for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28; at(g => cone(g, '#ffe680', '#ffffff', [0, 0, 0], [.05, .35, .05], [0, 0, 0], .9), 1.7 + Math.cos(a) * .3, -2.4 + Math.sin(a) * .3, 0, 1, .2).rotation.set(Math.sin(a) * .9, 0, -Math.cos(a) * .9) }
+  const fl = new THREE.PointLight('#fff2a0', 60, 10); fl.position.set(1.7, .8, -2); S.add(fl);
+  shot(S, cam, '4 · ฟ้าผ่าข้างตัว! คีลีเสียหลักตกหน้าผา', 'คีลี!!', 'ผู้เล่น') }
+/* 5 · into the water below */
+{ const { S, cam, at } = stage({ sky: skyTex('#2a3a6a', '#4a7ab0'), cam: [0, 9, 3], at: [0, 0, -1], fov: 50, sp: [2, 10, 4] });
+  const w = new THREE.Mesh(new THREE.CircleGeometry(12, 48), new THREE.MeshStandardMaterial({ color: '#3a7ab0', roughness: .2, metalness: .1 })); w.rotation.x = -Math.PI / 2; S.add(w);
+  for (const [x, z, rr] of [[0, -1, .6], [0, -1, 1.2], [0, -1, 1.9], [1.6, .4, .5], [1.6, .4, 1]]) { const m = new THREE.Mesh(new THREE.RingGeometry(rr - .06, rr, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .8 })); m.rotation.x = -Math.PI / 2; m.position.set(x, .02, z); S.add(m) }
+  for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28; at(g => part(g, '#cfe8ff', '#ffffff', [0, 0, 0], [.12, .12, .12], [0, 0, 0], { A: 0 }), Math.cos(a) * .8, -1 + Math.sin(a) * .8, 0, 1, .3 + (i % 3) * .3) }
+  shot(S, cam, '5 · ข้างล่างเป็นแหล่งน้ำ… รอดแล้ว', 'แค่ก… ยังอยู่ไหม คีลี?', 'ผู้เล่น') }
+/* 6 · the cave behind the waterfall, by the fire */
+{ const { S, cam, at } = stage({ sky: C('#0e0a18'), hemi: '#6a5a8a', hi: .25, si: .2, cam: [.3, 1.6, 4.4], at: [-.3, .7, -.4], fov: 50 }); ground(S, '#3a3038', '#4a3e44');
+  for (let i = 0; i < 12; i++) { const a = -1.2 + i * .25; at(g => part(g, '#2a2228', '#5a4a50', [0, 0, 0], [1.6, 2.6, 1.4], [0, 0, 0], { A: .2, f: 1.1 }), Math.sin(a) * 5.5, -Math.cos(a) * 5.5 + 1, 0, 1, 1.2) }
+  const wf = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.MeshBasicMaterial({ color: '#8ac8ff', transparent: true, opacity: .35 })); wf.position.set(0, 2, 5); S.add(wf);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; at(g => part(g, '#5a3420', '#8a5a30', [0, 0, 0], [.5, .07, .07], [0, a, 0], { A: 0 }), 0, 0, a, 1, .06) }
+  for (let i = 0; i < 4; i++) at(g => cone(g, '#e0402a', '#ffd23f', [0, 0, 0], [.22 - i * .04, .45 - i * .05, .22 - i * .04], [0, 0, 0], .95), (i - 1.5) * .08, 0, 0, 1, .35 + i * .05);
+  const fire = new THREE.PointLight('#ff9a4a', 25, 9); fire.position.set(0, .9, 0); fire.castShadow = true; S.add(fire);
+  at(HUMANS.kealee, -.9, -1.4, .55, .95);
+  shot(S, cam, '6 · ถ้ำหลังน้ำตก · ผิงไฟ', 'ยังหนาวอยู่เลย… ขอบคุณนะที่กระโดดตามมา', 'คีลี') }
+/* 7 · the black shadow in the giant smoke cloud takes Kealee */
+{ const { S, cam, at } = stage({ sky: skyTex('#3a2a5a', '#b08ac8', '#7a5a9a'), hemi: '#c8b8e8', hi: .8, si: 1.2, sp: [0, 10, 8], cam: [0, 2, 9], at: [0, 4.2, -3], fov: 55 }); ground(S, '#2a2228', '#3a3036');
+  at(g => smoke(g, 30, 1.4, 7), 0, -8, 0, 1, 5);
+  const b = at(shadowBeast, 0, -3.5, 0, 1.4, 5); b.rotation.x = -.4;
+  const k = at(HUMANS.kealee, .15, -2.2, Math.PI + .2, .7, 3.6); k.rotation.z = .5;
+  const ff = new THREE.DirectionalLight('#ffe0f0', 1.4); ff.position.set(0, 3, 10); S.add(ff);
+  for (let i = 0; i < 4; i++) at(g => part(g, '#08060c', '#2a2438', [0, 0, 0], [1.4, .9, 1.2], [0, 0, 0], { A: .15, shadow: false }), -5 + i * 3.4, -1, 0, 1, .6);   // dust at the cave mouth
+  shot(S, cam, '7 · เงาดำในเมฆควันคว้าคีลีไป', 'คีลี!!!', 'ผู้เล่น') }
+/* 8 · the island at night: ruins, the broken boat on the beach (someone is under it) */
+{ const { S, cam, at } = stage({ sky: skyTex('#0a1030', '#3a4a8a'), hemi: '#a8b8ff', hi: 1.1, sun: '#c8d8ff', si: 1.8, sp: [-8, 12, 6], cam: [-.6, 6.2, 11.5], at: [-2.2, .2, 1.4], fov: 52 }); ground(S, '#2e5040', '#3a6048');
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(40, 60), new THREE.MeshStandardMaterial({ color: '#1e4478', roughness: .3 })); sea.rotation.x = -Math.PI / 2; sea.position.set(-26, .03, 0); S.add(sea);
+  const sand = new THREE.Mesh(new THREE.PlaneGeometry(7, 60), new THREE.MeshStandardMaterial({ color: '#a89a80' })); sand.rotation.x = -Math.PI / 2; sand.position.set(-5, .02, 0); S.add(sand);
+  [[-.5, -4, .3], [3.5, -6, -.4], [6, -1.5, .2], [2, 1.5, .5]].forEach(([x, z, ry]) => at(ruin, x, z, ry, 1.3));
+  for (let i = 0; i < 14; i++) at(g => part(g, '#4a2a18', '#8a5a30', [0, 0, 0], [.5, .05, .1], [0, i * 1.7, 0], { A: 0 }), -2 + (i * 1.37) % 9, -5 + (i * 2.3) % 8, 0, 1, .06);   // scattered planks
+  at(g => { part(g, '#3a2418', '#7a4a30', [0, .25, 0], [1.7, .38, .65], [0, 0, .35], { A: .05 }); part(g, '#3a2418', '#6a4028', [-.6, 1, 0], [.06, 1, .06], [0, 0, .9], { A: 0 }); part(g, '#d8d0c0', '#f4ece0', [-1.2, .7, .1], [.5, .04, .4], [0, 0, .8], { A: 0 }) }, -4.6, 3, .5);
+  at(g => HUMANS.howsif(g), -3.6, 3.8, 1.2, .9).rotation.x = 1.35;                          // the old man lying face down under the wreck
+  for (let i = 0; i < 8; i++) at(g => PROPS.tree(g, .85), 8 + (i % 2), -9 + i * 2.4);
+  const moon = new THREE.Mesh(new THREE.CircleGeometry(1.4, 32), new THREE.MeshBasicMaterial({ color: '#fff6d8' })); moon.position.set(-10, 16, -34); S.add(moon);
+  shot(S, cam, '8 · กลับถึงเกาะ… บ้านเรือนพังหมด', 'ทุกคนหายไปไหนกันหมด…\nต้องหาที่พักก่อน แล้วค่อยออกตามหาคีลี', 'ผู้เล่น') }
+window.__done = true;
+</script></body></html>
