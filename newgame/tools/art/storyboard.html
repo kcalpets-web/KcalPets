@@ -62,7 +62,19 @@ function shot(S, cam, title, say, who) {
   const sunD = new THREE.Mesh(new THREE.CircleGeometry(4, 40), new THREE.MeshBasicMaterial({ color: '#ffe0a0' })); sunD.position.set(-3, -2, -60); S.add(sunD);
   at(HUMANS.kealee, 0, -2.2, 0, 1.3); at(g => PROPS.tree(g, 1.4), 4.5, -1); at(g => PROPS.bush(g, .8), -3.5, -2);
   const ff = new THREE.DirectionalLight('#ffd0b0', 1.6); ff.position.set(1, 3, 8); S.add(ff);
-  shot(S, cam, '3 · หน้าผายามอาทิตย์ตก', 'สวยงามจังเลย…', 'คีลี') }
+  shot(S, cam, '3 · หน้าผายามอาทิตย์ตก', 'ดูนั่นสิ!', 'คีลี') }
+/* 3b · what she points at: the sun setting over the water, a glittering path of reflected light */
+{ const { S, cam, at } = stage({ sky: skyTex('#2a1e5a', '#ffb070', '#ff6a5a'), hemi: '#ffd8b0', hi: .7, sun: '#ffb070', si: 1.2, sp: [0, 3, -20], cam: [0, 3.2, 8], at: [0, 1.4, -30], fov: 50 });
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#3a2e6a', roughness: .75, metalness: 0 })); sea.rotation.x = -Math.PI / 2; sea.position.y = -.5; S.add(sea);
+  const sunD = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.MeshBasicMaterial({ color: '#ffe6a8' })); sunD.position.set(0, 2.2, -120); S.add(sunD);
+  const halo = new THREE.Mesh(new THREE.CircleGeometry(11, 48), new THREE.MeshBasicMaterial({ color: '#ffb070', transparent: true, opacity: .35 })); halo.position.set(0, 2.2, -121); S.add(halo);
+  let rs = 9; const R = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+  const gl = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#ffe8a8', transparent: true, opacity: .95 }), 900), o = new THREE.Object3D();
+  for (let i = 0; i < 900; i++) { const z = -4 - Math.pow(R(), .7) * 115, w = 1.2 + (-z) * .07; o.position.set((R() - .5) * w * (R() < .8 ? 1 : 2.4), -.48, z); o.rotation.set(-Math.PI / 2, 0, 0); o.scale.set(.2 + R() * .6 + (-z) * .01, .04 + R() * .05, 1); o.updateMatrix(); gl.setMatrixAt(i, o.matrix) }
+  S.add(gl);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(30, 2, 6), new THREE.MeshStandardMaterial({ color: '#3a4a2a', roughness: 1 })); edge.position.set(0, .2, 7); S.add(edge);
+  at(g => PROPS.bush(g, .9), -3.4, 4.6); at(g => PROPS.bush(g, .7), 3.8, 4.8);
+  shot(S, cam, '3b · พระอาทิตย์ตกเหนือน้ำ แสงระยิบระยับ', 'สวยงามจังเลย…', 'คีลี') }
 /* 4 · lightning strikes right beside her; she loses her footing at the edge */
 { const { S, cam, at } = stage({ sky: skyTex('#120c26', '#5a4a8a'), hemi: '#c8c8ff', hi: .7, si: .8, sp: [3, 8, 6], cam: [0, 1.7, 4.5], at: [0, 1.2, -2], fov: 50 });
   const cliff = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#4a5a3a', roughness: 1 })); cliff.position.set(0, -3, 1); cliff.receiveShadow = true; S.add(cliff);
@@ -85,7 +97,7 @@ function shot(S, cam, title, say, who) {
   for (let i = 0; i < 4; i++) at(g => cone(g, '#e0402a', '#ffd23f', [0, 0, 0], [.22 - i * .04, .45 - i * .05, .22 - i * .04], [0, 0, 0], .95), (i - 1.5) * .08, 0, 0, 1, .35 + i * .05);
   const fire = new THREE.PointLight('#ff9a4a', 25, 9); fire.position.set(0, .9, 0); fire.castShadow = true; S.add(fire);
   at(HUMANS.kealee, -.9, -1.4, .55, .95);
-  shot(S, cam, '6 · ถ้ำหลังน้ำตก · ผิงไฟ', 'ยังหนาวอยู่เลย… ขอบคุณนะที่กระโดดตามมา', 'คีลี') }
+  shot(S, cam, '6 · ถ้ำหลังน้ำตก · ผิงไฟ', 'ขอบคุณนะ…', 'คีลี') }
 /* 7 · a formless shadow inside the giant black smoke cloud (no Kealee — the cloud alone tells it) */
 { const { S, cam, at } = stage({ sky: skyTex('#2a1e44', '#a07ab8', '#6a4a8a'), hemi: '#c8b8e8', hi: .7, si: 1, sp: [0, 10, 8], cam: [0, 1.8, 9], at: [0, 4.6, -3], fov: 58 }); ground(S, '#2a2228', '#3a3036');
   at(g => smoke(g, 40, 1.5, 7), 0, -9, 0, 1, 5.5); at(g => smoke(g, 22, 1.1, 19), 0, -5, .6, 1, 4.6);
@@ -104,6 +116,6 @@ function shot(S, cam, title, say, who) {
   at(g => HUMANS.howsif(g), -3.6, 3.8, 1.2, .9).rotation.x = 1.35;                          // the old man lying face down under the wreck
   for (let i = 0; i < 8; i++) at(g => PROPS.tree(g, .85), 8 + (i % 2), -9 + i * 2.4);
   const moon = new THREE.Mesh(new THREE.CircleGeometry(1.4, 32), new THREE.MeshBasicMaterial({ color: '#fff6d8' })); moon.position.set(-10, 16, -34); S.add(moon);
-  shot(S, cam, '8 · กลับถึงเกาะ… บ้านเรือนพังหมด', 'ทุกคนหายไปไหนกันหมด…\nต้องหาที่พักก่อน แล้วค่อยออกตามหาคีลี', 'ผู้เล่น') }
+  shot(S, cam, '8 · กลับถึงเกาะ… บ้านเรือนพังหมด', 'ทุกคนหายไปไหนหมด…', 'ผู้เล่น') }
 window.__done = true;
 </script></body></html>
