@@ -14,8 +14,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Other games hosted in sub-folders (e.g. /pensuk.html, /pensuk/) manage themselves — never cache them as this game's page.
-  if (url.pathname.includes('pensuk')) return;
+  // Other games hosted in sub-folders (e.g. /pensuk.html, /pensuk/, /newgame/) manage themselves — never cache them as this game's page.
+  if (url.pathname.includes('pensuk') || url.pathname.includes('/newgame')) return;
   // Game page: network first (fresh updates), cache fallback (offline).
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', cp)); return r; })

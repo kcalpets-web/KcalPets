@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2a2030"><title>New Game</title>
+<style>
+  :root{--ink:#2a2030;--paper:#fff8ee;--hp:#ff5d6c;--mp:#4f9cff;--xp:#ffd23f;--go:#3fae6a;--mut:#7a7088}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#9fd4ee;font:600 13px "Noto Sans Thai","Sukhumvit Set",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
+  #cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .top{position:fixed;left:0;right:0;top:0;padding:max(10px,env(safe-area-inset-top)) 10px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none}
+  .top>*{pointer-events:auto}
+  .pf{display:flex;gap:8px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:5px 10px 5px 5px;box-shadow:0 3px 0 #0003}
+  .av{width:40px;height:40px;border-radius:50%;background:#ffd9a8;border:3px solid var(--ink);display:grid;place-items:center;font-size:22px}
+  .bar{height:9px;border:2px solid var(--ink);border-radius:6px;background:#0002;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;transition:width .2s}
+  .bar.big{height:14px;margin:6px 0}
+  .cur{margin-left:auto;display:flex;flex-direction:column;gap:5px;align-items:flex-end}.rt{display:flex;gap:6px}
+  .pill{white-space:nowrap;background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:2px 9px;box-shadow:0 3px 0 #0003}
+  .sq{width:34px;height:34px;background:var(--paper);border:3px solid var(--ink);border-radius:12px;display:grid;place-items:center;font-size:18px;box-shadow:0 3px 0 #0003;padding:0;font-weight:700;color:var(--ink)}
+  .vit{position:fixed;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + 62px);background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:4px 8px;font-size:11px;width:150px;pointer-events:none}
+  .vit .row{display:flex;justify-content:space-between}
+  #quest{position:fixed;left:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);background:#2a2030e6;color:#fff;border-radius:12px;padding:7px 10px;font-size:12px;max-width:190px;line-height:1.45;cursor:pointer;box-shadow:0 3px 0 #0004}
+  .zoom{position:fixed;right:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 150px);display:flex;flex-direction:column;gap:6px}
+  .bot{position:fixed;left:0;right:0;bottom:0;padding:0 8px max(14px,env(safe-area-inset-bottom));display:flex;gap:6px}
+  .bb{flex:1;min-width:0;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:4px 2px;text-align:center;box-shadow:0 4px 0 #0003;font:700 11px inherit;font-family:inherit;color:var(--ink);white-space:nowrap}
+  .bb b{display:block;font-size:22px;line-height:1.15}.bb small{font-size:10px;color:var(--mut)}.bb.dim{opacity:.45}
+  #monTag{position:fixed;left:0;top:0;display:none;background:#2a2030e6;color:#fff;border-radius:8px;padding:2px 8px 4px;font-size:11px;white-space:nowrap;pointer-events:none}
+  #monTag .mb{height:5px;background:#0006;border-radius:3px;margin-top:2px;overflow:hidden}#monTag .mb i{display:block;height:100%;background:var(--hp)}
+  .fl{position:fixed;left:0;top:0;pointer-events:none;font:900 17px system-ui;white-space:nowrap;color:#fff;text-shadow:0 2px 0 #0007;will-change:transform}
+  .fl.dmg{color:#fff;text-shadow:0 0 3px #c0303a,0 2px 0 #c0303a}.fl.crit{color:#ffe14a;font-size:22px;text-shadow:0 0 3px #a0401a,0 2px 0 #a0401a}
+  .fl.hurt{color:#ff6a78}.fl.mat,.fl.coin,.fl.exp,.fl.item,.fl.heal{font-size:13px;background:#2a2030cc;border-radius:8px;padding:1px 6px}.fl.tool{font-size:20px;text-shadow:none}
+  #toast{position:fixed;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 120px);transform:translate(-50%,-10px);background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:8px 14px;max-width:88vw;text-align:center;opacity:0;transition:.2s;pointer-events:none;box-shadow:0 4px 0 #0003;line-height:1.5;z-index:30}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  #joy{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;background:#fff3;border:3px solid #fff8;display:none;pointer-events:none}
+  #joyK{position:absolute;left:35px;top:35px;width:44px;height:44px;border-radius:50%;background:#fffc;border:3px solid var(--ink)}
+  .ov{position:fixed;inset:0;background:#0006;display:flex;align-items:flex-end;justify-content:center;z-index:40}
+  .sh{width:100%;max-width:520px;height:72vh;background:var(--paper);border:3px solid var(--ink);border-bottom:0;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}}
+  .shh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:2px solid #0001}.shh h2{margin:0;font-size:17px}
+  .back{width:38px;height:38px;border-radius:12px;border:3px solid var(--ink);background:#fff;font:900 18px system-ui;color:var(--ink)}
+  .shb{flex:1;overflow:auto;padding:10px 12px 24px}.shb h3{margin:12px 0 6px;font-size:14px}
+  .card{background:#fff;border:2px solid #0002;border-radius:12px;padding:8px 10px;margin:8px 0}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0}.row2{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+  .mut{color:var(--mut);font-weight:500;font-size:12px}
+  .btn{border:3px solid var(--ink);background:#fff;border-radius:12px;padding:7px 12px;font:700 13px inherit;font-family:inherit;color:var(--ink);box-shadow:0 3px 0 #0003}
+  .btn.go{background:var(--go);color:#fff}.btn.ghost{background:transparent;box-shadow:none}.btn.sm{padding:4px 9px;font-size:12px}.btn.wide{width:100%;margin-top:6px}.btn:disabled{opacity:.4}
+  .tag{color:#fff;border-radius:6px;padding:0 6px;font-size:10px}
+  .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
+</style></head>
+<body>
+<canvas id="cv"></canvas>
+<div class="top">
+  <div class="pf"><div class="av">🐶</div><div><div><span id="hLv">Lv 1</span> · <span id="hName"></span></div><div class="bar" style="width:96px"><i id="hXp" style="background:var(--xp)"></i></div></div></div>
+  <div class="cur"><div class="rt"><div class="pill">🪙 <span id="hCoin">0</span></div><div class="pill">💎 <span id="hGem">0</span></div></div>
+    <div class="rt"><div class="pill">🕐 <span id="hClock"></span></div><button class="sq" id="bMenu" aria-label="เมนู">☰</button></div></div>
+</div>
+<div class="vit"><div class="row"><span>❤️ HP</span><span id="hHpT"></span></div><div class="bar"><i id="hHp" style="background:var(--hp)"></i></div>
+  <div class="row"><span>💧 Mana</span><span id="hMpT"></span></div><div class="bar"><i id="hMp" style="background:var(--mp)"></i></div></div>
+<div id="quest"></div>
+<div class="zoom"><button class="sq" id="zIn" aria-label="ซูมเข้า">＋</button><button class="sq" id="zOut" aria-label="ซูมออก">－</button></div>
+<div class="bot">
+  <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bTool"><b>🛠️</b>อุปกรณ์</button>
+  <button class="bb" id="bSkill"><b>💥</b>สกิล</button><button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button>
+  <button class="bb" id="bMp"><b>🔵</b>ยา MP <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
+</div>
+<div id="monTag"></div><div id="toast"></div><div id="joy"><div id="joyK"></div></div>
+<script type="module" src="src/main.js"></script>
+</body></html>
