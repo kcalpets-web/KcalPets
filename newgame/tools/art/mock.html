@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Game mock</title>
+<style>
+  :root{--ink:#2a2030;--paper:#fff8ee;--hp:#ff5d6c;--mp:#4f9cff;--xp:#ffd23f}
+  html,body{margin:0;height:100%;background:#7fc8e8;font:600 13px "Noto Sans Thai",system-ui,sans-serif;color:var(--ink);overflow:hidden}
+  #cv{position:fixed;inset:0;width:100%;height:100%}
+  .hud{position:fixed;left:0;right:0;pointer-events:none}
+  .top{top:0;padding:10px 10px 0;display:flex;gap:8px;align-items:flex-start}
+  .pf{display:flex;gap:8px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:5px 10px 5px 5px;box-shadow:0 3px 0 #0003}
+  .av{width:42px;height:42px;border-radius:50%;background:#ffd9a8;border:3px solid var(--ink);display:grid;place-items:center;font-size:24px}
+  .lv{font-size:12px} .bar{height:9px;width:96px;border:2px solid var(--ink);border-radius:6px;background:#0002;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%}
+  .cur{margin-left:auto;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+  .pill{white-space:nowrap;background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:2px 10px;box-shadow:0 3px 0 #0003;font-size:13px}
+  .rt{display:flex;gap:6px}.sq{width:34px;height:34px;background:var(--paper);border:3px solid var(--ink);border-radius:12px;display:grid;place-items:center;font-size:20px;box-shadow:0 3px 0 #0003}
+  .bot{bottom:0;padding:0 8px 14px;display:flex;gap:6px}
+  .btn{flex:1;min-width:0;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:5px 2px;text-align:center;box-shadow:0 4px 0 #0003;font-size:11px;white-space:nowrap}
+  .btn b{display:block;font-size:22px;line-height:1.1}
+  .lbl{position:fixed;transform:translate(-50%,-100%);background:#2a2030e6;color:#fff;border-radius:8px;padding:2px 7px;font-size:11px;white-space:nowrap;pointer-events:none}
+  .lbl.c{background:#fff8ee;color:var(--ink);border:2px solid var(--ink)}
+  .dmg{position:fixed;transform:translate(-50%,-100%);color:#fff;font:900 22px system-ui;text-shadow:0 2px 0 #c0303a,0 -2px 0 #c0303a,2px 0 0 #c0303a,-2px 0 0 #c0303a}
+  .vit{position:fixed;left:10px;top:76px;background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:4px 8px;font-size:11px}
+  .vit .bar{width:120px}
+  .card{position:fixed;left:10px;right:10px;bottom:96px;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:8px;font-size:11px;box-shadow:0 4px 0 #0003}
+  .card h4{margin:0 0 4px;font-size:13px}.card .r{display:flex;justify-content:space-between}
+  .tag{display:inline-block;border-radius:6px;padding:0 5px;color:#fff;font-size:10px}
+  .quest{position:fixed;left:10px;bottom:96px;background:#2a2030d9;color:#fff;border-radius:10px;padding:6px 9px;font-size:11px;max-width:150px}
+</style></head>
+<body>
+<canvas id="cv"></canvas>
+<div id="hud"></div>
+<script type="module">
+import { THREE, C, part, cone, PETS, MONS, PROPS, MAT } from './clay.js';
+const scene = new URLSearchParams(location.search).get('scene') || 'farm';
+const cv = document.getElementById('cv'), W = innerWidth, H = innerHeight;
+const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true }); r.setPixelRatio(devicePixelRatio); r.setSize(W, H);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0;
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+const S = new THREE.Scene(); S.background = C('#86cbe6');
+S.add(new THREE.HemisphereLight('#fff6ec', '#b8a080', 1.0));
+const sun = new THREE.DirectionalLight('#fff4e0', 2.4); sun.position.set(-8, 18, 10); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 }); sun.shadow.bias = -.0005; sun.shadow.radius = 4; S.add(sun);
+const fill = new THREE.DirectionalLight('#bcd4ff', .45); fill.position.set(8, 6, 6); S.add(fill);
+const cam = new THREE.PerspectiveCamera(40, W / H, .5, 200); cam.position.set(0, 17.5, 19.5); cam.lookAt(0, 0, -1.4);
+const at = (fn, x, z, ry = 0, s = 1, y = 0) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); S.add(g); return g };
+const labels = [];
+const label = (x, y, z, html, cls = 'lbl') => labels.push([new THREE.Vector3(x, y, z), html, cls]);
+function ground(lo, hi, sx, sz, y = -.3) { const g = new THREE.Group(); part(g, lo, hi, [0, 0, 0], [sx, .6, sz], [0, 0, 0], { A: .03, f: .6, seed: 3 }); g.position.y = y; g.children[0].castShadow = false; S.add(g); return g }
+function pad(x, z, lo, hi) { const g = new THREE.Group(); part(g, lo, hi, [0, 0, 0], [1.75, .14, 1.45], [0, 0, 0], { A: .04, f: .9 }); g.position.set(x, .12, z); S.add(g); return g }
+function sea() { const m = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: '#4fb3d9', roughness: .6 })); m.rotation.x = -Math.PI / 2; m.position.y = -.35; m.receiveShadow = true; S.add(m) }
+function path(pts, w = .55) { pts.forEach(([x, z], i) => { if (!i) return; const [a, b] = pts[i - 1], n = Math.ceil(Math.hypot(x - a, z - b) / .45); for (let k = 0; k <= n; k++) { const t = k / n, g = new THREE.Group(); part(g, '#c79a62', '#ecd2a0', [0, 0, 0], [w, .06, w], [0, (k * 1.3) % 3, 0], { A: .08, shadow: false }); g.position.set(a + (x - a) * t, .26, b + (z - b) * t); S.add(g) } }) }
+function bubble(x, z, txt) { label(x, 2.35, z, txt, 'lbl c') }
+function ring(x, z, col) { const m = new THREE.Mesh(new THREE.TorusGeometry(.62, .06, 8, 40), new THREE.MeshBasicMaterial({ color: col })); m.rotation.x = -Math.PI / 2; m.position.set(x, .33, z); S.add(m) }
+
+if (scene === 'farm') {
+  sea(); ground('#4f9a44', '#8fd06a', 7.2, 13.2);
+  path([[0, 9], [0, 6.2], [0, 2.3], [0, -1.2], [0, -4.6], [3.2, -6.4], [6.4, -7.4]]);
+  path([[0, -4.6], [-2.6, -7.6]]);
+  /* tree house (top-left) */
+  at(g => { part(g, '#5a3420', '#9a6238', [0, 1.4, 0], [.55, 1.5, .55], [0, 0, 0], { A: .1 }); [[0, 3.4, 0, 1.7], [-1.1, 3, .2, 1.1], [1.1, 3.1, -.1, 1.15], [0, 4.4, -.2, 1.1]].forEach(([x, y, z, s]) => part(g, '#2f7a3a', '#86d46a', [x, y, z], [s, s * .8, s], [0, 0, 0], { A: .12, f: 1.4 }));
+    part(g, '#8a4c26', '#d8945a', [0, 1.9, 1.0], [1.0, .7, .5]); part(g, '#a8342e', '#ff6a58', [0, 2.75, 1.05], [1.15, .3, .62]); part(g, '#3a2418', '#7a4a30', [-.25, 1.7, 1.5], [.24, .4, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.4, 2.0, 1.5], [.16, .16, .04], [0, 0, 0], { A: 0 });
+    for (let i = 0; i < 4; i++) part(g, '#7a4422', '#c8843a', [-.25, .3 + i * .32, 1.55], [.28, .04, .04], [0, 0, 0], { A: 0 }) }, -2.7, -9.4, .15, .95);
+  label(-2.4, .6, -7.6, '🏠 บ้านต้นไม้ · ผสมพันธุ์ · พักผ่อน');
+  /* forest exit (top-right) */
+  [[5.2, -8.8, 1.1], [6.6, -7.9, .9], [4.4, -9.9, 1], [6.3, -10.2, 1.2], [5.6, -6.4, .8]].forEach(([x, z, s]) => at(g => PROPS.pine(g, s), x, z));
+  at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 3.6, -5.8, -.3);
+  label(3.0, 1.9, -5.8, '⚔️ ทางไปผจญภัย →');
+  /* 6 element farms: 2 columns × 3 rows */
+  const EL = [['🔥', 'ไฟ', '#b84a2a', '#ff8a5a', g => { PROPS.rock(g, .9); cone(g, '#e0402a', '#ffd23f', [.1, .7, 0], [.22, .55, .22], [0, 0, 0]) }],
+    ['💧', 'น้ำ', '#2f7fb8', '#7fd0ff', g => { part(g, '#2f7fb8', '#9ae0ff', [0, .2, 0], [.8, .06, .6], [0, 0, 0], { A: .02 }) }],
+    ['🍃', 'ใบไม้', '#2f7a3a', '#86d46a', g => PROPS.bush(g, .9)],
+    ['❄️', 'น้ำแข็ง', '#7fb8d8', '#e8faff', g => { for (const [x, h] of [[-.25, .8], [.15, 1.1], [.4, .6]]) cone(g, '#8fd6ff', '#f4feff', [x, h / 2, 0], [.16, h / 2, .16], [0, 0, 0], .9) }],
+    ['⚡', 'สายฟ้า', '#b8962a', '#ffe066', g => { cone(g, '#e0b020', '#fff6a0', [0, .55, 0], [.22, .55, .22], [0, 0, .1], .9); part(g, '#e0b020', '#fff6a0', [.35, .2, .1], [.12, .2, .12]) }],
+    ['⛰️', 'ดิน', '#8a5a30', '#d0a060', g => { PROPS.rock(g, 1.1); g.children[0].position.x = -.2; const k = new THREE.Group(); PROPS.rock(k, .6); k.position.set(.45, 0, .2); g.add(k) }]];
+  const PET = [PETS.shiba, PETS.chick, PETS.bunny, PETS.penguin, PETS.chick, PETS.shiba];
+  const coins = ['4,200', '9,800', '1,500', '10,000', '3,100', '6,600'];
+  EL.forEach(([ic, n, lo, hi, prop], i) => {
+    const x = i % 2 ? 2.35 : -2.35, z = -2.9 + Math.floor(i / 2) * 3.9;
+    pad(x, z, lo, hi); at(prop, x - .75, z - .45, 0, 1, .2); at(PET[i], x + .45, z + .2, -.3 + (i % 2) * .6, .8, .2);
+    bubble(x + .45, z + .5, ic + ' ' + coins[i] + (coins[i] === '10,000' ? ' เต็ม!' : ''));
+  });
+  /* main pet (controlled) */
+  at(PETS.shiba, 0, 7.2, 0, .9, .1); ring(0, 7.2, '#4be37a'); label(0, 2.25, 7.2, '★ คุโมะ (ตัวหลัก)');
+  [[-5.2, 5.5, 1], [5.4, 4.2, .9], [-5.6, -1.6, .8], [5.6, 1.2, .8]].forEach(([x, z, s]) => at(g => PROPS.tree(g, s), x, z));
+  [[-4.6, 9.4], [4.8, 8.4]].forEach(([x, z]) => at(g => PROPS.bush(g, .8), x, z));
+} else {
+  ground('#4f9a44', '#8fd06a', 10, 16, -.3); S.background = C('#9fd8c0');
+  path([[-1, 10], [-.5, 5], [1, 1], [.5, -3], [-1, -7], [0, -11]], .5);
+  [[-5.2, 6], [5.3, 7], [-5.6, -1], [5.6, -2.5], [-4.8, -8], [4.6, -9.5], [-3.2, 10.5], [3.6, 11]].forEach(([x, z], i) => at(g => (i % 2 ? PROPS.pine : PROPS.tree)(g, .9 + (i % 3) * .1), x, z));
+  [[-3, 3], [3.4, -6], [2.8, 4.5]].forEach(([x, z]) => at(g => PROPS.rock(g, .9), x, z));
+  /* warp point */
+  const wp = new THREE.Mesh(new THREE.TorusGeometry(.75, .12, 10, 40), new THREE.MeshBasicMaterial({ color: '#b98aff' })); wp.rotation.x = -Math.PI / 2; wp.position.set(0, .32, -10.2); S.add(wp);
+  const wl = new THREE.PointLight('#c8a0ff', 6, 6); wl.position.set(0, 1, -10.2); S.add(wl); label(0, 1.2, -10.2, '🌀 จุดวาป');
+  at(g => { part(g, '#7a7a8a', '#d8d8e8', [0, .5, 0], [.3, .5, .3]); part(g, '#4f9cff', '#bfe0ff', [0, 1.15, 0], [.22, .22, .22], [0, 0, 0], { mat: MAT }) }, -3.4, -10.4); label(-3.4, 1.8, -10.4, '💾 จุดบันทึก');
+  /* monsters */
+  at(g => MONS.slime(g), -2.2, 5.6, .3, .9); label(-2.2, 1.35, 5.6, 'สไลม์ Lv3');
+  at(g => MONS.slime(g, ['#c0392b', '#ff9a8a']), 3.2, 1.6, -.4, .8); label(3.2, 1.2, 1.6, 'สไลม์ไฟ Lv4');
+  at(MONS.snake, 1.5, -2.4, -.6, 1); ring(1.6, -2.3, '#ff4a5a'); label(1.6, 1.55, -2.3, '🎯 งูม่วง Lv5');
+  at(g => MONS.slime(g, ['#3a7ad8', '#9ad0ff']), -3.4, -4.6, .2, .85); label(-3.4, 1.25, -4.6, 'สไลม์น้ำ Lv4');
+  at(g => MONS.slime(g, ['#7a3a9a', '#d0a0ff']), 0, -7.4, 0, 1.4); label(0, 2.0, -7.4, '👑 มินิบอส · ราชาสไลม์ Lv8');
+  /* player + drop */
+  at(g => PETS.shiba(g, { sword: true }), -.3, -.4, 2.5, .9, .1); ring(-.3, -.4, '#4be37a');
+  at(PROPS.coin, -.9, .3, 0, 1, .55); at(g => { part(g, '#8a8fa8', '#eef2ff', [0, .5, 0], [.05, .42, .02], [0, 0, .8], { A: 0 }); part(g, '#7a4422', '#c8843a', [.25, .2, 0], [.05, .12, .05], [0, 0, .8]) }, -1.5, -.4, 0, 1, .1);
+  label(-1.4, 1.2, -.3, '✨ ดาบไม้ (Rare)', 'lbl c');
+  labels.push([new THREE.Vector3(1.6, 1.9, -2.3), '-24', 'dmg']);
+}
+r.render(S, cam);
+const hud = document.getElementById('hud'); let h = '';
+for (const [v, t, cls] of labels) { const p = v.clone().project(cam); h += `<div class="${cls}" style="left:${(p.x + 1) / 2 * W}px;top:${(1 - p.y) / 2 * H}px">${t}</div>` }
+h += `<div class="hud top"><div class="pf"><div class="av">🐶</div><div><div class="lv">Lv 12 · คุโมะ</div><div class="bar"><i style="width:62%;background:var(--xp)"></i></div></div></div>
+  <div class="cur"><div class="rt"><div class="pill">🪙 128,400</div><div class="pill">💎 3,200</div></div><div class="rt"><div class="pill">🕐 14:32</div><div class="sq">☰</div></div></div></div>`;
+if (scene === 'farm') {
+  h += `<div class="quest">📜 เควส: ไปป่าทางขวา<br>กำจัดสไลม์ 3 ตัว (0/3)<br><u>แตะเพื่อเดินไปเอง</u></div>`;
+  h += `<div class="hud bot"><div class="btn"><b>🎒</b>กระเป๋า</div><div class="btn"><b>🛒</b>ร้านค้า</div><div class="btn"><b>🎟️</b>กาชา</div><div class="btn"><b>🪙</b>เก็บทั้งหมด</div><div class="btn"><b>🌳</b>ต้นไม้</div></div>`;
+} else {
+  h += `<div class="vit">❤️ HP 86/120<div class="bar"><i style="width:72%;background:var(--hp)"></i></div>💧 Mana 40/60<div class="bar"><i style="width:66%;background:var(--mp)"></i></div></div>`;
+  h += `<div class="card"><h4>🐍 งูม่วง Lv5</h4>HP 38/62 · ธาตุ ไม่มี<br><b>ของที่ดรอป</b><div class="r"><span><span class="tag" style="background:#8a8fa8">Basic</span> หนังงู</span><span>77.8%</span></div><div class="r"><span><span class="tag" style="background:#4f9cff">Rare</span> ดาบไม้</span><span>22.2%</span></div></div>`;
+  h += `<div class="hud bot"><div class="btn"><b>🚪</b>ออกด่าน</div><div class="btn"><b>🧪</b>ยา HP</div><div class="btn"><b>🔵</b>ยา Mana</div><div class="btn"><b>🔥</b>สกิล</div><div class="btn"><b>🎒</b>กระเป๋า</div></div>`;
+}
+hud.innerHTML = h; window.__done = true;
+</script>
+</body></html>
