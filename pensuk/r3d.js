@@ -133,6 +133,9 @@ export function start(){
   }
 
   /* water ripple rings: one shared transparent material, each ring expands with its own phase */
+  /* 🪟 v0.50 window glass: cool blue by day, warm lamplight glow at night (zones rebuild when NIGHT crosses .35) */
+  const GLASS = [new THREE.MeshStandardMaterial({ color:'#8ec6e6', roughness:.2, metalness:0, vertexColors:false }), new THREE.MeshStandardMaterial({ color:'#ffd58a', emissive:0xffb347, emissiveIntensity:1.1, roughness:.4 })];
+  const glassMat = night => GLASS[night ? 1 : 0];
   const waterMat = new THREE.MeshStandardMaterial({ color:C.water, emissive:0x0d2633, transparent:true, opacity:.78, roughness:.25 });
   let fishes = [];
   const RING = new THREE.RingGeometry(.25, .32, 24), ringMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.5, depthWrite:false });
@@ -200,8 +203,8 @@ export function start(){
     let nv = 0, ni = 0; for (const [g] of parts){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
     const pos = new Float32Array(nv*3), nor = new Float32Array(nv*3), col = new Float32Array(nv*3), idx = new Uint32Array(ni), v = new THREE.Vector3(), tc = new THREE.Color();
     let o = 0, oi = 0;
-    for (const [g, x, y, z, sx, sy, sz, ry = 0, rz = 0, tint] of parts){
-      _m4.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, ry, rz)), _s.set(sx, sy, sz)); _n3.getNormalMatrix(_m4);
+    for (const [g, x, y, z, sx, sy, sz, ry = 0, rz = 0, tint, rx = 0] of parts){   // v0.50: optional rx (index 10) for parts tilted about x
+      _m4.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz)), _s.set(sx, sy, sz)); _n3.getNormalMatrix(_m4);
       const P = g.attributes.position, N = g.attributes.normal, Cc = g.attributes.color; if (tint) tc.set(tint);
       for (let i = 0; i < P.count; i++){ v.fromBufferAttribute(P, i).applyMatrix4(_m4); pos.set([v.x, v.y, v.z], (o + i)*3);
         v.fromBufferAttribute(N, i).applyMatrix3(_n3).normalize(); nor.set([v.x, v.y, v.z], (o + i)*3);
@@ -453,21 +456,45 @@ export function start(){
       const gh = add(g, rb(W-.6, Math.max(.1, H*.85*p), D-.6, .1), new THREE.MeshStandardMaterial({ color:'#f3dfbd', transparent:true, opacity:.55, roughness:.9 }), 0, .15 + H*.85*p/2, 0);
       gh.castShadow = false; return g;
     }
-    const walls = (wc, rc, wh, opts) => {                       // modern gable house: foundation, walls, roof prism, ridge, door, windows
-      opts = opts || {}; const along = W >= D, ww = W*.82, dd = D*.82;
-      RB(g, ww+.2, .18, dd+.2, .06, '#d9d3c8', 0, 0, 0);                                   // stone foundation
-      RB(g, .9, .1, .45, .04, '#cfc8bb', -ww*.18, 0, dd/2+.25);                             // door step
-      add(g, rb(ww, wh, dd, .12), mat(wc), 0, .18 + wh/2 - .18, 0, null, null, null, true);
-      const roof = add(g, gable(along ? dd+.3 : ww+.3, (along ? dd : ww)*.42, along ? ww+.3 : dd+.3), mat(rc), 0, wh, 0, null, null, null, true);
-      if (along) roof.rotation.y = Math.PI/2;
-      const rl = (along ? ww : dd) + .45, rh = (along ? dd : ww)*.42 + .02;                // ridge cap along the top
-      const ridge = RB(g, along ? rl : .16, .12, along ? .16 : rl, .05, '#f7f3ea', 0, wh + rh, 0); ridge.castShadow = false;
-      RB(g, .6, Math.min(1.1, wh*.6), .1, .05, opts.door || '#8a5a3a', -ww*.18, 0, dd/2);          // door on the camera side
-      for (const x of [ww*.22]) { RB(g, .55, .55, .08, .05, '#ffffff', x, wh*.45, dd/2+.01); RB(g, .42, .42, .06, .03, '#8ec6e6', x, wh*.45+.06, dd/2+.04);
-        if (opts.shutters) for (const sx of [-.36,.36]) RB(g, .14, .55, .06, .03, opts.shutters, x+sx, wh*.45, dd/2+.03);
-        if (opts.box){ RB(g, .62, .14, .2, .04, '#b98a5c', x, wh*.45-.16, dd/2+.1); for (const fx of [-.2,0,.2]) BALL(g, .07,.07,.07, FLOWER[(fx*10+3|0)%5], x+fx, wh*.45, dd/2+.12); } }
-      RB(g, .08, .55, .55, .05, '#ffffff', ww/2+.01, wh*.45, 0); RB(g, .06, .42, .42, .03, '#8ec6e6', ww/2+.04, wh*.45+.06, 0);
-      if (opts.chimney) RB(g, .35, wh*.8, .35, .06, '#c98a6a', ww*.25, wh, -dd*.15, true);
+    /* 🏠 v0.50 CLAY HOUSE KIT (phase C, round 1) — same signature, footprint and anchor points as the old walls():
+         body ww = .82W × dd = .82D, wall height wh, door at x = −.18ww on the front (+z) face, window at x = +.22ww, side window on +x.
+       Body + trims are ONE merged vertex-coloured geometry (cached per colours/size/options); glass panes are a second merged mesh whose
+       material glows warm at night (glassMat(NIGHT > .35)). Roof = thick gable with eaves (+.36 across, +.42 along) and 3 rows of rounded clay tiles
+       per slope: slope half-width hw = base/2, rise rh = .42·base, angle θ = atan2(rh, hw); row t ∈ {.25, .5, .75} sits at
+       lateral s = ±hw·t, height y = wh + rh·(1 − t) + .05 and is tilted by ∓θ about the ridge axis (rx when the ridge runs along x). */
+    const walls = (wc, rc, wh, opts) => {
+      opts = opts || {}; const along = W >= D, ww = W*.82, dd = D*.82, base = (along ? dd : ww) + .36, len = (along ? ww : dd) + .42, rh = base*.42, hw = base/2, th = Math.atan2(rh, hw);
+      const key = `house_${wc}_${rc}_${wh}_${W}x${D}_${opts.door || ''}${opts.shutters || ''}${opts.box ? 'b' : ''}${opts.chimney ? 'c' : ''}`;
+      const wcD = '#' + new THREE.Color(wc).multiplyScalar(.86).getHexString(), rcD = '#' + new THREE.Color(rc).multiplyScalar(.8).getHexString(), rcL = '#' + new THREE.Color(rc).lerp(new THREE.Color('#ffffff'), .18).getHexString();
+      const body = mergeGeo(key, (() => { const P = [], fz = dd/2, dx = -ww*.18, wx = ww*.22, wy = wh*.48;
+        P.push([RBG(ww + .3, .22, dd + .3, .1), 0, .11, 0, 1, 1, 1, 0, 0, '#d9d3c8']);                                  // stone plinth
+        P.push([RBG(1.0, .12, .5, .05), dx, .06, fz + .28, 1, 1, 1, 0, 0, '#cfc8bb']);                                  // door step
+        P.push([RBG(ww, wh, dd, .2), 0, .18 + wh/2 - .02, 0, 1, 1, 1, 0, 0, wc]);                                       // walls (round clay corners)
+        P.push([RBG(ww + .04, .32, dd + .04, .12), 0, .34, 0, 1, 1, 1, 0, 0, wcD]);                                     // darker skirting band
+        P.push([gable(base, rh, len), 0, wh + .1, 0, 1, 1, 1, along ? Math.PI/2 : 0, 0, rc]);                          // roof
+        P.push([gable(base - .18, rh - .08, len + .06), 0, wh + .02, 0, 1, 1, 1, along ? Math.PI/2 : 0, 0, rcD]);       // darker underside → thick eaves
+        for (const sd of [-1, 1]) for (const t of [.25, .5, .75]){                                                         // clay tile rows
+          const sx2 = sd*hw*t, y = wh + .1 + rh*(1 - t) + .05;
+          P.push([RBG(along ? len - .1 : .1, .07, along ? .1 : len - .1, .035), along ? 0 : sx2, y, along ? sx2 : 0, 1, 1, 1, 0, along ? 0 : -sd*th, rcL, along ? sd*th : 0]); }
+        P.push([RBG(along ? len + .1 : .2, .16, along ? .2 : len + .1, .07), 0, wh + .1 + rh + .02, 0, 1, 1, 1, 0, 0, '#f7f3ea']);   // ridge cap
+        P.push([RBG(.72, Math.min(1.15, wh*.62), .12, .1), dx, .18 + Math.min(1.15, wh*.62)/2, fz + .01, 1, 1, 1, 0, 0, opts.door || '#8a5a3a']);   // door
+        P.push([CYL, dx, .18 + Math.min(1.15, wh*.62), fz + .01, .36, .12, .36, 0, 0, opts.door || '#8a5a3a', Math.PI/2]);   // arched top
+        P.push([BEAD, dx + .22, .18 + Math.min(1.15, wh*.62)*.5, fz + .1, .045, .045, .045, 0, 0, '#e2b24a']);         // knob
+        P.push([RBG(1.0, .07, .42, .03), dx, .18 + Math.min(1.15, wh*.62) + .42, fz + .2, 1, 1, 1, 0, 0, rc, -.25]);  // little canopy over the door
+        const frame = (x, y, z, side) => { P.push([RBG(side ? .1 : .66, .66, side ? .66 : .1, .06), x, y, z, 1, 1, 1, 0, 0, '#ffffff']);   // rounded frame + sill + cross
+          P.push([RBG(side ? .16 : .76, .08, side ? .76 : .16, .03), x + (side ? .04 : 0), y - .36, z + (side ? 0 : .05), 1, 1, 1, 0, 0, '#f2ede2']);
+          P.push([RBG(side ? .03 : .04, .5, side ? .04 : .03, .01), x + (side ? .085 : 0), y, z + (side ? 0 : .085), 1, 1, 1, 0, 0, '#ffffff']);   // cross mullions IN FRONT of the glass
+          P.push([RBG(side ? .03 : .5, .04, side ? .5 : .03, .01), x + (side ? .085 : 0), y, z + (side ? 0 : .085), 1, 1, 1, 0, 0, '#ffffff']); };
+        frame(wx, wy + .18, fz, false); frame(ww/2, wy + .18, 0, true);
+        if (opts.shutters) for (const sx2 of [-.42, .42]) P.push([RBG(.16, .62, .07, .05), wx + sx2, wy + .18, fz + .04, 1, 1, 1, 0, 0, opts.shutters]);
+        if (opts.box){ P.push([RBG(.7, .16, .22, .05), wx, wy - .22, fz + .14, 1, 1, 1, 0, 0, '#b98a5c']);
+          for (const fx of [-.22, 0, .22]) P.push([BEAD, wx + fx, wy - .08, fz + .15, .08, .07, .08, 0, 0, FLOWER[(fx*10 + 3 | 0) % 5]]); }
+        if (opts.chimney){ P.push([RBG(.4, wh*.85, .4, .1), ww*.25, wh + wh*.85/2, -dd*.15, 1, 1, 1, 0, 0, '#c98a6a']); P.push([RBG(.52, .12, .52, .05), ww*.25, wh + wh*.85, -dd*.15, 1, 1, 1, 0, 0, '#a8705a']); }
+        return P; })());
+      add(g, body, VCM, 0, 0, 0, null, null, null, true);
+      /* glass sits just in front of the frame block (frame depth .1 → front face at +.05), mullions at +.085 */
+      const glass = mergeGeo(`glass_${W}x${D}_${wh}`, [[RBG(.5, .5, .03, .01), ww*.22, wh*.48 + .18, dd/2 + .065, 1, 1, 1, 0, 0, '#ffffff'], [RBG(.03, .5, .5, .01), ww/2 + .065, wh*.48 + .18, 0, 1, 1, 1, 0, 0, '#ffffff']]);
+      add(g, glass, glassMat(NIGHT > .35), 0, 0, 0);
     };
     switch (o.type){
       case 'plot': {
