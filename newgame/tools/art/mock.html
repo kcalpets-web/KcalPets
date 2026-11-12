@@ -52,7 +52,80 @@ function path(pts, w = .55) { pts.forEach(([x, z], i) => { if (!i) return; const
 function bubble(x, z, txt) { label(x, 2.35, z, txt, 'lbl c') }
 function ring(x, z, col) { const m = new THREE.Mesh(new THREE.TorusGeometry(.62, .06, 8, 40), new THREE.MeshBasicMaterial({ color: col })); m.rotation.x = -Math.PI / 2; m.position.set(x, .33, z); S.add(m) }
 
-if (scene === 'world' || scene === 'volcano') {
+if (scene === 'home2') {
+  /* middle zone close-up, "Pen Suk-like" polish: world-noise grass colour, sand blended to the shore, sea with depth + sparkles + foam,
+     instanced grass tufts / flowers / pebbles, mixed trees, four-light setup (hemi .95 · sun 2.1 · cool fill .45 · warm rim .75) */
+  S.background = C('#9fd4ee'); r.toneMappingExposure = .95;
+  S.children.filter(o => o.isLight).forEach(o => S.remove(o));
+  S.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', .95));
+  const sun2 = new THREE.DirectionalLight('#fff1dc', 2.1); sun2.position.set(-7, 16, 9); sun2.castShadow = true; sun2.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun2.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 50 }); sun2.shadow.bias = -.0004; sun2.shadow.radius = 5; S.add(sun2);
+  const f2 = new THREE.DirectionalLight('#bcd4ff', .45); f2.position.set(9, 5, 8); S.add(f2);
+  const rim = new THREE.DirectionalLight('#ffd7a8', .75); rim.position.set(0, 6, -12); S.add(rim);
+  cam.fov = 36; cam.updateProjectionMatrix(); cam.position.set(-.6, 22, 23); cam.lookAt(-.6, 0, -1.2);
+  const shore = z => -3.0 + z * .28, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+  const nz = (x, z) => Math.sin(.45 * x + .2 * z) + .7 * Math.sin(.6 * z - .3 * x) + .25 * Math.sin(1.3 * (x + z));
+  const earth = (x, z) => Math.hypot((x - 1.2) * .8, z - 4.8) < 2.4 + .4 * Math.sin(x * 2 + z);
+  /* ground */
+  const geo = new THREE.PlaneGeometry(30, 36, 160, 190); geo.rotateX(-Math.PI / 2);
+  const P = geo.attributes.position, col = [], c = new THREE.Color(), G = C('#6fbf55'), SA = C('#efe2c4'), EA = C('#c49a68');
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), z = P.getZ(i), n = nz(x, z), d = x - shore(z);
+    let y = 0; c.copy(G).multiplyScalar(.9 + .12 * n / 1.95);
+    if (earth(x, z)) c.lerp(EA, .85);
+    c.lerp(SA, 1 - sm(1.6, 3.6, d + .35 * n));
+    if (d < 0) { y = Math.max(-1.2, d * .35); c.lerp(C('#d8c9a4'), .5) }
+    P.setY(i, y + .03 * n); col.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); land.receiveShadow = true; S.add(land);
+  /* sea: depth colour from the shore, soft sheen */
+  const sg = new THREE.PlaneGeometry(40, 40, 120, 120); sg.rotateX(-Math.PI / 2); const SP = sg.attributes.position, sc = [];
+  for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x, k = sm(0, 6, d); c.set('#7fd6cf').lerp(C('#3b8fc2'), k).lerp(C('#24578f'), sm(5, 12, d)); SP.setY(i, .04 * Math.sin(x * 1.4 + z * .8)); sc.push(c.r, c.g, c.b) }
+  sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3)); sg.computeVertexNormals();
+  const sea2 = new THREE.Mesh(sg, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .25, transparent: true, opacity: .9, clearcoat: .6 })); sea2.position.y = -.12; sea2.receiveShadow = true; S.add(sea2);
+  let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const inst = (geo, mat, n, place) => { const m = new THREE.InstancedMesh(geo, mat, n), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
+    for (let i = 0; i < n * 4 && k < n; i++) { const r0 = place(o, cc); if (!r0) continue; o.updateMatrix(); m.setMatrixAt(k, o.matrix); if (m.instanceColor || cc) m.setColorAt(k, cc); k++ } m.count = k; m.castShadow = true; m.receiveShadow = true; S.add(m); return m };
+  /* foam + sparkles */
+  inst(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), 160, (o, cc) => { const z = -14 + rnd() * 30, x = shore(z) - .15 - rnd() * .35; o.position.set(x, -.06, z); o.scale.set(.12 + rnd() * .2, .02, .06 + rnd() * .06); o.rotation.y = -.27; cc.set('#ffffff'); return 1 });
+  inst(new THREE.PlaneGeometry(.18, .05), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .8 }), 90, (o, cc) => { const z = -14 + rnd() * 30, x = shore(z) - 1 - rnd() * 9; o.position.set(x, -.06, z); o.rotation.x = -Math.PI / 2; cc.set(rnd() < .5 ? '#ffffff' : '#fff6c8'); return 1 });
+  /* grass tufts (5 blades each) · flowers · pebbles — instanced */
+  const blade = new THREE.ConeGeometry(.03, .24, 4); blade.translate(0, .12, 0);
+  inst(blade, new THREE.MeshStandardMaterial({ roughness: .9 }), 1300, (o, cc) => { const x = -6 + rnd() * 14, z = -12 + rnd() * 24; if (x - shore(z) < 2.4 || earth(x, z)) return 0;
+    o.position.set(x + (rnd() - .5) * .12, 0, z + (rnd() - .5) * .12); o.rotation.set((rnd() - .5) * .7, rnd() * 3, (rnd() - .5) * .7); o.scale.setScalar(.7 + rnd() * .8); cc.set(rnd() < .5 ? '#4f9a3e' : '#86cc5c'); return 1 });
+  const petal = new THREE.SphereGeometry(.07, 8, 6);
+  inst(petal, new THREE.MeshStandardMaterial({ roughness: .7 }), 260, (o, cc) => { const x = -5 + rnd() * 12, z = -11 + rnd() * 22; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + rnd() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(rnd() * 5)]); return 1 });
+  inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 110, (o, cc) => { const t = rnd(), z = -12 + t * 24, x = shore(z) + 1.2 + rnd() * 1.6; if (rnd() < .5) { const a = rnd() * 6.28, rr = 2.5 + rnd() * .5; o.position.set(1.2 + Math.cos(a) * rr / .8, .02, 4.8 + Math.sin(a) * rr) } else o.position.set(x, .02, z); o.scale.set(1 + rnd(), .5, 1 + rnd() * .6); o.rotation.y = rnd() * 3; cc.set(rnd() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 });
+  /* trees: broadleaf / pine / palm by the shore */
+  const palm = (x, z, s) => at(g => { for (let k = 0; k < 7; k++) part(g, '#8a5a30', '#c89058', [k * .06 * s, (.25 + k * .32) * s, 0], [.13 * s, .18 * s, .13 * s]); for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; part(g, '#2f7a3a', '#8ad86a', [.42 * s + Math.cos(a) * .7 * s, 2.25 * s, Math.sin(a) * .7 * s], [.75 * s, .07 * s, .2 * s], [0, -a, -.35], { A: .05 }) } part(g, '#6a4a20', '#a07a40', [.42 * s, 2.15 * s, 0], [.16 * s, .14 * s, .16 * s]) }, x, z, rnd() * 3);
+  const broad = (x, z, s) => at(g => PROPS.tree(g, s, rnd() < .5 ? 1 : 0), x, z, rnd() * 3);
+  for (let z = -12; z <= 12; z += 1.1) { for (let x = 5.2; x <= 10; x += 1.1) if (!(z > 1 && z < 3.4)) (rnd() < .3 ? PROPS.pine : null) ? at(g => PROPS.pine(g, .9 + rnd() * .3), x + rnd() * .4, z + rnd() * .4) : broad(x + rnd() * .4, z + rnd() * .4, .75 + rnd() * .3) }
+  for (const z of [-10.5, -6.8, -4.2, 6.5, 9.5]) { const x = shore(z) + 2.3 + rnd() * .6; palm(x, z, .85 + rnd() * .2) }
+  [[2.6, -3.2], [3.4, 6.6], [-.8, -8.6]].forEach(([x, z]) => broad(x, z, .8));
+  [[1.8, -1.2], [4.2, 4.6], [-1.2, 8.8], [3.8, -6.2]].forEach(([x, z]) => at(g => PROPS.bush(g, .8), x, z));
+  /* earth zone rocks + leaf zone */
+  [[.2, 3.8, 1], [2.2, 5.8, .8], [-.6, 6, .6], [2.8, 3.6, .55]].forEach(([x, z, s]) => at(g => PROPS.rock(g, s), x, z));
+  /* path: stepping stones from the tree house to the beach + to the adventure exit */
+  const stones = pts => pts.forEach(([x, z], i) => { if (!i) return; const [a, b] = pts[i - 1], n = Math.ceil(Math.hypot(x - a, z - b) / .55); for (let k = 0; k < n; k++) { const t = k / n; at(g => part(g, '#b9b2a6', '#ece6da', [0, 0, 0], [.26, .06, .22], [0, rnd() * 3, 0], { A: .1, shadow: false }), a + (x - a) * t + (rnd() - .5) * .2, b + (z - b) * t + (rnd() - .5) * .2, 0, 1, .02) } });
+  stones([[3.0, -7.2], [2.2, -5.4], [.6, -3.8], [-1.0, -2.6]]); stones([[3.2, 1.6], [5, 2.2], [7, 2.3], [10, 2.3]]);
+  /* tree house */
+  at(g => { part(g, '#5a3420', '#9a6238', [0, 1.1, 0], [.4, 1.15, .4], [0, 0, 0], { A: .12 }); [[0, 3.1, -.2, 1.5], [-1, 2.8, 0, 1], [1, 2.9, -.3, 1.05], [0, 4, -.4, 1]].forEach(([x, y, z, s]) => part(g, '#2f7a3a', '#9ade6c', [x, y, z], [s, s * .75, s], [0, 0, 0], { A: .12, f: 1.5 }));
+    part(g, '#8a4c26', '#dc9a5e', [0, 1.95, .55], [.95, .62, .5]); part(g, '#a8342e', '#ff6a58', [0, 2.7, .6], [1.1, .28, .62]); part(g, '#3a2418', '#7a4a30', [-.25, 1.78, 1.02], [.22, .36, .05], [0, 0, 0], { A: 0 });
+    part(g, '#ffe27a', '#fff6c8', [.4, 2.0, 1.02], [.15, .15, .04], [0, 0, 0], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#7a4422', '#c8843a', [-.25, .3 + i * .32, 1.08], [.26, .04, .04], [0, 0, 0], { A: 0 });
+    part(g, '#ff6a8a', '#ffb0c0', [0, 3.75, 1.0], [.22, .2, .08], [0, 0, 0], { A: 0 }) }, 3.2, -8.4, -.15, 1);
+  /* the boat vault */
+  const bx = shore(-1.6) - 1.05, bz = -1.6;
+  at(g => { part(g, '#7a4422', '#c8843a', [0, .05, 0], [1.25, .32, .5], [0, 0, 0], { A: .04 }); part(g, '#d8d8e0', '#ffffff', [.35, .55, 0], [.32, .22, .26]); part(g, '#a8342e', '#ff6a58', [.35, .8, 0], [.38, .07, .3]); part(g, '#6a4024', '#a8703e', [-.25, 1.35, 0], [.05, 1.1, .05], [0, 0, 0], { A: 0 });
+    const sg2 = new THREE.BufferGeometry(); sg2.setAttribute('position', new THREE.Float32BufferAttribute([-.3, .55, 0, -.3, 2.2, 0, -1.25, .6, 0], 3)); sg2.computeVertexNormals(); const sl = new THREE.Mesh(sg2, new THREE.MeshStandardMaterial({ color: '#f6f4f0', side: THREE.DoubleSide })); sl.castShadow = true; g.add(sl);
+    part(g, '#c03a3a', '#ff6a5a', [-.05, 2.35, 0], [.22, .1, .02], [0, 0, 0], { A: 0 }); part(g, '#e8e8f0', '#ffffff', [.45, 2.1, .1], [.34, .34, .1], [0, 0, 0], { A: 0 }); const cn = new THREE.Group(); PROPS.coin(cn); cn.position.set(.45, 2.1, .2); cn.scale.setScalar(.8); g.add(cn) }, bx, bz, -.35, 1, -.25);
+  at(g => { for (let i = 0; i < 4; i++) part(g, '#7a4a2a', '#b88050', [i * .55, .02, 0], [.28, .05, .5], [0, 0, 0], { A: 0 }); for (const px of [0, 1.65]) part(g, '#5a3420', '#8a5a30', [px, -.2, .45], [.06, .35, .06], [0, 0, 0], { A: 0 }) }, shore(-1.6) - .1, -.7, -.27, 1, .02);   // little jetty
+  /* pets: earth + leaf here, main pet on the beach */
+  [[PETS.bunny, 1.0, 6.0, .3], [PETS.chick, 2.8, 4.6, -.4], [PETS.bunny, 2.4, -1.8, -.3], [PETS.shiba, 3.9, 6.4, -.6]].forEach(([f, x, z, ry]) => at(f, x, z, ry, .75));
+  at(PETS.shiba, .2, .4, .2, .9); ring(.2, .4, '#4be37a');
+  label(.2, 2.25, .4, '★ คุโมะ (ตัวหลัก)'); label(3.2, 4.5, -8.4, '💞 บ้านต้นไม้'); label(bx + .9, -.2, bz + 1.7, '⛵ คลังเงิน · 🪙 32,600 / 50,000', 'lbl c');
+  label(6.4, 1.4, 2.3, '⚔️ ผจญภัย →'); label(1.2, 1.7, 4.4, '🪨 ลานดิน · 3 ตัว', 'lbl c'); label(2.4, 1.7, -1.8, '🌱 ป่า · 2 ตัว', 'lbl c');
+} else if (scene === 'world' || scene === 'volcano') {
   /* the big island: north = river + ice field + ice mountain (💧❄️) · middle = sand / earth / forest (🪨🌱) · south = volcano under storm clouds (🔥⚡) */
   S.background = C('#2d5f8a');
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
