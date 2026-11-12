@@ -154,7 +154,7 @@ function human(g, k) {
   const sk = ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
   role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footR');
   const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.24, .36, .18] : [.3, .32, .24]);   // body / clothes
-  if (k.skirt) cone(g, k.skD, k.sk, [0, A ? .62 : .42, 0], A ? [.34, .36, .28] : [.36, .26, .3], [Math.PI, 0, 0], .55);  // skirt
+  if (k.skirt) { if (A) cone(g, k.skD, k.sk, [0, .5, 0], [.36, .44, .3], [0, 0, 0], .5); else cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55) }  // adult: long skirt, wide at the hem  // skirt
   for (const s of [-1, 1]) role(part(g, k.clD, k.cl, [s * (A ? .27 : .33), A ? 1.0 : .7, 0], A ? [.065, .3, .065] : [.08, .2, .08], [0, 0, s * .2]), s < 0 ? 'armL' : 'armR');
   if (A) part(g, sk[0], sk[1], [0, hy - .3, 0], [.08, .1, .08], [0, 0, 0], { A: 0 });           // neck
   part(g, sk[0], sk[1], [0, hy, 0], [hr, hr * 1.05, hr * .95]);                                   // head

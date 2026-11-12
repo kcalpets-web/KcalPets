@@ -1,7 +1,9 @@
 /* Opening cutscene (docs/STORY.md). Plays by itself like a short film (letterbox · subtitles · bloom · film grain · soft shadows);
    tap = hurry the current line · "ข้าม" = jump to the name. The extra polish is only used here, the game keeps its light settings.
    playIntro(renderer) → Promise<name>. Runs its own frame loop; main.js pauses its world loop meanwhile. */
-import { THREE, C, part, cone, PETS, PROPS, HUMANS, smoke } from './clay.js';
+import { THREE, C, part, cone, PETS, PROPS, HUMANS, smoke, MAT } from './clay.js';
+import { TIME, WMAT, gulls } from './life.js';
+import { mood, sfx } from './audio.js';
 import { EffectComposer } from '../lib/pp/postprocessing/EffectComposer.js';
 import { RenderPass } from '../lib/pp/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from '../lib/pp/postprocessing/UnrealBloomPass.js';
@@ -36,19 +38,23 @@ const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 function camPath(cam, a, b, la, lb) { return t => { const k = ease(Math.min(1, t)); cam.position.set(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k); cam.lookAt(la[0] + (lb[0] - la[0]) * k, la[1] + (lb[1] - la[1]) * k, la[2] + (lb[2] - la[2]) * k) } }
 function house(g, roof) { part(g, '#c8a070', '#f0d8b0', [0, .8, 0], [1.2, .8, 1], [0, 0, 0], { A: .03 }); cone(g, '#8a3020', roof, [0, 2.0, 0], [1.6, .7, 1.4], [0, Math.PI / 4, 0], .98); part(g, '#5a3420', '#8a5a30', [0, .55, 1.0], [.25, .45, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.65, 1.0, 1.0], [.2, .2, .04], [0, 0, 0], { A: 0 }) }
 const bob = (g, t, a = .06, f = 9) => { g.position.y = Math.abs(Math.sin(t * f)) * a };
+/* walk cycle for a clay person: feet step and lift, arms swing (reads the userData.role parts) */
+function walker(g) { const r = {}; g.traverse(o => { if (o.userData.role) r[o.userData.role] = o }); return (t, k = 1, rate = 7) => { const s = Math.sin(t * rate);
+  for (const [n, sg] of [['footL', 1], ['footR', -1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.position.z = b[2] + sg * s * .13 * k; m.position.y = b[1] + Math.max(0, sg * s) * .07 * k; m.rotation.x = -sg * s * .35 * k }
+  for (const [n, sg] of [['armL', -1], ['armR', 1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .6 * k } } }
 
 /* ---------------- the beats ---------------- */
 function village() { const { S, cam, at } = stage({ sky: skyTex('#7ec4ee', '#d8f0ff') }); plane(S, '#7cc060', 80, 80);
   [[-4, -3, 0, '#c0503a'], [3.5, -4, .4, '#4a7ac0'], [-1, -7, -.2, '#d08a30'], [6, -1, -.5, '#8a4ac0']].forEach(([x, z, ry, c]) => at(g => house(g, c), x, z, ry, 1.1));
   for (let i = 0; i < 12; i++) at(g => PROPS.tree(g, .9 + (i % 3) * .15), -12 + i * 2.2, -10 - (i % 2) * 1.5);
   const walkers = [at(g => HUMANS.villager(g, 0), -3, 1.5, .4, 1.3), at(g => HUMANS.villager(g, 1), 3, 2, -.5, 1.3), at(g => HUMANS.villager(g, 2), .5, -1.5, .2, 1.3), at(PETS.shiba, -1.5, 2.6, .5, .7), at(PETS.chick, 3.4, 2.8, -.3, .6), at(PETS.bunny, 1.2, 3.5, .2, .6)];
-  const move = camPath(cam, [-3, 6, 15], [2, 6.5, 13], [0, 1, 0], [0, 1, -1]);
-  return { S, cam, dur: 6, bloom: .35, cap: 'หมู่บ้านที่สงบสุข', update(t) { move(t / 5.5); walkers.forEach((w, i) => { w.position.x += Math.sin(t * .6 + i) * .006; w.children[0].position.y = Math.abs(Math.sin(t * 8 + i)) * .05 }) } } }
+  const move = camPath(cam, [-3, 6, 15], [2, 6.5, 13], [0, 1, 0], [0, 1, -1]), wk = walkers.slice(0, 3).map(walker);
+  return { S, cam, dur: 6, bloom: .35, cap: 'หมู่บ้านที่สงบสุข', update(t) { move(t / 5.5); walkers.forEach((w, i) => { w.position.x += Math.sin(t * .6 + i) * .006; w.children[0].position.y = Math.abs(Math.sin(t * 8 + i)) * .05; if (wk[i]) wk[i](t + i, Math.abs(Math.cos(t * .6 + i))) }) } } }
 function forest() { const { S, cam, at } = stage({ sky: skyTex('#9fd0e8', '#e8f4e0'), fog: new THREE.Fog('#cfe6d8', 10, 34), fov: 55, sp: [4, 14, -6] }); plane(S, '#5e9e48', 80, 80);
   plane(S, '#c8a070', 2.2, 60, .01, 0, -20);
   for (let i = 0; i < 34; i++) { const s = i % 2 ? 1 : -1, z = 6 - i * 1.6; at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, 1.1 + (i % 4) * .15), s * (2.2 + (i % 3) * 1.2), z) }
-  const k = at(HUMANS.kealee, .2, -1, Math.PI, 1.25);
-  return { S, cam, min: 5, bloom: .4, lines: [['คีลี', 'มาทางนี้สิ! ใกล้ถึงแล้ว']], update(t) { const z = -1 - t * 1.1; k.position.z = z; k.children[0].position.y = Math.abs(Math.sin(t * 7)) * .05; cam.position.set(0, 1.6, z + 6.5); cam.lookAt(0, 1.2, z - 4) } } }
+  const k = at(HUMANS.kealee, .2, -1, Math.PI, 1.25), kw = walker(k);
+  return { S, cam, min: 5, bloom: .4, lines: [['คีลี', 'มาทางนี้สิ! ใกล้ถึงแล้ว']], update(t) { const z = -1 - t * 1.1; k.position.z = z; k.position.y = Math.abs(Math.sin(t * 7)) * .035; kw(t); cam.position.set(0, 1.6, z + 6.5); cam.lookAt(0, 1.2, z - 4) } } }
 function cliff() { const { S, cam, at } = stage({ sky: skyTex('#3a2a6a', '#ffb060', '#ff7a5a'), hemi: '#ffd8b0', hi: .8, sun: '#ffb070', si: 2.4, sp: [0, 3, -20], fov: 50 });
   const c = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#6a8a4a', roughness: 1 })); c.position.set(0, -3, 1); c.receiveShadow = true; S.add(c);
   const sun = new THREE.Mesh(new THREE.CircleGeometry(4, 40), new THREE.MeshBasicMaterial({ color: '#ffe0a0' })); sun.position.set(-3, -2, -60); S.add(sun);
@@ -62,8 +68,8 @@ function sunset() { const { S, cam } = stage({ sky: skyTex('#2a1e5a', '#ffb070',
   let rs = 9; const R = () => (rs = (rs * 16807) % 2147483647) / 2147483647, N = 700;
   const gl = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: '#ffe8a8', transparent: true }), N), o = new THREE.Object3D(), base = [];
   for (let i = 0; i < N; i++) { const z = -4 - Math.pow(R(), .7) * 115, w = 1.2 + (-z) * .07; base.push([(R() - .5) * w * (R() < .8 ? 1 : 2.4), z, .2 + R() * .6 + (-z) * .01, R() * 6]) }
-  S.add(gl); const edge = new THREE.Mesh(new THREE.BoxGeometry(30, 2, 6), new THREE.MeshStandardMaterial({ color: '#3a4a2a' })); edge.position.set(0, .2, 7); S.add(edge);
-  return { S, cam, min: 6.5, lead: 2, bloom: 1.1, lines: [['คีลี', 'สวยงามจังเลย…', 2.5]], update(t) { cam.position.set(0, 3.2, 8); cam.lookAt(0, 1.4, -30);
+  S.add(gl); const gu = gulls(S, 4, 0, -26, 9); const edge = new THREE.Mesh(new THREE.BoxGeometry(30, 2, 6), new THREE.MeshStandardMaterial({ color: '#3a4a2a' })); edge.position.set(0, .2, 7); S.add(edge);
+  return { S, cam, min: 6.5, lead: 2, bloom: 1.1, lines: [['คีลี', 'สวยงามจังเลย…', 2.5]], update(t) { cam.position.set(0, 3.2, 8); cam.lookAt(0, 1.4, -30); gu(t + 20);
     for (let i = 0; i < N; i++) { const [x, z, w, ph] = base[i], tw = .5 + .5 * Math.sin(t * 3 + ph); o.position.set(x + Math.sin(t * .8 + ph) * .15, -.48, z); o.rotation.set(-Math.PI / 2, 0, 0); o.scale.set(w * (.4 + tw), .05, 1); o.updateMatrix(); gl.setMatrixAt(i, o.matrix) } gl.instanceMatrix.needsUpdate = true } } }
 function strike() { const { S, cam, at } = stage({ sky: skyTex('#120c26', '#5a4a8a'), hemi: '#c8c8ff', hi: .7, si: .8, sp: [3, 8, 6], fov: 50 });
   const c = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#4a5a3a', roughness: 1 })); c.position.set(0, -3, 1); S.add(c);
@@ -117,16 +123,17 @@ export function playIntro(R, preset = '') {
     const comp = new EffectComposer(R), rp = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera()), bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), .5, .5, .82), grade = new ShaderPass(GRADE);
     comp.addPass(rp); if (!eco) comp.addPass(bloom); comp.addPass(grade); comp.addPass(new OutputPass());
     const size = () => { comp.setPixelRatio(R.getPixelRatio()); comp.setSize(W(), H()) }; size(); addEventListener('resize', size);
-    const BEATS = [village, forest, cliff, sunset, strike, water, cave, 'name', dark, cloud];
+    const BEATS = [village, forest, cliff, sunset, strike, water, cave, 'name', dark, cloud], MOOD = ['day', 'forest', 'cliff', 'sea', 'storm', 'under', 'cave', 'silent', 'silent', 'dread'];
     let bi = -1, B = null, t = 0, li = -1, typed = 0, line = null, hold = 0, wait = 0, name = preset || '', busy = false, last = performance.now(), alive = true;
     const say = l => { line = l; typed = 0; sub.classList.toggle('on', !!l); if (!l) return; const w = l[0].replace('{name}', name || 'ผู้เล่น'); who.textContent = w; who.style.display = w ? 'block' : 'none'; txt.textContent = '';
-      hold = l[2] ?? 1.3 + l[1].length * .035; if (B.shake || l[1].includes('ครืน')) el.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-8px,4px)' }, { transform: 'translate(7px,-5px)' }, { transform: 'translate(0,0)' }], { duration: 400, iterations: 3 }) };
+      hold = l[2] ?? 1.3 + l[1].length * .035; if (l[1].includes('ครืน')) sfx('boom'); if (B.shake || l[1].includes('ครืน')) el.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-8px,4px)' }, { transform: 'translate(7px,-5px)' }, { transform: 'translate(0,0)' }], { duration: 400, iterations: 3 }) };
     function next() {
       if (busy) return; busy = true; fade.style.opacity = 1; sub.classList.remove('on');
       setTimeout(() => { bi++; t = 0; li = -1; line = null; cap.style.opacity = 0;
         if (bi >= BEATS.length) return finish();
+        mood(MOOD[bi], .8); if (bi === 5) sfx('dive');
         if (BEATS[bi] === 'name') { B = null; form.style.display = 'flex'; inp.value = name; setTimeout(() => inp.focus(), 50); busy = false; return }
-        B = BEATS[bi](); B.S.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true } }); rp.scene = B.S; rp.camera = B.cam; bloom.strength = B.bloom ?? .5;
+        B = BEATS[bi](); B.S.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true } if (o.material === MAT) o.material = WMAT }); rp.scene = B.S; rp.camera = B.cam; bloom.strength = B.bloom ?? .5;
         if (B.cap) { cap.textContent = B.cap; setTimeout(() => cap.style.opacity = 1, 500) }
         wait = B.lead ?? 1; fade.style.opacity = B.dark ? 1 : 0; busy = false }, 800);
     }
@@ -151,8 +158,8 @@ export function playIntro(R, preset = '') {
       if (line && typed < line[1].length) { typed += dt * 20; txt.textContent = line[1].replace('{name}', name).slice(0, Math.floor(typed)) }
       if (!B) return; t += dt; step(dt); B.cam.aspect = W() / H(); B.cam.updateProjectionMatrix(); B.update(t, dt, li);
       if (!B.dark) { B.cam.position.x += Math.sin(t * .7) * .03 + Math.sin(t * 1.9) * .01; B.cam.position.y += Math.sin(t * .9 + 1) * .02; B.cam.rotation.z += Math.sin(t * .5) * .004 }   // hand-held drift
-      if (B.flashAt && Math.abs(t - B.flashAt) < .03) flash.animate([{ opacity: .95 }, { opacity: 0 }], { duration: 500 });
-      grade.uniforms.time.value = t; R.setClearColor(0x000000); comp.render(dt);
+      if (B.flashAt && !B.fl && t >= B.flashAt) { B.fl = 1; sfx('thunder'); flash.animate([{ opacity: .95 }, { opacity: 0 }], { duration: 500 }); }
+      grade.uniforms.time.value = t; TIME.value = now / 1000; R.setClearColor(0x000000); comp.render(dt);
     }
     requestAnimationFrame(loop); next();
     window.__cut = { advance, skip: () => $('.skip').click(), setName: v => { inp.value = v; form.requestSubmit() }, get beat() { return bi }, get B() { return B }, get t() { return t }, jump: i => { if (!name) name = 'ทดสอบ'; form.style.display = 'none'; bi = i - 1; busy = false; next() } };

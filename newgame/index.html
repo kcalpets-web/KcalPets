@@ -64,6 +64,9 @@
   #sleep{position:fixed;inset:0;z-index:55;background:#0a0e20;color:#fff;display:none;align-items:center;justify-content:center;font-size:22px;opacity:0;transition:opacity .6s}
   body.cut .top,body.cut .vit,body.cut #quest,body.cut #tools,body.cut .bot,body.cut #team,body.cut #fps,body.cut .mtag{display:none!important}
   body.night #quest{box-shadow:0 0 0 2px #ffd23f88}
+  #qArrow{position:fixed;left:0;top:0;display:none;pointer-events:none;z-index:20;filter:drop-shadow(0 0 1.5px #2a2030) drop-shadow(0 0 1.5px #2a2030) drop-shadow(0 3px 0 #2a203088)}
+  #qArrow i{display:block;width:34px;height:44px;background:#ffd23f;clip-path:polygon(30% 0,70% 0,70% 52%,100% 52%,50% 100%,0 52%,30% 52%);animation:qa .7s ease-in-out infinite}
+  @keyframes qa{50%{transform:translateY(-12px)}}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
 <body>
@@ -86,6 +89,6 @@
 </div>
 <div id="reel"><div class="rb"><b id="reelTxt"></b><div class="row"><span class="mut">สาย</span><div class="bar grow"><i id="reelTen"></i></div></div><div class="row"><span class="mut">ปลา</span><div class="bar grow"><i id="reelSta" style="background:#4f9cff"></i></div></div></div></div>
 <div id="login"><h1>🏝️ New Game</h1><p class="mut">เกาะของน้องๆ · ผจญภัยด้วยกัน</p><div id="lG"></div><button class="btn" id="lGuest">เล่นแบบไม่ล็อกอิน</button><p class="mut" style="font-size:11px">ล็อกอิน Google ใช้แค่ชื่อและรูปโปรไฟล์ · เซฟเก็บในเครื่องนี้</p></div>
-<div id="sleep"><b>😴 ราตรีสวัสดิ์…</b></div><div id="toast"></div><div id="joy"><div id="joyK"></div></div>
+<div id="qArrow"><i></i></div><div id="sleep"><b>😴 ราตรีสวัสดิ์…</b></div><div id="toast"></div><div id="joy"><div id="joyK"></div></div>
 <script type="module" src="src/main.js"></script>
 </body></html>

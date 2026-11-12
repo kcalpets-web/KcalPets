@@ -18,6 +18,8 @@ src/data.js       ตัวเลขทั้งหมด: ของที่เ
 src/state.js      เซฟ (localStorage `ng_save_v3` · `S.story` ธงเนื้อเรื่อง · `S.area` farm/town · `S.shops`) · ค่าพลัง · Exp · เรือคลังเงิน
 src/world.js      เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
 src/clay.js       ชุดปั้นดิน: น้อง มอนสเตอร์ ของในฉาก อุปกรณ์ · Q.seg = ความละเอียดก้อนดิน
+src/life.js       ลม (WMAT: ใบไม้สีเขียวไหว) · คลื่น (addWaves) · นกนางนวล · TIME = เวลาของ shader
+src/audio.js      เสียงสังเคราะห์ Web Audio: mood('day'|'night'|'town'|…) · sfx('chop'|'coin'|…) · เริ่มหลังแตะครั้งแรก
 src/ui.js         ป๊อปอัป (ปุ่มกลับมาก่อน) · toast · ตัวเลขลอย
 src/cutscene.js   ฉากเปิด (เล่นเองตามเวลา · bloom/เงา/เกรนเฉพาะช่วงนี้ แล้วคืนค่าเดิมให้ renderer · ฉากของตัวเอง · `playIntro(R)` → ชื่อผู้เล่น · hook `window.__cut`)
 src/main.js       ลูปเกม: เนื้อเรื่อง (QUESTS ใน data.js: flag/stat/check) เมือง (world.js `buildTown`, x≈46) เดิน เคลียร์ มอนสเตอร์ ต่อสู้ ดรอป กระเป๋า เรือ บ้าน ร้าน อุปกรณ์ เควส

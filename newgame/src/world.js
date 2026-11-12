@@ -4,6 +4,7 @@
    sea colour by depth from the shore · instanced grass tufts / flowers / pebbles / foam / sparkles. */
 import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS } from './clay.js';
 import { CLEAR } from './data.js';
+import { WMAT, addWind, addWaves } from './life.js';
 
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
@@ -41,15 +42,15 @@ export function buildWorld(scene, eco) {
   const sg = new THREE.PlaneGeometry(60, 60, 90, 90); sg.rotateX(-Math.PI / 2); const SP = sg.attributes.position, sc = [];
   for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
   sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
-  const sea = new THREE.Mesh(sg, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .25, transparent: true, opacity: .9, clearcoat: .6 })); sea.position.y = -.12; scene.add(sea); W.sea = sea;
+  const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .25, transparent: true, opacity: .9, clearcoat: .6 }))); sea.position.y = -.12; scene.add(sea); W.sea = sea;
   const R = rng(5);
   const inst = (g, mat, n, place, shadow = true) => { const m = new THREE.InstancedMesh(g, mat, n), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
     for (let i = 0; i < n * 4 && k < n; i++) { if (!place(o, cc)) continue; o.updateMatrix(); m.setMatrixAt(k, o.matrix); m.setColorAt(k, cc); k++ } m.count = k; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m };
-  inst(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), 200, (o, cc) => { const z = -16 + R() * 34, x = shore(z) - .15 - R() * .35; o.position.set(x, -.06, z); o.scale.set(.12 + R() * .2, .02, .06 + R() * .06); o.rotation.y = -.27; cc.set('#ffffff'); return 1 }, false);
+  W.foam = inst(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), 200, (o, cc) => { const z = -16 + R() * 34, x = shore(z) - .15 - R() * .35; o.position.set(x, -.06, z); o.scale.set(.12 + R() * .2, .02, .06 + R() * .06); o.rotation.y = -.27; cc.set('#ffffff'); return 1 }, false);
   W.spark = inst(new THREE.PlaneGeometry(.18, .05), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .8 }), 110, (o, cc) => { const z = -16 + R() * 34, x = shore(z) - 1 - R() * 10; o.position.set(x, -.06, z); o.rotation.x = -Math.PI / 2; cc.set(R() < .5 ? '#ffffff' : '#fff6c8'); return 1 }, false);
   /* ---- decor: grass tufts, flowers, beach pebbles (not clearable) ---- */
   const blade = new THREE.ConeGeometry(.03, .24, 4); blade.translate(0, .12, 0);
-  inst(blade, new THREE.MeshStandardMaterial({ roughness: .9 }), eco ? 500 : 1300, (o, cc) => { const x = -6 + R() * 14, z = -13 + R() * 26; if (x - shore(z) < 2.4 || earth(x, z)) return 0;
+  inst(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 500 : 1300, (o, cc) => { const x = -6 + R() * 14, z = -13 + R() * 26; if (x - shore(z) < 2.4 || earth(x, z)) return 0;
     o.position.set(x, 0, z); o.rotation.set((R() - .5) * .7, R() * 3, (R() - .5) * .7); o.scale.setScalar(.7 + R() * .8); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c'); return 1 }, false);
   inst(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ roughness: .7 }), eco ? 120 : 260, (o, cc) => { const x = -5 + R() * 12, z = -12 + R() * 24; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + R() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(R() * 5)]); return 1 }, false);
   inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 90, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
@@ -135,8 +136,8 @@ export function despawnClear(W, o) { if (!o.g) return; W.scene.remove(o.g); o.g 
 /* merge every static mesh into one mesh per material (non-indexed, world space) → a handful of draw calls instead of ~1,000 */
 function mergeStatic(root) {
   root.updateMatrixWorld(true); const buckets = new Map();
-  root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), key = o.material.uuid + '|' + keys;
-    if (!buckets.has(key)) buckets.set(key, { mat: o.material, list: [], keys: keys.split(',') }); const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld); buckets.get(key).list.push(g) });
+  root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), mat = o.material === MAT ? WMAT : o.material, key = mat.uuid + '|' + keys;
+    if (!buckets.has(key)) buckets.set(key, { mat, list: [], keys: keys.split(',') }); const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld); buckets.get(key).list.push(g) });
   const out = new THREE.Group();
   for (const { mat, list, keys } of buckets.values()) {
     const geo = new THREE.BufferGeometry();
