@@ -346,18 +346,27 @@ document.querySelectorAll('#tools [data-tool]').forEach(b => b.onclick = () => {
   if (k && !S.stat['tip_' + k]) { S.stat['tip_' + k] = 1; toast(tips[k] + (k !== 'rod' && k !== 'sword' ? '<br>ลากผ่าน 1 ครั้ง = 1 ที · ของใหญ่ลากหลายรอบ' : ''), 3000) } });
 cv.addEventListener('pointerdown', e => {
   if (CUT) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-  if (ptrs.size === 2) { const a = [...ptrs.values()]; pinch = { d: Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), z: zoom }; stroke = null; down = null; return }
+  camV.x = camV.z = 0;
+  if (ptrs.size === 2) { const a = [...ptrs.values()]; pinch = { d: Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), z: zoom, cx: (a[0][0] + a[1][0]) / 2, cy: (a[0][1] + a[1][1]) / 2 }; stroke = null; down = null; trail.length = 0; return }
   down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), moved: false };
-  if (tool && tool !== 'rod') stroke = { x: e.clientX, y: e.clientY, last: null };
+  if (tool && tool !== 'rod') stroke = { x: e.clientX, y: e.clientY, last: null, lock: false, go: 0 };
 });
 cv.addEventListener('pointermove', e => {
   if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
-  if (pinch && ptrs.size >= 2) { const a = [...ptrs.values()], d = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]); zoom = Math.max(.55, Math.min(1.7, pinch.z * Math.max(20, d) / pinch.d)); localStorage.setItem('ng_zoom', zoom); return }
+  if (pinch && ptrs.size >= 2) { const a = [...ptrs.values()], d = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), cx = (a[0][0] + a[1][0]) / 2, cy = (a[0][1] + a[1][1]) / 2;   // 2 fingers: pinch = zoom · move = pan
+    zoom = Math.max(.55, Math.min(1.7, pinch.z * Math.max(20, d) / pinch.d)); localStorage.setItem('ng_zoom', zoom); pan(cx - pinch.cx, cy - pinch.cy); pinch.cx = cx; pinch.cy = cy; return }
   if (!down) return; if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) down.moved = true;
-  if (stroke) { strokeTo(e.clientX, e.clientY); return }
-  if (down.moved) { const k = .045 * zoom; camT.x -= (e.clientX - down.lx) * k; camT.z -= (e.clientY - down.ly) * k; clampCam(); down.lx = e.clientX; down.ly = e.clientY }
+  /* holding a tool: a drag that crosses something the tool works on (within the first ~70 px) becomes a swipe;
+     a drag over empty ground just moves the map — no need to switch to ✋ first */
+  if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
+    if (stroke.go < 70) return; stroke = null; trail.length = 0; down.lx = e.clientX; down.ly = e.clientY; return }
+  if (down.moved) { pan(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY }
 });
-const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
+/* map panning with a little glide after letting go */
+const camV = { x: 0, z: 0, t: 0 };
+function pan(dx, dy) { const k = .045 * zoom, now = performance.now(), ddt = Math.max(8, now - camV.t); camT.x -= dx * k; camT.z -= dy * k; clampCam();
+  camV.x = camV.x * .5 + (-dx * k / ddt * 1000) * .5; camV.z = camV.z * .5 + (-dy * k / ddt * 1000) * .5; camV.t = now }
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (performance.now() - camV.t > 90) camV.x = camV.z = 0; if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.55, Math.min(1.7, zoom * (e.deltaY > 0 ? 1.1 : 1 / 1.1))); localStorage.setItem('ng_zoom', zoom) }, { passive: false });
 const fx = $('fx'), fxc = fx.getContext('2d'), trail = [];
@@ -369,11 +378,13 @@ function drawTrail(now) {
   for (let i = 1; i < trail.length; i++) { const a = trail[i - 1], b = trail[i]; if (b[2] - a[2] > 80) continue; const k = 1 - (now - b[2]) / 260;
     fxc.strokeStyle = tool === 'sword' ? `rgba(255,240,180,${k})` : `rgba(255,255,255,${k * .85})`; fxc.lineWidth = 3 + 9 * k; fxc.beginPath(); fxc.moveTo(a[0], a[1]); fxc.lineTo(b[0], b[1]); fxc.stroke() }
 }
-function strokeTo(x, y) {
-  const st = stroke, n = Math.max(1, Math.ceil(Math.hypot(x - st.x, y - st.y) / 12)), now = performance.now();
+const fits = key => key && (key.kind === 'mon' ? S.has.sword : key.kind === 'clear' && tool !== 'sword' && W.clear.get(key.id) && D.CLEAR[W.clear.get(key.id).t].tool === tool);
+function strokeTo(x, y) {                                   // returns true if the swipe touched something the tool works on
+  const st = stroke, dd = Math.hypot(x - st.x, y - st.y), n = Math.max(1, Math.ceil(dd / 12)), now = performance.now(); let hit = false; st.go += dd;
   for (let k = 1; k <= n; k++) { const px = st.x + (x - st.x) * k / n, py = st.y + (y - st.y) * k / n; trail.push([px, py, now]);
-    const key = pickForTool(px, py), id = key ? (key.kind === 'clear' ? key.id : key.kind === 'mon' ? key.m : key.kind) : null; if (id !== st.last) { st.last = id; if (key) toolHit(key) } }
-  st.x = x; st.y = y;
+    const key = pickForTool(px, py), id = key ? (key.kind === 'clear' ? key.id : key.kind === 'mon' ? key.m : key.kind) : null, ok = fits(key); if (ok) hit = true;
+    if (id !== st.last) { st.last = id; if (key && (ok || st.lock)) toolHit(key) } }
+  st.x = x; st.y = y; return hit;
 }
 function tap(x, y) {
   if (tool === 'rod') { rayAt(x, y); if (ray.ray.intersectPlane(seaPlane, hitV)) { const k = (rayAt(x, y).intersectObjects(W.picks, false)[0] || {}).object?.userData.pick; if (k && k.kind === 'howsif') return openHowsif(); castAt(hitV.x, hitV.z) } return }
@@ -451,6 +462,7 @@ function frame(now) {
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
   fishTick(dt, now); jobsTick(now);
   if (now - lastHurt > 4000) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt); S.mp = Math.min(st.mp, pMp() + st.mp * D.REGEN.perSec * dt) }
+  if (!down && !pinch && (camV.x || camV.z)) { camT.x += camV.x * dt / speed; camT.z += camV.z * dt / speed; clampCam(); const f = Math.pow(.04, dt / speed); camV.x *= f; camV.z *= f; if (Math.hypot(camV.x, camV.z) < .05) camV.x = camV.z = 0 }
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
@@ -673,5 +685,6 @@ if (!S.profile) showLogin(); else afterLogin();
 window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
+  get cam() { return { x: camT.x, z: camT.z } },
   finishJobs: () => { for (const k in S.jobs) S.jobs[k] = 0 }, get jobs() { return S.jobs },
   slashAll: () => { for (const m of [...mons]) if (m.area === S.area) toolHit({ kind: 'mon', m }) } };

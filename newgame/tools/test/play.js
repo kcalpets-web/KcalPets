@@ -33,6 +33,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
       const id = await E(([tool, pred]) => { const N = window.__ng; N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
       const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
+    /* holding a tool, a drag over open water moves the map (no ✋ needed) */
+    { await E(() => { window.__ng.setTool('axe'); window.__ng.look(-2, 0) }); await wait(1500); const c0 = await N(() => window.__ng.cam);
+      await pg.mouse.move(60, 600); await pg.mouse.down(); await pg.mouse.move(60, 380, { steps: 8 }); await pg.mouse.up(); await wait(400); const c1 = await N(() => window.__ng.cam);
+      log('pan with axe', (c1.z - c0.z).toFixed(2)); if (!(c1.z - c0.z > 3)) errs.push('drag with a tool did not pan the map') }
     await E(() => { window.__ng.speed = 3 });
     /* quest 0: wood 10 + stone 5 → build → sleep */
     await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
