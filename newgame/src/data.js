@@ -60,10 +60,14 @@ export const ITEMS = {
 export const SLOT_NAME = { weapon: 'อาวุธ', armor: 'ชุดเกราะ' };
 
 /* ---- the player (no body on screen: the finger is the player) ---- */
-export const PLAYER_BASE = { hp: 80, mp: 40, atk: 10, def: 2 };
-export const PLAYER_GROW = { hp: 6, mp: 2, atk: 2, def: 1 };
+export const PLAYER_BASE = { hp: 80, en: 100, atk: 10, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
+export const PLAYER_GROW = { hp: 6, en: 5, atk: 2, def: 1 };
+export const TOOL_EN = { sickle: 1, axe: 2, hammer: 2, rod: 3 };         // ⚡ per hit / per cast · the sword is free
+export const EN_REGEN = 1 / 900;                                          // share of max energy per second when resting (4 s without tools) → full in 15 min · sleeping/resting = full
+export const FISH_EN = { B: 8, R: 15, E: 30, L: 60 };                     // ⚡ from eating a fish (bag)
+export const HIT_STOP = 55;                                               // ms the world pauses when the sword connects (game-feel)
 export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pets)
-export const REGEN = { perSec: 1 / 150 };                                 // share of max HP/Mana per second when not hurt for 4 s → full in 2.5 min
+export const REGEN = { perSec: 1 / 150 };                                 // share of max HP per second when not hurt for 4 s → full in 2.5 min
 export const SLASH_CD = 220;                                              // ms between two sword hits
 export const MON_ATK_CD = 1400, AGGRO = 3.2;
 export const MON_HIT_PLAYER = .25;                                        // share of monster attacks that hit the player (screen shake)
@@ -104,8 +108,8 @@ export const BOAT_UP = [0, 300, 600, 1000, 1500, 2200, 3000, 4000, 5200, 6600]; 
 export const SHOP = [
   { k: 'hpS', icon: '🧪', name: 'ยา HP ขวดเล็ก', hp: 40, price: 300 },
   { k: 'hpL', icon: '🧪', name: 'ยา HP ขวดใหญ่', hp: 120, price: 900 },
-  { k: 'mpS', icon: '🔵', name: 'ยา Mana ขวดเล็ก', mp: 20, price: 300 },
-  { k: 'mpL', icon: '🔵', name: 'ยา Mana ขวดใหญ่', mp: 60, price: 900 },
+  { k: 'mpS', icon: '🍵', name: 'ชาสมุนไพร (พลังงาน)', en: 30, price: 250 },
+  { k: 'mpL', icon: '🍵', name: 'ชาสมุนไพรเข้มข้น (พลังงาน)', en: 90, price: 700 },
 ];
 export const SELL_RATE = .5;
 

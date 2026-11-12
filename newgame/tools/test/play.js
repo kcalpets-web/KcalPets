@@ -31,8 +31,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await clickAll('#tN'); await wait(500); await shot('03-night');
     const swipeAt = async (x, y, dx = 55) => { await pg.mouse.move(x - dx, y); await pg.mouse.down(); await pg.mouse.move(x + dx, y + 6, { steps: 7 }); await pg.mouse.up() };
     const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
-      const id = await E(([tool, pred]) => { const N = window.__ng; N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
+      const id = await E(([tool, pred]) => { const N = window.__ng; if (N.S.en < 10) { N.S.en = null; N.S.stat.enTopUp = (N.S.stat.enTopUp || 0) + 1 } N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
       const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
+    /* 🧰 toolbox: one button opens the tray, picking a tool closes it */
+    await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
+    { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed') }
     /* holding a tool, a drag over open water moves the map (no ✋ needed) */
     { await E(() => { window.__ng.setTool('axe'); window.__ng.look(-2, 0) }); await wait(1500); const c0 = await N(() => window.__ng.cam);
       await pg.mouse.move(60, 600); await pg.mouse.down(); await pg.mouse.move(60, 380, { steps: 8 }); await pg.mouse.up(); await wait(400); const c1 = await N(() => window.__ng.cam);

@@ -1,5 +1,5 @@
 /* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
-   Pets have their own level / HP / Mana / Exp and grow by eating. */
+   The player has ⚡ energy (tools), not Mana. Pets have their own level / HP / Mana / Exp and grow by eating. */
 import { SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
 
 export let S = null;
@@ -7,7 +7,7 @@ export function fresh() {
   return {
     v: 3, created: Date.now(), profile: null,                // profile: { name, pic, sub, guest }
     story: {}, area: 'farm', shops: {},                      // story flags (intro, built, slept, howsif, fishGiven, boatFixed, town, sword, …) · where the camera is · repaired shops
-    lv: 1, exp: 0, pts: 0, hp: null, mp: null,               // player level · tree points (rules TBD) · current HP / Mana (null = full)
+    lv: 1, exp: 0, pts: 0, hp: null, en: null,               // player level · tree points (rules TBD) · current HP / ⚡ energy (null = full)
     coin: 2000, gem: 500,
     pets: STARTERS.map(p => ({ ...p, lv: 1, exp: 0, hp: null, mp: null, down: 0 })), team: STARTERS.slice(0, TEAM_MAX).map(p => p.id),
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
@@ -28,12 +28,12 @@ export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 export function itemStats(it) { const T = ITEMS[it.t], m = RAR_MUL[it.r]; return { atk: Math.round((T.atk || 0) * m), def: Math.round((T.def || 0) * m), hp: Math.round((T.hp || 0) * m) } }
 /* player = base + growth per level + equipment */
 export function pStats() {
-  const L = S.lv - 1, s = { hp: PLAYER_BASE.hp + PLAYER_GROW.hp * L, mp: PLAYER_BASE.mp + PLAYER_GROW.mp * L, atk: PLAYER_BASE.atk + PLAYER_GROW.atk * L, def: PLAYER_BASE.def + PLAYER_GROW.def * L };
+  const L = S.lv - 1, s = { hp: PLAYER_BASE.hp + PLAYER_GROW.hp * L, en: PLAYER_BASE.en + PLAYER_GROW.en * L, atk: PLAYER_BASE.atk + PLAYER_GROW.atk * L, def: PLAYER_BASE.def + PLAYER_GROW.def * L };
   for (const slot in S.eq) { const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def; s.hp += st.hp } }
   return s;
 }
 export function pHp() { const m = pStats().hp; if (S.hp == null || S.hp > m) S.hp = m; return S.hp }
-export function pMp() { const m = pStats().mp; if (S.mp == null || S.mp > m) S.mp = m; return S.mp }
+export function pEn() { const m = pStats().en; if (S.en == null || S.en > m) S.en = m; return S.en }
 /* pet = (base + growth per level) × rarity × form */
 export const formOf = p => p.lv >= FORMS[2].lv ? 2 : p.lv >= FORMS[1].lv ? 1 : 0;
 export function petStats(p) {
@@ -43,7 +43,7 @@ export function petStats(p) {
 export function petHp(p) { const m = petStats(p).hp; if (p.hp == null || p.hp > m) p.hp = m; return p.hp }
 export function petMp(p) { const m = petStats(p).mp; if (p.mp == null || p.mp > m) p.mp = m; return p.mp }
 
-export function gainPlayerExp(n) { let up = 0; S.exp += n; while (S.exp >= expNeed(S.lv)) { S.exp -= expNeed(S.lv); S.lv++; S.pts++; up++ } if (up) { S.hp = null; S.mp = null } return up }
+export function gainPlayerExp(n) { let up = 0; S.exp += n; while (S.exp >= expNeed(S.lv)) { S.exp -= expNeed(S.lv); S.lv++; S.pts++; up++ } if (up) { S.hp = null; S.en = null } return up }
 /* returns { up: levels gained, evolved: true if the form changed } */
 export function gainPetExp(p, n) {
   const f0 = formOf(p); let up = 0; if (p.lv >= PET_LV_MAX) return { up, evolved: false };
