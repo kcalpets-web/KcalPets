@@ -397,6 +397,274 @@ export function start(){
     }
     return mergeGeo(key, P);
   }
+  /* ---------- 🏗 v0.51 CLAY BUILDINGS, ROUND 2 (phase C round 2 — designer confirmed the plan 12 พ.ย.) ----------
+     Buildings that never used walls(): บ้านน้อง, โรงสี, ศาลาน้องขิง, ทางเข้าเหมือง, เล้าไก่, คอกวัว  +  shop-front props of walls() houses
+     +  ruins (o.closed) with a staged repair look  +  the construction site.  Same rules as v0.49/v0.50:
+       • footprint, H and every anchor (doors, sign, mill hub, lantern, animal slots, trough) stay where they were
+       • all static parts are merged ONCE per (type, size, variant/stage) into one vertex-coloured geometry (mergeGeo → FOLG cache,
+         separate eco set because blobGeo is coarser in eco) → 1 draw call; only parts that move or glow stay separate
+         (mill sails, forge coals, mine lantern, mill glass, animals, construction ghost)
+       • the 3-s "live" zone rebuild therefore allocates nothing — it only looks the cached geometries up again. */
+  const shade = (hex, k) => '#' + new THREE.Color(hex).multiplyScalar(k).getHexString();   // cache-build time only
+  /** clay tile rows on a gable roof — same formula as walls(): slope half-width hw = base/2, rise rh, θ = atan2(rh, hw);
+      row t sits at lateral s = ±hw·t, height y = y0 + rh(1 − t) + .05 and is tilted ∓θ about the ridge. along = ridge runs along x. */
+  function tileRows(P, base, rh, len, y0, col, along, x0 = 0, z0 = 0, rows = [.25, .5, .75]){
+    const hw = base/2, th = Math.atan2(rh, hw);
+    for (const sd of [-1, 1]) for (const t of rows){ const s = sd*hw*t, y = y0 + rh*(1 - t) + .05;
+      P.push([RBG(along ? len - .1 : .1, .07, along ? .1 : len - .1, .035), x0 + (along ? 0 : s), y, z0 + (along ? s : 0), 1, 1, 1, 0, along ? 0 : -sd*th, col, along ? sd*th : 0]); }
+  }
+  /** log lying horizontally: axis along (cos ry, 0, −sin ry), bark body + 2 light end-grain caps */
+  function logP(P, x, y, z, len, rr, ry = 0, bark = '#a8703f'){ const cx = Math.cos(ry), cz = -Math.sin(ry);
+    P.push([CYL, x, y, z, rr, len, rr, ry, Math.PI/2, bark]);
+    for (const sd of [-1, 1]) P.push([CYL, x + sd*cx*len/2, y, z + sd*cz*len/2, rr*.86, .03, rr*.86, ry, Math.PI/2, '#ecd3a4']); }
+  /** n stacked planks (alternating tone, slightly askew) with the bottom at y0 */
+  function plankPile(P, x, z, n, y0 = 0, len = 1.1, col = '#d8b48a', ry = 0){
+    for (let k = 0; k < n; k++) P.push([RBG(len, .07, .22, .03), x + (k%2)*.04, y0 + .04 + k*.075, z + ((k*37)%5 - 2)*.015, 1, 1, 1, ry + (k%3 - 1)*.06, 0, k%2 ? col : shade(col, .9)]); }
+  /** n rubble stones scattered in a square of side `spread` around (cx, cz) */
+  function rubble(P, r, n, cx, cz, spread, s = 1){ for (let k = 0; k < n; k++){ const sz = (.12 + r()*.16)*s;
+    P.push([blobGeo(`rub${k%4}`, '#857b71', '#cfc7bb', .2, 1.4, [1, .7, .9]), cx + (r() - .5)*spread, sz*.45, cz + (r() - .5)*spread, sz, sz, sz, r()*6.28, 0]); } }
+  /** 🏚 ruin (o.closed, repair stage 0): cracked slab in two askew halves, broken walls (house) or snapped posts (sala),
+      leaning beams, the torn roof sheet in the house's roof colour (old anchor .1, .55, .1, tilt .4), loose tiles, rubble, weeds */
+  function ruinParts(P, r, W, D, wc, rc, sala){
+    const hw = (W - .3)/2 - .03;
+    P.push([RBG(hw, .12, D - .3, .05), -(W - .3)/4, .06, 0, 1, 1, 1, .02, .012, '#aaa08f']);
+    P.push([RBG(hw, .12, D - .3, .05), (W - .3)/4, .05, .03, 1, 1, 1, -.03, -.015, '#9c9282']);
+    if (sala){ for (const [x, z, h] of [[-1.55, -1.55, .75], [1.55, -1.55, .4], [-1.55, 1.55, .28]]){ P.push([CYL, x, .12 + h/2, z, .1, h, .1, 0, 0, '#7a5236']); P.push([BEAD, x, .12 + h, z, .1, .05, .1, 0, 0, '#ecd3a4']); }
+      logP(P, .35, .22, .95, 2.4, .1, .45, '#7a5236'); }
+    else { P.push([RBG(W*.55, .8, .2, .06), -W*.12, .52, -D*.36, 1, 1, 1, 0, .03, wc]);                         // broken back wall
+      P.push([RBG(.2, .55, D*.5, .06), -W*.38, .4, -D*.12, 1, 1, 1, 0, 0, shade(wc, .93)]);                    // side wall stub
+      for (let k = 0; k < 4; k++) P.push([blobGeo(`rw${k%2}`, '#c9bba3', '#fff7e8', .3, 1.7, [1, .8, .9]), -W*.34 + k*W*.15, .9 + (k%2)*.07, -D*.36, .17, .13, .13, r()*6, 0, k%2 ? wc : shade(wc, .95)]); }   // jagged top
+    P.push([RBG(.14, 1.6, .14, .04), -.8, .8, -.7, 1, 1, 1, 0, .35, '#7a5236']);                                // leaning beams
+    P.push([RBG(.14, 1.2, .14, .04), .8, .55, -.5, 1, 1, 1, 0, 0, '#6b4a30', -.5]);
+    P.push([RBG(1.6, .06, .9, .03), .1, .58, .1, 1, 1, 1, 0, .4, rc]);                                           // torn roof sheet
+    P.push([RBG(1.5, .03, .85, .02), .12, .63, .1, 1, 1, 1, 0, .4, shade(rc, 1.12)]);
+    for (let k = 0; k < 4; k++) P.push([RBG(.3, .05, .13, .025), (r() - .5)*W*.7, .14, D*.15 + r()*D*.25, 1, 1, 1, r()*6, 0, k%2 ? rc : shade(rc, .85)]);   // loose tiles
+    rubble(P, r, 8, .1, .45, W*.6);
+    P.push(...tuftParts(r, -W*.36, D*.36, .7), ...tuftParts(r, W*.33, D*.38, .6), ...tuftParts(r, W*.38, -D*.15, .55), ...tuftParts(r, -.2, -.2, .45));
+  }
+  /** windmill sails (spin group; hub at the group origin, arms in the x-y plane) — merged once: 4 spars + canvas sails + slats */
+  function millSails(){ return mergeGeo('millSails', (() => {
+    const P = [[BEAD, 0, 0, .06, .17, .17, .12, 0, 0, '#8a5a33'], [CYL, 0, 0, .15, .08, .1, .08, 0, 0, '#e2b24a', Math.PI/2]];
+    for (let k = 0; k < 4; k++){ const a = k*Math.PI/2, ux = -Math.sin(a), uy = Math.cos(a), px = Math.cos(a), py = Math.sin(a);   // arm direction u, sail side p
+      P.push([RBG(.09, 1.75, .07, .03), ux*.95, uy*.95, 0, 1, 1, 1, 0, a, '#8a5a33']);
+      P.push([RBG(.34, 1.25, .03, .015), ux*1.1 + px*.2, uy*1.1 + py*.2, -.02, 1, 1, 1, 0, a, '#fbf8f2']);
+      for (const d of [.55, .95, 1.35, 1.7]) P.push([RBG(.44, .045, .05, .02), ux*d + px*.17, uy*d + py*.17, .03, 1, 1, 1, 0, a, '#b07a4a']); }
+    return P; })()); }
+  /** v0.51 building bodies.  v = variant: repair stage for 'sala' (0 ruin … 3 done) • 1 = closed for 'mine' • 0 otherwise */
+  function bldGeo(type, W, D, v, H){
+    const key = `bld_${type}${W}x${D}v${v}h${H || 0}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = [];
+    switch (type){
+      case 'doghouse': {                                       // 1×1 kennel — anchors kept: body centre z −.08, arched door z .45 (centre y .42), plate y .81
+        P.push([RBG(1.5, .12, 1.5, .05), 0, .06, 0, 1, 1, 1, 0, 0, '#cdb08a']);                               // plank pad + seams
+        for (let k = 0; k < 4; k++) P.push([RBG(1.48, .015, .02, .005), 0, .125, -.6 + k*.4, 1, 1, 1, 0, 0, '#b8966c']);
+        P.push([RBG(1.15, .8, 1.05, .12), 0, .52, -.08, 1, 1, 1, 0, 0, '#e8ad66']);                          // rounded plank body
+        for (let k = 1; k < 4; k++) P.push([RBG(1.17, .025, 1.07, .012), 0, .12 + k*.2, -.08, 1, 1, 1, 0, 0, '#c98a48']);
+        for (const x of [-.56, .56]) for (const z of [-.6, .44]) P.push([RBG(.13, .84, .13, .05), x, .54, z, 1, 1, 1, 0, 0, '#c98a48']);   // corner posts
+        P.push([gable(1.2, .48, 1.31), 0, .86, -.08, 1, 1, 1, Math.PI/2, 0, '#a83a2a']);                     // darker underside → thick eaves
+        P.push([gable(1.35, .55, 1.25), 0, .9, -.08, 1, 1, 1, Math.PI/2, 0, '#d9533c']);                     // red roof (old anchor y .9)
+        tileRows(P, 1.35, .55, 1.25, .9, '#ec7a62', true, 0, -.08, [.33, .66]);
+        P.push([RBG(1.42, .1, .16, .05), 0, 1.47, -.08, 1, 1, 1, 0, 0, '#9c2f1e']);                          // ridge
+        P.push([CYL, 0, .42, .44, .31, .04, .31, 0, 0, '#c98a48', Math.PI/2]); P.push([RBG(.62, .3, .04, .02), 0, .27, .44, 1, 1, 1, 0, 0, '#c98a48']);   // door rim
+        P.push([CYL, 0, .42, .46, .26, .04, .26, 0, 0, '#3a2416', Math.PI/2]); P.push([RBG(.52, .3, .04, .02), 0, .27, .46, 1, 1, 1, 0, 0, '#3a2416']);   // arched opening
+        P.push([RBG(.42, .14, .04, .02), 0, .81, .46, 1, 1, 1, 0, 0, '#fff3d6']); P.push([BEAD, 0, .81, .485, .035, .035, .015, 0, 0, '#e86f8a']);   // name plate + heart
+        P.push([CYL, .55, .16, .52, .17, .08, .17, 0, 0, '#5f8fc9']); P.push([CYL, .55, .205, .52, .13, .02, .13, 0, 0, '#9fd3f2']);   // water bowl
+        P.push([CYL, -.5, .17, .55, .03, .24, .03, 0, Math.PI/2, '#fbf3e4']);                               // bone
+        for (const sd of [-1, 1]) for (const dz of [-.03, .03]) P.push([BEAD, -.5 + sd*.12, .17, .55 + dz, .04, .04, .04, 0, 0, '#fbf3e4']);
+        break; }
+      case 'mill': {                                           // tapered plaster tower r(y) = 1.15 − .25·(y − .2)/2.8 on y ∈ [.2, 3.0]; cone roof r 1.55 < hub z 1.83
+        P.push([CYL, 0, .11, 0, 1.24, .22, 1.24, 0, 0, '#d9d3c8']);                                          // stone plinth
+        P.push([geo('millTower', () => new THREE.CylinderGeometry(.9, 1.15, 1, 22, 1)), 0, 1.6, 0, 1, 2.8, 1, 0, 0, '#f1ebe0']);
+        P.push([CYL, 0, .36, 0, 1.17, .3, 1.17, 0, 0, '#ddd3c2']);                                          // skirting band
+        P.push([CYL, 0, 2.95, 0, .95, .12, .95, 0, 0, '#ddd3c2']);                                          // band under the roof
+        P.push([RBG(.9, .12, .42, .05), 0, .06, 1.32, 1, 1, 1, 0, 0, '#cfc8bb']);                            // door step
+        P.push([RBG(.8, 1.0, .1, .06), 0, .7, 1.06, 1, 1, 1, 0, 0, '#d9d3c8']); P.push([CYL, 0, 1.18, 1.06, .4, .1, .4, 0, 0, '#d9d3c8', Math.PI/2]);   // door frame
+        P.push([RBG(.62, .95, .14, .08), 0, .68, 1.09, 1, 1, 1, 0, 0, '#8a5a3a']); P.push([CYL, 0, 1.15, 1.09, .31, .14, .31, 0, 0, '#8a5a3a', Math.PI/2]);   // arched door
+        P.push([BEAD, .18, .68, 1.17, .045, .045, .045, 0, 0, '#e2b24a']);
+        P.push([RBG(.1, .58, .48, .05), .99, 1.9, 0, 1, 1, 1, 0, 0, '#ffffff']); P.push([RBG(.16, .08, .58, .03), 1.03, 1.58, 0, 1, 1, 1, 0, 0, '#f2ede2']);   // side window frame + sill
+        P.push([CYL, 0, 3.0, 0, 1.45, .1, 1.45, 0, 0, '#a84e3c']);                                          // roof underside → thick eaves
+        P.push([CONE, 0, 3.65, 0, 1.55, 1.3, 1.55, 0, 0, '#d9705a']);                                        // cone roof (base 3.0, top 4.3)
+        const tor = geo('torusRim', () => new THREE.TorusGeometry(1, .12, 8, 32).rotateX(Math.PI/2));
+        for (const t of [.22, .5]) P.push([tor, 0, 3.0 + 1.3*t, 0, 1.55*(1 - t), .6, 1.55*(1 - t), 0, 0, '#ec8a70']);   // tile rings r = 1.55(1 − t) at y = 3 + 1.3t
+        P.push([CYL, 0, 4.42, 0, .04, .3, .04, 0, 0, '#8a5a33']); P.push([BEAD, 0, 4.58, 0, .09, .09, .09, 0, 0, '#e2b24a']);   // finial
+        P.push([RBG(.14, .14, .95, .05), 0, 1.9, 1.38, 1, 1, 1, 0, 0, '#8a5a33']);                           // axle: tower (≈1.0) → hub (z 1.83)
+        for (const [x, z, s] of [[-.95, 1.45, 1], [-1.35, 1.05, .85], [-1.25, 1.5, .7]]){ P.push([BEAD, x, .25*s, z, .22*s, .26*s, .2*s, 0, 0, '#f2ead8']); P.push([BEAD, x, .5*s, z, .07*s, .06*s, .07*s, 0, 0, '#c9a46a']); }   // flour sacks
+        break; }
+      case 'sala': {                                           // น้องขิง's Thai sala.  v = repair stage: 1 floor • 2 posts + roof • 3 rails + gold trim + decor
+        if (v === 0){ ruinParts(P, r, W, D, '#c99a62', '#c0603f', true); break; }
+        P.push([RBG(3.7, .18, 3.7, .08), 0, .09, 0, 1, 1, 1, 0, 0, '#d9d3c8']);                               // stone plinth
+        P.push([RBG(3.5, .18, 3.5, .06), 0, .27, 0, 1, 1, 1, 0, 0, '#c99a62']);                               // teak floor, top y .36
+        for (let k = -3; k <= 3; k++) P.push([RBG(.02, .01, 3.44, .004), k*.45, .362, 0, 1, 1, 1, 0, 0, '#b3854f']);
+        P.push([RBG(1.1, .22, .3, .05), 0, .11, 1.88, 1, 1, 1, 0, 0, '#cfc8bb']);                             // front step
+        const gold = v >= 3 ? '#e2b24a' : '#8a5a3b';
+        if (v >= 2){
+          for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]){ const px = x*1.55, pz = z*1.55;     // 4 posts on stone bases, capitals
+            P.push([CYL, px, 1.16, pz, .1, 1.6, .1, 0, 0, '#8a5a3b']); P.push([CYL, px, .42, pz, .15, .12, .15, 0, 0, '#e8e1d2']); P.push([CYL, px, 1.9, pz, .14, .1, .14, 0, 0, gold]); }
+          for (const sd of [-1, 1]){ P.push([RBG(3.3, .16, .16, .04), 0, 2.0, sd*1.55, 1, 1, 1, 0, 0, '#7a4a2e']); P.push([RBG(.16, .16, 3.3, .04), sd*1.55, 2.0, 0, 1, 1, 1, 0, 0, '#7a4a2e']); }
+          /* two-tier Thai roof, ridge along z: lower gable(3.9, .72) base 2.04 + upper gable(2.7, 1.0) base 2.3 (apex 3.3);
+             the upper eave pokes just outside the lower slope (half-width 1.35 vs 1.95·(1 − .26/.72) ≈ 1.25) → a visible tier step */
+          P.push([gable(3.75, .62, 3.96), 0, 1.98, 0, 1, 1, 1, 0, 0, '#9a4a30']);
+          P.push([gable(3.9, .72, 3.9), 0, 2.04, 0, 1, 1, 1, 0, 0, '#c0603f']); tileRows(P, 3.9, .72, 3.9, 2.04, '#d8735a', false, 0, 0, [.2, .45]);
+          P.push([gable(2.7, 1.0, 3.5), 0, 2.3, 0, 1, 1, 1, 0, 0, '#d06a46']); tileRows(P, 2.7, 1.0, 3.5, 2.3, '#e58566', false, 0, 0, [.3, .6]);
+          P.push([RBG(.13, .1, 3.55, .04), 0, 3.33, 0, 1, 1, 1, 0, 0, v >= 3 ? gold : '#a84e3c']);            // ridge
+          if (v >= 3){ const th = Math.atan2(1.0, 1.35), Lb = Math.hypot(1.35, 1.0) + .1;
+            for (const sz of [-1, 1]){ for (const sx of [-1, 1]) P.push([RBG(Lb, .08, .06, .03), sx*.675, 2.8, sz*1.83, 1, 1, 1, 0, -sx*th, gold]);   // gold barge boards (ไม้ปั้นลม)
+              P.push([BEAD, 0, 3.42, sz*1.8, .06, .2, .1, 0, 0, gold, -sz*.5]); }                             // ช่อฟ้า at both ridge ends
+            for (const [x0, z0, x1, z1] of [[-1.55, -1.55, 1.55, -1.55], [-1.55, -1.55, -1.55, 1.55], [1.55, -1.55, 1.55, 1.55], [-1.55, 1.55, -.6, 1.55], [.6, 1.55, 1.55, 1.55]]){   // rails, front gap at the step
+              const L = Math.hypot(x1 - x0, z1 - z0), cx = (x0 + x1)/2, cz = (z0 + z1)/2, ax = x1 !== x0;
+              P.push([RBG(ax ? L : .1, .08, ax ? .1 : L, .03), cx, .86, cz, 1, 1, 1, 0, 0, '#a8743f']);
+              for (let k = 1, n = Math.round(L/.38); k < n; k++){ const t = k/n; P.push([CYL, x0 + (x1 - x0)*t, .6, z0 + (z1 - z0)*t, .035, .48, .035, 0, 0, '#c99a62']); } }
+            P.push([RBG(1.3, .04, .95, .02), 0, .38, 0, 1, 1, 1, 0, 0, '#f2e6c9']); P.push([RBG(1.2, .01, .85, .005), 0, .4, 0, 1, 1, 1, 0, 0, '#e8584a']);   // mat
+            P.push([RBG(.55, .16, .4, .05), 0, .48, 0, 1, 1, 1, 0, 0, '#8a5a3b']); for (const x of [-.12, .12]) P.push([CYL, x, .6, 0, .05, .08, .05, 0, 0, '#fbf8f2']);   // low table + 2 cups
+            for (const sd of [-1, 1]){ P.push([CYL, sd*.75, .14, 1.9, .14, .28, .14, 0, 0, '#c98a6a']); P.push(...flowerParts(r, sd*.75, 1.9, FLOWER[(sd + 1) % 5], .8).map(q => (q[2] += .28, q))); } }   // flower pots by the step
+          else { plankPile(P, -.9, .9, 4, .36); P.push([CYL, .9, .5, .9, .15, .28, .15, 0, 0, '#e2b24a']); P.push([RBG(.04, .35, .04, .02), .9, .72, .9, 1, 1, 1, 0, .3, '#8a5a3b']); }   // stage 2: planks + paint pot
+        } else {                                                // stage 1: floor done, posts waiting on the floor + planks
+          logP(P, .2, .47, .3, 2.2, .1, 0, '#8a5a3b'); logP(P, .25, .47, .55, 2.2, .1, 0, '#8a5a3b'); logP(P, .22, .65, .42, 2.2, .1, 0, '#8a5a3b');
+          plankPile(P, -.9, -.8, 5, .36); rubble(P, r, 4, 1.7, -1.6, .4, .8); }
+        P.push(...tuftParts(r, -1.8, 1.85, .55), ...tuftParts(r, 1.85, -1.7, .5));
+        break; }
+      case 'mine': {                                           // anchors kept: tunnel centre (0, .75, 1.2) r .55 • frame posts x ±.62 z 1.32 • lantern (.75, 1.12, 1.52)
+        const ST = ['#857b71', '#bdb4a7'], MOSS = ['#4f8a3e', '#9fd26a'];
+        P.push([blobGeo('mh0', ST[0], ST[1], .14, 1.3, [1, 1, 1]), 0, .1, -.32, 2.0, 1.5, 1.68, .3, 0]);       // rocky hill (old lumps: main + left + right)
+        P.push([blobGeo('mh1', '#7d7369', '#b0a698', .16, 1.5, [1, 1, 1]), -1.12, .1, .2, 1.15, .95, 1.15, 1, 0]);
+        P.push([blobGeo('mh2', '#8d8379', '#c4bbae', .16, 1.5, [1, 1, 1]), 1.2, .1, .32, 1.0, .78, 1.0, 2, 0]);
+        P.push([blobGeo('mm0', MOSS[0], MOSS[1], .2, 1.6, [1, .35, 1]), -.25, 1.45, -.55, 1.15, 1.0, .95, 0, 0]);   // moss caps
+        P.push([blobGeo('mm1', MOSS[0], MOSS[1], .22, 1.8, [1, .35, 1]), -1.25, .92, .05, .6, .7, .6, 0, 0]);
+        P.push(...tuftParts(r, -1.4, 1.15, .7), ...tuftParts(r, 1.55, 1.2, .6));
+        for (let k = 0; k < 5; k++){ const a = k*1.3 + .4; P.push([blobGeo(`st0${k%3}`, STONE[0], STONE[1], .18, 1.3, [1, .55, .9]), Math.cos(a)*1.75, .05, 1.2 + Math.sin(a)*.6, .13, .13, .13, a, 0]); }
+        P.push([RBG(1.14, .75, .14, .05), 0, .38, 1.2, 1, 1, 1, 0, 0, '#1c1814']); P.push([CYL, 0, .75, 1.2, .57, .14, .57, 0, 0, '#1c1814', Math.PI/2]);   // dark tunnel
+        for (const x of [-.62, .62]){ P.push([RBG(.18, 1.45, .18, .05), x, .725, 1.32, 1, 1, 1, 0, 0, '#8a5f32']); P.push([RBG(.24, .1, .24, .04), x, .05, 1.32, 1, 1, 1, 0, 0, '#9aa0a6']); }   // posts on stone feet
+        for (const x of [-.3, .3]) P.push([RBG(.06, .05, .95, .02), x, .045, 1.62, 1, 1, 1, 0, 0, '#9aa6b1']);                     // rails (kept inside the tile)
+        for (let k = 0; k < 4; k++) P.push([RBG(.8, .05, .12, .02), 0, .025, 1.3 + k*.24, 1, 1, 1, 0, 0, '#7a5236']);            // sleepers
+        if (v){                                                 // collapsed (repair project not done): rubble plugs the tunnel, fallen lintel, boards nailed across
+          for (const [x, y, z, s] of [[-.22, .3, 1.36, .42], [.26, .26, 1.4, .36], [0, .66, 1.34, .3], [.55, .1, 1.62, .2], [-.58, .08, 1.6, .17], [.1, .1, 1.75, .14]]) P.push([blobGeo(`mrub${(x*10|0)&3}`, '#857b71', '#cfc7bb', .2, 1.4, [1, .8, .9]), x, y, z, s, s*1.1, s*.9, x*3, 0]);
+          P.push([RBG(1.1, .16, .2, .05), .1, .55, 1.95, 1, 1, 1, 0, .5, '#7a5236']);                                         // broken lintel
+          for (const rz of [.42, -.42]) P.push([RBG(1.25, .12, .05, .03), 0, .78, 1.46, 1, 1, 1, 0, rz, '#b8844f']); }         // crossed boards
+        else {
+          P.push([RBG(1.55, .22, .26, .06), 0, 1.53, 1.32, 1, 1, 1, 0, 0, '#7a5232']);                                        // lintel
+          for (const sd of [-1, 1]) P.push([RBG(.09, .45, .09, .03), sd*.48, 1.28, 1.34, 1, 1, 1, 0, sd*.7, '#8a5f32']);      // corner braces
+          P.push([RBG(.62, .24, .05, .03), 0, 1.82, 1.4, 1, 1, 1, 0, 0, '#d8b48a']); for (const rz of [.7, -.7]) P.push([RBG(.04, .22, .02, .01), 0, 1.82, 1.43, 1, 1, 1, 0, rz, '#5a4a3a']);   // sign: crossed picks
+          P.push([CYL, .75, 1.375, 1.52, .025, .25, .025, 0, 0, '#3e4248']); P.push([RBG(.06, .04, .26, .02), .7, 1.5, 1.42, 1, 1, 1, 0, 0, '#3e4248']);   // lantern hook (glow mesh separate)
+          P.push([CONE, .75, 1.26, 1.52, .12, .1, .12, 0, 0, '#3e4248']);
+          /* ore cart on the rails, z 1.88: body + rim + ore lumps (coal, gold, gem) + 4 wheels */
+          P.push([RBG(.6, .3, .46, .06), 0, .3, 1.88, 1, 1, 1, 0, 0, '#6b6f76']); P.push([RBG(.66, .05, .52, .02), 0, .46, 1.88, 1, 1, 1, 0, 0, '#55606b']);
+          for (const [x, z, c] of [[-.12, 1.82, '#3e4248'], [.1, 1.92, '#3e4248'], [.14, 1.78, '#e2b24a'], [-.08, 1.98, '#7ad3e6']]) P.push([BEAD, x, .48, z, .1, .08, .1, 0, 0, c]);
+          for (const x of [-.31, .31]) for (const z of [1.74, 2.02]) P.push([CYL, x, .12, z, .1, .05, .1, 0, Math.PI/2, '#3e4248']); }
+        break; }
+      case 'coop': case 'cowshed': {
+        /* v0.42 layout kept: shed in the back third (centre z sz = −D/3, depth sd = D/3 − .2, height sh), fenced yard in front,
+           fence posts every .8, trough (cow) at (W/4, D/2 − .7) • nest (chicken) at (W/4, D/2 − .6); animals stay separate meshes */
+        const cow = type === 'cowshed', sz = -D/3, sd = D/3 - .2, sh = cow ? 1.5 : 1.1, rh = cow ? .9 : .6, fz = sz + sd/2;
+        const wc = cow ? '#c9573f' : '#f0cf8a', rc = '#9a6a43';
+        P.push([RBG(W - .3, .06, D - .3, .03), 0, .03, 0, 1, 1, 1, 0, 0, cow ? '#b9d77a' : '#e2cc94']);          // yard: grass / dirt
+        for (let k = 0; k < 12; k++) P.push([RBG(.2, .015, .035, .01), (r() - .5)*(W - .8), .068, fz + .3 + r()*(D/2 - fz - .6), 1, 1, 1, r()*6.28, 0, k%2 ? '#e9c46a' : '#d9b45a']);   // straw bits
+        P.push([RBG(W - .5, sh, sd, .08), 0, sh/2, sz, 1, 1, 1, 0, 0, wc]);                                       // shed
+        for (let y = .25; y < sh - .08; y += .25) P.push([RBG(W - .46, .022, .02, .008), 0, y, fz + .005, 1, 1, 1, 0, 0, shade(wc, .85)]);   // plank lines (front)
+        for (const x of [-(W - .5)/2, (W - .5)/2]) for (const z of [sz - sd/2, fz]) P.push([RBG(.12, sh, .12, .05), x, sh/2, z, 1, 1, 1, 0, 0, '#fbf8f2']);   // white corner trims
+        P.push([gable(sd + .18, rh - .08, W - .24), 0, sh - .06, sz, 1, 1, 1, Math.PI/2, 0, shade(rc, .78)]);       // eaves underside
+        P.push([gable(sd + .36, rh, W - .18), 0, sh, sz, 1, 1, 1, Math.PI/2, 0, rc]);                              // roof (ridge along x)
+        tileRows(P, sd + .36, rh, W - .18, sh, '#b98458', true, 0, sz, [.3, .65]);
+        P.push([RBG(W - .1, .12, .18, .05), 0, sh + rh + .03, sz, 1, 1, 1, 0, 0, '#f7f3ea']);                     // ridge cap
+        if (cow){ P.push([RBG(1.16, 1.18, .06, .03), 0, .59, fz + .02, 1, 1, 1, 0, 0, '#fbf8f2']); P.push([RBG(1.0, 1.08, .06, .03), 0, .56, fz + .045, 1, 1, 1, 0, 0, '#a8452f']);   // barn door + white X
+          for (const rz of [.73, -.73]) P.push([RBG(.07, 1.35, .04, .02), 0, .56, fz + .08, 1, 1, 1, 0, rz, '#fbf8f2']);
+          P.push([RBG(1.0, .3, .4, .06), W/4, .15, D/2 - .7, 1, 1, 1, 0, 0, '#7a5236']); P.push([blobGeo('hay', '#d9b45a', '#f6dc8a', .25, 2.2, [1, .5, 1]), W/4, .32, D/2 - .7, .45, .2, .17, 0, 0]); }   // hay trough
+        else { P.push([RBG(.5, .55, .05, .03), -W*.2, .32, fz + .03, 1, 1, 1, 0, 0, '#8a5a3b']); P.push([RBG(.46, .04, .7, .02), -W*.2, .2, fz + .37, 1, 1, 1, 0, 0, '#c99a62', .3]);   // little door + ramp
+          for (let k = 0; k < 3; k++) P.push([RBG(.44, .03, .03, .01), -W*.2, .26 - k*.09, fz + .2 + k*.2, 1, 1, 1, 0, 0, '#a8743f']);
+          P.push([CYL, W*.22, .7, fz + .02, .18, .04, .18, 0, 0, '#fbf8f2', Math.PI/2]); P.push([CYL, W*.22, .7, fz + .04, .13, .04, .13, 0, 0, '#5a3a22', Math.PI/2]);   // round window
+          P.push([RBG(.6, .12, .35, .04), W/4, .06, D/2 - .6, 1, 1, 1, 0, 0, '#a8703f']); P.push([blobGeo('hay', '#d9b45a', '#f6dc8a', .25, 2.2, [1, .5, 1]), W/4, .14, D/2 - .6, .28, .08, .15, 0, 0]);   // nest + straw + eggs
+          for (let k = 0; k < 3; k++) P.push([BEAD, W/4 - .15 + k*.15, .2, D/2 - .6, .07, .09, .07, 0, 0, '#fbf3e4']);
+          P.push([CYL, 0, .04, D/2 - .5, .17, .07, .17, 0, 0, '#5f8fc9']); P.push([CYL, 0, .08, D/2 - .5, .13, .02, .13, 0, 0, '#e9c46a']); }   // feed bowl
+        const FC = '#c99a62', fe = D/2 - .25;                                                                        // fence: posts every .8 + 2 rails
+        for (const x of [-(W/2 - .25), W/2 - .25]){ for (let zz = fz; zz <= D/2 - .2; zz += .8) P.push([RBG(.11, .6, .11, .04), x, .3, zz, 1, 1, 1, 0, 0, FC]);
+          for (const y of [.25, .48]) P.push([RBG(.05, .07, fe - fz, .02), x, y, (fz + fe)/2, 1, 1, 1, 0, 0, shade(FC, .92)]); }
+        for (let xx = -(W/2 - .25); xx <= W/2 - .2; xx += .8) P.push([RBG(.11, .6, .11, .04), xx, .3, fe, 1, 1, 1, 0, 0, FC]);
+        for (const y of [.25, .48]) P.push([RBG(W - .5, .07, .05, .02), 0, y, fe, 1, 1, 1, 0, 0, shade(FC, .92)]);
+        P.push(...tuftParts(r, -W/2 + .35, D/2 - .2, .5), ...tuftParts(r, W/2 - .3, fz + .4, .45), ...tuftParts(r, -W/2 + .3, sz - sd/2 + .1, .5));
+        break; }
+      case 'site': {                                           // 🚧 construction site (the rising ghost volume is a separate, scaled mesh)
+        P.push([RBG(W - .2, .15, D - .2, .05), 0, .075, 0, 1, 1, 1, 0, 0, '#e2d3b4']);                           // packed-earth pad
+        for (let k = 0; k < 4; k++) P.push([blobGeo(`sd0${k%2}`, '#cdb07a', '#ead7a8', .22, 1.8, [1, .18, .7]), (r() - .5)*(W - .8), .15, (r() - .5)*(D - .8), .35, .35, .35, r()*6, 0]);
+        const ex = W/2 - .3, ez = D/2 - .3, hh = H*.9;
+        for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) P.push([RBG(.12, hh, .12, .04), x*ex, .15 + hh/2, z*ez, 1, 1, 1, 0, 0, '#a8743f']);   // corner posts (old: H·.9)
+        for (const y of [.15 + H*.35, .15 + H*.75]){ for (const sd of [-1, 1]){ P.push([RBG(2*ex, .07, .07, .03), 0, y, sd*ez, 1, 1, 1, 0, 0, '#c99a62']); P.push([RBG(.07, .07, 2*ez, .03), sd*ex, y, 0, 1, 1, 1, 0, 0, '#c99a62']); } }   // scaffold rails
+        P.push([RBG(.06, Math.hypot(2*ex, H*.75), .05, .02), 0, .15 + H*.375, ez + .05, 1, 1, 1, 0, -Math.atan2(2*ex, H*.75), '#b8844f']);   // front brace: rz = −atan2(width, height) tips the top to +x
+        P.push([RBG(2*ex - .2, .05, .32, .02), 0, .15 + H*.35 + .06, ez + .02, 1, 1, 1, 0, 0, '#d8b48a']);       // walk board
+        plankPile(P, ex - .45, ez - .15, 4, .15, .9);                                                             // plank stack + bricks
+        for (let k = 0; k < 5; k++) P.push([RBG(.24, .1, .12, .02), -ex + .4 + (k%3)*.26, .2 + ((k/3)|0)*.1, ez - .2, 1, 1, 1, 0, 0, k%2 ? '#d9917a' : '#e6a98f']);
+        P.push([RBG(.5, .3, .04, .03), -ex, .15 + H*.35 - .3, ez + .08, 1, 1, 1, 0, 0, '#f6c445']);             // yellow sign with 2 stripes
+        for (const dx of [-.12, .1]) P.push([RBG(.07, .26, .02, .01), -ex + dx, .15 + H*.35 - .3, ez + .1, 1, 1, 1, 0, .6, '#3e4248']);
+        break; }
+    }
+    return mergeGeo(key, P);
+  }
+  /** shop-front props of walls() buildings (merged once per type & size). Positions stay inside the footprint
+      (wall front face at z = .41D; door spans x ∈ −.18·.82W ± .36 — props keep clear of it; window at x = +.22·.82W, sill ≈ .5) */
+  function propGeo(type, W, D, v){
+    const key = `prop_${type}${W}x${D}v${v}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = [], fz = D*.41, dx = -W*.82*.18;
+    switch (type){
+      case 'house': {                                          // porch (pulled inside the 2×4 footprint: deck z ∈ [fz, fz + .7], posts at fz + .62)
+        P.push([RBG(W*.5, .1, .7, .04), -W*.12, .23, fz + .35, 1, 1, 1, 0, 0, '#d6b07f']);
+        for (let k = 1; k < 4; k++) P.push([RBG(.015, .01, .68, .005), -W*.12 - W*.25 + k*W*.125, .285, fz + .35, 1, 1, 1, 0, 0, '#b8966c']);
+        for (const x of [-W*.33, W*.08]){ P.push([RBG(.12, 1.3, .12, .04), x, .83, fz + .62, 1, 1, 1, 0, 0, '#ffffff']); P.push([RBG(.18, .08, .18, .03), x, 1.5, fz + .62, 1, 1, 1, 0, 0, '#e8e1d2']); }
+        P.push([RBG(.08, .06, .6, .02), -W*.33, .7, fz + .32, 1, 1, 1, 0, 0, '#ffffff']);                       // side rail
+        P.push([CYL, W*.08 + .02, .4, fz + .35, .16, .26, .16, 0, 0, '#c98a6a']); P.push([blobGeo('b00', LEAF[0], LEAF[1], .22, 2.2, [1.2, .8, 1]), W*.08 + .02, .62, fz + .35, .22, .22, .22, 0, 0]);   // potted plant
+        break; }
+      case 'barn':                                             // X brace on the barn door (was 2 loose meshes)
+        for (const rz of [.7, -.7]) P.push([RBG(.08, 1.3, .05, .03), dx, .85, fz + .08, 1, 1, 1, 0, rz, '#fbf8f2']); break;
+      case 'sawmill':
+        /* log stack front-right: 2 bottom logs (z fz + .14, fz + .38) + 1 on top; sawhorse front-left with a log + saw; blade sign on the +x wall
+           (the old pile at z −.32D and the old blade at z .3D sat INSIDE the v0.50 walls, so nobody could see them) */
+        for (const z of [fz + .14, fz + .37]) logP(P, W*.21, .12, z, 1.0, .11); logP(P, W*.21 + .05, .32, fz + .255, .95, .11);
+        P.push([RBG(.08, .07, .55, .02), -W*.35, .42, fz + .2, 1, 1, 1, 0, 0, '#8a5a3b']);
+        for (const sd of [-1, 1]) for (const dz of [-.2, .2]) P.push([RBG(.05, .46, .05, .02), -W*.35 + sd*.08, .2, fz + .2 + dz, 1, 1, 1, 0, sd*.28, '#8a5a3b']);
+        logP(P, -W*.35, .55, fz + .2, .6, .1, Math.PI/2); P.push([RBG(.02, .13, .32, .01), -W*.35 + .03, .7, fz + .14, 1, 1, 1, 0, 0, '#cfd6dc']); P.push([RBG(.04, .1, .12, .02), -W*.35 + .03, .74, fz + .34, 1, 1, 1, 0, 0, '#8a5a33']);
+        for (let k = 0; k < 3; k++) P.push([blobGeo('dust', '#d9b98a', '#f2dcb0', .2, 2, [1, .15, 1]), -W*.35 + (r() - .5)*.4, .02, fz + .2 + (r() - .5)*.3, .18, .18, .18, 0, 0]);
+        P.push([CYL, W*.41 + .02, 1.05, -D*.22, .32, .04, .32, 0, Math.PI/2, '#cfd6dc']); P.push([CYL, W*.41 + .05, 1.05, -D*.22, .08, .03, .08, 0, Math.PI/2, '#5a5f66']);
+        for (let k = 0; k < 10; k++){ const a = k/10*Math.PI*2; P.push([CONE, W*.41 + .02, 1.05 + Math.sin(a)*.34, -D*.22 + Math.cos(a)*.34, .04, .08, .02, 0, 0, '#cfd6dc', a]); }   // saw teeth
+        break;
+      case 'buahome':                                          // 3 veggie crates right of the door + chalkboard menu left of it
+        for (const [x, c, c2] of [[W*.06, '#e84a3a', '#5aa24a'], [W*.18, '#f2a33a', '#7bbf5a'], [W*.3, '#4caf6a', '#9fd26a']]){
+          P.push([RBG(.42, .24, .3, .04), x, .12, fz + .2, 1, 1, 1, 0, 0, '#c99a62']); P.push([RBG(.44, .03, .32, .01), x, .19, fz + .2, 1, 1, 1, 0, 0, '#a8743f']);
+          for (let k = 0; k < 4; k++) P.push([BEAD, x - .12 + (k%2)*.24 + (r() - .5)*.04, .3, fz + .14 + ((k/2)|0)*.12, .09, .08, .08, 0, 0, k === 3 ? c2 : c]); }
+        for (const sd of [-1, 1]) P.push([RBG(.38, .52, .03, .02), -W*.37, .27, fz + .2 + sd*.08, 1, 1, 1, 0, 0, '#3f5a4a', -sd*.18]);   // A-frame board
+        for (let k = 0; k < 3; k++) P.push([RBG(.24 - k*.05, .02, .01, .005), -W*.37, .4 - k*.08, fz + .3, 1, 1, 1, 0, 0, '#fbf8f2', -.18]);
+        break;
+      case 'buafix':                                           // repair stage 1 of 2: walls + roof done, leftovers instead of the crates
+        plankPile(P, W*.18, fz + .22, 5, 0, 1.0); rubble(P, r, 5, -W*.35, fz + .2, .5, .8);
+        for (const sd of [-1, 1]) P.push([RBG(.06, 1.7, .06, .02), W*.41 + .08, .85, -D*.1 + sd*.18, 1, 1, 1, 0, 0, '#a8743f', -.25]);   // ladder against the +x wall
+        for (let k = 0; k < 5; k++) P.push([RBG(.04, .04, .4, .01), W*.41 + .08 - .04, .25 + k*.32, -D*.1 - (.25 + k*.32 - .85)*Math.tan(.25), 1, 1, 1, 0, 0, '#c99a62']);
+        P.push(...tuftParts(r, W*.38, fz + .3, .5));
+        break;
+      case 'dairy':                                            // 2 milk cans (old anchors x .3W − .5, .3W − .15) + butter & cheese crate (old x −.3W)
+        for (const x of [W*.3 - .5, W*.3 - .15]){ P.push([CYL, x, .17, fz + .2, .14, .34, .14, 0, 0, '#dfe5ea']); P.push([BEAD, x, .34, fz + .2, .14, .07, .14, 0, 0, '#dfe5ea']);
+          P.push([CYL, x, .21, fz + .2, .145, .04, .145, 0, 0, '#5f8fc9']); P.push([CYL, x, .42, fz + .2, .07, .1, .07, 0, 0, '#cfd6dc']); P.push([CYL, x, .48, fz + .2, .09, .04, .09, 0, 0, '#aeb6be']); }
+        P.push([RBG(.5, .28, .38, .04), -W*.32, .14, fz + .2, 1, 1, 1, 0, 0, '#c99a62']); P.push([RBG(.52, .03, .4, .01), -W*.32, .2, fz + .2, 1, 1, 1, 0, 0, '#a8743f']);
+        for (const dz of [-.08, .08]) P.push([CYL, -W*.32 - .1, .33, fz + .2 + dz, .1, .08, .1, 0, 0, '#f2c94c']);
+        P.push([RBG(.14, .08, .1, .02), -W*.32 + .12, .33, fz + .2, 1, 1, 1, 0, 0, '#fbe7a1']); break;
+      case 'petshop': {                                        // striped awning with scalloped edge, paw sign on a post (front-right), 2 kibble sacks
+        const n = 6, aw = (W - .6)/n;
+        for (let k = 0; k < n; k++) P.push([RBG(aw, .06, .55, .02), -W/2 + .3 + (k + .5)*aw, 1.42, fz + .16, 1, 1, 1, 0, 0, k%2 ? '#ffffff' : '#f29bb5', .35]);
+        for (let k = 0; k < 2*n; k++) P.push([BEAD, -W/2 + .3 + (k + .5)*aw/2, 1.31, fz + .42, aw*.24, .07, .04, 0, 0, (k >> 1)%2 ? '#ffffff' : '#f29bb5']);
+        P.push([CYL, W*.44, .6, fz + .26, .04, 1.2, .04, 0, 0, '#8a5a3b']); P.push([CYL, W*.44, 1.0, fz + .29, .31, .05, .31, 0, 0, '#f29bb5', Math.PI/2]); P.push([CYL, W*.44, 1.0, fz + .31, .27, .05, .27, 0, 0, '#ffffff', Math.PI/2]);
+        P.push([BEAD, W*.44, .95, fz + .34, .1, .085, .03, 0, 0, '#8a5a3b']); for (const [x, y] of [[-.13, 0], [-.05, .1], [.05, .1], [.13, 0]]) P.push([BEAD, W*.44 + x, 1.05 + y*.6, fz + .34, .045, .045, .025, 0, 0, '#8a5a3b']);
+        for (const [x, c] of [[W*.06, '#e9c27a'], [W*.18, '#c9a0dc']]){ P.push([RBG(.36, .42, .28, .12), x, .21, fz + .2, 1, 1, 1, 0, 0, c]); P.push([BEAD, x, .45, fz + .2, .08, .06, .06, 0, 0, shade(c, .85)]); P.push([BEAD, x, .24, fz + .35, .06, .05, .02, 0, 0, '#8a5a3b']); }
+        break; }
+      case 'smithy':                                           // stone hearth (front-right, glowing coals separate) + bellows • anvil on a stump + hammer (front-left) • water bucket
+        P.push([RBG(.8, .5, .34, .08), W*.29, .25, fz + .19, 1, 1, 1, 0, 0, '#8a8f96']); P.push([RBG(.86, .08, .38, .03), W*.29, .52, fz + .19, 1, 1, 1, 0, 0, '#6b7078']);
+        for (let k = 0; k < 3; k++) P.push([RBG(.82, .015, .36, .005), W*.29, .1 + k*.14, fz + .19, 1, 1, 1, 0, 0, '#767b82']);
+        P.push([BEAD, W*.29 - .52, .3, fz + .19, .1, .06, .16, 0, 0, '#8a5a3b']); P.push([CONE, W*.29 - .45, .3, fz + .19, .03, .12, .03, 0, -Math.PI/2, '#3e4248']);
+        P.push([CYL, -W*.33, .14, fz + .2, .2, .28, .2, 0, 0, '#8a5a3b']); P.push([CYL, -W*.33, .285, fz + .2, .17, .01, .17, 0, 0, '#ecd3a4']);
+        P.push([RBG(.26, .08, .18, .02), -W*.33, .32, fz + .2, 1, 1, 1, 0, 0, '#3e4248']); P.push([RBG(.14, .1, .12, .02), -W*.33, .41, fz + .2, 1, 1, 1, 0, 0, '#3e4248']);
+        P.push([RBG(.46, .1, .2, .03), -W*.33, .5, fz + .2, 1, 1, 1, 0, 0, '#55606b']); P.push([CONE, -W*.33 + .31, .51, fz + .2, .07, .18, .07, 0, -Math.PI/2, '#55606b']);
+        P.push([RBG(.28, .03, .04, .01), -W*.33 - .05, .58, fz + .24, 1, 1, 1, .4, 0, '#a8743f']); P.push([RBG(.07, .07, .12, .02), -W*.33 + .08, .59, fz + .18, 1, 1, 1, .4, 0, '#3e4248']);
+        P.push([CYL, -W*.44, .11, fz + .3, .13, .22, .13, 0, 0, '#8a5a3b']); P.push([CYL, -W*.44, .2, fz + .3, .11, .02, .11, 0, 0, '#6fa8c8']); break;
+    }
+    return mergeGeo(key, P);
+  }
+  /** glowing forge coals (separate emissive mesh, same mat as the old forge disc) */
+  const coalGeo = (x, z) => mergeGeo(`coals${x}_${z}`, [[BEAD, x - .2, .57, z, .12, .05, .1], [BEAD, x, .58, z + .03, .14, .06, .1], [BEAD, x + .2, .57, z - .02, .12, .05, .1], [BEAD, x + .08, .6, z - .06, .08, .04, .07]]);
+  const GHOST = new THREE.MeshStandardMaterial({ color:'#f3dfbd', transparent:true, opacity:.55, roughness:.9 });   // one shared material (was new per rebuild)
   function resModel(k, seed, i, bio){
     const g = new THREE.Group(), h = n => hrnd(seed, i, n);
     switch (k){
@@ -451,9 +719,12 @@ export function start(){
     const it = FARM_ITEMS[o.type], g = new THREE.Group(), W = o.w*2, D = o.h*2, H = it.H;
     if (!o.done){                                              // construction site: pad + posts + ghost volume rising with progress
       const p = 1 - Math.max(0, (o.end - Date.now())) / ((typeof objBuildSec === 'function' ? objBuildSec(o) : buildSec(it))*1000);   // o.bsec = actual duration (first builds are faster)
-      RB(g, W-.2, .15, D-.2, .05, '#e2d3b4', 0, 0, 0);
-      for (const [x,z] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .06, H*.9, '#a8743f', x*(W/2-.3), .15, z*(D/2-.3), true);
-      const gh = add(g, rb(W-.6, Math.max(.1, H*.85*p), D-.6, .1), new THREE.MeshStandardMaterial({ color:'#f3dfbd', transparent:true, opacity:.55, roughness:.9 }), 0, .15 + H*.85*p/2, 0);
+      /* 🚧 v0.51: clay site (pad, corner posts H·.9, scaffold rails at .35H / .75H, brace, planks, bricks, sign) = 1 cached mesh;
+         ghost height hh = max(.1, .85·H·p) is now a SCALE on one cached unit box + one shared material (the old code made a new
+         RoundedBoxGeometry for every p value and a new material on every 3-s rebuild) */
+      add(g, bldGeo('site', W, D, 0, H), VCM, 0, 0, 0, null, null, null, true);
+      const hh = Math.max(.1, H*.85*Math.max(0, Math.min(1, p)));
+      const gh = add(g, geo(`ghost${W}x${D}`, () => new RoundedBoxGeometry(W - .6, 1, D - .6, 2, .05)), GHOST, 0, .15 + hh/2, 0, 1, hh, 1);
       gh.castShadow = false; return g;
     }
     /* 🏠 v0.50 CLAY HOUSE KIT (phase C, round 1) — same signature, footprint and anchor points as the old walls():
@@ -514,45 +785,26 @@ export function start(){
       case 'fountain': add(g, decorGeo('fountain', W, D, 0), VCM, 0, 0, 0, null, null, null, true);   // ⛲ v0.49 clay basin + rims; water discs stay separate
         add(g, CYL, waterMat, 0, .41, 0, 1.3, .03, 1.3); add(g, CYL, waterMat, 0, 1.53, 0, .46, .03, .46); add(g, SPH, mat('#bfe6f7'), 0, 1.92, 0, .07, .16, .07); break;
       case 'gazebo': add(g, decorGeo('gazebo', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // 🏯 v0.49
-      case 'mill': { RB(g, W*.55, 3, D*.55, .15, '#efe9de', 0, 0, 0, true); CO(g, W*.42, 1, '#d9705a', 0, 3, 0, true);
-        const b = new THREE.Group(); b.position.set(0, 1.9, W*.42 + .15); b.userData.spin = 1; g.add(b);   // hub in front of the roof overhang (cone r = 0.42W) → blades never cut the roof
-        RB(g, .14, .14, W*.42 + .15 - D*.27, .05, '#8a5a33', 0, 1.83, (W*.42 + .15 + D*.27)/2);           // axle from the tower to the hub
-        for (let k=0;k<4;k++){ const a = new THREE.Group(); a.rotation.z = k*Math.PI/2; b.add(a); RB(a, .25, 1.6, .05, .03, C.white, 0, .1, 0); } break; }
-      case 'doghouse': {                                         // v0.24 1×1 kennel: plank body, red gable roof, arched door, name plate, water bowl
-        RB(g, 1.5, .12, 1.5, .04, '#cdb08a', 0, 0, 0);
-        RB(g, 1.15, .78, 1.05, .06, '#e3a85f', 0, .12, -.08, true);
-        for (let k=1;k<4;k++) RB(g, 1.17, .025, 1.07, .01, '#c78a45', 0, .12 + k*.2, -.08);                 // plank lines
-        const rf = add(g, gable(1.35, .55, 1.25), mat('#d64933'), 0, .9, -.08, null, null, null, true); rf.rotation.y = Math.PI/2;
-        RB(g, 1.42, .08, .1, .03, '#9c2f1e', 0, 1.42, -.08);                                                    // ridge
-        add(g, CYL, mat('#2b1a10'), 0, .12 + .3, .45, .26, .02, .26).rotation.x = Math.PI/2;                // arched opening (round top)
-        RB(g, .52, .3, .03, .02, '#2b1a10', 0, .12, .45);                                                       // door bottom
-        RB(g, .42, .14, .03, .02, '#fff3d6', 0, .74, .46);                                                      // name plate
-        CY(g, .17, .08, '#5f8fc9', .55, .12, .52); CY(g, .13, .02, '#9fd3f2', .55, .19, .52); break; }
+      case 'mill': { add(g, bldGeo('mill', W, D, 0), VCM, 0, 0, 0, null, null, null, true);   // 🏭 v0.51 clay windmill (tower, cone roof, door, sacks, axle)
+        add(g, mergeGeo('millGlass', [[RBG(.03, .42, .34, .01), 1.05, 1.92, 0, 1, 1, 1, 0, 0, '#ffffff']]), glassMat(NIGHT > .35), 0, 0, 0);   // side window glows at night
+        const b = new THREE.Group(); b.position.set(0, 1.9, W*.42 + .15); b.userData.spin = 1; g.add(b);   // hub in front of the roof overhang (old cone r = 0.42W; new r 1.55) → blades never cut the roof
+        add(b, millSails(), VCM, 0, 0, 0, null, null, null, true); break; }   // 4 sails merged = 1 draw call (was 4 meshes)
+      case 'doghouse': add(g, bldGeo('doghouse', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // 🛖 v0.51 clay kennel (v0.24 anchors kept)
       case 'starter':  walls('#fbf3e4', '#e98b6d', 1.6, { chimney:true, shutters:'#8fb79a', box:true }); break;
       case 'house':    walls('#ffffff', '#6f8fa8', 2.2, { chimney:true, shutters:'#6f8fa8', box:true });
-                       RB(g, W*.5, .1, .9, .05, '#d6b07f', -W*.12, .18, D*.41+.45); for (const x of [-W*.33, W*.08]) CY(g, .06, 1.3, '#ffffff', x, .18, D*.41+.85); break;   // porch
+                       add(g, propGeo('house', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // porch (v0.51 clay, inside the footprint)
       case 'barn':     walls('#d9604c', '#5f6670', 2.2, { door:'#fbf8f2' });
-                       for (const r of [.7,-.7]){ const b = RB(g, .08, 1.3, .05, .03, '#fbf8f2', -W*.82*.18, .2, D*.41+.08); b.rotation.z = r; } break;   // X brace on the door
-      case 'sawmill':  walls('#caa77d', '#7f9474', 1.5); add(g, CYL, mat('#cfd6dc'), W*.38, .9, D*.3, .45, .05, .45).rotation.x = Math.PI/2;
-                       for (let k=0;k<3;k++){ const l = CY(g, .2, 1.2, '#b07a4a', -W*.32 + k*.42, 0, -D*.32); l.rotation.z = Math.PI/2; l.position.y = .22 + (k===1 ? .32 : 0); } break;   // log pile
+                       add(g, propGeo('barn', W, D, 0), VCM, 0, 0, 0); break;   // X brace on the door (merged)
+      case 'sawmill':  walls('#caa77d', '#7f9474', 1.5); add(g, propGeo('sawmill', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // 🪵 v0.51 log stack + sawhorse + blade sign
       case 'kitchen':  walls('#f6e3c1', '#e9b44c', 1.5, { chimney:true, box:true });
                        for (let k=0;k<3;k++){ const p = BALL(g, .2,.2,.2, '#f2f2f2', W*.82*.25, 3.0 + k*.5, -D*.82*.15); p.userData.smoke = k; p.castShadow = false; } break;
       case 'jamhouse': walls('#fbd9de', '#e86f8a', 1.5); break;
       /* 🐔🐄 v0.42 livestock: shed in the back third (z < −D/6), fenced yard in front, one model per animal (o.live.n).
-         Yard slots: k → x = (k%2 ? +1 : −1)·W/4, z = D/12 + ⌊k/2⌋·D/4 ; animals tilt gently via the zone sway list (kind 0). */
+         Yard slots: k → x = (k%2 ? +1 : −1)·W/4, z = D/12 + ⌊k/2⌋·D/4 ; animals tilt gently via the zone sway list (kind 0).
+         v0.51: shed, roof, fence, trough/nest = one cached clay mesh (bldGeo); the animals below are unchanged (phase D redraws them). */
       case 'coop': case 'cowshed': {
-        const cow = o.type === 'cowshed', sz = -D/3, sd = D/3 - .2, sh = cow ? 1.5 : 1.1, n = (o.live && o.live.n) || 0;
-        RB(g, W-.3, .05, D-.3, .05, cow ? '#b9d77a' : '#d9c08a', 0, 0, 0);                                     // yard: grass / dirt
-        RB(g, W-.5, sh, sd, .06, cow ? '#c9573f' : '#e9c27a', 0, 0, sz, true);                                   // shed
-        const rf = add(g, gable(sd + .3, cow ? .9 : .6, W - .3), mat('#8a5a33'), 0, sh, sz, null, null, null, true); rf.rotation.y = Math.PI/2;
-        RB(g, cow ? 1.0 : .5, cow ? 1.1 : .55, .06, .03, '#5a3a22', 0, 0, sz + sd/2 + .01);                       // dark doorway
-        if (cow) for (const r of [.7, -.7]){ const b = RB(g, .06, 1.1, .04, .02, '#fbf8f2', 0, .02, sz + sd/2 + .05); b.rotation.z = r; }
-        for (const x of [-(W/2 - .25), W/2 - .25]){ for (let zz = sz + sd/2; zz <= D/2 - .2; zz += .8) CY(g, .05, .55, '#c99a62', x, 0, zz);
-          RB(g, .05, .06, D/2 - .2 - (sz + sd/2), .02, '#c99a62', x, .42, (sz + sd/2 + D/2 - .2)/2); }
-        for (let xx = -(W/2 - .25); xx <= W/2 - .2; xx += .8) CY(g, .05, .55, '#c99a62', xx, 0, D/2 - .25);
-        RB(g, W - .5, .06, .05, .02, '#c99a62', 0, .42, D/2 - .25);
-        if (cow) RB(g, 1.0, .3, .4, .04, '#7a5236', W/4, 0, D/2 - .7);                                           // hay trough
-        else { RB(g, .6, .12, .35, .03, '#a8703f', W/4, 0, D/2 - .6); for (let k=0;k<3;k++) BALL(g, .07, .09, .07, '#fbf3e4', W/4 - .15 + k*.15, .12, D/2 - .6); }   // nest with eggs
+        const cow = o.type === 'cowshed', n = (o.live && o.live.n) || 0;
+        add(g, bldGeo(o.type, W, D, 0), VCM2, 0, 0, 0, null, null, null, true);
         for (let k=0;k<n;k++){
           const a2 = new THREE.Group(); a2.position.set((k%2 ? 1 : -1)*W/4, 0, D/12 + ((k/2)|0)*D/4); a2.rotation.y = (k%2 ? -.6 : .6) + k; g.add(a2);
           if (cow){ BALL(a2, .5, .38, .75, '#fbf8f2', 0, .55, 0, true); BALL(a2, .25, .2, .3, '#2f2a28', .2, .7, .1); BALL(a2, .2, .16, .22, '#2f2a28', -.25, .6, -.3);
@@ -566,8 +818,7 @@ export function start(){
         }
         break; }
       case 'dairy': walls('#f4f7fb', '#5f8fc9', 1.5, { box:true });                                              // 🧀 dairy: white walls, blue roof, milk cans
-        for (const x of [-.5, -.15]){ CY(g, .14, .45, '#cfd6dc', W*.3 + x, 0, D*.45, true); CY(g, .08, .08, '#aeb6be', W*.3 + x, .45, D*.45); }
-        RB(g, .5, .3, .4, .04, '#f2c94c', -W*.3, 0, D*.45, true); break;
+        add(g, propGeo('dairy', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;                            // v0.51 clay cans + cheese crate
       /* ⛏ v0.22 phase 3 */
       /* 🏚 v0.30 NPC homes — ruined (o.closed) until the player repairs them */
       /* 🏋️ v0.33.3 โค้ชฟิต's gym — a real building, open from day one (o.closed only means "coach doesn't sleep here yet").
@@ -667,37 +918,25 @@ export function start(){
         if (gl >= 3){ RB(g, .9, .5, .36, .04, '#7a5236', 1.3, .05, fz + D*.18);                          // ③ dumbbell rack
           for (const dz of [-.08, .08]){ HB(.03, .5, '#5a5f66', 1.3, .64, fz + D*.18 + dz); for (const dx of [-.2, .2]) HB(.1, .08, '#3b3f45', 1.3 + dx, .64, fz + D*.18 + dz); } }
         break; }
-      case 'buahome': case 'salahouse':
-        if (o.closed){ RB(g, W-.3, .12, D-.3, .05, '#9c8f7e', 0, 0, 0);                       // cracked slab + rubble + leaning beams + torn roof sheet
-          BALL(g, .45, .35, .4, '#8f857a', -.6, .1, .4); BALL(g, .35, .3, .3, '#a39a8e', .55, .1, -.3); BALL(g, .25, .2, .25, '#7d746a', .2, .1, .6);
-          CY(g, .08, 1.5, '#7a5236', -.8, .12, -.7).rotation.z = .35; CY(g, .08, 1.1, '#6b4a30', .8, .12, -.6).rotation.x = -.5;
-          RB(g, 1.6, .06, .9, .02, o.type === 'buahome' ? '#7cae5a' : o.type === 'salahouse' ? '#c0603f' : '#5a6b7a', .1, .55, .1).rotation.z = .4; break; }
-        if (o.type === 'buahome'){ walls('#f6e2b8', '#7cae5a', 1.4, { chimney:true });          // ป้าบัว's healthy kitchen + veggie crates
-          for (const [x, c] of [[-.55, '#e84a3a'], [0, '#f2a33a'], [.55, '#4caf6a']]){ RB(g, .45, .25, .35, .04, '#c99a62', x, .12, D*.42); BALL(g, .16, .12, .12, c, x, .4, D*.42); } }
-        else { RB(g, W-.4, .3, D-.4, .05, '#c99a62', 0, 0, 0);                                    // น้องขิง's Thai sala: raised floor, 4 posts, tall red gable
-          for (const [x, z2] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .08, 1.6, '#8a5a3b', x*(W/2-.45), .3, z2*(D/2-.45));
-          const rf = add(g, gable(W-.1, 1.1, D-.1), mat('#c0603f'), 0, 1.9, 0); RB(g, .7, .06, .5, .03, '#f2e6c9', 0, .32, 0); }
-        break;
+      /* 🏚 v0.51 NPC homes with a STAGED repair look: k = S.homes[type] (stages already paid, index.html HOMES).
+           ป้าบัว (2 stages):   0 ruin → 1 walls + roof standing, leftovers (planks, rubble, ladder) → done: crates + menu board
+           น้องขิง (3 stages):  0 ruin → 1 floor → 2 posts + roof → done: rails, gold trim, ช่อฟ้า, mat, flower pots */
+      case 'buahome': case 'salahouse': {
+        const k = o.closed ? Math.min(((typeof S !== 'undefined' && S.homes && S.homes[o.type]) || 0), o.type === 'buahome' ? 1 : 2) : 9;
+        if (o.type === 'salahouse'){ add(g, bldGeo('sala', W, D, Math.min(3, k)), VCM2, 0, 0, 0, null, null, null, true); break; }   // น้องขิง's Thai sala
+        if (k === 0){ add(g, mergeGeo(`ruin_bua${W}x${D}`, (() => { const P = []; ruinParts(P, lcg(77), W, D, '#f6e2b8', '#7cae5a', false); return P; })()), VCM2, 0, 0, 0, null, null, null, true); break; }
+        walls('#f6e2b8', '#7cae5a', 1.4, { chimney:true });                                     // ป้าบัว's healthy kitchen
+        add(g, propGeo(k === 1 ? 'buafix' : 'buahome', W, D, 0), k === 1 ? VCM2 : VCM, 0, 0, 0, null, null, null, true); break; }
       case 'petshop': { walls('#fde4ec', '#f29bb5', 1.4, {});          // 🐾 v0.41 ป้านวล's pet shop: pink walls, striped awning, paw sign, kibble sacks
-        for (let k=0;k<6;k++) RB(g, (W-.6)/6, .06, .55, .02, k%2 ? '#ffffff' : '#f29bb5', -W/2 + .3 + (k+.5)*(W-.6)/6, 1.25, D*.44).rotation.x = .35;
-        add(g, CYL, mat('#ffffff'), 0, 1.75, D*.37, .32, .06, .32).rotation.x = Math.PI/2;                     // round sign
-        BALL(g, .1, .09, .04, '#8a5a3b', 0, 1.68, D*.37 + .05); for (const [x, y] of [[-.13,.0],[-.05,.1],[.05,.1],[.13,0]]) BALL(g, .045, .045, .03, '#8a5a3b', x, 1.82 + y*.6, D*.37 + .05);
-        for (const [x, c] of [[-.6, '#e9c27a'], [.6, '#c9a0dc']]){ RB(g, .4, .5, .3, .08, c, x, 0, D*.5, true); BALL(g, .07, .05, .03, '#8a5a3b', x, .3, D*.5 + .16); }
+        add(g, propGeo('petshop', W, D, 0), VCM, 0, 0, 0, null, null, null, true);   // v0.51 merged: scalloped awning, sign on a post, sacks clear of the door
         break; }
       case 'smithy': { walls('#a9b0b8', '#5a5f66', 1.5, { chimney:true });   // blacksmith: grey stone house, forge glow, anvil
-        const on = 1; add(g, CYL, mat('#ff7a2a', 0xff5a1a), W*.3, .5, D*.42, .32, .3, .1).rotation.x = Math.PI/2;
-        RB(g, .55, .25, .3, .05, '#3e4248', -W*.3, 0, D*.55); RB(g, .7, .18, .32, .05, '#55606b', -W*.3, .25, D*.55); break; }
-      case 'mine': {                                            // mine entrance: rocky hill, timber frame, dark tunnel, rails, lantern
-        BALL(g, W*.5, 1.5, D*.42, '#8d8379', 0, .1, -D*.08, true); BALL(g, W*.3, 1.0, D*.3, '#a0968a', -W*.28, .1, D*.05); BALL(g, W*.26, .8, D*.26, '#7d7369', W*.3, .1, D*.08);
-        add(g, CYL, mat('#1c1814'), 0, .75, D*.3, .55, .1, .55).rotation.x = Math.PI/2;
-        for (const x of [-.62, .62]) CY(g, .1, 1.45, '#8a5f32', x, 0, D*.33); RB(g, 1.5, .2, .22, .05, '#8a5f32', 0, 1.42, D*.33);
-        for (const x of [-.3, .3]) RB(g, .06, .05, D*.5, .02, '#9aa6b1', x, .02, D*.55);
-        for (let k=0;k<4;k++) RB(g, .8, .04, .1, .02, '#7a5236', 0, 0, D*.38 + k*.22);
-        if (o.closed){                                          // v0.23 collapsed: rubble plugs the tunnel, a broken beam, no lantern
-          BALL(g, .42, .5, .36, '#9a9086', -.22, .1, D*.36); BALL(g, .36, .42, .32, '#857b71', .26, .1, D*.4); BALL(g, .3, .36, .28, '#a8a096', 0, .55, D*.34);
-          BALL(g, .2, .2, .2, '#8d8379', .55, .05, D*.52); BALL(g, .16, .16, .16, '#a0968a', -.58, .05, D*.5);
-          RB(g, 1.1, .16, .2, .05, '#7a5236', .1, .55, D*.5).rotation.z = .5; break; }
-        CY(g, .025, .25, '#3e4248', .75, 1.25, D*.38); add(g, SPH, mat('#ffd27a', NIGHT > .35 ? 0xffb030 : 0x332000), .75, 1.12, D*.38, .1, .12, .1); break; }
+        add(g, propGeo('smithy', W, D, 0), VCM, 0, 0, 0, null, null, null, true);              // v0.51 hearth + anvil + bucket (inside the footprint)
+        add(g, coalGeo(W*.29, D*.41 + .19), mat('#ff7a2a', 0xff5a1a), 0, 0, 0); break; }        // glowing coals (old forge colours)
+      case 'mine': {                                            // ⛏ v0.51 clay mine: mossy rock hill, timber frame, rails + ore cart; v0.23 collapsed look when o.closed
+        add(g, bldGeo('mine', W, D, o.closed ? 1 : 0), VCM2, 0, 0, 0, null, null, null, true);
+        if (!o.closed) add(g, SPH, mat('#ffd27a', NIGHT > .35 ? 0xffb030 : 0x332000), .75, 1.12, D*.38, .1, .12, .1);   // lantern glow
+        break; }
       /* 🏮 v0.18 Loy Krathong event decor */
       case 'lanna': { const on = NIGHT > .35;                   // Lanna paper lantern hanging from a wooden post (glows at night)
         RB(g, .55, .1, .55, .04, '#cfc6b8', 0, 0, 0); CY(g, .07, 2.3, '#7a4a26', 0, .1, 0, true); RB(g, .7, .07, .07, .03, '#7a4a26', .3, 2.3, 0);
