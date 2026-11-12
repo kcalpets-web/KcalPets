@@ -51,7 +51,7 @@ tools/art/           ห้องทดลองดินปั้น (three.js 
 ## ทดสอบก่อน commit ทุกครั้ง
 ```bash
 python3 tools/build.py && bash tools/test/check.sh          # build ตรง · ไวยากรณ์ · คอมเมนต์ // กลางบรรทัด · VER = sw.js · ไม่มีอีเมล
-NODE_PATH=$(npm root -g) node tools/test/smoke.js /tmp/smoke   # ~3 นาที: เซฟตัวอย่าง × ทุกหน้า · error · ไทยในโหมดอังกฤษ · ภาพหน้าจอ
+NODE_PATH=$(npm root -g) node tools/test/smoke.js /tmp/smoke   # ~7 นาที: เซฟตัวอย่าง × ทุกหน้า · error · ไทยในโหมดอังกฤษ · ภาพหน้าจอ
 ONLY=vault,farm NODE_PATH=$(npm root -g) node tools/test/smoke.js   # เฉพาะบางหน้า
 ```
 เปลี่ยนรูปแบบเซฟ → สร้างเซฟตัวอย่างใหม่: `NODE_PATH=$(npm root -g) node tools/test/make-fixtures.js`
