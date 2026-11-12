@@ -304,6 +304,96 @@ export function start(){
       for (let k = 0; k < 3; k++){ const t = (r() - .5)*1.6; P.push([blobGeo(`st${v}${k}`, STONE[0], STONE[1], .18, 1.3, [1, .55, .9]), along ? t : o*.95, .06, along ? o*.95 : t, .1 + r()*.06, .1, .1, r()*6.28, 0]); } }
     return P.length ? mergeGeo(key, P) : null;
   }
+  /* ---------- 🥕 v0.49 CLAY FARM KIT (phase B) ----------
+     Crops: 4 plants per plot at (±.45, ±.45); growth p ∈ [0, 1] is bucketed into stages 0..3 (growing) + 4 (ripe), so a plot
+     only ever uses 5 cached geometries per crop (cropGeo(crop, stage, v)) and the "live" 3-s zone rebuild allocates nothing.
+       stage 0  = 2-leaf sprout (leaf blobs) for every crop
+       stage s  = crop foliage scaled by f = .45 + .55·s/3
+       ripe     = foliage + produce (carrot shoulders, corn cobs, tomatoes, golden rice heads, ribbed pumpkins, strawberries)
+     Decor (flowerbed, bench, fence, fountain, gazebo, lamp post) = merged vertex-coloured kits; only glowing / water parts stay separate. */
+  const LEAFC = ['#3f8a3a', '#9fd26a'];
+  const leaf = (P, key, x, y, z, s, sq = [1, .25, .55], ry = 0, rz = 0, c = LEAFC) => P.push([blobGeo(key, c[0], c[1], .12, 1.6, sq), x, y, z, s, s, s, ry, rz]);
+  function plantParts(crop, st, r, x, z){
+    const P = [], f = st >= 4 ? 1 : .45 + .55*st/3, ripe = st >= 4;
+    if (st === 0){ for (const sd of [-1, 1]) leaf(P, 'sprout', x + sd*.07, .12, z, .13, [1, .25, .55], sd > 0 ? 0 : Math.PI, .5); P.push([CYL, x, .06, z, .02, .12, .02, 0, 0, '#5aa24a']); return P; }
+    switch (crop){
+      case 'carrot':                                           // feathery tops: 5 bent blades; ripe → orange shoulder
+        for (let k = 0; k < 5; k++) P.push([bladeGeo(), x, 0, z, .6*f, .55*f, 1.6, k/5*Math.PI*2 + r(), 0]);
+        if (ripe){ P.push([BEAD, x, .04, z, .15, .13, .15, 0, 0, '#f08a3c']); P.push([BEAD, x + .16, .03, z + .1, .1, .09, .1, 0, 0, '#f39a4c']); } break;   // ripe: big orange shoulders
+      case 'corn': {                                           // stalk + long leaves; ripe → cob in a green husk
+        const h = 1.25*f; P.push([CYL, x, h/2, z, .04, h, .04, 0, 0, '#6aa84f']);
+        for (let k = 0; k < 4; k++) P.push([bladeGeo(), x, h*(.2 + k*.18), z, 1.2*f, .5*f, 1.8, k*1.9 + r(), .9]);
+        P.push([bladeGeo(), x, h, z, .3, .25, 1.2, r()*6, 0]);
+        if (ripe) for (const sd of [-1, 1]){ P.push([BEAD, x + sd*.13, h*.6, z + .03, .09, .22, .09, 0, -sd*.35, '#f6d24a']); P.push([BEAD, x + sd*.11, h*.52, z + .03, .095, .16, .095, 0, -sd*.35, '#7bbf5a']); } break; }
+      case 'tomato': {                                         // stake + leafy bush; ripe → 3 red tomatoes
+        const h = .95*f; P.push([CYL, x - .12, h/2, z - .1, .02, h + .1, .02, 0, 0, '#b48a5a']);
+        for (let k = 0; k < 4; k++) leaf(P, `tl${k%2}`, x + Math.cos(k*1.7)*.12, h*(.35 + k*.18), z + Math.sin(k*1.7)*.12, .22*f, [1, .55, .9], k);
+        if (ripe) for (let k = 0; k < 4; k++) P.push([BEAD, x + Math.cos(k*1.6 + .4)*.24, h*(.3 + (k%2)*.25), z + Math.sin(k*1.6 + .4)*.24, .12, .11, .12, 0, 0, '#e5483e']); break; }   // tomatoes outside the leaves
+      case 'rice': {                                           // dense thin blades; ripe → golden, drooping grain heads
+        const c = ripe ? '#e8c76a' : null;
+        for (let k = 0; k < 8; k++) P.push([bladeGeo(), x + (r() - .5)*.12, 0, z + (r() - .5)*.12, .5, .85*f, .7, k/8*Math.PI*2 + r(), 0, c]);
+        if (ripe) for (let k = 0; k < 4; k++) P.push([BEAD, x + Math.cos(k*1.6)*.12, .78, z + Math.sin(k*1.6)*.12, .035, .11, .035, 0, .6, '#d9a93a']); break; }
+      case 'pumpkin':                                          // broad round leaves on the ground; ripe → ribbed pumpkin + stem
+        for (let k = 0; k < 4; k++) leaf(P, `pl${k%2}`, x + Math.cos(k*1.57 + .3)*.2*f, .1, z + Math.sin(k*1.57 + .3)*.2*f, .2*f, [1, .2, 1], k);
+        if (ripe){ for (let k = 0; k < 6; k++){ const a = k/6*Math.PI*2; P.push([BEAD, x + Math.cos(a)*.1, .2, z + Math.sin(a)*.1, .15, .18, .15, -a, 0, k%2 ? '#f0962f' : '#e8822a']); }
+          P.push([CYL, x, .42, z, .03, .12, .03, 0, .3, '#6b8f3a']); } break;
+      case 'berry':                                            // low bush with white blossoms; ripe → strawberries
+        for (let k = 0; k < 5; k++) leaf(P, `bl${k%2}`, x + Math.cos(k*1.26)*.13*f, .12*f, z + Math.sin(k*1.26)*.13*f, .14*f, [1, .3, .8], k, .3);
+        for (let k = 0; k < 3; k++){ const a = k*2.1 + .5, px = x + Math.cos(a)*.18, pz = z + Math.sin(a)*.18;
+          if (ripe){ P.push([BEAD, px*1.15 - x*.15, .11, pz*1.15 - z*.15, .1, .12, .1, 0, 0, '#e2364d']); P.push([BEAD, px*1.15 - x*.15, .22, pz*1.15 - z*.15, .06, .02, .06, 0, 0, '#5aa24a']); }
+          else if (st >= 2) P.push([BEAD, px, .2, pz, .045, .02, .045, 0, 0, '#ffffff']); } break;
+    }
+    return P;
+  }
+  function cropGeo(crop, st, v){
+    const key = `crop_${crop}${st}${v}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = []; for (const [x, z] of [[-.45, -.45], [.45, -.45], [-.45, .45], [.45, .45]]) P.push(...plantParts(crop, st, r, x, z));
+    return mergeGeo(key, P);
+  }
+  /* decor kits (W×D in world units; `along` = long side on x) */
+  function decorGeo(type, W, D, v){
+    const key = `dec_${type}${W}x${D}v${v}`; if (FOLG.has(key)) return FOLG.get(key);
+    const r = lcg(strHash3(key)), P = [], along = W >= D, L = (along ? W : D);
+    const rot = (x, z) => along ? [x, z] : [z, x];                                 // place along the long side
+    switch (type){
+      case 'flowerbed':                                        // rounded plank planter, soil, 6 flowers + 2 tufts
+        for (const sd of [-1, 1]){ P.push([RBG(W - .3, .45, .14, .06), 0, .225, sd*(D/2 - .22), 1, 1, 1, 0, 0, '#b98a5c']); P.push([RBG(.14, .45, D - .3, .06), sd*(W/2 - .22), .225, 0, 1, 1, 1, 0, 0, '#a8784c']); }
+        P.push([RBG(W - .55, .08, D - .55, .04), 0, .42, 0, 1, 1, 1, 0, 0, '#6a4630']);
+        for (let k = 0; k < 6; k++) P.push(...flowerParts(r, ((k%3) - 1)*(W - .9)/2.4, (k < 3 ? -1 : 1)*(D - .9)/4, FLOWER[(k + v)%5]).map(q => (q[2] += .45, q)));
+        P.push(...tuftParts(r, -W/2 + .5, 0, .5).map(q => (q[2] += .45, q)), ...tuftParts(r, W/2 - .5, 0, .5).map(q => (q[2] += .45, q))); break;
+      case 'bench': {                                          // 3 rounded seat slats + 2 back slats on curved dark legs
+        const Lb = L - .5;
+        for (let k = 0; k < 3; k++){ const [x, z] = rot(0, -.2 + k*.2); P.push([RBG(along ? Lb : .17, .08, along ? .17 : Lb, .04), x, .48, z, 1, 1, 1, 0, 0, k%2 ? '#c99566' : '#d8a676']); }
+        for (let k = 0; k < 2; k++){ const [x, z] = rot(0, -.36); P.push([RBG(along ? Lb : .07, .14, along ? .07 : Lb, .035), x, .72 + k*.2, z, 1, 1, 1, 0, 0, '#c99566']); }
+        for (const e of [-Lb/2 + .25, Lb/2 - .25]){ const [x, z] = rot(e, 0); P.push([RBG(along ? .08 : .62, .48, along ? .62 : .08, .04), x, .24, z, 1, 1, 1, 0, 0, '#4a4f57']);
+          const [x2, z2] = rot(e, -.36); P.push([RBG(.08, .55, .08, .03), x2, .66, z2, 1, 1, 1, 0, 0, '#4a4f57']); } break; }
+      case 'fence': {                                          // pickets with rounded pointed caps + 2 rails, slight tone variation
+        const Lf = L - .2, n = Math.round(Lf/.32);
+        for (let k = 0; k <= n; k++){ const e = -Lf/2 + k*Lf/n, [x, z] = rot(e, 0), c = ['#fbf8f2', '#f2ede2', '#f7f3ea'][(r()*3)|0];
+          P.push([RBG(.13, .75, .08, .035), x, .375, z, 1, 1, 1, 0, 0, c]); P.push([CONE, x, .82, z, .075, .16, .05, along ? 0 : Math.PI/2, 0, c]); }
+        for (const y of [.28, .6]){ const [x, z] = rot(0, -.06); P.push([RBG(along ? Lf : .05, .08, along ? .05 : Lf, .025), x, y, z, 1, 1, 1, 0, 0, '#e8e1d2']); }
+        P.push(...tuftParts(r, ...rot(-Lf/3, .15), .5), ...tuftParts(r, ...rot(Lf/4, .12), .45)); break; }
+      case 'fountain':                                         // stone basin with rounded rim, pillar, top bowl (water = separate meshes)
+        P.push([CYL, 0, .2, 0, 1.45, .4, 1.45, 0, 0, '#d9d3c8']); P.push([geo('torusRim', () => new THREE.TorusGeometry(1, .12, 8, 32).rotateX(Math.PI/2)), 0, .42, 0, 1.38, 1.38, 1.38, 0, 0, '#ece7de']);
+        P.push([CYL, 0, .9, 0, .2, 1.0, .2, 0, 0, '#e3ddd3']); P.push([CYL, 0, 1.45, 0, .55, .14, .55, 0, 0, '#ece7de']);
+        P.push([geo('torusRim', () => new THREE.TorusGeometry(1, .12, 8, 32).rotateX(Math.PI/2)), 0, 1.52, 0, .52, .52, .52, 0, 0, '#f4f0e8']);
+        P.push([BEAD, 0, 1.75, 0, .1, .16, .1, 0, 0, '#e3ddd3']);
+        for (let k = 0; k < 8; k++){ const a = k/8*Math.PI*2; P.push([blobGeo(`st${v}${k%3}`, STONE[0], STONE[1], .18, 1.3, [1, .5, .9]), Math.cos(a)*1.62, .05, Math.sin(a)*1.62, .14, .14, .14, a, 0]); } break;
+      case 'gazebo': {                                         // stepped deck, 4 posts, low rails on 3 sides, pyramid roof with eaves + finial
+        P.push([RBG(W - .25, .2, D - .25, .08), 0, .1, 0, 1, 1, 1, 0, 0, '#e6d6b8']); P.push([RBG(1.1, .1, .4, .04), 0, .05, D/2 - .05, 1, 1, 1, 0, 0, '#d9c7a4']);
+        const px = W/2 - .45, pz = D/2 - .45;
+        for (const [x, z] of [[-px, -pz], [px, -pz], [-px, pz], [px, pz]]){ P.push([CYL, x, 1.2, z, .1, 2.0, .1, 0, 0, '#fbf8f2']); P.push([CYL, x, .26, z, .14, .12, .14, 0, 0, '#e8e1d2']); }
+        P.push([RBG(2*px, .08, .08, .03), 0, .65, -pz, 1, 1, 1, 0, 0, '#c99566']); for (const sd of [-1, 1]) P.push([RBG(.08, .08, 2*pz, .03), sd*px, .65, 0, 1, 1, 1, 0, 0, '#c99566']);
+        P.push([RBG(W - .1, .12, D - .1, .05), 0, 2.24, 0, 1, 1, 1, 0, 0, '#6f9e78']);
+        P.push([geo('roofPyr', () => new THREE.ConeGeometry(1, 1, 4, 1).rotateY(Math.PI/4)), 0, 2.85, 0, Math.max(W, D)*.62, 1.1, Math.max(W, D)*.62, 0, 0, '#86b48c']);
+        P.push([BEAD, 0, 3.45, 0, .1, .14, .1, 0, 0, '#e2b24a']); break; }
+      case 'lamp':                                             // stone base, dark green post with a collar, little roof (the glowing globe is separate)
+        P.push([CYL, 0, .1, 0, .22, .2, .22, 0, 0, '#bdb6aa']); P.push([CYL, 0, 1.1, 0, .06, 1.9, .06, 0, 0, '#3f5a4a']);
+        P.push([CYL, 0, .45, 0, .09, .08, .09, 0, 0, '#2f4538']); P.push([CYL, 0, 2.08, 0, .16, .06, .16, 0, 0, '#2f4538']);
+        P.push([CONE, 0, 2.68, 0, .3, .22, .3, 0, 0, '#2f4538']); P.push([BEAD, 0, 2.82, 0, .05, .05, .05, 0, 0, '#e2b24a']); break;
+    }
+    return mergeGeo(key, P);
+  }
   function resModel(k, seed, i, bio){
     const g = new THREE.Group(), h = n => hrnd(seed, i, n);
     switch (k){
@@ -387,24 +477,16 @@ export function start(){
           const u = Math.max(0, Math.min(1, (Date.now() - o.idle - (lim - 6*3600e3)) / (6*3600e3)));
           for (let k=0;k<Math.round(u*9);k++) CO(g, .07, .35 + (k%3)*.1, '#7dbb69', ((k*37)%9/9 - .5)*1.4, .3, ((k*53)%9/9 - .5)*1.4); }
         for (let k=-1;k<=1;k++){ const fr = add(g, geo('furrow' + W, () => new THREE.CapsuleGeometry(.11, W - .75, 4, 10)), mat('#8a5c3c'), 0, .3, k*.5, 1, .55, 1); fr.rotation.z = Math.PI/2; }   // 🟫 v0.48 rounded furrows
-        if (o.plant){ const cp = CROPS[o.crop || 'carrot'], p = Math.min(1, (Date.now()-o.plant)/(cp.sec*1000)), col = CROPC[o.crop || 'carrot'];
-          for (const [x,z] of [[-.45,-.45],[.45,-.45],[-.45,.45],[.45,.45]]){
-            CO(g, .14+.1*p, .3+.5*p, '#6dbb5d', x, .3, z);
-            if (p >= 1) BALL(g, .2, o.crop==='corn' ? .32 : .2, .2, col, x+.12, .55, z+.08); } }
+        if (o.plant){ const cp = CROPS[o.crop || 'carrot'], p = Math.min(1, (Date.now()-o.plant)/(cp.sec*1000)), st = p >= 1 ? 4 : Math.min(3, Math.floor(p*4));
+          add(g, cropGeo(o.crop || 'carrot', st, o.id % 3), VCM2, 0, .3, 0, null, null, null, true); }   // 🥕 v0.49 staged clay crops (1 draw call)
         break; }
-      case 'flowerbed': RB(g, W-.3, .5, D-.3, .08, '#b98a5c', 0, 0, 0); RB(g, W-.5, .06, D-.5, .04, '#6a4630', 0, .5, 0); for (let k=0;k<6;k++) flower(g, ((k%3)-1)*.5, (k<3?-.3:.3), FLOWER[(k+o.id)%5], .9).position.y = .5; break;
-      case 'lamp': CY(g, .06, 2.2, '#5b5f66', 0, 0, 0, true); add(g, SPH, mat('#fff3c4', NIGHT > .35 ? 0xffd27a : 0x2a2416), 0, 2.35, 0, .28, .28, .28); break;
-      case 'bench': { const along = W >= D, L = (along ? W : D) - .5;
-        const s = new THREE.Group(); if (!along) s.rotation.y = Math.PI/2; g.add(s);
-        RB(s, L, .12, .7, .05, C.oak, 0, .45, 0, true); RB(s, L, .55, .1, .05, C.oak, 0, .6, -.32, true);
-        for (const x of [-L/2+.2, L/2-.2]) for (const z of [-.25,.25]) CY(s, .05, .45, '#5b5f66', x, 0, z); break; }
-      case 'fence': { const along = W >= D, L = (along ? W : D) - .2, s = new THREE.Group(); if (!along) s.rotation.y = Math.PI/2; g.add(s);
-        for (let k=0;k<=6;k++) RB(s, .14, .9, .1, .04, C.white, -L/2 + k*L/6, 0, 0, true);
-        for (const y of [.3,.65]) RB(s, L, .1, .06, .03, C.white, 0, y, 0); break; }
-      case 'fountain': CY(g, 1.5, .5, '#dfe2e6', 0, 0, 0, true); add(g, CYL, mat('#7cc4ec', 0x0b2a3a), 0, .52, 0, 1.3, .04, 1.3); CY(g, .25, 1.1, '#e8eaee', 0, .5, 0, true); CY(g, .6, .12, '#e8eaee', 0, 1.6, 0, true); break;
-      case 'gazebo': RB(g, W-.3, .18, D-.3, .06, '#eadfcb', 0, 0, 0);
-        for (const [x,z] of [[-1,-1],[1,-1],[-1,1],[1,1]]) CY(g, .1, 2, C.white, x*(W/2-.45), .18, z*(D/2-.45), true);
-        add(g, CONE, mat('#86b48c'), 0, 2.6, 0, Math.max(W,D)*.6, 1.1, Math.max(W,D)*.6, true).rotation.y = Math.PI/4; break;
+      case 'flowerbed': add(g, decorGeo('flowerbed', W, D, o.id % 5), VCM2, 0, 0, 0, null, null, null, true); break;   // 🌷 v0.49
+      case 'lamp': add(g, decorGeo('lamp', W, D, 0), VCM, 0, 0, 0, null, null, null, true); add(g, SPH, mat('#fff3c4', NIGHT > .35 ? 0xffd27a : 0x2a2416), 0, 2.3, 0, .22, .26, .22); break;   // 🏮 v0.49 globe glows at night
+      case 'bench': add(g, decorGeo('bench', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // 🪑 v0.49
+      case 'fence': add(g, decorGeo('fence', W, D, o.id % 3), VCM2, 0, 0, 0, null, null, null, true); break;   // 🪵 v0.49 picket fence
+      case 'fountain': add(g, decorGeo('fountain', W, D, 0), VCM, 0, 0, 0, null, null, null, true);   // ⛲ v0.49 clay basin + rims; water discs stay separate
+        add(g, CYL, waterMat, 0, .41, 0, 1.3, .03, 1.3); add(g, CYL, waterMat, 0, 1.53, 0, .46, .03, .46); add(g, SPH, mat('#bfe6f7'), 0, 1.92, 0, .07, .16, .07); break;
+      case 'gazebo': add(g, decorGeo('gazebo', W, D, 0), VCM, 0, 0, 0, null, null, null, true); break;   // 🏯 v0.49
       case 'mill': { RB(g, W*.55, 3, D*.55, .15, '#efe9de', 0, 0, 0, true); CO(g, W*.42, 1, '#d9705a', 0, 3, 0, true);
         const b = new THREE.Group(); b.position.set(0, 1.9, W*.42 + .15); b.userData.spin = 1; g.add(b);   // hub in front of the roof overhang (cone r = 0.42W) → blades never cut the roof
         RB(g, .14, .14, W*.42 + .15 - D*.27, .05, '#8a5a33', 0, 1.83, (W*.42 + .15 + D*.27)/2);           // axle from the tower to the hub
