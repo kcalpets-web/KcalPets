@@ -56,6 +56,15 @@ export const PETS = {
     part(g, k.dark, k.fur, [.22, .72, -.38], [.16, .16, .16]);
     if (o.sword) { part(g, '#8a8fa8', '#eef2ff', [.62, 1.0, .15], [.05, .42, .02], [0, 0, -.5], { A: 0, mat: MAT_GOLD }); part(g, '#7a4422', '#c8843a', [.45, .66, .15], [.05, .12, .05], [0, 0, -.5]) }
   },
+  cat(g, o = {}) {                                                                   // grey tabby, white muzzle & paws
+    const k = { fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', foot: '#ffffff', footD: '#dcdce8' }; chibi(g, k);
+    part(g, k.dark, k.fur, [0, 1.24, 0], [.56, .48, .48]); part(g, '#e6e6f0', '#ffffff', [0, 1.11, .3], [.26, .17, .2]);
+    for (const s of [-1, 1]) { cone(g, '#5a5c70', '#a4a6b8', [s * .3, 1.68, 0], [.17, .25, .11], [0, 0, -s * .18], .95); cone(g, '#f0b0c0', '#ffd0dc', [s * .29, 1.64, .06], [.09, .16, .04], [0, 0, -s * .18], .95) }
+    for (let i = -1; i <= 1; i++) part(g, '#5a5c70', '#7a7c90', [i * .14, 1.62, .2], [.04, .1, .03], [.5, 0, 0], { A: 0 });       // forehead stripes
+    for (const s of [-1, 1]) for (const d of [-1, 1]) part(g, '#e0e0ea', '#ffffff', [s * .36, 1.13 + d * .03, .4], [.13, .008, .008], [0, 0, d * .12 * s], { A: 0, shadow: false });   // whiskers
+    part(g, '#d06a80', '#ff9ab0', [0, 1.18, .5], [.045, .035, .03], [0, 0, 0], { A: 0 }); eyes(g, 1.3, .43, .2); cheeks(g, 1.15, .44, .33);
+    part(g, k.dark, k.fur, [.3, .55, -.4], [.07, .07, .3], [-.9, .4, 0]); part(g, k.dark, k.fur, [.4, .95, -.55], [.07, .07, .22], [-.1, .4, 0]);   // tail curling up
+  },
   chick(g) {
     const k = { fur: '#ffe066', dark: '#f0b22e', belly: '#fff6c8', bellyD: '#f6e3a0', foot: '#ffa640', footD: '#e07a20' };
     part(g, k.dark, k.fur, [0, .78, 0], [.62, .66, .58], [0, 0, 0], { A: .04 }); part(g, k.bellyD, k.belly, [0, .6, .32], [.36, .34, .2]);
@@ -95,6 +104,10 @@ export const MONS = {
   },
 };
 /* ---- props ---- */
+export const SICK = {
+  bed(g) { part(g, '#a8803a', '#e0c070', [0, .04, 0], [.55, .04, 1.05], [0, 0, 0], { A: .02 }); part(g, '#e8e0d0', '#ffffff', [0, .1, -.8], [.32, .08, .2]);   // straw mat · pillow
+    part(g, '#5a7ab8', '#8ab0e8', [0, .34, .3], [.52, .14, .68], [0, 0, 0], { A: .06 }); part(g, '#c8a040', '#ffe27a', [0, .4, -.32], [.5, .04, .1], [0, 0, 0], { A: 0 }) },   // blanket
+};
 export const PROPS = {
   tree(g, s = 1, kind = 0) {
     part(g, '#6a4024', '#a8703e', [0, .7 * s, 0], [.16 * s, .7 * s, .16 * s]);
@@ -139,6 +152,28 @@ export const TOOLMESH = {
 };
 
 /* ---- evolution accessories (form 1: gold collar + tag · form 2: + crown) and the fishing float ---- */
+/* goblins (camp in the forest): green, big ears, a club · chief = bone helmet, war paint, cape, bigger club */
+MONS.goblin = function (g, chief = 0) {
+  const sk = ['#4a8a3a', '#9ad06a'], cloth = chief ? ['#6a1a1a', '#b03a2a'] : ['#5a3a20', '#9a6a3a'];
+  for (const s of [-1, 1]) { role(part(g, sk[0], sk[1], [s * .13, .2, 0], [.09, .2, .09]), s < 0 ? 'footL' : 'footR'); part(g, '#3a2a20', '#6a4a30', [s * .13, .05, .05], [.11, .06, .14]) }
+  part(g, sk[0], sk[1], [0, .58, 0], [.28, .3, .24]); part(g, cloth[0], cloth[1], [0, .4, .02], [.31, .13, .27], [0, 0, 0], { A: .08 });   // body · loincloth
+  for (const s of [-1, 1]) role(part(g, sk[0], sk[1], [s * .32, .6, .05], [.08, .21, .08], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR');
+  part(g, sk[0], sk[1], [0, 1.08, 0], [.36, .31, .31]);                                                                                // head
+  for (const s of [-1, 1]) { cone(g, sk[0], sk[1], [s * .44, 1.14, -.02], [.09, .27, .06], [0, 0, -s * 1.3], .9); part(g, '#2a4a20', '#3a5a2a', [s * .13, 1.2, .27], [.1, .025, .03], [0, 0, s * .45], { A: 0 }) }   // ears · angry brows
+  part(g, sk[0], sk[1], [0, 1.03, .32], [.08, .1, .09]); cone(g, '#d8d0b0', '#fffbe8', [.09, .9, .27], [.03, .06, .03], [Math.PI, 0, 0], .9);   // nose · fang
+  eyes(g, 1.11, .27, .13, .06);
+  const club = new THREE.Group(); part(club, '#4a2a18', '#8a5a30', [0, 0, 0], [.05, .3, .05]); part(club, '#4a2a18', '#8a5a30', [0, .3, 0], [.12, .16, .12], [0, 0, 0], { A: .15 });
+  if (chief) { for (let i = 0; i < 4; i++) cone(club, '#c8c0a8', '#fffbe8', [Math.cos(i * 1.57) * .11, .32, Math.sin(i * 1.57) * .11], [.03, .08, .03], [Math.sin(i * 1.57) * 1.4, 0, -Math.cos(i * 1.57) * 1.4], .9) }
+  club.position.set(.42, .62, .18); club.rotation.set(.6, 0, -.35); club.scale.setScalar(chief ? 1.3 : 1); g.add(club);
+  if (chief) {
+    part(g, '#d8d0b8', '#fffbe8', [0, 1.33, -.02], [.3, .14, .28], [0, 0, 0], { A: .1 });                                            // bone helmet
+    for (const s of [-1, 1]) cone(g, '#c8c0a8', '#fffbe8', [s * .22, 1.5, 0], [.06, .2, .06], [0, 0, -s * .5], .9);                 // horns
+    for (const s of [-1, 1]) part(g, '#a01a1a', '#e03a2a', [s * .2, 1.02, .28], [.07, .02, .02], [0, 0, s * .3], { A: 0 });          // war paint
+    part(g, '#6a1a1a', '#b03a2a', [0, .62, -.26], [.3, .42, .05], [.12, 0, 0], { A: .1 });                                           // cape
+    for (let i = 0; i < 5; i++) cone(g, '#d8d0b8', '#fffbe8', [-.16 + i * .08, .8, .22], [.025, .05, .025], [Math.PI, 0, 0], .9);   // tooth necklace
+  }
+};
+MONS.goblinChief = g => MONS.goblin(g, 1);
 export const ACC = {
   collar(g, y = .95) { const m = new THREE.Mesh(new THREE.TorusGeometry(.36, .05, 8, 28), MAT_GOLD.clone()); m.material.vertexColors = false; m.material.color = C('#ffcf40'); m.rotation.x = Math.PI / 2; m.position.y = y; g.add(m);
     part(g, '#d99a26', '#fff0a8', [0, y - .1, .36], [.08, .08, .03], [0, 0, 0], { A: 0, mat: MAT_GOLD }) },
@@ -169,6 +204,15 @@ export const HUMANS = {
   villager(g, v = 0) { const C2 = [['#e0a040', '#b07020'], ['#6aa0e0', '#3a6aa8'], ['#d06a8a', '#a04060']][v % 3];
     human(g, { cl: C2[0], clD: C2[1], hair: ['#3a2418', '#c8a060', '#1e1520'][v % 3], hairD: '#1e1410', leg: '#4a3a5a' });
     part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },                                         // apron
+  sberh(g) {                                                                     // young herbalist: small, green robe, round glasses, satchel, a sprig behind the ear
+    human(g, { adult: 1, cl: '#7aaa5a', clD: '#4a7a3a', hair: '#c8803a', hairD: '#8a4a1a', fringe: 1, leg: '#7a5a3a', legD: '#4a3020' });
+    cone(g, '#4a7a3a', '#7aaa5a', [0, .66, 0], [.3, .2, .24], [0, 0, 0], .35); part(g, '#6a3a1a', '#a8703a', [0, .82, 0], [.26, .04, .2], [0, 0, 0], { A: 0 });   // tunic hem · belt
+    for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(.085, .014, 8, 24), MAT_EYE); r.position.set(s * .1, 1.6, .27); g.add(r) }
+    part(g, '#2a2030', '#4a4050', [0, 1.6, .28], [.04, .012, .012], [0, 0, 0], { A: 0 });                                             // glasses bridge
+    part(g, '#6a3a1a', '#a8703a', [0, 1.02, 0], [.26, .03, .2], [0, 0, -.7], { A: 0 }); part(g, '#7a4a20', '#c08848', [.24, .64, .12], [.13, .13, .07], [0, 0, 0], { A: .05 });   // strap · satchel
+    for (let i = 0; i < 3; i++) part(g, '#2f7a3a', '#8ad86a', [-.26, 1.72 + i * .05, .02], [.05, .1, .02], [0, 0, .5 - i * .4], { A: 0 }); // sprig
+    part(g, '#3a6a2a', '#6a9a4a', [0, 1.95, -.05], [.2, .1, .2], [0, 0, 0], { A: .05 });                                             // little cap
+  },
   howsif(g) { human(g, { cl: '#4a6a8a', clD: '#2a3a5a', hair: '#e8e8f0', hairD: '#b8b8c8', leg: '#5a4a3a' });
     part(g, '#d8d8e0', '#ffffff', [0, 1.06, .26], [.2, .18, .1], [0, 0, 0], { A: .1 });          // white beard
     part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }); cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6) },  // straw hat
