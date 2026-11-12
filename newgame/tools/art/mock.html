@@ -52,7 +52,50 @@ function path(pts, w = .55) { pts.forEach(([x, z], i) => { if (!i) return; const
 function bubble(x, z, txt) { label(x, 2.35, z, txt, 'lbl c') }
 function ring(x, z, col) { const m = new THREE.Mesh(new THREE.TorusGeometry(.62, .06, 8, 40), new THREE.MeshBasicMaterial({ color: col })); m.rotation.x = -Math.PI / 2; m.position.set(x, .33, z); S.add(m) }
 
-if (scene === 'farm') {
+if (scene === 'home') {
+  cam.position.set(1.3, 25, 23); cam.lookAt(1.3, 0, -2.2);
+  /* the island farm (same plan as Luthonia's h2Farm): sea on the left · diagonal beach · forest on the right · tree house top-right */
+  S.background = C('#1f2f4a');
+  const shore = z => -5.4 + (z + 12) * .27, forest = z => -1.2 + (z + 12) * .21;
+  const geo = new THREE.PlaneGeometry(22, 46, 100, 200); geo.rotateX(-Math.PI / 2);
+  const P = geo.attributes.position, col = [], c = new THREE.Color();
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), z = P.getZ(i), sh = shore(z), fo = forest(z), n = Math.sin(x * 1.7 + z * .9) * .5 + Math.sin(z * 2.3 - x) * .5;
+    let y = 0, h;
+    if (x < sh - 4.5) { h = '#22385a'; y = -.42 } else if (x < sh - 2.2) { h = '#3f74a0'; y = -.4 } else if (x < sh - .7) { h = '#4fa6b4'; y = -.36 } else if (x < sh) { h = '#79cbbf'; y = -.3 + (x - sh + .7) * .3 }
+    else if (x < fo + .25 * n) { h = '#efcb8e'; y = .02 * n } else { h = '#5eae4c'; y = .1 + .04 * n }
+    c.set(h); if (x >= sh) c.offsetHSL(0, 0, .03 * n); P.setY(i, y); col.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9 })); land.receiveShadow = true; S.add(land);
+  const tree = (x, z, s) => at(g => { part(g, '#5a3420', '#9a6238', [0, .35 * s, 0], [.12 * s, .35 * s, .12 * s]); part(g, '#2f7a3a', '#86d46a', [0, .95 * s, 0], [.5 * s, .45 * s, .5 * s], [0, 0, 0], { A: .12, f: 1.5, seed: (x * 3 + z) % 5 }); if ((x * 7 + z * 3) % 3 < 1) part(g, '#d84a3a', '#ff8a6a', [.2 * s, 1.05 * s, .35 * s], [.06 * s, .06 * s, .06 * s], [0, 0, 0], { A: 0 }) }, x, z);
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let z = -21; z <= 14; z += .85) {
+    for (let x = 5.6; x <= 8.6; x += .8) if (!(z > 1.4 && z < 3.6)) tree(x + rnd() * .3, z + rnd() * .3, .9 + rnd() * .3);   // forest wall (gap = adventure exit)
+    for (let x = forest(z) + .7; x < 5.4; x += .9) if (rnd() < .2 && !(z > -9.6 && z < -7 && x > 2.8) && Math.abs(z - 2.5) > 1.2 && !(z > 3.6 && z < 6.4 && x < 4.6)) tree(x + rnd() * .3, z, .8 + rnd() * .3);
+  }
+  /* tree house + path down to the beach */
+  at(g => { part(g, '#5a3420', '#9a6238', [0, .9, 0], [.32, .9, .32]); part(g, '#2f7a3a', '#86d46a', [0, 2.3, -.1], [1.2, .7, 1.1], [0, 0, 0], { A: .1, f: 1.4 });
+    part(g, '#8a4c26', '#d8945a', [0, 1.55, .45], [.8, .5, .45]); part(g, '#a8342e', '#ff6a58', [0, 2.12, .5], [.95, .24, .55]); part(g, '#ffe27a', '#fff6c8', [0, 1.55, .9], [.16, .16, .04], [0, 0, 0], { A: 0 }) }, 4.2, -8.6, 0, 1.1);
+  label(4.2, 3.9, -8.6, '💞 บ้านต้นไม้ · ผสมพันธุ์', 'lbl c');
+  path([[3.8, -7.6], [2.6, -5.8], [1.2, -4.2], [-.2, -3.0]], .5);
+  path([[3.2, 1.9], [4.6, 2.4], [6.2, 2.6], [8.8, 2.6]], .5);
+  at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 4.2, 1.6, -.2);
+  label(4.4, 2.2, 1.6, '⚔️ ผจญภัย →');
+  /* six element farms — PROPOSAL: each sits where its element belongs on the island */
+  const sx = z => shore(z);
+  const H6 = [
+    ['🔥', '4,200', -1.4, -6.4, g => { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; part(g, '#7f7a74', '#d0cbc2', [Math.cos(a) * .45, .1, Math.sin(a) * .45], [.16, .12, .14]) } cone(g, '#e0402a', '#ffd23f', [0, .45, 0], [.25, .45, .25], [0, 0, 0]) }, PETS.shiba],
+    ['💧', '9,800', sx(-1) - 1.0, -1, g => { for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; part(g, i % 2 ? '#c03a3a' : '#e8e8f0', i % 2 ? '#ff7a6a' : '#ffffff', [Math.cos(a) * .5, -.2, Math.sin(a) * .5], [.16, .1, .16]) } part(g, '#3a8a4a', '#8ad87a', [0, -.26, 0], [.38, .04, .38], [0, 0, 0], { A: .1 }) }, PETS.penguin],
+    ['❄️', '10,000 เต็ม!', sx(6.5) - 1.9, 6.5, g => { part(g, '#9fd8f0', '#ffffff', [0, .1, 0], [.9, .45, .7], [0, 0, 0], { A: .15, f: 1.8 }); cone(g, '#bfe8ff', '#ffffff', [.2, .6, 0], [.35, .6, .35], [0, 0, 0], .9) }, PETS.penguin],
+    ['⛰️', '6,600', 1.0, 7.2, g => { PROPS.rock(g, 1.1); const k = new THREE.Group(); PROPS.rock(k, .6); k.position.set(.6, 0, .3); g.add(k) }, PETS.bunny],
+    ['🍃', '1,500', 3.2, -2.2, g => PROPS.bush(g, .9, ['#2f7a3a', '#9ade6c']), PETS.bunny],
+    ['⚡', '3,100', 2.9, 5.0, g => { cone(g, '#e0b020', '#fff6a0', [0, .55, 0], [.22, .55, .22], [0, 0, .1], .9); part(g, '#e0b020', '#fff6a0', [.35, .2, .1], [.12, .2, .12]) }, PETS.chick]];
+  H6.forEach(([ic, coin, x, z, prop, pet], i) => { at(prop, x, z); at(pet, x + .75, z + .45, -.3, .7, x < sx(z) ? -.3 : .05); label(x + .3, 2.0, z, ic + ' ' + coin, 'lbl c') });
+  /* main pet + wanderers */
+  at(PETS.shiba, -.6, 3.2, .2, .95); ring(-.6, 3.2, '#4be37a'); label(-.6, 2.35, 3.2, '★ คุโมะ (ตัวหลัก)');
+  at(PETS.chick, 1.8, 10.5, -.4, .7); at(PETS.bunny, -2.4, -9.5, .5, .7);
+} else if (scene === 'farm') {
   sea(); ground('#4f9a44', '#8fd06a', 7.2, 13.2);
   path([[0, 9], [0, 6.2], [0, 2.3], [0, -1.2], [0, -4.6], [3.2, -6.4], [6.4, -7.4]]);
   path([[0, -4.6], [-2.6, -7.6]]);
@@ -109,7 +152,7 @@ const hud = document.getElementById('hud'); let h = '';
 for (const [v, t, cls] of labels) { const p = v.clone().project(cam); h += `<div class="${cls}" style="left:${(p.x + 1) / 2 * W}px;top:${(1 - p.y) / 2 * H}px">${t}</div>` }
 h += `<div class="hud top"><div class="pf"><div class="av">🐶</div><div><div class="lv">Lv 12 · คุโมะ</div><div class="bar"><i style="width:62%;background:var(--xp)"></i></div></div></div>
   <div class="cur"><div class="rt"><div class="pill">🪙 128,400</div><div class="pill">💎 3,200</div></div><div class="rt"><div class="pill">🕐 14:32</div><div class="sq">☰</div></div></div></div>`;
-if (scene === 'farm') {
+if (scene !== 'stage') {
   h += `<div class="quest">📜 เควส: ไปป่าทางขวา<br>กำจัดสไลม์ 3 ตัว (0/3)<br><u>แตะเพื่อเดินไปเอง</u></div>`;
   h += `<div class="hud bot"><div class="btn"><b>🎒</b>กระเป๋า</div><div class="btn"><b>🛒</b>ร้านค้า</div><div class="btn"><b>🎟️</b>กาชา</div><div class="btn"><b>🪙</b>เก็บทั้งหมด</div><div class="btn"><b>🌳</b>ต้นไม้</div></div>`;
 } else {
