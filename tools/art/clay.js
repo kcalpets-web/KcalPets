@@ -97,8 +97,9 @@ const ICONS = {
   chest(grp) {
     part(grp, '#7a4422', '#b8743a', [0, .35, 0], [.85, .38, .55], [0, 0, 0], { A: .03 });   // box
     part(grp, '#8a4c26', '#cf8a48', [0, .76, 0], [.86, .24, .56], [0, 0, 0], { A: .03 });   // lid
-    for (const x of [-.55, .55]) part(grp, '#c7891c', '#ffe27a', [x, .55, .02], [.08, .5, .58], [0, 0, 0], { A: 0, mat: MAT_GOLD }); // bands
-    part(grp, '#c7891c', '#ffe27a', [0, .56, .55], [.13, .15, .06], [0, 0, 0], { A: 0, mat: MAT_GOLD }); // lock
+    for (const x of [-.5, .5]) part(grp, '#c7891c', '#ffe27a', [x, .52, .5], [.08, .42, .06], [0, 0, 0], { A: 0, mat: MAT_GOLD }); // gold straps on the front
+    part(grp, '#c7891c', '#ffe27a', [0, .6, .56], [.14, .16, .07], [0, 0, 0], { A: 0, mat: MAT_GOLD }); // lock
+    part(grp, '#2a1a10', '#3a2618', [0, .55, .62], [.03, .05, .02], [0, 0, 0], { A: 0 });                // keyhole
   },
 };
 
@@ -113,7 +114,7 @@ export function render(name, size = 256, yaw = -.38, pitch = .12) {
     const rim = new THREE.DirectionalLight('#ffd7a8', .9); rim.position.set(0, 3, -5); R.s.add(rim);
   }
   R.r.setSize(size, size); R.r.setPixelRatio(1);
-  const grp = new THREE.Group(), make = PETS[name] || ICONS[name]; make(grp); grp.rotation.set(pitch, yaw, 0); R.s.add(grp);
+  const grp = new THREE.Group(), make = PETS[name] || ICONS[name]; make(grp); if (ICONS[name]) yaw *= .35; grp.rotation.set(pitch, yaw, 0); R.s.add(grp);
   const box = new THREE.Box3().setFromObject(grp), ctr = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
   const h = Math.max(sz.x, sz.y) * .56, cam = new THREE.OrthographicCamera(-h, h, h, -h, .1, 50);
   cam.position.set(ctr.x, ctr.y, 10); cam.lookAt(ctr);
@@ -124,10 +125,16 @@ export const NAMES = { pets: Object.keys(PETS), icons: Object.keys(ICONS) };
 
 /* "pixelate": clay render → small pixel sprite (style ค): nearest downscale, up to `cols` colours (median cut), 1px dark outline */
 export function pixelate(src, w, h, cols = 14, outline = '#2a2030') {
+  /* 1) crop to the model, 2) fit inside w×h (1px left for the outline), area-average downscale */
+  const sg = src.getContext('2d'), sd = sg.getImageData(0, 0, src.width, src.height).data; let x0 = src.width, y0 = src.height, x1 = 0, y1 = 0;
+  for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (sd[(y * src.width + x) * 4 + 3] > 40) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y) }
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.min((w - 2) / bw, (h - 2) / bh), dw = Math.max(1, Math.round(bw * k)), dh = Math.max(1, Math.round(bh * k));
   const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
-  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, w, h);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(src, x0, y0, bw, bh, Math.floor((w - dw) / 2), h - 1 - dh, dw, dh);
   const im = g.getImageData(0, 0, w, h), d = im.data, px = [];
-  for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 110) { d[i + 3] = 0; continue } d[i + 3] = 255; px.push(i) }
+  /* 3) un-premultiply the soft edge, push contrast + saturation a little (small sprites read flat otherwise) */
+  for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 110) { d[i + 3] = 0; continue } d[i + 3] = 255;
+    const l = (d[i] + d[i + 1] + d[i + 2]) / 3; for (let ch = 0; ch < 3; ch++) d[i + ch] = Math.max(0, Math.min(255, (l + (d[i + ch] - l) * 1.3 - 128) * 1.12 + 128)); px.push(i) }
   let boxes = [px];                                                      // median cut
   while (boxes.length < cols) {
     boxes.sort((a, b) => b.length - a.length); const b = boxes.shift(); if (b.length < 2) { boxes.push(b); break }

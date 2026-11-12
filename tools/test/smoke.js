@@ -9,21 +9,24 @@ const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '../..');
 const OUT = process.argv[2] || '/tmp/luthonia_smoke';
 const URL = 'file://' + path.join(ROOT, 'index.html');
+const VER = (/const VER='([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')) || [])[1];
 const PAGES = ['home', 'farm', 'vault', 'harbor', 'bag', 'shop', 'exercise', 'adventure', 'collection', 'breed', 'quests', 'mail', 'settings', 'tower', 'pet'];
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
 const THAI = /[฀-๿]+/g;
 fs.mkdirSync(OUT, { recursive: true });
 
-async function enter(pg, save) {
-  await pg.goto(URL); await pg.waitForTimeout(800);
-  await pg.evaluate(s => { localStorage.clear(); if (s) localStorage.setItem('kpd_save_v1', s) }, save);
-  await pg.reload(); await pg.waitForTimeout(1200);
+/* each page starts from a clean load of the same save · seenUpdate=true skips the "updated, save a backup" popup
+   (the home page keeps it, so that popup is tested too) */
+async function enter(pg, save, seenUpdate) {
+  if (!pg.url().startsWith('file:')) { await pg.goto(URL); await pg.waitForTimeout(500) }
+  await pg.evaluate(([s, seen]) => { localStorage.clear(); if (s) localStorage.setItem('kpd_save_v1', s); if (seen) localStorage.setItem('kpd_lastver', seen) }, [save, seenUpdate ? VER : null]);
+  await pg.reload(); await pg.waitForTimeout(900);
   await pg.evaluate(() => { const c = document.querySelector('#cover'); if (c && !c.hidden) c.click() });
-  await pg.waitForTimeout(1800); await dismiss(pg);
+  await pg.waitForTimeout(1100); await dismiss(pg);
 }
 async function dismiss(pg) { /* tutorial cards, update popups, story: skip / close / ok */
   for (let i = 0; i < 12; i++) {
-    const n = await pg.evaluate(() => { let k = 0; document.querySelectorAll('.ov button, .cutv button').forEach(b => { if (/ข้ามไปก่อน|ข้าม|ปิด|เข้าใจแล้ว|ตกลง|^Skip|Close|Got it|^OK/.test(b.textContent.trim())) { b.click(); k++ } }); return k });
+    const n = await pg.evaluate(() => { let k = 0; document.querySelectorAll('.ov button, .cutv button').forEach(b => { if (/ข้ามไปก่อน|ข้าม|ปิด|เข้าใจแล้ว|ตกลง|ไว้ทีหลัง|^Skip|Close|Got it|^OK|^Later/.test(b.textContent.trim())) { b.click(); k++ } }); return k });
     if (!n) break; await pg.waitForTimeout(250);
   }
 }
@@ -40,11 +43,11 @@ async function dismiss(pg) { /* tutorial cards, update popups, story: skip / clo
     const pages = save ? PAGES.filter(p => !ONLY || ONLY.includes(p)) : ['home'];
     for (const p of pages) {
       errs = [];
-      await enter(pg, save);
-      if (p !== 'home') { await pg.evaluate(k => window.__kpdTest.pages[k](), p).catch(e => errs.push('open: ' + e.message)); await pg.waitForTimeout(900); await dismiss(pg) }
+      await enter(pg, save, p !== 'home');
+      if (p !== 'home') { await pg.evaluate(k => window.__kpdTest.pages[k](), p).catch(e => errs.push('open: ' + e.message)); await pg.waitForTimeout(700) }
       await pg.screenshot({ path: path.join(OUT, `${name}_${p}.png`) });
       if (locale.startsWith('en')) {
-        const t = await pg.evaluate(() => { const names = (window.__kpdTest.S && window.__kpdTest.S.pets || []).map(x => x.name); let s = document.body.innerText; names.forEach(n => { s = s.split(n).join('') }); return s });
+        const t = await pg.evaluate(() => { const names = (window.__kpdTest.S && window.__kpdTest.S.pets || []).map(x => x.name); let s = document.body.innerText; names.concat(['ภาษา · Language', 'ไทย']).forEach(n => { s = s.split(n).join('') }); return s }); /* the language picker is meant to show Thai */
         const hits = [...new Set(t.match(THAI) || [])]; if (hits.length) thai[p] = hits.slice(0, 8);
       }
       const ok = !errs.length; if (!ok) bad++;

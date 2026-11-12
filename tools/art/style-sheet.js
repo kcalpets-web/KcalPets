@@ -29,8 +29,8 @@ const PETS = ['shiba', 'chick', 'penguin'], ICONS = [['coin', '🪙'], ['chest',
         const im = await load(cur); g.imageSmoothingEnabled = false;
         if (im) { const s = Math.floor(140 / Math.max(im.width, im.height)), [x, yy] = box(0); g.drawImage(im, x + (150 - im.width * s) / 2, yy + (160 - im.height * s) / 2, im.width * s, im.height * s) }
         const big = render(n, 300); g.imageSmoothingEnabled = true; { const [x, yy] = box(1); g.drawImage(big, x, yy, 150, 160 * 150 / 160) }
-        const px = pixelate(big, pet ? 24 : 16, pet ? 24 : 16, pet ? 14 : 8); g.imageSmoothingEnabled = false;
-        { const [x, yy] = box(2), s = Math.floor(140 / px.width); g.drawImage(px, x + (150 - px.width * s) / 2, yy + (160 - px.height * s) / 2, px.width * s, px.height * s) }
+        const px = pixelate(big, pet ? 24 : 16, pet ? 32 : 16, pet ? 12 : 7); g.imageSmoothingEnabled = false;
+        { const [x, yy] = box(2), s = Math.floor(140 / Math.max(px.width, px.height)); g.drawImage(px, x + (150 - px.width * s) / 2, yy + (160 - px.height * s) / 2, px.width * s, px.height * s) }
       }
       return c.toDataURL('image/png');
     }, [PETS, ICONS, now]);

@@ -21,9 +21,9 @@ function draw() {
   out.innerHTML = ''; const yaw = +document.getElementById('yaw').value;
   for (const n of NAMES.pets.concat(NAMES.icons)) {
     const big = render(n, 256, yaw), isPet = NAMES.pets.includes(n);
-    const px = pixelate(big, isPet ? 24 : 16, isPet ? 24 : 16, isPet ? 14 : 8);
-    const z = document.createElement('canvas'); z.width = z.height = 128; z.className = 'px';
-    const g = z.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(px, 0, 0, 128, 128);
+    const px = pixelate(big, isPet ? 24 : 16, isPet ? 32 : 16, isPet ? 12 : 7);
+    const z = document.createElement('canvas'); z.width = px.width * 4; z.height = px.height * 4; z.className = 'px';
+    const g = z.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(px, 0, 0, z.width, z.height);
     const f = document.createElement('figure'); big.style.width = big.style.height = '128px';
     f.append(big, z); f.insertAdjacentHTML('beforeend', '<figcaption>' + n + '</figcaption>'); out.append(f);
   }
