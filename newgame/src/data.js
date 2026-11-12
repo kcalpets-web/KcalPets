@@ -5,6 +5,7 @@ export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.a
 
 /* ---- clearables: size → hits with a tier-0 tool (Pen Suk: small 1 · medium 3 · large 6) ---- */
 export const CLEAR = {
+  herb:    { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'สมุนไพรเรืองแสง' },                    // chapter 2: for Uncle Howsif
   debris:  { tool: 'axe',    size: 'm', mat: { wood: 2 }, mon: null, name: 'ซากเรือ' },     // story: the wreck over Uncle Howsif
   grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3 },
   bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3 },
@@ -32,6 +33,8 @@ export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, s
 export const MON = {
   slime:       { name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
   slimeKing:   { name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
+  goblin:      { name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
+  goblinChief: { name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
   grassSprite: { name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
   branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'barkArmor'], tier: 'normal' },
   rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'normal' },
@@ -112,8 +115,13 @@ export const BUILD = { house: { wood: 10, stone: 5 }, boat: { wood: 15, stone: 8
 export const BUILD_TIME = { house: 30, boat: 30, shop: 20 };          // seconds a build / repair takes (a clay hammer knocks meanwhile)
 export const HOWSIF_FISH = 2;
 export const TOWN_SLIMES = 5;
+export const HERBS = 3, GOBLINS = 4;
+export const FOREST_MONS = ['slime', 'grassSprite', 'slime'];   // wander along the forest path on each visit
+export const AUTO_POT = .3;                                   // auto-drink when HP is below this share (hold the potion button)
+export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet that finds you in the forest (dog or cat)
+export const CURE_GIFT = { hpS: 5, mpS: 2 };                  // potions Sberh gives after the shop is repaired
 export const SHOPS = [
-  { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'ป้าสมุนไพร', cost: { wood: 6, stone: 4, coin: 300 } },
+  { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'ลุงแป้ง', cost: { wood: 8, stone: 4, coin: 400 } },
   { k: 'tools', name: 'ช่างอุปกรณ์', icon: '🛠️', owner: 'ช่างตุ้ม', cost: { wood: 10, stone: 6, coin: 600 } },
   { k: 'smith', name: 'ช่างตีเหล็ก', icon: '⚒️', owner: 'ช่างเหล็ก', cost: { wood: 10, stone: 10, coin: 800 } },
@@ -134,6 +142,14 @@ export const QUESTS = [
   { id: 's3b', icon: '⚔️', text: 'หยิบดาบที่ตกอยู่บนพื้น', flag: 'sword', go: 'sword' },
   { id: 's3c', icon: '🟢', text: `กำจัดสไลม์ในเมือง ${5} ตัว`, stat: 'kill_slime', goal: 5, go: 'slime' },
   { id: 's3d', icon: '👑', text: 'กำจัดราชาสไลม์', stat: 'kill_slimeKing', goal: 1, go: 'slime' },
-  { id: 's3e', icon: '🏚️', text: 'ซ่อมร้านในเมือง 1 ร้าน', stat: 'shopFix', goal: 1, go: 'shops', reward: { coin: 500 } },
-  { id: 's3f', icon: '🌲', text: 'ทางไปป่าเปิดแล้ว (การผจญภัยต่อไปกำลังมา)', flag: 'forestTry', go: 'forest' },
+  /* chapter 2 (docs/STORY.md): Uncle Howsif falls ill → herbs in the forest → the goblin camp → Sberh → the potion shop → the medicine */
+  { id: 's4a', icon: '🏝️', text: 'กลับไปดูลุงฮาวซิฟที่เกาะ', flag: 'sickSeen', go: 'home' },
+  { id: 's4b', icon: '🌿', text: `ลุงป่วย! เข้าป่า (ประตูตะวันออกของเมือง) เก็บสมุนไพรเรืองแสง ${HERBS} ต้น`, stat: 'clr_herb', goal: HERBS, go: 'herb' },
+  { id: 's4c', icon: '👺', text: `กำจัดก็อบลินในแคมป์ ${GOBLINS} ตัว`, stat: 'kill_goblin', goal: GOBLINS, go: 'camp' },
+  { id: 's4d', icon: '👹', text: 'กำจัดหัวหน้าก็อบลิน', stat: 'kill_goblinChief', goal: 1, go: 'camp' },
+  { id: 's4e', icon: '🔓', text: 'ช่วยคนที่ถูกขังในกรง', flag: 'freed', go: 'cage' },
+  { id: 's5a', icon: '🏘️', text: 'พา Sberh กลับไปที่เมือง', flag: 'sberhTown', go: 'town' },
+  { id: 's5b', icon: '🧪', text: 'ซ่อมร้านยาของ Sberh', check: S => !!S.shops.potion, go: 'potionShop', reward: { coin: 500 } },
+  { id: 's5c', icon: '💊', text: 'นำยารักษาไปให้ลุงฮาวซิฟ', flag: 'cured', go: 'howsif2', reward: { coin: 1000, gem: 100 } },
+  { id: 's6', icon: '🌲', text: 'บทที่ 2 จบแล้ว · การผจญภัยต่อไปกำลังมา', flag: 'ch3', go: 'none' },
 ];

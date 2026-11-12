@@ -121,11 +121,15 @@ export function buildWorld(scene, eco) {
 const PICK_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
 export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
+const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
 /* show / hide one clearable */
 export function spawnClear(W, o) {
   if (o.g) return; const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
   const seg0 = Q.seg; Q.seg = W.eco ? 10 : 14;
-  ({ debris: () => { part(g, '#3a2418', '#7a4a30', [0, .12, 0], [.6, .12, .25], [0, 0, .2], { A: .05 }); part(g, '#4a2a18', '#8a5a30', [.2, .3, .1], [.45, .05, .1], [0, .6, .4], { A: 0 }) }, grass: () => PROPS.grassClump(g, 1.1), bush: () => PROPS.bush(g, .7), tree: () => PROPS.tree(g, .8, o.x > 4 ? 1 : 0), bigtree: () => PROPS.tree(g, 1.25, 1),
+  ({ herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
+       part(g, '#3f8a3a', '#7ac860', [0, .3, 0], [.025, .22, .025], [0, 0, 0], { A: 0 }); const f = new THREE.Mesh(new THREE.SphereGeometry(.11, 14, 10), GLOW); f.position.y = .55; g.add(f);
+       for (let i = 0; i < 4; i++) { const p2 = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), GLOW2); p2.position.set(Math.cos(i * 1.57) * .1, .55, Math.sin(i * 1.57) * .1); p2.scale.set(1, .5, 1); g.add(p2) } },
+     debris: () => { part(g, '#3a2418', '#7a4a30', [0, .12, 0], [.6, .12, .25], [0, 0, .2], { A: .05 }); part(g, '#4a2a18', '#8a5a30', [.2, .3, .1], [.45, .05, .1], [0, .6, .4], { A: 0 }) }, grass: () => PROPS.grassClump(g, 1.1), bush: () => PROPS.bush(g, .7), tree: () => PROPS.tree(g, .8, o.x > 4 ? 1 : 0), bigtree: () => PROPS.tree(g, 1.25, 1),
      pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, 0, o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
@@ -148,6 +152,50 @@ function mergeStatic(root) {
 }
 
 /* ================= the ruined town (east of the island; the camera jumps here through the gate) ================= */
+/* ---- the forest east of the town (chapter 2): a winding path, glowing herbs, the goblin camp with Sberh's cage ---- */
+export const FX = 92;
+export const FOREST = { x0: FX - 13, x1: FX + 13, z0: -9.5, z1: 9.5, gateW: { x: FX - 12, z: 0 }, camp: { x: FX + 7.5, z: 0 }, cage: { x: FX + 10, z: 3.2 } };
+export const walkForest = (x, z) => x > FOREST.x0 && x < FOREST.x1 && z > FOREST.z0 && z < FOREST.z1;
+const pathZ = x => Math.sin((x - FX) * .35) * 2.2 * Math.max(0, Math.min(1, (FX + 6 - x) / 4));      // the path winds, then opens into the camp
+export function buildForest(W, eco) {
+  const scene = W.scene, F = {}, ST = new THREE.Group(), R = rng(31);
+  const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
+  Q.seg = eco ? 10 : 14;
+  const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
+    c.set('#4f8a3a').multiplyScalar(.85 + .1 * n); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
+    const out = Math.max(0, Math.abs(z) - 10, Math.abs(x - FX) - 14); P.setY(i, out * .6 + .02 * n) }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = FX; g0.receiveShadow = true; scene.add(g0); F.ground = g0;
+  /* dense trees around the edge, a few inside (never on the path or in the camp) */
+  for (let i = 0; i < 70; i++) { const side = i % 4, t = R(); let x, z;
+    if (side === 0) { x = FX - 14 + t * 28; z = -9.8 - R() * 2 } else if (side === 1) { x = FX - 14 + t * 28; z = 9.8 + R() * 2 } else if (side === 2) { x = FX - 13.8 - R() * 2; z = -10 + t * 20; if (Math.abs(z) < 1.6) continue } else { x = FX + 13.8 + R() * 2; z = -10 + t * 20 }
+    at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x, z, R() * 6) }
+  for (let i = 0; i < 26; i++) { const x = FX - 11 + R() * 16, z = -8.5 + R() * 17; if (Math.abs(z - pathZ(x)) < 2.2 || Math.hypot(x - FOREST.camp.x, z) < 5.5) continue;
+    at(g => (R() < .4 ? PROPS.pine : R() < .5 ? PROPS.tree : PROPS.bush)(g, .8 + R() * .5), x, z, R() * 6) }
+  const blade = new THREE.ConeGeometry(.03, .26, 4); blade.translate(0, .13, 0);
+  const bm = new THREE.InstancedMesh(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 300 : 700), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
+  for (let i = 0; i < 3000 && k < bm.count; i++) { const x = FX - 13 + R() * 26, z = -9 + R() * 18; if (Math.abs(z - pathZ(x)) < 1.2 || Math.hypot(x - FOREST.camp.x, z) < 4.6) continue;
+    o.position.set(x, 0, z); o.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); o.scale.setScalar(.7 + R() * .9); o.updateMatrix(); bm.setMatrixAt(k, o.matrix); bm.setColorAt(k, cc.set(R() < .5 ? '#3f7a32' : '#6aaa4a')); k++ }
+  bm.count = k; scene.add(bm);
+  /* goblin camp: tents, a fire, crude stakes, the cage */
+  const cx = FOREST.camp.x, cz = FOREST.camp.z;
+  for (const [dx, dz, col] of [[-1.5, -3, '#8a6a4a'], [2.6, -2.4, '#7a5a3a'], [1.5, 3.4, '#8a6a4a']]) at(g => { cone(g, '#4a3220', col, [0, .9, 0], [1.1, .95, 1.1], [0, 0, 0], .95); part(g, '#2a1a10', '#4a3020', [0, .4, .9], [.3, .4, .05], [0, 0, 0], { A: 0 }) }, cx + dx, cz + dz, R() * 6);
+  at(g => { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .45, .1, Math.sin(a) * .45], [.16, .11, .14], [0, a, 0], { A: .2 }) } for (let i = 0; i < 4; i++) part(g, '#4a2a18', '#7a4a28', [0, .12, 0], [.4, .05, .05], [0, i * .8, .2], { A: 0 }) }, cx, cz);
+  F.fire = at(g => { cone(g, '#e0402a', '#ffd23f', [0, .35, 0], [.2, .4, .2], [0, 0, 0], .95); cone(g, '#ff8a2a', '#fff2a0', [0, .3, 0], [.12, .28, .12], [0, 0, 0], .95) }, cx, cz, 0, 1, 0, true);
+  for (let i = 0; i < 12; i++) { const a = -1.2 + i * .22; at(g => cone(g, '#5a3a20', '#a8703e', [0, .55, 0], [.08, .55, .08], [0, 0, 0], .9), cx + Math.cos(a) * 5.6, cz + Math.sin(a) * 5.6, 0, 1, 0) }
+  at(g => { part(g, '#3a2418', '#7a4a30', [0, 1.2, 0], [.8, .06, .8], [0, 0, 0], { A: .03 }); part(g, '#3a2418', '#7a4a30', [0, .05, 0], [.8, .06, .8], [0, 0, 0], { A: .03 });
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 6.28; part(g, '#4a2a18', '#8a5a30', [Math.cos(a) * .72, .62, Math.sin(a) * .72], [.04, .6, .04], [0, 0, 0], { A: 0 }) } }, FOREST.cage.x, FOREST.cage.z);
+  F.cageDoor = at(g => { for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#8a5a30', [-.18 + i * .18, .62, 0], [.04, .6, .04], [0, 0, 0], { A: 0 }) }, FOREST.cage.x - .1, FOREST.cage.z + .74, 0, 1, 0, true);
+  F.cagePick = addPick(W, FOREST.cage.x, FOREST.cage.z, 1, 2, { kind: 'cage' });
+  /* west gate back to the town */
+  at(g => { for (const s2 of [-1, 1]) part(g, '#5a3420', '#a8703e', [0, 1.1, s2 * 1.15], [.18, 1.1, .18], [0, 0, 0], { A: .04 }); part(g, '#2a5a2a', '#4a8a5a', [0, 2.25, 0], [.26, .16, 1.55], [0, 0, 0], { A: .03 }) }, FOREST.gateW.x, FOREST.gateW.z);
+  addPick(W, FOREST.gateW.x, FOREST.gateW.z, 1.4, 2.6, { kind: 'gateF' });
+  /* glowing herbs (sickle) */
+  [[FX - 6.5, -4.6], [FX - 1.2, 5.2], [FX + 2.6, -5.6]].forEach(([x, z], i) => W.clear.set('h' + (i + 1), { id: 'h' + (i + 1), t: 'herb', x, z, ry: i, g: null, pick: null, left: 0 }));
+  scene.add(mergeStatic(ST)); Q.seg = 32; return F;
+}
+
 export const TX = 46;                                          // town centre x · plaza at (TX, 0)
 export const TOWN = { x0: TX - 11, x1: TX + 11, z0: -11, z1: 11, gateW: { x: TX - 10.5, z: 0 }, gateE: { x: TX + 10.5, z: 0 }, sword: { x: TX - 7.5, z: 1.2 } };
 export const walkTown = (x, z) => x > TOWN.x0 && x < TOWN.x1 && z > TOWN.z0 && z < TOWN.z1;

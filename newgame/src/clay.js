@@ -215,7 +215,7 @@ export const HUMANS = {
   },
   howsif(g) { human(g, { cl: '#4a6a8a', clD: '#2a3a5a', hair: '#e8e8f0', hairD: '#b8b8c8', leg: '#5a4a3a' });
     part(g, '#d8d8e0', '#ffffff', [0, 1.06, .26], [.2, .18, .1], [0, 0, 0], { A: .1 });          // white beard
-    part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }); cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6) },  // straw hat
+    part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }).userData.hat = 1; cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6).userData.hat = 1 },  // straw hat
 };
 /* the shadow that takes Kealee: a black winged shape inside a huge black smoke cloud */
 export function shadowBeast(g) {

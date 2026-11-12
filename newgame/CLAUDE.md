@@ -1,4 +1,4 @@
-# New Game (ชื่อชั่วคราว) — คู่มือสำหรับ Claude Code
+# KEALEE — คู่มือสำหรับ Claude Code
 
 RPG ดินปั้น 3D (three.js) มือถือแนวตั้ง · ภาษาไทย · **ไม่เกี่ยวกับสุขภาพ** · ผู้ออกแบบ: Pasakorn
 สเปก: `docs/SPEC.md` (อ่านก่อนเริ่มงานทุกครั้ง) · ภาพตัวอย่าง: `docs/art/`
@@ -12,19 +12,19 @@ RPG ดินปั้น 3D (three.js) มือถือแนวตั้ง 
 
 ## โครงสร้าง (ES modules ไม่ต้อง build — GitHub Pages เสิร์ฟตรง)
 ```
-index.html        HUD + CSS · โหลด src/main.js
+index.html        HUD + CSS · โหลด src/main.js · icon-*.png + manifest.webmanifest (ไอคอนแอป)
 lib/              three.module.min.js (r170) · pp/ = postprocessing ของ three r170 (ใช้เฉพาะฉากเปิด)
 src/data.js       ตัวเลขทั้งหมด: ของที่เคลียร์ อุปกรณ์ มอนสเตอร์ ดรอป ไอเทม เรือ ร้าน เควส
 src/state.js      เซฟ (localStorage `ng_save_v3` · `S.story` ธงเนื้อเรื่อง · `S.area` farm/town · `S.shops`) · ค่าพลัง · Exp · เรือคลังเงิน
-src/world.js      เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
+src/world.js      เกาะ (x≈0) · เมือง `buildTown` (x≈46) · ป่าตะวันออก `buildForest` (x≈92 แคมป์ก็อบลิน กรง) · เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
 src/clay.js       ชุดปั้นดิน: น้อง มอนสเตอร์ ของในฉาก อุปกรณ์ · Q.seg = ความละเอียดก้อนดิน
 src/life.js       ลม (WMAT: ใบไม้สีเขียวไหว) · คลื่น (addWaves) · นกนางนวล · TIME = เวลาของ shader
 src/audio.js      เสียงสังเคราะห์ Web Audio: mood('day'|'night'|'town'|…) · sfx('chop'|'coin'|…) · เริ่มหลังแตะครั้งแรก
 src/ui.js         ป๊อปอัป (ปุ่มกลับมาก่อน) · toast · ตัวเลขลอย
-src/cutscene.js   ฉากเปิด (เล่นเองตามเวลา · bloom/เงา/เกรนเฉพาะช่วงนี้ แล้วคืนค่าเดิมให้ renderer · ฉากของตัวเอง · `playIntro(R)` → ชื่อผู้เล่น · hook `window.__cut`)
+src/cutscene.js   `film()` เล่นหนังสั้น: playIntro · playPetRescue (เลือกหมา/แมว) · playFlashback (ซีเปีย) (เล่นเองตามเวลา · bloom/เงา/เกรนเฉพาะช่วงนี้ แล้วคืนค่าเดิมให้ renderer · ฉากของตัวเอง · `playIntro(R)` → ชื่อผู้เล่น · hook `window.__cut`)
 src/main.js       ลูปเกม: เนื้อเรื่อง (QUESTS ใน data.js: flag/stat/check) เมือง (world.js `buildTown`, x≈46) เดิน เคลียร์ มอนสเตอร์ ต่อสู้ ดรอป กระเป๋า เรือ บ้าน ร้าน อุปกรณ์ เควส
-tools/art/        ห้องทดลองภาพตัวอย่าง (mock.html + shoot.js)
-tools/test/play.js  เล่นเนื้อเรื่อง v0.4 ตั้งแต่ฉากเปิดถึงประตูป่าอัตโนมัติ + ภาพหน้าจอ · ล้มถ้ามี error
+tools/art/        ห้องทดลองภาพ: mock.html · storyboard.html · cast.html (ตัวละคร) · icon.html (ไอคอนเกม) + shoot-*.js
+tools/test/play.js  เล่นเนื้อเรื่องอัตโนมัติตั้งแต่ฉากเปิดจนจบบทที่ 2 (~10 นาที) + ภาพหน้าจอ · ล้มถ้ามี error
 ```
 - **ผู้เล่นไม่มีตัวบนจอ (v0.3)**: ลากบนที่ว่าง = เลื่อนกล้องเสมอ (แม้ถืออุปกรณ์ · `stroke.lock` / `fits` · ไหลต่อ `camV`) · สองนิ้ว = เลื่อน+ซูม · แตะ = น้อง/เรือ/บ้าน/ประตู · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · 🎣 แตะน้ำ = ตกปลา (`castAt` / `fishTick`) · สองนิ้ว = ซูม
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`

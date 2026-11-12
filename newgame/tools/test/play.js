@@ -70,15 +70,35 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       if (p) await swipeAt(p.x, p.y, 70); if (i === 4) await shot('10-fight'); if (await N(() => window.__ng.mons.some(m => m.kind === 'slimeKing')) && !fs.existsSync(path.join(OUT, '11-king.png'))) await shot('11-king');
       if (await N(() => window.__ng.S.hp < 15)) await E(() => { window.__ng.S.hp = null }); await wait(250) }
     log('kills', JSON.stringify(await N(() => window.__ng.S.stat)), 'lv', await N(() => window.__ng.S.lv));
-    await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(1500); await shot('12a-repairing'); await E(() => window.__ng.finishJobs()); await wait(900);
-    await E(() => window.__ng.look(window.__ng.TW.shops[0].x, window.__ng.TW.shops[0].z + 2)); await wait(1500); await shot('12-shop-fixed');
-    await E(() => window.__ng.openShopKind('potion')); await wait(500); await shot('13-potion-shop'); await closeAll();
-    await E(() => window.__ng.openForest()); await wait(300); await clickAll('#cfY'); await wait(300); await clickAll('#tN');
-    log('quest', await N(() => window.__ng.S.quest), '/', 12, 'story', JSON.stringify(await N(() => window.__ng.S.story)));
-    ok = (await N(() => window.__ng.S.quest)) >= 12;
-    await E(() => window.__ng.openTown()); await wait(400); await shot('14-town-list'); await closeAll();
+    /* chapter 2: home → Uncle Howsif is ill → the forest: herbs, goblins, the cage → pet cutscene → Sberh → potion shop → flashback → medicine */
+    await E(() => window.__ng.goFarm()); await wait(3500); await shot('12-sick'); await clickAll('#tN');
+    log('sick', await N(() => window.__ng.S.story.sickSeen));
+    await E(() => window.__ng.goForest()); await wait(2500); await clickAll('#tN'); await shot('13-forest');
+    await clearSome('sickle', "o => o.t === 'herb'", () => (window.__ng.S.stat.clr_herb || 0) >= 3, 30);
+    log('herbs', await N(() => window.__ng.S.stat.clr_herb));
+    await E(() => { window.__ng.speed = 1.5 });
+    for (let i = 0; i < 260 && !(await N(() => window.__ng.S.story.campClear)); i++) {
+      const p = await E(() => { const N = window.__ng, M = N.mons.find(m => m.area === 'forest' && /goblin/.test(m.kind)) || N.mons.find(m => m.area === 'forest'); if (!M) return null; const q = M.A.root.position; N.look(q.x, q.z); N.setTool('sword'); return [q.x, q.z] });
+      if (!p) { await wait(300); continue } await wait(300); const q = await E(() => { const N = window.__ng, M = N.mons.find(m => m.area === 'forest' && /goblin/.test(m.kind)) || N.mons.find(m => m.area === 'forest'); if (!M) return null; const q = M.A.root.position; return N.project(q.x, .7, q.z) });
+      if (q) await swipeAt(q.x, q.y, 70); if (i === 6) await shot('14-goblins'); if (await N(() => window.__ng.mons.some(m => m.kind === 'goblinChief')) && !fs.existsSync(path.join(OUT, '15-chief.png'))) await shot('15-chief');
+      if (await N(() => window.__ng.S.hp < 25)) await E(() => { window.__ng.S.hp = null }); await wait(200) }
+    log('camp', JSON.stringify(await N(() => window.__ng.S.stat)));
+    await E(() => { window.__ng.speed = 3; window.__ng.openCage() }); await pg.waitForFunction(() => window.__cut && window.__cut.beat >= 0, null, { timeout: 60000 }); await wait(2500); await shot('16-cage-cut');
+    await E(() => window.__cut.skip()); await wait(1500); await shot('17-pet-pick'); await E(() => window.__cut.pet('cat')); await wait(500); await E(() => window.__cut.setName('มิว')); await wait(3000); await shot('18-thanks');
+    await E(() => window.__cut.skip()); await wait(2500); await clickAll('#tN');
+    log('pets', JSON.stringify(await N(() => window.__ng.S.pets.map(p => p.kind + ':' + p.name))), 'freed', await N(() => window.__ng.S.story.freed));
+    await wait(1200); await shot('19-with-pet');
+    await E(() => window.__ng.goTown()); await wait(2500); await shot('20-sberh-town'); await clickAll('#tN');
+    await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(1200); await shot('21-repairing'); await E(() => window.__ng.finishJobs());
+    await pg.waitForFunction(() => window.__ng.cut, null, { timeout: 60000 }); await wait(3500); await shot('22-flashback'); await E(() => window.__cut.skip());
+    await pg.waitForFunction(() => !window.__ng.cut, null, { timeout: 60000 }); await wait(800); await shot('23-gift'); await clickAll('#tN');
+    log('potions', JSON.stringify(await N(() => window.__ng.S.potions)), 'medicine', await N(() => window.__ng.S.story.medicine));
+    await pg.mouse.move(250, 815); await pg.mouse.down(); await wait(900); await pg.mouse.up(); await wait(400); log('auto potion', await N(() => window.__ng.autoPot)); await shot('24-auto');
+    await E(() => window.__ng.goFarm()); await wait(2500); await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN'); await wait(800); await shot('25-cured');
+    const st = await N(() => ({ q: window.__ng.S.quest, story: window.__ng.S.story })); log('quest', st.q, 'story', JSON.stringify(st.story));
+    ok = st.story.cured && st.q >= 18;
     log('perf', JSON.stringify(await N(() => window.__ng.info())));
   } finally { await b.close(); srv.kill() }
-  if (!ok) errs.push('story did not reach the end of v0.4');
+  if (!ok) errs.push('story did not reach the end of chapter 2');
   console.log(errs.length ? 'ERRORS\n' + errs.join('\n') : 'no page errors'); process.exit(errs.length ? 1 : 0);
 })();
