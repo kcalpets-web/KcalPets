@@ -1,0 +1,31 @@
+{
+ "v": "0.5.2",
+ "notes": [
+  "แจ้งเตือนเมื่อมีเวอร์ชันใหม่ แตะแถบสีเขียวด้านบนเพื่ออัปเดต",
+  "หลังอัปเดตจะมีหน้า 🆕 บอกว่ามีอะไรใหม่"
+ ],
+ "files": [
+  "index.html",
+  "manifest.webmanifest",
+  "lib/pp/postprocessing/EffectComposer.js",
+  "lib/pp/postprocessing/MaskPass.js",
+  "lib/pp/postprocessing/OutputPass.js",
+  "lib/pp/postprocessing/Pass.js",
+  "lib/pp/postprocessing/RenderPass.js",
+  "lib/pp/postprocessing/ShaderPass.js",
+  "lib/pp/postprocessing/UnrealBloomPass.js",
+  "lib/pp/shaders/CopyShader.js",
+  "lib/pp/shaders/LuminosityHighPassShader.js",
+  "lib/pp/shaders/OutputShader.js",
+  "lib/three.module.min.js",
+  "src/audio.js",
+  "src/clay.js",
+  "src/cutscene.js",
+  "src/data.js",
+  "src/life.js",
+  "src/main.js",
+  "src/state.js",
+  "src/ui.js",
+  "src/world.js"
+ ]
+}
