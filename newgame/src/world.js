@@ -52,8 +52,17 @@ export function buildWorld(scene, eco) {
     o.position.set(x, 0, z); o.rotation.set((R() - .5) * .7, R() * 3, (R() - .5) * .7); o.scale.setScalar(.7 + R() * .8); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c'); return 1 }, false);
   inst(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ roughness: .7 }), eco ? 120 : 260, (o, cc) => { const x = -5 + R() * 12, z = -12 + R() * 24; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + R() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(R() * 5)]); return 1 }, false);
   inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 90, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
-  /* ---- the forest wall (east, not clearable) with the adventure gap ---- */
-  for (let z = -15; z <= 14; z += 1.1) for (let x = 7.8; x <= 12; x += 1.1) { if (Math.abs(z - EXIT.z) < 1.3 && x < 10.5) continue; const s = .8 + R() * .35; at(g => (R() < .3 ? PROPS.pine : PROPS.tree)(g, s, R() < .5 ? 1 : 0), x + R() * .4, z + R() * .4, R() * 3) }
+  /* ---- east edge: a wooden palisade (clearly not choppable) with the adventure gate; hills + far mountains behind it ---- */
+  const FX = 7.75;
+  for (let z = -14.5; z <= 14; z += .42) { if (Math.abs(z - EXIT.z) < 1.15) continue;
+    at(g => { part(g, '#6a4024', '#b07a44', [0, .55, 0], [.12, .55, .12], [0, 0, 0], { A: .03 }); cone(g, '#6a4024', '#b07a44', [0, 1.18, 0], [.12, .12, .12], [0, 0, 0], .9) }, FX + (R() - .5) * .06, z, R() * 3, .95 + R() * .15) }
+  for (const y of [.35, .8]) for (const side of [-1, 1]) { const z0 = side < 0 ? -14.5 : EXIT.z + 1.15, z1 = side < 0 ? EXIT.z - 1.15 : 14;
+    at(g => part(g, '#5a3420', '#9a6238', [0, 0, 0], [.05, .05, (z1 - z0) / 2], [0, 0, 0], { A: 0 }), FX - .12, (z0 + z1) / 2, 0, 1, y) }
+  at(g => { for (const s2 of [-1, 1]) { part(g, '#5a3420', '#a8703e', [0, 1.1, s2 * 1.15], [.18, 1.1, .18], [0, 0, 0], { A: .04 }); part(g, '#c79a62', '#ecd2a0', [0, .08, s2 * 1.15], [.3, .1, .3], [0, 0, 0], { A: .05 }) }
+    part(g, '#8a3a2a', '#d8584a', [0, 2.25, 0], [.26, .16, 1.55], [0, 0, 0], { A: .03 }); part(g, '#5a3420', '#a8703e', [0, 1.95, 0], [.14, .08, 1.3], [0, 0, 0], { A: 0 });
+    part(g, '#e8d8b0', '#fff6e0', [-.14, 1.6, 0], [.04, .24, .62], [0, 0, 0], { A: 0 }) }, FX, EXIT.z, 0, 1.05);
+  for (let i = 0; i < 9; i++) { const z = -14 + i * 3.4 + R(); at(g => part(g, '#3d7a3a', '#7cc060', [0, 0, 0], [3.2 + R() * 2, 1.4 + R(), 2.6 + R()], [0, R() * 3, 0], { A: .08, f: .8 }), 12.4 + R() * 2, z, 0, 1, -.4) }   // green hills
+  for (let i = 0; i < 6; i++) { const z = -15 + i * 6 + R() * 2; at(g => cone(g, '#5a6a8a', '#c8d4e8', [0, 3, 0], [3.6, 3.6, 3.6], [0, 0, 0], .92), 18 + R() * 3, z) }  // far mountains
   /* palms along the beach */
   const palm = (x, z, s) => at(g => { for (let k = 0; k < 7; k++) part(g, '#8a5a30', '#c89058', [k * .06 * s, (.25 + k * .32) * s, 0], [.13 * s, .18 * s, .13 * s]); for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; part(g, '#2f7a3a', '#8ad86a', [.42 * s + Math.cos(a) * .7 * s, 2.25 * s, Math.sin(a) * .7 * s], [.75 * s, .07 * s, .2 * s], [0, -a, -.35], { A: .05 }) } }, x, z, R() * 3);
   for (const z of [-11, -7, 6.5, 10]) palm(shore(z) + 2.2 + R() * .5, z, .85 + R() * .2);
@@ -79,7 +88,7 @@ export function buildWorld(scene, eco) {
   const QR = rng(77); let id = 0;
   for (let z = -12.6; z <= 12.4; z += 1.15) for (let x = -7; x <= 7; x += 1.15) {
     const px = x + (QR() - .5) * .7, pz = z + (QR() - .5) * .7, roll = QR(), roll2 = QR(); id++;
-    if (!walkable(px, pz) || px > 7 || px - shore(pz) < .9) continue;
+    if (!walkable(px, pz) || px > 7.1 || px - shore(pz) < .9) continue;
     if (Math.hypot(px - HOUSE.x, pz - HOUSE.z) < 2.8 || Math.hypot(px - SPAWN.x, pz - SPAWN.z) < 3.0 || (pz > 1.2 && pz < 3.4 && px > 4.6)) continue;
     if (roll < .18) continue;                                                  // some open ground
     const beach = px - shore(pz) < 2.4, rocky = earth(px, pz), east = px > 3.6;

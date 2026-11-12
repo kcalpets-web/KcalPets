@@ -30,22 +30,36 @@ const W = buildWorld(scene, eco);
 for (const o of W.clear.values()) if (!S.cleared[o.id]) spawnClear(W, o);
 
 /* ---------- actors ---------- */
-const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
+
 function makeActor(build, scale) { const root = new THREE.Group(), body = new THREE.Group(); build(body); body.scale.setScalar(scale); root.add(body); scene.add(root); return { root, body } }
-const P = makeActor(g => PETS[mainPet().kind](g), .75); P.root.position.set(S.pos[0], 0, S.pos[1]);
+/* natural walk: feet step forward/back + lift, arms swing opposite, body leans and rolls a little, yaw turns smoothly,
+   idle breathing — all blended by A.mv (0 standing … 1 walking) so starting/stopping never snaps */
+function rigOf(A) { A.rig = {}; A.body.traverse(o => { if (o.userData.role) A.rig[o.userData.role] = o }); A.body.rotation.order = 'YXZ'; A.yaw = A.yawT = 0; A.mv = 0; A.phase = 0; A.bob = 0; A.base = A.body.scale.x; return A }
+const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d };
+function animate(A, moving, dt, now, rate = 11) {
+  A.mv += ((moving ? 1 : 0) - A.mv) * Math.min(1, dt * 8); const c = A.mv, R = A.rig;
+  A.yaw += angDiff(A.yaw, A.yawT) * Math.min(1, dt * 12); A.body.rotation.y = A.yaw;
+  A.phase += dt * rate * c; const s = Math.sin(A.phase);
+  for (const [k, sg] of [['footL', 1], ['footR', -1]]) { const m = R[k]; if (!m) continue; const b = m.userData.base; m.position.z = b[2] + sg * s * .14 * c; m.position.y = b[1] + Math.max(0, sg * s) * .08 * c }
+  for (const [k, sg] of [['armL', -1], ['armR', 1]]) { const m = R[k]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .8 * c; m.position.z = b[2] + sg * s * .06 * c }
+  A.body.rotation.x = .1 * c; A.body.rotation.z = s * .05 * c; A.bob = Math.abs(s) * .06 * c;
+  const br = 1 + Math.sin(now / 650) * .02 * (1 - c); A.body.scale.set(A.base, A.base * br, A.base);
+}
+const P = rigOf(makeActor(g => PETS[mainPet().kind](g), .75)); P.root.position.set(S.pos[0], 0, S.pos[1]);
 const toolHolder = new THREE.Group(); toolHolder.position.set(.42, .55, .12); P.body.add(toolHolder);
 let toolShown = '';
 function showTool(k) { if (toolShown === k) return; toolShown = k; while (toolHolder.children.length) toolHolder.remove(toolHolder.children[0]); if (k) TOOLMESH[k](toolHolder, k === 'sword' ? 0 : S.tools[k] || 0) }
 const ring = new THREE.Mesh(new THREE.TorusGeometry(.5, .05, 8, 32), new THREE.MeshBasicMaterial({ color: '#4be37a' })); ring.rotation.x = -Math.PI / 2; ring.position.y = .05; P.root.add(ring);
 const tRing = new THREE.Mesh(new THREE.TorusGeometry(.65, .06, 8, 32), new THREE.MeshBasicMaterial({ color: '#ff4a5a' })); tRing.rotation.x = -Math.PI / 2; tRing.visible = false; scene.add(tRing);
 /* other farm pets wander near their zone (they make the coins) */
-const wanderers = S.pets.filter(p => p.id !== S.main).map((p, i) => { const a = makeActor(g => PETS[p.kind](g), .6); const hx = 1 + i * 1.6, hz = 4 + i * .8; a.root.position.set(hx, 0, hz); return { a, p, home: [hx, hz], t: [hx, hz], wait: 1 } });
+const wanderers = S.pets.filter(p => p.id !== S.main).map((p, i) => { const a = rigOf(makeActor(g => PETS[p.kind](g), .6)); const hx = 1 + i * 1.6, hz = 4 + i * .8; a.root.position.set(hx, 0, hz); return { a, p, home: [hx, hz], t: [hx, hz], wait: 1 } });
 
 /* ---------- game state that is not saved ---------- */
 let act = null;                      // { type: 'move'|'clear'|'attack'|'goto', ... }
 let joy = null;                      // { x, y, dx, dy } while dragging
 let lastHurt = 0, atkT = 0, skillT = 0, swingT = 0, monAtkT = 0;
 let M = null;                        // the awake monster actor (mirrors S.mon)
+let down = null, stroke = null, pinch = null, tool = '', prevTool = '', tipT = 0;   // input + current tool ('' = hand)
 const drops = [];                    // items lying on the ground
 
 /* ---------- monster ---------- */
@@ -53,11 +67,12 @@ function monSpawn(kind, x, z, silent) {
   const T = D.MON[kind]; if (!S.mon) S.mon = { kind, hp: T.hp, x, z }; S.monSeen++;
   const a = makeActor(g => MONS[kind](g), .85); a.root.position.set(S.mon.x, 0, S.mon.z); a.root.scale.setScalar(.01);
   M = { a, kind, T, pick: addPick(W, S.mon.x, S.mon.z, .8, 1.6, { kind: 'mon' }), born: performance.now() };
-  if (!silent) { toast(`⚠️ <b>${T.name}</b> โผล่มาจากที่เพิ่งเคลียร์!<br>แตะมันเพื่อโจมตี · ต้องกำจัดก่อนถึงจะเคลียร์ต่อได้`, 3600); target(); }
+  prevTool = tool === 'sword' ? prevTool : tool; setTool('sword'); tRing.visible = true;
+  if (!silent) { toast(`⚠️ <b>${T.name}</b> โผล่มาจากที่เพิ่งเคลียร์!<br>⚔️ เปลี่ยนเป็นดาบแล้ว — ลากนิ้วผ่านมันเพื่อฟัน`, 3600); act = null }
   save();
 }
-function monGone() { if (!M) return; scene.remove(M.a.root); removePick(W, M.pick); M = null; S.mon = null; tRing.visible = false; if (act && act.type === 'attack') act = null }
-function target() { if (!M) return; act = { type: 'attack' }; tRing.visible = true }
+function monGone() { if (!M) return; scene.remove(M.a.root); removePick(W, M.pick); M = null; S.mon = null; tRing.visible = false; setTool(prevTool) }
+function target() { if (!M) return; setTool('sword'); tRing.visible = true; const m = M.a.root.position; act = { type: 'goto', x: m.x, z: m.z, r: 1.3 } }
 if (S.mon) monSpawn(S.mon.kind, S.mon.x, S.mon.z, true);
 
 /* ---------- helpers ---------- */
@@ -131,20 +146,86 @@ function pickDrop(d) {
   toast(`🎒 ได้ <b style="color:${D.RAR_COL[it.r]}">${T.icon} ${T.name} (${D.RAR_NAME[it.r]})</b><br>เปิดกระเป๋าเพื่อสวม`, 2800); questCheck(); save();
 }
 
-/* ---------- input: tap = act · press-and-drag = joystick ---------- */
-const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-let down = null;
-cv.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() } });
+/* ---------- input (like Pen Suk) ----------
+   1 finger · ✋ hand:  tap = walk / use the right tool automatically / interact · press and drag = joystick
+   1 finger · 🌾🪓⛏️ tool: drag across things = one hit each time the finger enters one (re-enter to hit again) · tap = one hit or walk
+   1 finger · ⚔️ sword (switches on by itself when a monster wakes): drag across the monster = slash
+   2 fingers anywhere: pinch = zoom */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ptrs = new Map();
+const REACH = 4.0, SLASH_REACH = 2.6;   // how far the pet reaches with a tool / the sword
+function rayAt(x, y) { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam); return ray }
+const pickAt = (x, y) => rayAt(x, y).intersectObjects(W.picks, false)[0];
+/* with a tool in hand, prefer what that tool works on (or the monster) even if something taller stands in front of it */
+function pickForTool(x, y) {
+  const hits = rayAt(x, y).intersectObjects(W.picks, false);
+  for (const h of hits) { const k = h.object.userData.pick; if (k.kind === 'mon') return k; if (k.kind === 'clear' && tool !== 'sword') { const o = W.clear.get(k.id); if (o && D.CLEAR[o.t].tool === tool) return k } }
+  return hits[0] ? hits[0].object.userData.pick : null;
+}
+function hint(msg) { const now = performance.now(); if (now < tipT) return; tipT = now + 1600; toast(msg, 1500) }
+function setTool(k) { tool = k; document.querySelectorAll('#tools [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === k)); $('tSword').style.display = M ? '' : 'none' }
+document.querySelectorAll('#tools [data-tool]').forEach(b => b.onclick = () => { const k = b.dataset.tool; if (k !== 'sword' && M) { hint(`⚔️ จัดการ ${M.T.name} ก่อน`); return } setTool(k);
+  if (k && k !== 'sword' && !S.stat['tip_' + k]) { S.stat['tip_' + k] = 1; toast(`${D.TOOLS[k][0]} ลากนิ้วผ่าน${k === 'sickle' ? 'หญ้า/พุ่มเล็ก' : k === 'axe' ? 'ต้นไม้/พุ่มไม้' : 'หิน'}เพื่อใช้<br>ลากผ่าน 1 ครั้ง = 1 ที · ของใหญ่ลากหลายรอบ`, 3200) } });
+const endJoy = () => { joy = null; $('joy').style.display = 'none'; $('joyK').style.transform = '' };
+cv.addEventListener('pointerdown', e => {
+  ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptrs.size === 2) { const a = [...ptrs.values()]; pinch = { d: Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), z: zoom }; endJoy(); stroke = null; down = null; return }
+  down = { x: e.clientX, y: e.clientY, t: performance.now() }; if (tool) stroke = { x: e.clientX, y: e.clientY, last: null, moved: false };
+});
 cv.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pinch && ptrs.size >= 2) { const a = [...ptrs.values()], d = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]); zoom = Math.max(.55, Math.min(1.6, pinch.z * pinch.d / Math.max(20, d))); localStorage.setItem('ng_zoom', zoom); return }
   if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y;
+  if (stroke) { strokeTo(e.clientX, e.clientY); return }
   if (!joy && Math.hypot(dx, dy) > 14) { joy = { x: down.x, y: down.y, dx: 0, dy: 0 }; act = null; $('joy').style.display = 'block'; $('joy').style.left = down.x + 'px'; $('joy').style.top = down.y + 'px' }
   if (joy) { const L = Math.min(60, Math.hypot(dx, dy)), a = Math.atan2(dy, dx); joy.dx = Math.cos(a) * L / 60; joy.dy = Math.sin(a) * L / 60; $('joyK').style.transform = `translate(${Math.cos(a) * L}px,${Math.sin(a) * L}px)` }
 });
-const endPtr = e => { if (!down) return; if (!joy && performance.now() - down.t < 500) tap(e.clientX, e.clientY); joy = null; down = null; $('joy').style.display = 'none'; $('joyK').style.transform = '' };
-cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', () => { joy = null; down = null; $('joy').style.display = 'none' });
+const endPtr = e => {
+  ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!down) return;
+  const quick = performance.now() - down.t < 500;
+  if (stroke) { if (!stroke.moved && quick) tapTool(e.clientX, e.clientY); stroke = null } else if (!joy && quick) tap(e.clientX, e.clientY);
+  endJoy(); down = null;
+};
+cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.55, Math.min(1.6, zoom * (e.deltaY > 0 ? 1.1 : 1 / 1.1))); localStorage.setItem('ng_zoom', zoom) }, { passive: false });
+/* finger trail (2D overlay) */
+const fx = $('fx'), fxc = fx.getContext('2d'), trail = [];
+function fxResize() { fx.width = innerWidth * devicePixelRatio; fx.height = innerHeight * devicePixelRatio; fxc.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0) }
+addEventListener('resize', fxResize); fxResize();
+function drawTrail(now) {
+  if (!trail.length && !fx.dataset.dirty) return; fxc.clearRect(0, 0, innerWidth, innerHeight); fx.dataset.dirty = trail.length ? '1' : '';
+  while (trail.length && now - trail[0][2] > 260) trail.shift();
+  fxc.lineCap = 'round'; for (let i = 1; i < trail.length; i++) { const a = trail[i - 1], b = trail[i]; if (b[2] - a[2] > 80) continue; const k = 1 - (now - b[2]) / 260;
+    fxc.strokeStyle = tool === 'sword' ? `rgba(255,240,180,${k})` : `rgba(255,255,255,${k * .85})`; fxc.lineWidth = 3 + 9 * k; fxc.beginPath(); fxc.moveTo(a[0], a[1]); fxc.lineTo(b[0], b[1]); fxc.stroke() }
+}
+function strokeTo(x, y) {
+  const st = stroke, n = Math.max(1, Math.ceil(Math.hypot(x - st.x, y - st.y) / 12)), now = performance.now();
+  if (Math.hypot(x - down.x, y - down.y) > 8) st.moved = true;
+  for (let k = 1; k <= n; k++) { const px = st.x + (x - st.x) * k / n, py = st.y + (y - st.y) * k / n; trail.push([px, py, now]);
+    const key = pickForTool(px, py), id = key ? (key.kind === 'clear' ? key.id : key.kind) : null;
+    if (id !== st.last) { st.last = id; if (key) toolHit(key) } }
+  st.x = x; st.y = y;
+}
+function tapTool(x, y) { const k = pickForTool(x, y); if (k && (k.kind === 'clear' || k.kind === 'mon')) toolHit(k); else tap(x, y) }
+function toolHit(key) {
+  const p = ppos(), now = performance.now();
+  if (key.kind === 'mon') {
+    if (!M) return; if (tool !== 'sword') setTool('sword'); tRing.visible = true;
+    const m = M.a.root.position; if (dist(p.x, p.z, m.x, m.z) > SLASH_REACH) { act = { type: 'goto', x: m.x, z: m.z, r: 1.3 }; hint('⚔️ เข้าไปใกล้ แล้วลากนิ้วผ่านมอนสเตอร์เพื่อฟัน'); return }
+    if (now < atkT) return; atkT = now + 220 / speed; act = null; P.yawT = Math.atan2(m.x - p.x, m.z - p.z); P.lunge = .22; hitMonster(1); return;
+  }
+  if (key.kind !== 'clear' || tool === 'sword') return;
+  const o = W.clear.get(key.id); if (!o || !o.g) return;
+  if (S.mon) { hint(`🔒 ต้องกำจัด <b>${D.MON[S.mon.kind].name}</b> ก่อน`); return }
+  const T = D.CLEAR[o.t], tier = S.tools[T.tool];
+  if (T.tool !== tool) { floater(`ใช้ ${D.TOOLS[T.tool][0]}`, 'tool', o.x, 1.3, o.z); return }
+  if ((T.minTier || 0) > tier) { hint(`${D.TOOLS[T.tool][0]} ต้องใช้${D.TOOLS[T.tool][1]}ขั้น <b>${D.TIER[T.minTier]}</b> ขึ้นไป`); return }
+  if (dist(p.x, p.z, o.x, o.z) > REACH) { act = { type: 'goto', x: o.x, z: o.z, r: .9 }; hint('เดินเข้าไปใกล้อีกนิด แล้วลากต่อ'); return }
+  if (!o.left) o.left = D.hitsFor(T.size, tier);
+  act = null; P.yawT = Math.atan2(o.x - p.x, o.z - p.z); P.lunge = .2; o.left--; o.shake = .25; floater(D.TOOLS[T.tool][0], 'tool', o.x, 1.3, o.z);
+  if (o.left <= 0) finishClear(o);
+}
 function tap(x, y) {
-  ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam);
-  const hit = ray.intersectObjects(W.picks, false)[0];
+  rayAt(x, y); const hit = ray.intersectObjects(W.picks, false)[0];
   if (hit) { const p = hit.object.userData.pick;
     if (p.kind === 'clear') { const o = W.clear.get(p.id); if (o) startClear(o); return }
     if (p.kind === 'mon') { target(); return }
@@ -159,12 +240,12 @@ const mark = new THREE.Mesh(new THREE.RingGeometry(.15, .25, 20), new THREE.Mesh
 function floatMark(p) { mark.position.set(p.x, .06, p.z); mark.visible = true; mark.userData.t = .6 }
 
 /* ---------- frame loop ---------- */
-let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, speed = 1;
+let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, speed = 1, fpsN = 0, fpsT = performance.now();
 function walkTo(x, z, r, dt) {
   const p = ppos(), dx = x - p.x, dz = z - p.z, d = Math.hypot(dx, dz); if (d <= r) return true;
   const sp = 3.2 * dt, k = Math.min(1, sp / d), nx = p.x + dx * k, nz = p.z + dz * k;
   if (walkable(nx, nz)) { p.x = nx; p.z = nz } else if (walkable(nx, p.z)) p.x = nx; else if (walkable(p.x, nz)) p.z = nz; else return true;
-  P.body.rotation.y = Math.atan2(dx, dz); P.moving = true; return false;
+  P.yawT = Math.atan2(dx, dz); P.moving = true; return false;
 }
 function frame(now) {
   requestAnimationFrame(frame);
@@ -177,19 +258,15 @@ function frame(now) {
     else if (act.type === 'clear') {
       const o = act.o; if (!o.g) act = null;
       else if (walkTo(o.x, o.z, { s: .75, m: .95, l: 1.35 }[D.CLEAR[o.t].size], dt)) {
-        P.body.rotation.y = Math.atan2(o.x - p.x, o.z - p.z); showTool(D.CLEAR[o.t].tool);
+        P.yawT = Math.atan2(o.x - p.x, o.z - p.z);
         if (now > swingT) { swingT = now + 600 / speed; P.lunge = .2; o.left--; o.shake = .25; floater(D.TOOLS[D.CLEAR[o.t].tool][0], 'tool', o.x, 1.3, o.z); if (o.left <= 0) finishClear(o) }
       }
-    } else if (act.type === 'attack') {
-      if (!M) act = null;
-      else { const m = M.a.root.position; showTool('sword');
-        if (walkTo(m.x, m.z, D.ATK_RANGE, dt)) { P.body.rotation.y = Math.atan2(m.x - p.x, m.z - p.z); if (now > atkT) { atkT = now + D.ATK_CD / speed; P.lunge = .2; hitMonster(1) } } }
     }
   }
-  if (!act || act.type === 'move' || act.type === 'goto') { if (!M || !tRing.visible) showTool('') }
+  showTool(act && act.type === 'clear' && act.o.g ? D.CLEAR[act.o.t].tool : tool);
   /* pet animation: bob while walking, lunge on hits */
-  P.lunge = Math.max(0, (P.lunge || 0) - dt); P.body.position.y = P.moving ? Math.abs(Math.sin(now / 110)) * .08 : 0; P.body.position.z = 0;
-  if (P.lunge > 0) { P.body.position.x = Math.sin(P.body.rotation.y) * P.lunge * .6; P.body.position.z = Math.cos(P.body.rotation.y) * P.lunge * .6 } else P.body.position.x = 0;
+  animate(P, P.moving, dt, now); P.lunge = Math.max(0, (P.lunge || 0) - dt); P.body.position.y = P.bob; P.body.position.z = 0;
+  if (P.lunge > 0) { P.body.position.x = Math.sin(P.yaw) * P.lunge * .6; P.body.position.z = Math.cos(P.yaw) * P.lunge * .6 } else P.body.position.x = 0;
   /* monster AI: grows in, chases when close, bites on a cooldown */
   if (M) {
     const m = M.a.root.position, d = dist(p.x, p.z, m.x, m.z), age = (now - M.born) / 400; M.a.root.scale.setScalar(Math.min(1, age));
@@ -207,16 +284,19 @@ function frame(now) {
   W.spark.position.x = Math.sin(now / 2000) * .15;
   if (mark.visible) { mark.userData.t -= dt; mark.material.opacity = Math.max(0, mark.userData.t); if (mark.userData.t <= 0) mark.visible = false }
   /* farm pets wander */
-  for (const w of wanderers) { const q = w.a.root.position; if ((w.wait -= dt) > 0) continue; const dx = w.t[0] - q.x, dz = w.t[1] - q.z, d = Math.hypot(dx, dz);
-    if (d < .1) { w.wait = 1.5 + Math.random() * 3; w.t = [w.home[0] + (Math.random() - .5) * 3, w.home[1] + (Math.random() - .5) * 3]; if (!walkable(w.t[0], w.t[1])) w.t = w.home; w.a.body.position.y = 0 }
-    else { const k = Math.min(1, 1.2 * dt / d); q.x += dx * k; q.z += dz * k; w.a.body.rotation.y = Math.atan2(dx, dz); w.a.body.position.y = Math.abs(Math.sin(now / 120)) * .06 } }
+  for (const w of wanderers) { const q = w.a.root.position; let mv = false;
+    if ((w.wait -= dt) <= 0) { const dx = w.t[0] - q.x, dz = w.t[1] - q.z, d = Math.hypot(dx, dz);
+      if (d < .1) { w.wait = 1.5 + Math.random() * 3; w.t = [w.home[0] + (Math.random() - .5) * 3, w.home[1] + (Math.random() - .5) * 3]; if (!walkable(w.t[0], w.t[1])) w.t = w.home }
+      else { const k = Math.min(1, 1.2 * dt / d); q.x += dx * k; q.z += dz * k; w.a.yawT = Math.atan2(dx, dz); mv = true } }
+    animate(w.a, mv, dt, now, 9); w.a.body.position.y = w.a.bob }
   /* regen on the farm when out of combat (full in ~3 min) */
-  if (now - lastHurt > 4000 && !(act && act.type === 'attack')) { const st = stats(); S.hp = Math.min(st.hp, curHp() + st.hp * D.REGEN.hpPerSec * dt); S.mp = Math.min(st.mp, curMp() + st.mp * D.REGEN.mpPerSec * dt) }
+  if (now - lastHurt > 4000) { const st = stats(); S.hp = Math.min(st.hp, curHp() + st.hp * D.REGEN.hpPerSec * dt); S.mp = Math.min(st.mp, curMp() + st.mp * D.REGEN.mpPerSec * dt) }
   /* camera follows the pet */
   const dz = 22 * zoom, dy = 21 * zoom; cam.position.set(p.x, dy, p.z + dz); cam.lookAt(p.x, 0, p.z - 1.2);
   sun.position.set(p.x - 7, 16, p.z + 9); sun.target.position.set(p.x, 0, p.z);
   R.render(scene, cam);
-  tickFloaters(dt / speed, project); labels();
+  tickFloaters(dt / speed, project); labels(); drawTrail(now);
+  fpsN++; if (now - fpsT > 500) { $('fps').textContent = Math.round(fpsN * 1000 / (now - fpsT)) + ' fps'; fpsN = 0; fpsT = now }
   if ((hudT -= dt) <= 0) { hudT = .25; hud() }
   if ((saveT -= dt) <= 0) { saveT = 5; S.pos = [p.x, p.z]; boatTick(); save() }
   if ((regrowT -= dt) <= 0) { regrowT = 30; regrow() }
@@ -241,7 +321,6 @@ function hud() {
   $('hHp').style.width = (curHp() / st.hp * 100) + '%'; $('hHpT').textContent = `${Math.ceil(curHp())}/${st.hp}`;
   $('hMp').style.width = (curMp() / st.mp * 100) + '%'; $('hMpT').textContent = `${Math.floor(curMp())}/${st.mp}`;
   const d = new Date(); $('hClock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  $('bSkill').classList.toggle('dim', !M || performance.now() < skillT || curMp() < D.SKILL.mp);
   $('bHp').querySelector('small').textContent = '×' + (S.potions.hpS || 0) + (S.potions.hpL ? '+' + S.potions.hpL : '');
   $('bMp').querySelector('small').textContent = '×' + (S.potions.mpS || 0) + (S.potions.mpL ? '+' + S.potions.mpL : '');
   const q = D.QUESTS[S.quest];
@@ -255,7 +334,7 @@ function questCheck() {
 }
 $('quest').onclick = () => {
   const q = D.QUESTS[S.quest]; if (!q) return; closeSheets();
-  if (q.go === 'monster') { if (M) target(); else { const o = nearestClear(o => o.t === 'grass' || o.t === 'bush'); if (o) { startClear(o); toast('เคลียร์ต่อไปเรื่อยๆ เดี๋ยวมอนสเตอร์ก็โผล่!') } } return }
+  if (q.go === 'monster') { if (M) { target(); toast('⚔️ ลากนิ้วผ่านมอนสเตอร์เพื่อฟัน!') } else { const o = nearestClear(o => o.t === 'grass' || o.t === 'bush'); if (o) { startClear(o); toast('เคลียร์ต่อไปเรื่อยๆ เดี๋ยวมอนสเตอร์ก็โผล่!') } } return }
   if (q.go === 'bag') return openBag(); if (q.go === 'tools') return openTools();
   if (q.go === 'boat') { act = { type: 'goto', x: shore(BOAT.z) + .6, z: BOAT.z + .4, r: .6, then: openBoat }; return }
   if (q.go === 'exit') { act = { type: 'goto', x: EXIT.x - 1, z: EXIT.z, r: .6, then: openExit }; return }
@@ -326,12 +405,12 @@ function openMenu() {
   });
 }
 $('bBag').onclick = openBag; $('bShop').onclick = openShop; $('bTool').onclick = openTools; $('bMenu').onclick = openMenu;
-$('bSkill').onclick = useSkill; $('bHp').onclick = () => usePotion(S.potions.hpS ? 'hpS' : 'hpL'); $('bMp').onclick = () => usePotion(S.potions.mpS ? 'mpS' : 'mpL');
-$('zIn').onclick = () => { zoom = Math.max(.6, zoom - .15); localStorage.setItem('ng_zoom', zoom) }; $('zOut').onclick = () => { zoom = Math.min(1.5, zoom + .15); localStorage.setItem('ng_zoom', zoom) };
+$('bHp').onclick = () => usePotion(S.potions.hpS ? 'hpS' : 'hpL'); $('bMp').onclick = () => usePotion(S.potions.mpS ? 'mpS' : 'mpL');
+
 document.addEventListener('visibilitychange', () => { if (document.hidden) { S.pos = [ppos().x, ppos().z]; save() } else { boatTick(); hud() } });
 
-boatTick(); regrow(); hud(); requestAnimationFrame(frame);
-if (!S.stat.welcomed) { S.stat.welcomed = 1; save(); setTimeout(() => toast('👋 ยินดีต้อนรับสู่เกาะ!<br>แตะพื้นเพื่อเดิน · กดค้างแล้วลากเพื่อบังคับ · แตะเควสซ้ายล่างเพื่อเริ่ม', 5000), 600) }
+boatTick(); regrow(); setTool(M ? 'sword' : ''); hud(); requestAnimationFrame(frame);
+if (!S.stat.welcomed) { S.stat.welcomed = 1; save(); setTimeout(() => toast('👋 ยินดีต้อนรับสู่เกาะ!<br>แตะพื้นเพื่อเดิน · กดค้างแล้วลากเพื่อบังคับ · สองนิ้วซูม<br>เลือกอุปกรณ์ด้านขวาแล้วลากนิ้วผ่านของ · หรือแตะเควสซ้ายล่าง', 5000), 600) }
 /* test hooks (tools/test/play.js) */
-window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles, geos: R.info.memory.geometries }), S, W, get M() { return M }, get act() { return act }, set speed(v) { speed = v }, startClear, target, useSkill, openBag, openBoat, openTools, openHouse, openShop, nearestClear, project, tap,
+window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles, geos: R.info.memory.geometries }), S, W, get M() { return M }, get act() { return act }, set speed(v) { speed = v }, startClear, target, useSkill, setTool, toolHit, slash: () => toolHit({ kind: 'mon' }), pickAt: (x, y) => { const h = pickAt(x, y); return h ? h.object.userData.pick : null }, get stroke() { return stroke }, get ptrs() { return ptrs.size }, get tool() { return tool }, openBag, openBoat, openTools, openHouse, openShop, nearestClear, project, tap,
   quest: () => $('quest').click(), stats, pickAll: () => { while (drops.length) pickDrop(drops[0]) } };

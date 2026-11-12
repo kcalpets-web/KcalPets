@@ -23,6 +23,8 @@ src/main.js       ลูปเกม: เดิน เคลียร์ มอ�
 tools/art/        ห้องทดลองภาพตัวอย่าง (mock.html + shoot.js)
 tools/test/play.js  เล่นลูปหลักอัตโนมัติ + ภาพหน้าจอ · ล้มถ้ามี error
 ```
+- การควบคุม: ✋ แตะ = เดิน/ใช้อุปกรณ์อัตโนมัติ · ลากค้าง = จอยสติก · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · สองนิ้ว = ซูม
+- ท่าเดิน: `rigOf` + `animate` ใน main.js อ่าน `userData.role` (armL/armR/footL/footR) ที่ clay.js ติดไว้
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม
 - hook ทดสอบ: `window.__ng` (S, W, M, startClear, target, useSkill, openBag … info())
 

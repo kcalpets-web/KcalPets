@@ -39,10 +39,12 @@ function eyes(grp, y, z, dx, r = .085) {
   }
 }
 const cheeks = (grp, y, z, dx) => { for (const s of [-1, 1]) part(grp, '#ff8fa6', '#ffb3c0', [s * dx, y, z], [.07, .045, .03], [0, s * .5, 0], { A: 0, shadow: false }) };
+/* rig roles (userData.role) let main.js animate a walk: arm = swings around the shoulder, foot = steps forward/back */
+const role = (m, r) => { m.userData.role = r; m.userData.base = [m.position.x, m.position.y, m.position.z, m.rotation.x, m.rotation.z]; return m };
 function chibi(grp, k) {
   part(grp, k.dark, k.fur, [0, .55, 0], [.42, .46, .38]);
   part(grp, k.bellyD, k.belly, [0, .5, .2], [.3, .34, .22]);
-  for (const s of [-1, 1]) { part(grp, k.dark, k.fur, [s * .4, .62, .08], [.11, .2, .11], [0, 0, s * .45]); part(grp, k.footD || k.dark, k.foot || k.fur, [s * .2, .12, .1], [.15, .1, .19]) }
+  for (const s of [-1, 1]) { role(part(grp, k.dark, k.fur, [s * .4, .62, .08], [.11, .2, .11], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR'); role(part(grp, k.footD || k.dark, k.foot || k.fur, [s * .2, .12, .1], [.15, .1, .19]), s < 0 ? 'footL' : 'footR') }
 }
 /* ---- playable pets (two legs) ---- */
 export const PETS = {
@@ -57,7 +59,7 @@ export const PETS = {
   chick(g) {
     const k = { fur: '#ffe066', dark: '#f0b22e', belly: '#fff6c8', bellyD: '#f6e3a0', foot: '#ffa640', footD: '#e07a20' };
     part(g, k.dark, k.fur, [0, .78, 0], [.62, .66, .58], [0, 0, 0], { A: .04 }); part(g, k.bellyD, k.belly, [0, .6, .32], [.36, .34, .2]);
-    for (const s of [-1, 1]) { part(g, k.dark, k.fur, [s * .6, .72, 0], [.12, .24, .2], [0, 0, s * .6]); part(g, k.footD, k.foot, [s * .18, .1, .14], [.13, .07, .17]) }
+    for (const s of [-1, 1]) { role(part(g, k.dark, k.fur, [s * .6, .72, 0], [.12, .24, .2], [0, 0, s * .6]), s < 0 ? 'armL' : 'armR'); role(part(g, k.footD, k.foot, [s * .18, .1, .14], [.13, .07, .17]), s < 0 ? 'footL' : 'footR') }
     cone(g, '#e07a20', '#ffa640', [0, .93, .6], [.09, .12, .09], [Math.PI / 2, 0, 0]);
     for (let i = -1; i <= 1; i++) part(g, k.dark, k.fur, [i * .08, 1.45, -.02], [.07, .12, .07], [0, 0, i * .5]);
     eyes(g, 1.06, .52, .22, .08); cheeks(g, .94, .52, .36);

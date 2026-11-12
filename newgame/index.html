@@ -19,7 +19,12 @@
   .vit{position:fixed;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + 62px);background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:4px 8px;font-size:11px;width:150px;pointer-events:none}
   .vit .row{display:flex;justify-content:space-between}
   #quest{position:fixed;left:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);background:#2a2030e6;color:#fff;border-radius:12px;padding:7px 10px;font-size:12px;max-width:190px;line-height:1.45;cursor:pointer;box-shadow:0 3px 0 #0004}
-  .zoom{position:fixed;right:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 150px);display:flex;flex-direction:column;gap:6px}
+  #tools{position:fixed;right:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);display:flex;flex-direction:column;gap:6px}
+  #tools button{width:50px;height:54px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);font-size:21px;line-height:1;box-shadow:0 3px 0 #0003;padding:3px 0 0;display:flex;flex-direction:column;align-items:center;gap:2px}
+  #tools button small{font:700 10px inherit;font-family:inherit;color:var(--ink)}
+  #tools button.on{background:#ffd23f;transform:translateY(2px);box-shadow:0 1px 0 #0003}#tools #tSword.on{background:#ff8a7a}
+  #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  #fps{position:fixed;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + 122px);background:#2a2030b3;color:#9effa8;border-radius:8px;padding:1px 7px;font:700 11px ui-monospace,monospace;pointer-events:none}
   .bot{position:fixed;left:0;right:0;bottom:0;padding:0 8px max(14px,env(safe-area-inset-bottom));display:flex;gap:6px}
   .bb{flex:1;min-width:0;background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:4px 2px;text-align:center;box-shadow:0 4px 0 #0003;font:700 11px inherit;font-family:inherit;color:var(--ink);white-space:nowrap}
   .bb b{display:block;font-size:22px;line-height:1.15}.bb small{font-size:10px;color:var(--mut)}.bb.dim{opacity:.45}
@@ -56,10 +61,11 @@
 <div class="vit"><div class="row"><span>❤️ HP</span><span id="hHpT"></span></div><div class="bar"><i id="hHp" style="background:var(--hp)"></i></div>
   <div class="row"><span>💧 Mana</span><span id="hMpT"></span></div><div class="bar"><i id="hMp" style="background:var(--mp)"></i></div></div>
 <div id="quest"></div>
-<div class="zoom"><button class="sq" id="zIn" aria-label="ซูมเข้า">＋</button><button class="sq" id="zOut" aria-label="ซูมออก">－</button></div>
+<canvas id="fx"></canvas><div id="fps">– fps</div>
+<div id="tools"><button data-tool="" class="on" aria-label="เดิน">✋<small>เดิน</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" style="display:none" aria-label="ดาบ">⚔️<small>ดาบ</small></button></div>
 <div class="bot">
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bTool"><b>🛠️</b>อุปกรณ์</button>
-  <button class="bb" id="bSkill"><b>💥</b>สกิล</button><button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button>
+<button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button>
   <button class="bb" id="bMp"><b>🔵</b>ยา MP <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
 </div>
 <div id="monTag"></div><div id="toast"></div><div id="joy"><div id="joyK"></div></div>
