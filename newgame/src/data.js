@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.6.0';
+export const APP_VER = '1.7.0';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -46,6 +46,8 @@ export const MON = {
   boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 0, coin: [0, 0], mat: { feather: 2 }, loot: [], tier: 'animal' },   // v1.5 (high ground)
+  stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 40, hp: 1800, atk: 34, def: 12, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss' },   // v1.7 the final boss
+  shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: [], tier: 'normal' },
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
   goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
   grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
@@ -337,3 +339,10 @@ export const RUINS = [                                          // need: where i
   { k: 'light', name: 'เมืองประภาคาร', npc: '🧑‍✈️ กัปตันริว', need: 'coast', v: 2, hello: 'ไม่มีแสงนำทาง เรือก็กลับบ้านไม่ได้… ช่วยจุดประภาคารอีกครั้งที',
     projects: [['lighthouse', 'ประภาคาร', { stone: 40, wood: 20, feather: 6 }], ['dock', 'ท่าเรือใหญ่', { wood: 34, stone: 8 }], ['stall', 'แผงปลาสด', { wood: 20, grass: 10 }]], reward: { coin: 4000, gem: 100 } },
 ];
+
+/* ================= v1.7 ☁️ the mysterious cloud (the final quest · any time · sail to the far east) ================= */
+export const STORM_GO_X = 1330;                       // sail past this (raft / whale) to reach the storm
+export const STORM_HEARTS = 12;                       // recommended hearts
+export const STORM_TOWN = { def: .08, atk: .06 };     // each revived town weakens the storm lord (5 towns → def −40 % · atk −30 %)
+export const STORM_ATK = { slam: { r: 4.5, wind: 1.1, mul: 1 }, bolt: { r: 1.7, wind: 1.2, mul: .8, n: [3, 4, 6] }, minions: [0, 2, 3] };
+export const STORM_REWARD = { coin: 10000, gem: 500 };

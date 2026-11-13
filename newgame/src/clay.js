@@ -341,3 +341,16 @@ export const VILLAGE = {
   dock(g) { for (let i = 0; i < 7; i++) log(g, [-.9 + i * .3, .3, 0], 3, [Math.PI / 2, 0, 0], .14, i % 2 ? WOOD : WOODL); for (const x of [-1, 1]) for (const z of [-1.3, 0, 1.3]) log(g, [x, -.1, z], 1.2, [0, 0, 0], .08);
     part(g, '#c8a070', '#e8c898', [.6, .55, 1], [.18, .18, .18], [0, 0, 0], { A: .05 }); log(g, [-.7, .7, 1.2], .8, [0, 0, 0], .04) },
 };
+
+/* v1.7 the mysterious cloud: the storm lord (final boss) · his shadow minions · the dark cloud seen from everywhere */
+export const STORM = {
+  lord(g) { const C1 = ['#1a1428', '#4a3a6a'], C2 = ['#241c38', '#5a4a80'];
+    for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28, r = .55 + (i % 3) * .12; part(g, ...(i % 2 ? C1 : C2), [Math.cos(a) * r, 1.4 + Math.sin(i * 1.7) * .3, Math.sin(a) * r * .8], [.7, .62, .6], [0, a, 0], { A: .18, f: 1.8 }) }
+    part(g, ...C1, [0, 2.3, .1], [.9, .75, .75], [0, 0, 0], { A: .15, f: 1.6 }); part(g, ...C2, [0, .55, 0], [.75, .55, .65], [0, 0, 0], { A: .2, f: 2 });
+    for (const s of [-1, 1]) { const eye = new THREE.Mesh(new THREE.SphereGeometry(.14, 12, 10), new THREE.MeshBasicMaterial({ color: '#ffe23a' })); eye.scale.set(1.3, .7, .5); eye.position.set(s * .32, 2.4, .78); eye.name = 'eye'; g.add(eye) }
+    for (const s of [-1, 1]) { const arm = new THREE.Group(); arm.position.set(s * 1.15, 1.9, .1); part(arm, ...C2, [s * .35, -.35, 0], [.38, .55, .38], [0, 0, s * .5], { A: .2, f: 1.8 }); part(arm, ...C1, [s * .55, -.95, .1], [.42, .38, .42], [0, 0, 0], { A: .18, f: 2 }); role(arm, s < 0 ? 'armL' : 'armR'); g.add(arm) }
+    for (let i = 0; i < 5; i++) cone(g, '#c8a010', '#fff27a', [(i - 2) * .26, 3.05 - Math.abs(i - 2) * .1, .1], [.08, .34, .08], [0, 0, (i - 2) * .25], .9) },
+  shade(g) { part(g, '#1a1428', '#4a3a6a', [0, .45, 0], [.42, .4, .4], [0, 0, 0], { A: .2, f: 2 }); part(g, '#241c38', '#5a4a80', [0, .85, 0], [.3, .28, .3], [0, 0, 0], { A: .18, f: 2 });
+    for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff5a8a' })); e.position.set(s * .11, .9, .26); g.add(e) } },
+  cloud(g) { for (let i = 0; i < 22; i++) { const a = i * 2.39, r = 6 + (i % 5) * 4.5; part(g, '#1a1830', '#3a3458', [Math.cos(a) * r, Math.sin(i * 1.3) * 3, Math.sin(a) * r * .6], [9 - (i % 4), 6 - (i % 3), 8], [0, a, 0], { A: .25, f: 1.4 }) } },
+};

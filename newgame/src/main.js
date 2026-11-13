@@ -3,10 +3,10 @@
    he gives the rod → bring him fish → repair his boat (it becomes the coin vault) → the ruined town: pick up the sword,
    clear the slimes and the Slime King → repair the shops → the way to the forest opens (next update).
    No pets yet: the first pet arrives in the forest. Farm monsters only wake once the player has a sword. */
-import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE } from './clay.js';
+import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE, STORM } from './clay.js';
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats } from './state.js';
-import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk } from './world.js';
+import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -232,9 +232,9 @@ function petExp(p, n) { const r = gainPetExp(p, n), e = PA.get(p.id); if (!e) re
   return r }
 
 /* ---------- monsters: any number at once (the farm one is saved in S.mon; town slimes respawn on each visit until cleared) ---------- */
-const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbit: .9, chicken: .9, duck: .9, deer: 1, boar: 1, whale: 1.4, hawk: .9 };
+const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbit: .9, chicken: .9, duck: .9, deer: 1, boar: 1, whale: 1.4, hawk: .9, stormLord: 1.7, shade: .9 };
 function monSpawn(kind, x, z, o = {}) {
-  const T = D.MON[kind], A = makeActor(g => (MONS[kind] || ANIMALS[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
+  const T = D.MON[kind], A = makeActor(g => (MONS[kind] || ANIMALS[kind] || { stormLord: STORM.lord, shade: STORM.shade }[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
   if (T.legs) rigOf(A);
   A.root.position.set(x, groundH(x, z), z); A.root.scale.setScalar(.01);
   const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x, z), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
@@ -258,6 +258,7 @@ function monDie(m) {
   if (T.loot.length && (forced || Math.random() < D.ITEM_DROP * (isNight() ? D.NIGHT.drop : 1))) { const r = forced ? 'R' : rollRarity(D.RAR_OK[T.tier]), t = T.loot[Math.floor(Math.random() * T.loot.length)]; dropItem({ t, r }, x, z) } if (T.animal) bump('hunt');
   if (m.area === 'town' || m.area === 'forest') S.stat['story_' + m.kind] = sk(m.kind) + 1;
   if (m.camp) campKill(m);
+  if (m.T.boss) setTimeout(stormWin, 600);
   bump('kills'); bump('kill_' + m.kind); monGone(m); townCheck(); campCheck(); questCheck(); achCheck(); save();
 }
 function petDown(e) { const p = e.p; e.mode = 'down'; e.foe = null; p.down = Date.now() + D.DOWN_MS; p.hp = 0; e.A.root.position.set(HOUSE.x - .8 + Math.random() * 1.6, 0, HOUSE.z + 1.8); toast(`😵 ${esc(p.name)} หมดแรง ไปพักที่บ้านต้นไม้ 1 นาที`, 2600) }
@@ -661,6 +662,7 @@ function useThing(k) {
     case 'chest': return openChest(k.id);
     case 'build': return openBuilt(k.id);
     case 'rnpc': return openRuin(k.id);
+    case 'stormBack': return confirmBox('⛵ กลับสู่ดินแดน?', backFromStorm, 'กลับ');
     case 'ruin': return openRuin(k.id, k.i);
     case 'scroll': return pickScroll(k.id);
     case 'sberh': return openSberh();
@@ -708,6 +710,7 @@ function frame(now) {
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
   for (let i = mons.length - 1; i >= 0; i--) {
     const M = mons[i]; if (!nearMe(M)) continue;
+    if (M.T.boss) { bossTick(M, dt, now); continue }
     if (M.stunT > now) { M.A.body.rotation.z = Math.sin(now / 50) * .12; continue } else if (M.stunT) { M.stunT = 0; M.A.body.rotation.z = 0 }
     const m = M.A.root.position, age = (now - M.born) / 400, ok = M.T.swim ? swimOk : walkMon, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
@@ -742,7 +745,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); bTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); bTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -948,7 +951,7 @@ function openBag(tab) {
     if (bagTab === 'quest') { const q = D.QUESTS[S.quest];
       h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
         + `<div class="card"><b>🌱 ฟื้นฟูโลก ${lifePct()}%</b><div class="bar s"><i style="width:${lifePct()}%;background:#7ac850"></i></div>` + RV.map(r => { const st = S.ruins[r.id]; return `<div class="row"><span>${st ? (st.fin ? '🏡 ' : '🏚️ ') + r.def.name : '❔ ซากเมืองที่ยังไม่พบ'}</span><span>${st ? ruinDone_n(r) + '/3' : ''} ✨</span></div>` }).join('') + '<div class="mut">สำรวจหาซากเมือง 🏚️ คุยกับผู้รอดชีวิต แล้วสร้างใหม่ให้ครบ · ครบแต่ละเมืองได้ ✨</div></div>'
-        + '<div class="card lock"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา</b><div class="mut">เมฆดำลึกลับปกคลุมดินแดนไกลโพ้น… (มาในอัปเดตถัดๆ ไป)</div></div>'
+        + `<div class="card${S.story.cloudGone ? '' : ' spirit'}"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา ${S.story.cloudGone ? '✅' : ''}</b><div class="mut">${S.story.cloudGone ? 'ท้องฟ้ากลับมาสดใสแล้ว ขอบคุณนะ ผู้กล้า' : `เมฆดำลอยอยู่เหนือทะเลทางตะวันออกสุดของโลก · แล่น 🛶 แพ หรือขี่ 🐋 วาฬ ไปทางตะวันออกจนสุดทาง · แนะนำ ❤️ ${D.STORM_HEARTS} ดวงขึ้นไป · เมืองที่ฟื้นฟูแล้วทำให้เมฆอ่อนแรงลง (${townsDone()}/5)`}</div></div>`
         + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
     if (bagTab === 'pets') h += `<p class="mut">น้อง ${S.pets.length}/${D.PET_MAX} · ทีม ${S.team.length}/${D.TEAM_MAX} · จับน้องใหม่: เข้าใกล้สัตว์ป่า (กด B ค้างเพื่อย่อง) แล้วกด 🫳 จับ</p>` + (S.pets.map(p => `<div class="card">${petCard(p)}${D.CATCH[p.kind] && D.CATCH[p.kind].ability ? `<div class="mut">✨ ความสามารถ: ${D.CATCH[p.kind].ability === 'swim' ? '🐋 ขี่ข้ามทะเล (ลงน้ำแล้วกด A)' : '🦅 ร่อนลงจากที่สูง (ยืนริมผาแล้วกด A)'}</div>` : ''}<div class="row2"><button class="btn sm" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn sm ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button></div></div>`).join('') || '<p>ยังไม่มีน้อง</p>');
     if (bagTab === 'ach') h += achHTML();
@@ -1470,7 +1473,7 @@ $('mini').onclick = () => openMap();
 /* ---------- the big world: chunks stream in around the player (terrain + decor near · clearables + wild monsters nearer) ---------- */
 const CHUNKS = new Map(); let chunkT = 0;
 const FAR = buildFarLand(scene);
-const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(3400, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2f6fa8', roughness: .35, metalness: .05 })); OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(600, -.38, 0); scene.add(OCEAN);
+const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2f6fa8', roughness: .35, metalness: .05 })); OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
 const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp', 'rockGolem', 'goblin', 'grassSprite'], ['rockGolem', 'goblin', 'goblin', 'rockGolem']];
 function chunkTick(now) {
   if (now < chunkT) return; chunkT = now + 220; const q = me(), ccx = Math.floor(q.x / CHUNK), ccz = Math.floor(q.z / CHUNK), R2 = 3, near = 1;
@@ -1876,6 +1879,79 @@ function ruinDone(k) {
     toast(`🏡 <b>${r.def.name}</b> กลับมามีชีวิตแล้ว!<br>ชาวบ้านกลับมา · ✨ +1 · 🪙 ${fmt(r.def.reward.coin)} · 💎 ${r.def.reward.gem} · 🌱 ${lifePct()}%`, 4200) }
   ruinView(r, false); ruinView(r, true); questCheck(); achCheck(); save(); hud();
 }
+/* ================= v1.7 ☁️ the mysterious cloud: seen from everywhere · sail far east → loading screen → the storm island → ⛈️ the storm lord (3 phases) ================= */
+const townsDone = () => Object.values(S.ruins || {}).filter(r => r.fin).length;
+const inStorm = () => Math.abs(me().x - CLOUD.x) < 120;
+/* the dark cloud on the horizon: always drawn far away in the cloud's direction (beyond the fog), with lightning now and then */
+const SKYCLOUD = new THREE.Group(); STORM.cloud(SKYCLOUD); SKYCLOUD.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.fog = false; o.castShadow = false } }); SKYCLOUD.scale.setScalar(3.2); scene.add(SKYCLOUD);
+let boltT = 0, BOSS = null, bossAct = null, stormSeen = false, warnT = 0;
+const DISK = new THREE.CircleGeometry(1, 32), WARN = () => new THREE.MeshBasicMaterial({ color: '#ff3a3a', transparent: true, opacity: .35, depthWrite: false });
+const warns = [];
+function warnAt(x, z, r, life) { const m = new THREE.Mesh(DISK, WARN()); m.rotation.x = -Math.PI / 2; m.position.set(x, groundH(x, z) + .07, z); m.scale.setScalar(r); scene.add(m); warns.push({ m, t: 0, life }); return m }
+let island = null;
+function buildIsland() {
+  if (island) return; island = new THREE.Group(); scene.add(island);
+  const g = new THREE.Mesh(new THREE.CircleGeometry(CLOUD.r + .5, 64), new THREE.MeshStandardMaterial({ color: '#4a4258', roughness: 1 })); g.rotation.x = -Math.PI / 2; g.position.set(CLOUD.x, .58, CLOUD.z); g.receiveShadow = true; island.add(g);
+  const top = new THREE.Mesh(new THREE.RingGeometry(CLOUD.r * .45, CLOUD.r * .5, 48), new THREE.MeshBasicMaterial({ color: '#8a6ad0' })); top.rotation.x = -Math.PI / 2; top.position.set(CLOUD.x, .62, CLOUD.z); island.add(top);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * 6.28, r = CLOUD.r * .62, p = new THREE.Group(); part(p, '#3a3448', '#6a6080', [0, 1.6, 0], [.45, 1.6, .45], [0, a, 0], { A: .1, f: 2 }); if (i % 3) part(p, '#3a3448', '#6a6080', [0, 3.4, 0], [.6, .25, .6], [0, 0, 0], { A: .1 }); p.position.set(CLOUD.x + Math.cos(a) * r, groundH(CLOUD.x + Math.cos(a) * r, CLOUD.z + Math.sin(a) * r), CLOUD.z + Math.sin(a) * r); island.add(p) }
+  const dk = new THREE.Group(); VILLAGE.dock(dk); dk.position.set(CLOUD.x - CLOUD.r + 1, .3, CLOUD.z); dk.rotation.y = Math.PI / 2; island.add(dk);
+  island.pick = addPick(W, CLOUD.x - CLOUD.r + 1.5, CLOUD.z, 1.2, 1.6, { kind: 'stormBack' }); island.pick.position.y += .6;
+}
+function loading(title, tip, done) {
+  const L = $('loadScr'); L.querySelector('b').textContent = title; L.querySelector('small').textContent = tip; L.style.display = 'flex'; const bar = L.querySelector('i'); bar.style.width = '0%'; let k = 0;
+  const step = () => { k += .035 + Math.random() * .04; bar.style.width = Math.min(100, k * 100) + '%'; if (k < 1) setTimeout(step, 60); else setTimeout(() => { done(); setTimeout(() => L.style.display = 'none', 250) }, 200) }; step();
+}
+const TIPS = ['เมืองที่ฟื้นฟูแล้วทำให้จอมเมฆาอ่อนแรงลง', 'เห็นวงสีแดงบนพื้น = หลบออกไปเร็ว!', 'น้องธาตุน้ำ/ใบไม้ช่วยฮีลระหว่างสู้', 'กด B ค้างหันหน้าเข้าหาศัตรูเพื่อกันด้วยโล่', 'กิน 🍲 อาหารเพิ่มหัวใจก่อนเข้าไป'];
+function goStorm() {
+  if (S.story.cloudGone) { toast('☀️ เมฆปริศนาสลายไปแล้ว', 1600); return }
+  const h = Math.round(pStats().hp / D.HEART);
+  confirmBox(`⛈️ แล่นเข้าสู่ <b>เมฆปริศนา</b>?<br><small>หัวใจ ${h}/${D.STORM_HEARTS} ดวงที่แนะนำ · เมืองที่ฟื้นฟู ${townsDone()}/5 (เมฆอ่อนแรงลง ${Math.round(townsDone() * D.STORM_TOWN.def * 100)}%)</small>`, () => {
+    leaveRaft(); loading('⛈️ เมฆปริศนา', '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)], () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⛵ ไปเลย');
+}
+function backFromStorm() { loading('🌊 กลับสู่ดินแดน', '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)], () => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m);
+  const rf = S.builds.find(b => b.k === 'raft' && b.done); placeMe(D.STORM_GO_X - 25, 0); if (rf) { rf.x = me().x; rf.z = me().z; bView(rf); board(rf) } else if (hasAbility('swim')) rideWhale(); save() }) }
+function stormHit(dmg, label) { const r = { d: Math.max(1, Math.round(dmg * (.9 + Math.random() * .2) - pStats().def * .5)) }; if (guard && BOSS && facing(BOSS) && spendEn(6)) { r.d = Math.max(1, Math.round(r.d * (S.eq.shield ? .3 : .6))); floater('🛡️', 'tool', me().x, 2.2, me().z) }
+  if (now0() < petGuardT) r.d = Math.ceil(r.d * .5); S.hp = Math.max(0, pHp() - r.d); lastHurt = performance.now(); shakeT = .35; sfx('hurt'); floater(`${label} -${r.d}`, 'hurt', me().x, 2.1, me().z); VF.burst(me().x, me().y + 1, me().z, '#ff4a5a', 10, 3); if (S.hp <= 0) stormLose() }
+const now0 = () => performance.now();
+function bossTick(M, dt, now) {
+  M.A.root.scale.setScalar(Math.min(1, (now - M.born) / 600)); const m = M.A.root.position, q = me(), d = dist(m.x, m.z, q.x, q.z), T = M.T, ph = M.hp > T.hp * .66 ? 1 : M.hp > T.hp * .33 ? 2 : 3, k = townsDone(); M.aggro = true; M.hit = true;
+  if (ph !== M.ph) { if (M.ph) { toast(ph === 2 ? '⛈️ จอมเมฆาโกรธแล้ว! เรียกลูกน้องและสายฟ้า' : '🌀 จอมเมฆาคลั่ง! เร็วขึ้นและแรงขึ้น', 2600); shakeT = .6; sfx('thunder'); VF.ring(m.x, m.y, m.z, '#b08aff', 8, .9) } M.ph = ph }
+  const sp = [0, 1.3, 1.7, 2.3][ph], atk = T.atk * (1 - D.STORM_TOWN.atk * k) * (ph === 3 ? 1.2 : 1);
+  if (!bossAct && d > 3) stepTo(M.A, q.x, q.z, sp, dt, (x, z) => walkWorld(x, z) === 'land'); M.A.yawT = Math.atan2(q.x - m.x, q.z - m.z);
+  M.A.body.rotation.y += ((M.A.yawT || 0) - M.A.body.rotation.y) * Math.min(1, dt * 3); M.A.body.position.y = Math.sin(now / 400) * .12 + (bossAct && bossAct.kind === 'slam' ? .5 * Math.min(1, (now - (bossAct.at - 1100)) / 900) : 0); M.pick.position.set(m.x, m.y + 1.6, m.z);
+  for (const e of M.A.root.children[0] ? M.A.root.getObjectsByProperty('name', 'eye') : []) e.scale.y = .7 * (bossAct ? 1.4 : 1);
+  if (M.flash > 0) { M.flash -= dt; M.A.body.scale.setScalar(1.7 * (1 + M.flash * .3)) } else M.A.body.scale.setScalar(1.7);
+  if (bossAct && now >= bossAct.at) { const a = bossAct; bossAct = null;
+    if (a.kind === 'slam') { VF.ring(m.x, m.y, m.z, '#c8a0ff', D.STORM_ATK.slam.r, .5); VF.burst(m.x, m.y + .5, m.z, '#8a6aff', 30, 6); sfx('boom'); shakeT = .5; if (dist(m.x, m.z, me().x, me().z) < D.STORM_ATK.slam.r) stormHit(atk, '💥') }
+    else if (a.kind === 'bolt') { sfx('thunder'); for (const p of a.pts) { VF.beam(new THREE.Vector3(p[0], 14, p[1]), new THREE.Vector3(p[0], groundH(p[0], p[1]), p[1]), '#fff27a', .35, 2.2); VF.ring(p[0], groundH(p[0], p[1]), p[1], '#fff27a', D.STORM_ATK.bolt.r * 1.3, .4); if (dist(p[0], p[1], me().x, me().z) < D.STORM_ATK.bolt.r) stormHit(atk * D.STORM_ATK.bolt.mul, '⚡') } $('stormTint').classList.add('flash'); setTimeout(() => $('stormTint').classList.remove('flash'), 160) }
+    M.next = now + [0, 3400, 2900, 2100][ph] }
+  if (!bossAct && now > (M.next || 0)) { const roll = Math.random();
+    if (ph >= 2 && roll < .25 && mons.filter(x => x.kind === 'shade').length < 4) { const n = D.STORM_ATK.minions[ph - 1]; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, x = m.x + Math.cos(a) * 4, z = m.z + Math.sin(a) * 4; const s2 = monSpawn('shade', x, z, { area: 'wild', aggro: true, silent: 1 }); s2.hit = true; VF.burst(x, 1, z, '#6a4a9a', 12) } toast('👤 เงาเมฆโผล่ออกมา!', 1400); M.next = now + 2500 }
+    else if (ph >= 2 && roll < .65 || (ph === 1 && d > 6)) { const n = D.STORM_ATK.bolt.n[ph - 1], pts = [[me().x, me().z]]; for (let i = 1; i < n; i++) { const a = Math.random() * 6.28, r = 2 + Math.random() * 5; pts.push([me().x + Math.cos(a) * r, me().z + Math.sin(a) * r]) }
+      for (const p of pts) warnAt(p[0], p[1], D.STORM_ATK.bolt.r, D.STORM_ATK.bolt.wind); bossAct = { kind: 'bolt', pts, at: now + D.STORM_ATK.bolt.wind * 1000 / (ph === 3 ? 1.25 : 1) } }
+    else { warnAt(m.x, m.z, D.STORM_ATK.slam.r, D.STORM_ATK.slam.wind); bossAct = { kind: 'slam', at: now + D.STORM_ATK.slam.wind * 1000 / (ph === 3 ? 1.25 : 1) }; M.A.body.position.y += .5 } }
+}
+function stormLose() { if (!inStorm()) return; bossAct = null; const f = $('sleep'); f.querySelector('b').textContent = '⛈️ พ่ายแพ้… ลมพายุพัดกลับฝั่ง'; f.style.display = 'flex'; f.style.opacity = 1;
+  setTimeout(() => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; placeMe(SPAWN.x, SPAWN.z); S.hp = pStats().hp * .5; S.en = null; S.tired = false; enterZone('farm'); save(); hud();
+    f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('💪 ลองฟื้นฟูเมือง เพิ่มหัวใจ และหาอุปกรณ์ที่ดีกว่า แล้วกลับไปใหม่!', 3600) }, 1600) }
+function stormWin() {
+  S.story.cloudGone = 1; bossAct = null; BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; S.coin += D.STORM_REWARD.coin; S.gem += D.STORM_REWARD.gem; S.spirit.free++; spiritNew = true; bump('stormWin');
+  sfx('level'); VF.ring(me().x, me().y, me().z, '#fff6a0', 14, 1.4); VF.rise(me().x, me().y, me().z, '#fff6a0', 40); SKYCLOUD.visible = false; save(); hud();
+  setTimeout(() => talk([['☀️', 'เมฆดำค่อยๆ สลายไป… แสงแดดอุ่นๆ ส่องลงมาทั่วดินแดนอีกครั้ง'], ['👴 ลุงฮาวซิฟ (เสียงจากไกลๆ)', 'เธอทำได้! ทุกคนเห็นท้องฟ้าแล้ว… ขอบคุณนะ ผู้กล้า'],
+    ['🎉 จบภารกิจใหญ่', `ได้รับ 🪙 ${fmt(D.STORM_REWARD.coin)} · 💎 ${D.STORM_REWARD.gem} · ✨ +1<br>โลกยังรอให้สำรวจ ฟื้นฟู และจับน้องตัวใหม่อีกมาก — ขอบคุณที่เล่น KEALEE 💛`]]), 1500);
+}
+function stormTick(dt, now) {
+  const cam0 = cam.position, dx = CLOUD.x - cam0.x, dz = CLOUD.z - cam0.z, L = Math.hypot(dx, dz) || 1, far = Math.min(L, 430);
+  SKYCLOUD.visible = !S.story.cloudGone; if (SKYCLOUD.visible) { SKYCLOUD.position.set(cam0.x + dx / L * far, L < 500 ? 40 : 55, cam0.z + dz / L * far); SKYCLOUD.rotation.y = now / 60000;
+    if (now > boltT) { boltT = now + 2500 + Math.random() * 5000; SKYCLOUD.traverse(o => { if (o.isMesh) o.material.emissive && o.material.emissive.set('#8a7aff') }); setTimeout(() => SKYCLOUD.traverse(o => { if (o.isMesh && o.material.emissive) o.material.emissive.set('#000000') }), 120) } }
+  for (let i = warns.length - 1; i >= 0; i--) { const w = warns[i]; w.t += dt; w.m.material.opacity = .25 + .3 * Math.abs(Math.sin(w.t * 12)); if (w.t > w.life) { scene.remove(w.m); w.m.material.dispose(); warns.splice(i, 1) } }
+  const st = inStorm() && !S.story.cloudGone; document.body.classList.toggle('storm', st);
+  if (st) { if (!island) buildIsland(); if (!stormSeen) { stormSeen = true; mood('storm') } const q = me(), dc = dist(q.x, q.z, CLOUD.x, CLOUD.z);
+    if (!BOSS && dc < 20 && !CUT) { BOSS = monSpawn('stormLord', CLOUD.x + 4, CLOUD.z, { area: 'wild', aggro: true, silent: 1 }); const k = townsDone(); BOSS.T = Object.assign({}, BOSS.T, { def: Math.round(D.MON.stormLord.def * (1 - D.STORM_TOWN.def * k)) });
+      LOCK = BOSS; sfx('thunder'); shakeT = .8; toast(`⛈️ <b>จอมเมฆา</b> ปรากฏตัว!${k ? `<br>พลังของเมืองที่ฟื้นฟู ${k} แห่งทำให้มันอ่อนแรงลง` : ''}`, 3200) } }
+  else if (stormSeen && !inStorm()) { stormSeen = false; ambience && ambience() }
+  if (!inStorm() && !S.story.cloudGone && RIDE && me().x > D.STORM_GO_X && now > warnT) { warnT = now + 6000; goStorm() }
+}
 /* ---------- boot: login → opening cutscene (once) → the island at night ---------- */
 async function startIntro(replay) {
   CUT = true; closeSheets(); document.body.classList.add('cut');
@@ -1894,7 +1970,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

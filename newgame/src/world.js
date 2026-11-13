@@ -257,7 +257,10 @@ export const ZONES = { wild: 'ดินแดนกว้างใหญ่', fa
 export const zoneOf = (x, z = 0) => coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
+export const CLOUD = { x: 2600, z: 0, r: 34 };                                   // v1.7 the storm island (its own map, past the eastern sea)
+const onCloud = (x, z) => Math.abs(x - CLOUD.x) < 60 && Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r;
 export function groundH(x, z) {
+  if (onCloud(x, z)) return .6;
   if (coreDist(x, z) > 0) return wildH(x, z);
   if (x >= 9 && x < 35) { const d = Math.abs(x - RIVER.x); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(RIVER.w - .3, RIVER.w + .7, d)); return 0 }
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
@@ -265,6 +268,7 @@ export function groundH(x, z) {
   return 0;
 }
 export function waterAt(x, z) {
+  if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
   if (x < 35) return Math.abs(x - RIVER.x) < RIVER.w && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 12 ? 'fresh' : null;
@@ -272,6 +276,7 @@ export function waterAt(x, z) {
   return null;
 }
 export function walkWorld(x, z) {
+  if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island
   if (x < 9.6) return 'land';                                                                                   // the island gate (open world)

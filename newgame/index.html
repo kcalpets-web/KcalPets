@@ -130,6 +130,10 @@
   #catchUI small{font-size:12px;opacity:.75}#catchUI .ct{position:relative;height:30px;border:3px solid var(--ink);border-radius:12px;background:#5a4030;overflow:hidden}#catchZ{position:absolute;top:0;bottom:0;background:#7ac850aa;border-radius:8px}#catchZ.in{background:#9aff6a}
   #catchM{position:absolute;top:-2px;width:0;height:0;border:9px solid transparent;border-top:14px solid #fff;transform:translateX(-9px);filter:drop-shadow(0 1px 0 #000)}#catchUI .cp{height:10px;border:2px solid var(--ink);border-radius:6px;background:#3a2030;overflow:hidden}#catchP{display:block;height:100%;background:linear-gradient(90deg,#ffd23f,#ff8a3a)}
   #catchUI.shake{animation:cShake .3s}@keyframes cShake{20%{transform:translate(-7px,2px) rotate(-2deg)}40%{transform:translate(6px,-2px) rotate(2deg)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,0)}}
+  #stormTint{display:none;position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(#2a1a4a55,#1a1a3a33),repeating-linear-gradient(105deg,transparent 0 9px,#c8d0ff22 9px 10px,transparent 10px 23px);background-size:100% 100%,120px 120px;animation:rain .35s linear infinite}
+  body.storm #stormTint{display:block}#stormTint.flash{background:#ffffffaa}@keyframes rain{to{background-position:0 0,-30px 120px}}
+  #loadScr{display:none;position:fixed;inset:0;z-index:30;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(#3a2a5a,#120c22);color:#fff;font-family:inherit;text-align:center;padding:24px}
+  #loadScr b{font-size:26px;text-shadow:0 3px 0 #000}#loadScr .lb{width:min(70vw,280px);height:14px;border:3px solid #fff;border-radius:9px;overflow:hidden}#loadScr .lb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23f,#ff8a3a);transition:width .06s}#loadScr small{opacity:.85;font-size:14px;max-width:300px}
   #debs{display:flex;gap:4px;margin:-2px 0 3px}#debs:empty{display:none}#debs button{border:2px solid var(--ink);border-radius:10px;background:#fff6e0;font:700 14px inherit;font-family:inherit;padding:1px 5px;pointer-events:auto;animation:debP 1s ease-in-out infinite}#debs small{font-size:10px;margin-left:2px}@keyframes debP{50%{transform:scale(1.08)}}
   .wh button.lock{opacity:.4;filter:grayscale(1)}.wh button.lock::after{content:'🔒';position:absolute;right:-4px;bottom:-4px;font-size:16px}.whc .lk{color:#ffb0a0;font-size:12px}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
@@ -153,6 +157,7 @@
 <div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button></div>
 <button id="bAuto">🤖 AUTO</button>
 <div id="boss"></div>
+<div id="stormTint"></div><div id="loadScr"><b></b><div class="lb"><i></i></div><small></small></div>
 <button id="bCatch"></button>
 <div id="catchUI"><b id="catchN"></b><small>กดค้างให้ ▼ อยู่ในช่องสีเขียว · ปล่อย = ▼ ถอยกลับ</small><div class="ct"><i id="catchZ"></i><i id="catchM"></i></div><div class="cp"><i id="catchP"></i></div></div>
 <div id="bBar"><b id="bbN"></b><small id="bbS"></small><div><button id="bbX">✖</button><button id="bbR">↻ หมุน</button><button id="bbOk">🔨 วาง</button></div></div>
