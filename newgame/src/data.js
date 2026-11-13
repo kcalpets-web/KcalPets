@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.9.3';
+export const APP_VER = '2.0.0';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -36,8 +36,8 @@ export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, s
 
 /* ---- monsters (no legs) ---- */
 export const MON = {
-  slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
-  slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
+  slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['branch', 'leafBlade', 'potLid', 'leafVest'], tier: 'normal' },
+  slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['travelerSword', 'woodAxe', 'woodSpear', 'woodShield'], tier: 'mini' },
   /* v1.2 wild animals (tier 'animal'): run away when you come close (hold B to sneak) · the boar charges back when hit */
   rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['meat', 1], loot: [], tier: 'animal' },
   chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
@@ -47,12 +47,12 @@ export const MON = {
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 0, coin: [0, 0], mat: { feather: 2 }, loot: [], tier: 'animal' },   // v1.5 (high ground)
   stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 40, hp: 1800, atk: 34, def: 12, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss' },   // v1.7 the final boss
-  shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: [], tier: 'normal' },
-  goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
-  goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
-  grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
-  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'barkArmor'], tier: 'normal' },
-  rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'normal' },
+  shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield'], tier: 'normal' },
+  goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor'], tier: 'normal', legs: 1 },
+  goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor'], tier: 'mini', legs: 1 },
+  grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['branch', 'leafBlade', 'pitchfork', 'leafVest'], tier: 'normal' },
+  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor'], tier: 'normal' },
+  rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'greatsword', 'stoneHammer', 'stoneArmor'], tier: 'normal' },
 };
 /* drop rarity: base 70/20/9/1 — farm monsters can only drop Basic/Rare → renormalised 77.8 / 22.2 */
 export const RAR = ['B', 'R', 'E', 'L'];
@@ -64,18 +64,49 @@ export const RAR_MUL = { B: 1, R: 1.6, E: 2.5, L: 4 };
 export const ITEM_DROP = .55;                  // chance an item drops at all (materials + coins always drop)
 
 /* ---- equipment templates (slot · base stats at Basic) ---- */
+/* v2.0 weapons & shields (models: src/weapons.js) · kind: one = one-handed (shield usable) · two = two-handed (slow, sweeps, no shield) · spear (fast, long reach, no shield)
+   dur = hits before it breaks (Zelda-like) · rarity rolls a bonus (RAR_BONUS) · tier = where it shows up (1 near home … 4 far away) */
 export const ITEMS = {
-  leafBlade:   { slot: 'sword', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 6 },          // v1.4: strength comes from gear (no player levels any more)
-  branchSword: { slot: 'sword', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 10 },
-  stoneClub:   { slot: 'sword', name: 'ดาบหินหนัก', icon: '⚔️', atk: 14, def: 1 },
-  leafVest:    { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3 },
-  barkArmor:   { slot: 'shield', name: 'โล่เปลือกไม้', icon: '🛡️', def: 5 },
-  stoneArmor:  { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8 },
+  branch:        { slot: 'sword', kind: 'one', name: 'กิ่งไม้', icon: '🌿', atk: 4, dur: 8, tier: 1 },
+  leafBlade:     { slot: 'sword', kind: 'one', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 7, dur: 12, tier: 1 },
+  travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1 },
+  branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
+  boneClub:      { slot: 'sword', kind: 'one', name: 'กระบองกระดูก', icon: '🦴', atk: 14, dur: 16, tier: 2 },
+  stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
+  scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3 },
+  knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
+  crystalBlade:  { slot: 'sword', kind: 'one', name: 'ดาบคริสตัล', icon: '💎', atk: 32, dur: 26, tier: 4 },
+  kingSword:     { slot: 'sword', kind: 'one', name: 'ดาบราชันย์', icon: '👑', atk: 40, dur: 36, tier: 4 },
+  woodAxe:       { slot: 'sword', kind: 'two', name: 'ขวานตัดไม้', icon: '🪓', atk: 14, dur: 25, tier: 1 },
+  greatsword:    { slot: 'sword', kind: 'two', name: 'ดาบใหญ่นักรบ', icon: '⚔️', atk: 26, dur: 28, tier: 2 },
+  stoneHammer:   { slot: 'sword', kind: 'two', name: 'ค้อนหินยักษ์', icon: '🔨', atk: 32, dur: 36, tier: 3 },
+  golemCrusher:  { slot: 'sword', kind: 'two', name: 'ค้อนอสูรหิน', icon: '🔨', atk: 44, dur: 34, tier: 4 },
+  dragonBlade:   { slot: 'sword', kind: 'two', name: 'ดาบมังกร', icon: '🐉', atk: 56, dur: 40, tier: 4 },
+  pitchfork:     { slot: 'sword', kind: 'spear', name: 'คราดชาวนา', icon: '🔱', atk: 8, dur: 14, tier: 1 },
+  woodSpear:     { slot: 'sword', kind: 'spear', name: 'หอกไม้', icon: '🔱', atk: 11, dur: 20, tier: 1 },
+  harpoon:       { slot: 'sword', kind: 'spear', name: 'ฉมวกจับปลา', icon: '🔱', atk: 13, dur: 22, tier: 2 },
+  soldierSpear:  { slot: 'sword', kind: 'spear', name: 'หอกทหาร', icon: '🔱', atk: 19, dur: 30, tier: 3 },
+  trident:       { slot: 'sword', kind: 'spear', name: 'หอกสามง่ามทะเล', icon: '🔱', atk: 27, dur: 34, tier: 4 },
+  potLid:        { slot: 'shield', name: 'ฝาหม้อ', icon: '🛡️', def: 1, dur: 8, tier: 1 },
+  leafVest:      { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3, dur: 12, tier: 1 },
+  woodShield:    { slot: 'shield', name: 'โล่ไม้', icon: '🛡️', def: 4, dur: 16, tier: 1 },
+  barkArmor:     { slot: 'shield', name: 'โล่เปลือกไม้', icon: '🛡️', def: 5, dur: 18, tier: 2 },
+  stoneArmor:    { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8, dur: 26, tier: 2 },
+  knightShield:  { slot: 'shield', name: 'โล่อัศวิน', icon: '🛡️', def: 11, dur: 30, tier: 3 },
+  crystalShield: { slot: 'shield', name: 'โล่คริสตัล', icon: '🛡️', def: 14, dur: 30, tier: 4 },
+  kingShield:    { slot: 'shield', name: 'โล่ราชันย์', icon: '🛡️', def: 18, dur: 40, tier: 4 },
 };
-export const SLOT_NAME = { sword: 'ดาบ', shield: 'โล่' };
+export const SLOT_NAME = { sword: 'อาวุธ', shield: 'โล่' };
+export const KIND = {                                          // cd = swing time × · reach (m) · arc = sweep half-angle (rad, 0 = one target) · energy ×
+  one:   { name: 'มือเดียว · ถือโล่ได้', cd: 1, reach: 2.2, arc: 0, shield: true, en: 1 },
+  two:   { name: 'สองมือ · ช้าแต่แรง ฟันกวาด · ถือโล่ไม่ได้', cd: 1.9, reach: 2.6, arc: 1.1, shield: false, en: 1.6 },
+  spear: { name: 'หอก · แทงเร็ว ระยะไกล · ถือโล่ไม่ได้', cd: .7, reach: 3.3, arc: 0, shield: false, en: .8 },
+};
+export const RAR_BONUS = { B: [[0, 0], [0, 0]], R: [[2, 4], [0, 4]], E: [[5, 9], [3, 8]], L: [[10, 16], [8, 14]] };   // [atk (def ÷2) min-max, durability min-max]
+export const OLD_ITEM = { leafBlade: [6], branchSword: [10], stoneClub: [14, 1], leafVest: [0, 3], barkArmor: [0, 5], stoneArmor: [0, 8] };   // v1.x stats (× RAR_MUL) → bonus on upgrade
 
 /* ---- the player (no body on screen: the finger is the player) ---- */
-export const PLAYER_BASE = { hp: 100, en: 100, atk: 12, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
+export const PLAYER_BASE = { hp: 100, en: 100, atk: 4, def: 2 };   /* v2.0: atk 4 = bare fists · the weapon adds the rest */       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
 export const PLAYER_GROW = { hp: 0, en: 0, atk: 0, def: 0 };   // v1.4: no levels → ✨ Spirits of Luthonia instead
 /* v1.4 ✨ Spirit of Luthonia: one per main NPC quest · choose ❤️ +1 heart or ⚡ +20 % energy (Zelda-like) */
 export const HEART = 20, HEARTS_MAX = 20, EN_STEP = .2, EN_MAX_MUL = 3;      // 1 heart = 20 HP · start 5 hearts · max 20 · energy up to 3× the start
@@ -174,7 +205,7 @@ export const SHOPS = [
   { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
   { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: '', cost: null },
 ];
-export const SMITH = [{ t: 'branchSword', r: 'B', price: 600 }, { t: 'leafVest', r: 'B', price: 500 }, { t: 'stoneClub', r: 'B', price: 1400 }, { t: 'barkArmor', r: 'B', price: 1100 }];
+export const SMITH = [{ t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'barkArmor', r: 'B', price: 1000 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
   { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },

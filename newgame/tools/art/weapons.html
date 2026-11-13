@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE weapons</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+/* v2.0 weapon sheet: one-handed · two-handed · spears · shields */
+import * as THREE from '../../lib/three.module.min.js';
+import { WEAPON_MESH, SHIELD_MESH } from '../../src/weapons.js';
+const W = 1600, H = 1000, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
+const S = new THREE.Scene(); S.background = new THREE.Color('#f4efe6'); S.add(new THREE.HemisphereLight('#ffffff', '#8a8070', 1.4)); const k = new THREE.DirectionalLight('#ffffff', 2.2); k.position.set(-2, 3, 5); S.add(k);
+const rows = [['leafBlade', 'branch', 'travelerSword', 'branchSword', 'boneClub', 'stoneClub', 'scimitar', 'knightSword', 'crystalBlade', 'kingSword'], ['woodAxe', 'greatsword', 'stoneHammer', 'golemCrusher', 'dragonBlade', 'pitchfork', 'woodSpear', 'harpoon', 'soldierSpear', 'trident']];
+rows.forEach((row, ri) => row.forEach((key, i) => { const g = new THREE.Group(); WEAPON_MESH[key](g); const big = ri === 1; g.position.set(-7.2 + i * 1.6, ri === 0 ? 2.2 : -1.6, 0); g.rotation.set(0, .5, -.25); g.scale.setScalar(big ? 2.3 : 3); S.add(g) }));
+Object.keys(SHIELD_MESH).forEach((key, i) => { const g = new THREE.Group(); SHIELD_MESH[key](g); g.position.set(-6.4 + i * 1.8, -3.9, 0); g.rotation.y = -.35; g.scale.setScalar(3.2); S.add(g) });
+const cam = new THREE.OrthographicCamera(-8, 8, 5, -5, .1, 50); cam.position.set(0, 0, 20); cam.lookAt(0, 0, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>
