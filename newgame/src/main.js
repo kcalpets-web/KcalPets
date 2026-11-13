@@ -149,7 +149,7 @@ function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; 
 function walkTick(dt, now) {
   let mv = false;
   const run = !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = PL.swim ? D.SWIM_SP : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (run ? D.RUN_SP : D.WALK_SP);
-  if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), cy = camTP() ? CAM.yaw : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
+  if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), cy = camTP() ? (joy.cy ?? CAM.yaw) : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
     if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(mx, mz); mv = true } }
   if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt, okMe); mv = d > w.near;
     if (d < w.best - .01) { w.best = d; w.stuck = 0 } else w.stuck += dt;
@@ -568,7 +568,7 @@ cv.addEventListener('pointermove', e => {
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
     if (stroke.go < 70) return; stroke = null; trail.length = 0 }
-  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * .009; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * .006)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
+  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
     else joyMove(down.x, down.y, e.clientX, e.clientY) }              // (top view) drag anywhere = a floating stick
 });
 /* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
@@ -705,9 +705,12 @@ function frame(now) {
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
   camY += (Math.max(0, me().y) - camY) * Math.min(1, dt * 4);
   if (camTP()) {                                                // behind the character · swings back behind while walking unless you just turned it
-    const q = me(), moving = joy.on || walkT || work; if (moving && now - CAM.manualT > 1500) { let d = PL.yaw - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); CAM.yaw += d * Math.min(1, dt * 1.6) }
-    const dd = 7.5 * zoom, cp = Math.cos(CAM.pitch), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.yaw) * dd * cp, pz = tz - Math.cos(CAM.yaw) * dd * cp, py = ty + Math.sin(CAM.pitch) * dd;
-    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.yaw) * 1.5, ty - .2, tz + Math.cos(CAM.yaw) * 1.5); cam.fov = 52; camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
+    const q = me(), moving = joy.on || walkT || work; CAM.walkT = moving ? (CAM.walkT || 0) + dt : 0;
+    /* gentle follow (no dizziness): only after walking a while, only when heading roughly away from the camera (not sideways/backwards), capped at ~25°/s */
+    if (moving && CAM.walkT > 1 && now - CAM.manualT > 3000) { let d = PL.yaw - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) < 1.2) CAM.yaw += Math.max(-D.CAM_FOLLOW * dt, Math.min(D.CAM_FOLLOW * dt, d * dt * .8)) }
+    let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); CAM.ps = (CAM.ps ?? CAM.pitch) + (CAM.pitch - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * 7);   // eased
+    const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
+    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
     if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 40, 140); cam.far = 260 } }
   else { cam.fov = 36; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
@@ -1077,9 +1080,9 @@ const stopAuto = () => { if (S.auto) { S.auto = false; $('bAuto').classList.remo
 { const st = $('stick'), kn = $('stickK'); let pid = null;
   const mv = e => { const r = st.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), k = Math.min(1, d / 46);
     joy.on = d > 6; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false; stopAuto(); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)` };
-  st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; st.setPointerCapture(pid); mv(e) });
+  st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; st.setPointerCapture(pid); joy.cy = CAM.yaw; mv(e) });   // directions stay tied to where the camera faced when you pressed
   st.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e) });
-  const up = e => { if (e.pointerId !== pid) return; pid = null; joy.on = false; kn.style.transform = '' }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
+  const up = e => { if (e.pointerId !== pid) return; pid = null; joy.on = false; joy.cy = undefined; kn.style.transform = '' }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
 /* A: tap = do the thing in front of you (talk · use · chop · break · cut · slash · cast) or a burst of running · hold = menu wheel */
 function nearTarget() {
   const q = me(), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw); let best = null, bs = 1e9;
