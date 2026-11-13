@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.3.0';
+export const APP_VER = '1.4.0';
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
@@ -60,18 +60,22 @@ export const ITEM_DROP = .55;                  // chance an item drops at all (m
 
 /* ---- equipment templates (slot · base stats at Basic) ---- */
 export const ITEMS = {
-  leafBlade:   { slot: 'weapon', name: 'ใบหญ้าคม', icon: '🗡️', atk: 3 },
-  branchSword: { slot: 'weapon', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 5 },
-  stoneClub:   { slot: 'weapon', name: 'กระบองหิน', icon: '🔨', atk: 6, def: 1 },
-  leafVest:    { slot: 'armor', name: 'เสื้อใบไม้', icon: '👕', def: 2, hp: 10 },
-  barkArmor:   { slot: 'armor', name: 'เกราะเปลือกไม้', icon: '🥋', def: 3, hp: 16 },
-  stoneArmor:  { slot: 'armor', name: 'เกราะหิน', icon: '🛡️', def: 5, hp: 20 },
+  leafBlade:   { slot: 'sword', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 6 },          // v1.4: strength comes from gear (no player levels any more)
+  branchSword: { slot: 'sword', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 10 },
+  stoneClub:   { slot: 'sword', name: 'ดาบหินหนัก', icon: '⚔️', atk: 14, def: 1 },
+  leafVest:    { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3 },
+  barkArmor:   { slot: 'shield', name: 'โล่เปลือกไม้', icon: '🛡️', def: 5 },
+  stoneArmor:  { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8 },
 };
-export const SLOT_NAME = { weapon: 'อาวุธ', armor: 'ชุดเกราะ' };
+export const SLOT_NAME = { sword: 'ดาบ', shield: 'โล่' };
 
 /* ---- the player (no body on screen: the finger is the player) ---- */
-export const PLAYER_BASE = { hp: 80, en: 100, atk: 10, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
-export const PLAYER_GROW = { hp: 6, en: 5, atk: 2, def: 1 };
+export const PLAYER_BASE = { hp: 100, en: 100, atk: 12, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
+export const PLAYER_GROW = { hp: 0, en: 0, atk: 0, def: 0 };   // v1.4: no levels → ✨ Spirits of Luthonia instead
+/* v1.4 ✨ Spirit of Luthonia: one per main NPC quest · choose ❤️ +1 heart or ⚡ +20 % energy (Zelda-like) */
+export const HEART = 20, HEARTS_MAX = 20, EN_STEP = .2, EN_MAX_MUL = 3;      // 1 heart = 20 HP · start 5 hearts · max 20 · energy up to 3× the start
+export const SPIRIT_QUESTS = ['s2', 's3d', 's4e', 's5c', 's6e'];              // repair Howsif's boat · Slime King · free Sberh · cure Howsif · first home-grown meal
+export const LV_REFUND = 150;                                                 // old saves: 🪙 per old player level
 /* ⚡ stamina, Zelda-like (v0.8): every action and running use it · refills fast once you stop · empty = exhausted (slow, no actions) until it is full again */
 export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6 };        // per hit / per cast
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
@@ -97,7 +101,11 @@ export const PET_RAR_MUL = { B: 1, R: 1.15, E: 1.35, L: 1.6 };
 export const PET_LV_MAX = 15;
 export const FORMS = [{ lv: 1, name: 'ร่างเด็ก', mul: 1, scale: .6 }, { lv: 5, name: 'ร่างโต', mul: 1.25, scale: .7 }, { lv: 10, name: 'ร่างสุดยอด', mul: 1.55, scale: .8 }];
 export const ELEM_SKILL = { '🔥': 'ลูกไฟ', '⚡': 'สายฟ้าฟาด', '🌱': 'ใบไม้คม', '💧': 'น้ำกระแทก', '❄️': 'เกล็ดน้ำแข็ง', '🪨': 'หินถล่ม' };
-export const PET_SKILL = { mp: 12, mul: 2, cd: 5000, basicMul: .4 };       // Basic: any element at −60% · Legendary: any element at full power
+export const PET_SKILL = { mp: 0, mul: 2.2, cd: 8000, basicMul: .4 };   // v1.4: pets have no HP / MP — two skills on cooldown, cast by themselves
+export const PET_SPECIAL = {                                                  // the 2nd skill (by element) · cd 25 s
+  '🔥': { name: 'ระเบิดไฟ', kind: 'aoe', mul: 1.6, r: 3.2 }, '⚡': { name: 'สายฟ้าสะกด', kind: 'stun', ms: 2500, r: 4 }, '🌱': { name: 'ใบไม้รักษา', kind: 'heal', hearts: 1 },
+  '💧': { name: 'สายน้ำชโลม', kind: 'heal', hearts: 1.5 }, '❄️': { name: 'ลมหนาวแช่แข็ง', kind: 'stun', ms: 3500, r: 3.5 }, '🪨': { name: 'โล่หิน', kind: 'guard', ms: 6000 } };
+export const PET_SPECIAL_CD = 25000;       // Basic: any element at −60% · Legendary: any element at full power
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },

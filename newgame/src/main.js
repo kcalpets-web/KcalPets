@@ -219,7 +219,8 @@ const dmgCalc = (atk, def, mul = 1) => { const crit = Math.random() < .08; retur
 function rollRarity(ok, bonus = {}) { const tot = ok.reduce((a, r) => a + D.RAR_W[r] + (bonus[r] || 0), 0); let x = Math.random() * tot; for (const r of ok) { x -= D.RAR_W[r] + (bonus[r] || 0); if (x < 0) return r } return ok[0] }
 function addIngr(k, n, x, z) { S.ingr[k] = (S.ingr[k] || 0) + n; floater(`${D.INGR[k].icon} +${n}`, 'mat', x, 1.6, z) }
 function addMats(m, x, z) { for (const k in m) { S.mats[k] = (S.mats[k] || 0) + m[k]; floater(`${D.MATS[k][0]} +${m[k]}`, 'mat', x, 1.4, z) } }
-function playerExp(n, x, z) { const up = gainPlayerExp(n); if (x != null) floater(`+${n} Exp`, 'exp', x, 1.7, z); if (up) sfx('level'); if (up) toast(`🎉 เลเวลผู้เล่นขึ้นเป็น <b>Lv ${S.lv}</b>! ได้แต้มต้นไม้ +${up}`, 3000) }
+function playerExp() { }   /* v1.4: no player levels (✨ spirits from main quests instead) */
+function playerExpOld(n, x, z) { const up = gainPlayerExp(n); if (x != null) floater(`+${n} Exp`, 'exp', x, 1.7, z); if (up) sfx('level'); if (up) toast(`🎉 เลเวลผู้เล่นขึ้นเป็น <b>Lv ${S.lv}</b>! ได้แต้มต้นไม้ +${up}`, 3000) }
 function petExp(p, n) { const r = gainPetExp(p, n), e = PA.get(p.id); if (!e) return r;
   if (r.evolved) { const q = e.A.root.position; buildPet(p, q.x, q.z); floater('✨ พัฒนาร่าง!', 'item', q.x, 2, q.z); toast(`✨ ${esc(p.name)} พัฒนาเป็น <b>${D.FORMS[formOf(p)].name}</b>!`, 3200) }
   else if (r.up) { const q = e.A.root.position; floater(`Lv ${p.lv}!`, 'exp', q.x, 1.6, q.z) }
@@ -666,7 +667,7 @@ let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, fpsN = 0, fpsT =
 const pv = new THREE.Vector3(), proj = { x: 0, y: 0 };
 function project(x, y, z) { pv.set(x, y, z).project(cam); proj.x = (pv.x + 1) / 2 * innerWidth; proj.y = (1 - pv.y) / 2 * innerHeight; proj.z = pv.z; return proj }
 function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d < .05) return d; const k = Math.min(1, sp * dt / d), nx = q.x + dx * k, nz = q.z + dz * k; if (ok(nx, nz)) { q.x = nx; q.z = nz; q.y = groundH(nx, nz) } A.yawT = Math.atan2(dx, dz); return d }
-function hitPlayer(m, now) { sfx('hurt'); const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (guard && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * .3)); floater('🛡️', 'tool', me().x, 2, me().z) } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
+function hitPlayer(m, now) { sfx('hurt'); const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * .3)); floater('🛡️', 'tool', me().x, 2, me().z) } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
 function frame(now) {
   requestAnimationFrame(frame); if (CUT) { last = now; return }
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
@@ -679,7 +680,8 @@ function frame(now) {
       if (d > D.PET_RANGE) { stepTo(e.A, m.x, m.z, 3, dt); mv = true }
       else { e.A.yawT = Math.atan2(m.x - q.x, m.z - q.z);
         if (now > e.atkT && M.born + 500 < now) { e.atkT = now + D.PET_ATK_CD / speed; const st = petStats(p);
-          if (petMp(p) >= D.PET_SKILL.mp && now > e.skT) { e.skT = now + D.PET_SKILL.cd / speed; p.mp -= D.PET_SKILL.mp; const el = (p.rar === 'B' || p.rar === 'L') ? Object.keys(D.ELEM_SKILL)[Math.floor(Math.random() * 6)] : p.el;
+          if (!(now < e.spT) && petSpecial(e, M, now)) e.spT = now + D.PET_SPECIAL_CD / speed;
+          else if (!(now < e.skT)) { e.skT = now + D.PET_SKILL.cd / speed; const el = (p.rar === 'B' || p.rar === 'L') ? Object.keys(D.ELEM_SKILL)[Math.floor(Math.random() * 6)] : p.el;
             const r = dmgCalc(st.atk, M.T.def, D.PET_SKILL.mul * (p.rar === 'B' ? D.PET_SKILL.basicMul : 1)); hurtMon(M, r.d, 'crit', el + ' ' + D.ELEM_SKILL[el]) }
           else { const r = dmgCalc(st.atk, M.T.def); hurtMon(M, r.d, 'pet') } } }
     } else { if (e.mode === 'fight') { e.mode = 'wander'; e.foe = null }
@@ -690,11 +692,11 @@ function frame(now) {
         if (foe) { e.mode = 'fight'; e.foe = foe }
       } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
     animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, q.y + .65, q.z);
-    if (e.mode !== 'down' && now - (e.hurt || 0) > 4000) { const st = petStats(p); p.hp = Math.min(st.hp, petHp(p) + st.hp * D.REGEN.perSec * dt); p.mp = Math.min(st.mp, petMp(p) + st.mp * D.REGEN.perSec * dt) }
   }
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
   for (let i = mons.length - 1; i >= 0; i--) {
     const M = mons[i]; if (!nearMe(M)) continue;
+    if (M.stunT > now) { M.A.body.rotation.z = Math.sin(now / 50) * .12; continue } else if (M.stunT) { M.stunT = 0; M.A.body.rotation.z = 0 }
     const m = M.A.root.position, age = (now - M.born) / 400, ok = walkMon, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     const pd = dist(me().x, me().z, m.x, m.z), sp = M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5, AN = M.T.animal && !(M.T.charge && M.aggro);
@@ -716,7 +718,7 @@ function frame(now) {
     if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, m.y + .8, m.z);
     if (!AN && M.aggro && age > 1.2 && now > M.atkT && (tgt ? td < 1.4 : pd < 2.4)) { M.atkT = now + D.MON_ATK_CD / speed;
       if (!tgt || Math.random() < D.MON_HIT_PLAYER) hitPlayer(M, now);
-      else { const r = dmgCalc(M.T.atk, petStats(tgt.p).def); tgt.p.hp = petHp(tgt.p) - r.d; tgt.hurt = now; const tq = tgt.A.root.position; floater('-' + r.d, 'hurt', tq.x, 1.4, tq.z); if (tgt.p.hp <= 0) petDown(tgt) } }
+      else { const tq = tgt.A.root.position; floater('💨', 'tool', tq.x, 1.4, tq.z) } }   /* pets have no HP (v1.4): they dodge */
     if (M.farm) { S.mon.x = m.x; S.mon.z = m.z }
     const bs = MSCALE[M.kind] || .85; if (M.flash > 0) { M.flash -= dt; M.A.body.scale.setScalar(bs * (1 + Math.max(0, M.flash) * .8)) } else M.A.body.scale.setScalar(bs);
   }
@@ -769,9 +771,9 @@ const qDone = q => q.check ? q.check(S) : q.flag ? !!S.story[q.flag] : (q.stat.s
 function hud() {
   const st = pStats(); boatTick();
   if (S.profile && S.profile.pic && !$('pfAv').firstElementChild) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
-  $('hLv').textContent = `Lv ${S.lv}`; $('hName').textContent = S.profile ? S.profile.name : 'ผู้เล่น'; $('hXp').style.width = (S.exp / D.expNeed(S.lv) * 100) + '%';
+  $('hLv').textContent = S.spirit.free > 0 ? `✨ ×${S.spirit.free} แตะเพื่ออัป!` : `✨ ${S.spirit.hp + S.spirit.en}`; $('pf').classList.toggle('glow', S.spirit.free > 0); $('hName').textContent = S.profile ? S.profile.name : 'ผู้เล่น'; 
   $('hCoin').textContent = fmt(S.coin); $('hGem').textContent = fmt(S.gem);
-  $('hHp').style.width = (pHp() / st.hp * 100) + '%'; $('hHpT').textContent = `${Math.ceil(pHp())}/${st.hp}`;
+  heartsHud(st);
   $('hMp').style.width = (pEn() / st.en * 100) + '%'; $('hMp').style.background = S.tired ? '#e8a040' : '#9ad03a'; $('hMpB').style.width = Math.min(100, (S.enB || 0) / st.en * 100) + '%'; $('hMpT').textContent = S.tired ? '💦 เหนื่อย' : `${Math.floor(pEn())}${S.enB >= 1 ? '+' + Math.floor(S.enB) : ''}/${st.en}`;
   setTime(); $('hClock').textContent = `${isNight() ? '🌙' : '☀️'} ${hhmm(S.time)}`; $('hSun').textContent = isNight() ? '🌅 06:00' : '🌇 22:00'; const tp = D.AREA_TEMP[S.area]; $('hTemp').textContent = tp < 0 ? '🥶' : tp > 0 ? '🥵' : '🙂';
   $('hBuff').style.display = S.buff && S.buff.until > Date.now() ? '' : 'none'; if (S.buff && S.buff.until > Date.now()) $('hBuff').textContent = `${S.buff.icon} ${S.buff.atk ? '⚔️+' + S.buff.atk : '🛡️+' + S.buff.def} ${Math.ceil((S.buff.until - Date.now()) / 60e3)}′`;
@@ -779,7 +781,7 @@ function hud() {
   $('bTool').classList.toggle('dim', !S.shops.tools); $('bShop').classList.toggle('dim', !S.story.town); $('bPets').classList.toggle('dim', !S.pets.length);
   $('hMats').textContent = `🪵 ${S.mats.wood || 0} · 🪨 ${S.mats.stone || 0}`;
   $('team').innerHTML = S.team.map(id => { const p = S.pets.find(x => x.id === id); if (!p) return ''; const ps = petStats(p), dn = p.down > Date.now();
-    return `<div class="tc${dn ? ' dn' : ''}" data-pet="${p.id}"><span>${PET_ICO[p.kind]}<small>Lv${p.lv}</small></span><div class="bar s"><i style="width:${petHp(p) / ps.hp * 100}%;background:var(--hp)"></i></div><div class="bar s"><i style="width:${petMp(p) / ps.mp * 100}%;background:var(--mp)"></i></div></div>` }).join('');
+    return `<div class="tc${dn ? ' dn' : ''}" data-pet="${p.id}"><span>${PET_ICO[p.kind]}<small>Lv${p.lv}</small></span><div class="bar s"><i style="width:${cdPct(p.id, 'skT', D.PET_SKILL.cd)}%;background:#ffb03a"></i></div><div class="bar s"><i style="width:${cdPct(p.id, 'spT', D.PET_SPECIAL_CD)}%;background:#7ad0ff"></i></div></div>` }).join('');
   const q = D.QUESTS[S.quest];
   if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '';
     const jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;
@@ -790,7 +792,9 @@ $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) open
 function questCheck() {
   if (S.story.sberhTown && S.shops.potion && !S.story.flashback && !CUT) setTimeout(runFlashback, 1200);
   let q; while ((q = D.QUESTS[S.quest]) && qDone(q)) { const r = q.reward || {}; if (r.coin) S.coin += r.coin; if (r.gem) S.gem += r.gem;
-    toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null }
+    toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null;
+    if (D.SPIRIT_QUESTS.includes(q.id)) { S.spirit.free++; spiritNew = true } }
+  if (spiritNew && !CUT) { spiritNew = false; setTimeout(() => openSpirit(true), 2000) }
   hud(); save();
 }
 let peekT = 0;
@@ -843,18 +847,16 @@ function openProfile() {
   sheet('👤 โปรไฟล์', (b, redraw, close) => {
     const st = pStats(), pr = S.profile || { name: 'ผู้เล่น', guest: true };
     b.innerHTML = `<div class="card pr">${pr.pic ? `<img src="${esc(pr.pic)}" alt="" referrerpolicy="no-referrer">` : '<div class="av big">🙂</div>'}<div><b>${esc(pr.name)}</b><div class="mut">${pr.guest ? 'เล่นแบบไม่ล็อกอิน' : 'ล็อกอินด้วย Google'}</div></div></div>
-      <div class="card"><div class="row"><b>Lv ${S.lv}</b><span class="mut">Exp ${fmt(S.exp)} / ${fmt(D.expNeed(S.lv))}</span></div><div class="bar big"><i style="width:${S.exp / D.expNeed(S.lv) * 100}%;background:var(--xp)"></i></div>
-      <div class="mut">❤️ ${st.hp} · ⚡ ${st.en} · ⚔️ ${st.atk} · 🛡️ ${st.def}</div><div class="mut">Exp ได้จาก: เคลียร์ · ตกปลา · ป้อนอาหารน้อง · กำจัดมอนสเตอร์ · ผจญภัย</div></div>
-      <div class="card"><div class="row"><b>🌳 แต้มต้นไม้</b><b>${S.pts}</b></div><p class="mut">ได้ 1 แต้มทุกเลเวล · แผนภูมิต้นไม้มาในอัปเดตถัดไป</p></div>
+      ${spiritCard()}<div class="mut" style="margin:-4px 0 10px">⚔️ ${st.atk} · 🛡️ ${st.def} (จากดาบและโล่)</div>
       <div class="card"><b>บัญชี</b>${pr.guest ? '<p class="mut">ล็อกอินด้วย Google เพื่อใช้ชื่อและรูปของคุณ (เซฟยังเก็บในเครื่องนี้)</p><button class="btn go wide" id="pG">เข้าด้วย Google</button>' : '<button class="btn ghost wide" id="pO">ออกจากระบบ (กลับเป็นผู้เล่นทั่วไป)</button>'}</div>`;
-    const g = b.querySelector('#pG'); if (g) g.onclick = () => { close(); showLogin() };
+    bindSpirit(b, redraw); const g = b.querySelector('#pG'); if (g) g.onclick = () => { close(); showLogin() };
     const o = b.querySelector('#pO'); if (o) o.onclick = () => { S.profile = { name: 'ผู้เล่น', guest: true }; try { google.accounts.id.disableAutoSelect() } catch (e) { } save(); hud(); redraw() };
   });
 }
 function petCard(p) { const ps = petStats(p), f = formOf(p), dn = p.down > Date.now();
   return `<div class="row"><b>${PET_ICO[p.kind]} ${esc(p.name)}</b><span><span class="tag" style="background:${D.RAR_COL[p.rar]}">${D.RAR_NAME[p.rar]}</span> ${p.rar === 'B' || p.rar === 'L' ? 'ทุกธาตุ' : p.el}</span></div>
     <div class="mut">Lv ${p.lv} · ${D.FORMS[f].name}${f < 2 ? ` (ร่างถัดไป Lv ${D.FORMS[f + 1].lv})` : ''}${dn ? ' · 💤 พักอยู่' : ''} · ⚔️ ${ps.atk} · 🛡️ ${ps.def}</div>
-    <div class="row"><span class="mut">❤️</span><div class="bar s grow"><i style="width:${petHp(p) / ps.hp * 100}%;background:var(--hp)"></i></div><span class="mut">💧</span><div class="bar s grow"><i style="width:${petMp(p) / ps.mp * 100}%;background:var(--mp)"></i></div></div>
+    <div class="mut">🟠 ${skillTxt(p)} · 🔵 ${specTxt(p)}</div>
     <div class="row"><span class="mut">Exp</span><div class="bar s grow"><i style="width:${p.lv >= D.PET_LV_MAX ? 100 : p.exp / D.expNeed(p.lv) * 100}%;background:var(--xp)"></i></div><span class="mut">${p.lv >= D.PET_LV_MAX ? 'MAX' : fmt(p.exp) + '/' + fmt(D.expNeed(p.lv))}</span></div>` }
 function feed(p, kind, key) {
   if (p.lv >= D.PET_LV_MAX) { toast('น้องเลเวลสูงสุดแล้ว'); return }
@@ -903,32 +905,90 @@ function openHouse() {
     b.querySelector('#hR').onclick = () => { restAll(); toast('😴 พักผ่อนเต็มที่! ทุกคน HP/Mana เต็ม'); save(); hud(); close() };
   });
 }
-function openBag() {
+let bagTab = 'sword';
+function openBag(tab) {
+  if (tab) bagTab = tab;
   sheet('🎒 กระเป๋า', (b, redraw) => {
+    const tabs = [['sword', '⚔️ ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹 ธนู']] : []), ['shield', '🛡️ โล่'], ['mats', '🪵 วัตถุดิบ'], ['food', '🍲 อาหาร'], ['quest', '📜 เควส'], ['ach', '🏆 สำเร็จ'], ['set', '⚙️ ตั้งค่า']];
+    let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${n}</button>`).join('')}</div>`;
     const st = pStats(), eqd = s => S.bag.find(x => x.id === S.eq[s]);
-    let h = `<div class="card"><b>ผู้เล่น Lv${S.lv}</b> <span class="mut">❤️ ${st.hp} · ⚡ ${st.en} · ⚔️ ${st.atk} · 🛡️ ${st.def}</span>`;
-    for (const s of ['weapon', 'armor']) { const it = eqd(s); h += `<div class="row"><span>${D.SLOT_NAME[s]}: ${it ? `<b style="color:${D.RAR_COL[it.r]}">${D.ITEMS[it.t].icon} ${D.ITEMS[it.t].name}</b>` : '<span class="mut">ว่าง</span>'}</span>${it ? `<button class="btn sm" data-un="${s}">ถอด</button>` : ''}</div>` }
-    h += '</div><h3>อุปกรณ์ (ผู้เล่นสวม)</h3>';
-    const items = S.bag.filter(it => !Object.values(S.eq).includes(it.id)).sort((p, q) => (gearCmp(q).better - gearCmp(p).better) || (gearScore(itemStats(q)) - gearScore(itemStats(p))));
-    h += items.length ? items.map(it => { const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), val = Math.round((x.atk * 60 + x.def * 60 + x.hp * 6) * D.SELL_RATE);
-      return `<div class="card"><div class="row"><b style="color:${D.RAR_COL[it.r]}">${T.icon} ${T.name}</b><span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span></div><div class="mut">${D.SLOT_NAME[T.slot]} · ${c.stats}</div><div class="cmp">${c.verdict} <span class="mut">${c.vs}</span></div><div class="row2"><button class="btn sm ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button><button class="btn sm ${c.better ? 'go' : ''}" data-eq="${it.id}">สวม</button></div></div>` }).join('') : '<p class="mut">ยังไม่มีอุปกรณ์ · กำจัดมอนสเตอร์เพื่อหาของดรอป</p>';
-    h += '<h3>ยา</h3>' + D.SHOP.map(x => `<div class="row"><span>${x.icon} ${x.name} ×${S.potions[x.k] || 0}</span><button class="btn sm" data-use="${x.k}" ${S.potions[x.k] ? '' : 'disabled'}>ใช้</button></div>`).join('');
-    h += '<h3>🍽️ อาหารที่ปรุง</h3>' + (D.RECIPES.filter(r => S.meals[r.k] > 0).map(r => `<div class="row"><span>${r.icon} ${r.name} ×${S.meals[r.k]} <small class="mut">${effTxt(r.eff)}</small></span><button class="btn sm go" data-meal="${r.k}">กิน</button></div>`).join('') || '<p class="mut">ยังไม่มี · ทำอาหารที่หม้อในแคมป์</p>');
-    h += '<h3>🧺 วัตถุดิบทำอาหาร</h3>' + (Object.keys(D.INGR).filter(k => S.ingr[k] > 0).map(k => `<div class="row"><span>${D.INGR[k].icon} ${D.INGR[k].name} ×${S.ingr[k]}</span><span class="mut">ใช้ที่หม้อ 🍲</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
-    h += '<h3>อาหารน้อง</h3>' + (D.FOODS.filter(f => S.food[f.k]).map(f => `<div class="row"><span>${f.icon} ${f.name} ×${S.food[f.k]}</span><span class="mut">ป้อนที่หน้าน้อง</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
-    h += '<h3>ปลา</h3>' + (Object.keys(S.fish).filter(k => S.fish[k]).map(k => `<div class="row"><span>🐟 <b style="color:${D.RAR_COL[D.FISH[k].r]}">${D.FISH[k].name}</b> ×${S.fish[k]}</span><span><button class="btn sm" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button> <button class="btn sm ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button></span></div>`).join('') || '<p class="mut">ยังไม่มี · เลือก 🎣 แล้วแตะที่น้ำ</p>');
-    h += '<h3>วัตถุดิบ</h3>' + (Object.keys(S.mats).filter(k => S.mats[k]).map(k => `<div class="row"><span>${D.MATS[k][0]} ${D.MATS[k][1]} ×${S.mats[k]}</span><button class="btn sm ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
+    if (['sword', 'shield', 'bow'].includes(bagTab)) { const sl = bagTab, it0 = eqd(sl);
+      h += `<div class="card"><div class="row"><span>สวมอยู่: ${it0 ? `<b style="color:${D.RAR_COL[it0.r]}">${D.ITEMS[it0.t].icon} ${D.ITEMS[it0.t].name}</b>` : '<span class="mut">ว่าง</span>'}</span>${it0 ? `<button class="btn sm" data-un="${sl}">ถอด</button>` : ''}</div><div class="mut">⚔️ ${st.atk} · 🛡️ ${st.def}</div></div>`;
+      const items = S.bag.filter(it => D.ITEMS[it.t].slot === sl && !Object.values(S.eq).includes(it.id)).sort((p, q) => (gearCmp(q).better - gearCmp(p).better) || (gearScore(itemStats(q)) - gearScore(itemStats(p))));
+      h += items.length ? items.map(it => { const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), val = Math.round((x.atk * 60 + x.def * 60 + x.hp * 6) * D.SELL_RATE);
+        return `<div class="card"><div class="row"><b style="color:${D.RAR_COL[it.r]}">${T.icon} ${T.name}</b><span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span></div><div class="mut">${c.stats}</div><div class="cmp">${c.verdict} <span class="mut">${c.vs}</span></div><div class="row2"><button class="btn sm ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button><button class="btn sm ${c.better ? 'go' : ''}" data-eq="${it.id}">สวม</button></div></div>` }).join('')
+        : `<p class="mut">ยังไม่มี${D.SLOT_NAME[sl] || ''}สำรอง · หาได้จากมอนสเตอร์ และหีบสมบัติในแคมป์ ⛺</p>` }
+    if (bagTab === 'mats') {
+      h += '<h3>🪵 วัตถุดิบ / ชิ้นส่วน</h3>' + (Object.keys(S.mats).filter(k => S.mats[k]).map(k => `<div class="row"><span>${D.MATS[k][0]} ${D.MATS[k][1]} ×${S.mats[k]}</span><button class="btn sm ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
+      h += '<h3>🧺 วัตถุดิบทำอาหาร</h3>' + (Object.keys(D.INGR).filter(k => S.ingr[k] > 0).map(k => `<div class="row"><span>${D.INGR[k].icon} ${D.INGR[k].name} ×${S.ingr[k]}</span><span class="mut">ใช้ที่หม้อ 🍲</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
+      h += '<h3>🐟 ปลา</h3>' + (Object.keys(S.fish).filter(k => S.fish[k]).map(k => `<div class="row"><span>🐟 <b style="color:${D.RAR_COL[D.FISH[k].r]}">${D.FISH[k].name}</b> ×${S.fish[k]}</span><span><button class="btn sm" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button> <button class="btn sm ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button></span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
+      h += '<h3>🌱 เมล็ดผัก</h3>' + (Object.keys(S.seeds || {}).filter(k => S.seeds[k] > 0).map(k => `<div class="row"><span>🌱 ${k} ×${S.seeds[k]}</span><span class="mut">ปลูกที่แปลงผัก</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
+    if (bagTab === 'food') {
+      h += '<h3>🍽️ อาหารที่ปรุงแล้ว</h3>' + (D.RECIPES.filter(r => S.meals[r.k] > 0).map(r => `<div class="row"><span>${r.icon} ${r.name} ×${S.meals[r.k]} <small class="mut">${effTxt(r.eff)}</small></span><button class="btn sm go" data-meal="${r.k}">กิน</button></div>`).join('') || '<p class="mut">ยังไม่มี · ทำอาหารที่หม้อในแคมป์หรือกองไฟ</p>');
+      h += '<h3>🧪 ยา</h3>' + D.SHOP.map(x => `<div class="row"><span>${x.icon} ${x.name} ×${S.potions[x.k] || 0}</span><button class="btn sm" data-use="${x.k}" ${S.potions[x.k] ? '' : 'disabled'}>ใช้</button></div>`).join('');
+      h += '<h3>🍖 อาหารน้อง</h3>' + (D.FOODS.filter(f => S.food[f.k]).map(f => `<div class="row"><span>${f.icon} ${f.name} ×${S.food[f.k]}</span><span class="mut">ป้อนที่หน้าน้อง</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
+    if (bagTab === 'quest') { const q = D.QUESTS[S.quest];
+      h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
+        + '<div class="card lock"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา</b><div class="mut">เมฆดำลึกลับปกคลุมดินแดนไกลโพ้น… (มาในอัปเดตถัดๆ ไป)</div></div>'
+        + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
+    if (bagTab === 'ach') h += achHTML();
+    if (bagTab === 'set') h += '<div id="bagSet"></div>';
     b.innerHTML = h;
+    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; redraw() });
+    if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
+    if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
+    if (bagTab === 'ach') bindAch(b, redraw);
     b.querySelectorAll('[data-eq]').forEach(x => x.onclick = () => { const it = S.bag.find(i => i.id === +x.dataset.eq); S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); save(); hud(); redraw() });
     b.querySelectorAll('[data-un]').forEach(x => x.onclick = () => { S.eq[x.dataset.un] = null; save(); hud(); redraw() });
     b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => confirmBox(`ขายชิ้นนี้ได้ 🪙 ${x.dataset.v}?`, () => { S.bag = S.bag.filter(i => i.id !== +x.dataset.sell); S.coin += +x.dataset.v; save(); hud(); redraw() }, 'ขาย'));
     b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => { usePotion(x.dataset.use); redraw() });
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const k = x.dataset.sm; S.mats[k]--; S.coin += Math.round(D.MATS[k][2] * D.SELL_RATE); save(); hud(); redraw() });
     b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { eatMeal(x.dataset.meal); redraw() });
-    b.querySelectorAll('[data-ef]').forEach(x => x.onclick = () => { const k = x.dataset.ef; if (!(S.fish[k] > 0)) return; S.fish[k]--; addEn(D.FISH_EN[D.FISH[k].r]); sfx('coin'); toast(`😋 ⚡ +${D.FISH_EN[D.FISH[k].r]}`, 1200); save(); hud(); redraw() });
+    b.querySelectorAll('[data-ef]').forEach(x => x.onclick = () => { const k = x.dataset.ef; if (!(S.fish[k] > 0)) return; S.fish[k]--; addEn(D.FISH_EN[D.FISH[k].r]); sfx('coin'); toast(`😋 ⚡ +${D.FISH_EN[D.FISH[k].r]}`, 1400); save(); hud(); redraw() });
     b.querySelectorAll('[data-sf]').forEach(x => x.onclick = () => { const k = x.dataset.sf; S.fish[k]--; S.coin += Math.round(D.FISH[k].price * D.SELL_RATE); save(); hud(); redraw() });
   });
 }
+const achHTML = () => D.ACH.map(a => { const v = Math.min(a.goal, achVal(a)), done = v >= a.goal, got = S.ach[a.k];
+  return `<div class="card"><div class="row"><b>${a.icon} ${a.name}</b>${got ? '<span class="up">✅ รับแล้ว</span>' : done ? `<button class="btn sm go" data-a="${a.k}">รับรางวัล</button>` : `<span class="mut">${v}/${a.goal}</span>`}</div><div class="mut">${a.text} · รางวัล ${a.reward.coin ? '🪙 ' + fmt(a.reward.coin) : ''}${a.reward.gem ? '💎 ' + a.reward.gem : ''}</div><div class="bar s"><i style="width:${v / a.goal * 100}%;background:var(--xp)"></i></div></div>` }).join('');
+const bindAch = (b, redraw) => b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { const a = D.ACH.find(y => y.k === x.dataset.a); S.ach[a.k] = Date.now(); if (a.reward.coin) S.coin += a.reward.coin; if (a.reward.gem) S.gem += a.reward.gem; sfx('level'); toast(`🏆 ${a.name}!`, 2000); save(); hud(); redraw() });
+/* ---------- v1.4 ✨ Spirit of Luthonia: ❤️ +1 heart or ⚡ +20 % energy ---------- */
+let spiritNew = false, petGuardT = 0;
+const hearts = () => pStats().hp / D.HEART, enMul = () => 1 + D.EN_STEP * S.spirit.en;
+const spiritOk = k => k === 'hp' ? hearts() < D.HEARTS_MAX : enMul() < D.EN_MAX_MUL - .01;
+function spiritCard() { const sp = S.spirit;
+  return `<div class="card spirit"><div class="row"><b>✨ จิตวิญญาณแห่งลูโทเนีย</b><b>${sp.free > 0 ? '×' + sp.free + ' รอเลือก' : ''}</b></div>
+    <div class="mut">❤️ หัวใจ ${hearts()} / ${D.HEARTS_MAX} ดวง · ⚡ พลังงาน ×${enMul().toFixed(1)} / ${D.EN_MAX_MUL} · ได้จากภารกิจหลักของ NPC</div>
+    ${sp.free > 0 ? `<div class="row2"><button class="btn go" data-sp="hp" ${spiritOk('hp') ? '' : 'disabled'}>❤️ หัวใจ +1</button><button class="btn go" data-sp="en" ${spiritOk('en') ? '' : 'disabled'}>⚡ พลังงาน +20%</button></div>` : ''}</div>` }
+function bindSpirit(b, redraw) { b.querySelectorAll('[data-sp]').forEach(x => x.onclick = () => { spiritUp(x.dataset.sp); redraw() }) }
+function spiritUp(k) {
+  if (!(S.spirit.free > 0) || !spiritOk(k)) return false; S.spirit.free--; S.spirit[k]++; S.hp = null; S.en = null; sfx('level');
+  floater(k === 'hp' ? '❤️ +1' : '⚡ +20%', 'heal', me().x, 2.2, me().z); toast(k === 'hp' ? `❤️ หัวใจเพิ่มเป็น ${hearts()} ดวง!` : `⚡ พลังงานเพิ่มเป็น ×${enMul().toFixed(1)}!`, 2200); save(); hud(); return true }
+function openSpirit(isNew) {
+  if (!(S.spirit.free > 0)) return; sfx('level');
+  sheet('✨ จิตวิญญาณแห่งลูโทเนีย', (b, redraw, close) => { b.innerHTML = (isNew ? '<p>แสงอบอุ่นไหลเข้าสู่ร่างกาย… ได้รับ <b>✨ จิตวิญญาณแห่งลูโทเนีย</b>!</p>' : '') + spiritCard() + '<p class="mut">เลือกทีหลังก็ได้ · แตะชื่อผู้เล่นมุมซ้ายบน หรือ 🎒 → 📜 เควส</p>';
+    b.querySelectorAll('[data-sp]').forEach(x => x.onclick = () => { if (spiritUp(x.dataset.sp)) { if (S.spirit.free > 0) redraw(); else close() } }) });
+}
+/* hearts on the HUD: 1 heart = 20 HP, quarters shown */
+let heartsK = '';
+function heartsHud(st) { const n = Math.round(st.hp / D.HEART), cur = pHp() / D.HEART, k = n + ':' + Math.ceil(cur * 4); if (k === heartsK) return; heartsK = k;
+  let h = ''; for (let i = 0; i < n; i++) { const f = Math.max(0, Math.min(1, cur - i)); h += `<i class="hr" style="--f:${Math.ceil(f * 4) * 25}%"></i>` } $('hearts').innerHTML = h }
+/* pets (v1.4): no HP / MP · 🟠 element skill every 8 s · 🔵 special every 25 s (by element) · cast by themselves */
+const petEl = p => (p.rar === 'B' || p.rar === 'L') ? null : p.el;
+const skillTxt = p => `${petEl(p) ? petEl(p) + ' ' + D.ELEM_SKILL[p.el] : 'สุ่มทุกธาตุ'} (${D.PET_SKILL.cd / 1000} วิ)`;
+const specTxt = p => `${petEl(p) ? D.PET_SPECIAL[p.el].name : 'พิเศษสุ่มธาตุ'} (${D.PET_SPECIAL_CD / 1000} วิ)`;
+function cdPct(id, k, cd) { const e = PA.get(id); if (!e || !e[k]) return 100; return Math.max(0, Math.min(100, 100 - (e[k] - performance.now()) / cd * 100)) }
+function petSpecial(e, M, now) {
+  const p = e.p, el = petEl(p) || Object.keys(D.PET_SPECIAL)[Math.floor(Math.random() * 6)], X = D.PET_SPECIAL[el], st = petStats(p), q = e.A.root.position, mq = M.A.root.position, mx = p.rar === 'B' ? D.PET_SKILL.basicMul : 1;
+  if (X.kind === 'heal') { if (pHp() >= pStats().hp - 1) return false; S.hp = Math.min(pStats().hp, pHp() + X.hearts * D.HEART); floater(`${el} ${X.name} ❤️+${X.hearts}`, 'heal', me().x, 2.2, me().z) }
+  else if (X.kind === 'guard') { petGuardT = now + X.ms; floater(`${el} ${X.name}`, 'heal', me().x, 2.2, me().z) }
+  else if (X.kind === 'stun') { for (const m of mons) if (!m.T.animal && dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) { m.stunT = now + X.ms; floater('💫', 'tool', m.A.root.position.x, 1.9, m.A.root.position.z) } floater(`${el} ${X.name}`, 'crit', mq.x, 2.3, mq.z) }
+  else { for (const m of [...mons]) if (dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) hurtMon(m, dmgCalc(st.atk, m.T.def, X.mul * mx).d, 'crit', `${el} ${X.name}`) }
+  sfx('level'); return true;
+}
+/* old saves: ✨ for the main quests already done · old levels → coins */
+if (!S.spiritV) { const n = D.SPIRIT_QUESTS.filter(id => D.QUESTS.findIndex(q => q.id === id) < S.quest).length, refund = Math.max(0, (S.lv || 1) - 1) * D.LV_REFUND;
+  S.spirit = { hp: 0, en: 0, free: n }; S.coin += refund; S.spiritV = 1; S.hp = null; S.en = null; for (const p of S.pets) { p.hp = null; p.mp = null; p.down = 0 } save();
+  if (S.story.intro) setTimeout(() => { toast(`🆕 ระบบใหม่! เลเวลผู้เล่น → ✨ จิตวิญญาณแห่งลูโทเนีย${n ? ` ×${n}` : ''}${refund ? `<br>คืนเลเวลเดิมเป็น 🪙 ${fmt(refund)}` : ''}`, 4200); if (n) setTimeout(() => openSpirit(), 4400) }, 3500) }
 function openTools() {
   sheet('🛠️ ช่าง · อัปเกรดอุปกรณ์', (b, redraw) => {
     const has = c => Object.keys(c).every(k => k === 'coin' ? S.coin >= c.coin : (S.mats[k] || 0) >= c[k]), costTxt = c => Object.keys(c).map(k => k === 'coin' ? '🪙 ' + fmt(c.coin) : D.MATS[k][0] + ' ' + c[k]).join(' · ');
@@ -937,8 +997,8 @@ function openTools() {
     b.querySelectorAll('[data-up]').forEach(x => x.onclick = () => { const k = x.dataset.up, up = D.TOOL_UP[S.tools[k] + 1]; for (const m in up) { if (m === 'coin') S.coin -= up.coin; else S.mats[m] -= up[m] } S.tools[k]++; bump('toolUp'); toast(`⬆️ ${D.TOOLS[k][1]}${D.TIER[S.tools[k]]}!`); questCheck(); save(); hud(); redraw() });
   });
 }
-function openMenu() {
-  sheet('☰ เมนู', (b, redraw) => {
+function openMenu() { sheet('☰ เมนู', menuBody) }
+function menuBody(b, redraw) { {
     b.innerHTML = `<div class="card"><b>🎮 การควบคุม</b><p class="mut">${OPT.ctrl === 'pad' ? 'ปุ่มแบบ GBA: จอยซ้าย · A ทำ/ตี/คุย (กดย้ำ = วิ่ง · กดค้าง = เมนู) · B กลับ/ป้องกัน' : 'แตะ/ลากนิ้ว: แตะ = เดิน/ทำ · ลาก = จอยลอย · ลากผ่านของ = ใช้อุปกรณ์'}</p><div class="row2"><button class="btn ${OPT.ctrl === 'pad' ? 'go' : ''}" id="oP">🎮 ปุ่ม GBA</button><button class="btn ${OPT.ctrl === 'touch' ? 'go' : ''}" id="oT">👆 แตะ/ลาก</button></div></div>
       <div class="card"><b>📷 มุมกล้อง</b><div class="row2"><button class="btn ${camTP() ? 'go' : ''}" id="oC1">หลังตัวละคร (Zelda)</button><button class="btn ${camTP() ? '' : 'go'}" id="oC2">มองจากบน</button></div></div>
       <div class="card"><b>🖥️ หน้าจอ</b><div class="row2"><button class="btn ${OPT.hud === 'z' ? 'go' : ''}" id="oZ">มินิมอล (แบบ Zelda)</button><button class="btn ${OPT.hud === 'f' ? 'go' : ''}" id="oF">แสดงทั้งหมด</button></div></div>
@@ -952,7 +1012,7 @@ function openMenu() {
     b.querySelector('#mS').onclick = () => { unlock(); toggleSound(); redraw() };
     b.querySelector('#mG').onclick = () => { localStorage.setItem('ng_gfx', eco ? 'high' : 'eco'); location.reload() };
     b.querySelector('#mR').onclick = () => confirmBox('ล้างเซฟทั้งหมด?', () => { localStorage.removeItem(D.SAVE_KEY); location.reload() }, 'ล้างเซฟ');
-  });
+  }
 }
 $('pf').onclick = openProfile; $('bBag').onclick = openBag; $('bPets').onclick = openPets; $('bTool').onclick = () => S.shops.tools ? openTools() : toast('🛠️ ช่างอุปกรณ์อยู่ในเมือง · ซ่อมร้านก่อนนะ'); $('bShop').onclick = openTown; $('bMenu').onclick = openMenu;
 /* potion button: tap = drink · hold = auto-drink on/off (when HP < AUTO_POT) */
@@ -1642,7 +1702,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

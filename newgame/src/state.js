@@ -1,6 +1,6 @@
 /* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
    The player has ⚡ energy (tools), not Mana. Pets have their own level / HP / Mana / Exp and grow by eating. */
-import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
+import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, HEART, EN_STEP, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, RAR_MUL, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
 
 export let S = null;
 export function fresh() {
@@ -13,8 +13,8 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false, hoe: false },
     plots: {}, seeds: {},                                   // v1.0 farm: 'x,z' → { c: crop|null, t: planted at (ms) } · seed counts
     mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
-    bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
-    camps: {}, zones: {}, fog: '', bp: {}, wcamps: {}, builds: [], scrolls: {}, ride: null,     /* v1.2: blueprints owned · wild monster camps { seen, c: cleared, o: chest opened } */                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
+    bag: [], eq: { sword: null, shield: null }, nextItem: 1,
+    camps: {}, zones: {}, fog: '', bp: {}, wcamps: {}, builds: [], scrolls: {}, ride: null, spirit: { hp: 0, en: 0, free: 0 }, spiritV: 1,     /* v1.2: blueprints owned · wild monster camps { seen, c: cleared, o: chest opened } */                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
     time: DAY.first, ingr: {}, meals: {}, buff: null, ach: {},                // v0.6: game clock (minutes 0–1439) · cooking ingredients · cooked dishes · food buff · claimed achievements
     journal: { recipes: {}, mons: {}, gear: {}, sketch: {} },               // the notebook: discovered recipes · monsters seen/killed · gear collected · sketches drawn (images in localStorage ng_sk_<key>)
     cleared: {}, mon: null, jobs: {},                       // jobs: build/repair → finish time (ms)
@@ -23,7 +23,10 @@ export function fresh() {
   };
 }
 export function load() {
-  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); S.journal = Object.assign(fresh().journal, S.journal); if (o.time == null && o.story && o.story.slept) S.time = 8 * 60; return S } } catch (e) { }
+  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); S.journal = Object.assign(fresh().journal, S.journal); if (o.time == null && o.story && o.story.slept) S.time = 8 * 60;
+    if (S.eq && ('weapon' in S.eq || 'armor' in S.eq)) S.eq = { sword: S.eq.weapon || null, shield: S.eq.armor || null };   // v1.4 slots
+    if (o.spiritV == null) S.spiritV = 0;   // v1.4: old save → main.js gives the spirits for quests already done
+    return S } } catch (e) { }
   S = fresh(); return S;
 }
 export function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)) } catch (e) { } }
@@ -32,7 +35,7 @@ export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 export function itemStats(it) { const T = ITEMS[it.t], m = RAR_MUL[it.r]; return { atk: Math.round((T.atk || 0) * m), def: Math.round((T.def || 0) * m), hp: Math.round((T.hp || 0) * m) } }
 /* player = base + growth per level + equipment */
 export function pStats() {
-  const L = S.lv - 1, s = { hp: PLAYER_BASE.hp + PLAYER_GROW.hp * L, en: PLAYER_BASE.en + PLAYER_GROW.en * L, atk: PLAYER_BASE.atk + PLAYER_GROW.atk * L, def: PLAYER_BASE.def + PLAYER_GROW.def * L };
+  const sp = S.spirit || { hp: 0, en: 0 }, s = { hp: PLAYER_BASE.hp + HEART * sp.hp, en: Math.round(PLAYER_BASE.en * (1 + EN_STEP * sp.en)), atk: PLAYER_BASE.atk, def: PLAYER_BASE.def };   // v1.4: ✨ spirits + gear
   if (S.buff && S.buff.until > Date.now()) { s.atk += S.buff.atk || 0; s.def += S.buff.def || 0 }
   for (const slot in S.eq) { const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def; s.hp += st.hp } }
   return s;
