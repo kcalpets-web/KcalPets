@@ -112,6 +112,9 @@
   body.pad:not(.zhud) #stick,body.pad:not(.zhud) #bA,body.pad:not(.zhud) #bB,body.pad:not(.zhud) #wnav{margin-bottom:84px}
   body.pad #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 170px)}body.pad:not(.zhud) #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 254px)}
   body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 100px)}body.cut #pad,body.cut #bAuto{display:none!important}
+  #miniW{position:relative;width:104px;height:104px;border:3px solid var(--ink);border-radius:16px;overflow:hidden;box-shadow:0 3px 0 #0003;background:#12162a}#mini{width:100%;height:100%;display:block}#miniZ{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9px;color:#fff;background:#2a2030b0;padding:1px 0}
+  .wmap{overflow-x:auto;border:3px solid var(--ink);border-radius:12px;background:#12162a}.wmap canvas{height:230px;display:block}
+  body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 214px)}#fps{top:calc(max(10px,env(safe-area-inset-top)) + 300px)}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
 <body>
@@ -121,6 +124,7 @@
   <div class="cur"><div class="rt"><div class="pill">🪙 <span id="hCoin">0</span></div><div class="pill">💎 <span id="hGem">0</span></div></div>
     <div class="rt"><div class="pill" id="hMats"></div></div>
     <div class="rt"><div class="pill clock"><span id="hClock"></span><small id="hSun"></small></div><button class="sq" id="hTemp" aria-label="อุณหภูมิ">🙂</button></div>
+    <div class="rt"><div id="miniW"><canvas id="mini"></canvas><small id="miniZ"></small></div></div>
     <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button><button class="sq" id="bWheel" aria-label="เมนู">◎</button></div></div>
 </div>
 <div class="vit"><div class="row"><span>👤 ❤️ HP</span><span id="hHpT"></span></div><div class="bar"><i id="hHp" style="background:var(--hp)"></i></div>

@@ -17,7 +17,7 @@ index.html        HUD + CSS · โหลด src/main.js · icon-*.png + manifest
 lib/              three.module.min.js (r170) · pp/ = postprocessing ของ three r170 (ใช้เฉพาะฉากเปิด)
 src/data.js       ตัวเลขทั้งหมด: ของที่เคลียร์ อุปกรณ์ มอนสเตอร์ ดรอป ไอเทม เรือ ร้าน เควส
 src/state.js      เซฟ (localStorage `ng_save_v3` · `S.story` ธงเนื้อเรื่อง · `S.area` farm/town · `S.shops`) · ค่าพลัง · Exp · เรือคลังเงิน
-src/world.js      เกาะ (x≈0) · เมือง `buildTown` (x≈46) · ป่าตะวันออก `buildForest` (x≈92 แคมป์ก็อบลิน กรง) · เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
+src/world.js      **โลกเปิด v0.9**: `walkWorld`/`groundH`/`waterAt`/`zoneOf`/`GATE`/`CAMPS`/`buildWild` (ทุ่งริมธาร 9–35 · เนินผาสูง 57–79) · เกาะ (x≈0) · เมือง `buildTown` (x≈46) · ป่าตะวันออก `buildForest` (x≈92 แคมป์ก็อบลิน กรง) · เกาะเขตกลาง: พื้น ทะเล ของประดับ (รวม mesh) · ของที่เคลียร์ได้ · จุดแตะ (pick)
 src/clay.js       ชุดปั้นดิน: น้อง มอนสเตอร์ ของในฉาก อุปกรณ์ · Q.seg = ความละเอียดก้อนดิน
 src/life.js       ลม (WMAT: ใบไม้สีเขียวไหว) · คลื่น (addWaves) · นกนางนวล · TIME = เวลาของ shader
 src/audio.js      เสียงสังเคราะห์ Web Audio: mood('day'|'night'|'town'|…) · sfx('chop'|'coin'|…) · เริ่มหลังแตะครั้งแรก
@@ -29,6 +29,7 @@ tools/test/play.js  เล่นเนื้อเรื่องอัตโน
 ```
 - **ผู้เล่น (v0.7)**: มีตัวละคร `PL` (`playerLook(S.avatar)` · `me()` = ตำแหน่ง · `walkTo`/`placeMe` · แตะพื้น = เดิน · แตะของ = เดินไปแล้ว `useThing`) · HP + ⚡ พลังงาน (`pEn`, `spendEn` · อุปกรณ์ใช้พลังงาน ดาบไม่ใช้) · อุปกรณ์อยู่ในปุ่ม 🧰 เดียว (`#tBox` / `#tTray`) · ลากบนที่ว่าง = เลื่อนกล้องเสมอ (แม้ถืออุปกรณ์ · `stroke.lock` / `fits` · ไหลต่อ `camV`) · สองนิ้ว = เลื่อน+ซูม · แตะ = น้อง/เรือ/บ้าน/ประตู · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · 🎣 แตะน้ำ = ตกปลา (`castAt` / `fishTick`) · สองนิ้ว = ซูม
 - **การควบคุม (v0.8)**: `OPT` (localStorage `ng_ctrl` pad|touch · `ng_hud` z|f) · pad: `#stick` · A = `actA` (แตะ) / วงล้อ `openWheel` (ค้าง) · B = กลับ/`guard` · `#bAuto` → `autoTick` · ⚡ แบบ Zelda: `spendEn` · `spendRun` · `S.tired` · `S.enB` · มอนสเตอร์ `M.alert` 0/1/2/3
+- **โลกเปิด (v0.9)**: `S.area` = โซนจากตำแหน่ง (`enterZone`) · `travel(area, after, at)` = วาร์ปแบบจาง · `goPath` เดินตามถนน · ผู้เล่นว่ายน้ำ/ปีน (`okMe` · `envTick`) · มอนสเตอร์/น้องเดินเฉพาะบก (`walkLand`) · แผนที่ `mapTick`/`openMap` (`S.fog`)
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
 - ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v3` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม

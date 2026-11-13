@@ -130,6 +130,18 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('sketch', JSON.stringify(Object.keys(await N(() => window.__ng.S.journal.sketch))), 'bytes', await N(() => (localStorage.getItem('ng_sk_howsif') || '').length));
     for (const t of ['recipes', 'mons', 'ach']) { await E(t => window.__ng.openJournal(t), t); await wait(500); await shot('30-journal-' + t); await closeAll() }
     await E(() => { window.__ng.setTool(''); window.__ng.S.time = 21 * 60 + 57 }); await wait(5000); await shot('31-dusk-night'); log('time', await N(() => document.getElementById('hClock').textContent), 'night', await N(() => document.body.classList.contains('night')));
+    /* v0.9 open world: through the island gate on foot · swim the river · freshwater fish · climb the cliff · map + warp */
+    await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.setTool(''); N.placeMe(5.5, 2.3); N.goPath(14, 2.5) }); await pg.waitForFunction(() => window.__ng.envState().area === 'meadow', null, { timeout: 60000 }).catch(() => errs.push('could not walk from the island into the meadow'));
+    await wait(1500); await shot('32-meadow'); log('zone', JSON.stringify(await N(() => window.__ng.envState())));
+    await E(() => { const N = window.__ng; N.placeMe(19.4, 5); N.walkTo(22, 5) }); await pg.waitForFunction(() => window.__ng.envState().swim, null, { timeout: 30000 }).catch(() => errs.push('did not start swimming in the river'));
+    await wait(800); await shot('33-swim'); log('swim', JSON.stringify(await N(() => window.__ng.envState())));
+    await E(() => { const N = window.__ng; N.placeMe(19.4, 6); N.S.en = null; N.S.tired = false; N.castAt(22, 6) }); log('fresh fish', await N(() => window.__ng.F && window.__ng.F.k)); await E(() => { window.__ng.hold(false) });
+    await E(() => { const N = window.__ng; N.placeMe(61.5, 6.2); N.S.en = null; N.S.tired = false; N.walkTo(69, 6.2) }); await wait(1500); await shot('34-climb');
+    await pg.waitForFunction(() => window.__ng.envState().y > 2, null, { timeout: 60000 }).catch(() => errs.push('could not climb the mesa'));
+    await wait(1200); log('climb', JSON.stringify(await N(() => window.__ng.envState())), 'camps', JSON.stringify(await N(() => window.__ng.S.camps))); await shot('35-mesa-top');
+    await E(() => window.__ng.openMap()); await wait(800); await shot('36-worldmap');
+    await E(() => document.querySelector('[data-c="home"]').click()); await wait(2500); if ((await N(() => window.__ng.envState().area)) !== 'farm') errs.push('warp to the home camp failed');
+    log('warp', JSON.stringify(await N(() => ({ x: window.__ng.me.x.toFixed(1), z: window.__ng.me.z.toFixed(1), area: window.__ng.envState().area })))); await shot('37-meadow-camp');
     const st = await N(() => ({ q: window.__ng.S.quest, story: window.__ng.S.story })); log('quest', st.q, 'story', JSON.stringify(st.story));
     ok = st.story.cured && st.q >= 18;
     log('perf', JSON.stringify(await N(() => window.__ng.info())));

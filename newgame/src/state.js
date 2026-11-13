@@ -13,6 +13,7 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
     mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
+    camps: {}, zones: {}, fog: '',                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
     time: DAY.first, ingr: {}, meals: {}, buff: null, ach: {},                // v0.6: game clock (minutes 0–1439) · cooking ingredients · cooked dishes · food buff · claimed achievements
     journal: { recipes: {}, mons: {}, gear: {}, sketch: {} },               // the notebook: discovered recipes · monsters seen/killed · gear collected · sketches drawn (images in localStorage ng_sk_<key>)
     cleared: {}, mon: null, jobs: {},                       // jobs: build/repair → finish time (ms)

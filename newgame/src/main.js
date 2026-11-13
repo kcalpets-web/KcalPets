@@ -6,7 +6,7 @@
 import { THREE, C, part, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook } from './clay.js';
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats } from './state.js';
-import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot } from './world.js';
+import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -46,11 +46,11 @@ const cam = new THREE.PerspectiveCamera(36, 1, .5, 140);
 let zoom = +(localStorage.getItem('ng_zoom') || 1); const camT = { x: S.cam[0], z: S.cam[1] }, camP = { x: camT.x, z: camT.z };
 function resize() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix() }
 addEventListener('resize', resize); resize();
-const clampCam = () => { if (S.area === 'forest') { camT.x = Math.max(FX - 11, Math.min(FX + 11, camT.x)); camT.z = Math.max(-8, Math.min(8, camT.z)) } else if (S.area === 'town') { camT.x = Math.max(TX - 9, Math.min(TX + 9, camT.x)); camT.z = Math.max(-9, Math.min(9, camT.z)) } else { camT.x = Math.max(-6, Math.min(9, camT.x)); camT.z = Math.max(-13, Math.min(12, camT.z)) } };
-const WALK = { farm: walkable, town: walkTown, forest: walkForest }, walkHere = (x, z) => WALK[S.area](x, z);
+const clampCam = () => { camT.x = Math.max(-12, Math.min(108, camT.x)); camT.z = Math.max(-14, Math.min(14, camT.z)) };
+const walkHere = walkLand, nearMe = (M, r = 30) => dist(me().x, me().z, M.A.root.position.x, M.A.root.position.z) < r;   // v0.9: one world · monsters and pets walk on land, the player can swim
 
 /* ---------- world + town ---------- */
-const W = buildWorld(scene, eco), TW = buildTown(W, eco), FW = buildForest(W, eco);
+const W = buildWorld(scene, eco), TW = buildTown(W, eco), FW = buildForest(W, eco), WW = buildWild(W, eco);
 for (const o of W.clear.values()) if (!S.cleared[o.id] && !(o.t === 'debris' && S.story.howsif)) spawnClear(W, o);
 function storyProps() {
   W.house.visible = !!S.story.built; W.site.visible = !S.story.built;
@@ -60,6 +60,7 @@ function storyProps() {
     if (ok && !sh.owner && D.SHOPS[i].owner && k !== 'potion') { sh.owner = makeActor(g => HUMANS.villager(g, i), .9); rigOf(sh.owner); sh.owner.root.position.set(sh.x + (sh.z < 0 ? .9 : -.9), 0, sh.z + (sh.z < 0 ? 1.8 : -1.8)); sh.owner.yawT = sh.owner.yaw = sh.z < 0 ? 0 : Math.PI } });
   document.querySelector('#tools [data-tool="sword"]').style.display = S.has.sword ? '' : 'none';
   document.querySelector('#tools [data-tool="rod"]').style.display = S.has.rod ? '' : 'none';
+  GATE.exit = !!S.story.boatFixed; GATE.east = !!(S.story.townClear && S.story.sickSeen); TW.lock.visible = !GATE.east; BARRIER.visible = !GATE.exit;
   FW.cageDoor.visible = !S.story.freed; placeHowsif(); placeSberh();
   setTime();
 }
@@ -131,20 +132,44 @@ function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9,
 function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; S.pos = [x, z]; camT.x = camP.x = x; camT.z = camP.z = z + 1; peekT = 0 }
 function walkTick(dt, now) {
   let mv = false;
-  const run = !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (run ? D.RUN_SP : D.WALK_SP);
+  const run = !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = PL.swim ? D.SWIM_SP : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (run ? D.RUN_SP : D.WALK_SP);
   if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), nx = q.x + joy.x * sp * dt, nz = q.z + joy.z * sp * dt;
-    if (sp > .3) { if (WALK[S.area](nx, nz)) { q.x = nx; q.z = nz } else if (WALK[S.area](nx, q.z)) q.x = nx; else if (WALK[S.area](q.x, nz)) q.z = nz; PL.yawT = Math.atan2(joy.x, joy.z); mv = true } }
-  if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt); mv = d > w.near;
+    if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(joy.x, joy.z); mv = true } }
+  if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt, okMe); mv = d > w.near;
     if (d < w.best - .01) { w.best = d; w.stuck = 0 } else w.stuck += dt;
-    if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
-  animate(PL, mv, dt, now, 12); PL.body.position.y = PL.bob;
+    if (w.queue && w.queue.length && (d <= w.near + .05 || w.stuck > 1.5)) { const n = w.queue.shift(); walkTo(n[0], n[1], w.then, w.queue.length ? .4 : w.qNear); walkT.queue = w.queue; walkT.qNear = w.qNear }
+    else if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
+  envTick(dt, now, mv);
+  animate(PL, mv, dt, now, PL.swim ? 7 : 12); PL.body.position.y = PL.bob;
   if (swingT > 0) { swingT -= dt; const a = PL.rig.armR; if (a) a.rotation.x = -2.4 * Math.sin((1 - swingT / .28) * Math.PI) }   // tool / sword swing
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
   if (mv || walkT || now > peekT) { camT.x += (me().x - camT.x) * Math.min(1, dt * 5); camT.z += (me().z + 1 - camT.z) * Math.min(1, dt * 5) }   // the character stays in the middle of the screen
   workTick(now);
 }
 /* tap a thing = walk over and do the job: trees → chop, rocks → break, grass → cut, monsters → fight (picks the right tool by itself) */
-function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!WALK[S.area](px, pz)) break; bx = px; bz = pz } return [bx, bz] }
+function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!walkWorld(px, pz)) break; bx = px; bz = pz } return [bx, bz] }
+/* the player may swim; climbing a steep slope needs stamina (and stops when exhausted) */
+function okMe(x, z) { const w = walkWorld(x, z); if (!w) return false; const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
+  if ((h1 - h0) / d > D.SLOPE && S.tired) { blocked(x, z, 'climb'); return false } return true }
+let bumpT = 0;
+function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) return; bumpT = now + 2500;
+  if (why === 'climb') return hint('💦 ปีนต่อไม่ไหวแล้ว… พักให้หลอด ⚡ เต็มก่อน', 1800);
+  if (!GATE.exit && dist(x, z, EXIT.x, EXIT.z) < 3) return hint('ประตูถูกปิดไว้… ช่วยลุงที่ซากเรือก่อนดีกว่า', 2200);
+  if (!GATE.east && dist(x, z, TOWN.gateE.x, TOWN.gateE.z) < 3) return hint(S.story.townClear ? 'ประตูป่าปิดอยู่… กลับไปดูลุงฮาวซิฟที่เกาะก่อน' : 'ไม้ขวางประตูไว้… ยังมีสไลม์อยู่ในเมือง', 2200);
+}
+let lastLand = [0, -4];
+function spendRunN(n) { if (S.tired) return false; const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
+function envTick(dt, now, mv) {                     // swimming (stamina · sinking when exhausted) · climbing (slow · stamina · sliding down when exhausted) · ground height
+  const q = me(), w = walkWorld(q.x, q.z), h = groundH(q.x, q.z), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw), ahead = groundH(q.x + fx * .4, q.z + fz * .4);
+  PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
+  if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) {          // exhausted while swimming → you sink and wash up on the shore
+      S.hp = Math.max(1, pHp() - pStats().hp * .15); toast('🌊 จมน้ำ! ลอยกลับขึ้นฝั่ง (HP −15%)', 2400); placeMe(lastLand[0], lastLand[1]) } }
+  else { q.y = h; if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
+    if (PL.climb) spendRunN(D.CLIMB_EN * dt);
+    const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
+    if (S.tired && gl > D.SLOPE * .6 * .6) { q.x -= gx / gl * 2.2 * dt; q.z -= gz / gl * 2.2 * dt; q.y = groundH(q.x, q.z) } }   // exhausted on a cliff → slide down
+  if (PL.swim || PL.climb) { const a = PL.rig.armL, b = PL.rig.armR, base = PL.swim ? -1.6 : -2.6, sw = Math.sin(now / (PL.swim ? 200 : 150)) * (PL.swim ? .8 : .5); if (a && b) { a.rotation.x = base + sw; b.rotation.x = base - sw } }
+}
 function workOn(o) { const T = D.CLEAR[o.t]; if (!T) return; if (S.mon && !o.mon) { hint(`🔒 ต้องกำจัด <b>${D.MON[S.mon.kind].name}</b> ก่อน`); return }
   setTool(T.tool); const go = () => { work = { o, t: 0 } }; dist(me().x, me().z, o.x, o.z) < 1.5 ? go() : walkTo(o.x, o.z, go, 1.1) }
 function fight(m) { if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } setTool('sword'); work = { m, t: 0 } }
@@ -158,7 +183,7 @@ function workTick(now) {
 function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .28 }
 
 /* ---------- transient state ---------- */
-let stopT = 0, potT = 0, speed = 1, tool = '', prevTool = '', tipT = 0, slashT = 0, lastHurt = 0, shakeT = 0, F = null, CUT = false;
+let camY = 0, stopT = 0, potT = 0, speed = 1, tool = '', prevTool = '', tipT = 0, slashT = 0, lastHurt = 0, shakeT = 0, F = null, CUT = false;
 let down = null, stroke = null, pinch = null; const ptrs = new Map(), drops = [];
 /* ⚡ energy: tools spend it, the sword does not · rest in the tree house, herbal tea or a fish refill it */
 let enT = 0;
@@ -189,8 +214,8 @@ const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25 };
 function monSpawn(kind, x, z, o = {}) {
   const T = D.MON[kind], A = makeActor(g => (MONS[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
   if (T.legs) rigOf(A);
-  A.root.position.set(x, 0, z); A.root.scale.setScalar(.01);
-  const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || S.area, pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
+  A.root.position.set(x, groundH(x, z), z); A.root.scale.setScalar(.01);
+  const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
   m.pick.userData.pick.m = m; if (!S.journal.mons[kind]) { S.journal.mons[kind] = { seen: 1, kills: 0 }; if (S.story.intro) floater('📓 บันทึกใหม่', 'item', x, 2.2, z) } m.tag = document.createElement('div'); m.tag.className = 'mtag'; document.body.appendChild(m.tag); mons.push(m);
   if (m.farm) { S.mon = { kind, hp: m.hp, x, z }; S.monSeen++; prevTool = tool === 'sword' ? prevTool : tool; setTool('sword'); callPets(m);
     if (!o.silent) toast(`⚠️ <b>${T.name}</b> โผล่มาจากที่เพิ่งเคลียร์!<br>⚔️ ลากนิ้วผ่านมันเพื่อฟัน`, 3400); save() }
@@ -270,21 +295,34 @@ function sickEvent() {
   if (S.story.sickSeen || !S.story.townClear || S.area !== 'farm' || CUT) return; S.story.sickSeen = 1; storyProps(); save(); look(HOWSIF.x, HOWSIF.z);
   talk([['💭', 'ลุงฮาวซิฟ…? ลุงนอนอยู่ริมท่าเรือ'], ['👴 ลุงฮาวซิฟ', 'แค่ก แค่ก… ตัวร้อนเหลือเกิน… คงเพราะแช่น้ำทะเลทั้งคืนตอนติดใต้เรือ'], ['👴 ลุงฮาวซิฟ', 'ได้ยินว่าใน<b>ป่าทางตะวันออกของเมือง</b> มี<b>สมุนไพรเรืองแสง</b> ที่รักษาไข้ได้… แค่ก…'], ['💭', `ต้องไปเก็บสมุนไพร ${D.HERBS} ต้นมาให้ลุง! (เลือก 🌾 เคียว แล้วลากผ่านสมุนไพร)`]], questCheck);
 }
-/* ---------- travel between areas (fade · camera to the entrance · the area's monsters) ---------- */
-const AREA_NAME = { farm: '🏝️ เกาะ', town: '🏘️ เมือง', forest: '🌲 ป่าตะวันออก' };
-function travel(area, after) {
-  const from = S.area, f = $('sleep'); f.querySelector('b').textContent = AREA_NAME[area]; f.style.display = 'flex'; f.style.opacity = 1;
-  setTimeout(() => { S.area = area; guide = null; ambience(); fishEnd();
-    const at = area === 'farm' ? [EXIT.x - 3, EXIT.z] : area === 'forest' ? [FOREST.gateW.x + 2.5, 0] : from === 'forest' ? [TOWN.gateE.x - 2.5, 0] : [TX - 6, 1];
-    camT.x = camP.x = at[0]; camT.z = camP.z = at[1]; placeMe(at[0], at[1] - .6);
-    for (const e of PA.values()) if (S.team.includes(e.p.id) && e.mode !== 'down') { e.mode = 'wander'; e.foe = null; e.A.root.position.set(at[0] + 1, 0, at[1] + .6) }
-    if (area === 'town') { if (!S.story.town) { S.story.town = 1; questCheck() } townSpawn() } if (area === 'forest') forestSpawn(); save();
-    f.style.opacity = 0; setTimeout(() => f.style.display = 'none', 600);
-    if (area === 'town' && !S.has.sword) talk([['💭', 'เงียบไปหมด… ผู้คนหายไปไหน บ้านเรือนพังเสียหาย'], ['💭', 'นั่น… มีดาบตกอยู่ตรงทางเข้า! แตะเพื่อหยิบ · มีสไลม์อยู่ในเมืองด้วย ระวังนะ']]);
-    if (area === 'town' && S.story.freed && !S.story.sberhTown) { S.story.sberhTown = 1; look(TW.shops[0].x, TW.shops[0].z); questCheck(); talk([['🧑‍🔬 Sberh', 'ถึงแล้ว… นี่คือร้านยาของผม'], ['🧑‍🔬 Sberh', 'พังหมดเลย!! …ช่วยหาวัตถุดิบมาซ่อมหน่อยได้ไหม? แตะที่ร้านเพื่อดูว่าต้องใช้อะไรบ้าง']]) }
-    if (area === 'forest' && !S.stat.forestIn) { S.stat.forestIn = 1; talk([['💭', 'ป่ามืดและเงียบ… สมุนไพรเรืองแสงน่าจะมองเห็นได้ง่าย'], ['💭', 'ลึกเข้าไปมีควันไฟลอยขึ้นมา… ระวังตัวด้วย']]) }
-    if (area === 'farm') setTimeout(sickEvent, 700);
-    after && setTimeout(after, 400) }, 500);
+/* ---------- v0.9 one world: zones change as you walk (no loading) · travel() = a faded warp (camps, tests) ---------- */
+const AREA_ENTRY = { farm: [EXIT.x - 3, EXIT.z], meadow: [12, 2.3], town: [TX - 8, 0], hills: [60, -1], forest: [FOREST.gateW.x + 2.5, 0] };
+function travel(area, after, at) {
+  const f = $('sleep'); f.querySelector('b').textContent = '📍 ' + (ZONES[area] || area); f.style.display = 'flex'; f.style.opacity = 1;
+  setTimeout(() => { const p = at || AREA_ENTRY[area]; fishEnd(); placeMe(p[0], p[1]);
+    for (const e of PA.values()) if (S.team.includes(e.p.id) && e.mode !== 'down') { e.mode = 'wander'; e.foe = null; e.A.root.position.set(p[0] + 1, groundH(p[0] + 1, p[1] + .6), p[1] + .6) }
+    enterZone(zoneOf(p[0])); save(); f.style.opacity = 0; setTimeout(() => f.style.display = 'none', 600); after && setTimeout(after, 400) }, 500);
+}
+function enterZone(z) {
+  const first = !(S.zones || {})[z]; S.zones = Object.assign(S.zones || {}, { [z]: 1 }); S.area = z; guide = null; ambience();
+  if (first && S.story.intro && z !== 'farm') toast(`📍 พื้นที่ใหม่: <b>${ZONES[z]}</b>`, 2400);
+  if (z === 'town') { if (!S.story.town) { S.story.town = 1; questCheck() } townSpawn();
+    if (!S.has.sword && !S.stat.townTalk) { S.stat.townTalk = 1; talk([['💭', 'เงียบไปหมด… ผู้คนหายไปไหน บ้านเรือนพังเสียหาย'], ['💭', 'นั่น… มีดาบตกอยู่ตรงทางเข้า! แตะเพื่อหยิบ · มีสไลม์อยู่ในเมืองด้วย ระวังนะ']]) }
+    if (S.story.freed && !S.story.sberhTown) { S.story.sberhTown = 1; questCheck(); talk([['🧑‍🔬 Sberh', 'ถึงแล้ว… นี่คือร้านยาของผม'], ['🧑‍🔬 Sberh', 'พังหมดเลย!! …ช่วยหาวัตถุดิบมาซ่อมหน่อยได้ไหม? แตะที่ร้านเพื่อดูว่าต้องใช้อะไรบ้าง']]) } }
+  if (z === 'forest') { forestSpawn(); if (!S.stat.forestIn) { S.stat.forestIn = 1; talk([['💭', 'ป่ามืดและเงียบ… สมุนไพรเรืองแสงน่าจะมองเห็นได้ง่าย'], ['💭', 'ลึกเข้าไปมีควันไฟลอยขึ้นมา… ระวังตัวด้วย']]) } }
+  if (z === 'meadow' || z === 'hills') wildSpawn(z);
+  if (z === 'farm') setTimeout(sickEvent, 700);
+}
+function wildSpawn(z) {
+  const have = mons.filter(m => m.area === z).length, list = D.ZONE_MONS[z] || []; if (have >= list.length - 1) return;
+  for (let i = have; i < list.length; i++) for (let t = 0; t < 30; t++) { const x = (z === 'meadow' ? 11 : 59) + Math.random() * 21, zz = -9 + Math.random() * 18;
+    if (walkLand(x, zz) && dist(x, zz, me().x, me().z) > 7 && groundH(x, zz) < 1 && Math.abs(zz - roadZ(x)) > 2) { monSpawn(list[i], x, zz, { area: z }); break } }
+}
+/* walking routes along the road (quest card auto-run across zones) */
+const ROUTE = [[6.2, 2.3], [10.5, 2.3], [RIVER.x - 2.6, RIVER.bz], [RIVER.x + 2.6, RIVER.bz], [33.8, 0], [37, 0], [55.5, 0], [59, -1], [76, -1], [80.6, 0], [83, 0]];
+function goPath(x, z, then, near = .2) {
+  const q = me(), dir = Math.sign(x - q.x), pts = ROUTE.filter(([px]) => dir > 0 ? px > q.x + .5 && px < x - .5 : px < q.x - .5 && px > x + .5); if (dir < 0) pts.reverse();
+  pts.push([x, z]); const [f, ...rest] = pts; walkTo(f[0], f[1], then, rest.length ? .4 : near); walkT.queue = rest; walkT.qNear = near;
 }
 
 /* ---------- drops: lie on the ground for a moment, then fly into the bag ---------- */
@@ -369,7 +407,7 @@ function openWreck() {
 }
 /* ---------- building jobs: pay → a clay hammer knocks on the site with a countdown → done (keeps counting while the game is closed) ---------- */
 const jobs = new Map();
-function jobAt(k) { if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, k === 'cook:home' ? 'farm' : 'forest'] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
+function jobAt(k) { if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, zoneOf(p.x)] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
   const sh = TW.shops[D.SHOPS.findIndex(s => 'shop:' + s.k === k)]; return [sh.x, sh.z + (sh.z < 0 ? 1.3 : -1.3), 'town'] }
 function startJob(k, secs) { S.jobs[k] = Date.now() + secs * 1000; save(); jobView(k); questCheck() }
 function jobView(k) {
@@ -461,9 +499,9 @@ function openTown() {
 const floatG = new THREE.Group(); ACC.float(floatG); floatG.visible = false; scene.add(floatG);
 const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), .1);
 function castAt(x, z) {
-  if (F) return; if (S.area !== 'farm' || x > shore(z) - .4) { hint('🎣 แตะที่น้ำทะเลเพื่อเหวี่ยงเบ็ด'); return } if (!spendEn(D.TOOL_EN.rod)) return; swingIcon('🎣', x + 1.2, 1.2, z);
-  const depth = shore(z) - x, bonus = { R: depth * 1.2 + S.tools.rod * 3, E: depth * .6 + S.tools.rod * 1.5, L: depth > 6 ? 1 + S.tools.rod * .5 : 0 };
-  const r = rollRarity(['B', 'R', 'E', 'L'], bonus), list = D.FISH_BY_R[r], k = list[Math.floor(Math.random() * list.length)];
+  const wt = waterAt(x, z); if (F) return; if (!wt) { hint('🎣 แตะที่น้ำ (ทะเล แม่น้ำ หรือทะเลสาบ) เพื่อเหวี่ยงเบ็ด'); return } if (!spendEn(D.TOOL_EN.rod)) return; swingIcon('🎣', x + 1.2, 1.2, z);
+  const depth = wt === 'sea' ? shore(z) - x : 2.5, bonus = { R: depth * 1.2 + S.tools.rod * 3, E: depth * .6 + S.tools.rod * 1.5, L: depth > 6 ? 1 + S.tools.rod * .5 : 0 };
+  const r = rollRarity(['B', 'R', 'E', 'L'], bonus), list = (wt === 'sea' ? D.FISH_BY_R : D.FRESH_BY_R)[r], k = list[Math.floor(Math.random() * list.length)];
   F = { phase: 'wait', x, z, t: 1.5 + Math.random() * 2.5, k, fish: D.FISH[k], sta: D.FISH[k].sta, ten: .2, hold: false };
   sfx('splash'); faceSwing(x, z); floatG.position.set(x, -.12, z); floatG.visible = true; floater('🎣', 'tool', x, .8, z);
 }
@@ -563,10 +601,10 @@ function useThing(k) {
     case 'wreck': return S.story.boatFixed ? null : openWreck();
     case 'howsif': return openHowsif();
     case 'house': return !S.story.built ? openSite() : !S.story.slept ? confirmBox('เข้าบ้านต้นไม้แล้วนอนพักถึงเช้า?', sleepNight, '😴 นอน') : openHouse();
-    case 'exit': return S.story.boatFixed ? confirmBox('เดินทางไปเมืองทางซุ้มประตูไม้?', () => goTown(), 'ไปเลย') : goTown();
-    case 'gateW': return confirmBox('กลับไปที่เกาะ?', () => goFarm(), 'กลับ');
+    case 'exit': return GATE.exit ? goPath(EXIT.x + 3, EXIT.z) : talk([['💭', 'ยังไปไม่ได้… ช่วยลุงที่ซากเรือก่อนดีกว่า']]);
+    case 'gateW': return goPath(TOWN.gateW.x - 3, 0);
     case 'gateE': return openForest();
-    case 'gateF': return confirmBox('กลับไปที่เมือง?', () => goTown(), 'กลับ');
+    case 'gateF': return goPath(FOREST.gateW.x - 3, 0);
     case 'cage': return openCage();
     case 'pot': return openPot(k.key);
     case 'sberh': return openSberh();
@@ -579,14 +617,14 @@ function useThing(k) {
 function openForest() {
   if (!S.story.townClear) { talk([['🌲 ประตูป่า', 'มีไม้ขวางทางไว้… เสียงสไลม์ยังดังอยู่ในเมือง กำจัดพวกมันก่อน']]); return }
   if (!S.story.sickSeen) { talk([['💭', 'ป่าทางตะวันออก… กลับไปเล่าเรื่องเมืองให้ลุงฮาวซิฟฟังก่อนดีกว่า']]); return }
-  confirmBox('เข้าไปในป่าตะวันออก?', () => goForest(), 'ไปเลย');
+  goPath(TOWN.gateE.x + 3, -1);
 }
 
 /* ---------- frame loop ---------- */
 let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, fpsN = 0, fpsT = performance.now();
 const pv = new THREE.Vector3(), proj = { x: 0, y: 0 };
 function project(x, y, z) { pv.set(x, y, z).project(cam); proj.x = (pv.x + 1) / 2 * innerWidth; proj.y = (1 - pv.y) / 2 * innerHeight; proj.z = pv.z; return proj }
-function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d < .05) return d; const k = Math.min(1, sp * dt / d), nx = q.x + dx * k, nz = q.z + dz * k; if (ok(nx, nz)) { q.x = nx; q.z = nz } A.yawT = Math.atan2(dx, dz); return d }
+function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d < .05) return d; const k = Math.min(1, sp * dt / d), nx = q.x + dx * k, nz = q.z + dz * k; if (ok(nx, nz)) { q.x = nx; q.z = nz; q.y = groundH(nx, nz) } A.yawT = Math.atan2(dx, dz); return d }
 function hitPlayer(m, now) { sfx('hurt'); const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (guard && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * .3)); floater('🛡️', 'tool', me().x, 2, me().z) } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
 function frame(now) {
   requestAnimationFrame(frame); if (CUT) { last = now; return }
@@ -607,7 +645,7 @@ function frame(now) {
       if (S.team.includes(p.id)) {                                   // the team walks with you (the camera) and joins any fight nearby
         const tx = me().x + 1.1, tz = me().z + .7, d = dist(q.x, q.z, tx, tz);
         if (d > 15) q.set(tx, 0, tz); else if (d > 2) { stepTo(e.A, tx, tz, d > 5 ? 4.5 : 2.6, dt); mv = true }
-        let foe = null, fd = 5; for (const M of mons) if (M.area === S.area && M.born + 800 < now) { const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
+        let foe = null, fd = 5; for (const M of mons) if (M.born + 800 < now) { const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
       } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
     animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, .65, q.z);
@@ -615,8 +653,8 @@ function frame(now) {
   }
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
   for (let i = mons.length - 1; i >= 0; i--) {
-    const M = mons[i]; if (M.area !== S.area) continue;
-    const m = M.A.root.position, age = (now - M.born) / 400, ok = WALK[M.area], ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
+    const M = mons[i]; if (!nearMe(M)) continue;
+    const m = M.A.root.position, age = (now - M.born) / 400, ok = walkLand, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     const pd = dist(me().x, me().z, m.x, m.z), sp = M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5;
     { const sight = isNight() ? D.SIGHT.night : D.SIGHT.day, temper = D.TEMPER[M.kind] || 2.5, was = M.alert || 0;      // awareness: idle · ❗ seen · ❗ angry · ❓ lost
@@ -640,14 +678,15 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); jobsTick(now); potTick(now); timeTick(dt); walkTick(dt, now); autoTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
+  fishTick(dt, now); jobsTick(now); potTick(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  { const z = zoneOf(me().x); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   if (S.autoPot && now > potT && pHp() < pStats().hp * D.AUTO_POT && (S.potions.hpS || S.potions.hpL)) { potT = now + 1500; usePotion(S.potions.hpS ? 'hpS' : 'hpL'); floater('🧪 AUTO', 'heal', me().x, 2, me().z) }
   if (now - lastHurt > 4000) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
   if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
-  cam.position.set(camP.x + sh, 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, 0, camP.z - 1.2);
+  camY += (Math.max(0, me().y) - camY) * Math.min(1, dt * 4); cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2);
   sun.position.set(camP.x - 7, 16, camP.z + 9); sun.target.position.set(camP.x, 0, camP.z);
   R.render(scene, cam);
   tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall);
@@ -658,7 +697,7 @@ function frame(now) {
 }
 function labels() {
   arrowTick(performance.now());
-  for (const M of mons) { const el = M.tag; if (M.area !== S.area || CUT) { el.style.display = 'none'; continue }
+  for (const M of mons) { const el = M.tag; if (!nearMe(M, 22) || CUT) { el.style.display = 'none'; continue }
     const m = M.A.root.position, q = project(m.x, M.kind === 'slimeKing' ? 2.3 : 1.55, m.z); if (q.z > 1) { el.style.display = 'none'; continue }
     el.style.display = 'block'; el.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
     el.innerHTML = `${M.alert ? `<span class="mk a${M.alert}${performance.now() - (M.markT || 0) < 400 ? ' pop' : ''}">${M.alert === 3 ? '?' : '!'}</span>` : ''}${M.T.name} <small>Lv${M.T.lv}</small><div class="mb"><i style="width:${Math.max(0, M.hp / M.T.hp * 100)}%"></i></div>` }
@@ -713,10 +752,8 @@ $('quest').onclick = () => {
   const q = D.QUESTS[S.quest]; if (!q || q.go === 'none') return; closeSheets(); questGo(q) };
 function questGo(q) {
   const want = GO_AREA[q.go] ?? 'farm', again = () => questGo(q);
-  if (q.go === 'town' && S.area !== 'town') return goTown();
-  if (want && want !== S.area) {                                   // travel first (the forest is reached through the town)
-    if (want === 'forest' && !S.story.sickSeen) return travel('farm', again);
-    return travel(want, again);
+  if (want && want !== S.area) {                                   // run there along the road (the forest is reached through the town)
+    const to = want === 'forest' && !S.story.sickSeen ? 'farm' : want, e = AREA_ENTRY[to]; goPath(e[0], e[1], to === want ? again : null, .6); toast(`🧭 กำลังไป${ZONES[to]}…`, 2000); return
   }
   switch (q.go) {
     case 'home': case 'howsif2': goNear(HOWSIF.x, HOWSIF.z); point(HOWSIF.x, HOWSIF.z, 1.6); setTool(''); toast(S.story.medicine ? '💊 แตะที่ลุงฮาวซิฟเพื่อให้ยา' : '👴 แตะที่ลุงฮาวซิฟ'); return;
@@ -876,10 +913,10 @@ function showLogin() {
 function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('ลากนิ้วเลื่อนแผนที่ · สองนิ้วซูม<br>แตะ 🧰 ขวาล่างเพื่อเลือกอุปกรณ์ แล้วลากผ่านของ<br>แตะการ์ดเรื่องหลักซ้ายล่างเพื่อเริ่ม', 5200), 400) }
 
 /* ================= v0.6: camp pots · cooking · sleep · journal · sketching · achievements ================= */
-const POT = { home: cookPot(W, 'home', HOUSE.x - 2.4, HOUSE.z + 2.8), forest: cookPot(W, 'forest', FOREST.camp.x, FOREST.camp.z) };
+const POT = {}; for (const k in CAMPS) POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);
 FW.fire.visible = false;
 for (const p of Object.values(POT)) for (const [id, o] of [...W.clear]) if (dist(o.x, o.z, p.x, p.z) < 1.4) { despawnClear(W, o); W.clear.delete(id) }   // keep the camp spot clear
-const potLit = key => key === 'home' ? !!S.story.built : !!S.story.campClear;
+const potLit = key => key === 'home' ? !!S.story.built : key === 'forest' ? !!S.story.campClear : !!(S.camps || {})[key];
 function potTick(now) {
   for (const k in POT) { const p = POT[k], lit = potLit(k); p.g.visible = k !== 'home' || !!S.story.built; p.fire.visible = lit; p.light.intensity = lit ? (2 + nightK() * 6) * (.85 + Math.sin(now / 90) * .15) : 0;
     const ck = !!S.jobs['cook:' + k], hop = ck ? Math.abs(Math.sin(now / 150)) : 0; p.pot.position.y = .4 + hop * .16; p.pot.scale.set(1 + (1 - hop) * .08 * +ck, 1 - (1 - hop) * .1 * +ck, 1 + (1 - hop) * .08 * +ck); p.pot.rotation.z = ck ? Math.sin(now / 95) * .12 : 0;
@@ -1021,14 +1058,14 @@ const stopAuto = () => { if (S.auto) { S.auto = false; $('bAuto').classList.remo
 function nearTarget() {
   const q = me(), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw); let best = null, bs = 1e9;
   const consider = (x, z, r, t) => { const dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d > r) return; const sc = d - (dx * fx + dz * fz) / (d || 1) * .6; if (sc < bs) { bs = sc; best = t } };
-  if (S.has.sword) for (const m of mons) if (m.area === S.area) consider(m.A.root.position.x, m.A.root.position.z, 2.1, { m });
+  if (S.has.sword) for (const m of mons) if (nearMe(m, 4)) consider(m.A.root.position.x, m.A.root.position.z, 2.1, { m });
   for (const o of W.clear.values()) if (o.g) consider(o.x, o.z, 1.8, { o });
   for (const p of W.picks) { const k = p.userData.pick; if (!k || ['clear', 'mon', 'pet'].includes(k.kind) || !p.parent) continue; consider(p.position.x, p.position.z, k.kind === 'house' || k.kind === 'shop' ? 2.8 : 2.2, { k }) }
   return best;
 }
 function actA() {
   stopAuto(); const now = performance.now();
-  if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) if (m.area === S.area) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
+  if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
@@ -1037,13 +1074,13 @@ function actA() {
   if (t && t.o) { const T = D.CLEAR[t.o.t]; setTool(T.tool); toolHit({ kind: 'clear', id: t.o.id }); return }
   if (t && t.k) { useThing(t.k); return }
   const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3;
-  if (S.has.rod && S.area === 'farm' && fx < shore(fz) - .4) { setTool('rod'); castAt(fx, fz); return }       // facing the sea = cast
+  if (S.has.rod && waterAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return }       // facing water = cast
   sprintT = now + 700;                                                                                        // nothing here: mash A to run
 }
 let wheelOn = false, wheelI = 0;
 const WHEEL = [['🎒', 'กระเป๋า', () => openBag()], ['🐾', 'น้อง', () => openPets()], ['📓', 'สมุดบันทึก', () => openJournal()], ['📜', 'เควส', () => $('quest').click()], ['🛒', 'ร้านในเมือง', () => openTown()],
   ['🛠️', 'ช่างอุปกรณ์', () => $('bTool').click()], ['🎣', 'ตกปลา', () => { setTool('rod'); toast('🎣 หันหน้าไปทางทะเล แล้วกด A', 2000) }], ['✏️', 'วาดภาพ', () => { setTool('sketch'); toast('✏️ เข้าใกล้มอนสเตอร์/คน/น้อง แล้วกด A', 2200) }],
-  ['🧪', 'ดื่มยา HP', () => usePotion(S.potions.hpS ? 'hpS' : 'hpL')], ['🤖', 'ดื่มยาอัตโนมัติ เปิด/ปิด', () => { S.autoPot = !S.autoPot; save(); hud(); toast(S.autoPot ? `🧪 ดื่มยาอัตโนมัติ: <b>เปิด</b> (HP ต่ำกว่า ${Math.round(D.AUTO_POT * 100)}%)` : '🧪 ดื่มยาอัตโนมัติ: <b>ปิด</b>', 2200) }], ['👤', 'โปรไฟล์', () => openProfile()], ['⚙️', 'ตั้งค่า', () => openMenu()]];
+  ['🗺️', 'แผนที่', () => openMap()], ['🧪', 'ดื่มยา HP', () => usePotion(S.potions.hpS ? 'hpS' : 'hpL')], ['🤖', 'ดื่มยาอัตโนมัติ เปิด/ปิด', () => { S.autoPot = !S.autoPot; save(); hud(); toast(S.autoPot ? `🧪 ดื่มยาอัตโนมัติ: <b>เปิด</b> (HP ต่ำกว่า ${Math.round(D.AUTO_POT * 100)}%)` : '🧪 ดื่มยาอัตโนมัติ: <b>ปิด</b>', 2200) }], ['👤', 'โปรไฟล์', () => openProfile()], ['⚙️', 'ตั้งค่า', () => openMenu()]];
 function openWheel() {
   if (wheelOn || CUT) return; wheelOn = true; CUT = true; joy.on = false; document.body.classList.add('wheel'); sfx('tap');
   const el = $('wheel'), ring = el.querySelector('.wh'), n = WHEEL.length; ring.innerHTML = WHEEL.map(([ic, nm], i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<button data-w="${i}" style="left:calc(50% + ${Math.cos(a) * 118}px);top:calc(50% + ${Math.sin(a) * 118}px)">${ic}</button>` }).join('');
@@ -1079,11 +1116,61 @@ function autoTick(now) {
   if (!S.auto || CUT || now < autoT || walkT || work || joy.on || F) return; autoT = now + 600;
   if (S.tired) return; const st = pStats();
   if (pHp() < st.hp * .35 && (S.potions.hpS || S.potions.hpL)) { usePotion(S.potions.hpS ? 'hpS' : 'hpL'); return }
-  if (S.has.sword) { let best = null, bd = 8; for (const m of mons) if (m.area === S.area) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = m } } if (best) { fight(best); return } }
+  if (S.has.sword) { let best = null, bd = 8; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = m } } if (best) { fight(best); return } }
   const q = D.QUESTS[S.quest], want = q && q.go === 'herb' ? ['herb'] : q && q.go === 'gather' ? ((S.mats.wood || 0) < 10 ? ['tree', 'bush'] : ['rock', 'pebble']) : ['tree', 'bush', 'rock', 'pebble', 'grass', 'mushroom'];
   let o = null, od = 12; for (const c of W.clear.values()) if (c.g && want.includes(c.t) && !(D.CLEAR[c.t].minTier > S.tools[D.CLEAR[c.t].tool])) { const d = dist(me().x, me().z, c.x, c.z); if (d < od) { od = d; o = c } }
   if (o) workOn(o);
 }
+
+/* ---------- v0.9 map: minimap (top right) + world map with fog of war · camps = warp points ---------- */
+const MAP = { x0: -16, x1: 112, z0: -16, z1: 16, k: 6 }, MW = (MAP.x1 - MAP.x0) * MAP.k, MH = (MAP.z1 - MAP.z0) * MAP.k, FC = (MAP.x1 - MAP.x0) / 2, FR = (MAP.z1 - MAP.z0) / 2;
+const mapBase = document.createElement('canvas'); mapBase.width = MW; mapBase.height = MH;
+{ const g = mapBase.getContext('2d'), img = g.createImageData(MW, MH), cache = {};
+  for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) { const x = MAP.x0 + (px + .5) / MAP.k, z = MAP.z0 + (py + .5) / MAP.k, hx = mapColor(x, z);
+    const c = cache[hx] || (cache[hx] = [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)]), i = (py * MW + px) * 4; img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255 }
+  g.putImageData(img, 0, 0); g.fillStyle = '#e8d8b0'; for (const sh of TW.shops) g.fillRect((sh.x - MAP.x0) * MAP.k - 6, (sh.z - MAP.z0) * MAP.k - 5, 12, 10);
+  g.fillStyle = '#6a3a1a'; g.fillRect((HOUSE.x - MAP.x0) * MAP.k - 5, (HOUSE.z - MAP.z0) * MAP.k - 5, 10, 10) }
+const fogCv = document.createElement('canvas'); fogCv.width = MW; fogCv.height = MH; let fogDirty = true;
+if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
+function reveal(x, z, r = 9) { let f = S.fog, ch = false; const c0 = Math.floor((x - r - MAP.x0) / 2), c1 = Math.floor((x + r - MAP.x0) / 2), r0 = Math.floor((z - r - MAP.z0) / 2), r1 = Math.floor((z + r - MAP.z0) / 2), a = f.split('');
+  for (let rr = Math.max(0, r0); rr <= Math.min(FR - 1, r1); rr++) for (let cc = Math.max(0, c0); cc <= Math.min(FC - 1, c1); cc++) { const i = rr * FC + cc; if (a[i] === '1') continue; const cx = MAP.x0 + cc * 2 + 1, cz = MAP.z0 + rr * 2 + 1; if (Math.hypot(cx - x, cz - z) < r) { a[i] = '1'; ch = true } }
+  if (ch) { S.fog = a.join(''); fogDirty = true } }
+function fogDraw() { const g = fogCv.getContext('2d'); g.clearRect(0, 0, MW, MH); g.fillStyle = 'rgba(18,22,40,.9)'; for (let i = 0; i < S.fog.length; i++) if (S.fog[i] !== '1') g.fillRect((i % FC) * 2 * MAP.k, Math.floor(i / FC) * 2 * MAP.k, 2 * MAP.k + 1, 2 * MAP.k + 1); fogDirty = false }
+const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
+let mapT = 0;
+function mapTick(now) {
+  if (now < mapT || CUT) return; mapT = now + 250; const q = me(); reveal(q.x, q.z);
+  for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
+  if (fogDirty) fogDraw(); drawMini();
+}
+function drawMini() {
+  const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, span = 34; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
+  const g = cv3.getContext('2d'), q = me(), sx = (q.x - span / 2 - MAP.x0) * MAP.k, sy = (q.z - span / 2 - MAP.z0) * MAP.k, sw = span * MAP.k, s = cv3.width / sw;
+  g.fillStyle = '#12162a'; g.fillRect(0, 0, cv3.width, cv3.height); g.drawImage(mapBase, sx, sy, sw, sw, 0, 0, cv3.width, cv3.height); g.drawImage(fogCv, sx, sy, sw, sw, 0, 0, cv3.width, cv3.height);
+  const P = (x, z) => [(x - q.x + span / 2) * MAP.k * s, (z - q.z + span / 2) * MAP.k * s];
+  g.fillStyle = '#ff4a5a'; for (const m of mons) if (nearMe(m, span)) { const [x, y] = P(m.A.root.position.x, m.A.root.position.z); g.beginPath(); g.arc(x, y, 2.6 * dpr, 0, 7); g.fill() }
+  g.font = `${11 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
+  if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
+  const [px, py] = P(q.x, q.z); g.save(); g.translate(px, py); g.rotate(Math.PI - PL.yaw); g.fillStyle = '#fff'; g.strokeStyle = '#2a2030'; g.lineWidth = 2 * dpr; g.beginPath(); g.moveTo(0, -6 * dpr); g.lineTo(4.5 * dpr, 5 * dpr); g.lineTo(-4.5 * dpr, 5 * dpr); g.closePath(); g.fill(); g.stroke(); g.restore();
+  $('miniZ').textContent = ZONES[S.area] || '';
+}
+function openMap() {
+  sheet('🗺️ แผนที่', (b, redraw, close) => {
+    b.innerHTML = `<div class="wmap"><canvas id="wmC" width="${MW}" height="${MH}"></canvas></div><p class="mut">ลากเลื่อนแผนที่ซ้าย-ขวา · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส</p><h3>🍲 วาร์ปไปแคมป์</h3>` +
+      Object.keys(CAMPS).map(k => `<div class="row"><span>${campOn(k) ? '🍲' : '❔'} ${campOn(k) ? CAMPS[k].name : '??? ยังไม่ค้นพบ'}</span>${campOn(k) ? `<button class="btn sm go" data-c="${k}">วาร์ป</button>` : ''}</div>`).join('');
+    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.drawImage(mapBase, 0, 0); g.drawImage(fogCv, 0, 0); g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const P = (x, z) => [(x - MAP.x0) * MAP.k, (z - MAP.z0) * MAP.k];
+    for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
+    g.font = 'bold 13px sans-serif'; g.fillStyle = '#fff'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; for (const [z, x] of [['farm', -2], ['meadow', 22], ['town', 46], ['hills', 68], ['forest', 93]]) if ((S.zones || {})[z]) { const [px, py] = P(x, -12.5); g.strokeText(ZONES[z], px, py); g.fillText(ZONES[z], px, py) }
+    if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.font = '18px sans-serif'; g.fillText('⭐', x, y) }
+    const [px, py] = P(me().x, me().z); g.fillStyle = '#ffd23f'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke();
+    const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px - wrap.clientWidth / 2;
+    b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { const k = x.dataset.c; close(); travel(zoneOf(CAMPS[k].x), null, [CAMPS[k].x + 1.2, CAMPS[k].z + .6]) });
+  });
+}
+$('mini').onclick = () => openMap();
+/* the island gate stays barred until Uncle Howsif's boat is repaired */
+const BARRIER = new THREE.Group(); for (let i = 0; i < 3; i++) part(BARRIER, '#5a3420', '#9a6238', [0, .35 + i * .32, 0], [.09, .09, 1.05], [0, 0, (i - 1) * .12], { A: 0 }); BARRIER.position.set(8.4, 0, EXIT.z); scene.add(BARRIER);
 
 /* ---------- update check (like Pen Suk): version.json on the server is newer → a bar to tap · re-fetches every file, then reloads ---------- */
 const verNum = v => String(v).split('.').concat(['0', '0', '0']).slice(0, 4).reduce((a, x) => a * 1000 + (parseInt(x, 10) || 0), 0);
@@ -1144,7 +1231,7 @@ function afterLogin() { if (!S.story.intro) startIntro(); else if (!S.avatar) op
 W.wreckPick = addPick(W, WRECK.x, WRECK.z, 1.2, 1.4, { kind: 'wreck' });
 placeHowsif(); storyProps();
 if (S.mon && S.has.sword) monSpawn(S.mon.kind, S.mon.x, S.mon.z, { farm: true, aggro: true, hp: S.mon.hp, silent: true }); else S.mon = null;
-if (S.area === 'town') townSpawn(); if (S.area === 'forest') forestSpawn(); setTimeout(sickEvent, 1500);
+{ const z = zoneOf(me().x); S.area = z; if (z === 'town') townSpawn(); if (z === 'forest') forestSpawn(); if (z === 'meadow' || z === 'hills') wildSpawn(z) } setTimeout(sickEvent, 1500);
 boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAnimationFrame(frame);
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
@@ -1156,6 +1243,7 @@ window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.t
   openPot, openCook, eatMeal, matchRecipe, openJournal, sketchPick, drawSketch, sleepTo, get POT() { return POT }, achCheck,
   setOpt: (c, h) => { OPT.ctrl = c; OPT.hud = h; applyOpt() }, actA, openWheel, closeWheel, wheelPick, get wheelOn() { return wheelOn }, autoTick, get guard() { return guard },
   openCreator, walkTo, placeMe, get me() { return me() }, get PL() { return PL },
+  openMap, reveal, get fog() { return S.fog }, goPath, enterZone, envState: () => ({ swim: PL.swim, climb: PL.climb, y: me().y, area: S.area }),
   updCheck, goForest, travel, openCage, openSberh, SB, get autoPot() { return S.autoPot },
   finishJobs: () => { for (const k in S.jobs) S.jobs[k] = 0 }, get jobs() { return S.jobs },
-  slashAll: () => { for (const m of [...mons]) if (m.area === S.area) toolHit({ kind: 'mon', m }) } };
+  slashAll: () => { for (const m of [...mons]) if (nearMe(m, 12)) toolHit({ kind: 'mon', m }) } };

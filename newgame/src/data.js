@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '0.8.2';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
+export const APP_VER = '0.9.0';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
@@ -68,7 +68,8 @@ export const PLAYER_GROW = { hp: 6, en: 5, atk: 2, def: 1 };
 export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10 };        // per hit / per cast
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
-export const WALK_SP = 3.6, RUN_SP = 6.4;
+export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
+export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'slime', 'branchImp', 'grassSprite'], hills: ['rockGolem', 'branchImp', 'rockGolem', 'grassSprite', 'slime'] };   // wanderers in the wild zones
 /* monster awareness: ❗ yellow = seen you (stays put unless you hit it) · ❗ red = too close, attacks · ❓ = lost you */
 export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +LOSE beyond sight = gives up
 export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
@@ -105,8 +106,16 @@ export const FISH = {
   seabass: { name: 'ปลากะพง', r: 'R', sta: 85, pull: .9, price: 180, exp: 90 },
   tuna:    { name: 'ปลาทูน่า', r: 'E', sta: 110, pull: 1.15, price: 600, exp: 250 },
   goldeel: { name: 'ปลาไหลทอง', r: 'L', sta: 140, pull: 1.4, price: 2500, exp: 800 },
+  /* freshwater (river · lake) */
+  carp:    { name: 'ปลาตะเพียน', r: 'B', sta: 45, pull: .55, price: 25, exp: 18 },
+  catfish: { name: 'ปลาดุก', r: 'B', sta: 55, pull: .65, price: 35, exp: 24 },
+  snakehead:{ name: 'ปลาช่อน', r: 'R', sta: 75, pull: .85, price: 130, exp: 65 },
+  gourami: { name: 'ปลาแรด', r: 'R', sta: 80, pull: .8, price: 150, exp: 80 },
+  giantcat:{ name: 'ปลาบึก', r: 'E', sta: 120, pull: 1.2, price: 700, exp: 280 },
+  goldcarp:{ name: 'ปลาตะเพียนทอง', r: 'L', sta: 130, pull: 1.3, price: 2400, exp: 760 },
 };
 export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'], E: ['tuna'], L: ['goldeel'] };
+export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
 export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
 export const REEL = { up: 1.25, down: 1.0, base: 32, perTier: 10 };       // tension/s while holding · release · fish stamina dmg/s at rod tier 0 · +per tier
 
@@ -172,7 +181,7 @@ export const QUESTS = [
 export const DAY = { dawn: 6 * 60, dusk: 22 * 60, first: 21 * 60 + 30 };     // the story's first night is frozen at 21:30 until you sleep
 export const NIGHT = { atk: 1.2, drop: 1.3 };                                  // monsters hit harder at night and drop items more often
 export const CHASE = 6;                                                        // monsters only chase you inside this range — explore freely
-export const AREA_TEMP = { farm: 0, town: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
+export const AREA_TEMP = { farm: 0, meadow: 0, town: 0, hills: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
 /* cooking ingredients (fish come from S.fish) · tag = what recipes ask for */
 export const INGR = {
   apple:    { icon: '🍎', name: 'แอปเปิ้ลป่า', tag: 'fruit', price: 15 },
@@ -199,7 +208,7 @@ export const RECIPES = [
   { k: 'mystery', desc: '…หน้าตาแปลกๆ แต่ก็กินได้นะ', icon: '❓', name: 'อาหารปริศนา', need: {}, eff: { hp: 8 }, hint: 'ผสมมั่วๆ ก็ได้อันนี้…' },
 ];
 export const COOK_TIME = 15;                                   // seconds the pot needs (a ladle stirs meanwhile)
-export const POTS = { home: 'แคมป์ที่พัก', forest: 'แคมป์ก็อบลิน (ร้าง)' };
+export const POTS = { meadow: 'แคมป์ริมธาร', mesa: 'แคมป์บนผาสูง', home: 'แคมป์ที่พัก', forest: 'แคมป์ก็อบลิน (ร้าง)' };
 /* journal achievements · check(S) → progress number · goal · reward */
 export const ACH = [
   { k: 'cook1', icon: '🍳', name: 'เชฟมือใหม่', text: 'ปรุงอาหารครั้งแรก', stat: 'cooked', goal: 1, reward: { coin: 200 } },

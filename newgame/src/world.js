@@ -63,8 +63,6 @@ export function buildWorld(scene, eco) {
   at(g => { for (const s2 of [-1, 1]) { part(g, '#5a3420', '#a8703e', [0, 1.1, s2 * 1.15], [.18, 1.1, .18], [0, 0, 0], { A: .04 }); part(g, '#c79a62', '#ecd2a0', [0, .08, s2 * 1.15], [.3, .1, .3], [0, 0, 0], { A: .05 }) }
     part(g, '#8a3a2a', '#d8584a', [0, 2.25, 0], [.26, .16, 1.55], [0, 0, 0], { A: .03 }); part(g, '#5a3420', '#a8703e', [0, 1.95, 0], [.14, .08, 1.3], [0, 0, 0], { A: 0 });
     part(g, '#e8d8b0', '#fff6e0', [-.14, 1.6, 0], [.04, .24, .62], [0, 0, 0], { A: 0 }) }, FX, EXIT.z, 0, 1.05);
-  for (let i = 0; i < 9; i++) { const z = -14 + i * 3.4 + R(); at(g => part(g, '#3d7a3a', '#7cc060', [0, 0, 0], [3.2 + R() * 2, 1.4 + R(), 2.6 + R()], [0, R() * 3, 0], { A: .08, f: .8 }), 12.4 + R() * 2, z, 0, 1, -.4) }   // green hills
-  for (let i = 0; i < 6; i++) { const z = -15 + i * 6 + R() * 2; at(g => cone(g, '#5a6a8a', '#c8d4e8', [0, 3, 0], [3.6, 3.6, 3.6], [0, 0, 0], .92), 18 + R() * 3, z) }  // far mountains
   /* palms along the beach */
   const palm = (x, z, s) => at(g => { for (let k = 0; k < 7; k++) part(g, '#8a5a30', '#c89058', [k * .06 * s, (.25 + k * .32) * s, 0], [.13 * s, .18 * s, .13 * s]); for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; part(g, '#2f7a3a', '#8ad86a', [.42 * s + Math.cos(a) * .7 * s, 2.25 * s, Math.sin(a) * .7 * s], [.75 * s, .07 * s, .2 * s], [0, -a, -.35], { A: .05 }) } }, x, z, R() * 3);
   for (const z of [-11, -7, 6.5, 10]) palm(shore(z) + 2.2 + R() * .5, z, .85 + R() * .2);
@@ -124,7 +122,7 @@ export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = 
 const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
 /* a cooking pot on a camp fire (tap = cook or sleep) */
 export function cookPot(W, key, x, z) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); W.scene.add(g);
+  const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); W.scene.add(g);
   for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .5, .1, Math.sin(a) * .5], [.16, .11, .14], [0, a, 0], { A: .2 }) }
   for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#7a4a28', [0, .1, 0], [.42, .05, .05], [0, i * 1.05, .15], { A: 0 });
   const fire = new THREE.Group(); cone(fire, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95); cone(fire, '#ff8a2a', '#fff2a0', [.08, .22, .05], [.1, .22, .1], [0, 0, 0], .95); g.add(fire);
@@ -134,7 +132,7 @@ export function cookPot(W, key, x, z) {
   part(pot, '#22222a', '#5a5a68', [0, .5, 0], [.2, .01, .01], [0, 0, 0], { A: 0 }); const lid = new THREE.Group(); part(lid, '#2a2a32', '#6a6a78', [0, 0, 0], [.3, .05, .3], [0, 0, 0], { A: 0 }); part(lid, '#2a2a32', '#6a6a78', [0, .07, 0], [.06, .04, .06], [0, 0, 0], { A: 0 }); lid.position.y = .5; lid.visible = false; pot.add(lid);
   const steam = []; for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); g.add(m); steam.push(m) }
   const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light);
-  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }); return { g, pot, lid, fire, steam, light, x, z };
+  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }).position.y += groundH(x, z); return { g, pot, lid, fire, steam, light, x, z };
 }
 /* show / hide one clearable */
 export function spawnClear(W, o) {
@@ -146,7 +144,7 @@ export function spawnClear(W, o) {
        for (let i = 0; i < 4; i++) { const p2 = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), GLOW2); p2.position.set(Math.cos(i * 1.57) * .1, .55, Math.sin(i * 1.57) * .1); p2.scale.set(1, .5, 1); g.add(p2) } },
      debris: () => { part(g, '#3a2418', '#7a4a30', [0, .12, 0], [.6, .12, .25], [0, 0, .2], { A: .05 }); part(g, '#4a2a18', '#8a5a30', [.2, .3, .1], [.45, .05, .1], [0, .6, .4], { A: 0 }) }, grass: () => PROPS.grassClump(g, 1.1), bush: () => PROPS.bush(g, .7), tree: () => PROPS.tree(g, .8, o.x > 4 ? 1 : 0), bigtree: () => PROPS.tree(g, 1.25, 1),
      pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
-  const mg = mergeStatic(g); mg.position.set(o.x, 0, o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
+  const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
   o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id });
 }
@@ -179,7 +177,7 @@ export function buildForest(W, eco) {
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
     c.set('#4f8a3a').multiplyScalar(.85 + .1 * n); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
-    const out = Math.max(0, Math.abs(z) - 10, Math.abs(x - FX) - 14); P.setY(i, out * .6 + .02 * n) }
+    const out = Math.max(0, Math.abs(z) - 10, x - FX - 14); P.setY(i, out * .6 + .02 * n) }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = FX; g0.receiveShadow = true; scene.add(g0); F.ground = g0;
   /* dense trees around the edge, a few inside (never on the path or in the camp) */
@@ -220,14 +218,14 @@ export function buildTown(W, eco) {
   const scene = W.scene, T = { shops: [] }, ST = new THREE.Group();
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   Q.seg = eco ? 10 : 14;
-  const geo = new THREE.PlaneGeometry(34, 34, 60, 60); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
+  const geo = new THREE.PlaneGeometry(22, 34, 44, 68); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), r = Math.hypot(x, z), n = Math.sin(x * .7 + z * .3) * .5 + Math.sin(z * .9 - x * .4) * .5;
-    c.set(r < 4.2 ? '#cfc6b4' : (Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12 ? '#c4b49a' : '#6aa850'); if (r >= 4.2) c.multiplyScalar(.92 + .08 * n); col.push(c.r, c.g, c.b); P.setY(i, r > 13 ? (r - 13) * .5 : 0) }
+    c.set(r < 4.2 ? '#cfc6b4' : (Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12 ? '#c4b49a' : '#6aa850'); if (r >= 4.2) c.multiplyScalar(.92 + .08 * n); col.push(c.r, c.g, c.b); P.setY(i, 0) }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = TX; g0.receiveShadow = true; scene.add(g0); T.ground = g0;
   /* broken fountain in the plaza */
   at(g => { part(g, '#8a8478', '#d8d2c6', [0, .25, 0], [1.6, .25, 1.6], [0, 0, 0], { A: .03 }); part(g, '#3a6a9a', '#7ab0d8', [0, .42, 0], [1.3, .05, 1.3], [0, 0, 0], { A: 0 }); part(g, '#8a8478', '#d8d2c6', [.2, .9, 0], [.25, .5, .25], [0, 0, .3], { A: .1 }) }, TX, 0);
-  for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, r = 12.5 + (i % 2); at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, .9), TX + Math.cos(a) * r, Math.sin(a) * r, i) }
+  for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, r = 12.5 + (i % 2); if (Math.abs(Math.sin(a)) < .3) continue; at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, .9), TX + Math.cos(a) * r, Math.sin(a) * r, i) }
   /* shops: a ruined and a repaired model each, toggled by S.shops[k] */
   const shop = (g, roof, sign) => { part(g, '#c8a070', '#f0d8b0', [0, .9, 0], [1.4, .9, 1.1], [0, 0, 0], { A: .03 }); cone(g, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
     part(g, '#5a3420', '#8a5a30', [0, .6, 1.1], [.3, .55, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.85, 1.1, 1.1], [.22, .22, .04], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [0, 1.75, 1.15], [.7, .2, .04], [0, 0, 0], { A: 0 }) };
@@ -247,4 +245,87 @@ export function buildTown(W, eco) {
   T.lock = at(g => { for (let i = 0; i < 3; i++) part(g, '#6a4024', '#b07a44', [0, .5 + i * .4, 0], [.08, .08, 1.2], [0, 0, 0], { A: 0 }) }, TOWN.gateE.x, TOWN.gateE.z, 0, 1, 0, true);
   addPick(W, TOWN.gateW.x, TOWN.gateW.z, 1.4, 2.6, { kind: 'gateW' }); addPick(W, TOWN.gateE.x, TOWN.gateE.z, 1.4, 2.6, { kind: 'gateE' });
   scene.add(mergeStatic(ST)); Q.seg = 32; return T;
+}
+
+
+/* ================= v0.9 open world: one continuous land, west → east =================
+   island (x<9) · 🌾 riverside meadow (9–35) · town (35–57) · ⛰️ cliff hills (57–79) · east forest (79+)
+   groundH = height of the ground · waterAt = sea / fresh / null · walkWorld = 'land' | 'water' | false (swim = water) */
+const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
+export const ZONES = { farm: 'เกาะบ้านเกิด', meadow: 'ทุ่งริมธาร', town: 'เมือง', hills: 'เนินผาสูง', forest: 'ป่าตะวันออก' };
+export const zoneOf = x => x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
+export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
+export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
+export function groundH(x, z) {
+  if (x >= 9 && x < 35) { const d = Math.abs(x - RIVER.x); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(RIVER.w - .3, RIVER.w + .7, d)); return 0 }
+  if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
+    return MESA.h * (1 - smw(MESA.r, MESA.r + MESA.edge, Math.hypot(x - MESA.x, (z - MESA.z) * 1.1))) }
+  return 0;
+}
+export function waterAt(x, z) {
+  if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
+  if (x < 35) return Math.abs(x - RIVER.x) < RIVER.w && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 12 ? 'fresh' : null;
+  if (x >= 57 && x < 79) return Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r ? 'fresh' : null;
+  return null;
+}
+export function walkWorld(x, z) {
+  if (x < 7.4) { if (z < BOUND.z0 || z > BOUND.z1) return false; if (x < shore(z) + .25) return x > shore(z) - 6 ? 'water' : false; return 'land' }
+  if (x < 9.6) return Math.abs(z - EXIT.z) < .9 && GATE.exit ? 'land' : false;                                    // the island gate
+  if (x < 33.5) return Math.abs(z) < 11.5 ? (waterAt(x, z) ? 'water' : 'land') : false;
+  if (x < 35.4) return Math.abs(z) < 1.6 ? 'land' : false;                                                       // town west gate
+  if (x < 56.6) return walkTown(x, z) ? 'land' : false;
+  if (x < 58.6) return Math.abs(z) < 1.6 && GATE.east ? 'land' : false;                                          // town east gate
+  if (x < 79) return Math.abs(z) < 10.5 ? (waterAt(x, z) ? 'water' : 'land') : false;
+  if (x < 80.4) return Math.abs(z) < 1.6 ? 'land' : false;                                                       // forest west gate
+  return walkForest(x, z) ? 'land' : false;
+}
+export const walkLand = (x, z) => walkWorld(x, z) === 'land';
+/* map colours for the minimap / world map */
+export function mapColor(x, z) {
+  const w = waterAt(x, z); if (w === 'sea' || (x < 9 && x < shore(z))) return x < shore(z) - 6 ? '#2a5a8a' : '#4a90c0'; if (w) return '#5aa0d0';
+  const walk = walkWorld(x, z) || (x < 9.6 && Math.abs(z - EXIT.z) < .9);
+  if (!walk && x > 7) return x >= 79 || (x > 57 && x < 79) ? '#2f5a2a' : '#3f6a34';
+  if (!walk) return '#3f6a34';
+  if (Math.abs(z - roadZ(x)) < .9 && x > 7 && x < 81) return '#c8a878';
+  if (x >= 35 && x < 57) return Math.hypot(x - 46, z) < 4.2 ? '#d8d0bc' : '#7ab060';
+  if (x >= 79) return '#4f8a3a';
+  const h = groundH(x, z); if (h > .4) return h > 2 ? '#a89070' : '#8a7a58';
+  if (x < 9 && x < shore(z) + 3) return '#e8dcb8';
+  return '#7cc060';
+}
+export const CAMPS = { home: { name: 'แคมป์ที่พัก (บ้านต้นไม้)', x: HOUSE.x - 2.4, z: HOUSE.z + 2.8 }, meadow: { name: 'แคมป์ริมธาร', x: 15.5, z: -6.5 }, mesa: { name: 'แคมป์บนผาสูง', x: MESA.x, z: MESA.z }, forest: { name: 'แคมป์ก็อบลิน (ร้าง)', x: FOREST.camp.x, z: FOREST.camp.z } };
+export function buildWild(W, eco) {
+  const scene = W.scene, R = rng(91), ST = new THREE.Group(), out = {};
+  const at = (fn, x, z, ry = 0, s = 1, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
+  Q.seg = eco ? 10 : 14;
+  const ground = (x0, x1) => { const w = x1 - x0, geo = new THREE.PlaneGeometry(w, 34, Math.round(w * 3), 102); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + w / 2, z = P.getZ(i), n = nz(x, z), h = groundH(x, z), edge = Math.max(0, Math.abs(z) - 11.5);
+      c.set(h > .35 ? '#8aa05a' : '#6fbf55').multiplyScalar(.9 + .08 * n); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
+      if (h < -.05) c.lerp(C('#c8b890'), .8); if (Math.abs(z - roadZ(x)) < .9) c.lerp(C('#c8a878'), .85); if (edge > 0) c.lerp(C('#4a8a3a'), .5);
+      col.push(c.r, c.g, c.b); P.setY(i, h + edge * .8 + .02 * n) }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); m.position.x = x0 + w / 2; m.receiveShadow = true; scene.add(m); return m };
+  out.meadow = ground(17, 35); out.hills = ground(57, 74.5);
+  /* island ground east of the palisade (17 → 9) gets a road strip; the meadow mesh starts at 17 */
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 1.8), new THREE.MeshStandardMaterial({ color: '#c8a878', roughness: 1 })); road.rotation.x = -Math.PI / 2; road.position.set(12.9, .035, 2.3); road.receiveShadow = true; scene.add(road);
+  /* water: the river (with a bridge on the road) and the hill lake */
+  const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#4a9ad0', roughness: .2, transparent: true, opacity: .85, clearcoat: .6 }), 999, 0);
+  const river = new THREE.Mesh(new THREE.PlaneGeometry(RIVER.w * 2 + .6, 26, 8, 60), wmat); river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
+  const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
+  at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
+  /* edges: forest walls north/south · signposts at the zone borders */
+  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 1.6) for (const sd of [-1, 1]) at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1.1 + R() * .5), x + R(), sd * (12.6 + R() * 1.8), R() * 6);
+  for (let i = 0; i < 8; i++) at(g => cone(g, '#5a6a8a', '#c8d4e8', [0, 3, 0], [3.6, 3.6, 3.6], [0, 0, 0], .92), 60 + i * 2.6 + R(), (i % 2 ? 1 : -1) * (16 + R() * 2));
+  const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z);
+  sign(10.5, 3.8); sign(33, 1.8); sign(59, -2.4); sign(77.5, 1.8);
+  /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; at(g => PROPS.rock(g, .8 + R() * .5), MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1, R() * 6) }
+  /* wild clearables (regrow): trees · bushes · rocks · grass, never on the road, in water or on the cliff band */
+  let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'grass', 'rock', 'pebble', 'pebble', 'bigtree', 'boulder'];
+  for (const [x0, x1, n] of [[9.8, 33, 46], [58.5, 78.5, 40]]) for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
+    if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
+    const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
+    const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
+  scene.add(mergeStatic(ST)); Q.seg = 32; return out;
 }
