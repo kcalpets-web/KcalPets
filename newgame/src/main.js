@@ -846,7 +846,7 @@ function hud() {
   const q = D.QUESTS[S.quest];
   if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '';
     const jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;
-    $('quest').style.display = 'block'; $('quest').innerHTML = `<b>📜 เรื่องหลัก ${S.quest + 1}/${D.QUESTS.length}</b><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
+    $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>📜 เรื่องหลัก ${S.quest + 1}/${D.QUESTS.length}</b><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
   else $('quest').style.display = 'none';
 }
 $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) openPet(S.pets.find(p => p.id === t.dataset.pet)) };
@@ -872,6 +872,14 @@ function arrowTick(now) {
   const g = guide, p = g.m ? g.m.A.root.position : null, q = project(p ? p.x : g.x, g.y + (g.m && g.m.kind === 'slimeKing' ? 1 : 0), p ? p.z : g.z);
   if (q.z > 1) { qArrow.style.display = 'none'; return } qArrow.style.display = 'block'; qArrow.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
 }
+/* v1.9.1: ✕ folds the quest card into a 📜 icon (remembered) · the icon opens it again */
+const qHide = v => { document.body.classList.toggle('qhide', v); try { localStorage.setItem('ng_qhide', v ? '1' : '') } catch (e) { } };
+try { qHide(localStorage.getItem('ng_qhide') === '1') } catch (e) { }
+$('qIcon').onclick = () => { qHide(false); sfx('tap') };
+$('quest').addEventListener('click', e => { if (e.target.closest('[data-qx]')) { e.stopImmediatePropagation(); qHide(true); sfx('tap') } }, { capture: true });
+/* v1.9.1 X = 🎒 the menu (bag with every tab) · Y = 🧰 quick wheel (tools and actions) */
+$('bX').addEventListener('pointerdown', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) { closeSheets(); return } openBag() });
+$('bY').addEventListener('pointerdown', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); else openWheel() });
 $('quest').onclick = () => {
   const q = D.QUESTS[S.quest]; if (!q || q.go === 'none') return; closeSheets(); questGo(q) };
 function questGo(q) {
@@ -975,7 +983,7 @@ function openBag(tab) {
   if (tab) bagTab = tab;
   sheet('🎒 กระเป๋า', (b, redraw) => {
     const tabs = [['sword', '⚔️ ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹 ธนู']] : []), ['shield', '🛡️ โล่'], ['pets', '🐾 น้อง'], ['mats', '🪵 วัตถุดิบ'], ['food', '🍲 อาหาร'], ['quest', '📜 เควส'], ['ach', '🏆 สำเร็จ'], ['set', '⚙️ ตั้งค่า']];
-    let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${n}</button>`).join('')}</div>`;
+    let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${n}</button>`).join('')}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>`;
     const st = pStats(), eqd = s => S.bag.find(x => x.id === S.eq[s]);
     if (['sword', 'shield', 'bow'].includes(bagTab)) { const sl = bagTab, it0 = eqd(sl);
       h += `<div class="card"><div class="row"><span>สวมอยู่: ${it0 ? `<b style="color:${D.RAR_COL[it0.r]}">${D.ITEMS[it0.t].icon} ${D.ITEMS[it0.t].name}</b>` : '<span class="mut">ว่าง</span>'}</span>${it0 ? `<button class="btn sm" data-un="${sl}">ถอด</button>` : ''}</div><div class="mut">⚔️ ${st.atk} · 🛡️ ${st.def}</div></div>`;
@@ -1002,6 +1010,7 @@ function openBag(tab) {
     if (bagTab === 'set') h += '<div id="bagSet"></div>';
     b.innerHTML = h;
     b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; redraw() });
+    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
     if (bagTab === 'ach') bindAch(b, redraw);
@@ -1208,12 +1217,12 @@ function openMenu() { sheet('☰ เมนู', menuBody) }
 function menuBody(b, redraw) { {
     b.innerHTML = `<div class="card"><b>🎮 การควบคุม</b><p class="mut">${OPT.ctrl === 'pad' ? 'ปุ่มแบบ GBA: จอยซ้าย · A ทำ/ตี/คุย (กดย้ำ = วิ่ง · กดค้าง = เมนู) · B กลับ/ป้องกัน' : 'แตะ/ลากนิ้ว: แตะ = เดิน/ทำ · ลาก = จอยลอย · ลากผ่านของ = ใช้อุปกรณ์'}</p><div class="row2"><button class="btn ${OPT.ctrl === 'pad' ? 'go' : ''}" id="oP">🎮 ปุ่ม GBA</button><button class="btn ${OPT.ctrl === 'touch' ? 'go' : ''}" id="oT">👆 แตะ/ลาก</button></div></div>
       <div class="card"><b>📷 มุมกล้อง</b><div class="row2"><button class="btn ${camTP() ? 'go' : ''}" id="oC1">หลังตัวละคร (Zelda)</button><button class="btn ${camTP() ? '' : 'go'}" id="oC2">มองจากบน</button></div></div>
-      <div class="card"><b>🖥️ หน้าจอ</b><div class="row2"><button class="btn ${OPT.hud === 'z' ? 'go' : ''}" id="oZ">มินิมอล (แบบ Zelda)</button><button class="btn ${OPT.hud === 'f' ? 'go' : ''}" id="oF">แสดงทั้งหมด</button></div></div>
+
       <div class="card"><b>เสียง</b><p class="mut">ลม คลื่น นก และเสียงประกอบ</p><button class="btn wide" id="mS">${soundOn() ? '🔊 เปิดอยู่ · แตะเพื่อปิด' : '🔇 ปิดอยู่ · แตะเพื่อเปิด'}</button></div><div class="card"><b>กราฟิก</b><p class="mut">ตอนนี้: ${eco ? 'ประหยัด' : 'สวย'}</p><button class="btn wide" id="mG">สลับเป็น${eco ? 'แบบสวย' : 'แบบประหยัด (เครื่องเล็ก)'}</button></div>
       <div class="card"><b>👤 ตัวละคร</b><button class="btn wide" id="mA">แต่งตัวละคร</button></div><div class="card"><b>🎬 ฉากเปิด</b><button class="btn wide" id="mI">ดูฉากเปิดอีกครั้ง</button></div><div class="card"><b>เริ่มใหม่</b><p class="mut">ลบเซฟของเกมนี้บนเครื่อง</p><button class="btn ghost wide" id="mR">ล้างเซฟ</button></div><p class="mut">KEALEE v${D.APP_VER} · เริ่มเรื่อง: เกาะยามค่ำคืน → ลุงฮาวซิฟ → เมืองร้าง</p>`;
     b.querySelector('#oP').onclick = () => { OPT.ctrl = 'pad'; applyOpt(); redraw() }; b.querySelector('#oT').onclick = () => { OPT.ctrl = 'touch'; applyOpt(); redraw() };
     b.querySelector('#oC1').onclick = () => { localStorage.setItem('ng_cam', 'tp'); redraw() }; b.querySelector('#oC2').onclick = () => { localStorage.setItem('ng_cam', 'top'); redraw() };
-    b.querySelector('#oZ').onclick = () => { OPT.hud = 'z'; applyOpt(); redraw() }; b.querySelector('#oF').onclick = () => { OPT.hud = 'f'; applyOpt(); redraw() };
+
     b.querySelector('#mA').onclick = () => { closeSheets(); openCreator(false) };
     b.querySelector('#mI').onclick = () => { closeSheets(); startIntro(true) };
     b.querySelector('#mS').onclick = () => { unlock(); toggleSound(); redraw() };
@@ -1374,7 +1383,7 @@ $('hTemp').onclick = () => { const t = D.AREA_TEMP[S.area]; toast(t < 0 ? '🥶 
 
 /* ================= v0.8: GBA-style pad (stick · A · B) · hold A = menu wheel · Zelda HUD · AUTO ================= */
 const OPT = { ctrl: localStorage.getItem('ng_ctrl') || 'pad', hud: localStorage.getItem('ng_hud') || 'z' };
-function applyOpt() { document.body.classList.toggle('pad', OPT.ctrl === 'pad'); document.body.classList.toggle('zhud', OPT.hud === 'z'); localStorage.setItem('ng_ctrl', OPT.ctrl); localStorage.setItem('ng_hud', OPT.hud) }
+function applyOpt() { OPT.hud = 'z'; /* v1.9.1: one HUD layout */ document.body.classList.toggle('pad', OPT.ctrl === 'pad'); document.body.classList.toggle('zhud', OPT.hud === 'z'); localStorage.setItem('ng_ctrl', OPT.ctrl); localStorage.setItem('ng_hud', OPT.hud) }
 applyOpt();
 const stopAuto = () => { if (S.auto) { S.auto = false; $('bAuto').classList.remove('on') } };
 /* stick (pad mode): drag inside the base · direction like the floating stick */
@@ -1430,16 +1439,19 @@ const WHEEL = [                                                  // [icon, name,
   ['🤖', 'ออโต้ เปิด/ปิด (สู้ · เก็บของ · ดื่มยาเอง)', () => toggleAuto(), () => S.has.sword || S.has.hoe ? '' : 'ต้องมีดาบก่อน'],
   ['👤', 'โปรไฟล์', () => openProfile(), () => ''], ['⚙️', 'ตั้งค่า', () => openMenu(), () => '']];
 function toggleAuto() { S.auto = !S.auto; $('bAuto').classList.toggle('on', S.auto); sfx('tap'); toast(S.auto ? '🤖 AUTO เปิด: ตัวละครจะสู้ เก็บของ และดื่มยาเอง · บังคับเองเมื่อไหร่ AUTO จะหยุด' : '🤖 AUTO ปิด', 2400) }
+/* v1.9.1: the wheel (Y, or hold A) shows only quick actions you can use right now — menus live under X 🎒 */
+const QUICK = new Set(['🎣', '🪏', '🐋', '🦅', '🔨', '✏️', '🍲', '🧴', '🤖']); let WV = [];
 function openWheel() {
   if (wheelOn || CUT) return; wheelOn = true; CUT = true; joy.on = false; document.body.classList.add('wheel'); sfx('tap');
-  const el = $('wheel'), ring = el.querySelector('.wh'), n = WHEEL.length; ring.innerHTML = WHEEL.map(([ic, nm], i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<button data-w="${i}" class="${WHEEL[i][3]() ? 'lock' : ''}" style="left:calc(50% + ${Math.cos(a) * 124}px);top:calc(50% + ${Math.sin(a) * 124}px)">${ic}</button>` }).join('');
+  WV = WHEEL.filter(w => QUICK.has(w[0]) && !w[3]()); if (!WV.length) WV = WHEEL.filter(w => w[0] === '🎒'); wheelI = Math.min(wheelI, WV.length - 1);
+  const el = $('wheel'), ring = el.querySelector('.wh'), n = WV.length; ring.innerHTML = WV.map(([ic, nm], i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<button data-w="${i}" class="${WV[i][3]() ? 'lock' : ''}" style="left:calc(50% + ${Math.cos(a) * 124}px);top:calc(50% + ${Math.sin(a) * 124}px)">${ic}</button>` }).join('');
   ring.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { wheelI = +b.dataset.w; wheelPick() }); el.style.display = 'flex'; wheelMark();
 }
-function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); const lk = WHEEL[wheelI][3](); $('whN').innerHTML = WHEEL[wheelI][0] + ' ' + WHEEL[wheelI][1] + (lk ? `<br><small class="lk">🔒 ${lk}</small>` : '') }
+function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); const lk = WV[wheelI][3](); $('whN').innerHTML = WV[wheelI][0] + ' ' + WV[wheelI][1] + (lk ? `<br><small class="lk">🔒 ${lk}</small>` : '') }
 function closeWheel() { if (!wheelOn) return; $('aK').style.transform = ''; wheelOn = false; CUT = false; last = performance.now(); $('wheel').style.display = 'none'; document.body.classList.remove('wheel') }
-function wheelPick() { const [, , f, lock] = WHEEL[wheelI], lk = lock(); closeWheel(); if (lk) { sfx('hurt'); hint('🔒 ' + lk, 1800); return } f() }
-$('wL').onclick = () => { wheelI = (wheelI + WHEEL.length - 1) % WHEEL.length; sfx('tap'); wheelMark() };
-$('wR').onclick = () => { wheelI = (wheelI + 1) % WHEEL.length; sfx('tap'); wheelMark() };
+function wheelPick() { const [, , f, lock] = WV[wheelI], lk = lock(); closeWheel(); if (lk) { sfx('hurt'); hint('🔒 ' + lk, 1800); return } f() }
+$('wL').onclick = () => { wheelI = (wheelI + WV.length - 1) % WV.length; sfx('tap'); wheelMark() };
+$('wR').onclick = () => { wheelI = (wheelI + 1) % WV.length; sfx('tap'); wheelMark() };
 $('wheel').addEventListener('pointerdown', e => { if (e.target.id === 'wheel') closeWheel() });
 $('bWheel').onclick = openWheel;
 { const A = $('bA'); let t0 = 0, held = false, tm = 0, ox = 0, oy = 0, slid = false;

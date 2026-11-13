@@ -20,10 +20,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await closeAll();
-    await wait(3000); await closeAll(); await E(() => window.__ng.placeMe(3, -2)); await wait(2500); await closeAll(); await shot('hud-pad');
-    await E(() => window.__ng.setOpt('pad', 'f')); await wait(800); await shot('hud-pad-full');
-    await E(() => window.__ng.setOpt('touch', 'f')); await wait(800); await shot('hud-touch-full');
-    await E(() => window.__ng.setOpt('pad', 'z')); await wait(500); await E(() => window.__ng.openWheel()); await wait(800); await shot('hud-wheel');
+    await wait(3000); await closeAll(); await E(() => { window.__ng.placeMe(3, -2); window.__ng.S.time = 600 }); await wait(2500); await closeAll(); await shot('hud-pad');
+    await E(() => document.querySelector('#quest [data-qx]').click()); await wait(500); await shot('hud-qhide');
+    await E(() => { const b = document.getElementById('bY'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-wheel'); await E(() => window.__ng.closeWheel());
+    await E(() => { const b = document.getElementById('bX'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-bag'); await closeAll();
+    await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => window.__ng.setOpt('touch', 'z')); await wait(800); await shot('hud-touch');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

@@ -2,7 +2,7 @@
 <script type="module">
 /* model sheet render (front · side · back · sword · shield) to compare with the designer's sheet */
 import * as THREE from '../../lib/three.module.min.js';
-import { figure, sword, kite } from '../../src/figure.js';
+import { figure, sword, kite } from '../../src/figure-v3.js';
 const W = 480, H = 1020, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
 const S = new THREE.Scene(); S.background = new THREE.Color('#ffffff');

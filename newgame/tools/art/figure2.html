@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>KEALEE figure v2</title><style>body{margin:0;background:#fff}</style></head><body>
 <script type="module">
 import * as THREE from '../../lib/three.module.min.js';
-import { figure, sword, kite } from '../../src/figure.js';
+import { figure, sword, kite } from '../../src/figure-v3.js';
 const W = 900, H = 1200, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.15; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
 const S = new THREE.Scene(); S.background = new THREE.Color(location.hash.includes('dark') ? '#2e2836' : '#ffffff');
