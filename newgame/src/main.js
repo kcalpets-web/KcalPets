@@ -177,9 +177,9 @@ function spendRunN(n) { if (S.tired) return false; const b = Math.min(S.enB || 0
 function envTick(dt, now, mv) {                     // swimming (stamina · sinking when exhausted) · climbing (slow · stamina · sliding down when exhausted) · ground height
   const q = me(), w = walkWorld(q.x, q.z), h = groundH(q.x, q.z), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw), ahead = groundH(q.x + fx * .4, q.z + fz * .4);
   if (RIDE) { PL.swim = PL.climb = false; q.y = -.1 + Math.sin(now / 600) * .03; return }   // standing on the raft
+  if (DROWN) { const k = Math.min(1, (now - DROWN) / 1600); q.y = -.55 - k * 1.4; if (Math.random() < .2) floater('🫧', 'tool', q.x + (Math.random() - .5) * .6, .2 + Math.random() * .4, q.z); return }
   PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
-  if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) {          // exhausted while swimming → you sink and wash up on the shore
-      S.hp = Math.max(1, pHp() - pStats().hp * .15); toast('🌊 จมน้ำ! ลอยกลับขึ้นฝั่ง (HP −15%)', 2400); placeMe(lastLand[0], lastLand[1]) } }
+  if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!DROWN && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }          // exhausted while swimming → you sink and wash up on a shore nearby
   else { q.y = h; if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
     if (PL.climb) spendRunN(D.CLIMB_EN * dt);
     const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
@@ -387,7 +387,7 @@ function toolHit(key) {
     const m = key.m; if (!m || !mons.includes(m)) return;
     if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } if (tool !== 'sword') setTool('sword');
     if (pHp() <= 0) { hint('😵 หมดแรง ฟันไม่ไหว · ดื่มยา HP หรือรอฟื้น'); return }
-    if (now < slashT) return; if (!spendEn(D.SWORD_EN)) return; slashT = now + D.SLASH_CD / speed; const r = dmgCalc(pStats().atk, m.T.def), q = m.A.root.position; faceSwing(q.x, q.z); swingIcon('⚔️', q.x + .3, 1.3, q.z); stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg'); return;
+    if (now < slashT) return; if (!spendEn(D.SWORD_EN)) return; slashT = now + D.SLASH_CD / speed; m.hit = true; const r = dmgCalc(pStats().atk, m.T.def), q = m.A.root.position; faceSwing(q.x, q.z); swingIcon('⚔️', q.x + .3, 1.3, q.z); stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg'); return;
   }
   if (key.kind !== 'clear' || tool === 'sword' || tool === 'rod') return;
   const o = W.clear.get(key.id); if (!o || !o.g) return;
@@ -667,7 +667,7 @@ let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, fpsN = 0, fpsT =
 const pv = new THREE.Vector3(), proj = { x: 0, y: 0 };
 function project(x, y, z) { pv.set(x, y, z).project(cam); proj.x = (pv.x + 1) / 2 * innerWidth; proj.y = (1 - pv.y) / 2 * innerHeight; proj.z = pv.z; return proj }
 function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d < .05) return d; const k = Math.min(1, sp * dt / d), nx = q.x + dx * k, nz = q.z + dz * k; if (ok(nx, nz)) { q.x = nx; q.z = nz; q.y = groundH(nx, nz) } A.yawT = Math.atan2(dx, dz); return d }
-function hitPlayer(m, now) { sfx('hurt'); const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * .3)); floater('🛡️', 'tool', me().x, 2, me().z) } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
+function hitPlayer(m, now) { sfx('hurt'); m.hit = true; const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * .3)); floater('🛡️', 'tool', me().x, 2, me().z) } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
 function frame(now) {
   requestAnimationFrame(frame); if (CUT) { last = now; return }
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
@@ -688,7 +688,7 @@ function frame(now) {
       if (S.team.includes(p.id)) {                                   // the team walks with you (the camera) and joins any fight nearby
         const tx = me().x + 1.1, tz = me().z + .7, d = dist(q.x, q.z, tx, tz);
         if (d > 15) q.set(tx, 0, tz); else if (d > 2) { stepTo(e.A, tx, tz, d > 5 ? 4.5 : 2.6, dt); mv = true }
-        let foe = null, fd = 5; for (const M of mons) if (M.born + 800 < now) { const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
+        let foe = null, fd = 6; for (const M of mons) if (M.born + 800 < now && M.hit) {   /* v1.4.1: pets attack only what you hit (or what attacks you) */ const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
       } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
     animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, q.y + .65, q.z);
@@ -882,11 +882,15 @@ function openPet(p) {
 function openPets() {
   sheet('🐾 น้องๆ', (b, redraw) => {
     if (!S.pets.length) { b.innerHTML = '<div class="card"><b>ยังไม่มีน้อง</b><p class="mut">ได้ยินว่ามีสัตว์ตัวเล็กๆ อาศัยอยู่ในป่าด้านตะวันออกของเมือง… บางทีอาจได้เจอเพื่อนใหม่ที่นั่น</p></div>'; return }
-    b.innerHTML = '<p class="mut">แตะการ์ดเพื่อป้อนอาหาร / จัดทีม · น้องทุกตัวหาเงินให้เรือ</p>' + S.pets.map(p => `<div class="card" data-op="${p.id}">${petCard(p)}${S.team.includes(p.id) ? '<div class="mut">🛡️ อยู่ในทีม</div>' : ''}</div>`).join('');
+    b.innerHTML = '<p class="mut">แตะการ์ดเพื่อป้อนอาหาร / จัดทีม</p>' + S.pets.map(p => `<div class="card" data-op="${p.id}">${petCard(p)}${S.team.includes(p.id) ? '<div class="mut">🛡️ อยู่ในทีม</div>' : ''}</div>`).join('');
     b.querySelectorAll('[data-op]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.op)));
   });
 }
 function openBoat() {
+  if (!(S.boat.c >= 1)) return talk([['👴 ลุงฮาวซิฟ', 'เรือลำนี้ลุงใช้ออกหาปลา… ถ้าอยากออกทะเลไกลๆ ลองสร้าง 🛶 เรือแพของตัวเองดูสิ']]);
+  if (S.boat.c >= 1) { const n = Math.floor(S.boat.c); S.boat.c = 0; S.coin += n; save(); hud(); return toast(`🪙 +${fmt(n)} (เงินที่เหลือในเรือ)`, 2200) }
+  openBoatOld() }
+function openBoatOld() {
   boatTick(); sheet('⛵ เรือคลังเงิน', (b, redraw) => {
     boatTick(); const B = S.boat, cap = D.BOAT_CAP(B.lv), next = B.lv < 10 ? D.BOAT_UP[B.lv] : null, rate = S.pets.length * D.COIN_PER_PET_H;
     b.innerHTML = `<p class="mut">น้องทุกตัวในฟาร์มหาเหรียญให้ ${fmt(D.COIN_PER_PET_H)} 🪙/ชม. ต่อตัว แม้ปิดเกม · เงินมาเก็บที่เรือ · เรือเต็มแล้วหยุดนับ</p>
@@ -943,7 +947,7 @@ function openBag(tab) {
     b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => confirmBox(`ขายชิ้นนี้ได้ 🪙 ${x.dataset.v}?`, () => { S.bag = S.bag.filter(i => i.id !== +x.dataset.sell); S.coin += +x.dataset.v; save(); hud(); redraw() }, 'ขาย'));
     b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => { usePotion(x.dataset.use); redraw() });
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const k = x.dataset.sm; S.mats[k]--; S.coin += Math.round(D.MATS[k][2] * D.SELL_RATE); save(); hud(); redraw() });
-    b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { eatMeal(x.dataset.meal); redraw() });
+    b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { closeSheets(); eatMeal(x.dataset.meal) });
     b.querySelectorAll('[data-ef]').forEach(x => x.onclick = () => { const k = x.dataset.ef; if (!(S.fish[k] > 0)) return; S.fish[k]--; addEn(D.FISH_EN[D.FISH[k].r]); sfx('coin'); toast(`😋 ⚡ +${D.FISH_EN[D.FISH[k].r]}`, 1400); save(); hud(); redraw() });
     b.querySelectorAll('[data-sf]').forEach(x => x.onclick = () => { const k = x.dataset.sf; S.fish[k]--; S.coin += Math.round(D.FISH[k].price * D.SELL_RATE); save(); hud(); redraw() });
   });
@@ -951,6 +955,27 @@ function openBag(tab) {
 const achHTML = () => D.ACH.map(a => { const v = Math.min(a.goal, achVal(a)), done = v >= a.goal, got = S.ach[a.k];
   return `<div class="card"><div class="row"><b>${a.icon} ${a.name}</b>${got ? '<span class="up">✅ รับแล้ว</span>' : done ? `<button class="btn sm go" data-a="${a.k}">รับรางวัล</button>` : `<span class="mut">${v}/${a.goal}</span>`}</div><div class="mut">${a.text} · รางวัล ${a.reward.coin ? '🪙 ' + fmt(a.reward.coin) : ''}${a.reward.gem ? '💎 ' + a.reward.gem : ''}</div><div class="bar s"><i style="width:${v / a.goal * 100}%;background:var(--xp)"></i></div></div>` }).join('');
 const bindAch = (b, redraw) => b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { const a = D.ACH.find(y => y.k === x.dataset.a); S.ach[a.k] = Date.now(); if (a.reward.coin) S.coin += a.reward.coin; if (a.reward.gem) S.gem += a.reward.gem; sfx('level'); toast(`🏆 ${a.name}!`, 2000); save(); hud(); redraw() });
+/* ---------- v1.4.1 drowning (energy gone in the water) · eating animation ---------- */
+let DROWN = 0, EAT = null;
+function drown(now) {
+  DROWN = now; walkT = null; work = null; fishEnd(); sfx('dive'); toast('🌊 หมดแรง… จมน้ำ!', 1800);
+  setTimeout(() => { const f = $('sleep'); f.querySelector('b').textContent = '🌊 จมน้ำ…'; f.style.display = 'flex'; f.style.opacity = 1;
+    setTimeout(() => { const q = me(); let sp = null;                                           // wash up on the nearest shore
+      for (let r = 2; r < 90 && !sp; r += 2) for (let a = 0; a < 24; a++) { const x = q.x + Math.cos(a * .26) * r, z = q.z + Math.sin(a * .26) * r; if (walkLand(x, z) && !waterAt(x, z) && groundH(x, z) > -.05) { sp = [x, z]; break } }
+      sp = sp || lastLand; DROWN = 0; placeMe(sp[0], sp[1]); S.hp = Math.max(1, pHp() - D.HEART); S.en = pStats().en * .3; S.tired = false; lastHurt = performance.now(); save(); hud();
+      f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('🏝️ ลอยมาติดฝั่ง… ❤️ −1 ดวง', 2600) }, 900) }, 1600);
+}
+function eatAnim(icon, done) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 96; const g = cv.getContext('2d'); g.font = '78px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(icon, 48, 54);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.setScalar(.45); scene.add(sp);
+  const t0 = performance.now(), T = 1900; EAT = { sp }; walkT = null; work = null;
+  const step = () => { const t = performance.now() - t0, k = t / T, q = me(), a = PL.rig.armR, bite = Math.floor(k * 3);
+    if (a) a.rotation.x = -2.3 + Math.sin(t / 110) * .25; const fx = Math.sin(PL.yaw) * .28, fz = Math.cos(PL.yaw) * .28;
+    sp.position.set(q.x + fx, q.y + 1.25 + Math.sin(t / 110) * .03, q.z + fz); sp.scale.setScalar(.45 * (1 - bite * .25));
+    if (bite !== EAT.b) { EAT.b = bite; if (bite < 3) { sfx('tap'); floater(['ง่ำ!', 'หงับ!', 'อร่อย!'][bite], 'tool', q.x, 1.9, q.z) } }
+    if (t < T) requestAnimationFrame(step); else { scene.remove(sp); sp.material.map.dispose(); EAT = null; if (a) a.rotation.x = 0; done() } };
+  requestAnimationFrame(step);
+}
 /* ---------- v1.4 ✨ Spirit of Luthonia: ❤️ +1 heart or ⚡ +20 % energy ---------- */
 let spiritNew = false, spiritT = 0, petGuardT = 0;
 const hearts = () => pStats().hp / D.HEART, enMul = () => 1 + D.EN_STEP * S.spirit.en;
@@ -1075,7 +1100,7 @@ function matchRecipe(pot) {
     const sc = keys.reduce((a, k) => a + r.need[k], 0) * 10 + keys.length + (r.only ? 0 : 1); if (sc > bs) { bs = sc; best = r } }
   return best || D.RECIPES.find(r => r.k === 'mystery');
 }
-const effTxt = e => [e.hp ? `❤️ +${e.hp}` : '', e.en ? `⚡ +${e.en}` : '', e.buff ? `${e.buff.atk ? '⚔️ +' + e.buff.atk : '🛡️ +' + e.buff.def} (${e.buff.min} นาที)` : ''].filter(Boolean).join(' · ');
+const effTxt = e => [e.hp ? `❤️ +${Math.round(e.hp / D.HEART * 4) / 4} ดวง` : '', e.en ? `⚡ +${e.en}` : '', e.buff ? `${e.buff.atk ? '⚔️ +' + e.buff.atk : '🛡️ +' + e.buff.def} (${e.buff.min} นาที)` : ''].filter(Boolean).join(' · ');
 const needTxt = r => Object.keys(r.need).map(k => `${({ fish: '🐟 ปลา', fruit: '🍎 ผลไม้', veg: '🥬 ผัก', meat: '🍖 เนื้อ', monster: '👾 ของมอนสเตอร์', herb: '🌿 สมุนไพร' })[k] || (D.INGR[k] ? D.INGR[k].icon + ' ' + D.INGR[k].name : k)} ×${r.need[k]}`).join(' + ') + (r.only ? ' (ล้วน)' : '');
 function openCook(key = 'home') {
   const pot = [];
@@ -1099,7 +1124,8 @@ function finishCook(key) {
     b2.querySelector('#eN').onclick = () => { eatMeal(r.k); c2() }; b2.querySelector('#eK').onclick = c2 });
 }
 function eatMeal(k) {
-  const r = D.RECIPES.find(x => x.k === k); if (!r || !(S.meals[k] > 0)) return; S.meals[k]--; const e = r.eff, st = pStats();
+  const r = D.RECIPES.find(x => x.k === k); if (!r || !(S.meals[k] > 0) || EAT) return; S.meals[k]--; save(); eatAnim(r.icon, () => eatDone(r)) }
+function eatDone(r) { const e = r.eff, st = pStats();
   if (e.hp) S.hp = Math.min(st.hp, pHp() + e.hp); if (e.en) addEn(e.en);
   if (e.buff) S.buff = { atk: e.buff.atk || 0, def: e.buff.def || 0, until: Date.now() + e.buff.min * 60e3, icon: r.icon };
   sfx('coin'); toast(`😋 ${r.icon} ${r.name}<br>${effTxt(e)}`, 2200); save(); hud();
@@ -1255,11 +1281,7 @@ let autoT = 0;
 function autoTick(now) {
   if (!S.auto || CUT || now < autoT || walkT || work || joy.on || F) return; autoT = now + 600;
   if (S.tired) return; const st = pStats();
-  if (pHp() < st.hp * .35 && (S.potions.hpS || S.potions.hpL)) { usePotion(S.potions.hpS ? 'hpS' : 'hpL'); return }
-  if (S.has.sword) { let best = null, bd = 8; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = m } } if (best) { fight(best); return } }
-  const q = D.QUESTS[S.quest], want = q && q.go === 'herb' ? ['herb'] : q && q.go === 'gather' ? ((S.mats.wood || 0) < 10 ? ['tree', 'bush'] : ['rock', 'pebble']) : ['tree', 'bush', 'rock', 'pebble', 'grass', 'mushroom'];
-  let o = null, od = 12; for (const c of W.clear.values()) if (c.g && want.includes(c.t) && !(D.CLEAR[c.t].minTier > S.tools[D.CLEAR[c.t].tool])) { const d = dist(me().x, me().z, c.x, c.z); if (d < od) { od = d; o = c } }
-  if (o) workOn(o);
+  if (S.has.sword) { let best = null, bd = 8; for (const m of mons) { if (m.T.animal) continue;   /* v1.4.1: AUTO = attack only (no gathering / potions) */ const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = m } } if (best) { fight(best); return } }
 }
 
 /* ---------- maps (v1.1 world): detailed core map (minimap near home) + a 4 m/px map of the whole 1.5 km world · fog of war in 8 m cells · camps = warp points ---------- */

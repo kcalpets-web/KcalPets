@@ -36,7 +36,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
       const id = await E(([tool, pred]) => { const N = window.__ng; if (N.S.en < 10) { N.S.en = null; N.S.stat.enTopUp = (N.S.stat.enTopUp || 0) + 1 } N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; if (Math.hypot(N.me.x - o.x, N.me.z - o.z) > 1.6) N.placeMe(o.x - 1.2, o.z); N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
       const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
-    /* v0.8 pad: A in front of a tree = chop · hold A = wheel (B closes) · AUTO gathers by itself */
+    /* v0.8 pad: A in front of a tree = chop · hold A = wheel (B closes) · AUTO only attacks (v1.4.1) */
     { await closeAll(); const t = await E(() => { const N = window.__ng, o = N.nearestClear(o => o.t === 'tree'); N.placeMe(o.x - .9, o.z); N.PL.yaw = N.PL.yawT = Math.PI / 2; return { id: o.id, left: o.left } }); await wait(800);
       const box = await (await pg.$('#bA')).boundingBox(); for (let i = 0; i < 3; i++) { await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await wait(450) }
       const after = await N(() => ({ en: window.__ng.S.en, chopped: window.__ng.S.stat.clr_tree || 0 })); log('A chop', JSON.stringify(after)); if (!(after.en < 100)) errs.push('A did not use the tool');
@@ -46,7 +46,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await pg.mouse.down(); await wait(800); await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 60, { steps: 5 }); await wait(300); await shot('03e2-wheel-slide'); await pg.mouse.up(); await wait(400);
       const ws = await N(() => ({ on: window.__ng.wheelOn, sheet: (document.querySelector('.ov h2') || {}).textContent })); log('wheel slide', JSON.stringify(ws)); if (ws.on || !/กระเป๋า/.test(ws.sheet || '')) errs.push('slide-to-pick on the wheel failed'); await closeAll();
       await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const c0 = await N(() => window.__ng.S.clearCount); await E(() => document.getElementById('bAuto').click()); await wait(9000); await shot('03f-auto'); await E(() => document.getElementById('bAuto').click());
-      const c1 = await N(() => window.__ng.S.clearCount); log('auto cleared', c1 - c0); if (!(c1 > c0)) errs.push('AUTO did not gather anything') }
+      const c1 = await N(() => window.__ng.S.clearCount); log('auto cleared', c1 - c0); if (c1 > c0) errs.push('AUTO should only attack (v1.4.1), but it gathered') }
     /* 🧰 toolbox: one button opens the tray, picking a tool closes it */
     await E(() => window.__ng.setOpt('touch', 'z')); await wait(300); await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
     { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed'); await E(() => window.__ng.setOpt('pad', 'z')) }

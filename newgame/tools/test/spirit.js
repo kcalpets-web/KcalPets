@@ -28,6 +28,16 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const h1 = await N(() => document.querySelectorAll('#hearts .hr').length); log('hearts after ❤️', h1); if (h1 !== 6) errs.push('spirit ❤️ did not add a heart');
     await closeAll(); await E(() => { window.__ng.S.hp = 47 }); await wait(800); await shot('03-hearts-hurt'); log('hearts html', await N(() => [...document.querySelectorAll('#hearts .hr')].map(h => h.style.getPropertyValue('--f')).join(' ')));
     for (const t of ['sword', 'shield', 'mats', 'food', 'quest', 'ach', 'set']) { await E(t => window.__ng.openBag(t), t); await wait(500); await shot('04-bag-' + t); await closeAll() }
+    /* v1.4.1: pets leave alone what you haven't hit */
+    await E(() => { const N = window.__ng, q = N.me; N.__calm = N.monSpawn('slime', q.x + 3, q.z - 2, { area: 'farm' }) }); await wait(5000);
+    const calm = await N(() => { const m = window.__ng.__calm; return { hp: m.hp, max: m.T.hp, hit: !!m.hit } }); log('calm slime', JSON.stringify(calm)); if (calm.hp < calm.max) errs.push('pets attacked a monster the player had not hit');
+    await E(() => { const N = window.__ng, m = N.__calm; if (N.mons.includes(m)) N.hurtMon(m, 999, 'dmg') }); await wait(500);
+    /* eating: animation, then ❤️ */
+    await E(() => { const N = window.__ng; N.S.meals.salad = 2; N.S.hp = 50 }); await E(() => window.__ng.openBag('food')); await wait(600); await pg.click('[data-meal="salad"]'); await wait(700); await shot('07-eating'); await wait(2200);
+    const ate = await N(() => ({ hp: window.__ng.S.hp, meals: window.__ng.S.meals.salad })); log('ate', JSON.stringify(ate)); if (!(ate.hp > 50 && ate.meals === 1)) errs.push('eating did not heal');
+    /* drowning: energy gone in the water → sink, wash up nearby, −1 heart */
+    const hp0 = await N(() => window.__ng.S.hp); await E(() => { const N = window.__ng; N.placeMe(-9, 0); N.S.en = .3; N.S.enB = 0; N.S.tired = false }); await wait(1200); await shot('08-drowning'); await wait(5000); await closeAll();
+    const dr = await N(() => ({ x: window.__ng.me.x, swim: window.__ng.envState().swim, hp: window.__ng.S.hp })); log('drowned', JSON.stringify(dr), 'hp before', hp0); if (dr.swim || !(dr.hp < hp0)) errs.push('drowning did not wash the player up with −1 heart'); await shot('09-washed-up');
     /* pets: no HP/MP, skills on cooldown, the water pet heals you */
     await E(() => { const N = window.__ng; N.S.hp = 40; const q = N.me; N.monSpawn('slime', q.x + 2.5, q.z + 1, { area: 'farm', aggro: true }) }); await wait(9000);
     const pt = await N(() => { const N = window.__ng, e = N.PA.get('p1'); return { mode: e && e.mode, skT: !!(e && e.skT), spT: !!(e && e.spT), hp: N.S.hp, petHp: N.S.pets[0].hp } }); log('pet', JSON.stringify(pt)); await shot('05-pet-fight');
