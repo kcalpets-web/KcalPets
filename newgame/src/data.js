@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.4.2';
+export const APP_VER = '1.4.3';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -141,8 +141,10 @@ export const COIN_PER_PET_H = 0;
 export const BOAT_CAP = lv => 10000 * lv;                                   // Lv1 10,000 … Lv10 100,000
 export const BOAT_UP = [0, 300, 600, 1000, 1500, 2200, 3000, 4000, 5200, 6600];   // 💎 to go from Lv n → n+1 (index n) · เสนอ
 export const SHOP = [
-  { k: 'hpS', icon: '🧪', name: 'ยา HP ขวดเล็ก', hp: 40, price: 300 },
-  { k: 'hpL', icon: '🧪', name: 'ยา HP ขวดใหญ่', hp: 120, price: 900 },
+  { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', cure: 'poison', price: 150 },       // v1.4.3: no HP potions — ❤️ comes back from food, sleep and 💧🌱 pets
+  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', cure: 'cold', price: 150 },
+  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', cure: 'burn', price: 150 },
+  { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', cure: 'daze', price: 150 },
   { k: 'mpS', icon: '🍵', name: 'ชาสมุนไพร (พลังงาน)', en: 30, price: 250 },
   { k: 'mpL', icon: '🍵', name: 'ชาสมุนไพรเข้มข้น (พลังงาน)', en: 90, price: 700 },
 ];
@@ -158,7 +160,7 @@ export const HERBS = 3, GOBLINS = 4;
 export const FOREST_MONS = ['slime', 'grassSprite', 'slime'];   // wander along the forest path on each visit
 export const AUTO_POT = .3;                                   // auto-drink when HP is below this share (hold the potion button)
 export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet that finds you in the forest (dog or cat)
-export const CURE_GIFT = { hpS: 5, mpS: 2 };                  // potions Sberh gives after the shop is repaired
+export const CURE_GIFT = { antidote: 2, mpS: 2 };                  // potions Sberh gives after the shop is repaired
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'ลุงแป้ง', cost: { wood: 8, stone: 4, coin: 400 } },
@@ -298,3 +300,14 @@ export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) �
 };
 export const RAFT_SP = 5.2;                                     // raft speed (m/s · swimming is ~1.6)
 export const SCROLLS = 10;                                      // glowing blueprint scrolls hidden around the world
+
+/* ================= v1.4.3 debuffs (cured by potions from Sberh's shop · or by themselves after a while) ================= */
+export const DEBUFF = {
+  poison: { icon: '🟢', name: 'พิษ', ms: 30000, tick: 3000, dmg: 5, desc: '❤️ ลดลงเรื่อยๆ · ไม่ฟื้นเอง' },
+  cold:   { icon: '🥶', name: 'หนาว', ms: 60000, desc: '⚡ ฟื้นช้าลงครึ่งหนึ่ง · ผิงไฟเพื่อหาย' },
+  burn:   { icon: '🔥', name: 'ไหม้', ms: 12000, tick: 1500, dmg: 5, desc: '❤️ ลดเร็ว · ลงน้ำเพื่อดับไฟ' },
+  daze:   { icon: '💫', name: 'มึน', ms: 8000, desc: 'เดินช้า · ฟันพลาดบ้าง' },
+};
+export const MON_DEBUFF = { goblin: ['poison', .25], branchImp: ['poison', .3], goblinChief: ['burn', .3], rockGolem: ['daze', .35] };   // [debuff, chance per hit]
+export const COLD_SWIM_S = 8, COLD_HIGH = 3.5;                  // night: swimming this long / standing this high → 🥶
+export const LV_POTION_REFUND = { hpS: 300, hpL: 900 };         // old HP potions → coins

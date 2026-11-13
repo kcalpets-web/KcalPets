@@ -15,7 +15,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, sword: 1 }, quest: 7, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1, rod: 1 }, lv: 6, coin: 100, time: 600, bag: [{ id: 1, t: 'branchSword', r: 'R' }, { id: 2, t: 'barkArmor', r: 'B' }, { id: 3, t: 'stoneArmor', r: 'E' }], eq: { weapon: 1, armor: 2 }, nextItem: 4, pets: [{ id: 'p1', kind: 'cat', name: 'มิว', rar: 'R', el: '💧', lv: 5, exp: 0, hp: 3, mp: 1 }], team: ['p1'], spirit: undefined })) });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, sword: 1 }, quest: 7, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1, rod: 1 }, lv: 6, coin: 100, time: 600, bag: [{ id: 1, t: 'branchSword', r: 'R' }, { id: 2, t: 'barkArmor', r: 'B' }, { id: 3, t: 'stoneArmor', r: 'E' }], eq: { weapon: 1, armor: 2 }, nextItem: 4, potions: { hpS: 2, mpS: 1, antidote: 1 }, pets: [{ id: 'p1', kind: 'cat', name: 'มิว', rar: 'R', el: '💧', lv: 5, exp: 0, hp: 3, mp: 1 }], team: ['p1'], spirit: undefined })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
@@ -37,6 +37,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const lk = await N(() => { const N = window.__ng, m = N.__foe.A.root.position, q = N.me; let d = Math.atan2(m.x - q.x, m.z - q.z) - N.PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return { lock: N.LOCK === N.__foe, off: +Math.abs(d).toFixed(2) } });
     log('lock-on', JSON.stringify(lk)); if (!lk.lock || lk.off > .5) errs.push('lock-on did not face the monster'); await shot('06b-lock');
     await E(() => { const N = window.__ng; if (N.mons.includes(N.__foe)) N.hurtMon(N.__foe, 999, 'dmg') }); await wait(500);
+    /* v1.4.3 debuffs: poison ticks ❤️ down · tap the icon = antidote · burn goes out in water */
+    log('hp potions refunded', JSON.stringify(await N(() => ({ coin: window.__ng.S.coin, pot: window.__ng.S.potions }))));
+    if (await N(() => window.__ng.S.potions.hpS)) errs.push('old HP potions were not removed');
+    await E(() => { window.__ng.S.hp = 90; window.__ng.addDeb('poison') }); await wait(4000); await shot('06c-poison');
+    const po = await N(() => ({ hp: window.__ng.S.hp, on: window.__ng.debOn('poison'), icons: document.querySelectorAll('#debs button').length })); log('poison', JSON.stringify(po)); if (!po.on || !(po.hp < 90) || !po.icons) errs.push('poison did not work');
+    await E(() => document.querySelector('#debs [data-deb="poison"]').click()); await wait(500); const cured = await N(() => !window.__ng.debOn('poison')); log('antidote', cured); if (!cured) errs.push('tapping the poison icon did not cure it');
+    await E(() => { const N = window.__ng; N.addDeb('burn'); N.placeMe(-6, 0) }); await wait(3000); const bo = await N(() => window.__ng.debOn('burn')); log('burn in water', bo, JSON.stringify(await N(() => window.__ng.envState())), await N(() => window.__ng.me.x)); if (bo) errs.push('water did not put the fire out');
+    await E(() => window.__ng.placeMe(2, -4)); await wait(800); await closeAll();
     /* eating: animation, then ❤️ */
     await E(() => { const N = window.__ng; N.S.meals.salad = 2; N.S.hp = 50 }); await E(() => window.__ng.openBag('food')); await wait(600); await pg.click('[data-meal="salad"]'); await wait(700); await shot('07-eating'); await wait(2200);
     const ate = await N(() => ({ hp: window.__ng.S.hp, meals: window.__ng.S.meals.salad })); log('ate', JSON.stringify(ate)); if (!(ate.hp > 50 && ate.meals === 1)) errs.push('eating did not heal');

@@ -118,7 +118,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await pg.waitForFunction(() => window.__ng.cut, null, { timeout: 60000 }); await wait(3500); await shot('22-flashback'); await E(() => window.__cut.skip());
     await pg.waitForFunction(() => !window.__ng.cut, null, { timeout: 60000 }); await wait(800); await shot('23-gift'); await clickAll('#tN');
     log('potions', JSON.stringify(await N(() => window.__ng.S.potions)), 'medicine', await N(() => window.__ng.S.story.medicine));
-    await E(() => window.__ng.openWheel()); await wait(300); await E(() => { const i = [...document.querySelectorAll('[data-w]')].findIndex(b => b.textContent === '💊'); document.querySelector(`[data-w="${i}"]`).click() }); await wait(400); log('auto potion', await N(() => window.__ng.autoPot)); if (!(await N(() => window.__ng.autoPot))) errs.push('auto potion toggle (wheel) failed'); await shot('24-auto');
+    log('potions v1.4.3', JSON.stringify(await N(() => window.__ng.S.potions))); if (!(await N(() => window.__ng.S.potions.antidote >= 2))) errs.push('Sberh did not give antidotes'); await shot('24-auto');
     await E(() => window.__ng.goFarm()); await wait(2500); await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN'); await wait(800); await shot('25-cured');
     /* v0.6: recipes · cooking at the home pot · sketching · journal · day → night */
     log('recipes', JSON.stringify(await N(() => { const m = window.__ng.matchRecipe, F = k => ({ k, fish: 1 }), I = k => ({ k });

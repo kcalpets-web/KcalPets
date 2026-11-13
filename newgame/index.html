@@ -123,6 +123,8 @@
   body.ride #bRide.on{display:block}
   #hearts{display:flex;flex-wrap:wrap;gap:1px 2px;max-width:200px;margin:1px 0 4px}#hearts .hr{width:17px;height:16px;display:block;background:linear-gradient(90deg,#ff3a50 var(--f),#4a2a38 var(--f));-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;filter:drop-shadow(0 1px 0 #0006)}
   #pf.glow{animation:spGlow 1.2s ease-in-out infinite}@keyframes spGlow{50%{box-shadow:0 0 14px 4px #ffe27a}}.card.spirit{background:linear-gradient(135deg,#fff8e0,#f0e8ff)}
+  body.zhud.hasdeb #team{top:calc(max(10px,env(safe-area-inset-top)) + 104px)}
+  #debs{display:flex;gap:4px;margin:-2px 0 3px}#debs:empty{display:none}#debs button{border:2px solid var(--ink);border-radius:10px;background:#fff6e0;font:700 14px inherit;font-family:inherit;padding:1px 5px;pointer-events:auto;animation:debP 1s ease-in-out infinite}#debs small{font-size:10px;margin-left:2px}@keyframes debP{50%{transform:scale(1.08)}}
   .wh button.lock{opacity:.4;filter:grayscale(1)}.wh button.lock::after{content:'🔒';position:absolute;right:-4px;bottom:-4px;font-size:16px}.whc .lk{color:#ffb0a0;font-size:12px}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
@@ -136,7 +138,7 @@
     <div class="rt"><div id="miniW"><canvas id="mini"></canvas><small id="miniZ"></small></div></div>
     <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button><button class="sq" id="bWheel" aria-label="เมนู">◎</button></div></div>
 </div>
-<div class="vit"><div id="hearts"></div>
+<div class="vit"><div id="hearts"></div><div id="debs"></div>
   <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar en"><i id="hMp" style="background:#9ad03a"></i><i id="hMpB" class="enb"></i></div></div>
 <div id="quest"></div>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
@@ -149,7 +151,7 @@
 <div id="wheel"><div class="wh"></div><div class="whc"><b id="whN"></b><small>ลากนิ้วเลือก · ปล่อย = ตกลง<br>B = ปิด</small></div></div>
 <div class="bot">
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bPets"><b>🐾</b>น้อง</button><button class="bb" id="bTool"><b>🛠️</b>ช่าง</button>
-<button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
+<button class="bb" id="bHp"><b>🍲</b>กินด่วน <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
 </div>
 <div id="reel"><div class="rb"><b id="reelTxt"></b><div class="row"><span class="mut">สาย</span><div class="bar grow"><i id="reelTen"></i></div></div><div class="row"><span class="mut">ปลา</span><div class="bar grow"><i id="reelSta" style="background:#4f9cff"></i></div></div></div></div>
 <div id="login"><h1>🏝️ KEALEE</h1><p class="mut">เกาะของน้องๆ · ผจญภัยด้วยกัน</p><div id="lG"></div><button class="btn" id="lGuest">เล่นแบบไม่ล็อกอิน</button><p class="mut" style="font-size:11px">ล็อกอิน Google ใช้แค่ชื่อและรูปโปรไฟล์ · เซฟเก็บในเครื่องนี้</p></div>
