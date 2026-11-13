@@ -131,7 +131,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     for (const t of ['recipes', 'mons', 'ach']) { await E(t => window.__ng.openJournal(t), t); await wait(500); await shot('30-journal-' + t); await closeAll() }
     await E(() => { window.__ng.setTool(''); window.__ng.S.time = 21 * 60 + 57 }); await wait(5000); await shot('31-dusk-night'); log('time', await N(() => document.getElementById('hClock').textContent), 'night', await N(() => document.body.classList.contains('night')));
     /* v1.0 farming: Uncle Howsif gives the hoe + seeds → dig 4 plots → plant all → (fast-forward) → sickle swipe harvest → cook the veg */
-    await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.placeMe(3, -1); N.openHowsif() }); await wait(500); await clickAll('#tN');
+    await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.placeMe(3, -1); N.openHowsif() }); await wait(500); await clickAll('#tN'); await closeAll(); log('bp from Howsif', await N(() => Object.keys(window.__ng.S.bp).join(','))); await E(() => window.__ng.openHowsif()); await wait(500); await clickAll('#tN');
     log('hoe', await N(() => window.__ng.S.has.hoe), 'seeds', JSON.stringify(await N(() => window.__ng.S.seeds)), 'quest', await N(() => window.__ng.S.quest));
     const dug = await E(() => { const N = window.__ng; let n = 0; for (let z = -6; z <= 8 && n < 6; z++) for (let x = 0; x <= 6 && n < 6; x++) { N.S.en = null; N.S.tired = false; if (N.tillable(x, z) && N.till(x, z, true)) n++ } return n }); log('dug', dug);
     await E(() => { const k = Object.keys(window.__ng.plots)[0]; window.__ng.plotAction(k) }); await wait(400); await shot('42-plant-sheet'); await pg.click('[data-all="carrot"]'); await wait(300);
