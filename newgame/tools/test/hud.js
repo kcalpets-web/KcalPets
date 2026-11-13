@@ -15,7 +15,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, sword: 1, townClear: 1 }, shops: { potion: 1, tools: 1 }, has: { sword: 1, rod: 1, hoe: 1 }, pets: [{ id: 'p1', kind: 'cat', name: 'มิว', rar: 'R', el: '💧', lv: 3, exp: 0 }], team: ['p1'], spiritV: 1, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, lv: 12, time: 600 })) });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, sword: 1, townClear: 1 }, shops: { potion: 1, tools: 1 }, has: { sword: 1, rod: 1, hoe: 1 }, bag: [{ id: 1, t: 'branchSword', r: 'E' }, { id: 2, t: 'stoneArmor', r: 'R' }, { id: 3, t: 'leafBlade', r: 'B' }, { id: 4, t: 'stoneClub', r: 'L' }, { id: 5, t: 'barkArmor', r: 'B' }], eq: { sword: 1, shield: 2 }, nextItem: 6, mats: { wood: 24, stone: 12, hide: 3, feather: 5 }, ingr: { meat: 2, apple: 3 }, fish: { minnow: 2 }, meals: { salad: 2, fishstew: 1 }, pets: [{ id: 'p1', kind: 'cat', name: 'มิว', rar: 'R', el: '💧', lv: 3, exp: 0 }], team: ['p1'], spiritV: 1, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, lv: 12, time: 600 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
@@ -24,6 +24,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => document.querySelector('#quest [data-qx]').click()); await wait(500); await shot('hud-qhide');
     await E(() => { const b = document.getElementById('bY'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-wheel'); await E(() => window.__ng.closeWheel());
     await E(() => { const b = document.getElementById('bX'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-bag'); await closeAll();
+    for (const t of ['sword', 'shield', 'pets', 'mats', 'food', 'quest']) { await E(t => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag(t) }, t); await wait(1500); await shot('inv-' + t) } await closeAll();
     await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => window.__ng.setOpt('touch', 'z')); await wait(800); await shot('hud-touch');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();

@@ -10,7 +10,7 @@ export function toast(msg, ms = 2200) { const t = $('toast'); t.innerHTML = msg;
 const stack = [];
 /* sheet(title, render(body, redraw), opts) — render is called again by redraw() */
 export function sheet(title, render, opts = {}) {
-  const ov = document.createElement('div'); ov.className = 'ov';
+  const ov = document.createElement('div'); ov.className = 'ov' + (opts.cls ? ' ' + opts.cls : '');
   ov.innerHTML = `<div class="sh"><div class="shh"><button class="back" aria-label="กลับ">←</button><h2>${title}</h2></div><div class="shb"></div></div>`;
   const body = ov.querySelector('.shb'), close = () => { ov.remove(); const i = stack.indexOf(ov); if (i >= 0) stack.splice(i, 1); opts.onClose && opts.onClose() };
   ov.querySelector('.back').onclick = close; ov.addEventListener('pointerdown', e => { if (e.target === ov) close() });

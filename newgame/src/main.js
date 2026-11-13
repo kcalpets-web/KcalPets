@@ -978,45 +978,73 @@ function openHouse() {
     b.querySelector('#hR').onclick = () => { restAll(); toast('😴 พักผ่อนเต็มที่! ทุกคน HP/Mana เต็ม'); save(); hud(); close() };
   });
 }
-let bagTab = 'sword';
+let bagTab = 'sword', bagSel = {};
+/* v1.9.2 inventory, console-style: icon tabs · a grid of tiles (count / power badge, rarity frame, equipped = blue) · details of the selected tile · a 3D preview wearing the gear */
+const INV_TABS = () => [['sword', '⚔️', 'ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹', 'ธนู']] : []), ['shield', '🛡️', 'โล่'], ['pets', '🐾', 'น้อง'], ['mats', '🪵', 'วัตถุดิบ'], ['food', '🍲', 'อาหาร'], ['quest', '📜', 'เควส'], ['ach', '🏆', 'สำเร็จ'], ['set', '⚙️', 'ระบบ']];
+function invItems(tab) {
+  const L = [], st = pStats();
+  if (['sword', 'shield', 'bow'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t].slot === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
+    const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), eq = S.eq[tab] === it.id, val = Math.round((x.atk * 60 + x.def * 60 + x.hp * 6) * D.SELL_RATE);
+    L.push({ key: 'i' + it.id, icon: T.icon, n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better,
+      name: T.name, sub: `<span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span> ${c.stats}`, desc: eq ? 'กำลังสวมอยู่' : `${c.verdict} <span class="mut">${c.vs}</span>`,
+      act: (eq ? `<button class="btn" data-un="${tab}">ถอด</button>` : `<button class="btn go" data-eq="${it.id}">สวม</button>`) + (eq ? '' : `<button class="btn ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button>`) }) }
+  if (tab === 'pets') for (const p of S.pets) { const C = D.CATCH[p.kind];
+    L.push({ key: 'p' + p.id, icon: PET_ICO[p.kind] || '🐾', n: p.lv, nIcon: 'Lv', col: D.RAR_COL[p.rar], eq: S.team.includes(p.id), pet: p, name: esc(p.name), sub: '', desc: petCard(p) + (C && C.ability ? `<div class="mut">✨ ${C.ability === 'swim' ? '🐋 ขี่ข้ามทะเล' : '🦅 ร่อนลงจากที่สูง'}</div>` : ''),
+      act: `<button class="btn" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button>` }) }
+  if (tab === 'mats') {
+    for (const k of Object.keys(S.mats).filter(k => S.mats[k] > 0)) L.push({ key: 'm' + k, icon: D.MATS[k][0], n: S.mats[k], name: D.MATS[k][1], sub: 'วัตถุดิบ / ชิ้นส่วน', desc: 'ใช้สร้าง ซ่อม และอัปเกรด', act: `<button class="btn ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button>` });
+    for (const k of Object.keys(D.INGR).filter(k => S.ingr[k] > 0)) L.push({ key: 'g' + k, icon: D.INGR[k].icon, n: S.ingr[k], name: D.INGR[k].name, sub: 'วัตถุดิบทำอาหาร', desc: 'ใส่หม้อที่แคมป์หรือกองไฟเพื่อทำอาหาร 🍲', act: '' });
+    for (const k of Object.keys(S.fish).filter(k => S.fish[k] > 0)) L.push({ key: 'f' + k, icon: '🐟', n: S.fish[k], col: D.RAR_COL[D.FISH[k].r], name: D.FISH[k].name, sub: 'ปลา', desc: 'กินได้ หรือใส่หม้อทำอาหาร', act: `<button class="btn go" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button><button class="btn ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button>` });
+    for (const k of Object.keys(S.seeds || {}).filter(k => S.seeds[k] > 0)) L.push({ key: 's' + k, icon: '🌱', n: S.seeds[k], name: 'เมล็ด ' + k, sub: 'เมล็ดผัก', desc: 'ปลูกที่แปลงผักใกล้บ้าน', act: '' }) }
+  if (tab === 'food') {
+    for (const r of D.RECIPES.filter(r => S.meals[r.k] > 0)) L.push({ key: 'r' + r.k, icon: r.icon, n: S.meals[r.k], name: r.name, sub: effTxt(r.eff), desc: r.desc || '', act: `<button class="btn go" data-meal="${r.k}">😋 กิน</button>` });
+    for (const x of D.SHOP.filter(x => S.potions[x.k] > 0)) L.push({ key: 'u' + x.k, icon: x.icon, n: S.potions[x.k], name: x.name, sub: x.cure ? `แก้ ${D.DEBUFF[x.cure].icon} ${D.DEBUFF[x.cure].name}` : `⚡ +${x.en}`, desc: '', act: `<button class="btn go" data-use="${x.k}">ใช้</button>` });
+    for (const f of D.FOODS.filter(f => S.food[f.k] > 0)) L.push({ key: 'o' + f.k, icon: f.icon, n: S.food[f.k], name: f.name, sub: `Exp น้อง +${f.exp}`, desc: 'ป้อนน้องในแท็บ 🐾 น้อง', act: '' }) }
+  return L;
+}
+/* the 3D preview (its own small renderer, alive only while the bag is open) */
+let PV = null;
+function invPreview(cv, tab, sel) {
+  if (!PV) { const r = new THREE.WebGLRenderer({ canvas: document.createElement('canvas'), antialias: true, alpha: true }); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+    const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.5)); const l = new THREE.DirectionalLight('#ffffff', 2); l.position.set(-1, 3, 4); sc.add(l); const rim = new THREE.DirectionalLight('#9ac8ff', 1.2); rim.position.set(2, 2, -3); sc.add(rim);
+    PV = { r, sc, cam: new THREE.PerspectiveCamera(30, 1, .1, 30), doll: null, key: '', yaw: .4, drag: null } }
+  const k = tab === 'pets' && sel && sel.pet ? 'pet:' + sel.pet.id + formOf(sel.pet) : 'me:' + JSON.stringify(S.eq) + JSON.stringify(S.avatar || {});
+  if (k !== PV.key) { PV.key = k; if (PV.doll) PV.sc.remove(PV.doll); const g = new THREE.Group();
+    if (tab === 'pets' && sel && sel.pet) { const p = sel.pet, f = formOf(p); (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76); g.scale.setScalar(D.FORMS[f].scale * 1.6); PV.h = 1.1 }
+    else { playerLook(g, S.avatar || {}); g.scale.setScalar(.82); PV.h = 1.62;
+      const sw = S.eq.sword && S.bag.find(x => x.id === S.eq.sword), shd = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), hand = g.getObjectByName('handR'), arm = g.getObjectByName('armL2');
+      if (hand && (sw || S.has.sword)) { const t = new THREE.Group(); TOOLMESH.sword(t); t.rotation.x = -Math.PI / 2 - .25; t.scale.setScalar(1.15); hand.add(t) }
+      if (arm && shd) { const t = new THREE.Group(); part(t, '#5a3a20', '#9a6a3a', [0, 0, 0], [.03, .2, .17], [0, 0, 0], { A: .02 }); part(t, '#8a7a5a', D.RAR_COL[shd.r] || '#8a6a4a', [-.035, 0, 0], [.012, .12, .09], [0, 0, 0], { A: 0 }); t.position.set(-.04, 0, 0); arm.add(t) } }
+    PV.doll = g; PV.sc.add(g); const bb = new THREE.Box3().setFromObject(g); PV.h = Math.max(.6, bb.max.y - bb.min.y) }   /* frame whatever is shown */
+  cv.replaceWith(PV.r.domElement); PV.r.domElement.className = 'invcv';
+  const loop = () => { const el = PV.r.domElement; if (!el.isConnected) return; const w = el.clientWidth || 160, h = el.clientHeight || 220; if (el.width !== w * 2) { PV.r.setPixelRatio(2); PV.r.setSize(w, h, false); PV.cam.aspect = w / h; PV.cam.updateProjectionMatrix() }
+    if (!PV.drag) PV.yaw += .006; PV.doll.rotation.y = PV.yaw; PV.cam.position.set(0, PV.h * .62, PV.h * 2.6); PV.cam.lookAt(0, PV.h * .5, 0); PV.r.render(PV.sc, PV.cam); requestAnimationFrame(loop) };
+  const el = PV.r.domElement; el.onpointerdown = e => { PV.drag = e.clientX; el.setPointerCapture(e.pointerId) }; el.onpointermove = e => { if (PV.drag != null) { PV.yaw += (e.clientX - PV.drag) * .02; PV.drag = e.clientX } }; el.onpointerup = el.onpointercancel = () => { PV.drag = null };
+  requestAnimationFrame(loop);
+}
 function openBag(tab) {
   if (tab) bagTab = tab;
   sheet('🎒 กระเป๋า', (b, redraw) => {
-    const tabs = [['sword', '⚔️ ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹 ธนู']] : []), ['shield', '🛡️ โล่'], ['pets', '🐾 น้อง'], ['mats', '🪵 วัตถุดิบ'], ['food', '🍲 อาหาร'], ['quest', '📜 เควส'], ['ach', '🏆 สำเร็จ'], ['set', '⚙️ ตั้งค่า']];
-    let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${n}</button>`).join('')}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>`;
-    const st = pStats(), eqd = s => S.bag.find(x => x.id === S.eq[s]);
-    if (['sword', 'shield', 'bow'].includes(bagTab)) { const sl = bagTab, it0 = eqd(sl);
-      h += `<div class="card"><div class="row"><span>สวมอยู่: ${it0 ? `<b style="color:${D.RAR_COL[it0.r]}">${D.ITEMS[it0.t].icon} ${D.ITEMS[it0.t].name}</b>` : '<span class="mut">ว่าง</span>'}</span>${it0 ? `<button class="btn sm" data-un="${sl}">ถอด</button>` : ''}</div><div class="mut">⚔️ ${st.atk} · 🛡️ ${st.def}</div></div>`;
-      const items = S.bag.filter(it => D.ITEMS[it.t].slot === sl && !Object.values(S.eq).includes(it.id)).sort((p, q) => (gearCmp(q).better - gearCmp(p).better) || (gearScore(itemStats(q)) - gearScore(itemStats(p))));
-      h += items.length ? items.map(it => { const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), val = Math.round((x.atk * 60 + x.def * 60 + x.hp * 6) * D.SELL_RATE);
-        return `<div class="card"><div class="row"><b style="color:${D.RAR_COL[it.r]}">${T.icon} ${T.name}</b><span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span></div><div class="mut">${c.stats}</div><div class="cmp">${c.verdict} <span class="mut">${c.vs}</span></div><div class="row2"><button class="btn sm ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button><button class="btn sm ${c.better ? 'go' : ''}" data-eq="${it.id}">สวม</button></div></div>` }).join('')
-        : `<p class="mut">ยังไม่มี${D.SLOT_NAME[sl] || ''}สำรอง · หาได้จากมอนสเตอร์ และหีบสมบัติในแคมป์ ⛺</p>` }
-    if (bagTab === 'mats') {
-      h += '<h3>🪵 วัตถุดิบ / ชิ้นส่วน</h3>' + (Object.keys(S.mats).filter(k => S.mats[k]).map(k => `<div class="row"><span>${D.MATS[k][0]} ${D.MATS[k][1]} ×${S.mats[k]}</span><button class="btn sm ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
-      h += '<h3>🧺 วัตถุดิบทำอาหาร</h3>' + (Object.keys(D.INGR).filter(k => S.ingr[k] > 0).map(k => `<div class="row"><span>${D.INGR[k].icon} ${D.INGR[k].name} ×${S.ingr[k]}</span><span class="mut">ใช้ที่หม้อ 🍲</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
-      h += '<h3>🐟 ปลา</h3>' + (Object.keys(S.fish).filter(k => S.fish[k]).map(k => `<div class="row"><span>🐟 <b style="color:${D.RAR_COL[D.FISH[k].r]}">${D.FISH[k].name}</b> ×${S.fish[k]}</span><span><button class="btn sm" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button> <button class="btn sm ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button></span></div>`).join('') || '<p class="mut">ยังไม่มี</p>');
-      h += '<h3>🌱 เมล็ดผัก</h3>' + (Object.keys(S.seeds || {}).filter(k => S.seeds[k] > 0).map(k => `<div class="row"><span>🌱 ${k} ×${S.seeds[k]}</span><span class="mut">ปลูกที่แปลงผัก</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
-    if (bagTab === 'food') {
-      h += '<h3>🍽️ อาหารที่ปรุงแล้ว</h3>' + (D.RECIPES.filter(r => S.meals[r.k] > 0).map(r => `<div class="row"><span>${r.icon} ${r.name} ×${S.meals[r.k]} <small class="mut">${effTxt(r.eff)}</small></span><button class="btn sm go" data-meal="${r.k}">กิน</button></div>`).join('') || '<p class="mut">ยังไม่มี · ทำอาหารที่หม้อในแคมป์หรือกองไฟ</p>');
-      h += '<h3>🧪 ยา</h3>' + D.SHOP.map(x => `<div class="row"><span>${x.icon} ${x.name} ×${S.potions[x.k] || 0}</span><button class="btn sm" data-use="${x.k}" ${S.potions[x.k] ? '' : 'disabled'}>ใช้</button></div>`).join('');
-      h += '<h3>🍖 อาหารน้อง</h3>' + (D.FOODS.filter(f => S.food[f.k]).map(f => `<div class="row"><span>${f.icon} ${f.name} ×${S.food[f.k]}</span><span class="mut">ป้อนที่หน้าน้อง</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
-    if (bagTab === 'quest') { const q = D.QUESTS[S.quest];
-      h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
-        + `<div class="card"><b>🌱 ฟื้นฟูโลก ${lifePct()}%</b><div class="bar s"><i style="width:${lifePct()}%;background:#7ac850"></i></div>` + RV.map(r => { const st = S.ruins[r.id]; return `<div class="row"><span>${st ? (st.fin ? '🏡 ' : '🏚️ ') + r.def.name : '❔ ซากเมืองที่ยังไม่พบ'}</span><span>${st ? ruinDone_n(r) + '/3' : ''} ✨</span></div>` }).join('') + '<div class="mut">สำรวจหาซากเมือง 🏚️ คุยกับผู้รอดชีวิต แล้วสร้างใหม่ให้ครบ · ครบแต่ละเมืองได้ ✨</div></div>'
-        + `<div class="card${S.story.cloudGone ? '' : ' spirit'}"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา ${S.story.cloudGone ? '✅' : ''}</b><div class="mut">${S.story.cloudGone ? 'ท้องฟ้ากลับมาสดใสแล้ว ขอบคุณนะ ผู้กล้า' : `เมฆดำลอยอยู่เหนือทะเลทางตะวันออกสุดของโลก · แล่น 🛶 แพ หรือขี่ 🐋 วาฬ ไปทางตะวันออกจนสุดทาง · แนะนำ ❤️ ${D.STORM_HEARTS} ดวงขึ้นไป · เมืองที่ฟื้นฟูแล้วทำให้เมฆอ่อนแรงลง (${townsDone()}/5)`}</div></div>`
-        + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
-    if (bagTab === 'pets') h += `<p class="mut">น้อง ${S.pets.length}/${D.PET_MAX} · ทีม ${S.team.length}/${D.TEAM_MAX} · จับน้องใหม่: เข้าใกล้สัตว์ป่า (กด B ค้างเพื่อย่อง) แล้วกด 🫳 จับ</p>` + (S.pets.map(p => `<div class="card">${petCard(p)}${D.CATCH[p.kind] && D.CATCH[p.kind].ability ? `<div class="mut">✨ ความสามารถ: ${D.CATCH[p.kind].ability === 'swim' ? '🐋 ขี่ข้ามทะเล (ลงน้ำแล้วกด A)' : '🦅 ร่อนลงจากที่สูง (ยืนริมผาแล้วกด A)'}</div>` : ''}<div class="row2"><button class="btn sm" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn sm ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button></div></div>`).join('') || '<p>ยังไม่มีน้อง</p>');
-    if (bagTab === 'ach') h += achHTML();
-    if (bagTab === 'set') h += '<div id="bagSet"></div>';
+    const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
+    let h = `<div class="invtop"><div class="invh">${$('hearts').innerHTML}</div><div class="invc">🪙 ${fmt(S.coin)} · 💎 ${fmt(S.gem)}</div></div>
+      <div class="invtabs">${T.map(([k, ic, nm]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${ic}<small>${nm}</small></button>`).join('')}</div>`;
+    if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
+    else { const L = invItems(bagTab); let sel = L.find(x => x.key === bagSel[bagTab]) || L.find(x => x.eq) || L[0]; if (sel) bagSel[bagTab] = sel.key; const st = pStats();
+      h += `<div class="invmain"><div class="invgrid">${L.map(x => `<button class="tile${x.eq ? ' eq' : ''}${sel && x.key === sel.key ? ' sel' : ''}" data-k="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.n != null ? `<i>${x.nIcon === 'Lv' ? 'Lv' + x.n : x.n}</i>` : ''}${x.up ? '<u>▲</u>' : ''}</button>`).join('') || `<p class="mut" style="grid-column:1/-1">ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', pets: 'เข้าใกล้สัตว์ป่าแล้วกด 🫳 จับ', mats: 'ตัดต้นไม้ ทุบหิน ล่าสัตว์', food: 'ทำอาหารที่หม้อหรือกองไฟ' }[bagTab] || ''}</p>`}</div>
+        <div class="invside"><canvas class="invcv"></canvas><div class="mut invst">${bagTab === 'pets' ? `ทีม ${S.team.length}/${D.TEAM_MAX}` : `⚔️ ${st.atk} · 🛡️ ${st.def}`}</div></div></div>
+        ${sel ? `<div class="invdet"><b>${sel.icon} ${sel.name}</b><div class="mut">${sel.sub || ''}</div><div>${sel.desc || ''}</div><div class="row2">${sel.act || ''}</div></div>` : ''}`; bagSel._cur = sel }
+    h += '<div class="invhint">B กลับ · แตะช่องเพื่อเลือก · ลากตัวละครเพื่อหมุน</div>';
     b.innerHTML = h;
-    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; redraw() });
+    const cv = b.querySelector('.invcv'); if (cv) invPreview(cv, bagTab, bagSel._cur);
+    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; sfx('tap'); redraw() });
+    b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw() });
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
     if (bagTab === 'ach') bindAch(b, redraw);
     b.querySelectorAll('[data-pf]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.pf)));
     b.querySelectorAll('[data-pt]').forEach(x => x.onclick = () => { const id = x.dataset.pt; if (S.team.includes(id)) S.team = S.team.filter(i => i !== id); else if (S.team.length >= D.TEAM_MAX) { toast(`ทีมเต็มแล้ว (${D.TEAM_MAX} ตัว)`); return } else S.team.push(id); save(); hud(); redraw() });
-    b.querySelectorAll('[data-eq]').forEach(x => x.onclick = () => { const it = S.bag.find(i => i.id === +x.dataset.eq); S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); save(); hud(); redraw() });
+    b.querySelectorAll('[data-eq]').forEach(x => x.onclick = () => { const it = S.bag.find(i => i.id === +x.dataset.eq); S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); save(); hud(); sfx('knock'); redraw() });
     b.querySelectorAll('[data-un]').forEach(x => x.onclick = () => { S.eq[x.dataset.un] = null; save(); hud(); redraw() });
     b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => confirmBox(`ขายชิ้นนี้ได้ 🪙 ${x.dataset.v}?`, () => { S.bag = S.bag.filter(i => i.id !== +x.dataset.sell); S.coin += +x.dataset.v; save(); hud(); redraw() }, 'ขาย'));
     b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => { usePotion(x.dataset.use); redraw() });
@@ -1024,8 +1052,17 @@ function openBag(tab) {
     b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { closeSheets(); eatMeal(x.dataset.meal) });
     b.querySelectorAll('[data-ef]').forEach(x => x.onclick = () => { const k = x.dataset.ef; if (!(S.fish[k] > 0)) return; S.fish[k]--; addEn(D.FISH_EN[D.FISH[k].r]); sfx('coin'); toast(`😋 ⚡ +${D.FISH_EN[D.FISH[k].r]}`, 1400); save(); hud(); redraw() });
     b.querySelectorAll('[data-sf]').forEach(x => x.onclick = () => { const k = x.dataset.sf; S.fish[k]--; S.coin += Math.round(D.FISH[k].price * D.SELL_RATE); save(); hud(); redraw() });
-  });
+  }, { cls: 'inv' });
 }
+function bagText(tab) { let h = '';
+    if (tab === 'quest') { const q = D.QUESTS[S.quest];
+      h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
+        + `<div class="card"><b>🌱 ฟื้นฟูโลก ${lifePct()}%</b><div class="bar s"><i style="width:${lifePct()}%;background:#7ac850"></i></div>` + RV.map(r => { const st = S.ruins[r.id]; return `<div class="row"><span>${st ? (st.fin ? '🏡 ' : '🏚️ ') + r.def.name : '❔ ซากเมืองที่ยังไม่พบ'}</span><span>${st ? ruinDone_n(r) + '/3' : ''} ✨</span></div>` }).join('') + '<div class="mut">สำรวจหาซากเมือง 🏚️ คุยกับผู้รอดชีวิต แล้วสร้างใหม่ให้ครบ · ครบแต่ละเมืองได้ ✨</div></div>'
+        + `<div class="card${S.story.cloudGone ? '' : ' spirit'}"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา ${S.story.cloudGone ? '✅' : ''}</b><div class="mut">${S.story.cloudGone ? 'ท้องฟ้ากลับมาสดใสแล้ว ขอบคุณนะ ผู้กล้า' : `เมฆดำลอยอยู่เหนือทะเลทางตะวันออกสุดของโลก · แล่น 🛶 แพ หรือขี่ 🐋 วาฬ ไปทางตะวันออกจนสุดทาง · แนะนำ ❤️ ${D.STORM_HEARTS} ดวงขึ้นไป · เมืองที่ฟื้นฟูแล้วทำให้เมฆอ่อนแรงลง (${townsDone()}/5)`}</div></div>`
+        + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
+    if (tab === 'ach') h += achHTML();
+    if (tab === 'set') h += '<div id="bagSet"></div>';
+  return h }
 const achHTML = () => D.ACH.map(a => { const v = Math.min(a.goal, achVal(a)), done = v >= a.goal, got = S.ach[a.k];
   return `<div class="card"><div class="row"><b>${a.icon} ${a.name}</b>${got ? '<span class="up">✅ รับแล้ว</span>' : done ? `<button class="btn sm go" data-a="${a.k}">รับรางวัล</button>` : `<span class="mut">${v}/${a.goal}</span>`}</div><div class="mut">${a.text} · รางวัล ${a.reward.coin ? '🪙 ' + fmt(a.reward.coin) : ''}${a.reward.gem ? '💎 ' + a.reward.gem : ''}</div><div class="bar s"><i style="width:${v / a.goal * 100}%;background:var(--xp)"></i></div></div>` }).join('');
 const bindAch = (b, redraw) => b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { const a = D.ACH.find(y => y.k === x.dataset.a); S.ach[a.k] = Date.now(); if (a.reward.coin) S.coin += a.reward.coin; if (a.reward.gem) S.gem += a.reward.gem; sfx('level'); toast(`🏆 ${a.name}!`, 2000); save(); hud(); redraw() });

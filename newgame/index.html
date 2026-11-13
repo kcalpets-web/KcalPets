@@ -121,7 +121,7 @@
   #bBar button{font:800 14px inherit;font-family:inherit;border:3px solid var(--ink);border-radius:12px;background:#fff;padding:6px 10px;margin:0 3px}#bBar #bbOk{background:#9ad03a}
   #bRide{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 200px);z-index:6;font:800 15px inherit;font-family:inherit;border:3px solid var(--ink);border-radius:14px;background:#ffd23f;padding:8px 14px;box-shadow:0 3px 0 var(--ink)}
   body.ride #bRide.on{display:block}
-  #hearts{display:flex;flex-wrap:wrap;gap:1px 2px;max-width:200px;margin:1px 0 4px}#hearts .hr{width:17px;height:16px;display:block;background:linear-gradient(90deg,#ff3a50 var(--f),#4a2a38 var(--f));-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;filter:drop-shadow(0 1px 0 #0006)}
+  #hearts{display:flex;flex-wrap:wrap;gap:1px 2px;max-width:200px;margin:1px 0 4px}#hearts .hr,.invh .hr{width:17px;height:16px;display:block;background:linear-gradient(90deg,#ff3a50 var(--f),#4a2a38 var(--f));-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;filter:drop-shadow(0 1px 0 #0006)}
   #pf.glow{animation:spGlow 1.2s ease-in-out infinite}@keyframes spGlow{50%{box-shadow:0 0 14px 4px #ffe27a}}.card.spirit{background:linear-gradient(135deg,#fff8e0,#f0e8ff)}
   body.zhud.hasdeb #team{top:calc(max(10px,env(safe-area-inset-top)) + 104px)}
   #boss{display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 182px);z-index:5;width:min(78vw,320px);text-align:center;color:#fff;font:800 14px inherit;font-family:inherit;text-shadow:0 2px 0 #000,0 0 6px #000;pointer-events:none}#boss small{font-size:11px;opacity:.85}#boss .bb2{height:11px;border:2px solid #1a1020;border-radius:6px;background:#3a2030;overflow:hidden;margin-top:3px;box-shadow:0 2px 0 #0008}#boss .bb2 i{display:block;height:100%;background:linear-gradient(#ff7a6a,#d0302a);transition:width .2s}
@@ -145,6 +145,24 @@
   body.zhud .vit{background:none;border:none;padding:0;color:#fff;text-shadow:0 1px 2px #000c,0 0 4px #0008}body.zhud .vit .bar{border-color:#fff;box-shadow:0 1px 3px #0008}
   body.zhud #team,body.zhud #bWheel{display:none!important}
   .tabs.go2{margin-top:-4px}.tabs.go2 button{background:#f4ecd8;font-size:12px}
+  /* v1.9.2 inventory (console style) */
+  .ov.inv{background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);align-items:stretch}
+  .ov.inv .sh{max-width:none;height:100%;background:none;border:0;border-radius:0;color:#fff;animation:none;padding-top:env(safe-area-inset-top)}
+  .ov.inv .shh{background:none;border:0}.ov.inv .shh h2{color:#fff;text-shadow:0 2px 0 #000}.ov.inv .back{background:#ffffff22;color:#fff;border-color:#fff8}
+  .ov.inv .shb{padding:4px 12px 12px;display:flex;flex-direction:column;gap:8px}
+  .invtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.invh{display:flex;flex-wrap:wrap;gap:1px 2px;max-width:60%}.invh .hr{width:15px;height:14px}.invc{font-weight:800;font-size:13px;white-space:nowrap}
+  .invtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.invtabs::-webkit-scrollbar{display:none}
+  .invtabs button{flex:0 0 auto;min-width:46px;border:0;background:none;color:#fff;font-size:22px;padding:4px 4px 2px;border-radius:10px;display:flex;flex-direction:column;align-items:center;opacity:.55}
+  .invtabs button small{font-size:10px;font-family:inherit;height:12px}.invtabs button.on{opacity:1;background:#ffffff1c;box-shadow:inset 0 -3px 0 #ffd23f}
+  .invmain{display:flex;gap:8px;align-items:flex-start}.invgrid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:44vh;overflow-y:auto;align-content:start}
+  .tile{position:relative;aspect-ratio:1;border:2px solid var(--rc);border-radius:10px;background:#1c1a2ae0;font-size:28px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #0006}
+  .tile.eq{background:linear-gradient(#3a7ad8,#2a5aa8)}.tile.sel{outline:3px solid #fff;outline-offset:1px;box-shadow:0 0 12px #fff8}
+  .tile i{position:absolute;right:2px;bottom:2px;font:800 11px system-ui;font-style:normal;background:#000c;color:#fff;border-radius:5px;padding:0 4px}.tile u{position:absolute;left:3px;top:1px;text-decoration:none;color:#7aff8a;font-size:12px}
+  .invside{width:36%;display:flex;flex-direction:column;align-items:center}.invcv{width:100%;height:32vh;touch-action:none}.invst{font-size:12px;color:#ddd}
+  .invdet{background:#12101cd8;border-left:4px solid #3a8ad8;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.5}.invdet b{font-size:16px}.invdet .mut{color:#c8c4d8}.invdet .row2{margin-top:6px;display:flex;gap:6px}
+  .invdet .card,.invtext .card{background:#ffffff14;border-color:#fff3;color:#fff}.invtext{color:#fff}.invtext .mut,.invdet .card .mut{color:#c8c4d8}.invtext h3{color:#ffd23f}
+  .invdet .btn.ghost{background:#ffffff1a;color:#fff;border-color:#fff8}.invdet .btn:disabled{opacity:.45}
+  .invhint{margin-top:auto;text-align:center;font-size:11px;color:#fffa;padding:6px 0}
   #qIcon{display:none;position:fixed;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + 70px);z-index:5;width:44px;height:44px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font-size:22px;box-shadow:0 3px 0 #0004}
   body.qhide #quest{display:none!important}body.qhide #qIcon{display:block}
   body.zhud #quest{top:calc(max(10px,env(safe-area-inset-top)) + 70px);left:10px}#quest .qx{float:right;margin:-3px -4px 0 6px;font-size:15px;opacity:.85;padding:0 4px}
