@@ -1,0 +1,30 @@
+/* v1.2 open-world test: wild animals (flee) · a monster camp → chief → treasure chest → blueprint · map + journal.
+   NODE_PATH=$(npm root -g) node newgame/tools/test/world.js outDir   (~3 min) · fails on page errors or broken checks */
+const { chromium } = require('playwright');
+const { spawn } = require('child_process');
+const path = require('path'), fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8795, OUT = process.argv[2] || '/tmp/newgame_drag';
+fs.mkdirSync(OUT, { recursive: true });
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
+  await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const errs = [], log = (...a) => console.log(...a);
+  try {
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+    pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp'); localStorage.setItem('ng_ctrl', 'pad');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, lv: 12, time: 600 })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
+    const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
+    const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    await closeAll();
+    await wait(3000); await closeAll();
+    for (const [n, x, z] of [['meadow', 18, -6], ['hills', 62, 9], ['town', 46, 3]]) { await E(([x, z]) => window.__ng.placeMe(x, z), [x, z]); await wait(3000); await closeAll();
+      const y0 = await N(() => window.__ng.CAM.yaw); await pg.mouse.move(200, 400); await pg.mouse.down(); await pg.mouse.move(120, 400, { steps: 5 }); await pg.mouse.up(); const y1 = await N(() => window.__ng.CAM.yaw);
+      const el = await N(() => { const e = document.elementFromPoint(200, 400); return e.id || e.className }); log(n, 'drag', (y1 - y0).toFixed(2), 'element', el, 'lock', await N(() => !!window.__ng.LOCK)) }
+  } catch (e) { errs.push('X ' + e.stack) }
+  await b.close(); srv.kill();
+  if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
+})();
