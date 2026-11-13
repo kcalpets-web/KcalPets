@@ -146,7 +146,7 @@ export function spawnClear(W, o) {
      pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
-  o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id });
+  o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z);
 }
 export function despawnClear(W, o) { if (!o.g) return; W.scene.remove(o.g); o.g = null; removePick(W, o.pick); o.pick = null }
 
@@ -253,36 +253,40 @@ export function buildTown(W, eco) {
    groundH = height of the ground · waterAt = sea / fresh / null · walkWorld = 'land' | 'water' | false (swim = water) */
 const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
-export const ZONES = { farm: 'เกาะบ้านเกิด', meadow: 'ทุ่งริมธาร', town: 'เมือง', hills: 'เนินผาสูง', forest: 'ป่าตะวันออก' };
-export const zoneOf = x => x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
+export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะบ้านเกิด', meadow: 'ทุ่งริมธาร', town: 'เมือง', hills: 'เนินผาสูง', forest: 'ป่าตะวันออก' };
+export const zoneOf = (x, z = 0) => coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
 export function groundH(x, z) {
+  if (coreDist(x, z) > 0) return wildH(x, z);
   if (x >= 9 && x < 35) { const d = Math.abs(x - RIVER.x); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(RIVER.w - .3, RIVER.w + .7, d)); return 0 }
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
     return MESA.h * (1 - smw(MESA.r, MESA.r + MESA.edge, Math.hypot(x - MESA.x, (z - MESA.z) * 1.1))) }
   return 0;
 }
 export function waterAt(x, z) {
+  if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
   if (x < 35) return Math.abs(x - RIVER.x) < RIVER.w && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 12 ? 'fresh' : null;
   if (x >= 57 && x < 79) return Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r ? 'fresh' : null;
   return null;
 }
 export function walkWorld(x, z) {
+  if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (x < 7.4) { if (z < BOUND.z0 || z > BOUND.z1) return false; if (x < shore(z) + .25) return x > shore(z) - 6 ? 'water' : false; return 'land' }
   if (x < 9.6) return Math.abs(z - EXIT.z) < .9 && GATE.exit ? 'land' : false;                                    // the island gate
-  if (x < 33.5) return Math.abs(z) < 11.5 ? (waterAt(x, z) ? 'water' : 'land') : false;
+  if (x < 33.5) return waterAt(x, z) ? 'water' : 'land';                                                       // the meadow opens north and south (v1.1)
   if (x < 35.4) return Math.abs(z) < 1.6 ? 'land' : false;                                                       // town west gate
   if (x < 56.6) return walkTown(x, z) ? 'land' : false;
   if (x < 58.6) return Math.abs(z) < 1.6 && GATE.east ? 'land' : false;                                          // town east gate
-  if (x < 79) return Math.abs(z) < 10.5 ? (waterAt(x, z) ? 'water' : 'land') : false;
-  if (x < 80.4) return Math.abs(z) < 1.6 ? 'land' : false;                                                       // forest west gate
+  if (x < 79) return waterAt(x, z) ? 'water' : 'land';
+  if (x < 80.4) return Math.abs(z) < 1.6 && GATE.east ? 'land' : false;                                          // forest west gate (locked like the town's east gate: the wilds lead around)
   return walkForest(x, z) ? 'land' : false;
 }
 export const walkLand = (x, z) => walkWorld(x, z) === 'land';
 /* map colours for the minimap / world map */
 export function mapColor(x, z) {
+  if (coreDist(x, z) > 0) return wildColor(x, z);
   const w = waterAt(x, z); if (w === 'sea' || (x < 9 && x < shore(z))) return x < shore(z) - 6 ? '#2a5a8a' : '#4a90c0'; if (w) return '#5aa0d0';
   const walk = walkWorld(x, z) || (x < 9.6 && Math.abs(z - EXIT.z) < .9);
   if (!walk && x > 7) return x >= 79 || (x > 57 && x < 79) ? '#2f5a2a' : '#3f6a34';
@@ -303,7 +307,7 @@ export function buildWild(W, eco) {
     for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + w / 2, z = P.getZ(i), n = nz(x, z), h = groundH(x, z), edge = Math.max(0, Math.abs(z) - 11.5);
       c.set(h > .35 ? '#8aa05a' : '#6fbf55').multiplyScalar(.9 + .08 * n); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
       if (h < -.05) c.lerp(C('#c8b890'), .8); if (Math.abs(z - roadZ(x)) < .9) c.lerp(C('#c8a878'), .85); if (edge > 0) c.lerp(C('#4a8a3a'), .5);
-      col.push(c.r, c.g, c.b); P.setY(i, h + edge * .8 + .02 * n) }
+      col.push(c.r, c.g, c.b); P.setY(i, h - edge * .03 + .02 * n) }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); m.position.x = x0 + w / 2; m.receiveShadow = true; scene.add(m); return m };
   out.meadow = ground(17, 35); out.hills = ground(57, 74.5);
@@ -315,8 +319,7 @@ export function buildWild(W, eco) {
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
   at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
   /* edges: forest walls north/south · signposts at the zone borders */
-  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 1.6) for (const sd of [-1, 1]) at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1.1 + R() * .5), x + R(), sd * (12.6 + R() * 1.8), R() * 6);
-  for (let i = 0; i < 8; i++) at(g => cone(g, '#5a6a8a', '#c8d4e8', [0, 3, 0], [3.6, 3.6, 3.6], [0, 0, 0], .92), 60 + i * 2.6 + R(), (i % 2 ? 1 : -1) * (16 + R() * 2));
+  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x + R() * 3, sd * (13 + R() * 3), R() * 6);   // a few trees on the edges (the land goes on)
   const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z);
   sign(10.5, 3.8); sign(33, 1.8); sign(59, -2.4); sign(77.5, 1.8);
   /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
@@ -329,3 +332,66 @@ export function buildWild(W, eco) {
     const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
   scene.add(mergeStatic(ST)); Q.seg = 32; return out;
 }
+
+
+/* ================= v1.1 the big world (~1.5 × 1.5 km) around the hand-made core =================
+   core = the strip x −17…110, |z| ≤ 14 (island · meadow · town · hills · forest) · around it: noise terrain (hills, mountain ridges, lakes, the western sea)
+   streamed in 64 m chunks (2 m detail + decor + a few clearables) · a 16 m "far land" mesh shows the mountains on the horizon */
+export const WORLD = { x0: -120, x1: 1380, z0: -750, z1: 750 }, CHUNK = 64;
+export const coreDist = (x, z) => { const dx = Math.max(-17 - x, 0, x - 110), dz = Math.max(Math.abs(z) - 14, 0); return Math.hypot(dx, dz) };
+const hsh = (i, j) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296 };
+function vnoise(x, z) { const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz), a = hsh(i, j), b = hsh(i + 1, j), c = hsh(i, j + 1), d = hsh(i + 1, j + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v }
+export function fbm(x, z, o = 5) { let s = 0, a = .5, f = 1; for (let k = 0; k < o; k++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5 } return s }
+export const coastX = z => { const k = smw(18, 70, Math.abs(z)); return shore(z) * (1 - k) + (-14 + 40 * (fbm(z / 260 + 3.3, 1.7, 3) - .5)) * k };
+export function wildH(x, z) {
+  const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));
+  let h = (n - .47) * 30 + Math.pow(r, 3) * 46 * far + 4 * far;                                                                   // rolling land · mountain ridges farther out
+  const k = smw(0, 50, coreDist(x, z)); h = h * k + (.45 + (fbm(x / 40, z / 40, 2) - .5) * .8) * (1 - k) + (fbm(x / 40, z / 40, 2) - .5) * 1.2 * k;   // gentle and dry next to the core
+  const c = coastX(z); h = h - smw(c + 16, c - 4, x) * (Math.max(0, h) + 6);                                                            // the western sea (a 20 m beach band)
+  return h;
+}
+export function wildColor(x, z) {
+  const h = wildH(x, z); if (h < -.45) return h < -4 ? '#2a5a8a' : '#4a90c0'; if (h < .8 && x < coastX(z) + 14) return '#e8dcb8';
+  const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2)); if (h > 30) return '#f0f2f6'; if (sl > 3.2) return '#8a7a6a';
+  return fbm(x / 60 + 4, z / 60) > .55 ? '#3f7a34' : h > 14 ? '#6a9a4a' : '#7cc060';
+}
+const TREE_TRUNK = new THREE.CylinderGeometry(.18, .28, 1.6, 6); TREE_TRUNK.translate(0, .8, 0);
+const TREE_TOP = new THREE.IcosahedronGeometry(1.15, 1); TREE_TOP.translate(0, 2.3, 0); const PINE_TOP = new THREE.ConeGeometry(1.1, 2.6, 7); PINE_TOP.translate(0, 2.6, 0);
+const ROCK_G = new THREE.DodecahedronGeometry(.8, 0);
+const M_TRUNK = new THREE.MeshStandardMaterial({ color: '#7a4a28', roughness: .9 }), M_TOP = addWind(new THREE.MeshStandardMaterial({ roughness: .85 })), M_ROCK = new THREE.MeshStandardMaterial({ color: '#9a948a', roughness: .95, flatShading: true });
+const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), BLADE = new THREE.ConeGeometry(.04, .3, 4); BLADE.translate(0, .15, 0);
+const M_LAND = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 });
+const _col = new THREE.Color();
+function landGeo(x0, z0, size, seg, sink) {
+  const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + size / 2, z = P.getZ(i) + z0 + size / 2, dc = coreDist(x, z), h = dc > 0 ? wildH(x, z) : 0;
+    P.setY(i, (dc > 0 ? h : -2) - sink); _col.set(wildColor(x, z)).multiplyScalar(.92 + .1 * vnoise(x * .3, z * .3)); col.push(_col.r, _col.g, _col.b) }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
+}
+/* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */
+export function buildFarLand(scene) {
+  const size = 1600, m = new THREE.Mesh(landGeo(-170, -800, size, 100, .9), M_LAND); m.position.set(-170 + size / 2, 0, -800 + size / 2); scene.add(m); return m;
+}
+/* one 64 m chunk: 2 m terrain · instanced trees / pines / rocks / grass · a few clearables (returned as entries for W.clear) */
+export function buildChunk(W, cx, cz) {
+  const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
+  const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
+  const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3) continue; const h = wildH(x, z); if (h < .3 || x < coastX(z) + 12) continue;
+    const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60) }) }
+  const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6);
+  const inst = (geo, mat, list, place) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c) }); m.castShadow = true; m.receiveShadow = true; g.add(m) };
+  const pines = trees.filter(p => p.h > 9 || R() < .3), broad = trees.filter(p => !pines.includes(p));
+  const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) };
+  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff') });
+  inst(TREE_TOP, M_TOP, broad, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#4f9a3e' : '#6ab84a') }); inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
+  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff') });
+  const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
+  inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
+  /* clearables: 5 per chunk on gentle ground (regrow like the others) */
+  const types = [['tree', 'bush', 'grass', 'pebble', 'tree'], ['rock', 'pine', 'rock', 'boulder', 'pebble']];
+  for (let i = 0, n = 0; i < 40 && n < 5; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 5)];
+    out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
+  W.scene.add(g); return out;
+}
+export function dropChunk(W, ch) { W.scene.remove(ch.g); ch.g.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'PlaneGeometry') o.geometry.dispose(); if (o.isInstancedMesh) o.dispose() }) }

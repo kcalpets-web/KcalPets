@@ -6,7 +6,7 @@
 import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook } from './clay.js';
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats } from './state.js';
-import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA } from './world.js';
+import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -44,25 +44,23 @@ function setTime() {                                         // lighting follows
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
 function timeTick(dt) { if (!S.story.slept) { S.time = D.DAY.first; return } S.time = (S.time + dt) % 1440 }
-const cam = new THREE.PerspectiveCamera(36, 1, .3, 260);
+const cam = new THREE.PerspectiveCamera(36, 1, .3, 700);
 /* v0.9.5 camera: 'tp' = behind the character like Zelda (default) · 'top' = the old view from above */
 const camTP = () => (localStorage.getItem('ng_cam') || 'tp') === 'tp';
 const CAM = { yaw: Math.PI, pitch: .42, manualT: 0 };            // yaw: the direction the camera looks (forward = sin/cos) · pitch: how far it looks down
 /* sky dome (gradient · clouds · stars) + far mountains so the horizon reads from the ground */
-const SKY = new THREE.Mesh(new THREE.SphereGeometry(240, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+const SKY = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { top: { value: C('#5aa8e0') }, bot: { value: C('#cfe8f4') }, stars: { value: 0 }, t: { value: 0 } },
   vertexShader: 'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader: `uniform vec3 top,bot;uniform float stars,t;varying vec3 vP;float h(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}
     void main(){float y=clamp(vP.y,0.,1.);vec3 c=mix(bot,top,pow(y,.6));vec3 q=floor(vP*180.);float s=step(.9965,h(q))*stars*smoothstep(.05,.3,vP.y);
     float cl=smoothstep(.55,.85,sin(vP.x*9.+t*.02)*sin(vP.z*7.-t*.015)*.5+.5)*smoothstep(.08,.3,vP.y)*smoothstep(.7,.35,vP.y);c=mix(c,vec3(1.),cl*.55*(1.-stars));gl_FragColor=vec4(c+s,1.);}` }));
 SKY.renderOrder = -1; scene.add(SKY);
-{ const M = new THREE.Group(); let rs = 3; const Rn = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 46; i++) { const a = i / 46 * Math.PI * 2, r = 150 + Rn() * 40, h = 18 + Rn() * 30, m = new THREE.Mesh(new THREE.ConeGeometry(h * .9, h, 6), new THREE.MeshLambertMaterial({ color: Rn() < .5 ? '#7a8aa8' : '#6a7a98', flatShading: true }));
-    m.position.set(48 + Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r * .8); M.add(m) } scene.add(M) }
+/* (v1.1: the far mountain ring is gone — the big world has real mountains) */
 let zoom = +(localStorage.getItem('ng_zoom') || 1); const camT = { x: S.cam[0], z: S.cam[1] }, camP = { x: camT.x, z: camT.z };
 function resize() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix() }
 addEventListener('resize', resize); resize();
-const clampCam = () => { camT.x = Math.max(-12, Math.min(108, camT.x)); camT.z = Math.max(-14, Math.min(14, camT.z)) };
+const clampCam = () => { camT.x = Math.max(WORLD.x0, Math.min(WORLD.x1, camT.x)); camT.z = Math.max(WORLD.z0, Math.min(WORLD.z1, camT.z)) };
 const walkHere = walkLand, nearMe = (M, r = 30) => dist(me().x, me().z, M.A.root.position.x, M.A.root.position.z) < r;   // v0.9: one world · monsters and pets walk on land, the player can swim
 
 /* ---------- world + town ---------- */
@@ -231,7 +229,7 @@ function monSpawn(kind, x, z, o = {}) {
   const T = D.MON[kind], A = makeActor(g => (MONS[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
   if (T.legs) rigOf(A);
   A.root.position.set(x, groundH(x, z), z); A.root.scale.setScalar(.01);
-  const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
+  const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x, z), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
   m.pick.userData.pick.m = m; if (!S.journal.mons[kind]) { S.journal.mons[kind] = { seen: 1, kills: 0 }; if (S.story.intro) floater('📓 บันทึกใหม่', 'item', x, 2.2, z) } m.tag = document.createElement('div'); m.tag.className = 'mtag'; document.body.appendChild(m.tag); mons.push(m);
   if (m.farm) { S.mon = { kind, hp: m.hp, x, z }; S.monSeen++; prevTool = tool === 'sword' ? prevTool : tool; setTool('sword'); callPets(m);
     if (!o.silent) toast(`⚠️ <b>${T.name}</b> โผล่มาจากที่เพิ่งเคลียร์!<br>⚔️ ลากนิ้วผ่านมันเพื่อฟัน`, 3400); save() }
@@ -317,7 +315,7 @@ function travel(area, after, at) {
   const f = $('sleep'); f.querySelector('b').textContent = '📍 ' + (ZONES[area] || area); f.style.display = 'flex'; f.style.opacity = 1;
   setTimeout(() => { const p = at || AREA_ENTRY[area]; fishEnd(); placeMe(p[0], p[1]);
     for (const e of PA.values()) if (S.team.includes(e.p.id) && e.mode !== 'down') { e.mode = 'wander'; e.foe = null; e.A.root.position.set(p[0] + 1, groundH(p[0] + 1, p[1] + .6), p[1] + .6) }
-    enterZone(zoneOf(p[0])); save(); f.style.opacity = 0; setTimeout(() => f.style.display = 'none', 600); after && setTimeout(after, 400) }, 500);
+    enterZone(zoneOf(p[0], p[1])); save(); f.style.opacity = 0; setTimeout(() => f.style.display = 'none', 600); after && setTimeout(after, 400) }, 500);
 }
 function enterZone(z) {
   const first = !(S.zones || {})[z]; S.zones = Object.assign(S.zones || {}, { [z]: 1 }); S.area = z; guide = null; ambience();
@@ -426,7 +424,7 @@ function openWreck() {
 }
 /* ---------- building jobs: pay → a clay hammer knocks on the site with a countdown → done (keeps counting while the game is closed) ---------- */
 const jobs = new Map();
-function jobAt(k) { if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, zoneOf(p.x)] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
+function jobAt(k) { if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, zoneOf(p.x, p.z)] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
   const sh = TW.shops[D.SHOPS.findIndex(s => 'shop:' + s.k === k)]; return [sh.x, sh.z + (sh.z < 0 ? 1.3 : -1.3), 'town'] }
 function startJob(k, secs) { S.jobs[k] = Date.now() + secs * 1000; save(); jobView(k); questCheck() }
 function jobView(k) {
@@ -676,7 +674,7 @@ function frame(now) {
         let foe = null, fd = 5; for (const M of mons) if (M.born + 800 < now) { const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
       } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
-    animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, .65, q.z);
+    animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, q.y + .65, q.z);
     if (e.mode !== 'down' && now - (e.hurt || 0) > 4000) { const st = petStats(p); p.hp = Math.min(st.hp, petHp(p) + st.hp * D.REGEN.perSec * dt); p.mp = Math.min(st.mp, petMp(p) + st.mp * D.REGEN.perSec * dt) }
   }
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
@@ -692,7 +690,7 @@ function frame(now) {
     if (tgt) { if (td > 1.05) stepTo(M.A, tgt.A.root.position.x, tgt.A.root.position.z, sp, dt, ok) }
     else if (M.aggro) { if (pd > 1.1) stepTo(M.A, me().x, me().z, sp * .8, dt, ok) }
     else if (M.alert !== 1 && (M.wait -= dt) <= 0) { const d = stepTo(M.A, M.t[0], M.t[1], .6, dt, ok); if (d < .1) { M.wait = 1 + Math.random() * 2.5; M.t = [M.home[0] + (Math.random() - .5) * 3, M.home[1] + (Math.random() - .5) * 3] } }
-    if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, .8, m.z);
+    if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, m.y + .8, m.z);
     if (M.aggro && age > 1.2 && now > M.atkT && (tgt ? td < 1.4 : pd < 2.4)) { M.atkT = now + D.MON_ATK_CD / speed;
       if (!tgt || Math.random() < D.MON_HIT_PLAYER) hitPlayer(M, now);
       else { const r = dmgCalc(M.T.atk, petStats(tgt.p).def); tgt.p.hp = petHp(tgt.p) - r.d; tgt.hurt = now; const tq = tgt.A.root.position; floater('-' + r.d, 'hurt', tq.x, 1.4, tq.z); if (tgt.p.hp <= 0) petDown(tgt) } }
@@ -707,7 +705,7 @@ function frame(now) {
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
   fishTick(dt, now); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
-  { const z = zoneOf(me().x); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
+  { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   if (S.autoPot && now > potT && pHp() < pStats().hp * D.AUTO_POT && (S.potions.hpS || S.potions.hpL)) { potT = now + 1500; usePotion(S.potions.hpS ? 'hpS' : 'hpL'); floater('🧪 AUTO', 'heal', me().x, 2, me().z) }
   if (now - lastHurt > 4000) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
   if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
@@ -722,7 +720,7 @@ function frame(now) {
     let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); CAM.ps = (CAM.ps ?? CAM.pitch) + (CAM.pitch - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * 7);   // eased
     const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
     py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
-    if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 40, 140); cam.far = 260 } }
+    if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 } }
   else { cam.fov = 36; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
   sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
@@ -1166,20 +1164,30 @@ function autoTick(now) {
   if (o) workOn(o);
 }
 
-/* ---------- v0.9 map: minimap (top right) + world map with fog of war · camps = warp points ---------- */
-const MAP = { x0: -16, x1: 112, z0: -16, z1: 16, k: 6 }, MW = (MAP.x1 - MAP.x0) * MAP.k, MH = (MAP.z1 - MAP.z0) * MAP.k, FC = (MAP.x1 - MAP.x0) / 2, FR = (MAP.z1 - MAP.z0) / 2;
+/* ---------- maps (v1.1 world): detailed core map (minimap near home) + a 4 m/px map of the whole 1.5 km world · fog of war in 8 m cells · camps = warp points ---------- */
+const MAP = { x0: -16, x1: 112, z0: -16, z1: 16, k: 6 }, MW = (MAP.x1 - MAP.x0) * MAP.k, MH = (MAP.z1 - MAP.z0) * MAP.k;
 const mapBase = document.createElement('canvas'); mapBase.width = MW; mapBase.height = MH;
-{ const g = mapBase.getContext('2d'), img = g.createImageData(MW, MH), cache = {};
-  for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) { const x = MAP.x0 + (px + .5) / MAP.k, z = MAP.z0 + (py + .5) / MAP.k, hx = mapColor(x, z);
-    const c = cache[hx] || (cache[hx] = [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)]), i = (py * MW + px) * 4; img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255 }
+const hexRGB = {}, rgb = hx => hexRGB[hx] || (hexRGB[hx] = [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)]);
+{ const g = mapBase.getContext('2d'), img = g.createImageData(MW, MH);
+  for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) { const x = MAP.x0 + (px + .5) / MAP.k, z = MAP.z0 + (py + .5) / MAP.k, c = rgb(mapColor(x, z)), i = (py * MW + px) * 4; img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255 }
   g.putImageData(img, 0, 0); g.fillStyle = '#e8d8b0'; for (const sh of TW.shops) g.fillRect((sh.x - MAP.x0) * MAP.k - 6, (sh.z - MAP.z0) * MAP.k - 5, 12, 10);
   g.fillStyle = '#6a3a1a'; g.fillRect((HOUSE.x - MAP.x0) * MAP.k - 5, (HOUSE.z - MAP.z0) * MAP.k - 5, 10, 10) }
-const fogCv = document.createElement('canvas'); fogCv.width = MW; fogCv.height = MH; let fogDirty = true;
+const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) * WMk, worldMap = document.createElement('canvas'); worldMap.width = WMW; worldMap.height = WMH;
+{ const g = worldMap.getContext('2d'), img = g.createImageData(WMW, WMH), H = new Float32Array(WMW * WMH);           // heights first, colours from the grid (fast)
+  for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) H[py * WMW + px] = wildH(WORLD.x0 + (px + .5) / WMk, WORLD.z0 + (py + .5) / WMk);
+  for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) { const i = py * WMW + px, h = H[i], x = WORLD.x0 + (px + .5) / WMk, z = WORLD.z0 + (py + .5) / WMk;
+    const sl = Math.abs((H[i + 1] ?? h) - (H[i - 1] ?? h)) + Math.abs((H[i + WMW] ?? h) - (H[i - WMW] ?? h)), shade = 1 - Math.max(-.25, Math.min(.25, ((H[i + 1] ?? h) - (H[i - 1] ?? h)) * .06));
+    const hx = h < -.45 ? (h < -4 ? '#2a5a8a' : '#4a90c0') : h < .8 && x < coastX(z) + 14 ? '#e8dcb8' : h > 30 ? '#f0f2f6' : sl > 12 ? '#8a7a6a' : fbm(x / 60 + 4, z / 60, 2) > .55 ? '#3f7a34' : h > 14 ? '#6a9a4a' : '#7cc060';
+    const c = rgb(hx), j = i * 4; img.data[j] = c[0] * shade; img.data[j + 1] = c[1] * shade; img.data[j + 2] = c[2] * shade; img.data[j + 3] = 255 }
+  g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * WMk, (MAP.z0 - WORLD.z0) * WMk, (MAP.x1 - MAP.x0) * WMk, (MAP.z1 - MAP.z0) * WMk) }
+const FCELL = 8, FC = (WORLD.x1 - WORLD.x0) / FCELL, FR = (WORLD.z1 - WORLD.z0) / FCELL, fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
 if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
-function reveal(x, z, r = 9) { let f = S.fog, ch = false; const c0 = Math.floor((x - r - MAP.x0) / 2), c1 = Math.floor((x + r - MAP.x0) / 2), r0 = Math.floor((z - r - MAP.z0) / 2), r1 = Math.floor((z + r - MAP.z0) / 2), a = f.split('');
-  for (let rr = Math.max(0, r0); rr <= Math.min(FR - 1, r1); rr++) for (let cc = Math.max(0, c0); cc <= Math.min(FC - 1, c1); cc++) { const i = rr * FC + cc; if (a[i] === '1') continue; const cx = MAP.x0 + cc * 2 + 1, cz = MAP.z0 + rr * 2 + 1; if (Math.hypot(cx - x, cz - z) < r) { a[i] = '1'; ch = true } }
-  if (ch) { S.fog = a.join(''); fogDirty = true } }
-function fogDraw() { const g = fogCv.getContext('2d'); g.clearRect(0, 0, MW, MH); g.fillStyle = 'rgba(18,22,40,.9)'; for (let i = 0; i < S.fog.length; i++) if (S.fog[i] !== '1') g.fillRect((i % FC) * 2 * MAP.k, Math.floor(i / FC) * 2 * MAP.k, 2 * MAP.k + 1, 2 * MAP.k + 1); fogDirty = false }
+function revealVisited() { const zx = { farm: [-8, 9], meadow: [9, 35], town: [35, 57], hills: [57, 79], forest: [79, 106] }; for (const z in S.zones || {}) if (zx[z]) for (let x = zx[z][0]; x <= zx[z][1]; x += 6) reveal(x, 0, 16) }   // saves from before v1.1: uncover what was already explored
+function reveal(x, z, r = coreDist(x, z) > 0 ? 26 : 12) { const c0 = Math.floor((x - r - WORLD.x0) / FCELL), c1 = Math.floor((x + r - WORLD.x0) / FCELL), r0 = Math.floor((z - r - WORLD.z0) / FCELL), r1 = Math.floor((z + r - WORLD.z0) / FCELL); let a = null;
+  for (let rr = Math.max(0, r0); rr <= Math.min(FR - 1, r1); rr++) for (let cc = Math.max(0, c0); cc <= Math.min(FC - 1, c1); cc++) { const i = rr * FC + cc; if (S.fog[i] === '1') continue; const cx = WORLD.x0 + cc * FCELL + 4, cz = WORLD.z0 + rr * FCELL + 4; if (Math.hypot(cx - x, cz - z) < r) { a = a || S.fog.split(''); a[i] = '1' } }
+  if (a) { S.fog = a.join(''); fogDirty = true } }
+function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(FC, FR); for (let i = 0; i < S.fog.length; i++) { const j = i * 4; img.data[j] = 18; img.data[j + 1] = 22; img.data[j + 2] = 40; img.data[j + 3] = S.fog[i] === '1' ? 0 : 236 } g.putImageData(img, 0, 0); fogDirty = false }
+if (S.fog.indexOf('1') < 0 && S.story.intro) { S.zones = Object.assign({ farm: 1 }, S.zones); revealVisited() }
 const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
 let mapT = 0;
 function mapTick(now) {
@@ -1188,10 +1196,12 @@ function mapTick(now) {
   if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {
-  const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, span = 34; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
-  const g = cv3.getContext('2d'), q = me(), sx = (q.x - span / 2 - MAP.x0) * MAP.k, sy = (q.z - span / 2 - MAP.z0) * MAP.k, sw = span * MAP.k, s = cv3.width / sw;
-  g.fillStyle = '#12162a'; g.fillRect(0, 0, cv3.width, cv3.height); g.drawImage(mapBase, sx, sy, sw, sw, 0, 0, cv3.width, cv3.height); g.drawImage(fogCv, sx, sy, sw, sw, 0, 0, cv3.width, cv3.height);
-  const P = (x, z) => [(x - q.x + span / 2) * MAP.k * s, (z - q.z + span / 2) * MAP.k * s];
+  const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
+  const g = cv3.getContext('2d'); g.imageSmoothingEnabled = !core; g.fillStyle = '#12162a'; g.fillRect(0, 0, cv3.width, cv3.height);
+  const wx = (q.x - span / 2 - WORLD.x0) * WMk, wz = (q.z - span / 2 - WORLD.z0) * WMk, ws = span * WMk;
+  if (core) g.drawImage(mapBase, (q.x - span / 2 - MAP.x0) * MAP.k, (q.z - span / 2 - MAP.z0) * MAP.k, span * MAP.k, span * MAP.k, 0, 0, cv3.width, cv3.height); else g.drawImage(worldMap, wx, wz, ws, ws, 0, 0, cv3.width, cv3.height);
+  g.imageSmoothingEnabled = true; g.drawImage(fogCv, (q.x - span / 2 - WORLD.x0) / FCELL, (q.z - span / 2 - WORLD.z0) / FCELL, span / FCELL, span / FCELL, 0, 0, cv3.width, cv3.height);
+  const s = cv3.width / span, P = (x, z) => [(x - q.x + span / 2) * s, (z - q.z + span / 2) * s];
   g.fillStyle = '#ff4a5a'; for (const m of mons) if (nearMe(m, span)) { const [x, y] = P(m.A.root.position.x, m.A.root.position.z); g.beginPath(); g.arc(x, y, 2.6 * dpr, 0, 7); g.fill() }
   g.font = `${11 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
   if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
@@ -1200,19 +1210,43 @@ function drawMini() {
 }
 function openMap() {
   sheet('🗺️ แผนที่', (b, redraw, close) => {
-    b.innerHTML = `<div class="wmap"><canvas id="wmC" width="${MW}" height="${MH}"></canvas></div><p class="mut">ลากเลื่อนแผนที่ซ้าย-ขวา · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส</p><h3>🍲 วาร์ปไปแคมป์</h3>` +
+    const Z = 2, CW = WMW * Z, CH = WMH * Z;
+    b.innerHTML = `<div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}"></canvas></div><p class="mut">ลากเลื่อนแผนที่ · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส · โลกกว้าง ~1.5 กม.</p><h3>🍲 วาร์ปไปแคมป์</h3>` +
       Object.keys(CAMPS).map(k => `<div class="row"><span>${campOn(k) ? '🍲' : '❔'} ${campOn(k) ? CAMPS[k].name : '??? ยังไม่ค้นพบ'}</span>${campOn(k) ? `<button class="btn sm go" data-c="${k}">วาร์ป</button>` : ''}</div>`).join('');
-    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.drawImage(mapBase, 0, 0); g.drawImage(fogCv, 0, 0); g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    const P = (x, z) => [(x - MAP.x0) * MAP.k, (z - MAP.z0) * MAP.k];
+    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true; g.drawImage(fogCv, 0, 0, CW, CH);
+    const P = (x, z) => [(x - WORLD.x0) * WMk * Z, (z - WORLD.z0) * WMk * Z]; g.font = '16px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
-    g.font = 'bold 13px sans-serif'; g.fillStyle = '#fff'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; for (const [z, x] of [['farm', -2], ['meadow', 22], ['town', 46], ['hills', 68], ['forest', 93]]) if ((S.zones || {})[z]) { const [px, py] = P(x, -12.5); g.strokeText(ZONES[z], px, py); g.fillText(ZONES[z], px, py) }
-    if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.font = '18px sans-serif'; g.fillText('⭐', x, y) }
+    if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
     const [px, py] = P(me().x, me().z); g.fillStyle = '#ffd23f'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke();
-    const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px - wrap.clientWidth / 2;
-    b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { const k = x.dataset.c; close(); travel(zoneOf(CAMPS[k].x), null, [CAMPS[k].x + 1.2, CAMPS[k].z + .6]) });
+    const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px - wrap.clientWidth / 2; wrap.scrollTop = py - wrap.clientHeight / 2;
+    b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { const k = x.dataset.c; close(); travel(zoneOf(CAMPS[k].x, CAMPS[k].z), null, [CAMPS[k].x + 1.2, CAMPS[k].z + .6]) });
   });
 }
 $('mini').onclick = () => openMap();
+/* ---------- the big world: chunks stream in around the player (terrain + decor near · clearables + wild monsters nearer) ---------- */
+const CHUNKS = new Map(); let chunkT = 0;
+const FAR = buildFarLand(scene);
+const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(3400, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2f6fa8', roughness: .35, metalness: .05 })); OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(600, -.38, 0); scene.add(OCEAN);
+const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp', 'rockGolem', 'goblin', 'grassSprite'], ['rockGolem', 'goblin', 'goblin', 'rockGolem']];
+function chunkTick(now) {
+  if (now < chunkT) return; chunkT = now + 220; const q = me(), ccx = Math.floor(q.x / CHUNK), ccz = Math.floor(q.z / CHUNK), R2 = 3, near = 1;
+  let built = false;
+  for (let dz = -R2; dz <= R2 && !built; dz++) for (let dx = -R2; dx <= R2 && !built; dx++) { const cx = ccx + dx, cz = ccz + dz, key = cx + ',' + cz;
+    if (CHUNKS.has(key) || Math.hypot(dx, dz) > R2 + .2 || (cx + 1) * CHUNK < WORLD.x0 || cx * CHUNK > WORLD.x1 || (cz + 1) * CHUNK < WORLD.z0 || cz * CHUNK > WORLD.z1) continue;
+    const allCore = [[0, 0], [1, 0], [0, 1], [1, 1]].every(([a, c]) => coreDist((cx + a) * CHUNK, (cz + c) * CHUNK) === 0); if (allCore) { CHUNKS.set(key, { core: 1 }); continue }
+    CHUNKS.set(key, Object.assign(buildChunk(W, cx, cz), { cx, cz, near: false, mons: [] })); built = true }                        // one chunk per tick (no hitches)
+  for (const [key, ch] of CHUNKS) { if (ch.core) continue; const dx = ch.cx - ccx, dz = ch.cz - ccz, d = Math.hypot(dx, dz);
+    if (d > R2 + 1.2) { setNear(ch, false); dropChunk(W, ch); CHUNKS.delete(key); continue }
+    setNear(ch, Math.max(Math.abs(dx), Math.abs(dz)) <= near) }
+}
+function setNear(ch, on) {
+  if (ch.near === on) return; ch.near = on;
+  if (on) { for (const o of ch.clears) { if (!W.clear.has(o.id)) W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o) }
+    if (!ch.spawned) { ch.spawned = 1; const x = (ch.cx + .5) * CHUNK, z = (ch.cz + .5) * CHUNK, tier = Math.min(2, Math.floor(Math.hypot(x - 46, z) / 220)); if (Math.random() < .55) for (let t = 0; t < 20; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50;
+      if (walkLand(px, pz) && coreDist(px, pz) > 8 && dist(px, pz, me().x, me().z) > 10) { const L = WILD_MONS[tier]; ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })); break } } } }
+  else { for (const o of ch.clears) { despawnClear(W, o); W.clear.delete(o.id) } for (const m of ch.mons) if (mons.includes(m) && !m.aggro) monGone(m); ch.mons = ch.mons.filter(m => mons.includes(m)) }
+}
+
 /* the island gate stays barred until Uncle Howsif's boat is repaired */
 const BARRIER = new THREE.Group(); for (let i = 0; i < 3; i++) part(BARRIER, '#5a3420', '#9a6238', [0, .35 + i * .32, 0], [.09, .09, 1.05], [0, 0, (i - 1) * .12], { A: 0 }); BARRIER.position.set(8.4, 0, EXIT.z); scene.add(BARRIER);
 
@@ -1221,7 +1255,7 @@ const PLOTS = new Map(), SOIL_G = new THREE.BoxGeometry(.92, .1, .92), SOIL_M = 
 const SPARK = new THREE.MeshBasicMaterial({ color: '#fff27a' });
 const cellOf = (x, z) => [Math.round(x), Math.round(z)], keyOf = (cx, cz) => cx + ',' + cz;
 function tillable(cx, cz) {
-  if (zoneOf(cx) !== 'farm' || !walkLand(cx, cz) || cx < shore(cz) + 2.6 || cx > 6.6 || S.plots[keyOf(cx, cz)]) return false;
+  if (zoneOf(cx, cz) !== 'farm' || !walkLand(cx, cz) || cx < shore(cz) + 2.6 || cx > 6.6 || S.plots[keyOf(cx, cz)]) return false;
   if (dist(cx, cz, HOUSE.x, HOUSE.z) < 2.8 || dist(cx, cz, POT.home.x, POT.home.z) < 1.7 || dist(cx, cz, HOWSIF.x, HOWSIF.z) < 1.8 || dist(cx, cz, WRECK.x, WRECK.z) < 2.2 || Math.abs(cz - EXIT.z) < 1.2 && cx > 5) return false;
   for (const o of W.clear.values()) if (o.g && dist(cx, cz, o.x, o.z) < .95) return false;
   return Object.keys(S.plots).length < D.PLOT_MAX;
@@ -1344,7 +1378,7 @@ function afterLogin() { if (!S.story.intro) startIntro(); else if (!S.avatar) op
 W.wreckPick = addPick(W, WRECK.x, WRECK.z, 1.2, 1.4, { kind: 'wreck' });
 placeHowsif(); storyProps();
 if (S.mon && S.has.sword) monSpawn(S.mon.kind, S.mon.x, S.mon.z, { farm: true, aggro: true, hp: S.mon.hp, silent: true }); else S.mon = null;
-{ const z = zoneOf(me().x); S.area = z; if (z === 'town') townSpawn(); if (z === 'forest') forestSpawn(); if (z === 'meadow' || z === 'hills') wildSpawn(z) } setTimeout(sickEvent, 1500);
+{ const z = zoneOf(me().x, me().z); S.area = z; if (z === 'town') townSpawn(); if (z === 'forest') forestSpawn(); if (z === 'meadow' || z === 'hills') wildSpawn(z) } setTimeout(sickEvent, 1500);
 boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAnimationFrame(frame);
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
@@ -1357,6 +1391,7 @@ window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.t
   setCam: v => localStorage.setItem('ng_cam', v), CAM, setOpt: (c, h) => { OPT.ctrl = c; OPT.hud = h; applyOpt() }, actA, openWheel, closeWheel, wheelPick, get wheelOn() { return wheelOn }, autoTick, get guard() { return guard },
   openCreator, walkTo, placeMe, get me() { return me() }, get PL() { return PL },
   tillable, till, plant, harvest, plotAction, cropStage, growAll: () => { for (const k in S.plots) if (S.plots[k].c) S.plots[k].t = 0; for (const k in S.plots) plotView(k) }, get plots() { return S.plots },
+  get chunks() { return [...CHUNKS.values()].filter(c => !c.core).length }, wildH, coreDist,
   openMap, reveal, get fog() { return S.fog }, goPath, enterZone, envState: () => ({ swim: PL.swim, climb: PL.climb, y: me().y, area: S.area }),
   updCheck, goForest, travel, openCage, openSberh, SB, get autoPot() { return S.autoPot },
   finishJobs: () => { for (const k in S.jobs) S.jobs[k] = 0 }, get jobs() { return S.jobs },

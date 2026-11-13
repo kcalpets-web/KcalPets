@@ -164,6 +164,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     { const y0 = await N(() => window.__ng.CAM.yaw); await pg.mouse.move(200, 400); await pg.mouse.down(); await pg.mouse.move(120, 400, { steps: 5 }); await pg.mouse.up(); const y1 = await N(() => window.__ng.CAM.yaw); log('tp drag turns camera', (y1 - y0).toFixed(2)); if (Math.abs(y1 - y0) < .3) errs.push('dragging did not turn the camera') }
     await E(() => { const N = window.__ng; N.placeMe(62, -1); N.CAM.yaw = Math.PI / 2 + .5 }); await wait(2500); await shot('39-tp-hills'); await E(() => { const N = window.__ng; N.placeMe(46, 3); N.CAM.yaw = Math.PI }); await wait(2500); await shot('40-tp-town');
     await E(() => { const N = window.__ng; N.S.time = 23 * 60; N.placeMe(2, -2); N.CAM.yaw = -Math.PI / 2 }); await wait(2500); await shot('41-tp-night-sea');
+    /* v1.1 big world: go north out of the meadow into the wilds · chunks stream in */
+    await E(() => { const N = window.__ng; N.setCam('tp'); N.travel('wild', null, [24, 60]) }); await wait(9000);
+    { const w = await N(() => ({ chunks: window.__ng.chunks, area: window.__ng.envState().area, y: window.__ng.me.y })); log('wild', JSON.stringify(w)); if (!(w.chunks > 8) || w.area !== 'wild') errs.push('the big world did not stream in') }
+    await shot('46-wild');
     const st = await N(() => ({ q: window.__ng.S.quest, story: window.__ng.S.story })); log('quest', st.q, 'story', JSON.stringify(st.story));
     ok = st.story.cured && st.q >= 18;
     log('perf', JSON.stringify(await N(() => window.__ng.info())));

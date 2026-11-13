@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.0.0';
+export const APP_VER = '1.1.0';
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
@@ -188,7 +188,7 @@ export const QUESTS = [
 export const DAY = { dawn: 6 * 60, dusk: 22 * 60, first: 21 * 60 + 30 };     // the story's first night is frozen at 21:30 until you sleep
 export const NIGHT = { atk: 1.2, drop: 1.3 };                                  // monsters hit harder at night and drop items more often
 export const CHASE = 6;                                                        // monsters only chase you inside this range — explore freely
-export const AREA_TEMP = { farm: 0, meadow: 0, town: 0, hills: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
+export const AREA_TEMP = { wild: 0, farm: 0, meadow: 0, town: 0, hills: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
 /* cooking ingredients (fish come from S.fish) · tag = what recipes ask for */
 export const INGR = {
   apple:    { icon: '🍎', name: 'แอปเปิ้ลป่า', tag: 'fruit', price: 15 },
