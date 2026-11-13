@@ -27,6 +27,13 @@ export function part(grp, lo, hi, [x, y, z], [sx, sy, sz], [rx, ry, rz] = [0, 0,
   const m = new THREE.Mesh(o.geo || blobGeo(lo, hi, o.A ?? .05, o.f ?? 1.2, o.seed ?? ((x * 7 + y * 3 + z * 5) % 6)), o.mat || MAT);
   m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = o.shadow !== false; m.receiveShadow = true; grp.add(m); return m;
 }
+/* v1.8.1 smooth limbs: a capsule from y0 to y1 (round ends overlap the joints, so arms and legs read as one piece) */
+const CAPS = new Map();
+function capsuleGeo(r, len, lo, hi) { const key = [r, len, lo, hi].join('|'); if (CAPS.has(key)) return CAPS.get(key);
+  const g = new THREE.CapsuleGeometry(r, len, 5, 14), p = g.attributes.position, col = [], L = C(lo), H = C(hi), c = new THREE.Color();
+  for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + len / 2 + r) / (len + 2 * r), side = p.getX(i) / r; c.copy(L).lerp(H, sm(.0, 1, t * .6 + .4 - Math.abs(side) * .15)); col.push(c.r, c.g, c.b) }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); CAPS.set(key, g); return g }
+export function limb(grp, lo, hi, y0, y1, r) { const len = Math.max(.001, Math.abs(y0 - y1)); return part(grp, lo, hi, [0, (y0 + y1) / 2, 0], [1, 1, 1], [0, 0, 0], { geo: capsuleGeo(r, len, lo, hi) }) }
 export function cone(grp, lo, hi, pos, s, rot, k = .82) {
   const g = blobGeo(lo, hi, .03, 1, 2, 24).clone(), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + 1) / 2; p.setX(i, p.getX(i) * (1 - k * t)); p.setZ(i, p.getZ(i) * (1 - k * t)) }
@@ -229,16 +236,18 @@ function human(g, k) {
   /* v1.8 legs: hip → thigh → knee → shin → shoe (pivots at the joints, so walking swings from the hip and the knee bends) */
   const hipY = .44 * L, lw = A ? .085 : .105, up = k.pants || k.leg || '#5a4a6a', upD = k.pantsD || k.legD || '#3a3048';
   for (const s of [-1, 1]) { const hip = new THREE.Group(); hip.position.set(s * .11, hipY, 0); g.add(hip);
-    part(hip, upD, up, [0, -hipY * .26, 0], [lw, hipY * .3, lw], [0, 0, 0], { A: .03 }); const knee = new THREE.Group(); knee.position.y = -hipY * .5; hip.add(knee);
-    part(knee, k.legD || '#3a3048', k.leg || '#5a4a6a', [0, -hipY * .22, 0], [lw * .92, hipY * .27, lw * .92], [0, 0, 0], { A: .03 }); part(knee, '#3a2a20', '#6a4a30', [0, -hipY * .46, .035], [lw * 1.05, .045, lw * 1.4], [0, 0, 0], { A: 0 });
+    limb(hip, upD, up, 0, -hipY * .5, lw); const knee = new THREE.Group(); knee.position.y = -hipY * .5; hip.add(knee); part(knee, upD, up, [0, 0, 0], [lw * .97, lw * .97, lw * .97], [0, 0, 0], { A: 0 });
+    limb(knee, k.legD || '#3a3048', k.leg || '#5a4a6a', 0, -hipY * .4, lw * .9); part(knee, '#3a2a20', '#6a4a30', [0, -hipY * .44, .04], [lw * 1.1, .055, lw * 1.5], [0, 0, 0], { A: 0 });
     role(hip, s < 0 ? 'hipL' : 'hipR'); role(knee, s < 0 ? 'kneeL' : 'kneeR') }
-  const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.24, .36, .18] : [.3, .32, .24]);   // body / clothes
+  const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.25, .36, .185] : [.3, .32, .24]);   // body / clothes
+  part(g, upD, up, [0, hipY + (A ? .05 : .04), 0], A ? [.215, .13, .16] : [.25, .12, .2], [0, 0, 0], { A: .02 });   // v1.8.1 hips / shorts: joins the legs to the body
+  part(g, k.clD, k.cl, [0, (A ? 1.28 : .88) - .03, 0], A ? [.31, .11, .17] : [.36, .12, .22], [0, 0, 0], { A: .02 });   // shoulders: joins the arms to the body
   if (k.skirt) { if (A) cone(g, k.skD, k.sk, [0, .5, 0], [.36, .44, .3], [0, 0, 0], .5); else cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55) }  // adult: long skirt, wide at the hem  // skirt
   /* v1.8 arms: shoulder → upper arm → elbow → forearm → hand (+ an empty 'handR' to hold a sword / tool) */
   const shY = A ? 1.28 : .88, al = A ? .3 : .21, aw = A ? .062 : .078;
   for (const s of [-1, 1]) { const sh = new THREE.Group(); sh.position.set(s * (A ? .27 : .33), shY, 0); sh.rotation.z = s * .14; g.add(sh);
-    part(sh, k.clD, k.cl, [0, -al * .45, 0], [aw, al * .52, aw], [0, 0, 0], { A: .03 }); const el = new THREE.Group(); el.position.y = -al * .95; sh.add(el);
-    part(el, k.clD, k.cl, [0, -al * .38, 0], [aw * .9, al * .45, aw * .9], [0, 0, 0], { A: .03 }); part(el, sk[0], sk[1], [0, -al * .86, 0], [aw * 1.05, aw * 1.05, aw * 1.05], [0, 0, 0], { A: 0 });
+    part(sh, k.clD, k.cl, [0, 0, 0], [aw * 1.3, aw * 1.3, aw * 1.3], [0, 0, 0], { A: 0 }); limb(sh, k.clD, k.cl, 0, -al * .95, aw); const el = new THREE.Group(); el.position.y = -al * .95; sh.add(el);
+    part(el, k.clD, k.cl, [0, 0, 0], [aw * .98, aw * .98, aw * .98], [0, 0, 0], { A: 0 }); limb(el, k.clD, k.cl, 0, -al * .72, aw * .88); part(el, sk[0], sk[1], [0, -al * .86, 0], [aw * 1.15, aw * 1.2, aw * 1.1], [0, 0, 0], { A: 0 });
     if (s > 0) { const h = new THREE.Group(); h.position.y = -al * .86; h.name = 'handR'; el.add(h) } else { const h = new THREE.Group(); h.position.set(-aw * .6, -al * .45, 0); h.name = 'armL2'; el.add(h) }
     role(sh, s < 0 ? 'armL' : 'armR'); role(el, s < 0 ? 'elL' : 'elR') }
   if (A) part(g, sk[0], sk[1], [0, hy - .3, 0], [.08, .1, .08], [0, 0, 0], { A: 0 });           // neck
