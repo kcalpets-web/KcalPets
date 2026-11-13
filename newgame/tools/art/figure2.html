@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE figure v2</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+import * as THREE from '../../lib/three.module.min.js';
+import { figure, sword, kite } from '../../src/figure.js';
+const W = 900, H = 1200, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.15; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+const S = new THREE.Scene(); S.background = new THREE.Color(location.hash.includes('dark') ? '#2e2836' : '#ffffff');
+S.add(new THREE.HemisphereLight('#ffffff', '#6a6560', 1.05)); const key = new THREE.DirectionalLight('#fff6ee', 2.6); key.position.set(-2, 4, 5); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -2, right: 2, top: 3, bottom: -1 }); S.add(key);
+const fill = new THREE.DirectionalLight('#dde6ff', .7); fill.position.set(3, 2, 2); S.add(fill);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.ShadowMaterial({ opacity: .18 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const kind = location.hash.includes('hero') ? { skin: '#f2c9a2', hair: '#e0b870', cloth: '#9aa4b8', clothD: '#6a7488', skirt: '#c8ccd8', front: '#2a3a6a', belt: '#6a4428', boot: '#8a8f9a', joint: '#7a8090', leg: '#8a8f9a', glove: '#6a7488', sleeve: '#9aa4b8' } : { mannequin: 1 };
+const g = figure(new THREE.Group(), kind); g.rotation.y = -.22; S.add(g); const R = {}; g.traverse(o => { if (o.userData.role) R[o.userData.role] = o });
+const sw = sword(new THREE.Group(), kind.mannequin); sw.rotation.set(Math.PI + .35, 0, .55); g.getObjectByName('handL').add(sw);
+const sh = kite(new THREE.Group(), kind.mannequin); sh.rotation.set(1.4, .25, 0); sh.position.set(.03, -.02, .07); g.getObjectByName('armR2').add(sh); sh.scale.setScalar(.95);
+R.armL.rotation.z = -.35; R.armL.rotation.x = -.1; R.elL.rotation.x = -.35; R.armR.rotation.x = -.25; R.armR.rotation.z = .2; R.elR.rotation.x = -1.05; R.armR.rotation.x = -.05;
+R.hipL.rotation.z = -.1; R.hipR.rotation.z = .12; R.hipR.rotation.x = -.05;
+const cam = new THREE.PerspectiveCamera(24, W / H, .1, 50); cam.position.set(0, 1.9, 6.4); cam.lookAt(0, .95, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>
