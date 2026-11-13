@@ -3,11 +3,12 @@
    Vertex colour = mix(dark, light, smoothstep(−.6, .9, ny + .25n)) → top light baked in. */
 import * as THREE from '../lib/three.module.min.js';
 export { THREE };
+import { figure } from './figure.js';
 export const C = h => new THREE.Color(h);
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const GEO = new Map();
 /* Q.seg = sphere detail for blobs; the world drops it while building scenery (pets keep 32) */
-export const Q = { seg: 32, facet: (() => { try { return localStorage.getItem('ng_style') === 'facet' } catch (e) { return false } })() };   // facet = v1.8 preview: low-poly papercraft
+export const Q = { seg: 32, facet: (() => { try { return localStorage.getItem('ng_style') !== 'smooth' } catch (e) { return true } })() };   // facet (default since v1.9) = low-poly · ng_style=smooth = the old soft clay   // facet = v1.8 preview: low-poly papercraft
 export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
   if (Q.facet) seg = Math.min(seg, 9); const key = [lo, hi, A, f, seed.toFixed(2), seg].join('|'); if (GEO.has(key)) return GEO.get(key);
   const g = new THREE.SphereGeometry(1, seg, Math.round(seg * .7)), p = g.attributes.position, col = [], L = C(lo), H = C(hi), v = new THREE.Vector3(), c = new THREE.Color();
@@ -231,7 +232,17 @@ export const ACC = {
 
 /* ---- people (chibi, head ×1.1 like Pen Suk's clay people) · same rig roles as pets so the walk animation works ---- */
 /* k.adult → taller, slimmer, smaller head (a young adult instead of a chibi kid) */
+/* v1.9 people = ball-jointed low-poly figures (figure.js) · children are a bit smaller · the old soft clay body stays for ng_style=smooth */
+const FIG_SC = k => k.adult ? 1 : .8;
 function human(g, k) {
+  if (!Q.facet) return humanClay(g, k);
+  const sc = FIG_SC(k), body = sc === 1 ? g : new THREE.Group(); if (sc !== 1) { body.scale.setScalar(sc); g.add(body) }
+  const hs = k.longHair ? 'long' : k.bun ? 'bun' : k.pony ? 'pony' : k.spiky ? 'spiky' : 'short';
+  figure(body, { skin: (k.skin || ['#e8b48a', '#ffd9bc'])[1], hair: k.hair, cloth: k.cl, clothD: k.clD, skirt: k.skirt ? k.sk : k.clD, leg: k.skirt ? (k.leg || '#e8c0a0') : (k.pants || k.leg || '#4a4a5a'), belt: '#6a4428', boot: '#5a3a24', joint: k.clD, hairStyle: hs, glove: (k.skin || ['#e8b48a', '#ffd9bc'])[1] });
+  return sc;
+}
+const FH = (g, y) => y;   // figure height helper (adult head centre ≈ 1.69)
+function humanClay(g, k) {
   const sk = k.skin || ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
   /* v1.8 legs: hip → thigh → knee → shin → shoe (pivots at the joints, so walking swings from the hip and the knee bends) */
   const hipY = .44 * L, lw = A ? .085 : .105, up = k.pants || k.leg || '#5a4a6a', upD = k.pantsD || k.legD || '#3a3048';
@@ -277,12 +288,15 @@ export function playerLook(g, a = {}) {
 }
 export const HUMANS = {
   kealee(g) { human(g, { adult: 1, cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, longHair: 1, leg: '#ffe0c8', legD: '#e8b48a' });
-    part(g, '#c0303a', '#ff5a5a', [.18, 1.88, .06], [.09, .06, .05], [0, 0, .4], { A: 0 }) },                                  // red hair clip
+    if (Q.facet) part(g, '#c0303a', '#ff5a5a', [.12, 1.82, .04], [.05, .035, .03], [0, 0, .4], { A: 0 }); else part(g, '#c0303a', '#ff5a5a', [.18, 1.88, .06], [.09, .06, .05], [0, 0, .4], { A: 0 }) },                                  // red hair clip
   villager(g, v = 0) { const C2 = [['#e0a040', '#b07020'], ['#6aa0e0', '#3a6aa8'], ['#d06a8a', '#a04060']][v % 3];
     human(g, { cl: C2[0], clD: C2[1], hair: ['#3a2418', '#c8a060', '#1e1520'][v % 3], hairD: '#1e1410', leg: '#4a3a5a' });
-    part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },                                         // apron
+    if (Q.facet) part(g, '#e8e0d0', '#ffffff', [0, .82, .11], [.12, .17, .02], [0, 0, 0], { A: 0 }); else part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },   // apron
   sberh(g) {                                                                     // young herbalist: small, green robe, round glasses, satchel, a sprig behind the ear
     human(g, { adult: 1, cl: '#7aaa5a', clD: '#4a7a3a', hair: '#c8803a', hairD: '#8a4a1a', fringe: 1, leg: '#7a5a3a', legD: '#4a3020' });
+    if (Q.facet) { for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(.035, .007, 6, 16), MAT_EYE); r.position.set(s * .045, 1.7, .125); g.add(r) }
+      part(g, '#7a4a20', '#c08848', [.2, .95, .08], [.09, .09, .05], [0, 0, 0], { A: .05 }); part(g, '#6a3a1a', '#a8703a', [0, 1.2, .1], [.2, .02, .02], [0, 0, -.8], { A: 0 });
+      for (let i = 0; i < 3; i++) part(g, '#2f7a3a', '#8ad86a', [-.15, 1.76 + i * .03, .02], [.03, .06, .015], [0, 0, .5 - i * .4], { A: 0 }); part(g, '#3a6a2a', '#6a9a4a', [0, 1.86, -.02], [.15, .05, .15], [0, 0, 0], { A: .05 }); return }
     cone(g, '#4a7a3a', '#7aaa5a', [0, .66, 0], [.3, .2, .24], [0, 0, 0], .35); part(g, '#6a3a1a', '#a8703a', [0, .82, 0], [.26, .04, .2], [0, 0, 0], { A: 0 });   // tunic hem · belt
     for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(.085, .014, 8, 24), MAT_EYE); r.position.set(s * .1, 1.6, .27); g.add(r) }
     part(g, '#2a2030', '#4a4050', [0, 1.6, .28], [.04, .012, .012], [0, 0, 0], { A: 0 });                                             // glasses bridge
@@ -291,6 +305,8 @@ export const HUMANS = {
     part(g, '#3a6a2a', '#6a9a4a', [0, 1.95, -.05], [.2, .1, .2], [0, 0, 0], { A: .05 });                                             // little cap
   },
   howsif(g) { human(g, { cl: '#4a6a8a', clD: '#2a3a5a', hair: '#e8e8f0', hairD: '#b8b8c8', leg: '#5a4a3a' });
+    if (Q.facet) { const s = FIG_SC({}); part(g, '#d8d8e0', '#ffffff', [0, 1.6 * s, .1 * s], [.1 * s, .09 * s, .05 * s], [0, 0, 0], { A: .1 });
+      part(g, '#b8903a', '#ecc870', [0, 1.84 * s, 0], [.3 * s, .03 * s, .3 * s], [0, 0, 0], { A: .02 }).userData.hat = 1; cone(g, '#b8903a', '#ecc870', [0, 1.92 * s, 0], [.15 * s, .1 * s, .15 * s], [0, 0, 0], .6).userData.hat = 1; return }
     part(g, '#d8d8e0', '#ffffff', [0, 1.06, .26], [.2, .18, .1], [0, 0, 0], { A: .1 });          // white beard
     part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }).userData.hat = 1; cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6).userData.hat = 1 },  // straw hat
 };

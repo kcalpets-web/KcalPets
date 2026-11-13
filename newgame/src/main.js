@@ -165,8 +165,8 @@ function gearView() {
   if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = -Math.PI / 2 - .25; g.position.set(0, -.02, .02); g.scale.setScalar(held === 'sword' ? 1.15 : 1); hand.add(g) }
   if (arm && shield) { const g = new THREE.Group(); g.name = 'gear'; const col = D.RAR_COL[shield.r] || '#8a6a4a';
     part(g, '#5a3a20', '#9a6a3a', [0, 0, 0], [.03, .2, .17], [0, 0, 0], { A: .02 }); part(g, '#8a7a5a', col, [-.035, 0, 0], [.012, .12, .09], [0, 0, 0], { A: 0 }); g.position.set(-.04, 0, 0); arm.add(g) }
-  { const g = new THREE.Group(); g.name = 'gear'; part(g, '#6a4a2a', '#a87a48', [0, 1.05, -.27], [.2, .24, .11], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, 1.28, -.27], [.18, .06, .1], [0, 0, 0], { A: 0 });
-    if (S.has.sword && held !== 'sword') { const sw = new THREE.Group(); TOOLMESH.sword(sw); sw.position.set(.12, .95, -.34); sw.rotation.set(0, 0, .55); g.add(sw) } PL.body.add(g) }
+  { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
+    if (S.has.sword && held !== 'sword') { const sw = new THREE.Group(); TOOLMESH.sword(sw); sw.position.set(.12, F ? 1.15 : .95, F ? -.27 : -.34); sw.rotation.set(0, 0, .55); g.add(sw) } PL.body.add(g) }
 }
 buildPlayer();
 const me = () => PL.root.position;

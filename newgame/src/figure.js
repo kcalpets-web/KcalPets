@@ -1,7 +1,7 @@
 /* Low-poly "ball-jointed figure" characters (art direction test, after the designer's reference: a mannequin with
    faceted shapes, ball joints at shoulders / elbows / knees / ankles, simple skirt plates, chunky hair, sword + kite shield).
    Same joint names as human() in clay.js (hipL/R kneeL/R armL/R elL/R handR armL2), so the game's walk/swing animation drives it. */
-import { THREE } from './clay.js';
+import * as THREE from '../lib/three.module.min.js';
 const MATS = new Map();
 const mat = c => MATS.get(c) || (MATS.set(c, new THREE.MeshStandardMaterial({ color: c, roughness: .7, metalness: .05, flatShading: true })), MATS.get(c));
 const mesh = (g, geo, c, [x, y, z] = [0, 0, 0], [rx, ry, rz] = [0, 0, 0], [sx, sy, sz] = [1, 1, 1]) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, sz); m.castShadow = m.receiveShadow = true; g.add(m); return m };
@@ -12,12 +12,12 @@ const role = (o, r) => { o.userData.role = r; o.userData.base = [o.position.x, o
 /* k: colours { skin, hair, cloth, clothD, skirt, belt, metal, boot, joint } · k.mannequin = all grey */
 export function figure(g, k = {}) {
   const M = k.mannequin, c = (key, def) => M ? (key === 'joint' ? '#b8b4ae' : key === 'dark' ? '#6a6a70' : '#c8c4be') : (k[key] || def);
-  const skin = c('skin', '#f0c8a0'), hair = c('hair', '#d8b070'), cloth = c('cloth', '#4a6ab0'), clothD = c('clothD', '#3a5088'), skirt = c('skirt', '#5a7ac0'), belt = M ? '#6a6a70' : (k.belt || '#6a4428'), boot = M ? '#d0ccc6' : (k.boot || '#5a3a24'), joint = c('joint', '#3a3448');
+  const legC = M ? c() : (k.leg || '#3a3448'), skin = c('skin', '#f0c8a0'), hair = c('hair', '#d8b070'), cloth = c('cloth', '#4a6ab0'), clothD = c('clothD', '#3a5088'), skirt = c('skirt', '#5a7ac0'), belt = M ? '#6a6a70' : (k.belt || '#6a4428'), boot = M ? '#d0ccc6' : (k.boot || '#5a3a24'), joint = c('joint', '#3a3448');
   const hipY = .98, shY = 1.46;
   /* legs: thigh · knee ball · shin · ankle ball · boot */
   for (const s of [-1, 1]) { const hip = new THREE.Group(); hip.position.set(s * .1, hipY, 0); g.add(hip); ball(hip, .075, joint);
-    seg(hip, .075, .062, .42, M ? c() : '#3a3448', -.02, 7); const knee = new THREE.Group(); knee.position.y = -.46; hip.add(knee); ball(knee, .066, joint);
-    seg(knee, .06, .045, .38, M ? c() : '#3a3448', -.02, 7); ball(knee, .05, joint, [0, -.42, 0]); box(knee, .1, .08, .2, boot, [0, -.47, .04]);
+    seg(hip, .075, .062, .42, legC, -.02, 7); const knee = new THREE.Group(); knee.position.y = -.46; hip.add(knee); ball(knee, .066, joint);
+    seg(knee, .06, .045, .38, k.skirtLong ? legC : (k.shin || legC), -.02, 7); ball(knee, .05, joint, [0, -.42, 0]); box(knee, .1, .08, .2, boot, [0, -.47, .04]);
     role(hip, s < 0 ? 'hipL' : 'hipR'); role(knee, s < 0 ? 'kneeL' : 'kneeR') }
   /* body: pelvis · waist · chest · shoulder line · neck */
   mesh(g, new THREE.CylinderGeometry(.16, .14, .16, 8), c('cloth', clothD), [0, hipY + .05, 0], [0, 0, 0], [1, 1, .75]);
@@ -33,8 +33,12 @@ export function figure(g, k = {}) {
   mesh(head, new THREE.IcosahedronGeometry(.12, 1), skin, [0, 0, 0], [0, 0, 0], [1, 1.18, 1.02]);
   for (const s of [-1, 1]) box(head, .022, .028, .01, '#2a2030', [s * .045, .005, .118]);
   box(head, .018, .03, .02, skin, [0, -.03, .125], [.3, 0, 0]);
-  box(head, .27, .13, .26, hair, [0, .1, -.01]); box(head, .27, .32, .08, hair, [0, -.08, -.11]); for (const s of [-1, 1]) box(head, .05, .26, .2, hair, [s * .125, -.05, .0]);
-  box(head, .24, .05, .08, hair, [0, .08, .1], [-.3, 0, 0]);
+  const hs = k.hairStyle || 'long';                                                                     // hair: long · short · bun · pony · spiky · bald
+  if (hs !== 'bald') { box(head, .27, .12, .26, hair, [0, .11, -.01]); box(head, .24, .05, .08, hair, [0, .08, .1], [-.3, 0, 0]); for (const s of [-1, 1]) box(head, .05, hs === 'long' ? .26 : .14, .2, hair, [s * .125, hs === 'long' ? -.05 : .02, 0]) }
+  if (hs === 'long') box(head, .27, .34, .08, hair, [0, -.09, -.11]); else if (hs !== 'bald') box(head, .26, .18, .08, hair, [0, .0, -.11]);
+  if (hs === 'bun') mesh(head, new THREE.IcosahedronGeometry(.07, 0), hair, [0, .18, -.1]);
+  if (hs === 'pony') { mesh(head, new THREE.IcosahedronGeometry(.045, 0), hair, [0, .07, -.15]); box(head, .07, .24, .06, hair, [0, -.08, -.17], [.2, 0, 0]) }
+  if (hs === 'spiky') for (let i = 0; i < 5; i++) mesh(head, new THREE.ConeGeometry(.04, .12, 4), hair, [(i - 2) * .055, .2, -.02], [-.2, 0, (i - 2) * -.3]);
   /* arms: shoulder ball · upper arm · elbow ball · forearm · hand */
   for (const s of [-1, 1]) { const sh = new THREE.Group(); sh.position.set(s * .23, shY - .03, 0); sh.rotation.z = s * .1; g.add(sh); ball(sh, .07, M ? joint : clothD);
     seg(sh, .055, .048, .3, M ? c() : cloth, -.03, 7); const el = new THREE.Group(); el.position.y = -.34; sh.add(el); ball(el, .05, joint);

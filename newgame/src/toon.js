@@ -21,5 +21,5 @@ export function toonify(scene) {
 }
 
 /* v1.8 preview 2: faceted "papercraft" look (flat-shaded clay) — ng_style = 'facet' */
-export const facetOn = () => { try { return localStorage.getItem('ng_style') === 'facet' } catch (e) { return false } };
+export const facetOn = () => { try { const v = localStorage.getItem('ng_style'); return v !== 'smooth' && v !== 'toon' } catch (e) { return true } };   // v1.9: low-poly is the default look
 export function facetify(scene) { scene.traverse(o => { if (o.isMesh && !o.userData.facet) { o.userData.facet = 1; const m = o.material; if (m && !Array.isArray(m) && (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) && !m.flatShading) { m.flatShading = true; m.needsUpdate = true } } }) }
