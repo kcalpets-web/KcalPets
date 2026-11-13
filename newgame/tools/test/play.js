@@ -42,6 +42,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await pg.mouse.down(); await wait(800); await pg.mouse.up(); await wait(300);
       log('wheel', await N(() => window.__ng.wheelOn)); await pg.click('#wR'); await wait(200); await shot('03e-wheel'); if (!(await N(() => window.__ng.wheelOn))) errs.push('hold A did not open the wheel');
       await pg.click('#bB'); await wait(300); if (await N(() => window.__ng.wheelOn)) errs.push('B did not close the wheel');
+      await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await pg.mouse.down(); await wait(800); await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 60, { steps: 5 }); await wait(300); await shot('03e2-wheel-slide'); await pg.mouse.up(); await wait(400);
+      const ws = await N(() => ({ on: window.__ng.wheelOn, sheet: (document.querySelector('.ov h2') || {}).textContent })); log('wheel slide', JSON.stringify(ws)); if (ws.on || !/กระเป๋า/.test(ws.sheet || '')) errs.push('slide-to-pick on the wheel failed'); await closeAll();
       await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const c0 = await N(() => window.__ng.S.clearCount); await E(() => document.getElementById('bAuto').click()); await wait(9000); await shot('03f-auto'); await E(() => document.getElementById('bAuto').click());
       const c1 = await N(() => window.__ng.S.clearCount); log('auto cleared', c1 - c0); if (!(c1 > c0)) errs.push('AUTO did not gather anything') }
     /* 🧰 toolbox: one button opens the tray, picking a tool closes it */

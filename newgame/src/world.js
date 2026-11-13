@@ -129,11 +129,12 @@ export function cookPot(W, key, x, z) {
   for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#7a4a28', [0, .1, 0], [.42, .05, .05], [0, i * 1.05, .15], { A: 0 });
   const fire = new THREE.Group(); cone(fire, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95); cone(fire, '#ff8a2a', '#fff2a0', [.08, .22, .05], [.1, .22, .1], [0, 0, 0], .95); g.add(fire);
   for (const s2 of [-1, 1]) { part(g, '#3a2418', '#6a4028', [s2 * .55, .5, 0], [.04, .5, .04], [0, 0, s2 * .12], { A: 0 }) } part(g, '#3a2418', '#6a4028', [0, .98, 0], [.62, .035, .035], [0, 0, 0], { A: 0 });   // tripod bar
-  part(g, '#22222a', '#5a5a68', [0, .62, 0], [.32, .26, .32], [0, 0, 0], { A: .03 }); part(g, '#a86a3a', '#e8a860', [0, .82, 0], [.27, .04, .27], [0, 0, 0], { A: .1 });   // the pot · stew inside
-  part(g, '#22222a', '#5a5a68', [0, .9, 0], [.2, .01, .01], [0, 0, 0], { A: 0 });
+  const pot = new THREE.Group(); pot.position.y = .4; g.add(pot);                                  // the pot (hops while cooking) · stew inside
+  part(pot, '#22222a', '#5a5a68', [0, .22, 0], [.32, .26, .32], [0, 0, 0], { A: .03 }); part(pot, '#a86a3a', '#e8a860', [0, .42, 0], [.27, .04, .27], [0, 0, 0], { A: .1 });
+  part(pot, '#22222a', '#5a5a68', [0, .5, 0], [.2, .01, .01], [0, 0, 0], { A: 0 }); const lid = new THREE.Group(); part(lid, '#2a2a32', '#6a6a78', [0, 0, 0], [.3, .05, .3], [0, 0, 0], { A: 0 }); part(lid, '#2a2a32', '#6a6a78', [0, .07, 0], [.06, .04, .06], [0, 0, 0], { A: 0 }); lid.position.y = .5; lid.visible = false; pot.add(lid);
   const steam = []; for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); g.add(m); steam.push(m) }
   const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light);
-  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }); return { g, fire, steam, light, x, z };
+  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }); return { g, pot, lid, fire, steam, light, x, z };
 }
 /* show / hide one clearable */
 export function spawnClear(W, o) {

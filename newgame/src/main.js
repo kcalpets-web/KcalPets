@@ -392,7 +392,7 @@ function jobsTick(now) {
     if (left <= 0) { jobDone(k); continue }
     const ph = (now / 520) % 1, sw = ph < .75 ? -1.3 + Math.pow(ph / .75, 2.2) * 1.9 : .6 - (ph - .75) / .25 * 1.9; j.pv.rotation.z = sw;   // lift … slam … lift
     const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { const ck = k.startsWith('cook:'); sfx(ck ? 'tap' : 'knock'); floater(ck ? (n % 2 ? 'คน~' : '🫧') : n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
-    j.g.visible = j.area === S.area; const q = project(j.x, 3.3, j.z);
+    j.g.visible = j.area === S.area && !k.startsWith('cook:'); const q = project(j.x, k.startsWith('cook:') ? 2.2 : 3.3, j.z);
     j.tag.style.display = j.area === S.area && !CUT && q.z < 1 ? 'block' : 'none'; j.tag.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
     j.tag.innerHTML = `${k.startsWith('cook:') ? '🍳 กำลังปรุง' : k === 'house' ? '🔨 สร้างบ้าน' : '🔨 ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k.startsWith('cook:') ? D.COOK_TIME : k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
 }
@@ -685,7 +685,7 @@ function hud() {
   const q = D.QUESTS[S.quest];
   if (q) { const prog = q.stat ? ` (${Math.min(q.goal, S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '';
     const jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;
-    $('quest').style.display = 'block'; $('quest').innerHTML = `<b>📜 เรื่องหลัก ${S.quest + 1}/${D.QUESTS.length}</b><br>${q.icon} ${q.text}${prog}${jk ? `<br>🔨 กำลังสร้าง… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
+    $('quest').style.display = 'block'; $('quest').innerHTML = `<b>📜 เรื่องหลัก ${S.quest + 1}/${D.QUESTS.length}</b><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
   else $('quest').style.display = 'none';
 }
 $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) openPet(S.pets.find(p => p.id === t.dataset.pet)) };
@@ -882,7 +882,9 @@ for (const p of Object.values(POT)) for (const [id, o] of [...W.clear]) if (dist
 const potLit = key => key === 'home' ? !!S.story.built : !!S.story.campClear;
 function potTick(now) {
   for (const k in POT) { const p = POT[k], lit = potLit(k); p.g.visible = k !== 'home' || !!S.story.built; p.fire.visible = lit; p.light.intensity = lit ? (2 + nightK() * 6) * (.85 + Math.sin(now / 90) * .15) : 0;
-    p.fire.scale.y = .85 + Math.sin(now / 70 + p.x) * .15; p.steam.forEach((m, i) => { const t = (now / 1400 + i / 4) % 1; m.visible = lit; m.position.set(Math.sin(t * 6 + i) * .08, 1 + t * 1.1, 0); m.scale.setScalar(.6 + t * 1.4); m.material.opacity = .45 * (1 - t) }) }
+    const ck = !!S.jobs['cook:' + k], hop = ck ? Math.abs(Math.sin(now / 150)) : 0; p.pot.position.y = .4 + hop * .16; p.pot.scale.set(1 + (1 - hop) * .08 * +ck, 1 - (1 - hop) * .1 * +ck, 1 + (1 - hop) * .08 * +ck); p.pot.rotation.z = ck ? Math.sin(now / 95) * .12 : 0;
+    p.lid.visible = ck; p.lid.position.y = .5 + (ck ? Math.max(0, Math.sin(now / 75)) * .08 : 0); p.lid.rotation.z = ck ? Math.sin(now / 60) * .2 : 0;   // cooking: the pot hops, the lid rattles
+    p.fire.scale.y = (.85 + Math.sin(now / 70 + p.x) * .15) * (ck ? 1.4 : 1); p.steam.forEach((m, i) => { const t = (now / 1400 + i / 4) % 1; m.visible = lit; m.position.set(Math.sin(t * 6 + i) * .08, 1 + t * 1.1, 0); m.scale.setScalar(.6 + t * 1.4); m.material.opacity = .45 * (1 - t) }) }
 }
 function openPot(key) {
   if (key === 'home' && !S.story.built) return; if (key === 'forest' && !S.story.campClear) { hint('🔥 แคมป์ของก็อบลิน… กำจัดพวกมันก่อนถึงจะใช้หม้อนี้ได้'); return }
@@ -1054,9 +1056,13 @@ $('wL').onclick = () => { wheelI = (wheelI + WHEEL.length - 1) % WHEEL.length; s
 $('wR').onclick = () => { wheelI = (wheelI + 1) % WHEEL.length; sfx('tap'); wheelMark() };
 $('wheel').addEventListener('pointerdown', e => { if (e.target.id === 'wheel') closeWheel() });
 $('bWheel').onclick = openWheel;
-{ const A = $('bA'); let t0 = 0, held = false, tm = 0;
-  A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; t0 = performance.now(); held = false; tm = setTimeout(() => { held = true; openWheel() }, 450) });
-  const up = () => { clearTimeout(tm); if (F && F.hold) { F.hold = false; return } if (wheelOn) { if (!held) wheelPick(); held = false; return } if (!held && performance.now() - t0 < 450) actA(); held = false };
+{ const A = $('bA'); let t0 = 0, held = false, tm = 0, ox = 0, oy = 0, slid = false;
+  A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
+    t0 = performance.now(); held = false; slid = false; ox = e.clientX; oy = e.clientY; tm = setTimeout(() => { held = true; openWheel() }, 450) });
+  /* while the wheel is open, slide the same finger: its direction from where it pressed picks the slot · letting go = choose */
+  A.addEventListener('pointermove', e => { if (!wheelOn || !held) return; const dx = e.clientX - ox, dy = e.clientY - oy; if (Math.hypot(dx, dy) < 22) return;
+    const n = WHEEL.length, a = Math.atan2(dy, dx) + Math.PI / 2, i = ((Math.round(a / (Math.PI * 2) * n) % n) + n) % n; if (i !== wheelI) { wheelI = i; sfx('tap'); wheelMark() } slid = true });
+  const up = () => { clearTimeout(tm); if (F && F.hold) { F.hold = false; return } if (wheelOn) { if (!held || slid) wheelPick(); held = false; slid = false; return } if (!held && performance.now() - t0 < 450) actA(); held = false };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => clearTimeout(tm)); A.addEventListener('contextmenu', e => e.preventDefault()) }
 /* B: tap = back (close the top window · stop what you're doing) · hold = guard (−70 % damage, uses stamina) */
 let guard = false;
