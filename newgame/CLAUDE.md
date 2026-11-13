@@ -28,6 +28,7 @@ tools/art/        ห้องทดลองภาพ: mock.html · storyboard.
 tools/test/play.js  เล่นเนื้อเรื่องอัตโนมัติตั้งแต่ฉากเปิดจนจบบทที่ 2 (~10 นาที) + ภาพหน้าจอ · ล้มถ้ามี error
 ```
 - **ผู้เล่น (v0.7)**: มีตัวละคร `PL` (`playerLook(S.avatar)` · `me()` = ตำแหน่ง · `walkTo`/`placeMe` · แตะพื้น = เดิน · แตะของ = เดินไปแล้ว `useThing`) · HP + ⚡ พลังงาน (`pEn`, `spendEn` · อุปกรณ์ใช้พลังงาน ดาบไม่ใช้) · อุปกรณ์อยู่ในปุ่ม 🧰 เดียว (`#tBox` / `#tTray`) · ลากบนที่ว่าง = เลื่อนกล้องเสมอ (แม้ถืออุปกรณ์ · `stroke.lock` / `fits` · ไหลต่อ `camV`) · สองนิ้ว = เลื่อน+ซูม · แตะ = น้อง/เรือ/บ้าน/ประตู · ถืออุปกรณ์ = ลากผ่านของ (`strokeTo` → `pickForTool` เลือกของที่ตรงอุปกรณ์ก่อน) · ⚔️ ลากผ่านมอนสเตอร์ = ฟัน · 🎣 แตะน้ำ = ตกปลา (`castAt` / `fishTick`) · สองนิ้ว = ซูม
+- **การควบคุม (v0.8)**: `OPT` (localStorage `ng_ctrl` pad|touch · `ng_hud` z|f) · pad: `#stick` · A = `actA` (แตะ) / วงล้อ `openWheel` (ค้าง) · B = กลับ/`guard` · `#bAuto` → `autoTick` · ⚡ แบบ Zelda: `spendEn` · `spendRun` · `S.tired` · `S.enB` · มอนสเตอร์ `M.alert` 0/1/2/3
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
 - ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v3` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม

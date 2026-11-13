@@ -86,6 +86,29 @@
   #maker .btn{max-width:420px}
   .dish{text-align:center}.dish .plate{width:120px;height:120px;margin:4px auto 8px;border-radius:50%;background:radial-gradient(#fff 55%,#f0e6d4 56%,#fff 70%);border:3px solid #0002;box-shadow:0 6px 0 #0001;display:grid;place-items:center;font-size:62px;animation:pop .5s ease-out}
   @keyframes pop{0%{transform:scale(.3) rotate(-20deg)}70%{transform:scale(1.1)}}.dish>b{display:block;font-size:20px}.ribbon{display:inline-block;background:#ffd23f;border:2px solid var(--ink);border-radius:10px;padding:2px 10px;font-weight:800;margin-bottom:4px}
+  .bar.en{position:relative}.bar.en .enb{position:absolute;left:0;top:0;height:100%;background:#ffd23fcc}
+  .mtag .mk{position:absolute;left:50%;top:-34px;width:28px;height:28px;margin-left:-14px;border-radius:50%;border:2.5px solid var(--ink);font:900 18px/23px system-ui;text-align:center;color:#fff;box-shadow:0 2px 0 #0005}.mtag .mk.a1{background:#ffc020;color:var(--ink)}.mtag .mk.a2{background:#ff3a3a}.mtag .mk.a3{background:#9a98a8}.mtag .mk.pop{animation:pop .4s ease-out}
+  /* v0.8 pad · wheel · Zelda HUD */
+  #pad{display:none}body.pad #pad{display:block}#bAuto{position:fixed;right:12px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 250px);z-index:6;border:3px solid var(--ink);border-radius:14px;background:var(--paper);font:800 12px inherit;font-family:inherit;padding:6px 10px;box-shadow:0 3px 0 #0003;color:var(--ink)}#bAuto.on{background:#5ad07a;animation:qa 1.2s ease-in-out infinite}
+  #stick{position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 20px);width:130px;height:130px;border-radius:50%;background:#ffffff40;border:3px solid #ffffffaa;z-index:6;touch-action:none}
+  #stickK{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:#fffd;border:3px solid var(--ink);box-shadow:0 3px 0 #0003;pointer-events:none}
+  #bA,#bB{position:fixed;z-index:6;border-radius:50%;border:3px solid var(--ink);font:900 26px system-ui;color:#fff;box-shadow:0 4px 0 #0004;touch-action:none;-webkit-user-select:none}
+  #bA{right:22px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px);width:84px;height:84px;background:#3fae6a}#bB{right:118px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 30px);width:64px;height:64px;background:#e8604a}
+  #bA:active,#bB:active{box-shadow:0 1px 0 #0004}body.guard #bB{background:#4a8ad8}
+  #wnav{display:none;position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);gap:10px;z-index:72}body.wheel #wnav{display:flex}body.wheel #stick{display:none}
+  #wnav button{width:64px;height:64px;border-radius:18px;border:3px solid var(--ink);background:var(--paper);font:900 24px system-ui;color:var(--ink);box-shadow:0 3px 0 #0003}
+  body.wheel #bA,body.wheel #bB{z-index:72}
+  #wheel{position:fixed;inset:0;z-index:70;background:#0009;display:none;align-items:center;justify-content:center}.wh{position:absolute;left:50%;top:44%;width:0;height:0}
+  .wh button{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);font-size:28px;box-shadow:0 3px 0 #0004;padding:0}.wh button.on{background:#ffd23f;transform:scale(1.18)}
+  .whc{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;color:#fff}.whc b{display:block;font-size:18px}.whc small{font-size:11px;opacity:.8}
+  #bWheel{display:none}body.zhud #bWheel{display:grid}
+  body.zhud .pf,body.zhud .cur>.rt:nth-child(1),body.zhud .cur>.rt:nth-child(2),body.zhud #bBook,body.zhud #bMenu,body.zhud .bot{display:none}
+  body.zhud .vit{top:max(10px,env(safe-area-inset-top))}body.zhud #team{top:calc(max(10px,env(safe-area-inset-top)) + 76px)}
+  body.zhud #quest{top:calc(max(10px,env(safe-area-inset-top)) + 76px);left:104px;bottom:auto;font-size:11px;max-width:170px;padding:5px 8px}
+  body.pad #tools{display:none}body.zhud:not(.pad) #tools{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 14px)}
+  body.pad:not(.zhud) #stick,body.pad:not(.zhud) #bA,body.pad:not(.zhud) #bB,body.pad:not(.zhud) #wnav{margin-bottom:84px}
+  body.pad #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 170px)}body.pad:not(.zhud) #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 254px)}
+  body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 100px)}body.cut #pad,body.cut #bAuto{display:none!important}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
 <body>
@@ -95,14 +118,17 @@
   <div class="cur"><div class="rt"><div class="pill">🪙 <span id="hCoin">0</span></div><div class="pill">💎 <span id="hGem">0</span></div></div>
     <div class="rt"><div class="pill" id="hMats"></div></div>
     <div class="rt"><div class="pill clock"><span id="hClock"></span><small id="hSun"></small></div><button class="sq" id="hTemp" aria-label="อุณหภูมิ">🙂</button></div>
-    <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button></div></div>
+    <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button><button class="sq" id="bWheel" aria-label="เมนู">◎</button></div></div>
 </div>
 <div class="vit"><div class="row"><span>👤 ❤️ HP</span><span id="hHpT"></span></div><div class="bar"><i id="hHp" style="background:var(--hp)"></i></div>
-  <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar"><i id="hMp" style="background:#9ad03a"></i></div></div>
+  <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar en"><i id="hMp" style="background:#9ad03a"></i><i id="hMpB" class="enb"></i></div></div>
 <div id="quest"></div>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>
+<div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA">A</button></div>
+<button id="bAuto">🤖 AUTO</button>
+<div id="wheel"><div class="wh"></div><div class="whc"><b id="whN"></b><small>◀ ▶ เลือก · A ตกลง · B ปิด</small></div></div>
 <div class="bot">
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bPets"><b>🐾</b>น้อง</button><button class="bb" id="bTool"><b>🛠️</b>ช่าง</button>
 <button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>

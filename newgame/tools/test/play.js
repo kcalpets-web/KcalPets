@@ -35,9 +35,18 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
       const id = await E(([tool, pred]) => { const N = window.__ng; if (N.S.en < 10) { N.S.en = null; N.S.stat.enTopUp = (N.S.stat.enTopUp || 0) + 1 } N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
       const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
+    /* v0.8 pad: A in front of a tree = chop · hold A = wheel (B closes) · AUTO gathers by itself */
+    { await closeAll(); const t = await E(() => { const N = window.__ng, o = N.nearestClear(o => o.t === 'tree'); N.placeMe(o.x - .9, o.z); N.PL.yaw = N.PL.yawT = Math.PI / 2; return { id: o.id, left: o.left } }); await wait(800);
+      const box = await (await pg.$('#bA')).boundingBox(); for (let i = 0; i < 3; i++) { await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await wait(450) }
+      const after = await N(() => ({ en: window.__ng.S.en, chopped: window.__ng.S.stat.clr_tree || 0 })); log('A chop', JSON.stringify(after)); if (!(after.en < 100)) errs.push('A did not use the tool');
+      await pg.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await pg.mouse.down(); await wait(800); await pg.mouse.up(); await wait(300);
+      log('wheel', await N(() => window.__ng.wheelOn)); await pg.click('#wR'); await wait(200); await shot('03e-wheel'); if (!(await N(() => window.__ng.wheelOn))) errs.push('hold A did not open the wheel');
+      await pg.click('#bB'); await wait(300); if (await N(() => window.__ng.wheelOn)) errs.push('B did not close the wheel');
+      await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const c0 = await N(() => window.__ng.S.clearCount); await E(() => document.getElementById('bAuto').click()); await wait(9000); await shot('03f-auto'); await E(() => document.getElementById('bAuto').click());
+      const c1 = await N(() => window.__ng.S.clearCount); log('auto cleared', c1 - c0); if (!(c1 > c0)) errs.push('AUTO did not gather anything') }
     /* 🧰 toolbox: one button opens the tray, picking a tool closes it */
-    await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
-    { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed') }
+    await E(() => window.__ng.setOpt('touch', 'z')); await wait(300); await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
+    { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed'); await E(() => window.__ng.setOpt('pad', 'z')) }
     /* tap the ground → the character walks there */
     { await E(() => window.__ng.setTool('')); const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); await pg.mouse.click(250, 470); await wait(3000); const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z }));
       log('walk', JSON.stringify(m0), '→', JSON.stringify(m1)); if (Math.hypot(m1.x - m0.x, m1.z - m0.z) < .5) errs.push('tap to walk did not move the character'); await shot('03c-walk') }
@@ -47,9 +56,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       await pg.mouse.move(80, 640); await pg.mouse.down(); await pg.mouse.move(80, 560, { steps: 6 }); await wait(1200); await shot('03d-stick'); await pg.mouse.up(); await wait(400);
       const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); log('stick', (m1.z - m0.z).toFixed(2)); if (!(m0.z - m1.z > .3)) errs.push('dragging did not walk the character north') }
     /* tap a tree → walk over and chop it (picks the axe by itself) */
-    { await E(() => { window.__ng.setTool(''); window.__ng.placeMe(0, -4) }); await wait(1500); const t = await E(() => { const N = window.__ng, o = N.nearestClear(o => o.t === 'tree'); return o ? { id: o.id, n: N.S.stat.clr_tree || 0 } : null });
+    { await E(() => { window.__ng.setTool(''); window.__ng.placeMe(0, -4); window.__ng.S.en = null; window.__ng.S.tired = false }); await wait(1500); const t = await E(() => { const N = window.__ng, o = N.nearestClear(o => o.t === 'tree'); if (o) N.placeMe(o.x - 2.2, o.z + .5); return o ? { id: o.id, n: N.S.stat.clr_tree || 0 } : null });
       if (t) { await wait(800); const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return N.project(o.x, .6, o.z) }, t.id); await pg.mouse.click(p.x, p.y);
-        await pg.waitForFunction(id => !window.__ng.W.clear.get(id).g, t.id, { timeout: 40000 }).catch(() => errs.push('tap-to-chop did not finish the tree')); log('tap-chop', t.id, await N(() => window.__ng.S.stat.clr_tree || 0)) } }
+        await pg.waitForFunction(id => !window.__ng.W.clear.get(id).g, t.id, { timeout: 40000 }).catch(async () => { errs.push('tap-to-chop did not finish the tree'); log('chop debug', JSON.stringify(await E(id => { const N = window.__ng, o = N.W.clear.get(id); return { o: { x: o.x, z: o.z, t: o.t, left: o.left }, me: [N.me.x, N.me.z], tool: N.tool, en: N.S.en, tired: N.S.tired, mon: N.S.mon, ov: document.querySelectorAll('.ov').length, cut: N.cut } }, t.id))); await shot('03x-chopfail') }); log('tap-chop', t.id, await N(() => window.__ng.S.stat.clr_tree || 0)) } }
     await E(() => { window.__ng.speed = 3 });
     /* quest 0: wood 10 + stone 5 → build → sleep */
     await closeAll(); await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
@@ -106,7 +115,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await pg.waitForFunction(() => window.__ng.cut, null, { timeout: 60000 }); await wait(3500); await shot('22-flashback'); await E(() => window.__cut.skip());
     await pg.waitForFunction(() => !window.__ng.cut, null, { timeout: 60000 }); await wait(800); await shot('23-gift'); await clickAll('#tN');
     log('potions', JSON.stringify(await N(() => window.__ng.S.potions)), 'medicine', await N(() => window.__ng.S.story.medicine));
-    await pg.mouse.move(250, 815); await pg.mouse.down(); await wait(900); await pg.mouse.up(); await wait(400); log('auto potion', await N(() => window.__ng.autoPot)); await shot('24-auto');
+    await E(() => window.__ng.openWheel()); await wait(300); await E(() => { const i = [...document.querySelectorAll('[data-w]')].findIndex(b => b.textContent === '🤖'); document.querySelector(`[data-w="${i}"]`).click() }); await wait(400); log('auto potion', await N(() => window.__ng.autoPot)); if (!(await N(() => window.__ng.autoPot))) errs.push('auto potion toggle (wheel) failed'); await shot('24-auto');
     await E(() => window.__ng.goFarm()); await wait(2500); await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN'); await wait(800); await shot('25-cured');
     /* v0.6: recipes · cooking at the home pot · sketching · journal · day → night */
     log('recipes', JSON.stringify(await N(() => { const m = window.__ng.matchRecipe, F = k => ({ k, fish: 1 }), I = k => ({ k });

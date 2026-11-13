@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '0.7.1';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
+export const APP_VER = '0.8.0';                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
@@ -64,9 +64,16 @@ export const SLOT_NAME = { weapon: 'อาวุธ', armor: 'ชุดเกร
 /* ---- the player (no body on screen: the finger is the player) ---- */
 export const PLAYER_BASE = { hp: 80, en: 100, atk: 10, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
 export const PLAYER_GROW = { hp: 6, en: 5, atk: 2, def: 1 };
-export const TOOL_EN = { sickle: 1, axe: 2, hammer: 2, rod: 3 };         // ⚡ per hit / per cast · the sword is free
-export const EN_REGEN = 1 / 900;                                          // share of max energy per second when resting (4 s without tools) → full in 15 min · sleeping/resting = full
-export const FISH_EN = { B: 8, R: 15, E: 30, L: 60 };                     // ⚡ from eating a fish (bag)
+/* ⚡ stamina, Zelda-like (v0.8): every action and running use it · refills fast once you stop · empty = exhausted (slow, no actions) until it is full again */
+export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10 };        // per hit / per cast
+export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
+export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
+export const WALK_SP = 3.6, RUN_SP = 6.4;
+/* monster awareness: ❗ yellow = seen you (stays put unless you hit it) · ❗ red = too close, attacks · ❓ = lost you */
+export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +LOSE beyond sight = gives up
+export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
+export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // extra ⚡ (yellow, over the max) from eating a fish · herbal tea and some dishes too
+export const EN_BONUS_MAX = 100;
 export const HIT_STOP = 55;                                               // ms the world pauses when the sword connects (game-feel)
 export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pets)
 export const REGEN = { perSec: 1 / 150 };                                 // share of max HP per second when not hurt for 4 s → full in 2.5 min
