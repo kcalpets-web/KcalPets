@@ -391,7 +391,7 @@ function jobsTick(now) {
   for (const k in S.jobs) { if (!jobs.has(k)) jobView(k); const j = jobs.get(k), left = Math.ceil((S.jobs[k] - Date.now()) / 1000);
     if (left <= 0) { jobDone(k); continue }
     const ph = (now / 520) % 1, sw = ph < .75 ? -1.3 + Math.pow(ph / .75, 2.2) * 1.9 : .6 - (ph - .75) / .25 * 1.9; j.pv.rotation.z = sw;   // lift … slam … lift
-    const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { const ck = k.startsWith('cook:'); sfx(ck ? 'tap' : 'knock'); floater(ck ? (n % 2 ? 'คน~' : '🫧') : n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
+    const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { const ck = k.startsWith('cook:'); sfx(ck ? 'tap' : 'knock'); floater(ck ? '🫧' : n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
     j.g.visible = j.area === S.area && !k.startsWith('cook:'); const q = project(j.x, k.startsWith('cook:') ? 2.2 : 3.3, j.z);
     j.tag.style.display = j.area === S.area && !CUT && q.z < 1 ? 'block' : 'none'; j.tag.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
     j.tag.innerHTML = `${k.startsWith('cook:') ? '🍳 กำลังปรุง' : k === 'house' ? '🔨 สร้างบ้าน' : '🔨 ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k.startsWith('cook:') ? D.COOK_TIME : k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
@@ -1050,7 +1050,7 @@ function openWheel() {
   ring.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { wheelI = +b.dataset.w; wheelPick() }); el.style.display = 'flex'; wheelMark();
 }
 function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); $('whN').textContent = WHEEL[wheelI][0] + ' ' + WHEEL[wheelI][1] }
-function closeWheel() { if (!wheelOn) return; wheelOn = false; CUT = false; last = performance.now(); $('wheel').style.display = 'none'; document.body.classList.remove('wheel') }
+function closeWheel() { if (!wheelOn) return; $('aK').style.transform = ''; wheelOn = false; CUT = false; last = performance.now(); $('wheel').style.display = 'none'; document.body.classList.remove('wheel') }
 function wheelPick() { const f = WHEEL[wheelI][2]; closeWheel(); f() }
 $('wL').onclick = () => { wheelI = (wheelI + WHEEL.length - 1) % WHEEL.length; sfx('tap'); wheelMark() };
 $('wR').onclick = () => { wheelI = (wheelI + 1) % WHEEL.length; sfx('tap'); wheelMark() };
@@ -1062,6 +1062,7 @@ $('bWheel').onclick = openWheel;
   /* while the wheel is open, slide the same finger: its direction from where it pressed picks the slot · letting go = choose */
   A.addEventListener('pointermove', e => { if (!wheelOn || !held) return; const dx = e.clientX - ox, dy = e.clientY - oy; if (Math.hypot(dx, dy) < 22) return;
     const n = WHEEL.length, a = Math.atan2(dy, dx) + Math.PI / 2, i = ((Math.round(a / (Math.PI * 2) * n) % n) + n) % n; if (i !== wheelI) { wheelI = i; sfx('tap'); wheelMark() } slid = true });
+  A.addEventListener('pointermove', e => { if (!wheelOn || !held) return; const dx = e.clientX - ox, dy = e.clientY - oy, d = Math.hypot(dx, dy), k = Math.min(d, 30) / (d || 1); $('aK').style.transform = `translate(${dx * k}px,${dy * k}px)` });   // A turns into a stick while the wheel is open
   const up = () => { clearTimeout(tm); if (F && F.hold) { F.hold = false; return } if (wheelOn) { if (!held || slid) wheelPick(); held = false; slid = false; return } if (!held && performance.now() - t0 < 450) actA(); held = false };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => clearTimeout(tm)); A.addEventListener('contextmenu', e => e.preventDefault()) }
 /* B: tap = back (close the top window · stop what you're doing) · hold = guard (−70 % damage, uses stamina) */

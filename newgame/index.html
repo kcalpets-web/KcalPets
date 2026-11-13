@@ -98,6 +98,9 @@
   #wnav{display:none;position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);gap:10px;z-index:72}body.wheel #wnav{display:flex}body.wheel #stick{display:none}
   #wnav button{width:64px;height:64px;border-radius:18px;border:3px solid var(--ink);background:var(--paper);font:900 24px system-ui;color:var(--ink);box-shadow:0 3px 0 #0003}
   body.wheel #bA,body.wheel #bB{z-index:72}
+  #aK{display:none;position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#fffd;border:3px solid var(--ink);box-shadow:0 3px 0 #0003;pointer-events:none}
+  body.wheel #bA{background:#ffffff33;border-color:#ffffffcc;box-shadow:none}body.wheel #bA span{display:none}body.wheel #aK{display:block}
+  .whc{max-width:150px}
   #wheel{position:fixed;inset:0;z-index:70;background:#0009;display:none;align-items:center;justify-content:center}.wh{position:absolute;left:50%;top:44%;width:0;height:0}
   .wh button{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);font-size:28px;box-shadow:0 3px 0 #0004;padding:0}.wh button.on{background:#ffd23f;transform:scale(1.18)}
   .whc{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;color:#fff}.whc b{display:block;font-size:18px}.whc small{font-size:11px;opacity:.8}
@@ -126,9 +129,9 @@
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>
-<div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA">A</button></div>
+<div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button></div>
 <button id="bAuto">🤖 AUTO</button>
-<div id="wheel"><div class="wh"></div><div class="whc"><b id="whN"></b><small>กด A ค้างแล้วลากนิ้วไปทางช่องที่ต้องการ · ปล่อย = เลือก<br>หรือ ◀ ▶ แล้วกด A · B = ปิด</small></div></div>
+<div id="wheel"><div class="wh"></div><div class="whc"><b id="whN"></b><small>ลากนิ้วเลือก · ปล่อย = ตกลง<br>B = ปิด</small></div></div>
 <div class="bot">
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bPets"><b>🐾</b>น้อง</button><button class="bb" id="bTool"><b>🛠️</b>ช่าง</button>
 <button class="bb" id="bHp"><b>🧪</b>ยา HP <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
