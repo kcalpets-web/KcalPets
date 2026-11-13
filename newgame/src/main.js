@@ -39,10 +39,26 @@ function setTime() {                                         // lighting follows
   if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color(); scene.background.copy(mix(LDAY.bg, LNIGHT.bg)).lerp(GLOW, g * .45);
   hemi.color.copy(mix(LDAY.hc, LNIGHT.hc)).lerp(GLOW, g * .3); hemi.groundColor.copy(mix(LDAY.hg, LNIGHT.hg)); hemi.intensity = (eco ? 1.2 : .95) * (1 - k) + .55 * k;
   sun.color.copy(mix(LDAY.sc, LNIGHT.sc)).lerp(GLOW, g * .6); sun.intensity = 2.1 * (1 - k) + .9 * k; fill.intensity = .45 * (1 - k) + .25 * k; rim.color.copy(mix(LDAY.rc, LNIGHT.rc));
+  SKY.material.uniforms.top.value.copy(_c.copy(C('#4a98d8')).lerp(C('#0a1030'), k)); SKY.material.uniforms.bot.value.copy(_c.copy(LDAY.bg).lerp(LNIGHT.bg, k)).lerp(GLOW, g * .6); SKY.material.uniforms.stars.value = k;
+  if (scene.fog) scene.fog.color.copy(SKY.material.uniforms.bot.value);
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
 function timeTick(dt) { if (!S.story.slept) { S.time = D.DAY.first; return } S.time = (S.time + dt) % 1440 }
-const cam = new THREE.PerspectiveCamera(36, 1, .5, 140);
+const cam = new THREE.PerspectiveCamera(36, 1, .3, 260);
+/* v0.9.5 camera: 'tp' = behind the character like Zelda (default) · 'top' = the old view from above */
+const camTP = () => (localStorage.getItem('ng_cam') || 'tp') === 'tp';
+const CAM = { yaw: Math.PI, pitch: .42, manualT: 0 };            // yaw: the direction the camera looks (forward = sin/cos) · pitch: how far it looks down
+/* sky dome (gradient · clouds · stars) + far mountains so the horizon reads from the ground */
+const SKY = new THREE.Mesh(new THREE.SphereGeometry(240, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: C('#5aa8e0') }, bot: { value: C('#cfe8f4') }, stars: { value: 0 }, t: { value: 0 } },
+  vertexShader: 'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: `uniform vec3 top,bot;uniform float stars,t;varying vec3 vP;float h(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}
+    void main(){float y=clamp(vP.y,0.,1.);vec3 c=mix(bot,top,pow(y,.6));vec3 q=floor(vP*180.);float s=step(.9965,h(q))*stars*smoothstep(.05,.3,vP.y);
+    float cl=smoothstep(.55,.85,sin(vP.x*9.+t*.02)*sin(vP.z*7.-t*.015)*.5+.5)*smoothstep(.08,.3,vP.y)*smoothstep(.7,.35,vP.y);c=mix(c,vec3(1.),cl*.55*(1.-stars));gl_FragColor=vec4(c+s,1.);}` }));
+SKY.renderOrder = -1; scene.add(SKY);
+{ const M = new THREE.Group(); let rs = 3; const Rn = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 46; i++) { const a = i / 46 * Math.PI * 2, r = 150 + Rn() * 40, h = 18 + Rn() * 30, m = new THREE.Mesh(new THREE.ConeGeometry(h * .9, h, 6), new THREE.MeshLambertMaterial({ color: Rn() < .5 ? '#7a8aa8' : '#6a7a98', flatShading: true }));
+    m.position.set(48 + Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r * .8); M.add(m) } scene.add(M) }
 let zoom = +(localStorage.getItem('ng_zoom') || 1); const camT = { x: S.cam[0], z: S.cam[1] }, camP = { x: camT.x, z: camT.z };
 function resize() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix() }
 addEventListener('resize', resize); resize();
@@ -133,8 +149,8 @@ function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; 
 function walkTick(dt, now) {
   let mv = false;
   const run = !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = PL.swim ? D.SWIM_SP : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (run ? D.RUN_SP : D.WALK_SP);
-  if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), nx = q.x + joy.x * sp * dt, nz = q.z + joy.z * sp * dt;
-    if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(joy.x, joy.z); mv = true } }
+  if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), cy = camTP() ? CAM.yaw : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
+    if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(mx, mz); mv = true } }
   if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt, okMe); mv = d > w.near;
     if (d < w.best - .01) { w.best = d; w.stuck = 0 } else w.stuck += dt;
     if (w.queue && w.queue.length && (d <= w.near + .05 || w.stuck > 1.5)) { const n = w.queue.shift(); walkTo(n[0], n[1], w.then, w.queue.length ? .4 : w.qNear); walkT.queue = w.queue; walkT.qNear = w.qNear }
@@ -552,7 +568,8 @@ cv.addEventListener('pointermove', e => {
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
     if (stroke.go < 70) return; stroke = null; trail.length = 0 }
-  if (down.moved && S.avatar) joyMove(down.x, down.y, e.clientX, e.clientY);              // drag anywhere = a floating stick: the character walks that way
+  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * .009; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * .006)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
+    else joyMove(down.x, down.y, e.clientX, e.clientY) }              // (top view) drag anywhere = a floating stick
 });
 /* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
 const joy = { x: 0, z: 0, on: false }, camV = { x: 0, z: 0, t: 0 };
@@ -686,8 +703,15 @@ function frame(now) {
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
-  camY += (Math.max(0, me().y) - camY) * Math.min(1, dt * 4); cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2);
-  sun.position.set(camP.x - 7, 16, camP.z + 9); sun.target.position.set(camP.x, 0, camP.z);
+  camY += (Math.max(0, me().y) - camY) * Math.min(1, dt * 4);
+  if (camTP()) {                                                // behind the character · swings back behind while walking unless you just turned it
+    const q = me(), moving = joy.on || walkT || work; if (moving && now - CAM.manualT > 1500) { let d = PL.yaw - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); CAM.yaw += d * Math.min(1, dt * 1.6) }
+    const dd = 7.5 * zoom, cp = Math.cos(CAM.pitch), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.yaw) * dd * cp, pz = tz - Math.cos(CAM.yaw) * dd * cp, py = ty + Math.sin(CAM.pitch) * dd;
+    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.yaw) * 1.5, ty - .2, tz + Math.cos(CAM.yaw) * 1.5); cam.fov = 52; camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
+    if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 40, 140); cam.far = 260 } }
+  else { cam.fov = 36; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
+  cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
+  sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
   R.render(scene, cam);
   tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall);
   fpsN++; if (wall - fpsT > 500) { $('fps').textContent = Math.round(fpsN * 1000 / (wall - fpsT)) + ' fps'; fpsN = 0; fpsT = wall }
@@ -878,10 +902,12 @@ function openTools() {
 function openMenu() {
   sheet('☰ เมนู', (b, redraw) => {
     b.innerHTML = `<div class="card"><b>🎮 การควบคุม</b><p class="mut">${OPT.ctrl === 'pad' ? 'ปุ่มแบบ GBA: จอยซ้าย · A ทำ/ตี/คุย (กดย้ำ = วิ่ง · กดค้าง = เมนู) · B กลับ/ป้องกัน' : 'แตะ/ลากนิ้ว: แตะ = เดิน/ทำ · ลาก = จอยลอย · ลากผ่านของ = ใช้อุปกรณ์'}</p><div class="row2"><button class="btn ${OPT.ctrl === 'pad' ? 'go' : ''}" id="oP">🎮 ปุ่ม GBA</button><button class="btn ${OPT.ctrl === 'touch' ? 'go' : ''}" id="oT">👆 แตะ/ลาก</button></div></div>
+      <div class="card"><b>📷 มุมกล้อง</b><div class="row2"><button class="btn ${camTP() ? 'go' : ''}" id="oC1">หลังตัวละคร (Zelda)</button><button class="btn ${camTP() ? '' : 'go'}" id="oC2">มองจากบน</button></div></div>
       <div class="card"><b>🖥️ หน้าจอ</b><div class="row2"><button class="btn ${OPT.hud === 'z' ? 'go' : ''}" id="oZ">มินิมอล (แบบ Zelda)</button><button class="btn ${OPT.hud === 'f' ? 'go' : ''}" id="oF">แสดงทั้งหมด</button></div></div>
       <div class="card"><b>เสียง</b><p class="mut">ลม คลื่น นก และเสียงประกอบ</p><button class="btn wide" id="mS">${soundOn() ? '🔊 เปิดอยู่ · แตะเพื่อปิด' : '🔇 ปิดอยู่ · แตะเพื่อเปิด'}</button></div><div class="card"><b>กราฟิก</b><p class="mut">ตอนนี้: ${eco ? 'ประหยัด' : 'สวย'}</p><button class="btn wide" id="mG">สลับเป็น${eco ? 'แบบสวย' : 'แบบประหยัด (เครื่องเล็ก)'}</button></div>
       <div class="card"><b>👤 ตัวละคร</b><button class="btn wide" id="mA">แต่งตัวละคร</button></div><div class="card"><b>🎬 ฉากเปิด</b><button class="btn wide" id="mI">ดูฉากเปิดอีกครั้ง</button></div><div class="card"><b>เริ่มใหม่</b><p class="mut">ลบเซฟของเกมนี้บนเครื่อง</p><button class="btn ghost wide" id="mR">ล้างเซฟ</button></div><p class="mut">KEALEE v${D.APP_VER} · เริ่มเรื่อง: เกาะยามค่ำคืน → ลุงฮาวซิฟ → เมืองร้าง</p>`;
     b.querySelector('#oP').onclick = () => { OPT.ctrl = 'pad'; applyOpt(); redraw() }; b.querySelector('#oT').onclick = () => { OPT.ctrl = 'touch'; applyOpt(); redraw() };
+    b.querySelector('#oC1').onclick = () => { localStorage.setItem('ng_cam', 'tp'); redraw() }; b.querySelector('#oC2').onclick = () => { localStorage.setItem('ng_cam', 'top'); redraw() };
     b.querySelector('#oZ').onclick = () => { OPT.hud = 'z'; applyOpt(); redraw() }; b.querySelector('#oF').onclick = () => { OPT.hud = 'f'; applyOpt(); redraw() };
     b.querySelector('#mA').onclick = () => { closeSheets(); openCreator(false) };
     b.querySelector('#mI').onclick = () => { closeSheets(); startIntro(true) };
@@ -1241,7 +1267,7 @@ window.__ng = { info: () => ({ calls: R.info.render.calls, tris: R.info.render.t
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
   openPot, openCook, eatMeal, matchRecipe, openJournal, sketchPick, drawSketch, sleepTo, get POT() { return POT }, achCheck,
-  setOpt: (c, h) => { OPT.ctrl = c; OPT.hud = h; applyOpt() }, actA, openWheel, closeWheel, wheelPick, get wheelOn() { return wheelOn }, autoTick, get guard() { return guard },
+  setCam: v => localStorage.setItem('ng_cam', v), CAM, setOpt: (c, h) => { OPT.ctrl = c; OPT.hud = h; applyOpt() }, actA, openWheel, closeWheel, wheelPick, get wheelOn() { return wheelOn }, autoTick, get guard() { return guard },
   openCreator, walkTo, placeMe, get me() { return me() }, get PL() { return PL },
   openMap, reveal, get fog() { return S.fog }, goPath, enterZone, envState: () => ({ swim: PL.swim, climb: PL.climb, y: me().y, area: S.area }),
   updCheck, goForest, travel, openCage, openSberh, SB, get autoPot() { return S.autoPot },

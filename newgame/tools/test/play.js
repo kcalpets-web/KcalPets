@@ -16,7 +16,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   try {
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
-    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx) }, process.env.GFX || 'eco'); await pg.reload();
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx); localStorage.setItem('ng_cam', 'top') }, process.env.GFX || 'eco'); await pg.reload();
     await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(1500);
     const shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f);
@@ -142,6 +142,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => window.__ng.openMap()); await wait(800); await shot('36-worldmap');
     await E(() => document.querySelector('[data-c="home"]').click()); await wait(2500); if ((await N(() => window.__ng.envState().area)) !== 'farm') errs.push('warp to the home camp failed');
     log('warp', JSON.stringify(await N(() => ({ x: window.__ng.me.x.toFixed(1), z: window.__ng.me.z.toFixed(1), area: window.__ng.envState().area })))); await shot('37-meadow-camp');
+    /* v0.9.5 camera behind the character: the stick walks where the camera looks · dragging the screen turns the camera */
+    await closeAll(); await E(() => { const N = window.__ng; N.setCam('tp'); N.S.time = 640; N.placeMe(14, 2.4); N.CAM.yaw = Math.PI / 2; N.PL.yaw = N.PL.yawT = Math.PI / 2 }); await wait(2500); await shot('38-tp-meadow');
+    { const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })), sb = await (await pg.$('#stick')).boundingBox(); await pg.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await pg.mouse.down(); await pg.mouse.move(sb.x + sb.width / 2, sb.y + 10, { steps: 4 }); await wait(1500); await pg.mouse.up();
+      const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); log('tp stick forward', (m1.x - m0.x).toFixed(2), (m1.z - m0.z).toFixed(2)); if (!(m1.x - m0.x > .4)) errs.push('stick forward did not follow the camera direction') }
+    { const y0 = await N(() => window.__ng.CAM.yaw); await pg.mouse.move(200, 400); await pg.mouse.down(); await pg.mouse.move(120, 400, { steps: 5 }); await pg.mouse.up(); const y1 = await N(() => window.__ng.CAM.yaw); log('tp drag turns camera', (y1 - y0).toFixed(2)); if (Math.abs(y1 - y0) < .3) errs.push('dragging did not turn the camera') }
+    await E(() => { const N = window.__ng; N.placeMe(62, -1); N.CAM.yaw = Math.PI / 2 + .5 }); await wait(2500); await shot('39-tp-hills'); await E(() => { const N = window.__ng; N.placeMe(46, 3); N.CAM.yaw = Math.PI }); await wait(2500); await shot('40-tp-town');
+    await E(() => { const N = window.__ng; N.S.time = 23 * 60; N.placeMe(2, -2); N.CAM.yaw = -Math.PI / 2 }); await wait(2500); await shot('41-tp-night-sea');
     const st = await N(() => ({ q: window.__ng.S.quest, story: window.__ng.S.story })); log('quest', st.q, 'story', JSON.stringify(st.story));
     ok = st.story.cured && st.q >= 18;
     log('perf', JSON.stringify(await N(() => window.__ng.info())));
