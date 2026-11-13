@@ -126,7 +126,7 @@ function openSberh() {
 /* ---------- pets (none until the forest) ---------- */
 const PA = new Map();
 function buildPet(p, x, z) {
-  const f = formOf(p), A = rigOf(makeActor(g => { PETS[p.kind](g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76) }, D.FORMS[f].scale));
+  const f = formOf(p), A = rigOf(makeActor(g => { (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76) }, D.FORMS[f].scale));
   A.root.position.set(x, 0, z); const old = PA.get(p.id);
   const e = { p, A, pick: addPick(W, x, z, .55, 1.3, { kind: 'pet', id: p.id }), home: old ? old.home : [x, z], t: [x, z], wait: Math.random() * 2, mode: 'wander', atkT: 0, skT: 0 };
   if (old) { scene.remove(old.A.root); removePick(W, old.pick) } PA.set(p.id, e); return e;
@@ -147,7 +147,7 @@ function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9,
 function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; S.pos = [x, z]; camT.x = camP.x = x; camT.z = camP.z = z + 1; peekT = 0 }
 function walkTick(dt, now) {
   let mv = false;
-  const run = !RIDE && !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = RIDE ? D.RAFT_SP : PL.swim ? D.SWIM_SP : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (debOn('daze') ? .6 : 1) * (run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1);
+  const run = !RIDE && !S.tired && (joy.run || now < sprintT) && (joy.on || walkT) && spendRun(dt), spd = GLIDE ? D.GLIDE.sp : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * (guard ? .5 : 1) * (debOn('daze') ? .6 : 1) * (run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1);
   if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), cy = camTP() ? (joy.cy ?? CAM.yaw) : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
     if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(mx, mz); mv = true } }
   if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt, okMe); mv = d > w.near;
@@ -157,6 +157,7 @@ function walkTick(dt, now) {
   lockTick(now);
   envTick(dt, now, mv);
   animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : 12); PL.body.position.y = PL.bob;
+  if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
   if (swingT > 0) { swingT -= dt; const a = PL.rig.armR; if (a) a.rotation.x = -2.4 * Math.sin((1 - swingT / .28) * Math.PI) }   // tool / sword swing
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
@@ -166,7 +167,7 @@ function walkTick(dt, now) {
 /* tap a thing = walk over and do the job: trees → chop, rocks → break, grass → cut, monsters → fight (picks the right tool by itself) */
 function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!walkWorld(px, pz)) break; bx = px; bz = pz } return [bx, bz] }
 /* the player may swim; climbing a steep slope needs stamina (and stops when exhausted) */
-function okMe(x, z) { if (RIDE) return sailable(x, z) && !(S.builds.length && solidAt(x, z)); const w = walkWorld(x, z); if (!w) return false; if (S.builds.length && solidAt(x, z) && !solidAt(me().x, me().z)) return false; const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
+function okMe(x, z) { if (GLIDE) return x > WORLD.x0 && x < WORLD.x1 && z > WORLD.z0 && z < WORLD.z1; if (RIDE) return sailable(x, z) && !(S.builds.length && solidAt(x, z)); const w = walkWorld(x, z); if (!w) return false; if (S.builds.length && solidAt(x, z) && !solidAt(me().x, me().z)) return false; const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
   if ((h1 - h0) / d > D.SLOPE && S.tired) { blocked(x, z, 'climb'); return false } return true }
 let bumpT = 0;
 function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) return; bumpT = now + 2500;
@@ -178,7 +179,9 @@ let lastLand = [0, -4];
 function spendRunN(n) { if (S.tired) return false; const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
 function envTick(dt, now, mv) {                     // swimming (stamina · sinking when exhausted) · climbing (slow · stamina · sliding down when exhausted) · ground height
   const q = me(), w = walkWorld(q.x, q.z), h = groundH(q.x, q.z), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw), ahead = groundH(q.x + fx * .4, q.z + fz * .4);
-  if (RIDE) { PL.swim = PL.climb = false; q.y = -.1 + Math.sin(now / 600) * .03; return }   // standing on the raft
+  if (GLIDE) { PL.swim = PL.climb = false; GLIDE.t += dt; if (GLIDE.t > .5) GLIDE.y -= D.GLIDE.sink * dt; if (!joy.on && !walkT) { q.x += Math.sin(PL.yaw) * D.GLIDE.sp * .8 * dt; q.z += Math.cos(PL.yaw) * D.GLIDE.sp * .8 * dt }
+    const gy = Math.max(-.55, groundH(q.x, q.z)); q.y = GLIDE.y; glideView(now); if (GLIDE.y <= gy + .05) landGlide(); return }   // holding the hawk's legs
+  if (RIDE) { PL.swim = PL.climb = false; q.y = (RIDE.whale ? .05 : -.1) + Math.sin(now / 600) * .03; return }   // standing on the raft / the whale's back
   if (DROWN) { const k = Math.min(1, (now - DROWN) / 1600); q.y = -.55 - k * 1.4; if (Math.random() < .2) floater('🫧', 'tool', q.x + (Math.random() - .5) * .6, .2 + Math.random() * .4, q.z); return }
   PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
   if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!DROWN && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }          // exhausted while swimming → you sink and wash up on a shore nearby
@@ -229,7 +232,7 @@ function petExp(p, n) { const r = gainPetExp(p, n), e = PA.get(p.id); if (!e) re
   return r }
 
 /* ---------- monsters: any number at once (the farm one is saved in S.mon; town slimes respawn on each visit until cleared) ---------- */
-const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbit: .9, chicken: .9, duck: .9, deer: 1, boar: 1 };
+const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbit: .9, chicken: .9, duck: .9, deer: 1, boar: 1, whale: 1.4, hawk: .9 };
 function monSpawn(kind, x, z, o = {}) {
   const T = D.MON[kind], A = makeActor(g => (MONS[kind] || ANIMALS[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
   if (T.legs) rigOf(A);
@@ -703,7 +706,7 @@ function frame(now) {
   for (let i = mons.length - 1; i >= 0; i--) {
     const M = mons[i]; if (!nearMe(M)) continue;
     if (M.stunT > now) { M.A.body.rotation.z = Math.sin(now / 50) * .12; continue } else if (M.stunT) { M.stunT = 0; M.A.body.rotation.z = 0 }
-    const m = M.A.root.position, age = (now - M.born) / 400, ok = walkMon, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
+    const m = M.A.root.position, age = (now - M.born) / 400, ok = M.T.swim ? swimOk : walkMon, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     const pd = dist(me().x, me().z, m.x, m.z), sp = M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5, AN = M.T.animal && !(M.T.charge && M.aggro);
     if (AN) {                                                       // v1.2 wild animals: graze · bolt when you come close (hold B = sneak) · run when hit
@@ -721,6 +724,7 @@ function frame(now) {
     else if (tgt) { if (td > 1.05) stepTo(M.A, tgt.A.root.position.x, tgt.A.root.position.z, sp, dt, ok) }
     else if (M.aggro) { if (pd > 1.1) stepTo(M.A, me().x, me().z, sp * .8, dt, ok) }
     else if (M.alert !== 1 && (M.wait -= dt) <= 0) { const d = stepTo(M.A, M.t[0], M.t[1], .6, dt, ok); if (d < .1) { M.wait = 1 + Math.random() * 2.5; M.t = [M.home[0] + (Math.random() - .5) * 3, M.home[1] + (Math.random() - .5) * 3] } }
+    if (M.T.swim) m.y = -.55 + Math.sin(now / 600 + i) * .06;
     if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, m.y + .8, m.z);
     if (!AN && M.aggro && age > 1.2 && now > M.atkT && (tgt ? td < 1.4 : pd < 2.4)) { M.atkT = now + D.MON_ATK_CD / speed;
       if (!tgt || Math.random() < D.MON_HIT_PLAYER) hitPlayer(M, now);
@@ -735,7 +739,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); bTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); bTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -773,7 +777,7 @@ function labels() {
 function regrow() { const now = Date.now(); for (const o of W.clear.values()) { const T = D.CLEAR[o.t], t = S.cleared[o.id]; if (!t || !T.regrow || now - t < T.regrow) continue; delete S.cleared[o.id]; spawnClear(W, o) } }
 
 /* ---------- HUD + story quests ---------- */
-const PET_ICO = { cat: '🐱', shiba: '🐶', chick: '🐤', bunny: '🐰', penguin: '🐧' };
+const PET_ICO = { cat: '🐱', shiba: '🐶', chick: '🐤', bunny: '🐰', penguin: '🐧', rabbit: '🐇', chicken: '🐔', duck: '🦆', deer: '🦌', boar: '🐗', whale: '🐋', hawk: '🦅' };
 const qDone = q => q.check ? q.check(S) : q.flag ? !!S.story[q.flag] : (q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0) >= q.goal;
 function hud() {
   const st = pStats(); boatTick();
@@ -920,7 +924,7 @@ let bagTab = 'sword';
 function openBag(tab) {
   if (tab) bagTab = tab;
   sheet('🎒 กระเป๋า', (b, redraw) => {
-    const tabs = [['sword', '⚔️ ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹 ธนู']] : []), ['shield', '🛡️ โล่'], ['mats', '🪵 วัตถุดิบ'], ['food', '🍲 อาหาร'], ['quest', '📜 เควส'], ['ach', '🏆 สำเร็จ'], ['set', '⚙️ ตั้งค่า']];
+    const tabs = [['sword', '⚔️ ดาบ'], ...(S.bag.some(it => D.ITEMS[it.t].slot === 'bow') ? [['bow', '🏹 ธนู']] : []), ['shield', '🛡️ โล่'], ['pets', '🐾 น้อง'], ['mats', '🪵 วัตถุดิบ'], ['food', '🍲 อาหาร'], ['quest', '📜 เควส'], ['ach', '🏆 สำเร็จ'], ['set', '⚙️ ตั้งค่า']];
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${n}</button>`).join('')}</div>`;
     const st = pStats(), eqd = s => S.bag.find(x => x.id === S.eq[s]);
     if (['sword', 'shield', 'bow'].includes(bagTab)) { const sl = bagTab, it0 = eqd(sl);
@@ -942,6 +946,7 @@ function openBag(tab) {
       h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
         + '<div class="card lock"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา</b><div class="mut">เมฆดำลึกลับปกคลุมดินแดนไกลโพ้น… (มาในอัปเดตถัดๆ ไป)</div></div>'
         + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
+    if (bagTab === 'pets') h += `<p class="mut">น้อง ${S.pets.length}/${D.PET_MAX} · ทีม ${S.team.length}/${D.TEAM_MAX} · จับน้องใหม่: เข้าใกล้สัตว์ป่า (กด B ค้างเพื่อย่อง) แล้วกด 🫳 จับ</p>` + (S.pets.map(p => `<div class="card">${petCard(p)}${D.CATCH[p.kind] && D.CATCH[p.kind].ability ? `<div class="mut">✨ ความสามารถ: ${D.CATCH[p.kind].ability === 'swim' ? '🐋 ขี่ข้ามทะเล (ลงน้ำแล้วกด A)' : '🦅 ร่อนลงจากที่สูง (ยืนริมผาแล้วกด A)'}</div>` : ''}<div class="row2"><button class="btn sm" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn sm ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button></div></div>`).join('') || '<p>ยังไม่มีน้อง</p>');
     if (bagTab === 'ach') h += achHTML();
     if (bagTab === 'set') h += '<div id="bagSet"></div>';
     b.innerHTML = h;
@@ -949,6 +954,8 @@ function openBag(tab) {
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
     if (bagTab === 'ach') bindAch(b, redraw);
+    b.querySelectorAll('[data-pf]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.pf)));
+    b.querySelectorAll('[data-pt]').forEach(x => x.onclick = () => { const id = x.dataset.pt; if (S.team.includes(id)) S.team = S.team.filter(i => i !== id); else if (S.team.length >= D.TEAM_MAX) { toast(`ทีมเต็มแล้ว (${D.TEAM_MAX} ตัว)`); return } else S.team.push(id); save(); hud(); redraw() });
     b.querySelectorAll('[data-eq]').forEach(x => x.onclick = () => { const it = S.bag.find(i => i.id === +x.dataset.eq); S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); save(); hud(); redraw() });
     b.querySelectorAll('[data-un]').forEach(x => x.onclick = () => { S.eq[x.dataset.un] = null; save(); hud(); redraw() });
     b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => confirmBox(`ขายชิ้นนี้ได้ 🪙 ${x.dataset.v}?`, () => { S.bag = S.bag.filter(i => i.id !== +x.dataset.sell); S.coin += +x.dataset.v; save(); hud(); redraw() }, 'ขาย'));
@@ -969,7 +976,7 @@ function lockTick(now) {
   const q = me(), dm = M => dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z);
   if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > D.LOCK_OFF || !hostile(LOCK) || !(LOCK.aggro || LOCK.hit))) LOCK = null;
   if (!LOCK && !RIDE && S.has.sword) { let bd = D.LOCK_ON; for (const M of mons) if (hostile(M) && (M.aggro || M.hit) && M.born + 600 < now) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }
-  if (LOCK && !RIDE && !PL.swim && !DROWN && !EAT) { const m = LOCK.A.root.position; PL.yawT = Math.atan2(m.x - q.x, m.z - q.z);
+  if (LOCK && !RIDE && !GLIDE && !PL.swim && !DROWN && !EAT) { const m = LOCK.A.root.position; PL.yawT = Math.atan2(m.x - q.x, m.z - q.z);
     lockMark.visible = !CUT; lockMark.position.set(m.x, m.y + (MSCALE[LOCK.kind] || .85) * 2 + .35 + Math.sin(now / 160) * .08, m.z); lockMark.rotation.y = now / 300 } else lockMark.visible = false;
 }
 const facing = m => { const q = me(), p = m.A.root.position; let d = Math.atan2(p.x - q.x, p.z - q.z) - PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.abs(d) < 1.2 };
@@ -994,6 +1001,61 @@ const bestMeal = () => D.RECIPES.filter(r => S.meals[r.k] > 0 && r.eff.hp).sort(
 function quickEat() { const r = bestMeal(); if (!r) { toast('🍲 ไม่มีอาหารที่เพิ่ม ❤️ · ทำอาหารที่หม้อหรือกองไฟ', 2000); return } if (pHp() >= pStats().hp) { toast('❤️ หัวใจเต็มอยู่แล้ว', 1200); return } closeSheets(); eatMeal(r.k) }
 if (S.potions.hpS || S.potions.hpL) { const c = (S.potions.hpS || 0) * D.LV_POTION_REFUND.hpS + (S.potions.hpL || 0) * D.LV_POTION_REFUND.hpL; S.coin += c; delete S.potions.hpS; delete S.potions.hpL; S.autoPot = false; save();
   if (S.story.intro) setTimeout(() => toast(`🧪 ยา HP ถูกยกเลิกแล้ว · คืนเป็น 🪙 ${fmt(c)}<br>❤️ ฟื้นด้วยอาหาร การนอน และน้อง · ร้านยามียารักษาอาการแทน`, 4000), 8000) }
+/* ================= v1.5 🫳 catching pets (a tug-of-war like fishing · the animal struggles: the screen and the phone shake) · 🐋 ride · 🦅 glide ================= */
+const swimOk = (x, z) => sailable(x, z) && !walkLand(x, z);
+const hasAbility = a => S.team.some(id => { const p = S.pets.find(x => x.id === id); return p && D.CATCH[p.kind] && D.CATCH[p.kind].ability === a });
+const waterNear = r => { const q = me(); for (let a = 0; a < 12; a++) if (swimOk(q.x + Math.cos(a * .52) * r, q.z + Math.sin(a * .52) * r)) return true; return false };
+let CATCHING = null, catchT = 0, catchFor = null;
+function catchTick(dt, now) {
+  if (CATCHING) return catchStep(dt, now);
+  if (now < catchT) return; catchT = now + 200; let best = null, bd = 1e9; const q = me();
+  if (!CUT && !BM && !GLIDE && S.pets.length < D.PET_MAX) for (const M of mons) { const C = D.CATCH[M.kind]; if (!C || M.chief) continue; const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z), r = D.CATCH_RANGE * (M.T.swim ? 1.6 : 1);
+    if (d < r && d < bd && (!(now < M.fleeT) || M.hp < M.T.hp * .4)) { bd = d; best = M } }
+  catchFor = best; const b = $('bCatch'); b.style.display = best ? 'block' : 'none'; if (best) b.textContent = `🫳 จับ ${best.T.name}`;
+}
+$('bCatch').onclick = () => { if (catchFor && mons.includes(catchFor)) startCatch(catchFor) };
+function startCatch(M) {
+  const C = D.CATCH[M.kind], weak = M.hp < M.T.hp * .4; CATCHING = { M, C, pos: .3, v: 0, zone: .5, zv: 0, zw: Math.max(.14, .3 / C.diff * (weak ? 1.35 : 1)), prog: .3, hold: false, t: 0, kick: 1 + Math.random() };
+  M.stunT = performance.now() + 60000; walkT = null; work = null; joyEnd(); $('bCatch').style.display = 'none'; $('catchUI').style.display = 'flex'; $('catchN').textContent = `🫳 ${M.T.name}`; sfx('splash');
+}
+function catchStep(dt, now) {
+  const c = CATCHING, M = c.M, ui = $('catchUI'); if (!mons.includes(M)) return endCatch(false);
+  c.t += dt; c.kick -= dt;
+  if (c.kick <= 0) { c.kick = (.8 + Math.random() * 1.6) / c.C.diff; c.zv = (Math.random() < .5 ? -1 : 1) * (1.2 + Math.random() * 1.4) * c.C.diff; ui.classList.remove('shake'); void ui.offsetWidth; ui.classList.add('shake'); shakeT = .18; try { navigator.vibrate && navigator.vibrate(40) } catch (e) { } sfx('grass'); M.A.body.rotation.z = (Math.random() - .5) * .8 }
+  c.zv *= Math.pow(.25, dt); c.zone += c.zv * dt + Math.sin(c.t * 2.3 * c.C.diff) * .12 * dt * c.C.diff; if (c.zone < c.zw / 2 || c.zone > 1 - c.zw / 2) { c.zone = Math.max(c.zw / 2, Math.min(1 - c.zw / 2, c.zone)); c.zv *= -.6 }
+  c.v += (c.hold ? 2.6 : -2.2) * dt; c.v *= Math.pow(.35, dt); c.pos += c.v * dt; if (c.pos < 0) { c.pos = 0; c.v = 0 } if (c.pos > 1) { c.pos = 1; c.v = 0 }
+  const inZ = Math.abs(c.pos - c.zone) < c.zw / 2; c.prog += (inZ ? .26 : -.17 * c.C.diff) * dt;
+  $('catchZ').style.left = (c.zone - c.zw / 2) * 100 + '%'; $('catchZ').style.width = c.zw * 100 + '%'; $('catchM').style.left = c.pos * 100 + '%'; $('catchP').style.width = Math.max(0, Math.min(1, c.prog)) * 100 + '%'; $('catchZ').classList.toggle('in', inZ);
+  M.A.body.rotation.z *= Math.pow(.05, dt);
+  if (c.prog >= 1) endCatch(true); else if (c.prog <= 0 || c.t > 25) endCatch(false);
+}
+{ const ui = $('catchUI'), on = e => { e.preventDefault(); if (CATCHING) CATCHING.hold = true }, off = () => { if (CATCHING) CATCHING.hold = false };
+  ui.addEventListener('pointerdown', on); ui.addEventListener('pointerup', off); ui.addEventListener('pointercancel', off); ui.addEventListener('pointerleave', off);
+  $('bA').addEventListener('pointerdown', () => { if (CATCHING) CATCHING.hold = true }); $('bA').addEventListener('pointerup', off) }
+function endCatch(ok) {
+  const c = CATCHING; CATCHING = null; $('catchUI').style.display = 'none'; if (!c) return; const M = c.M, q = M.A.root.position;
+  if (!ok) { if (mons.includes(M)) { M.stunT = 0; M.fleeT = performance.now() + 5000; M.A.body.rotation.z = 0 } sfx('hurt'); toast(`💨 ${M.T.name} ดิ้นหลุดไปแล้ว…`, 1800); return }
+  const rar = rollRarity(['B', 'R', 'E', 'L']), p = { id: 'p' + Date.now().toString(36), kind: M.kind, name: M.T.name.replace(/^\S+\s/, ''), rar, el: c.C.el, lv: 1, exp: 0, hp: null, mp: null, down: 0 };
+  VF.burst(q.x, q.y + .6, q.z, '#ffe27a', 24, 4); VF.ring(q.x, q.y, q.z, '#ffe27a', 2.2, .5); const x = q.x, z = M.T.swim ? me().z : q.z; monGone(M);
+  S.pets.push(p); if (S.team.length < D.TEAM_MAX) S.team.push(p.id); buildPet(p, M.T.swim ? me().x + 1 : x, z); bump('caught'); sfx('level'); save(); hud(); achCheck();
+  sheet('🎉 จับได้แล้ว!', (b, redraw, close) => { b.innerHTML = `<div class="card">${petCard(p)}</div>${c.C.ability ? `<p>✨ ความสามารถพิเศษ: ${c.C.ability === 'swim' ? '🐋 ขี่ข้ามทะเล — ลงน้ำแล้วกด A' : '🦅 ร่อนลงจากที่สูง — ยืนริมผาแล้วกด A'}</p>` : ''}<p class="mut">ตั้งชื่อน้อง</p><input id="pnN" maxlength="12" value="${esc(p.name)}" style="width:100%;font:inherit;font-size:16px;padding:8px;border:3px solid var(--ink);border-radius:12px"><button class="btn go wide" id="pnOk" style="margin-top:10px">ตกลง</button>`;
+    b.querySelector('#pnOk').onclick = () => { const n = b.querySelector('#pnN').value.trim(); if (n) p.name = n; save(); hud(); close() } });
+}
+/* 🐋 ride the whale */
+const WH = makeActor(g => ANIMALS.whale(g), 1.25);
+function rideWhale() {
+  if (RIDE || !hasAbility('swim')) return; const q = me(); let sp = PL.swim ? [q.x, q.z] : null;
+  if (!sp) for (let r = 1; r <= 3.5 && !sp; r += .5) for (let a = 0; a < 16; a++) { const x = q.x + Math.sin(a * .39) * r, z = q.z + Math.cos(a * .39) * r; if (swimOk(x, z)) { sp = [x, z]; break } }
+  if (!sp) { hint('🐋 ต้องอยู่ในน้ำหรือริมน้ำ'); return } fishEnd(); placeMe(sp[0], sp[1]); RIDE = { id: 'whale', whale: 1 }; scene.add(WH.root); document.body.classList.add('ride'); sfx('dive'); VF.ring(sp[0], -.4, sp[1], '#cfefff', 2.5, .6);
+  toast('🐋 ขี่น้องวาฬ! พายข้ามทะเลได้เร็ว ไม่เสียพลังงาน · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3000);
+}
+/* 🦅 glide: hold the hawk's legs and drift down from high ground */
+let GLIDE = null; const HK = rigOf(makeActor(g => ANIMALS.hawk(g), 1.1));
+function canGlide() { const q = me(), h = groundH(q.x, q.z); if (h < D.GLIDE.minH || PL.swim || RIDE) return null;   /* facing a drop first, else any side with a drop */
+  for (const y of [PL.yaw, ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => i * Math.PI / 4)]) for (const d of [1.2, 2, 3]) if (groundH(q.x + Math.sin(y) * d, q.z + Math.cos(y) * d) < h - 1.2) return y; return null }
+function startGlide() { const y = canGlide(); if (y == null) { hint('🦅 ยืนบนที่สูง ใกล้ขอบผา แล้วกด A'); return } PL.yaw = PL.yawT = y; LOCK = null; GLIDE = { y: me().y + 1.1, t: 0 };   /* a little hop as the hawk lifts you */ walkT = null; work = null; scene.add(HK.root); sfx('dive'); toast('🦅 จับขาน้องเหยี่ยวร่อนลง! ใช้จอยบังคับทิศ', 2200) }
+function glideView(now) { const q = me(), f = Math.sin(now / 90); HK.root.position.set(q.x, q.y + 1.65 + f * .05, q.z); HK.root.rotation.y = PL.yaw; if (HK.rig.armL) { HK.rig.armL.rotation.z = -.6 + f * .7; HK.rig.armR.rotation.z = .6 - f * .7 } if (PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 } }
+function landGlide() { GLIDE = null; scene.remove(HK.root); if (PL.rig.armL) PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = 0; VF.ring(me().x, Math.max(-.4, groundH(me().x, me().z)), me().z, '#ffffff', 1.4, .4); sfx('tap') }
 /* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
 let bossK = '';
 function bossHud() { const M = LOCK && (LOCK.chief || LOCK.T.hp >= 100 || /King|Chief/.test(LOCK.kind)) ? LOCK : null, el = $('boss');
@@ -1257,6 +1319,9 @@ function nearTarget() {
 function actA() {
   stopAuto(); const now = performance.now();
   if (BM) { placeBuild(); return }
+  if (CATCHING) return;
+  if (!RIDE && PL.swim && hasAbility('swim')) { rideWhale(); return }
+  if (!RIDE && !GLIDE && hasAbility('glide') && canGlide() === PL.yaw && !(nearTarget() || {}).m) { startGlide(); return }   /* facing a drop on high ground */
   if (RIDE) { const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (!landNear() && S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return } if (!unboard()) { if (S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz) } else hint('🛶 พายเข้าใกล้ฝั่ง แล้วกด A เพื่อขึ้นฝั่ง') } return }
   if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
@@ -1279,6 +1344,8 @@ const WHEEL = [                                                  // [icon, name,
   ['🗺️', 'แผนที่', () => openMap(), () => ''], ['🛒', 'ร้านในเมือง', () => openTown(), () => S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['🛠️', 'ช่างอุปกรณ์', () => $('bTool').click(), () => S.shops.tools ? '' : 'ร้านช่างอุปกรณ์ยังไม่เปิด'],
   ['🎣', 'ตกปลา', () => { setTool('rod'); toast('🎣 หันหน้าไปทางน้ำ แล้วกด A', 2000) }, () => !S.has.rod ? 'ยังไม่มีเบ็ด' : nearWater() ? '' : 'ต้องอยู่ใกล้น้ำก่อน'],
   ['🪏', 'จอบ (ขุดแปลงผัก)', () => { setTool('hoe'); toast('🪏 หันหน้าไปที่พื้นหญ้าใกล้บ้าน แล้วกด A เพื่อขุด', 2200) }, () => !S.has.hoe ? 'ยังไม่มีจอบ' : zoneOf(me().x, me().z) === 'farm' ? '' : 'ขุดได้เฉพาะบนเกาะใกล้บ้าน'],
+  ['🐋', 'ขี่น้องวาฬ', () => rideWhale(), () => !hasAbility('swim') ? 'ต้องมีน้องวาฬในทีม' : RIDE ? 'กำลังขี่อยู่' : (PL.swim || waterNear(3)) ? '' : 'ต้องอยู่ในน้ำหรือริมน้ำ'],
+  ['🦅', 'ร่อนกับน้องเหยี่ยว', () => startGlide(), () => !hasAbility('glide') ? 'ต้องมีน้องเหยี่ยวในทีม' : canGlide() != null ? '' : 'ต้องยืนบนที่สูง หันหน้าไปทางที่ต่ำกว่า'],
   ['🔨', 'ก่อสร้าง', () => openBuild(), () => Object.keys(S.bp).length ? '' : 'ยังไม่มีแบบแปลน (คุยกับลุงฮาวซิฟ)'],
   ['✏️', 'วาดภาพ', () => { setTool('sketch'); toast('✏️ เข้าใกล้มอนสเตอร์/คน/น้อง แล้วกด A', 2200) }, () => subjectNear() ? '' : 'ไม่มีอะไรให้วาดแถวนี้'],
   ['🍲', 'กินด่วน (❤️)', () => quickEat(), () => !bestMeal() ? 'ไม่มีอาหารที่เพิ่ม ❤️' : pHp() >= pStats().hp ? 'หัวใจเต็มอยู่แล้ว' : ''],
@@ -1539,6 +1606,9 @@ function openCreator(first) {
 /* ================= v1.2 open world: wild animals in every chunk · monster camps with a treasure chest (blueprints!) ================= */
 function spawnAnimals(ch, x, z) {
   const n = 1 + Math.floor(Math.random() * 3);
+  if (Math.random() < .45) for (let t = 0; t < 14; t++) { const px = x + (Math.random() - .5) * 56, pz = z + (Math.random() - .5) * 56;   // v1.5: 🐋 in the open sea · 🦅 up high
+    if (!walkLand(px, pz) && swimOk(px, pz) && wildH(px, pz) < -3 && dist(px, pz, me().x, me().z) > 14) { ch.mons.push(monSpawn('whale', px, pz, { area: 'wild' })); break }
+    if (walkLand(px, pz) && groundH(px, pz) > 4.5 && dist(px, pz, me().x, me().z) > 12) { ch.mons.push(monSpawn('hawk', px, pz, { area: 'wild' })); break } }
   for (let i = 0; i < n; i++) for (let t = 0; t < 12; t++) { const px = x + (Math.random() - .5) * 56, pz = z + (Math.random() - .5) * 56;
     if (!walkLand(px, pz) || coreDist(px, pz) < 8 || dist(px, pz, me().x, me().z) < 12) continue;
     let wet = false; for (let a = 0; a < 6 && !wet; a++) wet = !!waterAt(px + Math.cos(a) * 6, pz + Math.sin(a) * 6);
@@ -1705,7 +1775,7 @@ function board(b) {
   document.body.classList.add('ride'); sfx('splash'); save();
   toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>🎣 หันไปทางน้ำแล้วกด A = ตกปลา · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3400);
 }
-function leaveRaft() { const b = RIDE; if (!b) return; b.x = me().x; b.z = me().z; b.r = PL.yaw; RIDE = null; S.ride = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); bView(b) }
+function leaveRaft() { const b = RIDE; if (!b) return; if (b.whale) { scene.remove(WH.root); RIDE = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); return } b.x = me().x; b.z = me().z; b.r = PL.yaw; RIDE = null; S.ride = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); bView(b) }
 function unboard() { if (!RIDE) return false; const sp = landNear(); if (!sp) return false; fishEnd(); leaveRaft(); placeMe(sp[0], sp[1]); sfx('tap');
   for (const e of PA.values()) if (S.team.includes(e.p.id)) e.A.root.position.set(sp[0] + .8, groundH(sp[0] + .8, sp[1] + .5), sp[1] + .5); save(); return true }
 $('bRide').onclick = () => unboard();
@@ -1730,7 +1800,8 @@ function pickScroll(id) {
 let bT = 0;
 function bTick(dt, now) {
   if (BM) buildTick();
-  if (RIDE) { const v = BV.get(RIDE.id); if (v && v.g) { v.g.position.set(me().x, -.3 + Math.sin(now / 600) * .03, me().z); v.g.rotation.y = PL.yaw; v.g.rotation.z = Math.sin(now / 900) * .03; if (v.pick) v.pick.position.set(1e5, -50, 1e5) } $('bRide').classList.toggle('on', !!landNear()) }
+  if (RIDE && RIDE.whale) { WH.root.position.set(me().x, -.95 + Math.sin(now / 600) * .04, me().z); WH.root.rotation.y = PL.yaw; WH.root.rotation.z = Math.sin(now / 800) * .04; if (Math.random() < .03) VF.rise(me().x - Math.sin(PL.yaw) * 1.4, .3, me().z - Math.cos(PL.yaw) * 1.4, '#cfefff', 6); $('bRide').classList.toggle('on', !!landNear()) }
+  else if (RIDE) { const v = BV.get(RIDE.id); if (v && v.g) { v.g.position.set(me().x, -.3 + Math.sin(now / 600) * .03, me().z); v.g.rotation.y = PL.yaw; v.g.rotation.z = Math.sin(now / 900) * .03; if (v.pick) v.pick.position.set(1e5, -50, 1e5) } $('bRide').classList.toggle('on', !!landNear()) }
   for (const b of S.builds) if (b.k === 'raft' && b.done && b !== RIDE) { const v = BV.get(b.id); if (v && v.g) v.g.position.y = -.3 + Math.sin(now / 700 + b.x) * .03 }
   for (const o of SCR) if (o.g) { o.sp.rotation.y = now / 400; o.sp.position.y = 1.1 + Math.sin(now / 500) * .1 }
   if (now < bT) return; bT = now + 1000; const q = me();
@@ -1764,7 +1835,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
