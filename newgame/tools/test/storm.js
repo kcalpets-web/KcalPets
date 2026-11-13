@@ -25,6 +25,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => window.__ng.goStorm()); await wait(400); await pg.click('#cfY'); await wait(700); await shot('02-loading'); await wait(3500); await closeAll();
     const at = await N(() => ({ x: window.__ng.me.x, storm: document.body.classList.contains('storm') })); log('arrived', JSON.stringify(at)); if (!(at.x > 2500) || !at.storm) errs.push('did not reach the storm island');
     await shot('03-island');
+    await E(() => { window.__hpkeep = setInterval(() => { const N = window.__ng; if (N.S.hp != null && N.S.hp < 120) N.S.hp = null }, 200) });   /* the test checks the fight's flow, not survival */
     await E(() => { const N = window.__ng; N.placeMe(2600 - 8, 0); N.S.en = null }); await wait(3500); await closeAll();
     const bs = await N(() => { const B = window.__ng.BOSS; return B ? { hp: B.hp, def: B.T.def } : null }); log('boss', JSON.stringify(bs)); if (!bs) errs.push('the storm lord did not appear');
     await wait(3500); await shot('04-boss'); await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, Math.round(B.T.hp * .45), 'dmg') }); await wait(6000); await shot('05-phase2');

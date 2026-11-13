@@ -43,7 +43,7 @@ function setTime() {                                         // lighting follows
   if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color(); scene.background.copy(mix(LDAY.bg, LNIGHT.bg)).lerp(GLOW, g * .45);
   hemi.color.copy(mix(LDAY.hc, LNIGHT.hc)).lerp(GLOW, g * .3); hemi.groundColor.copy(mix(LDAY.hg, LNIGHT.hg)); hemi.intensity = (eco ? 1.2 : .95) * (1 - k) + .55 * k;
   sun.color.copy(mix(LDAY.sc, LNIGHT.sc)).lerp(GLOW, g * .6); sun.intensity = 2.1 * (1 - k) + .9 * k; fill.intensity = .45 * (1 - k) + .25 * k; rim.color.copy(mix(LDAY.rc, LNIGHT.rc));
-  SKY.material.uniforms.top.value.copy(_c.copy(C('#4a98d8')).lerp(C('#0a1030'), k)); SKY.material.uniforms.bot.value.copy(_c.copy(LDAY.bg).lerp(LNIGHT.bg, k)).lerp(GLOW, g * .6); SKY.material.uniforms.stars.value = k;
+  SKY.material.uniforms.top.value.copy(_c.copy(C('#4a98d8')).lerp(C('#0a1030'), k)); SKY.material.uniforms.bot.value.copy(_c.copy(LDAY.bg).lerp(LNIGHT.bg, k)).lerp(GLOW, g * .6); SKY.material.uniforms.stars.value = k; SKY.material.uniforms.glow.value = g; { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI; SKY.material.uniforms.sun.value.set(Math.cos(a), Math.sin(a) * .9 + .05, -.35) }
   if (scene.fog) scene.fog.color.copy(SKY.material.uniforms.bot.value);
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
@@ -53,12 +53,25 @@ const cam = new THREE.PerspectiveCamera(36, 1, .3, 700);
 const camTP = () => (localStorage.getItem('ng_cam') || 'tp') === 'tp';
 const CAM = { yaw: Math.PI, pitch: .42, manualT: 0 };            // yaw: the direction the camera looks (forward = sin/cos) · pitch: how far it looks down
 /* sky dome (gradient · clouds · stars) + far mountains so the horizon reads from the ground */
-const SKY = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { top: { value: C('#5aa8e0') }, bot: { value: C('#cfe8f4') }, stars: { value: 0 }, t: { value: 0 } },
+const SKY = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,   /* v1.9: layered clouds lit by the sun · golden horizon at dusk · moon + dense twinkling stars */
+  uniforms: { top: { value: C('#5aa8e0') }, bot: { value: C('#cfe8f4') }, stars: { value: 0 }, t: { value: 0 }, glow: { value: 0 }, sun: { value: new THREE.Vector3(0, 1, 0) } },
   vertexShader: 'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-  fragmentShader: `uniform vec3 top,bot;uniform float stars,t;varying vec3 vP;float h(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}
-    void main(){float y=clamp(vP.y,0.,1.);vec3 c=mix(bot,top,pow(y,.6));vec3 q=floor(vP*180.);float s=step(.9965,h(q))*stars*smoothstep(.05,.3,vP.y);
-    float cl=smoothstep(.55,.85,sin(vP.x*9.+t*.02)*sin(vP.z*7.-t*.015)*.5+.5)*smoothstep(.08,.3,vP.y)*smoothstep(.7,.35,vP.y);c=mix(c,vec3(1.),cl*.55*(1.-stars));gl_FragColor=vec4(c+s,1.);}` }));
+  fragmentShader: `uniform vec3 top,bot,sun;uniform float stars,t,glow;varying vec3 vP;
+    float h(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}
+    float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2(1,0)),f.x),mix(h2(i+vec2(0,1)),h2(i+vec2(1,1)),f.x),f.y);}
+    float fb(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*n2(p);p*=2.03;a*=.5;}return s;}
+    void main(){float y=clamp(vP.y,0.,1.);vec3 c=mix(bot,top,pow(y,.6));
+      float sd=max(0.,dot(vP,normalize(sun)));vec3 warm=vec3(1.,.55,.28);c=mix(c,warm,glow*pow(1.-y,3.)*.8*(.4+.6*sd));            // golden horizon toward the sun
+      c+=vec3(1.,.9,.7)*pow(sd,400.)*(1.-stars)*2.+vec3(1.,.8,.5)*pow(sd,12.)*.25*(1.-stars);                                      // the sun + its haze
+      vec2 uv=vP.xz/(vP.y+.18);float cl=smoothstep(.48,.78,fb(uv*1.6+vec2(t*.006,t*.002)))*.85+smoothstep(.55,.8,fb(uv*3.2-vec2(t*.01,0.)))*.35;
+      cl*=smoothstep(.02,.18,vP.y);vec3 lit=mix(vec3(1.),mix(vec3(1.,.62,.45),vec3(1.,.8,.85),.4),glow);lit=mix(lit,vec3(.16,.18,.3),stars);
+      vec3 shade=mix(vec3(.72,.76,.86),vec3(.55,.3,.38),glow);shade=mix(shade,vec3(.06,.07,.14),stars);
+      c=mix(c,mix(shade,lit,.55+.45*sd),clamp(cl,0.,1.)*.92);
+      vec3 q=floor(vP*260.);float tw=.6+.4*sin(t*2.+h(q)*30.);float s=step(.994,h(q))*stars*smoothstep(.04,.3,vP.y)*tw*(1.-cl);
+      float mw=exp(-pow(dot(vP,normalize(vec3(.4,.6,-.7))),2.)*30.)*fb(vP.xz*8.)*stars*.35;                                             // milky way
+      vec3 mn=normalize(-sun+vec3(0.,.35,0.));float md=dot(vP,mn);c+=vec3(.95,.95,1.)*smoothstep(.9992,.9995,md)*stars+vec3(.5,.6,.9)*pow(max(md,0.),60.)*stars*.25;   // moon
+      gl_FragColor=vec4(c+s+mw*vec3(.7,.75,1.),1.);}` }));
 SKY.renderOrder = -1; scene.add(SKY);
 /* (v1.1: the far mountain ring is gone — the big world has real mountains) */
 let zoom = +(localStorage.getItem('ng_zoom') || 1); const camT = { x: S.cam[0], z: S.cam[1] }, camP = { x: camT.x, z: camT.z };
@@ -774,7 +787,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); bTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -788,11 +801,13 @@ function frame(now) {
     /* gentle follow (no dizziness): only after walking a while, only when heading roughly away from the camera (not sideways/backwards), capped at ~25°/s */
     if (moving && CAM.walkT > 1 && now - CAM.manualT > 3000) { let d = PL.yaw - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) < 1.2) CAM.yaw += Math.max(-D.CAM_FOLLOW * dt, Math.min(D.CAM_FOLLOW * dt, d * dt * .8)) }
     if (LOCK && now - CAM.manualT > 1500) { let d = PL.yaw - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); CAM.yaw += Math.max(-1.1 * dt, Math.min(1.1 * dt, d * dt * 2)) }   /* lock-on: the camera swings behind you, toward the monster */
-    let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); CAM.ps = (CAM.ps ?? CAM.pitch) + (CAM.pitch - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * 7);   // eased
+    const still = !joy.on && !walkT && !work && !LOCK && !F && now - (CAM.manualT || 0) > 4000 && now - actT > 6000; if (still) CAM.yaw += dt * .035;   /* v1.9 scenic camera: stand still → it lifts its gaze to the horizon and drifts */
+    let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); { const pT = still ? Math.min(CAM.pitch, .03) : CAM.pitch; CAM.ps = (CAM.ps ?? CAM.pitch) + (pT - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * (still ? .5 : 7)) }   // eased
     const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
-    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
-    if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 } }
-  else { cam.fov = 36; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
+    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
+    if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 }
+    { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; scene.fog.near += (60 - 52 * mist - scene.fog.near) * dt; scene.fog.far += (420 - 330 * mist - scene.fog.far) * dt } }   /* forest + dawn mist */
+  else { cam.fov = 36; cam.near = .1; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
   sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
   if (GR) { GR.auto(nightK(), Math.min(1, glowK()), S.area, inStorm() && !S.story.cloudGone); GR.render(dt / speed) } else R.render(scene, cam);
@@ -1092,6 +1107,31 @@ function canGlide() { const q = me(), h = groundH(q.x, q.z); if (h < D.GLIDE.min
 function startGlide() { const y = canGlide(); if (y == null) { hint('🦅 ยืนบนที่สูง ใกล้ขอบผา แล้วกด A'); return } PL.yaw = PL.yawT = y; LOCK = null; GLIDE = { y: me().y + 1.1, t: 0 };   /* a little hop as the hawk lifts you */ walkT = null; work = null; scene.add(HK.root); sfx('dive'); toast('🦅 จับขาน้องเหยี่ยวร่อนลง! ใช้จอยบังคับทิศ', 2200) }
 function glideView(now) { const q = me(), f = Math.sin(now / 90); HK.root.position.set(q.x, q.y + 1.65 + f * .05, q.z); HK.root.rotation.y = PL.yaw; if (HK.rig.armL) { HK.rig.armL.rotation.z = -.6 + f * .7; HK.rig.armR.rotation.z = .6 - f * .7 } if (PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 } }
 function landGlide() { GLIDE = null; scene.remove(HK.root); if (PL.rig.armL) PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = 0; VF.ring(me().x, Math.max(-.4, groundH(me().x, me().z)), me().z, '#ffffff', 1.4, .4); sfx('tap') }
+/* ---------- v1.9 things in the air: petals by day (leaves in the forest) · fireflies at night — drifting with the wind around the camera ---------- */
+const AIRN = 90, airPos = new Float32Array(AIRN * 3), airCol = new Float32Array(AIRN * 3), airG = new THREE.BufferGeometry(); airG.setAttribute('position', new THREE.BufferAttribute(airPos, 3)); airG.setAttribute('color', new THREE.BufferAttribute(airCol, 3));
+const airTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'), r = g.createRadialGradient(16, 16, 0, 16, 16, 16); r.addColorStop(0, '#fff'); r.addColorStop(.45, '#fffc'); r.addColorStop(1, '#fff0'); g.fillStyle = r; g.fillRect(0, 0, 32, 32); return new THREE.CanvasTexture(c) })();
+const airM = new THREE.PointsMaterial({ size: .14, map: airTex, alphaTest: .02, vertexColors: true, transparent: true, opacity: .9, depthWrite: false }), AIR = new THREE.Points(airG, airM); AIR.frustumCulled = false; scene.add(AIR);
+const airS = Array.from({ length: AIRN }, (_, i) => ({ ph: Math.random() * 6.28, sp: .4 + Math.random() * .6, set: false }));
+let airMode = '';
+function airTick(dt, now) {
+  const q = me(), night = nightK() > .5, mode = inStorm() ? 'none' : night ? 'fly' : S.area === 'forest' ? 'leaf' : S.area === 'town' ? 'none' : 'petal';
+  AIR.visible = mode !== 'none' && !CUT && !eco; if (!AIR.visible) return; const t = now / 1000, cc = new THREE.Color();
+  if (mode !== airMode) { airMode = mode; airM.size = mode === 'fly' ? .2 : .13; airM.blending = mode === 'fly' ? THREE.AdditiveBlending : THREE.NormalBlending; airM.needsUpdate = true; airS.forEach(a => a.set = false) }
+  for (let i = 0; i < AIRN; i++) { const a = airS[i], j = i * 3;
+    if (!a.set || Math.abs(airPos[j] - q.x) > 20 || Math.abs(airPos[j + 2] - q.z) > 20 || airPos[j + 1] < q.y - 1) { a.set = true; airPos[j] = q.x + (Math.random() - .5) * 36; airPos[j + 1] = q.y + (mode === 'fly' ? .3 + Math.random() * 2 : 1 + Math.random() * 7); airPos[j + 2] = q.z + (Math.random() - .5) * 36;
+      cc.set(mode === 'fly' ? '#d8ff6a' : mode === 'leaf' ? ['#6aa848', '#c8a040', '#d87a3a'][i % 3] : ['#ffc8d8', '#ffffff', '#ffb0c8', '#fff0a0'][i % 4]); airCol[j] = cc.r; airCol[j + 1] = cc.g; airCol[j + 2] = cc.b }
+    if (mode === 'fly') { airPos[j] += Math.sin(t * .7 + a.ph) * dt * .4; airPos[j + 1] += Math.sin(t * 1.3 + a.ph) * dt * .25; airPos[j + 2] += Math.cos(t * .6 + a.ph) * dt * .4; const b = .5 + .5 * Math.sin(t * 2.5 + a.ph * 3); cc.set('#d8ff6a').multiplyScalar(b); airCol[j] = cc.r; airCol[j + 1] = cc.g; airCol[j + 2] = cc.b }
+    else { airPos[j] += (1.1 + Math.sin(t + a.ph)) * dt * a.sp; airPos[j + 1] -= dt * (.35 + .25 * Math.sin(t * 2 + a.ph)) * a.sp; airPos[j + 2] += Math.sin(t * 1.7 + a.ph) * dt * .5 } }
+  airG.attributes.position.needsUpdate = true; airG.attributes.color.needsUpdate = true;
+}
+/* ---------- v1.9 camera vs scenery: if a tree / house sits between the character and the camera, the camera moves in front of it ---------- */
+const occRay = new THREE.Raycaster(), occList = []; let occT = 0, occListT = 0, occD = 99, occDs = 99;
+function camOcc(q, now) {
+  if (now > occListT) { occListT = now + 2000; occList.length = 0; scene.traverse(o => { if (o.userData.occ && o.visible) occList.push(o) }) }
+  if (now > occT) { occT = now + 120; const from = new THREE.Vector3(q.x, Math.max(-.2, q.y) + 1.25, q.z), dir = new THREE.Vector3(-Math.sin(CAM.ys) * Math.cos(CAM.ps), Math.sin(CAM.ps), -Math.cos(CAM.ys) * Math.cos(CAM.ps)).normalize();
+    occRay.set(from, dir); occRay.far = 7.5 * zoom; const near = occList.filter(o => !o.geometry.boundingSphere || true); const hit = occRay.intersectObjects(near, false)[0]; occD = hit ? Math.max(2.9, hit.distance - .35) : 99 }
+  occDs += (occD - occDs) * (occD < occDs ? .35 : .06); return occDs;
+}
 /* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
 let bossK = '';
 function bossHud() { const M = LOCK && (LOCK.chief || LOCK.T.hp >= 100 || /King|Chief/.test(LOCK.kind)) ? LOCK : null, el = $('boss');
@@ -1118,7 +1158,8 @@ function eatAnim(icon, done) {
   requestAnimationFrame(step);
 }
 /* ---------- v1.4 ✨ Spirit of Luthonia: ❤️ +1 heart or ⚡ +20 % energy ---------- */
-let spiritNew = false, spiritT = 0, petGuardT = 0;
+let spiritNew = false, spiritT = 0, petGuardT = 0, actT = 0;
+document.addEventListener('pointerdown', () => { actT = performance.now() }, { capture: true });
 const hearts = () => pStats().hp / D.HEART, enMul = () => 1 + D.EN_STEP * S.spirit.en;
 const spiritOk = k => k === 'hp' ? hearts() < D.HEARTS_MAX : enMul() < D.EN_MAX_MUL - .01;
 function spiritCard() { const sp = S.spirit;

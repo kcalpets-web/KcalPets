@@ -153,6 +153,9 @@ export function despawnClear(W, o) { if (!o.g) return; W.scene.remove(o.g); o.g 
 
 /* merge every static mesh into one mesh per material (non-indexed, world space) → a handful of draw calls instead of ~1,000 */
 function mergeStatic(root) {
+  const out = mergeStatic0(root); out.traverse(o => { if (o.isMesh) o.userData.occ = 1 }); return out;   /* v1.9: static scenery can block the camera → it moves in */
+}
+function mergeStatic0(root) {
   root.updateMatrixWorld(true); const buckets = new Map();
   root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), mat = o.material === MAT ? WMAT : o.material, key = mat.uuid + '|' + keys;
     if (!buckets.has(key)) buckets.set(key, { mat, list: [], keys: keys.split(',') }); const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld); buckets.get(key).list.push(g) });
@@ -389,7 +392,7 @@ export function buildChunk(W, cx, cz) {
   const inst = (geo, mat, list, place) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c) }); m.castShadow = true; m.receiveShadow = true; g.add(m) };
   const pines = trees.filter(p => p.h > 9 || R() < .3), broad = trees.filter(p => !pines.includes(p));
   const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) };
-  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff') });
+  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff') }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
   inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
   inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff') });
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
@@ -397,6 +400,7 @@ export function buildChunk(W, cx, cz) {
   /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
   const lush = []; for (const p of spots) if (p.sl < 1.6 && p.h < 20 && R() < (p.f > .55 ? .5 : .22)) { const k = lushKind(R, p.f, p.h); if (k === 'blossom' && R() < .6) continue; lush.push({ k, x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2, r: R() * 6, s: k === 'blossom' ? .8 + R() * .5 : .7 + R() * .7 }) }
   for (const p of lush) p.y = wildH(p.x, p.z) - .05; lushPlace(g, lush, R);
+  g.children.forEach(m => { if (m.isInstancedMesh && (m.geometry === TREE_TRUNK || m.geometry === LG.crown || m.geometry === PINE_TOP)) m.userData.occ = 1 });
   /* clearables: 5 per chunk on gentle ground (regrow like the others) */
   const types = [['tree', 'bush', 'grass', 'pebble', 'tree'], ['rock', 'pine', 'rock', 'boulder', 'pebble']];
   for (let i = 0, n = 0; i < 40 && n < 5; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 5)];
