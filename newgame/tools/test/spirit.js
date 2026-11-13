@@ -36,6 +36,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng, q = N.me; N.PL.yaw = N.PL.yawT = 0; N.__foe = N.monSpawn('goblin', q.x + 3, q.z, { area: 'farm', aggro: true }) }); await wait(2500);
     const lk = await N(() => { const N = window.__ng, m = N.__foe.A.root.position, q = N.me; let d = Math.atan2(m.x - q.x, m.z - q.z) - N.PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return { lock: N.LOCK === N.__foe, off: +Math.abs(d).toFixed(2) } });
     log('lock-on', JSON.stringify(lk)); if (!lk.lock || lk.off > .5) errs.push('lock-on did not face the monster'); await shot('06b-lock');
+    /* v1.4.4 effects: sword arcs + sparks + boss bar */
+    await E(() => { const N = window.__ng, m = N.__foe.A.root.position; N.placeMe(m.x - 1.6, m.z); N.S.en = null; N.__foe.T = Object.assign({}, N.__foe.T, { hp: 400 }); N.__foe.hp = 400 }); await wait(800);
+    for (let i = 0; i < 3; i++) { await E(() => window.__ng.actA()); await wait(i === 2 ? 60 : 450) } await shot('06d-fx-slash');
+    log('boss bar', await N(() => document.getElementById('boss').style.display + ' ' + document.getElementById('boss').textContent));
     await E(() => { const N = window.__ng; if (N.mons.includes(N.__foe)) N.hurtMon(N.__foe, 999, 'dmg') }); await wait(500);
     /* v1.4.3 debuffs: poison ticks ❤️ down · tap the icon = antidote · burn goes out in water */
     log('hp potions refunded', JSON.stringify(await N(() => ({ coin: window.__ng.S.coin, pot: window.__ng.S.potions }))));

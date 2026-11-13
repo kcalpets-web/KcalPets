@@ -10,6 +10,7 @@ import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, sh
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
+import * as VF from './vfx.js';
 import { unlock, mood, sfx, toggle as toggleSound, soundOn } from './audio.js';
 
 load();
@@ -19,7 +20,7 @@ const eco = localStorage.getItem('ng_gfx') === 'eco';
 const cv = $('cv'), R = new THREE.WebGLRenderer({ canvas: cv, antialias: !eco, powerPreference: 'high-performance' });
 R.setPixelRatio(Math.min(devicePixelRatio, eco ? 1.25 : 2)); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = .95;
 R.shadowMap.enabled = !eco; R.shadowMap.type = THREE.PCFSoftShadowMap;
-const scene = new THREE.Scene();
+const scene = new THREE.Scene(); VF.initVFX(scene);
 const hemi = new THREE.HemisphereLight('#fff6ec', '#c9a27e', eco ? 1.2 : .95); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#fff1dc', 2.1); sun.castShadow = !eco; sun.shadow.mapSize.set(1536, 1536);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 }); sun.shadow.bias = -.0004; sun.shadow.radius = 4; scene.add(sun); scene.add(sun.target);
@@ -245,6 +246,7 @@ function monGone(m) { scene.remove(m.A.root); m.tag.remove(); removePick(W, m.pi
 const farmMon = () => mons.find(m => m.farm);
 function hurtMon(m, d, cls, label) { const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
 function monDie(m) {
+  { const q = m.A.root.position, big = (MSCALE[m.kind] || .85) > 1; VF.burst(q.x, q.y + .6, q.z, m.T.animal ? '#ffffff' : '#c8a0ff', big ? 30 : 16, big ? 5 : 3.5); VF.ring(q.x, q.y, q.z, '#ffffff', big ? 3.2 : 1.8, .45) }
   const T = m.T, q = m.A.root.position, x = q.x, z = q.z, coin = T.coin[0] + Math.floor(Math.random() * (T.coin[1] - T.coin[0]));
   if (coin) { sfx('coin'); S.coin += coin; floater(`🪙 +${coin}`, 'coin', x, 1.9, z) } else sfx('hit'); addMats(T.mat, x + .4, z); playerExp(T.exp, x - .4, z);
   for (const e of PA.values()) if (e.foe === m) petExp(e.p, Math.round(T.exp * .6));
@@ -390,7 +392,7 @@ function toolHit(key) {
     if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } if (tool !== 'sword') setTool('sword');
     if (pHp() <= 0) { hint('😵 หมดแรง ฟันไม่ไหว · ดื่มยา HP หรือรอฟื้น'); return }
     if (now < slashT) return; if (!spendEn(D.SWORD_EN)) return; slashT = now + D.SLASH_CD / speed; m.hit = true;
-    if (debOn('daze') && Math.random() < .3) { faceSwing(m.A.root.position.x, m.A.root.position.z); floater('💫 พลาด!', 'tool', m.A.root.position.x, 1.6, m.A.root.position.z); return } const r = dmgCalc(pStats().atk, m.T.def), q = m.A.root.position; faceSwing(q.x, q.z); swingIcon('⚔️', q.x + .3, 1.3, q.z); stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg'); return;
+    if (debOn('daze') && Math.random() < .3) { faceSwing(m.A.root.position.x, m.A.root.position.z); VF.slash(me().x, me().y + 1, me().z, PL.yaw, '#a0a0c0'); floater('💫 พลาด!', 'tool', m.A.root.position.x, 1.6, m.A.root.position.z); return } const r = dmgCalc(pStats().atk, m.T.def), q = m.A.root.position; faceSwing(q.x, q.z); swingIcon('⚔️', q.x + .3, 1.3, q.z); { const a = Math.atan2(q.x - me().x, q.z - me().z); VF.slash(me().x + Math.sin(a) * .5, me().y + 1, me().z + Math.cos(a) * .5, a, r.crit ? '#ffd23f' : '#ffffff', r.crit); VF.burst(q.x, q.y + .7, q.z, r.crit ? '#ffd23f' : '#fff6d0', r.crit ? 16 : 9); if (r.crit) VF.ring(q.x, q.y, q.z, '#ffd23f', 1.8, .35) } stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg'); return;
   }
   if (key.kind !== 'clear' || tool === 'sword' || tool === 'rod') return;
   const o = W.clear.get(key.id); if (!o || !o.g) return;
@@ -400,7 +402,7 @@ function toolHit(key) {
   if ((T.minTier || 0) > tier) { hint(`${D.TOOLS[T.tool][0]} ต้องใช้${D.TOOLS[T.tool][1]}ขั้น <b>${D.TIER[T.minTier]}</b> ขึ้นไป · อัปเกรดที่ช่างอุปกรณ์ในเมือง`); return }
   if (!o.left) o.left = D.hitsFor(T.size, tier);
   if (!spendEn(D.TOOL_EN[T.tool])) return;
-  faceSwing(o.x, o.z); o.left--; o.shake = .25; sfx({ axe: 'chop', hammer: 'stone', sickle: 'grass' }[T.tool]); swingIcon(D.TOOLS[T.tool][0], o.x, T.size === 'l' ? 1.6 : 1.1, o.z); if (o.left <= 0) finishClear(o);
+  faceSwing(o.x, o.z); o.left--; o.shake = .25; VF.burst(o.x, groundH(o.x, o.z) + (T.size === 'l' ? 1 : .5), o.z, { axe: '#c89050', hammer: '#c0c0c8', sickle: '#8ae070' }[T.tool] || '#ffffff', 7, 2.4); sfx({ axe: 'chop', hammer: 'stone', sickle: 'grass' }[T.tool]); swingIcon(D.TOOLS[T.tool][0], o.x, T.size === 'l' ? 1.6 : 1.1, o.z); if (o.left <= 0) finishClear(o);
 }
 
 /* ---------- story events ---------- */
@@ -671,7 +673,7 @@ let last = performance.now(), hudT = 0, saveT = 0, regrowT = 0, fpsN = 0, fpsT =
 const pv = new THREE.Vector3(), proj = { x: 0, y: 0 };
 function project(x, y, z) { pv.set(x, y, z).project(cam); proj.x = (pv.x + 1) / 2 * innerWidth; proj.y = (1 - pv.y) / 2 * innerHeight; proj.z = pv.z; return proj }
 function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx = x - q.x, dz = z - q.z, d = Math.hypot(dx, dz); if (d < .05) return d; const k = Math.min(1, sp * dt / d), nx = q.x + dx * k, nz = q.z + dz * k; if (ok(nx, nz)) { q.x = nx; q.z = nz; q.y = groundH(nx, nz) } A.yawT = Math.atan2(dx, dz); return d }
-function hitPlayer(m, now) { sfx('hurt'); m.hit = true; const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && facing(m) && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * (S.eq.shield ? .2 : .5))); floater('🛡️', 'tool', me().x, 2, me().z); sfx('knock') } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; { const md = D.MON_DEBUFF[m.kind]; if (md && !(guard && facing(m)) && Math.random() < md[1]) addDeb(md[0]) } shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
+function hitPlayer(m, now) { sfx('hurt'); m.hit = true; const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && facing(m) && spendEn(4)) { r.d = Math.max(1, Math.round(r.d * (S.eq.shield ? .2 : .5))); floater('🛡️', 'tool', me().x, 2, me().z); sfx('knock') } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; VF.burst(me().x, me().y + 1, me().z, '#ff4a5a', 8, 2.6); { const md = D.MON_DEBUFF[m.kind]; if (md && !(guard && facing(m)) && Math.random() < md[1]) addDeb(md[0]) } shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
 function frame(now) {
   requestAnimationFrame(frame); if (CUT) { last = now; return }
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
@@ -686,8 +688,8 @@ function frame(now) {
         if (now > e.atkT && M.born + 500 < now) { e.atkT = now + D.PET_ATK_CD / speed; const st = petStats(p);
           if (!(now < e.spT) && petSpecial(e, M, now)) e.spT = now + D.PET_SPECIAL_CD / speed;
           else if (!(now < e.skT)) { e.skT = now + D.PET_SKILL.cd / speed; const el = (p.rar === 'B' || p.rar === 'L') ? Object.keys(D.ELEM_SKILL)[Math.floor(Math.random() * 6)] : p.el;
-            const r = dmgCalc(st.atk, M.T.def, D.PET_SKILL.mul * (p.rar === 'B' ? D.PET_SKILL.basicMul : 1)); hurtMon(M, r.d, 'crit', el + ' ' + D.ELEM_SKILL[el]) }
-          else { const r = dmgCalc(st.atk, M.T.def); hurtMon(M, r.d, 'pet') } } }
+            const r = dmgCalc(st.atk, M.T.def, D.PET_SKILL.mul * (p.rar === 'B' ? D.PET_SKILL.basicMul : 1)); const mq = M.A.root.position, from = new THREE.Vector3(q.x, q.y + .5, q.z), to = new THREE.Vector3(mq.x, mq.y + .6, mq.z); if (el === '⚡') { VF.beam(new THREE.Vector3(mq.x, mq.y + 6, mq.z), to, VF.ELEM_COL[el], .3, 1.4); VF.burst(to.x, to.y, to.z, VF.ELEM_COL[el], 14) } else VF.orb(from, to, VF.ELEM_COL[el]); hurtMon(M, r.d, 'crit', el + ' ' + D.ELEM_SKILL[el]) }
+          else { const r = dmgCalc(st.atk, M.T.def), mq = M.A.root.position; VF.burst(mq.x, mq.y + .5, mq.z, '#ffffff', 5, 2); hurtMon(M, r.d, 'pet') } } }
     } else { if (e.mode === 'fight') { e.mode = 'wander'; e.foe = null }
       if (S.team.includes(p.id)) {                                   // the team walks with you (the camera) and joins any fight nearby
         const tx = me().x + 1.1, tz = me().z + .7, d = dist(q.x, q.z, tx, tz);
@@ -733,7 +735,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); bTick(dt, now); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); bTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -992,6 +994,10 @@ const bestMeal = () => D.RECIPES.filter(r => S.meals[r.k] > 0 && r.eff.hp).sort(
 function quickEat() { const r = bestMeal(); if (!r) { toast('🍲 ไม่มีอาหารที่เพิ่ม ❤️ · ทำอาหารที่หม้อหรือกองไฟ', 2000); return } if (pHp() >= pStats().hp) { toast('❤️ หัวใจเต็มอยู่แล้ว', 1200); return } closeSheets(); eatMeal(r.k) }
 if (S.potions.hpS || S.potions.hpL) { const c = (S.potions.hpS || 0) * D.LV_POTION_REFUND.hpS + (S.potions.hpL || 0) * D.LV_POTION_REFUND.hpL; S.coin += c; delete S.potions.hpS; delete S.potions.hpL; S.autoPot = false; save();
   if (S.story.intro) setTimeout(() => toast(`🧪 ยา HP ถูกยกเลิกแล้ว · คืนเป็น 🪙 ${fmt(c)}<br>❤️ ฟื้นด้วยอาหาร การนอน และน้อง · ร้านยามียารักษาอาการแทน`, 4000), 8000) }
+/* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
+let bossK = '';
+function bossHud() { const M = LOCK && (LOCK.chief || LOCK.T.hp >= 100 || /King|Chief/.test(LOCK.kind)) ? LOCK : null, el = $('boss');
+  const k = M ? M.kind + Math.ceil(M.hp) : ''; if (k === bossK) return; bossK = k; el.style.display = M ? 'block' : 'none'; if (M) el.innerHTML = `<b>${M.T.name}</b> <small>Lv${M.T.lv}</small><div class="bb2"><i style="width:${Math.max(0, M.hp / M.T.hp * 100)}%"></i></div>` }
 /* ---------- v1.4.1 drowning (energy gone in the water) · eating animation ---------- */
 let DROWN = 0, EAT = null;
 function drown(now) {
@@ -1041,10 +1047,10 @@ const specTxt = p => `${petEl(p) ? D.PET_SPECIAL[p.el].name : 'พิเศษ�
 function cdPct(id, k, cd) { const e = PA.get(id); if (!e || !e[k]) return 100; return Math.max(0, Math.min(100, 100 - (e[k] - performance.now()) / cd * 100)) }
 function petSpecial(e, M, now) {
   const p = e.p, el = petEl(p) || Object.keys(D.PET_SPECIAL)[Math.floor(Math.random() * 6)], X = D.PET_SPECIAL[el], st = petStats(p), q = e.A.root.position, mq = M.A.root.position, mx = p.rar === 'B' ? D.PET_SKILL.basicMul : 1;
-  if (X.kind === 'heal') { if (pHp() >= pStats().hp - 1) return false; S.hp = Math.min(pStats().hp, pHp() + X.hearts * D.HEART); floater(`${el} ${X.name} ❤️+${X.hearts}`, 'heal', me().x, 2.2, me().z) }
-  else if (X.kind === 'guard') { petGuardT = now + X.ms; floater(`${el} ${X.name}`, 'heal', me().x, 2.2, me().z) }
-  else if (X.kind === 'stun') { for (const m of mons) if (!m.T.animal && dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) { m.stunT = now + X.ms; floater('💫', 'tool', m.A.root.position.x, 1.9, m.A.root.position.z) } floater(`${el} ${X.name}`, 'crit', mq.x, 2.3, mq.z) }
-  else { for (const m of [...mons]) if (dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) hurtMon(m, dmgCalc(st.atk, m.T.def, X.mul * mx).d, 'crit', `${el} ${X.name}`) }
+  if (X.kind === 'heal') { if (pHp() >= pStats().hp - 1) return false; S.hp = Math.min(pStats().hp, pHp() + X.hearts * D.HEART); VF.ring(me().x, me().y, me().z, VF.ELEM_COL[el], 1.6, .6); VF.rise(me().x, me().y, me().z, VF.ELEM_COL[el], 16); floater(`${el} ${X.name} ❤️+${X.hearts}`, 'heal', me().x, 2.2, me().z) }
+  else if (X.kind === 'guard') { petGuardT = now + X.ms; VF.ring(me().x, me().y, me().z, VF.ELEM_COL[el], 1.4, .7); VF.rise(me().x, me().y, me().z, '#e8d8b0', 10); floater(`${el} ${X.name}`, 'heal', me().x, 2.2, me().z) }
+  else if (X.kind === 'stun') { VF.ring(mq.x, mq.y, mq.z, VF.ELEM_COL[el], X.r, .55); VF.burst(mq.x, mq.y + .8, mq.z, VF.ELEM_COL[el], 18, 4); for (const m of mons) if (!m.T.animal && dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) { m.stunT = now + X.ms; floater('💫', 'tool', m.A.root.position.x, 1.9, m.A.root.position.z) } floater(`${el} ${X.name}`, 'crit', mq.x, 2.3, mq.z) }
+  else { VF.ring(mq.x, mq.y, mq.z, VF.ELEM_COL[el], X.r, .5); VF.ring(mq.x, mq.y, mq.z, '#ffffff', X.r * .6, .35); VF.burst(mq.x, mq.y + .6, mq.z, VF.ELEM_COL[el], 26, 5); shakeT = .25; for (const m of [...mons]) if (dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) hurtMon(m, dmgCalc(st.atk, m.T.def, X.mul * mx).d, 'crit', `${el} ${X.name}`) }
   sfx('level'); return true;
 }
 /* old saves: ✨ for the main quests already done · old levels → coins */

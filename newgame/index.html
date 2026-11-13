@@ -124,6 +124,7 @@
   #hearts{display:flex;flex-wrap:wrap;gap:1px 2px;max-width:200px;margin:1px 0 4px}#hearts .hr{width:17px;height:16px;display:block;background:linear-gradient(90deg,#ff3a50 var(--f),#4a2a38 var(--f));-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21 C5 15 1 11.5 1 7 A5.5 5.5 0 0 1 12 4 A5.5 5.5 0 0 1 23 7 C23 11.5 19 15 12 21Z'/></svg>") center/contain no-repeat;filter:drop-shadow(0 1px 0 #0006)}
   #pf.glow{animation:spGlow 1.2s ease-in-out infinite}@keyframes spGlow{50%{box-shadow:0 0 14px 4px #ffe27a}}.card.spirit{background:linear-gradient(135deg,#fff8e0,#f0e8ff)}
   body.zhud.hasdeb #team{top:calc(max(10px,env(safe-area-inset-top)) + 104px)}
+  #boss{display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 182px);z-index:5;width:min(78vw,320px);text-align:center;color:#fff;font:800 14px inherit;font-family:inherit;text-shadow:0 2px 0 #000,0 0 6px #000;pointer-events:none}#boss small{font-size:11px;opacity:.85}#boss .bb2{height:11px;border:2px solid #1a1020;border-radius:6px;background:#3a2030;overflow:hidden;margin-top:3px;box-shadow:0 2px 0 #0008}#boss .bb2 i{display:block;height:100%;background:linear-gradient(#ff7a6a,#d0302a);transition:width .2s}
   #debs{display:flex;gap:4px;margin:-2px 0 3px}#debs:empty{display:none}#debs button{border:2px solid var(--ink);border-radius:10px;background:#fff6e0;font:700 14px inherit;font-family:inherit;padding:1px 5px;pointer-events:auto;animation:debP 1s ease-in-out infinite}#debs small{font-size:10px;margin-left:2px}@keyframes debP{50%{transform:scale(1.08)}}
   .wh button.lock{opacity:.4;filter:grayscale(1)}.wh button.lock::after{content:'🔒';position:absolute;right:-4px;bottom:-4px;font-size:16px}.whc .lk{color:#ffb0a0;font-size:12px}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
@@ -146,6 +147,7 @@
 <div id="team"></div>
 <div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button></div>
 <button id="bAuto">🤖 AUTO</button>
+<div id="boss"></div>
 <div id="bBar"><b id="bbN"></b><small id="bbS"></small><div><button id="bbX">✖</button><button id="bbR">↻ หมุน</button><button id="bbOk">🔨 วาง</button></div></div>
 <button id="bRide">🏝️ ขึ้นฝั่ง</button>
 <div id="wheel"><div class="wh"></div><div class="whc"><b id="whN"></b><small>ลากนิ้วเลือก · ปล่อย = ตกลง<br>B = ปิด</small></div></div>
