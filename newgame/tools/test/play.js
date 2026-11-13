@@ -76,7 +76,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('howsif', await N(() => window.__ng.S.story.howsif), 'rod', await N(() => window.__ng.S.has.rod));
     for (let k = 0; k < 6 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
       await E(() => { const N = window.__ng; N.setTool('rod'); N.look(-4.5, 1); N.castAt(-5.5, 1) });
-      for (let i = 0; i < 160; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) break;
+      for (let i = 0; i < 420; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) break;
         if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'reel') { await E(t => window.__ng.hold(t < .6), f.ten); if (k === 0 && i % 15 === 0) await shot('07-reel') } await wait(120) } }
     log('fish', JSON.stringify(await N(() => window.__ng.S.fish)));
     await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN');
