@@ -125,6 +125,10 @@ function poseOf(A, c, now) {
   if (P.sneak) return { b: [.38, -.13], hipL: [-.55, 0], hipR: [-.55, 0], kneeL: [1, 0], kneeR: [1, 0], armL: [-.55, -.1], armR: [-.55, .1], elL: [-.9, 0], elR: [-.9, 0], walk: .6 };
   if (P.cold) { const sh = Math.sin(n * 38) * .035; return { b: [.12, -.02], rz: sh, armL: [-1.05, .75], armR: [-1.05, -.75], elL: [-1.7, 0], elR: [-1.7, 0], walk: .8 } }
   if (P.hot && c < .3) { const f = Math.sin(n * 14) * .35; return { b: [.04, 0], armR: [-2.3, .35 + f], elR: [-1.7, 0], armL: [.1, -.15], elL: [-.2, 0] } }
+  if (P.ready && !P.guard) { const b = Math.sin(n * 2.4) * .04, m = c;   /* v2.0.1 combat stance by weapon type · the legs keep walking */
+    if (P.ready === 'two') return { b: [.12, -.03 * (1 - m)], hipL: [-.3 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.35 * (1 - m), 0], kneeR: [.3 * (1 - m), 0], armR: [-.95 + b, .25], elR: [-1.05, 0], armL: [-1.25 + b, -.55], elL: [-1.25, 0], walk: m };
+    if (P.ready === 'spear') return { b: [.1, -.02 * (1 - m)], hipL: [-.35 * (1 - m), 0], hipR: [.25 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.35 * (1 - m), 0], armR: [-.55 + b, .2], elR: [-1.5, 0], armL: [-1.15 + b, -.35], elL: [-.7, 0], walk: m };
+    return { b: [.08, -.02 * (1 - m)], hipL: [-.25 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.25 * (1 - m), 0], armR: [-.85 + b, .15], elR: [-1.15, 0], armL: [-1.0 + b, .25], elL: [-1.45, 0], walk: m } }
   if (P.tired) { const pant = Math.sin(n * 9) * .03; return c < .3 ? { b: [.55 + pant, -.1], hipL: [-.35, 0], hipR: [-.35, 0], kneeL: [.45, 0], kneeR: [.45, 0], armL: [-.75, .1], armR: [-.75, -.1], elL: [-.15, 0], elR: [-.15, 0] } : { b: [.28 + pant, 0], armL: [.15, -.1], armR: [.15, .1], walk: .9 } }
   return null;
 }
@@ -197,7 +201,7 @@ function gearView() {
   if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), held = ['sword', 'axe', 'hammer', 'sickle'].includes(tool) ? tool : '', k = held + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
   if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
   const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
-  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = -1.15; g.position.set(0, -.02, .02); hand.add(g) }   /* tip up and forward */
+  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15;   /* weapons: tip up / spear forward in the combat stance */ g.position.set(0, -.02, .02); hand.add(g) }   /* tip up and forward */
   if (arm && shield && shieldOn()) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
   { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
     if (wpn && held !== 'sword') { const sw = new THREE.Group(); itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55); g.add(sw) }
@@ -231,7 +235,7 @@ function walkTick(dt, now) {
     else if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
   lockTick(now);
   envTick(dt, now, mv);
-  PL.pose = { swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, sneak: guard && !LOCK && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
+  PL.pose = { swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, ready: tool === 'sword' && weaponOf() && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: guard && !LOCK && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
   gearView(); animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); PL.body.position.y = PL.bob;
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
