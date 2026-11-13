@@ -314,3 +314,30 @@ export const BUILDS = {
   raft(g) { for (let i = 0; i < 6; i++) log(g, [-.6 + i * .24, .08, 0], 2.2, [Math.PI / 2, 0, 0], .12, i % 2 ? WOOD : WOODL); for (const z of [-.7, .7]) log(g, [0, .2, z], 1.5, [0, 0, Math.PI / 2], .05, ['#8a6a3a', '#d8b878']);
     log(g, [.45, .5, -.6], .9, [0, 0, 0], .04); part(g, '#e8e0d0', '#ffffff', [.45, .7, -.45], [.03, .25, .22], [0, 0, 0], { A: .02 }) },
 };
+
+/* v1.6 ruined villages: rubble before · rebuilt places after */
+export const VILLAGE = {
+  rubble(g) { for (let i = 0; i < 7; i++) { const a = i * 2.4, r = .3 + (i % 3) * .35; part(g, STONE[0], STONE[1], [Math.cos(a) * r, .14, Math.sin(a) * r], [.22 + (i % 2) * .1, .16, .2], [0, a, 0], { A: .12, f: 2 }) }
+    for (let i = 0; i < 4; i++) log(g, [-.4 + i * .3, .12 + (i % 2) * .1, -.3 + (i % 3) * .25], 1.1, [Math.PI / 2, i * .7, .3 * (i % 2 ? 1 : -1)], .06, i % 2 ? WOOD : ['#4a3a2a', '#7a6a5a']) },
+  well(g) { for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; part(g, STONE[0], STONE[1], [Math.cos(a) * .6, .3, Math.sin(a) * .6], [.2, .3, .16], [0, -a, 0], { A: .08 }) }
+    part(g, '#2a5a8a', '#4a90d0', [0, .45, 0], [.48, .03, .48], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) log(g, [s * .65, 1, 0], 1.3, [0, 0, 0], .06); log(g, [0, 1.6, 0], 1.5, [0, 0, Math.PI / 2], .05);
+    cone(g, '#8a2a1a', '#d0503a', [0, 1.95, 0], [1, .45, .7], [0, Math.PI / 4, 0], .95); part(g, '#6a4024', '#a8703e', [0, 1.1, 0], [.12, .14, .12], [0, 0, 0], { A: 0 }) },
+  house(g, col = '#d0503a') { part(g, '#d8c8a8', '#fff4e0', [0, .8, 0], [1.2, .8, 1], [0, 0, 0], { A: .03 }); cone(g, '#6a1a10', col, [0, 2.1, 0], [1.75, .85, 1.5], [0, Math.PI / 4, 0], .95);
+    part(g, '#4a2a18', '#7a4a28', [0, .55, 1.0], [.3, .55, .05], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) part(g, '#5a8ac0', '#bfe0ff', [s * .7, 1.05, 1.0], [.22, .2, .03], [0, 0, 0], { A: 0 });
+    part(g, '#3a7a3a', '#6ac060', [.9, .2, 1.15], [.3, .2, .15], [0, 0, 0], { A: .15, f: 2 }); part(g, '#e85a8a', '#ffb0c8', [.9, .4, 1.2], [.08, .06, .06]) },
+  windmill(g) { cone(g, '#b8a888', '#f0e6d0', [0, 1.4, 0], [.85, 2.8, .85], [0, 0, 0], .55); cone(g, '#6a1a10', '#c84030', [0, 3.1, 0], [.75, .6, .75], [0, 0, 0], .95); part(g, '#4a2a18', '#7a4a28', [0, .45, .62], [.22, .42, .05], [0, 0, 0], { A: 0 });
+    const b = new THREE.Group(); b.position.set(0, 2.6, .78); b.name = 'blades'; for (let i = 0; i < 4; i++) { const r = new THREE.Group(); r.rotation.z = i * Math.PI / 2; log(r, [0, .9, 0], 1.8, [0, 0, 0], .04); part(r, '#e8e0d0', '#ffffff', [.14, 1.05, 0], [.14, .6, .02], [0, 0, 0], { A: 0 }); b.add(r) } part(b, '#4a2a18', '#7a4a28', [0, 0, 0], [.1, .1, .1]); g.add(b) },
+  stall(g) { for (const x of [-.8, .8]) for (const z of [-.4, .4]) log(g, [x, .8, z], 1.6, [0, 0, 0], .05); part(g, ...WOODL, [0, .75, .1], [.95, .06, .45], [0, 0, 0], { A: 0 });
+    for (let i = 0; i < 6; i++) part(g, i % 2 ? '#c03a2a' : '#f0e6d0', i % 2 ? '#ff6a5a' : '#ffffff', [-.75 + i * .3, 1.7, 0], [.16, .06, .55], [.25, 0, 0], { A: 0 });
+    const F = [['#e84a3a', '#ff8a6a'], ['#7ac850', '#b8f0a0'], ['#f0c83a', '#ffe88a'], ['#e8802a', '#ffb060']]; for (let i = 0; i < 8; i++) part(g, ...F[i % 4], [-.7 + (i % 4) * .45, .86, (i < 4 ? -.05 : .25)], [.1, .09, .1]) },
+  lighthouse(g) { const cyl = (c, y, r0, r1, h) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 20), LOGM[c] = LOGM[c] || new THREE.MeshStandardMaterial({ color: c, roughness: .8 })); m.position.y = y; m.castShadow = true; g.add(m) };
+    for (let i = 0; i < 5; i++) cyl(i % 2 ? '#e0503a' : '#f6efe2', .4 + i * .8, .78 - i * .08, .7 - i * .08, .8); cyl('#3a3a4a', 4.05, .62, .62, .1);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(.3, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff6a0' })); lamp.position.y = 4.42; lamp.name = 'lamp'; g.add(lamp);
+    for (const a of [0, 1.57, 3.14, 4.71]) log(g, [Math.sin(a) * .4, 4.42, Math.cos(a) * .4], .62, [0, 0, 0], .03, ['#2a2a3a', '#5a5a6a']); cone(g, '#2a2a3a', '#5a5a6a', [0, 4.95, 0], [.55, .45, .55], [0, 0, 0], .95);
+    part(g, '#4a2a18', '#7a4a28', [0, .45, .76], [.22, .42, .04], [0, 0, 0], { A: 0 }) },
+  shrine(g) { for (const s of [-1, 1]) log(g, [s * .9, 1.2, 0], 2.4, [0, 0, 0], .1, ['#8a1a10', '#d84030']); log(g, [0, 2.35, 0], 2.6, [0, 0, Math.PI / 2], .1, ['#2a1a10', '#5a3a28']); log(g, [0, 2.05, 0], 2.2, [0, 0, Math.PI / 2], .07, ['#8a1a10', '#d84030']);
+    part(g, STONE[0], STONE[1], [0, .3, -1.2], [.5, .3, .4], [0, 0, 0], { A: .05 }); const orb = new THREE.Mesh(new THREE.OctahedronGeometry(.22), new THREE.MeshBasicMaterial({ color: '#a8f0ff' })); orb.position.set(0, .95, -1.2); orb.name = 'lamp'; g.add(orb);
+    for (const s of [-1, 1]) { part(g, STONE[0], STONE[1], [s * 1.4, .4, .4], [.18, .4, .18], [0, 0, 0], { A: .05 }); part(g, '#ffd870', '#fff6c0', [s * 1.4, .9, .4], [.14, .14, .14], [0, 0, 0], { A: 0 }) } },
+  dock(g) { for (let i = 0; i < 7; i++) log(g, [-.9 + i * .3, .3, 0], 3, [Math.PI / 2, 0, 0], .14, i % 2 ? WOOD : WOODL); for (const x of [-1, 1]) for (const z of [-1.3, 0, 1.3]) log(g, [x, -.1, z], 1.2, [0, 0, 0], .08);
+    part(g, '#c8a070', '#e8c898', [.6, .55, 1], [.18, .18, .18], [0, 0, 0], { A: .05 }); log(g, [-.7, .7, 1.2], .8, [0, 0, 0], .04) },
+};

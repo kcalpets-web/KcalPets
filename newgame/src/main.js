@@ -3,7 +3,7 @@
    he gives the rod → bring him fish → repair his boat (it becomes the coin vault) → the ruined town: pick up the sword,
    clear the slimes and the Slime King → repair the shops → the way to the forest opens (next update).
    No pets yet: the first pet arrives in the forest. Farm monsters only wake once the player has a sword. */
-import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS } from './clay.js';
+import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE } from './clay.js';
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats } from './state.js';
 import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk } from './world.js';
@@ -446,7 +446,7 @@ function openWreck() {
 }
 /* ---------- building jobs: pay → a clay hammer knocks on the site with a countdown → done (keeps counting while the game is closed) ---------- */
 const jobs = new Map();
-function jobAt(k) { if (k.startsWith('bld:')) { const b = bOf(k.slice(4)); return b ? [b.x, b.z, zoneOf(b.x, b.z)] : [0, 0, 'farm'] } if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, zoneOf(p.x, p.z)] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
+function jobAt(k) { if (k.startsWith('rv:')) { const [, id, i] = k.split(':'), r = RV.find(x => x.id === id), o = r && r.spots[+i]; return o ? [o.x, o.z, zoneOf(o.x, o.z)] : [0, 0, 'farm'] } if (k.startsWith('bld:')) { const b = bOf(k.slice(4)); return b ? [b.x, b.z, zoneOf(b.x, b.z)] : [0, 0, 'farm'] } if (k.startsWith('cook:')) { const p = POT[k.slice(5)]; return [p.x, p.z, zoneOf(p.x, p.z)] } if (k === 'house') return [HOUSE.x, HOUSE.z + 1.2, 'farm']; if (k === 'boat') return [WRECK.x, WRECK.z + .3, 'farm'];
   const sh = TW.shops[D.SHOPS.findIndex(s => 'shop:' + s.k === k)]; return [sh.x, sh.z + (sh.z < 0 ? 1.3 : -1.3), 'town'] }
 function startJob(k, secs) { S.jobs[k] = Date.now() + secs * 1000; save(); jobView(k); questCheck() }
 function jobView(k) {
@@ -459,6 +459,7 @@ function jobDone(k) {
   const j = jobs.get(k); if (j) { scene.remove(j.g); j.tag.remove(); jobs.delete(k) } delete S.jobs[k];
   if (k.startsWith('cook:')) { finishCook(k.slice(5)); return }
   if (k.startsWith('bld:')) { buildDone(k.slice(4)); return }
+  if (k.startsWith('rv:')) { ruinDone(k); return }
   if (k === 'house') { S.story.built = 1; storyProps(); toast('🏠 สร้างบ้านต้นไม้เสร็จแล้ว! แตะที่บ้านเพื่อเข้าไปนอนพัก', 3200) }
   else if (k === 'boat') { S.story.boatFixed = 1; S.boat.t = Date.now(); storyProps();
     talk([['👴 ลุงฮาวซิฟ', 'เรือกลับมาลอยได้แล้ว! เก่งมาก'], ['👴 ลุงฮาวซิฟ', 'ต่อไปไปดูที่เมืองทางขวามือหน่อยนะ ลุงเป็นห่วงคนในเมือง… เดินผ่านซุ้มประตูไม้ไปได้เลย']], questCheck) }
@@ -472,7 +473,7 @@ function jobsTick(now) {
     const n = Math.floor(now / 520); if (n !== j.hit && ph > .74) { j.hit = n; if (j.area === S.area) { const ck = k.startsWith('cook:'); sfx(ck ? 'tap' : 'knock'); floater(ck ? '🫧' : n % 3 ? 'ก๊อก!' : 'ป๊อก!', 'tool', j.x + (Math.random() - .5) * .6, .9, j.z); if (k === 'house') W.site.rotation.y = (Math.random() - .5) * .05 } }
     j.g.visible = j.area === S.area && !k.startsWith('cook:'); const q = project(j.x, k.startsWith('cook:') ? 2.2 : 3.3, j.z);
     j.tag.style.display = j.area === S.area && !CUT && q.z < 1 ? 'block' : 'none'; j.tag.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
-    j.tag.innerHTML = `${k.startsWith('cook:') ? '🍳 กำลังปรุง' : k.startsWith('bld:') ? '🔨 ' + (BP[(bOf(k.slice(4)) || {}).k] || { name: '' }).name : k === 'house' ? '🔨 สร้างบ้าน' : '🔨 ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k.startsWith('cook:') ? D.COOK_TIME : k.startsWith('bld:') ? (BP[(bOf(k.slice(4)) || {}).k] || { t: 1 }).t : k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
+    j.tag.innerHTML = `${k.startsWith('cook:') ? '🍳 กำลังปรุง' : k.startsWith('rv:') ? '🔨 ' + ruinName(k) : k.startsWith('bld:') ? '🔨 ' + (BP[(bOf(k.slice(4)) || {}).k] || { name: '' }).name : k === 'house' ? '🔨 สร้างบ้าน' : '🔨 ซ่อม'} <b>${mmss(left)}</b><div class="mb"><i style="width:${100 - left / (k.startsWith('cook:') ? D.COOK_TIME : k.startsWith('rv:') ? D.RUIN_T : k.startsWith('bld:') ? (BP[(bOf(k.slice(4)) || {}).k] || { t: 1 }).t : k === 'house' ? D.BUILD_TIME.house : k === 'boat' ? D.BUILD_TIME.boat : D.BUILD_TIME.shop) * 100}%;background:#ffd23f"></i></div>` }
 }
 function openSite() {
   if (jobLeft('house')) return;
@@ -659,6 +660,8 @@ function useThing(k) {
     case 'plot': return plotAction(k.key);
     case 'chest': return openChest(k.id);
     case 'build': return openBuilt(k.id);
+    case 'rnpc': return openRuin(k.id);
+    case 'ruin': return openRuin(k.id, k.i);
     case 'scroll': return pickScroll(k.id);
     case 'sberh': return openSberh();
     case 'sword': return pickSword();
@@ -944,6 +947,7 @@ function openBag(tab) {
       h += '<h3>🍖 อาหารน้อง</h3>' + (D.FOODS.filter(f => S.food[f.k]).map(f => `<div class="row"><span>${f.icon} ${f.name} ×${S.food[f.k]}</span><span class="mut">ป้อนที่หน้าน้อง</span></div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
     if (bagTab === 'quest') { const q = D.QUESTS[S.quest];
       h += spiritCard() + (q ? `<div class="card"><b>📜 เรื่องหลักตอนนี้</b><p>${q.icon} ${q.text}${D.SPIRIT_QUESTS.includes(q.id) ? ' <span class="tag" style="background:#8a4ac0">✨ จิตวิญญาณ</span>' : ''}</p>${q.go !== 'none' ? '<button class="btn go" id="qGo">🧭 ไปเลย</button>' : ''}</div>` : '')
+        + `<div class="card"><b>🌱 ฟื้นฟูโลก ${lifePct()}%</b><div class="bar s"><i style="width:${lifePct()}%;background:#7ac850"></i></div>` + RV.map(r => { const st = S.ruins[r.id]; return `<div class="row"><span>${st ? (st.fin ? '🏡 ' : '🏚️ ') + r.def.name : '❔ ซากเมืองที่ยังไม่พบ'}</span><span>${st ? ruinDone_n(r) + '/3' : ''} ✨</span></div>` }).join('') + '<div class="mut">สำรวจหาซากเมือง 🏚️ คุยกับผู้รอดชีวิต แล้วสร้างใหม่ให้ครบ · ครบแต่ละเมืองได้ ✨</div></div>'
         + '<div class="card lock"><b>⭐ ภารกิจใหญ่: ☁️ เมฆปริศนา</b><div class="mut">เมฆดำลึกลับปกคลุมดินแดนไกลโพ้น… (มาในอัปเดตถัดๆ ไป)</div></div>'
         + '<h3>✅ ทำแล้ว</h3>' + (D.QUESTS.slice(0, S.quest).reverse().map(x => `<div class="row"><span>${x.icon} ${x.text}</span>${D.SPIRIT_QUESTS.includes(x.id) ? '<span>✨</span>' : ''}</div>`).join('') || '<p class="mut">ยังไม่มี</p>') }
     if (bagTab === 'pets') h += `<p class="mut">น้อง ${S.pets.length}/${D.PET_MAX} · ทีม ${S.team.length}/${D.TEAM_MAX} · จับน้องใหม่: เข้าใกล้สัตว์ป่า (กด B ค้างเพื่อย่อง) แล้วกด 🫳 จับ</p>` + (S.pets.map(p => `<div class="card">${petCard(p)}${D.CATCH[p.kind] && D.CATCH[p.kind].ability ? `<div class="mut">✨ ความสามารถ: ${D.CATCH[p.kind].ability === 'swim' ? '🐋 ขี่ข้ามทะเล (ลงน้ำแล้วกด A)' : '🦅 ร่อนลงจากที่สูง (ยืนริมผาแล้วกด A)'}</div>` : ''}<div class="row2"><button class="btn sm" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn sm ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button></div></div>`).join('') || '<p>ยังไม่มีน้อง</p>');
@@ -1421,7 +1425,7 @@ function mapTick(now) {
   if (tool === 'rod' && !F && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
-  wcampTick(now); if (fogDirty) fogDraw(); drawMini();
+  ruinTick(now); wcampTick(now); if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {
   const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
@@ -1433,6 +1437,7 @@ function drawMini() {
   g.fillStyle = '#ff4a5a'; for (const m of mons) if (nearMe(m, span)) { const [x, y] = P(m.A.root.position.x, m.A.root.position.z); g.beginPath(); g.arc(x, y, 2.6 * dpr, 0, 7); g.fill() }
   g.font = `${11 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
   for (const b of S.builds) if (BICON[b.k] && b.done && dist(b.x, b.z, q.x, q.z) < span) { const [x, y] = P(b.x, b.z); g.fillText(BICON[b.k], x, y) }
+  for (const r of RV) if (S.ruins[r.id] && dist(r.x, r.z, q.x, q.z) < span) { const [x, y] = P(r.x, r.z); g.fillText(S.ruins[r.id].fin ? '🏡' : '🏚️', x, y) }
   for (const c of WC) if (S.wcamps[c.id] && dist(c.x, c.z, q.x, q.z) < span) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
   if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
   const [px, py] = P(q.x, q.z); g.save(); g.translate(px, py); g.rotate(Math.PI - PL.yaw); g.fillStyle = '#fff'; g.strokeStyle = '#2a2030'; g.lineWidth = 2 * dpr; g.beginPath(); g.moveTo(0, -6 * dpr); g.lineTo(4.5 * dpr, 5 * dpr); g.lineTo(-4.5 * dpr, 5 * dpr); g.closePath(); g.fill(); g.stroke(); g.restore();
@@ -1443,17 +1448,20 @@ function openMap() {
     const Z = 2, CW = WMW * Z, CH = WMH * Z;
     b.innerHTML = `<div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}"></canvas></div><p class="mut">ลากเลื่อนแผนที่ · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส · โลกกว้าง ~1.5 กม.</p><h3>🍲 วาร์ปไปแคมป์</h3>` +
       Object.keys(CAMPS).map(k => `<div class="row"><span>${campOn(k) ? '🍲' : '❔'} ${campOn(k) ? CAMPS[k].name : '??? ยังไม่ค้นพบ'}</span>${campOn(k) ? `<button class="btn sm go" data-c="${k}">วาร์ป</button>` : ''}</div>`).join('') +
+      `<h3>🌱 โลกกลับมามีชีวิต ${lifePct()}%</h3>` + RV.filter(r => S.ruins[r.id]).map(r => `<div class="row"><span>${S.ruins[r.id].fin ? '🏡' : '🏚️'} ${r.def.name} <small class="mut">${ruinDone_n(r)}/3</small></span>${S.ruins[r.id].fin ? `<button class="btn sm go" data-rv="${r.id}">วาร์ป</button>` : ''}</div>`).join('') +
       (S.builds.some(b => b.done && WARPB[b.k]) ? '<h3>🔨 ที่พักของฉัน</h3>' + S.builds.filter(b => b.done && WARPB[b.k]).map(b => `<div class="row"><span>${BP[b.k].icon} ${BP[b.k].name}</span><button class="btn sm go" data-bw="${b.id}">วาร์ป</button></div>`).join('') : '') +
       (WC.some(c => S.wcamps[c.id]) ? '<h3>⛺ แคมป์มอนสเตอร์ที่พบ</h3>' + WC.filter(c => S.wcamps[c.id]).map(c => `<div class="row"><span>${S.wcamps[c.id].c ? '🏕️' : '⛺'} ${campName(c)}${S.wcamps[c.id].c ? '' : ' <small class="mut">ยังไม่ได้ยึด</small>'}</span>${S.wcamps[c.id].c ? `<button class="btn sm go" data-w="${c.id}">วาร์ป</button>` : ''}</div>`).join('') : '');
     const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true; g.drawImage(fogCv, 0, 0, CW, CH);
     const P = (x, z) => [(x - WORLD.x0) * WMk * Z, (z - WORLD.z0) * WMk * Z]; g.font = '16px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
     for (const b of S.builds) if (BICON[b.k] && b.done) { const [x, y] = P(b.x, b.z); g.fillText(BICON[b.k], x, y) }
+    for (const r of RV) if (S.ruins[r.id]) { const [x, y] = P(r.x, r.z); g.fillText(S.ruins[r.id].fin ? '🏡' : '🏚️', x, y) }
     for (const c of WC) if (S.wcamps[c.id]) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
     if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
     const [px, py] = P(me().x, me().z); g.fillStyle = '#ffd23f'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke();
     const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px - wrap.clientWidth / 2; wrap.scrollTop = py - wrap.clientHeight / 2;
     b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { const k = x.dataset.c; close(); travel(zoneOf(CAMPS[k].x, CAMPS[k].z), null, [CAMPS[k].x + 1.2, CAMPS[k].z + .6]) });
+    b.querySelectorAll('[data-rv]').forEach(x => x.onclick = () => { const r = RV.find(y => y.id === x.dataset.rv); close(); travel('wild', null, [r.x + 2, r.z + 6]) });
     b.querySelectorAll('[data-bw]').forEach(x => x.onclick = () => { const bb = bOf(x.dataset.bw); close(); travel(zoneOf(bb.x, bb.z), null, [bb.x + 1.6, bb.z + 1.6]) });
     b.querySelectorAll('[data-w]').forEach(x => x.onclick = () => { const c = WC.find(y => y.id === x.dataset.w); close(); travel('wild', null, [c.x + 2.5, c.z + 2.5]) });
   });
@@ -1817,6 +1825,57 @@ function howsifBlueprints() {
 for (const b of S.builds) bView(b);
 if (S.ride && bOf(S.ride)) { RIDE = bOf(S.ride); document.body.classList.add('ride') } else S.ride = null;
 
+/* ================= v1.6 🏚️ fallen towns: find them, talk to the survivor, rebuild 3 places → the town lives again (✨ + villagers + a warp) ================= */
+const RV = (() => { let sd = 31337; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647, out = [];
+  const flat = (x, z) => { if (!walkLand(x, z) || waterAt(x, z)) return false; const h = groundH(x, z); for (let a = 0; a < 8; a++) { const px = x + Math.cos(a * .785) * 8, pz = z + Math.sin(a * .785) * 8; if (!walkLand(px, pz) || waterAt(px, pz) || Math.abs(groundH(px, pz) - h) > 1.4) return false } return true };
+  const wet = (x, z) => { for (let a = 0; a < 16; a++) for (const r of [14, 22, 30]) if (waterAt(x + Math.cos(a * .39) * r, z + Math.sin(a * .39) * r) === 'sea') return true; return false };
+  for (const def of D.RUINS) { let best = null;
+    for (let t = 0; t < 9000 && !best; t++) { const x = WORLD.x0 + 60 + rnd() * (WORLD.x1 - WORLD.x0 - 120), z = WORLD.z0 + 60 + rnd() * (WORLD.z1 - WORLD.z0 - 120), lax = t > 6000;
+      if (coreDist(x, z) < 70 || out.some(o => dist(o.x, o.z, x, z) < 180) || WC.some(c => dist(c.x, c.z, x, z) < 50) || !flat(x, z)) continue;
+      if (!lax && (def.need === 'coast' ? !wet(x, z) : def.need === 'high' ? groundH(x, z) < 3 : false)) continue; best = { x, z } }
+    if (!best) continue; const spots = [[-5, -3], [5, -3], [0, 5]].map(([dx, dz]) => ({ x: best.x + dx, z: best.z + dz }));
+    out.push({ id: 'r' + out.length, def, x: best.x, z: best.z, spots, n: out.length }) }
+  return out })();
+const ruinDone_n = r => ((S.ruins[r.id] || {}).done || []).filter(Boolean).length;
+const lifePct = () => Math.round(RV.reduce((a, r) => a + ruinDone_n(r), 0) / Math.max(1, RV.length * 3) * 100);
+const ruinName = k => { const [, id, i] = k.split(':'), r = RV.find(x => x.id === id); return r ? r.def.projects[+i][1] : '' };
+function ruinView(r, on) {
+  if (!on) { if (r.g) { scene.remove(r.g); for (const p of r.picks) removePick(W, p); r.g = null; r.picks = []; r.vill = [] } return }
+  if (r.g) return; const st = S.ruins[r.id] || {}, g = new THREE.Group(); r.picks = []; r.vill = []; scene.add(g); r.g = g;
+  r.spots.forEach((o, i) => { const m = new THREE.Group(), done = st.done && st.done[i], kind = r.def.projects[i][0]; if (done) (kind === 'house' ? (gg => VILLAGE.house(gg, ['#d0503a', '#3a7ac0', '#7a4ab0'][i % 3])) : VILLAGE[kind])(m); else VILLAGE.rubble(m);
+    m.position.set(o.x, groundH(o.x, o.z), o.z); m.rotation.y = Math.atan2(r.x - o.x, r.z - o.z); g.add(m); o.m = m; const pk = addPick(W, o.x, o.z, 1.3, 1.6, { kind: 'ruin', id: r.id, i }); pk.position.y += Math.max(0, groundH(o.x, o.z)); r.picks.push(pk) });
+  const npc = rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .9)); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
+  const pk = addPick(W, r.x, r.z, .7, 1.8, { kind: 'rnpc', id: r.id }); pk.position.y += Math.max(0, groundH(r.x, r.z)); r.picks.push(pk);
+  if (st.fin) { for (let i = 0; i < 3; i++) { const v = rigOf(makeActor(gg => HUMANS.villager(gg, (r.def.v + i + 1) % 3), .85)), a = i * 2.1 + .7; v.root.position.set(r.x + Math.cos(a) * 3, groundH(r.x, r.z), r.z + Math.sin(a) * 3); g.add(v.root); r.vill.push({ A: v, a, t: Math.random() * 6 }) }
+    for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, rr = 7 + (i % 3); part(g, '#3a8a3a', '#6ac060', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .15, r.z + Math.sin(a) * rr], [.25, .18, .22], [0, a, 0], { A: .15, f: 2 }); part(g, ['#ff7a9a', '#ffd23f', '#9a7aff'][i % 3], '#ffffff', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .38, r.z + Math.sin(a) * rr], [.07, .06, .07]) } }
+}
+let rvT = 0;
+function ruinTick(now) {
+  const q = me();
+  for (const r of RV) { const d = dist(r.x, r.z, q.x, q.z); if (now > rvT) { if (d < 95) ruinView(r, true); else if (d > 130) ruinView(r, false);
+      if (d < 35 && !S.ruins[r.id]) { S.ruins[r.id] = { seen: 1, done: [0, 0, 0] }; sfx('tap'); toast(`🏚️ พบ <b>${r.def.name}</b>… เหลือแต่ซาก<br>มีคนยืนอยู่ตรงกลาง ลองไปคุยดู`, 3400); save() } }
+    if (!r.g) continue; r.npc.yawT = Math.atan2(q.x - r.x, q.z - r.z); animate(r.npc, false, .016, now);
+    for (const o of r.spots) if (o.m) { const b = o.m.getObjectByName('blades'); if (b) b.rotation.z = now / 700; const l = o.m.getObjectByName('lamp'); if (l) l.scale.setScalar(1 + Math.sin(now / 300) * .15) }
+    for (const v of r.vill) { v.t += .016; const a = v.a + v.t * .15, x = r.x + Math.cos(a) * 3.2, z = r.z + Math.sin(a) * 3.2; v.A.root.position.set(x, groundH(x, z), z); v.A.yawT = a + Math.PI; animate(v.A, true, .016, now, 6) } }
+  if (now > rvT) rvT = now + 400;
+}
+function openRuin(id, focus) {
+  const r = RV.find(x => x.id === id); if (!r) return; const st = S.ruins[id] = S.ruins[id] || { seen: 1, done: [0, 0, 0] };
+  if (st.fin) return talk([[r.def.npc, `ขอบคุณมากนะ! ${r.def.name}กลับมามีชีวิตอีกครั้งแล้ว 🌱`], [r.def.npc, `ตอนนี้โลกกลับมามีชีวิต ${lifePct()}% · ยังมีที่อื่นรอเธออยู่… และเมฆดำนั่นก็ยังลอยอยู่`]]);
+  const show = () => sheet(`🏚️ ${r.def.name}`, (b, redraw, close) => {
+    b.innerHTML = `<p class="mut">${r.def.npc}: ${r.def.hello}</p>` + r.def.projects.map(([k, name, cost], i) => { const done = st.done[i], job = S.jobs[`rv:${id}:${i}`];
+      return `<div class="card"><div class="row"><b>${done ? '✅' : job ? '🔨' : '🏚️'} ${name}</b>${done ? '<span class="up">เสร็จแล้ว</span>' : job ? '<span class="mut">กำลังสร้าง…</span>' : `<button class="btn sm go" data-rb="${i}" ${hasCost(cost) ? '' : 'disabled'}>🔨 สร้าง</button>`}</div>${done ? '' : `<div class="mut">ใช้: ${costTxt(cost)}</div>`}</div>` }).join('') +
+      `<p class="mut">สร้างครบ 3 อย่าง → ชาวบ้านกลับมา · ได้ ✨ จิตวิญญาณแห่งลูโทเนีย · 🪙 ${fmt(r.def.reward.coin)} 💎 ${r.def.reward.gem}</p>`;
+    b.querySelectorAll('[data-rb]').forEach(x => x.onclick = () => { const i = +x.dataset.rb, c = r.def.projects[i][2]; if (!hasCost(c)) return; payCost(c); close(); hud(); startJob(`rv:${id}:${i}`, D.RUIN_T); look(r.spots[i].x, r.spots[i].z); toast(`🔨 เริ่มสร้าง${r.def.projects[i][1]}! ใช้เวลา ${D.RUIN_T} วินาที`, 2200) }) });
+  if (!st.met) { st.met = 1; save(); talk([[r.def.npc, r.def.hello], [r.def.npc, 'ช่วยสร้างใหม่ทีละอย่างก็ได้… วัสดุหาได้จากป่าและแคมป์มอนสเตอร์']], show) } else show();
+}
+function ruinDone(k) {
+  const [, id, i] = k.split(':'), r = RV.find(x => x.id === id); if (!r) return; const st = S.ruins[id] = S.ruins[id] || { seen: 1, done: [0, 0, 0] }; st.done[+i] = 1; sfx('done');
+  const o = r.spots[+i]; VF.burst(o.x, groundH(o.x, o.z) + 1, o.z, '#ffe27a', 26, 4); VF.ring(o.x, groundH(o.x, o.z), o.z, '#ffffff', 3, .6); toast(`🎉 ${r.def.projects[+i][1]} สร้างเสร็จแล้ว! (${ruinDone_n(r)}/3)`, 2400);
+  if (ruinDone_n(r) >= 3 && !st.fin) { st.fin = 1; S.coin += r.def.reward.coin; S.gem += r.def.reward.gem; S.spirit.free++; spiritNew = true; bump('revived'); sfx('level');
+    toast(`🏡 <b>${r.def.name}</b> กลับมามีชีวิตแล้ว!<br>ชาวบ้านกลับมา · ✨ +1 · 🪙 ${fmt(r.def.reward.coin)} · 💎 ${r.def.reward.gem} · 🌱 ${lifePct()}%`, 4200) }
+  ruinView(r, false); ruinView(r, true); questCheck(); achCheck(); save(); hud();
+}
 /* ---------- boot: login → opening cutscene (once) → the island at night ---------- */
 async function startIntro(replay) {
   CUT = true; closeSheets(); document.body.classList.add('cut');
@@ -1835,7 +1894,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

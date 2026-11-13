@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.5.0';
+export const APP_VER = '1.6.0';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -322,3 +322,18 @@ export const CATCH = {                     // diff: harder = smaller zone, wilde
 export const CATCH_RANGE = 2.8, PET_MAX = 12;
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
 export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };         // hold the hawk's legs: fall speed · forward speed · how high you must stand
+
+/* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
+export const RUIN_T = 45;                                       // seconds to rebuild one place (hammer)
+export const RUINS = [                                          // need: where it likes to be · projects: [model, name, cost]
+  { k: 'fishing', name: 'หมู่บ้านชาวประมง', npc: '👵 ป้ามาลี', need: 'coast', v: 1, hello: 'เกลียวคลื่นพัดทุกอย่างไปหมด… ถ้ามีท่าเรือกับบ่อน้ำ พวกเราคงกลับมาจับปลาได้อีก',
+    projects: [['dock', 'ท่าเรือ', { wood: 30, stone: 6 }], ['well', 'บ่อน้ำ', { stone: 20, wood: 6 }], ['house', 'บ้านชาวประมง', { wood: 24, stone: 12, hide: 2 }]], reward: { coin: 2000, gem: 60 } },
+  { k: 'farmv', name: 'หมู่บ้านทุ่งข้าว', npc: '👨‍🌾 ลุงทองดี', need: 'flat', v: 0, hello: 'ทุ่งข้าวเงียบไปนานแล้ว… กังหันลมพังตั้งแต่เมฆดำมา ช่วยสร้างใหม่ได้ไหม',
+    projects: [['windmill', 'กังหันลม', { wood: 36, stone: 10, feather: 4 }], ['well', 'บ่อน้ำ', { stone: 20, wood: 6 }], ['house', 'บ้านไร่', { wood: 24, stone: 12, hide: 2 }]], reward: { coin: 2500, gem: 70 } },
+  { k: 'market', name: 'ตลาดนัดเก่า', npc: '🧔 พ่อค้าโต', need: 'flat', v: 2, hello: 'ที่นี่เคยเป็นตลาดที่คึกคักที่สุด… ถ้ามีแผงขายของ พ่อค้าคงกลับมา',
+    projects: [['stall', 'แผงผักผลไม้', { wood: 20, grass: 10 }], ['stall', 'แผงของป่า', { wood: 20, hide: 3 }], ['house', 'ร้านพ่อค้า', { wood: 28, stone: 14, hide: 2 }]], reward: { coin: 3000, gem: 80 } },
+  { k: 'shrine', name: 'ศาลบนเนินเขา', npc: '🧙 หลวงตาเมฆ', need: 'high', v: 1, hello: 'ศาลนี้เคยปกป้องดินแดนจากเมฆดำ… สร้างให้มันส่องแสงอีกครั้งเถิด',
+    projects: [['shrine', 'ศาลเจ้า', { stone: 30, wood: 16, feather: 4 }], ['well', 'บ่อน้ำศักดิ์สิทธิ์', { stone: 24, wood: 6 }], ['house', 'กุฏิ', { wood: 24, stone: 14 }]], reward: { coin: 3500, gem: 90 } },
+  { k: 'light', name: 'เมืองประภาคาร', npc: '🧑‍✈️ กัปตันริว', need: 'coast', v: 2, hello: 'ไม่มีแสงนำทาง เรือก็กลับบ้านไม่ได้… ช่วยจุดประภาคารอีกครั้งที',
+    projects: [['lighthouse', 'ประภาคาร', { stone: 40, wood: 20, feather: 6 }], ['dock', 'ท่าเรือใหญ่', { wood: 34, stone: 8 }], ['stall', 'แผงปลาสด', { wood: 20, grass: 10 }]], reward: { coin: 4000, gem: 100 } },
+];

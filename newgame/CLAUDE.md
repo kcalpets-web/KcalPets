@@ -37,6 +37,7 @@ tools/test/play.js  เล่นเนื้อเรื่องอัตโน
 - **ก่อสร้าง (v1.3)**: `S.builds` · `enterBuild`/`canBuild`/`placeBuild`/`bView`/`buildDone`/`openBuilt`/`demolish` · โมเดล `BUILDS` ใน clay.js (ดูภาพ `tools/art/builds.html`) · ข้อมูล `D.BLUEPRINTS` (t, w, d, solid, water) · เรือแพ `RIDE` + `sailable`/`wetAt` · ม้วน `SCR`/`pickScroll` (`S.scrolls`) · ทดสอบ `tools/test/build.js`
 - **หัวใจ + ✨ (v1.4)**: ไม่มีเลเวลผู้เล่น · `pStats` = ฐาน + `S.spirit` + อุปกรณ์ (`S.eq.sword/shield`) · `SPIRIT_QUESTS` ใน data.js · น้องไม่มี HP/MP (สกิลคูลดาวน์ `e.skT`/`e.spT` · `petSpecial`) · กระเป๋าแท็บ `openBag(tab)` · ทดสอบ `tools/test/spirit.js`
 - **v1.4.x–1.5**: `src/vfx.js` (VF.slash/burst/ring/beam/orb/rise) · ล็อกเป้า `LOCK`/`lockTick` · debuff `S.deb` + `D.DEBUFF`/`addDeb`/`debTick` · จับน้อง `CATCHING`/`startCatch` · ขี่วาฬ `RIDE.whale` · ร่อน `GLIDE` · ทดสอบ `tools/test/pets.js`
+- **ฟื้นเมือง (v1.6)**: `RV` (ซากเมือง 5 แห่ง) · `S.ruins` {seen, met, done[3], fin} · `openRuin`/`ruinDone`/`ruinView`/`ruinTick` · `lifePct()` · ทดสอบ `tools/test/towns.js`
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
 - ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v3` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม
