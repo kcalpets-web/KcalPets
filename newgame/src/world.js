@@ -276,9 +276,9 @@ export function walkWorld(x, z) {
   if (x < 7.4) { if (z < BOUND.z0 || z > BOUND.z1) return false; if (x < shore(z) + .25) return x > shore(z) - 6 ? 'water' : false; return 'land' }
   if (x < 9.6) return Math.abs(z - EXIT.z) < .9 && GATE.exit ? 'land' : false;                                    // the island gate
   if (x < 33.5) return waterAt(x, z) ? 'water' : 'land';                                                       // the meadow opens north and south (v1.1)
-  if (x < 35.4) return Math.abs(z) < 1.6 ? 'land' : false;                                                       // town west gate
-  if (x < 56.6) return walkTown(x, z) ? 'land' : false;
-  if (x < 58.6) return Math.abs(z) < 1.6 && GATE.east ? 'land' : false;                                          // town east gate
+  if (x < 35.4) return 'land';                                                                                   // town edges are open (v1.1.1: no invisible walls)
+  if (x < 56.6) return 'land';
+  if (x < 58.6) return 'land';
   if (x < 79) return waterAt(x, z) ? 'water' : 'land';
   if (x < 80.4) return Math.abs(z) < 1.6 && GATE.east ? 'land' : false;                                          // forest west gate (locked like the town's east gate: the wilds lead around)
   return walkForest(x, z) ? 'land' : false;

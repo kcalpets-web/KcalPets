@@ -74,7 +74,7 @@ function storyProps() {
     if (ok && !sh.owner && D.SHOPS[i].owner && k !== 'potion') { sh.owner = makeActor(g => HUMANS.villager(g, i), .9); rigOf(sh.owner); sh.owner.root.position.set(sh.x + (sh.z < 0 ? .9 : -.9), 0, sh.z + (sh.z < 0 ? 1.8 : -1.8)); sh.owner.yawT = sh.owner.yaw = sh.z < 0 ? 0 : Math.PI } });
   document.querySelector('#tools [data-tool="sword"]').style.display = S.has.sword ? '' : 'none';
   document.querySelector('#tools [data-tool="rod"]').style.display = S.has.rod ? '' : 'none'; document.querySelector('#tools [data-tool="hoe"]').style.display = S.has.hoe ? '' : 'none';
-  GATE.exit = !!S.story.boatFixed; GATE.east = !!(S.story.townClear && S.story.sickSeen); TW.lock.visible = !GATE.east; BARRIER.visible = !GATE.exit;
+  GATE.exit = !!S.story.boatFixed; GATE.east = !!(S.story.townClear && S.story.sickSeen); TW.lock.visible = false; FBAR.visible = !GATE.east; BARRIER.visible = !GATE.exit;
   FW.cageDoor.visible = !S.story.freed; placeHowsif(); placeSberh();
   setTime();
 }
@@ -169,7 +169,7 @@ let bumpT = 0;
 function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) return; bumpT = now + 2500;
   if (why === 'climb') return hint('💦 ปีนต่อไม่ไหวแล้ว… พักให้หลอด ⚡ เต็มก่อน', 1800);
   if (!GATE.exit && dist(x, z, EXIT.x, EXIT.z) < 3) return hint('ประตูถูกปิดไว้… ช่วยลุงที่ซากเรือก่อนดีกว่า', 2200);
-  if (!GATE.east && dist(x, z, TOWN.gateE.x, TOWN.gateE.z) < 3) return hint(S.story.townClear ? 'ประตูป่าปิดอยู่… กลับไปดูลุงฮาวซิฟที่เกาะก่อน' : 'ไม้ขวางประตูไว้… ยังมีสไลม์อยู่ในเมือง', 2200);
+  if (!GATE.east && dist(x, z, FOREST.gateW.x, FOREST.gateW.z) < 3) return hint(S.story.townClear ? 'ทางเข้าป่าถูกปิดไว้… กลับไปดูลุงฮาวซิฟที่เกาะก่อน' : 'ทางเข้าป่าถูกปิดไว้… ยังมีสไลม์อยู่ในเมือง', 2200);
 }
 let lastLand = [0, -4];
 function spendRunN(n) { if (S.tired) return false; const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
@@ -192,7 +192,7 @@ function workTick(now) {
   if (work.o) { const o = work.o; if (!o.g) { work = null; return } if (dist(me().x, me().z, o.x, o.z) > 1.7) { if (!walkT) walkTo(o.x, o.z, null, 1.1); return }
     const en0 = pEn(), left0 = o.left; toolHit({ kind: 'clear', id: o.id }); if (o.g && pEn() === en0 && o.left === left0) work = null }    // stopped (no energy / tool tier / wrong tool)
   else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
-    if (d > 1.4) { stepTo(PL, q.x, q.z, 3.8, .2); work.t = now + 60; return } toolHit({ kind: 'mon', m }) }
+    if (d > 1.6) { if (!walkT || dist(walkT.x, walkT.z, q.x, q.z) > 1.2) walkTo(q.x, q.z, null, 1.3); work.t = now + 120; return } walkT = null; toolHit({ kind: 'mon', m }) }
 }
 function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .28 }
 
@@ -370,6 +370,10 @@ function finishClear(o) {
 }
 function toolHit(key) {
   const now = performance.now();
+  if (S.avatar && (key.kind === 'mon' || key.kind === 'clear')) {                    // reach: too far = walk over and do it there (no slashing from afar)
+    const t = key.kind === 'mon' ? key.m && key.m.A.root.position : W.clear.get(key.id);
+    if (t && dist(me().x, me().z, t.x, t.z) > (key.kind === 'mon' ? D.REACH_SWORD : D.REACH_TOOL)) {
+      if (key.kind === 'mon') { if (S.has.sword && (!work || work.m !== key.m)) fight(key.m) } else if (t.g && (!work || work.o !== t)) workOn(t); return } }
   if (key.kind === 'mon') {
     const m = key.m; if (!m || !mons.includes(m)) return;
     if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } if (tool !== 'sword') setTool('sword');
@@ -1120,17 +1124,27 @@ function actA() {
   sprintT = now + 700;                                                                                        // nothing here: mash A to run
 }
 let wheelOn = false, wheelI = 0;
-const WHEEL = [['🎒', 'กระเป๋า', () => openBag()], ['🐾', 'น้อง', () => openPets()], ['📓', 'สมุดบันทึก', () => openJournal()], ['📜', 'เควส', () => $('quest').click()], ['🛒', 'ร้านในเมือง', () => openTown()],
-  ['🛠️', 'ช่างอุปกรณ์', () => $('bTool').click()], ['🎣', 'ตกปลา', () => { setTool('rod'); toast('🎣 หันหน้าไปทางทะเล แล้วกด A', 2000) }], ['✏️', 'วาดภาพ', () => { setTool('sketch'); toast('✏️ เข้าใกล้มอนสเตอร์/คน/น้อง แล้วกด A', 2200) }],
-  ['🗺️', 'แผนที่', () => openMap()], ['🪏', 'จอบ (ขุดแปลงผัก)', () => { if (!S.has.hoe) return toast('ยังไม่มีจอบ… ลุงฮาวซิฟอาจมีให้'); setTool('hoe'); toast('🪏 หันหน้าไปที่พื้นหญ้าใกล้บ้าน แล้วกด A เพื่อขุด', 2200) }], ['🧪', 'ดื่มยา HP', () => usePotion(S.potions.hpS ? 'hpS' : 'hpL')], ['🤖', 'ดื่มยาอัตโนมัติ เปิด/ปิด', () => { S.autoPot = !S.autoPot; save(); hud(); toast(S.autoPot ? `🧪 ดื่มยาอัตโนมัติ: <b>เปิด</b> (HP ต่ำกว่า ${Math.round(D.AUTO_POT * 100)}%)` : '🧪 ดื่มยาอัตโนมัติ: <b>ปิด</b>', 2200) }], ['👤', 'โปรไฟล์', () => openProfile()], ['⚙️', 'ตั้งค่า', () => openMenu()]];
+const nearWater = (r = 5) => { const q = me(); for (let a = 0; a < 12; a++) for (const d of [1.5, 3, r]) if (waterAt(q.x + Math.cos(a * .52) * d, q.z + Math.sin(a * .52) * d)) return true; return false };
+const subjectNear = () => mons.some(m => nearMe(m, 6)) || dist(me().x, me().z, HS.root.position.x, HS.root.position.z) < 6 || dist(me().x, me().z, SB.root.position.x, SB.root.position.z) < 6 || [...PA.values()].some(e => dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z) < 6);
+const WHEEL = [                                                  // [icon, name, action, lock() → reason or '']
+  ['🎒', 'กระเป๋า', () => openBag(), () => ''], ['🐾', 'น้อง', () => openPets(), () => S.pets.length ? '' : 'ยังไม่มีน้อง'], ['📓', 'สมุดบันทึก', () => openJournal(), () => ''], ['📜', 'เควส', () => $('quest').click(), () => ''],
+  ['🗺️', 'แผนที่', () => openMap(), () => ''], ['🛒', 'ร้านในเมือง', () => openTown(), () => S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['🛠️', 'ช่างอุปกรณ์', () => $('bTool').click(), () => S.shops.tools ? '' : 'ร้านช่างอุปกรณ์ยังไม่เปิด'],
+  ['🎣', 'ตกปลา', () => { setTool('rod'); toast('🎣 หันหน้าไปทางน้ำ แล้วกด A', 2000) }, () => !S.has.rod ? 'ยังไม่มีเบ็ด' : nearWater() ? '' : 'ต้องอยู่ใกล้น้ำก่อน'],
+  ['🪏', 'จอบ (ขุดแปลงผัก)', () => { setTool('hoe'); toast('🪏 หันหน้าไปที่พื้นหญ้าใกล้บ้าน แล้วกด A เพื่อขุด', 2200) }, () => !S.has.hoe ? 'ยังไม่มีจอบ' : zoneOf(me().x, me().z) === 'farm' ? '' : 'ขุดได้เฉพาะบนเกาะใกล้บ้าน'],
+  ['✏️', 'วาดภาพ', () => { setTool('sketch'); toast('✏️ เข้าใกล้มอนสเตอร์/คน/น้อง แล้วกด A', 2200) }, () => subjectNear() ? '' : 'ไม่มีอะไรให้วาดแถวนี้'],
+  ['🧪', 'ดื่มยา HP', () => usePotion(S.potions.hpS ? 'hpS' : 'hpL'), () => !(S.potions.hpS || S.potions.hpL) ? 'ไม่มียา HP' : pHp() >= pStats().hp ? 'HP เต็มอยู่แล้ว' : ''],
+  ['💊', 'ดื่มยาอัตโนมัติ เปิด/ปิด', () => { S.autoPot = !S.autoPot; save(); hud(); toast(S.autoPot ? `🧪 ดื่มยาอัตโนมัติ: <b>เปิด</b> (HP ต่ำกว่า ${Math.round(D.AUTO_POT * 100)}%)` : '🧪 ดื่มยาอัตโนมัติ: <b>ปิด</b>', 2200) }, () => ''],
+  ['🤖', 'ออโต้ เปิด/ปิด (สู้ · เก็บของ · ดื่มยาเอง)', () => toggleAuto(), () => S.has.sword || S.has.hoe ? '' : 'ต้องมีดาบก่อน'],
+  ['👤', 'โปรไฟล์', () => openProfile(), () => ''], ['⚙️', 'ตั้งค่า', () => openMenu(), () => '']];
+function toggleAuto() { S.auto = !S.auto; $('bAuto').classList.toggle('on', S.auto); sfx('tap'); toast(S.auto ? '🤖 AUTO เปิด: ตัวละครจะสู้ เก็บของ และดื่มยาเอง · บังคับเองเมื่อไหร่ AUTO จะหยุด' : '🤖 AUTO ปิด', 2400) }
 function openWheel() {
   if (wheelOn || CUT) return; wheelOn = true; CUT = true; joy.on = false; document.body.classList.add('wheel'); sfx('tap');
-  const el = $('wheel'), ring = el.querySelector('.wh'), n = WHEEL.length; ring.innerHTML = WHEEL.map(([ic, nm], i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<button data-w="${i}" style="left:calc(50% + ${Math.cos(a) * 118}px);top:calc(50% + ${Math.sin(a) * 118}px)">${ic}</button>` }).join('');
+  const el = $('wheel'), ring = el.querySelector('.wh'), n = WHEEL.length; ring.innerHTML = WHEEL.map(([ic, nm], i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; return `<button data-w="${i}" class="${WHEEL[i][3]() ? 'lock' : ''}" style="left:calc(50% + ${Math.cos(a) * 124}px);top:calc(50% + ${Math.sin(a) * 124}px)">${ic}</button>` }).join('');
   ring.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { wheelI = +b.dataset.w; wheelPick() }); el.style.display = 'flex'; wheelMark();
 }
-function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); $('whN').textContent = WHEEL[wheelI][0] + ' ' + WHEEL[wheelI][1] }
+function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); const lk = WHEEL[wheelI][3](); $('whN').innerHTML = WHEEL[wheelI][0] + ' ' + WHEEL[wheelI][1] + (lk ? `<br><small class="lk">🔒 ${lk}</small>` : '') }
 function closeWheel() { if (!wheelOn) return; $('aK').style.transform = ''; wheelOn = false; CUT = false; last = performance.now(); $('wheel').style.display = 'none'; document.body.classList.remove('wheel') }
-function wheelPick() { const f = WHEEL[wheelI][2]; closeWheel(); f() }
+function wheelPick() { const [, , f, lock] = WHEEL[wheelI], lk = lock(); closeWheel(); if (lk) { sfx('hurt'); hint('🔒 ' + lk, 1800); return } f() }
 $('wL').onclick = () => { wheelI = (wheelI + WHEEL.length - 1) % WHEEL.length; sfx('tap'); wheelMark() };
 $('wR').onclick = () => { wheelI = (wheelI + 1) % WHEEL.length; sfx('tap'); wheelMark() };
 $('wheel').addEventListener('pointerdown', e => { if (e.target.id === 'wheel') closeWheel() });
@@ -1152,7 +1166,7 @@ let guard = false;
     const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } walkT = null; work = null; stopAuto(); if (tool) setTool('') };
   B.addEventListener('pointerup', up); B.addEventListener('pointercancel', up); B.addEventListener('contextmenu', e => e.preventDefault()) }
 /* AUTO (idle style): fights what is near, gathers what the quest needs, drinks potions · any input of yours stops it */
-$('bAuto').onclick = () => { S.auto = !S.auto; $('bAuto').classList.toggle('on', S.auto); sfx('tap'); toast(S.auto ? '🤖 AUTO: ตัวละครจะสู้ เก็บของ และดื่มยาเอง · บังคับเองเมื่อไหร่ AUTO จะหยุด' : '🤖 AUTO ปิด', 2400) };
+$('bAuto').onclick = () => toggleAuto();                     // the green AUTO badge: tap to stop
 let autoT = 0;
 function autoTick(now) {
   if (!S.auto || CUT || now < autoT || walkT || work || joy.on || F) return; autoT = now + 600;
@@ -1192,6 +1206,7 @@ const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.
 let mapT = 0;
 function mapTick(now) {
   if (now < mapT || CUT) return; mapT = now + 250; const q = me(); reveal(q.x, q.z);
+  if (tool === 'rod' && !F && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (fogDirty) fogDraw(); drawMini();
 }
@@ -1248,6 +1263,7 @@ function setNear(ch, on) {
 }
 
 /* the island gate stays barred until Uncle Howsif's boat is repaired */
+const FBAR = new THREE.Group(); for (let i = 0; i < 3; i++) part(FBAR, '#5a3420', '#9a6238', [0, .35 + i * .32, 0], [.09, .09, 1.6], [0, 0, (i - 1) * .12], { A: 0 }); FBAR.position.set(FOREST.gateW.x - .8, 0, 0); scene.add(FBAR);   // the forest entrance stays barred until the story opens it
 const BARRIER = new THREE.Group(); for (let i = 0; i < 3; i++) part(BARRIER, '#5a3420', '#9a6238', [0, .35 + i * .32, 0], [.09, .09, 1.05], [0, 0, (i - 1) * .12], { A: 0 }); BARRIER.position.set(8.4, 0, EXIT.z); scene.add(BARRIER);
 
 /* ================= v1.0 farming: 🪏 hoe → soil plot · plant a seed · grows in real time (even offline) · ✨ ripe → harvest (tap, A, or swipe the sickle) ================= */

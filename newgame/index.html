@@ -115,6 +115,8 @@
   #miniW{position:relative;width:104px;height:104px;border:3px solid var(--ink);border-radius:16px;overflow:hidden;box-shadow:0 3px 0 #0003;background:#12162a}#mini{width:100%;height:100%;display:block}#miniZ{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9px;color:#fff;background:#2a2030b0;padding:1px 0}
   .wmap{overflow-x:auto;border:3px solid var(--ink);border-radius:12px;background:#12162a}.wmap canvas{height:230px;display:block}
   body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 214px)}#fps{top:calc(max(10px,env(safe-area-inset-top)) + 300px)}
+  #bAuto{display:none!important}#bAuto.on{display:block!important}   /* v1.1.1: AUTO lives in the wheel; this is just the 'on' badge (tap = stop) */
+  .wh button.lock{opacity:.4;filter:grayscale(1)}.wh button.lock::after{content:'🔒';position:absolute;right:-4px;bottom:-4px;font-size:16px}.whc .lk{color:#ffb0a0;font-size:12px}
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 </style></head>
 <body>
