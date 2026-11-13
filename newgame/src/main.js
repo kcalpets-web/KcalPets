@@ -794,7 +794,7 @@ function questCheck() {
   let q; while ((q = D.QUESTS[S.quest]) && qDone(q)) { const r = q.reward || {}; if (r.coin) S.coin += r.coin; if (r.gem) S.gem += r.gem;
     toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null;
     if (D.SPIRIT_QUESTS.includes(q.id)) { S.spirit.free++; spiritNew = true } }
-  if (spiritNew && !CUT) { spiritNew = false; setTimeout(() => openSpirit(true), 2000) }
+
   hud(); save();
 }
 let peekT = 0;
@@ -952,7 +952,7 @@ const achHTML = () => D.ACH.map(a => { const v = Math.min(a.goal, achVal(a)), do
   return `<div class="card"><div class="row"><b>${a.icon} ${a.name}</b>${got ? '<span class="up">✅ รับแล้ว</span>' : done ? `<button class="btn sm go" data-a="${a.k}">รับรางวัล</button>` : `<span class="mut">${v}/${a.goal}</span>`}</div><div class="mut">${a.text} · รางวัล ${a.reward.coin ? '🪙 ' + fmt(a.reward.coin) : ''}${a.reward.gem ? '💎 ' + a.reward.gem : ''}</div><div class="bar s"><i style="width:${v / a.goal * 100}%;background:var(--xp)"></i></div></div>` }).join('');
 const bindAch = (b, redraw) => b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { const a = D.ACH.find(y => y.k === x.dataset.a); S.ach[a.k] = Date.now(); if (a.reward.coin) S.coin += a.reward.coin; if (a.reward.gem) S.gem += a.reward.gem; sfx('level'); toast(`🏆 ${a.name}!`, 2000); save(); hud(); redraw() });
 /* ---------- v1.4 ✨ Spirit of Luthonia: ❤️ +1 heart or ⚡ +20 % energy ---------- */
-let spiritNew = false, petGuardT = 0;
+let spiritNew = false, spiritT = 0, petGuardT = 0;
 const hearts = () => pStats().hp / D.HEART, enMul = () => 1 + D.EN_STEP * S.spirit.en;
 const spiritOk = k => k === 'hp' ? hearts() < D.HEARTS_MAX : enMul() < D.EN_MAX_MUL - .01;
 function spiritCard() { const sp = S.spirit;
@@ -1292,6 +1292,7 @@ function mapTick(now) {
   if (now < mapT || CUT) return; mapT = now + 250; const q = me(); reveal(q.x, q.z);
   if (tool === 'rod' && !F && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
+  if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
   wcampTick(now); if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {

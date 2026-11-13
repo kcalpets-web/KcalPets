@@ -16,6 +16,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   try {
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
+    await pg.addInitScript(() => setInterval(() => { const b = document.querySelector('[data-sp="hp"]:not([disabled])'); if (b) b.click() }, 300));   /* v1.4: pick ❤️ whenever a ✨ spirit pops up */
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx); localStorage.setItem('ng_cam', 'top') }, process.env.GFX || 'eco'); await pg.reload();
     await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(1500);
     const shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
@@ -93,7 +94,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       if (!m) { await wait(300); continue } await wait(250); const p = await E(() => { const N = window.__ng, M = N.mons.find(m => m.area === 'town'); if (!M) return null; const q = M.A.root.position; return N.project(q.x, .6, q.z) });
       if (p) await swipeAt(p.x, p.y, 70); if (i === 4) await shot('10-fight'); if (await N(() => window.__ng.mons.some(m => m.kind === 'slimeKing')) && !fs.existsSync(path.join(OUT, '11-king.png'))) await shot('11-king');
       if (await N(() => window.__ng.S.hp < 15)) await E(() => { window.__ng.S.hp = null }); await wait(250) }
-    log('kills', JSON.stringify(await N(() => window.__ng.S.stat)), 'lv', await N(() => window.__ng.S.lv));
+    log('kills', JSON.stringify(await N(() => window.__ng.S.stat)), 'spirit', JSON.stringify(await N(() => window.__ng.S.spirit)));
     /* chapter 2: home → Uncle Howsif is ill → the forest: herbs, goblins, the cage → pet cutscene → Sberh → potion shop → flashback → medicine */
     await E(() => window.__ng.goFarm()); await wait(3500); await shot('12-sick'); await clickAll('#tN');
     log('sick', await N(() => window.__ng.S.story.sickSeen));
