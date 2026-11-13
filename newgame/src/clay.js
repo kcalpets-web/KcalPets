@@ -174,6 +174,36 @@ MONS.goblin = function (g, chief = 0) {
   }
 };
 MONS.goblinChief = g => MONS.goblin(g, 1);
+/* ---- v1.2 wild animals (four legs: front legs use the arm roles, back legs the foot roles, so the same walk cycle works) ---- */
+function quad(g, k) {                                    // k: body [lo, hi], size, leg colour, head offset
+  const L = k.leg || k.body[0];
+  for (const [sx, sz, r] of [[-1, 1, 'armL'], [1, 1, 'armR'], [-1, -1, 'footL'], [1, -1, 'footR']]) role(part(g, L, k.body[1], [sx * k.w * .55, k.lh, sz * k.d * .6], [k.lw, k.lh, k.lw]), r);
+  part(g, ...k.body, [0, k.lh * 2 + k.h * .7, 0], [k.w, k.h, k.d], [0, 0, 0], { A: .05 });
+}
+export const ANIMALS = {
+  rabbit(g) { quad(g, { body: ['#b8a890', '#f0e6d4'], w: .26, h: .24, d: .34, lw: .06, lh: .08 }); part(g, '#b8a890', '#f0e6d4', [0, .5, .3], [.2, .19, .2]);
+    for (const s of [-1, 1]) { part(g, '#b8a890', '#f0e6d4', [s * .08, .78, .26], [.05, .2, .04], [0, 0, s * .15]); part(g, '#e8a0a8', '#ffc8d0', [s * .08, .78, .28], [.025, .15, .01], [0, 0, s * .15], { A: 0 }) }
+    part(g, '#ffffff', '#ffffff', [0, .42, -.36], [.09, .09, .09], [0, 0, 0], { A: 0 }); eyes(g, .54, .45, .09, .035) },
+  chicken(g) { role(part(g, '#c8901a', '#f0c040', [-.07, .1, 0], [.03, .1, .03]), 'footL'); role(part(g, '#c8901a', '#f0c040', [.07, .1, 0], [.03, .1, .03]), 'footR');
+    part(g, '#a86a3a', '#e8a868', [0, .36, 0], [.22, .2, .28], [0, 0, 0], { A: .06 }); part(g, '#a86a3a', '#e8a868', [0, .58, .17], [.13, .14, .13]); part(g, '#c02020', '#ff4a3a', [0, .73, .17], [.04, .06, .08], [0, 0, 0], { A: 0 });
+    cone(g, '#c8901a', '#f0c040', [0, .58, .32], [.04, .06, .04], [Math.PI / 2, 0, 0], .9); for (const s of [-1, 1]) role(part(g, '#8a4a20', '#c87a48', [s * .2, .38, 0], [.05, .12, .16], [0, 0, s * .3], { A: 0 }), s < 0 ? 'armL' : 'armR'); part(g, '#6a3a1a', '#a86a3a', [0, .5, -.28], [.1, .14, .06], [-.6, 0, 0], { A: 0 }); eyes(g, .62, .28, .07, .025) },
+  duck(g) { role(part(g, '#c87a1a', '#f0a030', [-.07, .06, 0], [.04, .06, .06]), 'footL'); role(part(g, '#c87a1a', '#f0a030', [.07, .06, 0], [.04, .06, .06]), 'footR');
+    part(g, '#d8d8d0', '#ffffff', [0, .28, 0], [.24, .18, .32], [0, 0, 0], { A: .05 }); part(g, '#2a6a3a', '#4aa060', [0, .5, .2], [.12, .13, .12]); part(g, '#c87a1a', '#f0a030', [0, .48, .34], [.07, .03, .07], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) role(part(g, '#b8b8b0', '#e8e8e0', [s * .2, .3, -.02], [.05, .1, .2], [0, 0, s * .2], { A: 0 }), s < 0 ? 'armL' : 'armR'); eyes(g, .54, .3, .07, .025) },
+  deer(g) { quad(g, { body: ['#9a5a2a', '#d8945a'], w: .3, h: .3, d: .55, lw: .06, lh: .32 }); part(g, '#9a5a2a', '#d8945a', [0, 1.05, .45], [.12, .26, .12], [.5, 0, 0]);
+    part(g, '#9a5a2a', '#d8945a', [0, 1.28, .62], [.15, .14, .2]); part(g, '#f0e6d4', '#ffffff', [0, .78, -.5], [.08, .1, .05], [0, 0, 0], { A: 0 }); for (let i = 0; i < 5; i++) part(g, '#f0e6d4', '#fff8ee', [(i % 2 ? .12 : -.12), .98, -.2 + i * .1], [.04, .02, .04], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) { part(g, '#6a4a2a', '#a8805a', [s * .1, 1.5, .58], [.03, .18, .03], [0, 0, s * .4], { A: 0 }); part(g, '#6a4a2a', '#a8805a', [s * .2, 1.62, .55], [.025, .1, .025], [0, 0, s * 1.1], { A: 0 }) } eyes(g, 1.32, .76, .09, .035) },
+  boar(g) { quad(g, { body: ['#4a3a2a', '#8a6a4a'], w: .4, h: .32, d: .55, lw: .08, lh: .16 }); part(g, '#4a3a2a', '#8a6a4a', [0, .58, .5], [.26, .24, .24]); part(g, '#c88a7a', '#e8b0a0', [0, .52, .74], [.12, .1, .06], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) { cone(g, '#d8d0b8', '#fffbe8', [s * .14, .5, .7], [.03, .1, .03], [-.8, 0, s * .3], .9); cone(g, '#3a2a1a', '#6a5a4a', [s * .17, .82, .45], [.06, .1, .04], [0, 0, -s * .3], .9) }
+    for (let i = 0; i < 5; i++) cone(g, '#2a2018', '#4a3a2a', [0, .88, .2 - i * .14], [.04, .1, .04], [0, 0, 0], .9); eyes(g, .66, .7, .12, .035) },
+};
+export const CAMP = {
+  tent(g, col = '#8a6a4a') { cone(g, '#4a3220', col, [0, .9, 0], [1.1, .95, 1.1], [0, 0, 0], .95); part(g, '#2a1a10', '#4a3020', [0, .4, .9], [.3, .4, .05], [0, 0, 0], { A: 0 }) },
+  banner(g, col = '#c03a2a') { part(g, '#4a2a18', '#7a4a28', [0, 1.1, 0], [.05, 1.1, .05], [0, 0, 0], { A: 0 }); part(g, '#6a1a1a', col, [.28, 1.85, 0], [.28, .22, .02], [0, 0, 0], { A: 0 }); part(g, '#fff8ee', '#ffffff', [.28, 1.85, .03], [.08, .08, .01], [0, 0, 0], { A: 0 }) },
+  chest(g) { part(g, '#6a3a1a', '#a8683a', [0, .25, 0], [.42, .22, .3], [0, 0, 0], { A: .02 }); part(g, '#c7891c', '#ffe27a', [0, .25, .31], [.08, .1, .02], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) part(g, '#c7891c', '#ffe27a', [s * .36, .25, 0], [.03, .23, .31], [0, 0, 0], { A: 0 });
+    const lid = new THREE.Group(); lid.position.set(0, .47, -.3); part(lid, '#6a3a1a', '#a8683a', [0, .05, .3], [.42, .08, .3], [0, 0, 0], { A: .02 }); part(lid, '#c7891c', '#ffe27a', [0, .1, .3], [.43, .03, .08], [0, 0, 0], { A: 0 }); lid.name = 'lid'; g.add(lid) },
+};
 export const ACC = {
   collar(g, y = .95) { const m = new THREE.Mesh(new THREE.TorusGeometry(.36, .05, 8, 28), MAT_GOLD.clone()); m.material.vertexColors = false; m.material.color = C('#ffcf40'); m.rotation.x = Math.PI / 2; m.position.y = y; g.add(m);
     part(g, '#d99a26', '#fff0a8', [0, y - .1, .36], [.08, .08, .03], [0, 0, 0], { A: 0, mat: MAT_GOLD }) },

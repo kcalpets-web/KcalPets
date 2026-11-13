@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.1.1';
+export const APP_VER = '1.2.0';
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
@@ -25,7 +25,7 @@ export const hitsFor = (size, tier) => Math.max(1, Math.ceil(HITS[size] / (1 + .
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60] };  // [icon, name, sell price]
+export const MATS = { hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60] };  // [icon, name, sell price]
 
 /* ---- farm tools: tier 0 wood · 1 stone · 2 iron · 3 crystal ---- */
 export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], rod: ['🎣', 'เบ็ด'] };
@@ -37,6 +37,12 @@ export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, s
 export const MON = {
   slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
   slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini' },
+  /* v1.2 wild animals (tier 'animal'): run away when you come close (hold B to sneak) · the boar charges back when hit */
+  rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['meat', 1], loot: [], tier: 'animal' },
+  chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
+  duck:    { animal: 1, legs: 1, flee: 5, run: 3.2, name: '🦆 เป็ดป่า', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: { feather: 2 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
+  deer:    { animal: 1, legs: 1, flee: 9, run: 5.6, name: '🦌 กวาง', lv: 2, hp: 30, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { hide: 1 }, ingr: ['venison', 1, 2], loot: [], tier: 'animal' },
+  boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['branchSword', 'barkArmor'], tier: 'normal', legs: 1 },
   goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'stoneArmor'], tier: 'mini', legs: 1 },
   grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['leafBlade', 'leafVest'], tier: 'normal' },
@@ -71,7 +77,7 @@ export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6 };       
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
 export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
-export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'slime', 'branchImp', 'grassSprite'], hills: ['rockGolem', 'branchImp', 'rockGolem', 'grassSprite', 'slime'] };   // wanderers in the wild zones
+export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'rabbit', 'chicken', 'rabbit', 'branchImp'], hills: ['rockGolem', 'branchImp', 'deer', 'rabbit', 'boar', 'slime'] };   // wanderers in the wild zones
 /* monster awareness: ❗ yellow = seen you (stays put unless you hit it) · ❗ red = too close, attacks · ❓ = lost you */
 export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +LOSE beyond sight = gives up
 export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
@@ -164,13 +170,13 @@ export const QUESTS = [
   { id: 's2', icon: '🔨', text: 'ซ่อมเรือของลุงฮาวซิฟ', flag: 'boatFixed', go: 'boat' },
   { id: 's3a', icon: '🏘️', text: 'ไปเมืองทางซุ้มประตูด้านขวา', flag: 'town', go: 'exit' },
   { id: 's3b', icon: '⚔️', text: 'หยิบดาบที่ตกอยู่บนพื้น', flag: 'sword', go: 'sword' },
-  { id: 's3c', icon: '🟢', text: `กำจัดสไลม์ในเมือง ${5} ตัว`, stat: 'kill_slime', goal: 5, go: 'slime' },
-  { id: 's3d', icon: '👑', text: 'กำจัดราชาสไลม์', stat: 'kill_slimeKing', goal: 1, go: 'slime' },
+  { id: 's3c', icon: '🟢', text: `กำจัดสไลม์ในเมือง ${5} ตัว`, stat: 'story_slime', goal: 5, go: 'slime' },
+  { id: 's3d', icon: '👑', text: 'กำจัดราชาสไลม์', stat: 'story_slimeKing', goal: 1, go: 'slime' },
   /* chapter 2 (docs/STORY.md): Uncle Howsif falls ill → herbs in the forest → the goblin camp → Sberh → the potion shop → the medicine */
   { id: 's4a', icon: '🏝️', text: 'กลับไปดูลุงฮาวซิฟที่เกาะ', flag: 'sickSeen', go: 'home' },
   { id: 's4b', icon: '🌿', text: `ลุงป่วย! เข้าป่า (ประตูตะวันออกของเมือง) เก็บสมุนไพรเรืองแสง ${HERBS} ต้น`, stat: 'clr_herb', goal: HERBS, go: 'herb' },
-  { id: 's4c', icon: '👺', text: `กำจัดก็อบลินในแคมป์ ${GOBLINS} ตัว`, stat: 'kill_goblin', goal: GOBLINS, go: 'camp' },
-  { id: 's4d', icon: '👹', text: 'กำจัดหัวหน้าก็อบลิน', stat: 'kill_goblinChief', goal: 1, go: 'camp' },
+  { id: 's4c', icon: '👺', text: `กำจัดก็อบลินในแคมป์ ${GOBLINS} ตัว`, stat: 'story_goblin', goal: GOBLINS, go: 'camp' },
+  { id: 's4d', icon: '👹', text: 'กำจัดหัวหน้าก็อบลิน', stat: 'story_goblinChief', goal: 1, go: 'camp' },
   { id: 's4e', icon: '🔓', text: 'ช่วยคนที่ถูกขังในกรง', flag: 'freed', go: 'cage' },
   { id: 's5a', icon: '🏘️', text: 'พา Sberh กลับไปที่เมือง', flag: 'sberhTown', go: 'town' },
   { id: 's5b', icon: '🧪', text: 'ซ่อมร้านยาของ Sberh', check: S => !!S.shops.potion, go: 'potionShop', reward: { coin: 500 } },
@@ -198,6 +204,8 @@ export const INGR = {
   jelly:    { icon: '🟢', name: 'เจลลี่สไลม์', tag: 'monster', price: 20 },
   meat:     { icon: '🍖', name: 'เนื้อดิบ', tag: 'meat', price: 30 },
   glowherb: { icon: '🌿', name: 'สมุนไพรเรืองแสง', tag: 'herb', price: 120 },
+  poultry:  { icon: '🍗', name: 'เนื้อไก่', tag: 'meat', price: 25 },
+  venison:  { icon: '🥩', name: 'เนื้อกวาง', tag: 'meat', price: 45 },
   /* v1.0 farm crops */
   carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },
   cabbage:  { icon: '🥬', name: 'กะหล่ำปลี', tag: 'veg', price: 30 },
@@ -238,6 +246,8 @@ export const ACH = [
   { k: 'draw5', icon: '🖼️', name: 'ศิลปินพเนจร', text: 'วาดภาพลงสมุด 5 ภาพ', f: S => Object.keys(S.journal.sketch).length, goal: 5, reward: { gem: 60 } },
   { k: 'drawmon', icon: '👹', name: 'นักวาดมอนสเตอร์', text: 'วาดมอนสเตอร์ 4 ชนิด', f: S => Object.keys(S.journal.sketch).filter(k => MON[k]).length, goal: 4, reward: { gem: 80 } },
   { k: 'hunt50', icon: '⚔️', name: 'นักล่า', text: 'กำจัดมอนสเตอร์ 50 ตัว', stat: 'kills', goal: 50, reward: { coin: 1500 } },
+  { k: 'hunter', icon: '🏹', name: 'นายพราน', text: 'ล่าสัตว์ป่า 15 ตัว', stat: 'hunt', goal: 15, reward: { coin: 800 } },
+  { k: 'camp3', icon: '⛺', name: 'ผู้พิชิตแคมป์', text: 'ยึดแคมป์มอนสเตอร์ในป่า 3 แห่ง', stat: 'wcamps', goal: 3, reward: { gem: 100 } },
   { k: 'farmer', icon: '🧑‍🌾', name: 'ชาวไร่', text: 'เก็บเกี่ยวผัก 20 ครั้ง', stat: 'harvested', goal: 20, reward: { coin: 1000 } },
   { k: 'gear5', icon: '🛡️', name: 'นักสะสมอุปกรณ์', text: 'สะสมอุปกรณ์ 5 แบบ', f: S => Object.keys(S.journal.gear).length, goal: 5, reward: { gem: 50 } },
   { k: 'night', icon: '🌙', name: 'นกฮูก', text: 'กำจัดมอนสเตอร์ตอนกลางคืน 10 ตัว', stat: 'nightKills', goal: 10, reward: { coin: 800 } },
@@ -253,3 +263,26 @@ export const CROPS = {                                       // min = real minut
   pumpkin:    { min: 35, n: [1, 1], seed: 250, back: .2, col: '#e8802a' },
 };
 export const PLOT_MAX = 24, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed
+
+/* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
+export const ANIMAL_SPAWN = { low: ['rabbit', 'chicken', 'rabbit', 'deer'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
+export const WCAMP = { count: 18, spacing: 150 };              // monster camps scattered over the big world
+export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down
+  { name: 'แคมป์สไลม์', col: '#3fa860', mons: ['slime', 'slime', 'grassSprite'], chief: 'slimeKing', gem: [30, 60], coin: [300, 500] },
+  { name: 'แคมป์ก็อบลิน', col: '#c03a2a', mons: ['goblin', 'goblin', 'branchImp', 'goblin'], chief: 'goblinChief', gem: [60, 120], coin: [600, 1000] },
+  { name: 'ป้อมอสูรหิน', col: '#6a6a7a', mons: ['rockGolem', 'goblin', 'rockGolem', 'goblin'], chief: 'goblinChief', gem: [100, 200], coin: [1000, 1800] },
+];
+/* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
+export const BLUEPRINTS = {
+  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารและนอนพักได้ทุกที่ · เป็นจุดวาร์ป', cost: { wood: 6, stone: 4 }, start: 1 },
+  chest:     { icon: '📦', name: 'หีบเก็บของ', desc: 'เก็บของได้เพิ่ม 20 ช่อง', cost: { wood: 10 }, start: 1 },
+  fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์เดินผ่านไม่ได้', cost: { wood: 4 } },
+  path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'ทางเดินสวยๆ · เดินบนทางเร็วขึ้นนิดหน่อย', cost: { stone: 2 } },
+  bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพัก · ตื่นมาพลังงานสำรองเพิ่ม', cost: { grass: 10, hide: 2 } },
+  stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'แข็งแรงกว่ารั้วไม้', cost: { stone: 6 } },
+  kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 } },
+  scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงรอบๆ โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 } },
+  cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอน · จุดวาร์ป', cost: { wood: 40, stone: 20, hide: 4 } },
+  tower:     { icon: '🗼', name: 'หอสังเกตการณ์', desc: 'ปีนขึ้นไปเพื่อเปิดแผนที่รอบๆ กว้าง 150 ม.', cost: { wood: 30, stone: 10, feather: 4 } },
+};
+export const SCROLLS = 10;                                      // glowing blueprint scrolls hidden around the world
