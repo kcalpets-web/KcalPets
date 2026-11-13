@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '0.9.6';
+export const APP_VER = '1.0.0';
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
@@ -66,7 +66,7 @@ export const SLOT_NAME = { weapon: 'อาวุธ', armor: 'ชุดเกร
 export const PLAYER_BASE = { hp: 80, en: 100, atk: 10, def: 2 };       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
 export const PLAYER_GROW = { hp: 6, en: 5, atk: 2, def: 1 };
 /* ⚡ stamina, Zelda-like (v0.8): every action and running use it · refills fast once you stop · empty = exhausted (slow, no actions) until it is full again */
-export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10 };        // per hit / per cast
+export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6 };        // per hit / per cast
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
 export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
@@ -174,6 +174,12 @@ export const QUESTS = [
   { id: 's5a', icon: '🏘️', text: 'พา Sberh กลับไปที่เมือง', flag: 'sberhTown', go: 'town' },
   { id: 's5b', icon: '🧪', text: 'ซ่อมร้านยาของ Sberh', check: S => !!S.shops.potion, go: 'potionShop', reward: { coin: 500 } },
   { id: 's5c', icon: '💊', text: 'นำยารักษาไปให้ลุงฮาวซิฟ', flag: 'cured', go: 'howsif2', reward: { coin: 1000, gem: 100 } },
+  /* v1.0 farming (after Uncle Howsif is well again) */
+  { id: 's6a', icon: '👴', text: 'ลุงฮาวซิฟมีของจะให้ ไปคุยกับลุง', flag: 'farmGift', go: 'howsif2' },
+  { id: 's6b', icon: '🪏', text: 'ขุดแปลงผัก 4 แปลงด้วยจอบ (ใกล้บ้านต้นไม้)', stat: 'tilled', goal: 4, go: 'farm' },
+  { id: 's6c', icon: '🌱', text: 'ปลูกเมล็ดผัก 4 แปลง', stat: 'planted', goal: 4, go: 'farm' },
+  { id: 's6d', icon: '🥕', text: 'เก็บเกี่ยวผักครั้งแรก', stat: 'harvested', goal: 1, go: 'farm', reward: { coin: 300 } },
+  { id: 's6e', icon: '🥗', text: 'ทำอาหารจากผักที่ปลูกเอง', stat: 'cookVeg', goal: 1, go: 'pot', reward: { gem: 50 } },
   { id: 's6', icon: '🌲', text: 'บทที่ 2 จบแล้ว · การผจญภัยต่อไปกำลังมา', flag: 'ch3', go: 'none' },
 ];
 
@@ -191,12 +197,24 @@ export const INGR = {
   jelly:    { icon: '🟢', name: 'เจลลี่สไลม์', tag: 'monster', price: 20 },
   meat:     { icon: '🍖', name: 'เนื้อดิบ', tag: 'meat', price: 30 },
   glowherb: { icon: '🌿', name: 'สมุนไพรเรืองแสง', tag: 'herb', price: 120 },
+  /* v1.0 farm crops */
+  carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },
+  cabbage:  { icon: '🥬', name: 'กะหล่ำปลี', tag: 'veg', price: 30 },
+  tomato:   { icon: '🍅', name: 'มะเขือเทศ', tag: 'veg', price: 40 },
+  strawberry:{ icon: '🍓', name: 'สตรอว์เบอร์รี', tag: 'fruit', price: 50 },
+  corn:     { icon: '🌽', name: 'ข้าวโพด', tag: 'veg', price: 60 },
+  pumpkin:  { icon: '🎃', name: 'ฟักทอง', tag: 'veg', price: 120 },
 };
 export const CLEAR_INGR = { tree: ['apple', .35], bush: ['berry', .5], grass: ['berry', .12] };   // chance to find an ingredient while clearing
 /* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
    the most specific matching recipe wins · undiscovered recipes show as ??? with a hint in the journal */
 export const RECIPES = [
   { k: 'grillfish', desc: 'ปลาเสียบไม้ย่างไฟอ่อนๆ หอมกลิ่นทะเล', icon: '🍢', name: 'ปลาย่าง', need: { fish: 2 }, only: 1, eff: { hp: 45 }, hint: 'ปลาล้วนๆ ย่างไฟ' },
+  { k: 'berrytart', desc: 'ทาร์ตกรอบๆ ใส่สตรอว์เบอร์รีจากแปลงของเราเอง', icon: '🥧', name: 'ทาร์ตสตรอว์เบอร์รี', need: { strawberry: 2 }, only: 1, eff: { hp: 40, en: 60 }, hint: 'ผลไม้สีแดงจากแปลงผัก ล้วนๆ' },
+  { k: 'salad', desc: 'ผักสดกรอบๆ จากแปลง ราดน้ำสลัดง่ายๆ', icon: '🥗', name: 'สลัดผักสด', need: { veg: 2 }, only: 1, eff: { hp: 45, en: 35 }, hint: 'ผักล้วน 2 อย่างขึ้นไป' },
+  { k: 'cornroast', desc: 'ข้าวโพดปิ้งเนย หอมหวาน', icon: '🌽', name: 'ข้าวโพดปิ้งเนย', need: { corn: 2 }, only: 1, eff: { hp: 35, en: 55 }, hint: 'ข้าวโพดล้วน' },
+  { k: 'veggiesoup', desc: 'ซุปผักรวมร้อนๆ ใส่ผักหลายอย่าง', icon: '🍜', name: 'ซุปผักรวม', need: { veg: 3 }, eff: { hp: 95, en: 30 }, hint: 'ผัก 3 อย่างขึ้นไปในหม้อเดียว' },
+  { k: 'pumpkinstew', desc: 'แกงฟักทองกับเนื้อ เข้มข้น อิ่มนาน', icon: '🎃', name: 'แกงฟักทองเนื้อ', need: { pumpkin: 1, meat: 1 }, eff: { hp: 120, buff: { def: 3, min: 8 } }, hint: 'ผลใหญ่สีส้มจากแปลง + เนื้อ', secret: 1 },
   { k: 'fruitbake', desc: 'ผลไม้อบจนหวานฉ่ำ ราดน้ำผึ้งป่า', icon: '🍎', name: 'ผลไม้อบน้ำผึ้ง', need: { fruit: 2 }, only: 1, eff: { hp: 25, en: 25 }, hint: 'ผลไม้ล้วน 2 อย่างขึ้นไป' },
   { k: 'grillmeat', desc: 'เนื้อย่างถ่านไม้ ไหม้นิดๆ กำลังดี', icon: '🍖', name: 'เนื้อย่างถ่าน', need: { meat: 2 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อล้วนๆ' },
   { k: 'mushsoup', desc: 'ซุปเห็ดป่าข้นหอม อุ่นท้อง เติมแรงได้ดี', icon: '🫕', name: 'ซุปเห็ด', need: { mushroom: 2 }, only: 1, eff: { hp: 30, en: 40 }, hint: 'เห็ดล้วน' },
@@ -219,6 +237,18 @@ export const ACH = [
   { k: 'draw5', icon: '🖼️', name: 'ศิลปินพเนจร', text: 'วาดภาพลงสมุด 5 ภาพ', f: S => Object.keys(S.journal.sketch).length, goal: 5, reward: { gem: 60 } },
   { k: 'drawmon', icon: '👹', name: 'นักวาดมอนสเตอร์', text: 'วาดมอนสเตอร์ 4 ชนิด', f: S => Object.keys(S.journal.sketch).filter(k => MON[k]).length, goal: 4, reward: { gem: 80 } },
   { k: 'hunt50', icon: '⚔️', name: 'นักล่า', text: 'กำจัดมอนสเตอร์ 50 ตัว', stat: 'kills', goal: 50, reward: { coin: 1500 } },
+  { k: 'farmer', icon: '🧑‍🌾', name: 'ชาวไร่', text: 'เก็บเกี่ยวผัก 20 ครั้ง', stat: 'harvested', goal: 20, reward: { coin: 1000 } },
   { k: 'gear5', icon: '🛡️', name: 'นักสะสมอุปกรณ์', text: 'สะสมอุปกรณ์ 5 แบบ', f: S => Object.keys(S.journal.gear).length, goal: 5, reward: { gem: 50 } },
   { k: 'night', icon: '🌙', name: 'นกฮูก', text: 'กำจัดมอนสเตอร์ตอนกลางคืน 10 ตัว', stat: 'nightKills', goal: 10, reward: { coin: 800 } },
 ];
+
+/* ================= v1.0 farming: hoe the ground near the tree house · plant seeds · real-time growth (grows while the game is closed) · harvest ================= */
+export const CROPS = {                                       // min = real minutes to ripen · n = harvest [min, max] · seed = price at Uncle Howsif · back = chance to get a seed back
+  carrot:     { min: 4, n: [1, 2], seed: 30, back: .35, col: '#f08a2a' },
+  cabbage:    { min: 7, n: [1, 2], seed: 50, back: .3, col: '#7ac850' },
+  strawberry: { min: 10, n: [2, 3], seed: 80, back: .3, col: '#e8304a' },
+  tomato:     { min: 12, n: [2, 3], seed: 90, back: .3, col: '#e84a3a' },
+  corn:       { min: 18, n: [1, 3], seed: 120, back: .25, col: '#f0c83a' },
+  pumpkin:    { min: 35, n: [1, 1], seed: 250, back: .2, col: '#e8802a' },
+};
+export const PLOT_MAX = 24, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed

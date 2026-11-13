@@ -31,6 +31,7 @@ tools/test/play.js  เล่นเนื้อเรื่องอัตโน
 - **การควบคุม (v0.8)**: `OPT` (localStorage `ng_ctrl` pad|touch · `ng_hud` z|f) · pad: `#stick` · A = `actA` (แตะ) / วงล้อ `openWheel` (ค้าง) · B = กลับ/`guard` · `#bAuto` → `autoTick` · ⚡ แบบ Zelda: `spendEn` · `spendRun` · `S.tired` · `S.enB` · มอนสเตอร์ `M.alert` 0/1/2/3
 - **โลกเปิด (v0.9)**: `S.area` = โซนจากตำแหน่ง (`enterZone`) · `travel(area, after, at)` = วาร์ปแบบจาง · `goPath` เดินตามถนน · ผู้เล่นว่ายน้ำ/ปีน (`okMe` · `envTick`) · มอนสเตอร์/น้องเดินเฉพาะบก (`walkLand`) · แผนที่ `mapTick`/`openMap` (`S.fog`)
 - **กล้อง (v0.9.5)**: `camTP()` (localStorage `ng_cam`, ค่าเริ่มต้น tp) · `CAM.yaw` = ทิศที่กล้องมอง · จอย map ตามกล้องใน `walkTick` · ลากจอ = หมุนกล้อง · `SKY` โดมท้องฟ้า · play.js ตั้ง `ng_cam=top` เพื่อให้ swipe เดิมใช้ได้ แล้วทดสอบ tp แยกตอนท้าย
+- **ปลูกผัก (v1.0)**: `S.plots` ('x,z' → {c, t}) · `S.seeds` · `tillable`/`till`/`plant`/`harvest`/`plotAction` · `plotView` สร้างดิน+ต้นตามระยะ (`cropStage`) · ลากจอบ/เคียว = `strokeFarm` · ข้อมูล `CROPS` ใน data.js
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
 - ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v3` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม

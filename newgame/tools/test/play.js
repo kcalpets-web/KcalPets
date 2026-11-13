@@ -130,6 +130,21 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('sketch', JSON.stringify(Object.keys(await N(() => window.__ng.S.journal.sketch))), 'bytes', await N(() => (localStorage.getItem('ng_sk_howsif') || '').length));
     for (const t of ['recipes', 'mons', 'ach']) { await E(t => window.__ng.openJournal(t), t); await wait(500); await shot('30-journal-' + t); await closeAll() }
     await E(() => { window.__ng.setTool(''); window.__ng.S.time = 21 * 60 + 57 }); await wait(5000); await shot('31-dusk-night'); log('time', await N(() => document.getElementById('hClock').textContent), 'night', await N(() => document.body.classList.contains('night')));
+    /* v1.0 farming: Uncle Howsif gives the hoe + seeds → dig 4 plots → plant all → (fast-forward) → sickle swipe harvest → cook the veg */
+    await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.placeMe(3, -1); N.openHowsif() }); await wait(500); await clickAll('#tN');
+    log('hoe', await N(() => window.__ng.S.has.hoe), 'seeds', JSON.stringify(await N(() => window.__ng.S.seeds)), 'quest', await N(() => window.__ng.S.quest));
+    const dug = await E(() => { const N = window.__ng; let n = 0; for (let z = -6; z <= 8 && n < 6; z++) for (let x = 0; x <= 6 && n < 6; x++) { N.S.en = null; N.S.tired = false; if (N.tillable(x, z) && N.till(x, z, true)) n++ } return n }); log('dug', dug);
+    await E(() => { const k = Object.keys(window.__ng.plots)[0]; window.__ng.plotAction(k) }); await wait(400); await shot('42-plant-sheet'); await pg.click('[data-all="carrot"]'); await wait(300);
+    await E(() => { const k = Object.keys(window.__ng.plots).find(k => !window.__ng.plots[k].c); if (k) { window.__ng.plotAction(k) } }); await wait(300); await E(() => { const b = document.querySelector('[data-all="cabbage"]'); b && b.click() }); await wait(300);
+    await E(() => { const N = window.__ng; const k = Object.keys(N.plots)[0].split(',').map(Number); N.placeMe(k[0] - 1.5, k[1] + 2.5); N.setCam('top') }); await wait(1500); await shot('43-planted'); await E(() => window.__ng.growAll()); await wait(1500); await shot('44-ripe');
+    { await E(() => window.__ng.setTool('sickle')); const pts = await E(() => Object.keys(window.__ng.plots).map(k => { const [x, z] = k.split(',').map(Number); return window.__ng.project(x, .3, z) })); pts.sort((a, b) => a.x - b.x);
+      for (const row of [pts.filter((p, i) => i % 2 === 0), pts.filter((p, i) => i % 2)]) if (row.length) { await pg.mouse.move(row[0].x - 40, row[0].y); await pg.mouse.down(); for (const p of row) await pg.mouse.move(p.x, p.y, { steps: 4 }); await pg.mouse.move(row[row.length - 1].x + 40, row[row.length - 1].y, { steps: 3 }); await pg.mouse.up(); await wait(300) } }
+    log('harvested', await N(() => window.__ng.S.stat.harvested || 0), 'ingr', JSON.stringify(await N(() => window.__ng.S.ingr)));
+    if (!((await N(() => window.__ng.S.stat.harvested || 0)) >= 1)) errs.push('sickle swipe did not harvest');
+    await E(() => { const N = window.__ng; N.S.ingr.carrot = (N.S.ingr.carrot || 0) + 1; N.S.ingr.cabbage = (N.S.ingr.cabbage || 0) + 1; N.openPot('home') }); await wait(300); await pg.click('#pC'); await wait(300);
+    await pg.click('[data-i="carrot"]'); await pg.click('[data-i="cabbage"]'); await pg.click('#cGo'); await wait(500); await E(() => window.__ng.finishJobs()); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(500); await shot('45-salad'); await closeAll();
+    log('farm quest', await N(() => window.__ng.S.quest), JSON.stringify(await N(() => ({ cookVeg: window.__ng.S.stat.cookVeg, salad: window.__ng.S.journal.recipes.salad }))));
+    if (!((await N(() => window.__ng.S.quest)) >= 23)) errs.push('farming quests did not complete');
     /* v0.9 open world: through the island gate on foot · swim the river · freshwater fish · climb the cliff · map + warp */
     await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.setTool(''); N.placeMe(5.5, 2.3); N.goPath(14, 2.5) }); await pg.waitForFunction(() => window.__ng.envState().area === 'meadow', null, { timeout: 60000 }).catch(() => errs.push('could not walk from the island into the meadow'));
     await wait(1500); await shot('32-meadow'); log('zone', JSON.stringify(await N(() => window.__ng.envState())));

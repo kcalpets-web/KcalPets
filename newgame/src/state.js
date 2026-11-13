@@ -10,7 +10,8 @@ export function fresh() {
     lv: 1, exp: 0, pts: 0, hp: null, en: null,               // player level · tree points (rules TBD) · current HP / ⚡ energy (null = full)
     coin: 2000, gem: 500,
     pets: STARTERS.map(p => ({ ...p, lv: 1, exp: 0, hp: null, mp: null, down: 0 })), team: STARTERS.slice(0, TEAM_MAX).map(p => p.id),
-    tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false },
+    tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false, hoe: false },
+    plots: {}, seeds: {},                                   // v1.0 farm: 'x,z' → { c: crop|null, t: planted at (ms) } · seed counts
     mats: {}, potions: { hpS: 2, mpS: 1 }, food: {}, fish: {},
     bag: [], eq: { weapon: null, armor: null }, nextItem: 1,
     camps: {}, zones: {}, fog: '',                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
