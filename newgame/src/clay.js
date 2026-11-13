@@ -7,9 +7,9 @@ export const C = h => new THREE.Color(h);
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const GEO = new Map();
 /* Q.seg = sphere detail for blobs; the world drops it while building scenery (pets keep 32) */
-export const Q = { seg: 32 };
+export const Q = { seg: 32, facet: (() => { try { return localStorage.getItem('ng_style') === 'facet' } catch (e) { return false } })() };   // facet = v1.8 preview: low-poly papercraft
 export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
-  const key = [lo, hi, A, f, seed.toFixed(2), seg].join('|'); if (GEO.has(key)) return GEO.get(key);
+  if (Q.facet) seg = Math.min(seg, 9); const key = [lo, hi, A, f, seed.toFixed(2), seg].join('|'); if (GEO.has(key)) return GEO.get(key);
   const g = new THREE.SphereGeometry(1, seg, Math.round(seg * .7)), p = g.attributes.position, col = [], L = C(lo), H = C(hi), v = new THREE.Vector3(), c = new THREE.Color();
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i).normalize();
@@ -17,7 +17,7 @@ export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
     p.setXYZ(i, v.x * (1 + A * n), v.y * (1 + A * n), v.z * (1 + A * n));
     c.copy(L).lerp(H, sm(-.6, .9, v.y + .25 * n)); col.push(c.r, c.g, c.b);
   }
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); GEO.set(key, g); return g;
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); if (Q.facet) { const f2 = g.toNonIndexed(); f2.computeVertexNormals(); GEO.set(key, f2); return f2 } GEO.set(key, g); return g;
 }
 export const MAT = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .8, sheen: .5, sheenRoughness: .5, sheenColor: C('#fff3e6') });
 export const MAT_GOLD = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .38, metalness: .1, clearcoat: .8, emissive: '#3a2400', emissiveIntensity: .25 });

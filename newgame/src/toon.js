@@ -19,3 +19,7 @@ export function toonify(scene) {
     for (const c of o.children) if (!c.userData.outline) walk(c, a) };
   walk(scene, false);
 }
+
+/* v1.8 preview 2: faceted "papercraft" look (flat-shaded clay) — ng_style = 'facet' */
+export const facetOn = () => { try { return localStorage.getItem('ng_style') === 'facet' } catch (e) { return false } };
+export function facetify(scene) { scene.traverse(o => { if (o.isMesh && !o.userData.facet) { o.userData.facet = 1; const m = o.material; if (m && !Array.isArray(m) && (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) && !m.flatShading) { m.flatShading = true; m.needsUpdate = true } } }) }

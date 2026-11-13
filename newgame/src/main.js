@@ -11,7 +11,7 @@ import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloate
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
 import * as VF from './vfx.js';
-import { toonify, toonOn } from './toon.js';
+import { toonify, toonOn, facetify, facetOn } from './toon.js';
 import { unlock, mood, sfx, toggle as toggleSound, soundOn } from './audio.js';
 
 load();
@@ -1454,7 +1454,7 @@ function mapTick(now) {
   if (tool === 'rod' && !F && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
-  ruinTick(now); townLife(now); if (TOON && now > toonT) { toonT = now + 1000; toonify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
+  ruinTick(now); townLife(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {
   const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
@@ -1988,7 +1988,7 @@ import('./lush.js').then(({ lushPlace, lushKind }) => {
   const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);
 });
 /* ================= v1.8 the town lives: villagers stroll around the plaza once the slimes are gone · optional 'picture book' style (ng_style=toon) ================= */
-const TOON = toonOn(); let toonT = 0; const WALKERS = [];
+const TOON = toonOn(), FACET = facetOn(); let toonT = 0; const WALKERS = [];
 function townLife(now) {
   const near = dist(me().x, me().z, TX, 0) < 60 && S.story.townClear;
   if (near && !WALKERS.length) for (let i = 0; i < 7; i++) { const A = rigOf(makeActor(g => HUMANS.villager(g, i), .82 + (i % 3) * .05)), x = TX - 8 + Math.random() * 16, z = -5 + Math.random() * 10; A.root.position.set(x, 0, z); WALKERS.push({ A, t: [x, z], wait: Math.random() * 3, sp: .9 + Math.random() * .5 }) }
