@@ -20,6 +20,7 @@ const eco = localStorage.getItem('ng_gfx') === 'eco';
 /* ---------- renderer · lights · camera ---------- */
 const cv = $('cv'), R = new THREE.WebGLRenderer({ canvas: cv, antialias: !eco, powerPreference: 'high-performance' });
 R.setPixelRatio(Math.min(devicePixelRatio, eco ? 1.25 : 2)); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = .95;
+if (localStorage.getItem('ng_style') === 'pixel') { R.setPixelRatio(.3); cv.style.imageRendering = 'pixelated' }   /* v1.8 preview: chunky pixels (like a pixel-art game) */
 R.shadowMap.enabled = !eco; R.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene(); VF.initVFX(scene);
 const hemi = new THREE.HemisphereLight('#fff6ec', '#c9a27e', eco ? 1.2 : .95); scene.add(hemi);
