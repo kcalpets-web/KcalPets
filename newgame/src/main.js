@@ -33,7 +33,7 @@ function nightK(t = S.time) { return t < 300 ? 1 : t < 420 ? 1 - (t - 300) / 120
 const glowK = (t = S.time) => Math.max(0, 1 - Math.abs(t - 1260) / 75) + Math.max(0, 1 - Math.abs(t - 375) / 60) * .7;   // sunset / sunrise glow
 const hhmm = t => String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 const ambience = () => { if (!CUT) mood(S.area === 'town' ? 'town' : isNight() ? 'night' : 'day') };
-const LDAY = { bg: C('#9fd4ee'), hc: C('#fff6ec'), hg: C('#c9a27e'), sc: C('#fff1dc'), rc: C('#ffd7a8') }, LNIGHT = { bg: C('#0e1636'), hc: C('#8aa0ff'), hg: C('#2a2a48'), sc: C('#a8c0ff'), rc: C('#6a7aff') }, GLOW = C('#ff9a5a'), _c = new THREE.Color();
+const LDAY = { bg: C('#a6d6ec'), hc: C('#fff2e0'), hg: C('#a8b878'), sc: C('#ffe8c8'), rc: C('#ffd0a0') }   /* v1.8: warmer sun, green bounce from the ground */, LNIGHT = { bg: C('#0e1636'), hc: C('#8aa0ff'), hg: C('#2a2a48'), sc: C('#a8c0ff'), rc: C('#6a7aff') }, GLOW = C('#ff9a5a'), _c = new THREE.Color();
 let wasNight = null;
 function setTime() {                                         // lighting follows the clock (a smooth blend through dawn and dusk)
   const k = nightK(), g = Math.min(1, glowK()), mix = (a, b) => _c.copy(a).lerp(b, k);
@@ -84,10 +84,22 @@ function storyProps() {
 function makeActor(build, scale) { const root = new THREE.Group(), body = new THREE.Group(); build(body); body.scale.setScalar(scale); root.add(body); scene.add(root); return { root, body } }
 function rigOf(A) { A.rig = {}; A.body.traverse(o => { if (o.userData.role) A.rig[o.userData.role] = o }); A.body.rotation.order = 'YXZ'; A.yaw = A.yawT = 0; A.mv = 0; A.phase = 0; A.bob = 0; A.base = A.body.scale.x; return A }
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d };
+/* v1.8 people: legs swing from the hip and bend at the knee, arms swing from the shoulder against the legs with a soft elbow, a lean when running, breathing when still */
+function humanAnim(A, c, dt, now, rate) {
+  const Rg = A.rig, p = A.phase, run = rate >= 13, sw = Math.sin(p), amp = c * (run ? 1.25 : 1), idle = 1 - c, br = Math.sin(now / 700);
+  Rg.hipL.rotation.x = -sw * .55 * amp; Rg.hipR.rotation.x = sw * .55 * amp;
+  Rg.kneeL.rotation.x = (Math.max(0, -Math.cos(p)) * (run ? 1.2 : .85) + .06) * c; Rg.kneeR.rotation.x = (Math.max(0, Math.cos(p)) * (run ? 1.2 : .85) + .06) * c;
+  if (Rg.armL) { Rg.armL.rotation.x = Rg.armL.userData.base[3] + sw * .65 * amp + br * .03 * idle; Rg.armL.rotation.z = Rg.armL.userData.base[4] - .04 * br * idle }
+  if (Rg.armR) { Rg.armR.rotation.x = Rg.armR.userData.base[3] - sw * .65 * amp + br * .03 * idle; Rg.armR.rotation.z = Rg.armR.userData.base[4] + .04 * br * idle }
+  if (Rg.elL) Rg.elL.rotation.x = -(.18 + Math.max(0, -sw) * .5 * amp) - (run ? .5 : 0) * c; if (Rg.elR) Rg.elR.rotation.x = -(.18 + Math.max(0, sw) * .5 * amp) - (run ? .5 : 0) * c;
+  if (!A.lying) { A.body.rotation.x = (run ? .2 : .07) * c; A.body.rotation.z = sw * .035 * c } A.bob = Math.abs(Math.cos(p)) * (run ? .09 : .055) * c;
+  const b2 = 1 + br * .018 * idle; A.body.scale.set(A.base, A.base * b2, A.base);
+}
 function animate(A, moving, dt, now, rate = 11) {
   A.mv += ((moving ? 1 : 0) - A.mv) * Math.min(1, dt * 8); const c = A.mv, Rg = A.rig;
   A.yaw += angDiff(A.yaw, A.yawT) * Math.min(1, dt * 12); A.body.rotation.y = A.yaw;
   A.phase += dt * rate * c; const s = Math.sin(A.phase);
+  if (Rg.hipL) return humanAnim(A, c, dt, now, rate);
   for (const [k, sg] of [['footL', 1], ['footR', -1]]) { const m = Rg[k]; if (!m) continue; const b = m.userData.base; m.position.z = b[2] + sg * s * .14 * c; m.position.y = b[1] + Math.max(0, sg * s) * .08 * c }
   for (const [k, sg] of [['armL', -1], ['armR', 1]]) { const m = Rg[k]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .8 * c; m.position.z = b[2] + sg * s * .06 * c }
   if (!A.lying) { A.body.rotation.x = .1 * c; A.body.rotation.z = s * .05 * c } A.bob = Math.abs(s) * .06 * c;
@@ -138,7 +150,18 @@ let PL = null, walkT = null, swingT = 0, work = null, sprintT = 0;
 function spendRun(dt) { if (S.tired) return false; const n = D.RUN_EN * dt, b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
 function buildPlayer() {
   const at = PL ? PL.root.position.clone() : null; if (PL) scene.remove(PL.root);
-  PL = rigOf(makeActor(g => playerLook(g, S.avatar || {}), .82)); const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar;
+  PL = rigOf(makeActor(g => playerLook(g, S.avatar || {}), .82)); const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar; PL.gearK = ''; setTimeout(() => gearView());
+}
+/* v1.8 gear you can see: the tool / sword in the right hand · the shield on the left arm · a backpack (+ the sword on the back when not in hand) */
+function gearView() {
+  if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, held = ['sword', 'axe', 'hammer', 'sickle'].includes(tool) ? tool : '', k = held + '|' + (shield ? shield.r + shield.t : '') + '|' + (S.has.sword ? 1 : 0);
+  if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
+  const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
+  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = -Math.PI / 2 - .25; g.position.set(0, -.02, .02); g.scale.setScalar(held === 'sword' ? 1.15 : 1); hand.add(g) }
+  if (arm && shield) { const g = new THREE.Group(); g.name = 'gear'; const col = D.RAR_COL[shield.r] || '#8a6a4a';
+    part(g, '#5a3a20', '#9a6a3a', [0, 0, 0], [.03, .2, .17], [0, 0, 0], { A: .02 }); part(g, '#8a7a5a', col, [-.035, 0, 0], [.012, .12, .09], [0, 0, 0], { A: 0 }); g.position.set(-.04, 0, 0); arm.add(g) }
+  { const g = new THREE.Group(); g.name = 'gear'; part(g, '#6a4a2a', '#a87a48', [0, 1.05, -.27], [.2, .24, .11], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, 1.28, -.27], [.18, .06, .1], [0, 0, 0], { A: 0 });
+    if (S.has.sword && held !== 'sword') { const sw = new THREE.Group(); TOOLMESH.sword(sw); sw.position.set(.12, .95, -.34); sw.rotation.set(0, 0, .55); g.add(sw) } PL.body.add(g) }
 }
 buildPlayer();
 const me = () => PL.root.position;
@@ -156,10 +179,11 @@ function walkTick(dt, now) {
     else if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
   lockTick(now);
   envTick(dt, now, mv);
-  animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : 12); PL.body.position.y = PL.bob;
+  gearView(); animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); PL.body.position.y = PL.bob;
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
-  if (swingT > 0) { swingT -= dt; const a = PL.rig.armR; if (a) a.rotation.x = -2.4 * Math.sin((1 - swingT / .28) * Math.PI) }   // tool / sword swing
+  if (swingT > 0) { swingT -= dt; const a = PL.rig.armR, e = PL.rig.elR, t = 1 - Math.max(0, swingT) / .3;   // v1.8 swing: wind up · strike · follow through
+    if (a) a.rotation.x = t < .3 ? -2.8 * (t / .3) : -2.8 + (t - .3) / .7 * 3.5; if (e) e.rotation.x = t < .3 ? -.9 : -.9 + (t - .3) / .7 * .85; PL.body.rotation.y = PL.yaw + (t < .3 ? .4 * t / .3 : .4 - (t - .3) / .7 * .9) }
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
   if (mv || walkT || now > peekT) { camT.x += (me().x - camT.x) * Math.min(1, dt * 5); camT.z += (me().z + 1 - camT.z) * Math.min(1, dt * 5) }   // the character stays in the middle of the screen
   workTick(now);
@@ -201,7 +225,7 @@ function workTick(now) {
   else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
     if (d > 1.6) { if (!walkT || dist(walkT.x, walkT.z, q.x, q.z) > 1.2) walkTo(q.x, q.z, null, 1.3); work.t = now + 120; return } walkT = null; toolHit({ kind: 'mon', m }) }
 }
-function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .28 }
+function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .3 }
 
 /* ---------- transient state ---------- */
 let camY = 0, stopT = 0, potT = 0, speed = 1, tool = '', prevTool = '', tipT = 0, slashT = 0, lastHurt = 0, shakeT = 0, F = null, CUT = false;
@@ -572,7 +596,7 @@ function pickForTool(x, y) {
   return hits[0] ? hits[0].object.userData.pick : null;
 }
 const TOOL_ICO = { hoe: ['🪏', 'จอบ'], sketch: ['✏️', 'วาด'], '': ['🧰', 'อุปกรณ์'], sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], sword: ['⚔️', 'ดาบ'], rod: ['🎣', 'เบ็ด'] };
-function setTool(k) { if (k === 'sword' && !S.has.sword || k === 'rod' && !S.has.rod || k === 'hoe' && !S.has.hoe) k = ''; tool = k; document.querySelectorAll('#tools [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === k));
+function setTool(k) { setTimeout(() => gearView && gearView()); if (k === 'sword' && !S.has.sword || k === 'rod' && !S.has.rod || k === 'hoe' && !S.has.hoe) k = ''; tool = k; document.querySelectorAll('#tools [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === k));
   $('tBoxI').textContent = TOOL_ICO[k][0]; $('tBoxL').textContent = TOOL_ICO[k][1]; $('tBox').classList.toggle('on', !!k); $('tBox').classList.toggle('sw', k === 'sword'); $('tools').classList.remove('open'); if (k !== 'rod' && F && F.phase === 'wait') fishEnd() }
 /* 🧰 one toolbox button (like Pen Suk): tap = open the tray · pick a tool = close */
 $('tBox').onclick = () => { $('tools').classList.toggle('open'); sfx('tap') };
@@ -1952,6 +1976,15 @@ function stormTick(dt, now) {
   else if (stormSeen && !inStorm()) { stormSeen = false; ambience && ambience() }
   if (!inStorm() && !S.story.cloudGone && RIDE && me().x > D.STORM_GO_X && now > warnT) { warnT = now + 6000; goStorm() }
 }
+/* ================= v1.8 lush hand-made areas: ground cover around the island, meadow, hills and forest (decor only, never on roads, plots or near buildings) ================= */
+import('./lush.js').then(({ lushPlace, lushKind }) => {
+  let sd = 4242; const R = () => (sd = sd * 16807 % 2147483647) / 2147483647, list = [], keep = [[HOUSE.x, HOUSE.z, 4], [WRECK.x, WRECK.z, 3.5], [HOWSIF.x, HOWSIF.z, 2.5], [EXIT.x, EXIT.z, 2.5], ...Object.values(POT).map(p => [p.x, p.z, 2.4]), [FOREST.cage.x, FOREST.cage.z, 3], [FOREST.camp.x, FOREST.camp.z, 6]];
+  for (let i = 0; i < 1400; i++) { const x = -14 + R() * 124, z = -14 + R() * 28; if (x > 34 && x < 58) continue; if (!walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0) continue;
+    if (Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue; if (x < 7 && x > -1 && Math.abs(z) < 9) continue;   // the farm field stays open for plots
+    const f = x > 79 ? .8 : x > 57 ? .45 : x < 9 ? .3 : .35; if (R() > (f > .5 ? .9 : .55)) continue; const k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue;
+    list.push({ k, x, y: groundH(x, z) - .03, z, r: R() * 6, s: k === 'blossom' ? .6 + R() * .25 : .6 + R() * .6 }) }
+  const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);
+});
 /* ---------- boot: login → opening cutscene (once) → the island at night ---------- */
 async function startIntro(replay) {
   CUT = true; closeSheets(); document.body.classList.add('cut');
@@ -1970,7 +2003,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

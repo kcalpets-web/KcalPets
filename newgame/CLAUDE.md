@@ -39,6 +39,7 @@ tools/test/play.js  เล่นเนื้อเรื่องอัตโน
 - **v1.4.x–1.5**: `src/vfx.js` (VF.slash/burst/ring/beam/orb/rise) · ล็อกเป้า `LOCK`/`lockTick` · debuff `S.deb` + `D.DEBUFF`/`addDeb`/`debTick` · จับน้อง `CATCHING`/`startCatch` · ขี่วาฬ `RIDE.whale` · ร่อน `GLIDE` · ทดสอบ `tools/test/pets.js`
 - **ฟื้นเมือง (v1.6)**: `RV` (ซากเมือง 5 แห่ง) · `S.ruins` {seen, met, done[3], fin} · `openRuin`/`ruinDone`/`ruinView`/`ruinTick` · `lifePct()` · ทดสอบ `tools/test/towns.js`
 - **เมฆปริศนา (v1.7)**: `CLOUD` (world.js) · `SKYCLOUD` · `goStorm`/`backFromStorm`/`loading` · บอส `bossTick` (`M.T.boss` ข้ามลูปมอนสเตอร์ปกติ) · `stormHit`/`stormLose`/`stormWin` · ทดสอบ `tools/test/storm.js`
+- **ภาพ (v1.8)**: ฉากรก `src/lush.js` (`lushPlace`/`lushKind`) · คนมีข้อต่อ `humanAnim` (ใช้เมื่อ rig มี hipL) · ของในมือ `gearView` · ภาพฉากเทียบ `tools/test/shots.js` · ท่าทาง `tools/test/anim.js`
 - น้อง: `PA` (id → actor) โหมด wander / fight / down · ท่าเดิน `rigOf` + `animate` อ่าน `userData.role` (armL/armR/footL/footR) · ร่าง = `formOf` + `ACC.collar/crown`
 - ล็อกอิน: Google Identity Services ใช้ Client ID เดียวกับ Luthonia (`data.js`) · ปุ่มขึ้นเฉพาะบน github.io · เก็บแค่ชื่อ รูป sub · เซฟ `ng_save_v3` ในเครื่อง
 - โหมดกราฟิก: `localStorage.ng_gfx = 'eco'` (ไม่มีเงา · ความละเอียดต่ำ) · ตอนนี้ ~210 draw call · ~0.4–0.5 ล้านสามเหลี่ยม

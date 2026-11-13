@@ -226,10 +226,21 @@ export const ACC = {
 /* k.adult → taller, slimmer, smaller head (a young adult instead of a chibi kid) */
 function human(g, k) {
   const sk = k.skin || ['#e8b48a', '#ffd9bc'], A = k.adult ? 1 : 0, L = A ? 1.45 : 1, hy = A ? 1.62 : 1.22, hr = A ? .29 : .36;
-  role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [-.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footL'); role(part(g, k.legD || '#3a3048', k.leg || '#5a4a6a', [.11, .22 * L, 0], [A ? .08 : .1, .22 * L, A ? .08 : .1]), 'footR');
+  /* v1.8 legs: hip → thigh → knee → shin → shoe (pivots at the joints, so walking swings from the hip and the knee bends) */
+  const hipY = .44 * L, lw = A ? .085 : .105, up = k.pants || k.leg || '#5a4a6a', upD = k.pantsD || k.legD || '#3a3048';
+  for (const s of [-1, 1]) { const hip = new THREE.Group(); hip.position.set(s * .11, hipY, 0); g.add(hip);
+    part(hip, upD, up, [0, -hipY * .26, 0], [lw, hipY * .3, lw], [0, 0, 0], { A: .03 }); const knee = new THREE.Group(); knee.position.y = -hipY * .5; hip.add(knee);
+    part(knee, k.legD || '#3a3048', k.leg || '#5a4a6a', [0, -hipY * .22, 0], [lw * .92, hipY * .27, lw * .92], [0, 0, 0], { A: .03 }); part(knee, '#3a2a20', '#6a4a30', [0, -hipY * .46, .035], [lw * 1.05, .045, lw * 1.4], [0, 0, 0], { A: 0 });
+    role(hip, s < 0 ? 'hipL' : 'hipR'); role(knee, s < 0 ? 'kneeL' : 'kneeR') }
   const by = A ? .98 : .66; part(g, k.clD, k.cl, [0, by, 0], A ? [.24, .36, .18] : [.3, .32, .24]);   // body / clothes
   if (k.skirt) { if (A) cone(g, k.skD, k.sk, [0, .5, 0], [.36, .44, .3], [0, 0, 0], .5); else cone(g, k.skD, k.sk, [0, .42, 0], [.36, .26, .3], [Math.PI, 0, 0], .55) }  // adult: long skirt, wide at the hem  // skirt
-  for (const s of [-1, 1]) role(part(g, k.clD, k.cl, [s * (A ? .27 : .33), A ? 1.0 : .7, 0], A ? [.065, .3, .065] : [.08, .2, .08], [0, 0, s * .2]), s < 0 ? 'armL' : 'armR');
+  /* v1.8 arms: shoulder → upper arm → elbow → forearm → hand (+ an empty 'handR' to hold a sword / tool) */
+  const shY = A ? 1.28 : .88, al = A ? .3 : .21, aw = A ? .062 : .078;
+  for (const s of [-1, 1]) { const sh = new THREE.Group(); sh.position.set(s * (A ? .27 : .33), shY, 0); sh.rotation.z = s * .14; g.add(sh);
+    part(sh, k.clD, k.cl, [0, -al * .45, 0], [aw, al * .52, aw], [0, 0, 0], { A: .03 }); const el = new THREE.Group(); el.position.y = -al * .95; sh.add(el);
+    part(el, k.clD, k.cl, [0, -al * .38, 0], [aw * .9, al * .45, aw * .9], [0, 0, 0], { A: .03 }); part(el, sk[0], sk[1], [0, -al * .86, 0], [aw * 1.05, aw * 1.05, aw * 1.05], [0, 0, 0], { A: 0 });
+    if (s > 0) { const h = new THREE.Group(); h.position.y = -al * .86; h.name = 'handR'; el.add(h) } else { const h = new THREE.Group(); h.position.set(-aw * .6, -al * .45, 0); h.name = 'armL2'; el.add(h) }
+    role(sh, s < 0 ? 'armL' : 'armR'); role(el, s < 0 ? 'elL' : 'elR') }
   if (A) part(g, sk[0], sk[1], [0, hy - .3, 0], [.08, .1, .08], [0, 0, 0], { A: 0 });           // neck
   part(g, sk[0], sk[1], [0, hy, 0], [hr, hr * 1.05, hr * .95]);                                   // head
   part(g, k.hairD, k.hair, [0, hy + hr * .38, -.05], [hr * 1.08, hr * .85, hr], [0, 0, 0], { A: .08, f: 1.5 }); // hair cap
@@ -238,7 +249,6 @@ function human(g, k) {
   if (k.bun) part(g, k.hairD, k.hair, [0, hy + hr * .95, -hr * .25], [hr * .42, hr * .38, hr * .42], [0, 0, 0], { A: .08 });                  // top bun
   if (k.pony) { part(g, k.hairD, k.hair, [0, hy + hr * .3, -hr * .95], [hr * .22, hr * .22, hr * .22], [0, 0, 0], { A: .05 }); part(g, k.hairD, k.hair, [0, hy - hr * .35, -hr * 1.1], [hr * .28, hr * .8, hr * .26], [.25, 0, 0], { A: .08 }) }   // ponytail
   if (k.spiky) for (let i = 0; i < 5; i++) cone(g, k.hairD, k.hair, [(i - 2) * hr * .32, hy + hr * .78, -.02 - Math.abs(i - 2) * .02], [hr * .2, hr * .38, hr * .2], [-.25, 0, (i - 2) * -.3], .9);   // spiky tips
-  if (k.pants) for (const s of [-1, 1]) part(g, k.pantsD || k.legD, k.pants, [s * .11, .4 * (A ? 1.45 : 1) * .62, 0], [A ? .1 : .12, .2 * (A ? 1.45 : 1), A ? .1 : .12]);   // trouser legs (static, over the walking feet)
   if (k.belt) part(g, '#5a3420', '#9a6238', [0, A ? .66 : .45, 0], [A ? .25 : .3, .04, A ? .19 : .25], [0, 0, 0], { A: 0 });
   eyes(g, hy - hr * .05, hr * .84, hr * .36, A ? .05 : .06); cheeks(g, hy - hr * .3, hr * .84, hr * .58);
 }

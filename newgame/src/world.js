@@ -5,6 +5,7 @@
 import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS } from './clay.js';
 import { CLEAR } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
+import { lushPlace, lushKind, G as LG } from './lush.js';
 
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
@@ -389,10 +390,13 @@ export function buildChunk(W, cx, cz) {
   const pines = trees.filter(p => p.h > 9 || R() < .3), broad = trees.filter(p => !pines.includes(p));
   const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) };
   inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff') });
-  inst(TREE_TOP, M_TOP, broad, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#4f9a3e' : '#6ab84a') }); inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
+  inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
   inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff') });
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
+  /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
+  const lush = []; for (const p of spots) if (p.sl < 1.6 && p.h < 20 && R() < (p.f > .55 ? .5 : .22)) { const k = lushKind(R, p.f, p.h); if (k === 'blossom' && R() < .6) continue; lush.push({ k, x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2, r: R() * 6, s: k === 'blossom' ? .8 + R() * .5 : .7 + R() * .7 }) }
+  for (const p of lush) p.y = wildH(p.x, p.z) - .05; lushPlace(g, lush, R);
   /* clearables: 5 per chunk on gentle ground (regrow like the others) */
   const types = [['tree', 'bush', 'grass', 'pebble', 'tree'], ['rock', 'pine', 'rock', 'boulder', 'pebble']];
   for (let i = 0, n = 0; i < 40 && n < 5; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 5)];

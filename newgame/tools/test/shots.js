@@ -1,0 +1,29 @@
+/* Scenery shots (art review): a few spots around the world, camera behind the character.
+   PORT=8775 NODE_PATH=$(npm root -g) node newgame/tools/test/shots.js outDir · fails on page errors or broken checks */
+const { chromium } = require('playwright');
+const { spawn } = require('child_process');
+const path = require('path'), fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = +(process.env.PORT || 8775), OUT = process.argv[2] || '/tmp/newgame_shots';
+fs.mkdirSync(OUT, { recursive: true });
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
+  await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const errs = [], log = (...a) => console.log(...a);
+  try {
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+    pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'high'); localStorage.setItem('ng_cam', 'tp');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, lv: 12, time: 600 })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
+    const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
+    const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    await closeAll();
+    await wait(2500); await closeAll();
+    const SP = [['meadow', 18, -6, 1.2], ['hills', 62, 9, 2.2], ['forest', 88, 4, 1.57], ['wild', 160, 60, 1], ['wild2', -60, -120, 2.5], ['farm', 2, -2, 2.6]];
+    for (const [n, x, z, yaw] of SP) { await E(([x, z, yaw]) => { const N = window.__ng; N.placeMe(x, z); N.PL.yaw = N.PL.yawT = yaw; N.CAM.yaw = yaw; N.S.time = 600 }, [x, z, yaw]); await wait(6500); await closeAll(); await shot(n) }
+  } catch (e) { errs.push('X ' + e.stack) }
+  await b.close(); srv.kill();
+  if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
+})();
