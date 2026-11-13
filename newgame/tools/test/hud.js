@@ -20,7 +20,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await closeAll();
-    await wait(3000); await closeAll(); await E(() => { window.__ng.placeMe(3, -2); window.__ng.S.time = 600 }); await wait(2500); await closeAll(); await shot('hud-pad');
+    await wait(3000); await closeAll(); await E(() => { const N = window.__ng; N.placeMe(3, -2); N.S.time = 600; N.PL.yaw = N.PL.yawT = 2.6; N.CAM.yaw = 2.6; N.CAM.pitch = .35; window.__hold = setInterval(() => { N.CAM.yaw = 2.6; N.CAM.pitch = .35; N.CAM.manualT = performance.now(); N.S.time = 600 }, 50) });   /* same view in every shot */ await wait(2500); await closeAll(); await shot('hud-pad');
     await E(() => document.querySelector('#quest [data-qx]').click()); await wait(500); await shot('hud-qhide');
     await E(() => { const b = document.getElementById('bY'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-wheel'); await E(() => window.__ng.closeWheel());
     await E(() => { const b = document.getElementById('bX'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-bag'); await closeAll();
