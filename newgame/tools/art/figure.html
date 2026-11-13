@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE figure test</title><style>body{margin:0;background:#111}</style></head><body>
+<script type="module">
+/* art direction test: ball-jointed low-poly figures (grey mannequin · coloured hero · villager · walking) */
+import { THREE } from '../../src/clay.js';
+import { figure, sword, kite } from '../../src/figure.js';
+const W = 1400, H = 800, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+const S = new THREE.Scene(); S.background = new THREE.Color('#2e2836'); S.fog = new THREE.Fog('#2e2836', 7, 18);
+S.add(new THREE.HemisphereLight('#e8e0f0', '#5a4a3a', 1.1));
+const key = new THREE.DirectionalLight('#fff0dc', 2.4); key.position.set(-3, 6, 6); key.castShadow = true; Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -2 }); key.shadow.mapSize.set(2048, 2048); S.add(key);
+const rim = new THREE.DirectionalLight('#8ab0ff', 1.4); rim.position.set(4, 4, -5); S.add(rim);
+for (const x of [-5.5, 5.5]) { const l = new THREE.PointLight('#ff9a4a', 6, 9); l.position.set(x, 2.2, -2); S.add(l); const f = new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd28a' })); f.position.copy(l.position); S.add(f) }
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), new THREE.MeshStandardMaterial({ color: '#2a2630', roughness: .35, metalness: .2 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+for (let i = -3; i <= 3; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(.5, 6, .5), new THREE.MeshStandardMaterial({ color: '#2e2a36', roughness: .9, flatShading: true })); p.position.set(i * 2.6, 3, -4.5); S.add(p) }
+const put = (k, x, ry, arm) => { const g = figure(new THREE.Group(), k); g.position.x = x; g.rotation.y = ry; S.add(g); g.traverse(o => { if (o.isMesh) o.castShadow = true });
+  const R = {}; g.traverse(o => { if (o.userData.role) R[o.userData.role] = o });
+  if (arm) { const sw = sword(new THREE.Group(), k.mannequin); sw.rotation.set(Math.PI, 0, .15); g.getObjectByName('handR').add(sw);
+    const sh = kite(new THREE.Group(), k.mannequin); sh.rotation.set(.9, -.25, 0); sh.position.set(-.1, .02, .06); g.getObjectByName('armL2').add(sh); R.armL.rotation.x = -.35; R.elL.rotation.x = -.9; R.armR.rotation.z = .25 }
+  return R };
+put({ mannequin: 1 }, -2.4, .3, 1);
+put({ skin: '#f2c9a2', hair: '#e0b870', cloth: '#9aa4b8', clothD: '#6a7488', skirt: '#2a3a6a', belt: '#6a4428', boot: '#8a8f9a', joint: '#4a4a58', glove: '#6a7488' }, -.8, .12, 1);
+const v = put({ skin: '#e8b48a', hair: '#3a2418', cloth: '#d06a3a', clothD: '#a04a28', skirt: '#4a6a3a', belt: '#5a3a20', boot: '#5a3a24', joint: '#3a2a30' }, .8, -.15, 0);
+v.armL.rotation.x = -.3; v.armR.rotation.x = .25; v.elL.rotation.x = -.6;
+const w = put({ skin: '#f0c8a0', hair: '#8a5030', cloth: '#3fb8a8', clothD: '#2a8a80', skirt: '#ffffff', belt: '#6a4428', boot: '#5a3a24', joint: '#2a4a48' }, 2.4, -.5, 0);
+w.hipL.rotation.x = -.55; w.hipR.rotation.x = .45; w.kneeR.rotation.x = .7; w.kneeL.rotation.x = .15; w.armL.rotation.x = .5; w.armR.rotation.x = -.5; w.elR.rotation.x = -.5; w.elL.rotation.x = -.3;
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 100); cam.position.set(0, 1.35, 6.2); cam.lookAt(0, 1.0, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>
