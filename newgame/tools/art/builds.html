@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE builds</title><style>body{margin:0}</style></head><body>
+<script type="module">
+/* v1.3 line-up: things built from blueprints. Shot by shoot-cast.js-style script */
+import { THREE, ANIMALS, CAMP, HUMANS, MONS, BUILDS } from '../../src/clay.js';
+const W = 1400, H = 560, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#bfe3f2'); S.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', .95)); const sun = new THREE.DirectionalLight('#fff1dc', 2.1); sun.position.set(-5, 10, 8); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 8, bottom: -8 }); S.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.MeshStandardMaterial({ color: '#7cc060' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const at = (fn, x, z, ry, s) => { const g = new THREE.Group(); fn(g); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(s); g.traverse(o => { if (o.isMesh) o.castShadow = true }); S.add(g) };
+at(HUMANS.kealee, -8.4, 1.5, .4, .82); at(BUILDS.cabin, -5.6, -1, .35, 1); at(BUILDS.tower, -1.6, -2.4, .2, 1); at(BUILDS.bed, -7.6, 3.6, .3, 1); at(BUILDS.kitchen, -4.9, 3.2, .1, 1);
+at(BUILDS.scarecrow, -2.4, 2.4, .3, 1); at(BUILDS.chest, -.9, 3.6, -.2, 1); at(BUILDS.fence, 1.2, 1.2, -.2, 1); at(BUILDS.stonewall, 3.6, .2, -.3, 1); at(BUILDS.path, 1, 3.6, 0, 1); at(BUILDS.raft, 5.2, 3.2, -.6, 1.1);
+at(g => CAMP.tent(g), 6.4, -1.8, .3, 1);
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 100); cam.position.set(-1, 5.5, 17); cam.lookAt(-1, 1.2, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>

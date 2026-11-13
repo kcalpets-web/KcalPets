@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '1.2.0';
+export const APP_VER = '1.3.0';
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
 export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
@@ -248,6 +248,7 @@ export const ACH = [
   { k: 'hunt50', icon: '⚔️', name: 'นักล่า', text: 'กำจัดมอนสเตอร์ 50 ตัว', stat: 'kills', goal: 50, reward: { coin: 1500 } },
   { k: 'hunter', icon: '🏹', name: 'นายพราน', text: 'ล่าสัตว์ป่า 15 ตัว', stat: 'hunt', goal: 15, reward: { coin: 800 } },
   { k: 'camp3', icon: '⛺', name: 'ผู้พิชิตแคมป์', text: 'ยึดแคมป์มอนสเตอร์ในป่า 3 แห่ง', stat: 'wcamps', goal: 3, reward: { gem: 100 } },
+  { k: 'builder', icon: '🔨', name: 'นักสร้าง', text: 'สร้างสิ่งก่อสร้าง 5 อย่าง', stat: 'built', goal: 5, reward: { gem: 50 } },
   { k: 'farmer', icon: '🧑‍🌾', name: 'ชาวไร่', text: 'เก็บเกี่ยวผัก 20 ครั้ง', stat: 'harvested', goal: 20, reward: { coin: 1000 } },
   { k: 'gear5', icon: '🛡️', name: 'นักสะสมอุปกรณ์', text: 'สะสมอุปกรณ์ 5 แบบ', f: S => Object.keys(S.journal.gear).length, goal: 5, reward: { gem: 50 } },
   { k: 'night', icon: '🌙', name: 'นกฮูก', text: 'กำจัดมอนสเตอร์ตอนกลางคืน 10 ตัว', stat: 'nightKills', goal: 10, reward: { coin: 800 } },
@@ -273,16 +274,18 @@ export const CAMP_TIERS = [                                    // by distance fr
   { name: 'ป้อมอสูรหิน', col: '#6a6a7a', mons: ['rockGolem', 'goblin', 'rockGolem', 'goblin'], chief: 'goblinChief', gem: [100, 200], coin: [1000, 1800] },
 ];
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
-export const BLUEPRINTS = {
-  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารและนอนพักได้ทุกที่ · เป็นจุดวาร์ป', cost: { wood: 6, stone: 4 }, start: 1 },
-  chest:     { icon: '📦', name: 'หีบเก็บของ', desc: 'เก็บของได้เพิ่ม 20 ช่อง', cost: { wood: 10 }, start: 1 },
-  fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์เดินผ่านไม่ได้', cost: { wood: 4 } },
-  path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'ทางเดินสวยๆ · เดินบนทางเร็วขึ้นนิดหน่อย', cost: { stone: 2 } },
-  bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพัก · ตื่นมาพลังงานสำรองเพิ่ม', cost: { grass: 10, hide: 2 } },
-  stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'แข็งแรงกว่ารั้วไม้', cost: { stone: 6 } },
-  kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 } },
-  scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงรอบๆ โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 } },
-  cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอน · จุดวาร์ป', cost: { wood: 40, stone: 20, hide: 4 } },
-  tower:     { icon: '🗼', name: 'หอสังเกตการณ์', desc: 'ปีนขึ้นไปเพื่อเปิดแผนที่รอบๆ กว้าง 150 ม.', cost: { wood: 30, stone: 10, feather: 4 } },
+export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
+  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารและนอนพักได้ทุกที่ · วาร์ปมาได้จากแผนที่', cost: { wood: 6, stone: 4 }, start: 1, t: 20, w: 1.6, d: 1.6 },
+  chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
+  raft:      { icon: '🛶', name: 'เรือแพ', desc: 'วางที่น้ำริมฝั่ง · ขึ้นพายข้ามทะเลได้ไม่เสียพลังงาน · ตกปลากลางทะเลได้', cost: { wood: 16, grass: 8 }, start: 1, t: 40, w: 1.6, d: 2.3, water: 1 },
+  fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์และสัตว์เดินผ่านไม่ได้', cost: { wood: 4 }, t: 8, w: 2, d: .3, solid: 1 },
+  path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, t: 6, w: 2, d: 2 },
+  bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
+  stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, t: 15, w: 2, d: .6, solid: 1 },
+  kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'หม้อในระยะ 8 ม. ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 }, t: 45, w: 1.9, d: 1, solid: 1 },
+  scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, t: 25, w: .8, d: .8, solid: 1 },
+  cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอนพัก · วาร์ปมาได้จากแผนที่', cost: { wood: 40, stone: 20, hide: 4 }, t: 120, w: 3, d: 3, solid: 1 },
+  tower:     { icon: '🗼', name: 'หอสังเกตการณ์', desc: 'ปีนขึ้นไปเพื่อเปิดแผนที่รอบๆ กว้าง 150 ม.', cost: { wood: 30, stone: 10, feather: 4 }, t: 90, w: 2, d: 2, solid: 1 },
 };
+export const RAFT_SP = 5.2;                                     // raft speed (m/s · swimming is ~1.6)
 export const SCROLLS = 10;                                      // glowing blueprint scrolls hidden around the world

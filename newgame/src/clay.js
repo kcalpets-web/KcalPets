@@ -276,3 +276,32 @@ export function shadowBeast(g) {
 }
 export function smoke(g, n = 14, s = 1, seed = 3) { let r = seed; const R = () => (r = (r * 16807) % 2147483647) / 2147483647;
   for (let i = 0; i < n; i++) part(g, '#08060c', '#3a3448', [(R() - .5) * 5 * s, (R() - .2) * 2.2 * s, (R() - .5) * 3 * s], [(.8 + R()) * s, (.6 + R() * .6) * s, (.8 + R()) * s], [0, 0, 0], { A: .15, f: 1.2, shadow: false }) }
+
+/* v1.3 things the player builds from blueprints (origin = ground centre · front = +z) */
+const WOOD = ['#5a3420', '#9a6238'], WOODL = ['#7a4a28', '#c08a52'], STONE = ['#6a6460', '#b0a8a0'], STRAW = ['#b8902a', '#f0d070'];
+const LOGM = {}, LOGG = {};
+const log = (g, [x, y, z], len, [rx, ry, rz], r = .09, c = WOOD) => { const gk = r.toFixed(3) + '|' + len.toFixed(2), m = new THREE.Mesh(LOGG[gk] = LOGG[gk] || new THREE.CapsuleGeometry(r, Math.max(.01, len - r * 2), 3, 8), LOGM[c[1]] = LOGM[c[1]] || new THREE.MeshStandardMaterial({ color: c[1], roughness: .85 }));
+  m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; g.add(m); return m };
+export const BUILDS = {
+  chest(g) { CAMP.chest(g) },
+  fence(g) { for (const x of [-.95, 0, .95]) log(g, [x, .45, 0], .9, [0, 0, 0], .07); for (const y of [.35, .7]) log(g, [0, y, 0], 2, [0, 0, Math.PI / 2], .05, WOODL) },
+  path(g) { const P = [[-.5, -.5], [.5, -.45], [-.45, .5], [.5, .5], [0, 0]]; for (const [x, z] of P) part(g, STONE[0], STONE[1], [x, .03, z], [.36, .04, .34], [0, x * 2 + z, 0], { A: .08, f: 2 }) },
+  bed(g) { part(g, ...WOOD, [0, .15, 0], [.6, .12, 1.05], [0, 0, 0], { A: 0 }); part(g, ...STRAW, [0, .32, .05], [.55, .1, .95], [0, 0, 0], { A: .06, f: 3 }); part(g, '#d8d0c0', '#ffffff', [0, .45, -.7], [.32, .09, .18], [0, 0, 0], { A: .04 });
+    part(g, '#3a6aa8', '#7aa8e8', [0, .42, .3], [.56, .06, .5], [0, 0, 0], { A: .03 }) },
+  stonewall(g) { for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) part(g, STONE[0], STONE[1], [-.75 + i * .5 + (j % 2) * .12, .25 + j * .45, 0], [.26, .23, .28], [0, (i * 7 + j) % 3 * .1, 0], { A: .1, f: 2 }) },
+  kitchen(g) { part(g, ...WOODL, [0, .75, 0], [.9, .06, .45], [0, 0, 0], { A: 0 }); for (const x of [-.8, .8]) for (const z of [-.35, .35]) log(g, [x, .37, z], .74, [0, 0, 0], .05);
+    part(g, '#e8d8b8', '#fff8e8', [-.35, .82, .05], [.25, .02, .17], [0, .2, 0], { A: 0 }); part(g, '#22222a', '#5a5a68', [.4, .9, 0], [.2, .12, .2], [0, 0, 0], { A: .02 });
+    part(g, '#e84a3a', '#ff8a6a', [-.3, .87, .05], [.06, .06, .06]); part(g, '#7ac850', '#b8f0a0', [-.45, .87, -.02], [.07, .06, .07]); log(g, [0, 1.25, -.4], 1.7, [0, 0, Math.PI / 2], .04, WOODL); for (const x of [-.8, .8]) log(g, [x, 1.0, -.4], .55, [0, 0, 0], .04) },
+  scarecrow(g) { log(g, [0, .9, 0], 1.8, [0, 0, 0], .06); log(g, [0, 1.35, 0], 1.3, [0, 0, Math.PI / 2], .05); part(g, '#8a5a2a', '#c88a4a', [0, 1.3, 0], [.28, .32, .16], [0, 0, 0], { A: .05, f: 2 });
+    part(g, '#c8601a', '#f0a040', [0, 1.85, 0], [.24, .22, .24], [0, 0, 0], { A: .1, f: 2.4 }); cone(g, '#4a3a2a', '#8a6a4a', [0, 2.12, 0], [.34, .3, .34], [0, 0, 0], .95); for (const s of [-1, 1]) part(g, ...STRAW, [s * .68, 1.32, 0], [.1, .14, .1], [0, 0, 0], { A: .15, f: 3 }) },
+  cabin(g) { for (let i = 0; i < 6; i++) { const y = .18 + i * .3; log(g, [0, y, -1.3], 2.8, [0, 0, Math.PI / 2], .15); log(g, [-1.3, y, 0], 2.8, [Math.PI / 2, 0, 0], .15); log(g, [1.3, y, 0], 2.8, [Math.PI / 2, 0, 0], .15);
+      if (i > 3) log(g, [0, y, 1.3], 2.8, [0, 0, Math.PI / 2], .15); else for (const x of [-.85, .85]) log(g, [x, y, 1.3], 1.1, [0, 0, Math.PI / 2], .15) }
+    part(g, '#3a2214', '#6a4028', [0, .65, 1.32], [.38, .62, .05], [0, 0, 0], { A: 0 }); part(g, '#c7891c', '#ffe27a', [.22, .65, 1.38], [.04, .04, .03], [0, 0, 0], { A: 0 });
+    cone(g, '#8a2a1a', '#d0503a', [0, 2.55, 0], [2.2, .95, 2.2], [0, 0, 0], .95); part(g, '#6a6460', '#b0a8a0', [.8, 2.9, -.6], [.18, .4, .18], [0, 0, 0], { A: .08 });
+    part(g, '#ffd870', '#fff6c0', [-.8, 1.05, 1.36], [.25, .2, .02], [0, 0, 0], { A: 0 }) },
+  tower(g) { for (const x of [-.8, .8]) for (const z of [-.8, .8]) log(g, [x * .85, 2, z * .85], 4.1, [z * .05, 0, -x * .05], .1); part(g, ...WOODL, [0, 4, 0], [1.05, .08, 1.05], [0, 0, 0], { A: 0 });
+    for (const a of [0, 1.57, 3.14, 4.71]) log(g, [Math.sin(a) * .95, 4.3, Math.cos(a) * .95], 1.9, [0, a, Math.PI / 2], .04, WOODL); for (let i = 0; i < 9; i++) log(g, [0, .3 + i * .42, .95], .5, [0, 0, Math.PI / 2], .03, WOODL);
+    for (const x of [-.18, .18]) log(g, [x, 1.95, .95], 3.9, [0, 0, 0], .035); cone(g, '#8a2a1a', '#d0503a', [0, 5.25, 0], [1.3, .7, 1.3], [0, 0, 0], .95); for (const x of [-.8, .8]) for (const z of [-.8, .8]) log(g, [x, 4.55, z], 1.1, [0, 0, 0], .05) },
+  raft(g) { for (let i = 0; i < 6; i++) log(g, [-.6 + i * .24, .08, 0], 2.2, [Math.PI / 2, 0, 0], .12, i % 2 ? WOOD : WOODL); for (const z of [-.7, .7]) log(g, [0, .2, z], 1.5, [0, 0, Math.PI / 2], .05, ['#8a6a3a', '#d8b878']);
+    log(g, [.45, .5, -.6], .9, [0, 0, 0], .04); part(g, '#e8e0d0', '#ffffff', [.45, .7, -.45], [.03, .25, .22], [0, 0, 0], { A: .02 }) },
+};
