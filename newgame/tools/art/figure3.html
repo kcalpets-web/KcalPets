@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE figure sheet</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+/* model sheet render (front · side · back · sword · shield) to compare with the designer's sheet */
+import * as THREE from '../../lib/three.module.min.js';
+import { figure, sword, kite } from '../../src/figure.js';
+const W = 480, H = 1020, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
+const S = new THREE.Scene(); S.background = new THREE.Color('#ffffff');
+S.add(new THREE.HemisphereLight('#ffffff', '#7a7672', 1.25)); const key = new THREE.DirectionalLight('#ffffff', 2.1); key.position.set(-2, 3, 5); S.add(key); const back = new THREE.DirectionalLight('#ffffff', .8); back.position.set(2, 2, -4); S.add(back);
+const pose = g => { const R = {}; g.traverse(o => { if (o.userData.role) R[o.userData.role] = o }); R.armL.rotation.z = -.32; R.armR.rotation.z = .32; R.elL.rotation.x = R.elR.rotation.x = -.12; R.hipL.rotation.z = -.07; R.hipR.rotation.z = .07; R.kneeL.rotation.z = -.03; R.kneeR.rotation.z = .03 };
+const fig = (x, y, s, ry) => { const g = figure(new THREE.Group(), { mannequin: 1 }); pose(g); g.position.set(x, y, 0); g.scale.setScalar(s); g.rotation.y = ry; S.add(g) };
+const V = location.hash.slice(1) || 'front';
+if (V === 'hero') { const g = figure(new THREE.Group(), { skin: '#f2c9a2', hair: '#e0b870', cloth: '#9aa4b8', clothD: '#6a7488', skirt: '#c8ccd8', front: '#2a3a6a', belt: '#6a4428', boot: '#7a5a3a', joint: '#8a90a0', leg: '#8a8f9a', glove: '#7a5a3a' }); pose(g); g.rotation.y = .35; S.add(g);
+  const sw = sword(new THREE.Group()); sw.rotation.set(Math.PI + .3, 0, 0); g.getObjectByName('handR').add(sw); const sh = kite(new THREE.Group()); sh.rotation.set(0, -1.3, 0); sh.position.set(-.04, -.02, .02); g.getObjectByName('armL2').add(sh) } else fig(0, 0, 1, V === 'side' ? -Math.PI / 2 : V === 'back' ? Math.PI : 0);
+const cam = new THREE.OrthographicCamera(-.48, .48, 1.02, -1.02, .1, 50); cam.position.set(0, .97, 20); cam.lookAt(0, .97, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>
