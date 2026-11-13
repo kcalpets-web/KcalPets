@@ -112,6 +112,27 @@ function humanAnim(A, c, dt, now, rate) {
   if (Rg.elL) Rg.elL.rotation.x = -(.18 + Math.max(0, -sw) * .5 * amp) - (run ? .5 : 0) * c; if (Rg.elR) Rg.elR.rotation.x = -(.18 + Math.max(0, sw) * .5 * amp) - (run ? .5 : 0) * c;
   if (!A.lying) { A.body.rotation.x = (run ? .2 : .07) * c; A.body.rotation.z = sw * .035 * c } A.bob = Math.abs(Math.cos(p)) * (run ? .09 : .055) * c;
   const b2 = 1 + br * .018 * idle; A.body.scale.set(A.base, A.base * b2, A.base);
+  if (A.pose) poseLayer(A, c, dt, now);
+}
+/* v1.9.3 poses on top of the walk cycle (player): swim · cheer · jump · shield up · sneak · cold · hot · tired — blended in and out */
+function poseOf(A, c, now) {
+  const P = A.pose, n = now / 1000;
+  if (P.swim) return { b: [1.15, -.05], hipL: [Math.sin(n * 7) * .45, 0], hipR: [-Math.sin(n * 7) * .45, 0], kneeL: [.25, 0], kneeR: [.25, 0], armL: [-2.6 + Math.sin(n * 4.5) * 1.1, -.2], armR: [-2.6 - Math.sin(n * 4.5) * 1.1, .2], elL: [-.3, 0], elR: [-.3, 0] };
+  if (P.cheer) { const j = Math.abs(Math.sin(n * 7)); return { b: [-.05, j * .25], armL: [-2.95, -.35 - j * .2], armR: [-2.95, .35 + j * .2], elL: [-.15, 0], elR: [-.15, 0], kneeL: [j * .4, 0], kneeR: [j * .4, 0] } }
+  if (P.jump > 0) { const k = Math.sin(P.jump * Math.PI); return { b: [.1, 0], hipL: [-.7 * k, 0], hipR: [-.4 * k, 0], kneeL: [1.1 * k, 0], kneeR: [.8 * k, 0], armL: [-1.4 * k, -.3], armR: [-1.4 * k, .3], elL: [-.4, 0], elR: [-.4, 0] } }
+  if (P.guard) return { b: [.14, -.05], hipL: [-.35, 0], hipR: [.05, 0], kneeL: [.45, 0], kneeR: [.35, 0], armL: [-1.45, .35], elL: [-1.25, 0], armR: [-.5, .15], elR: [-.6, 0], walk: .45 };
+  if (P.sneak) return { b: [.38, -.13], hipL: [-.55, 0], hipR: [-.55, 0], kneeL: [1, 0], kneeR: [1, 0], armL: [-.55, -.1], armR: [-.55, .1], elL: [-.9, 0], elR: [-.9, 0], walk: .6 };
+  if (P.cold) { const sh = Math.sin(n * 38) * .035; return { b: [.12, -.02], rz: sh, armL: [-1.05, .75], armR: [-1.05, -.75], elL: [-1.7, 0], elR: [-1.7, 0], walk: .8 } }
+  if (P.hot && c < .3) { const f = Math.sin(n * 14) * .35; return { b: [.04, 0], armR: [-2.3, .35 + f], elR: [-1.7, 0], armL: [.1, -.15], elL: [-.2, 0] } }
+  if (P.tired) { const pant = Math.sin(n * 9) * .03; return c < .3 ? { b: [.55 + pant, -.1], hipL: [-.35, 0], hipR: [-.35, 0], kneeL: [.45, 0], kneeR: [.45, 0], armL: [-.75, .1], armR: [-.75, -.1], elL: [-.15, 0], elR: [-.15, 0] } : { b: [.28 + pant, 0], armL: [.15, -.1], armR: [.15, .1], walk: .9 } }
+  return null;
+}
+function poseLayer(A, c, dt, now) {
+  const T = poseOf(A, c, now), R = A.rig, k = T ? Math.min(1, (A.pw = Math.min(1, (A.pw || 0) + dt * 6))) : (A.pw = Math.max(0, (A.pw || 0) - dt * 6));
+  if (T) A.pT = T; const P = A.pT; if (!P || k <= 0) return; const mix = (a, b) => a + (b - a) * k;
+  for (const j of ['hipL', 'hipR', 'kneeL', 'kneeR', 'armL', 'armR', 'elL', 'elR']) { const o = R[j], v = P[j]; if (!o || !v) continue; const keep = P.walk != null && /hip|knee/.test(j) ? o.rotation.x * P.walk : 0;   // legs keep some of the walk swing
+    o.rotation.x = mix(o.rotation.x, v[0] + keep); if (v[1]) o.rotation.z = mix(o.rotation.z, (o.userData.base[4] || 0) + v[1]) }
+  if (P.b) { A.body.rotation.x = mix(A.body.rotation.x, P.b[0]); A.bob = mix(A.bob, P.b[1] + (P.walk != null ? A.bob : 0)) } if (P.rz) A.body.rotation.z += P.rz * k;
 }
 function animate(A, moving, dt, now, rate = 11) {
   A.mv += ((moving ? 1 : 0) - A.mv) * Math.min(1, dt * 8); const c = A.mv, Rg = A.rig;
@@ -197,6 +218,7 @@ function walkTick(dt, now) {
     else if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
   lockTick(now);
   envTick(dt, now, mv);
+  PL.pose = { swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, sneak: guard && !LOCK && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
   gearView(); animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); PL.body.position.y = PL.bob;
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
@@ -227,7 +249,7 @@ function envTick(dt, now, mv) {                     // swimming (stamina · sink
   if (DROWN) { const k = Math.min(1, (now - DROWN) / 1600); q.y = -.55 - k * 1.4; if (Math.random() < .2) floater('🫧', 'tool', q.x + (Math.random() - .5) * .6, .2 + Math.random() * .4, q.z); return }
   PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
   if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!DROWN && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }          // exhausted while swimming → you sink and wash up on a shore nearby
-  else { q.y = h; if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
+  else { q.y = h + (now < jumpT ? (k => 4 * D.JUMP.h * k * (1 - k))(1 - (jumpT - now) / (D.JUMP.t * 1000)) : 0); if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
     if (PL.climb) spendRunN(D.CLIMB_EN * dt);
     const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
     if (S.tired && gl > D.SLOPE * .6 * .6) { q.x -= gx / gl * 2.2 * dt; q.z -= gz / gl * 2.2 * dt; q.y = groundH(q.x, q.z) } }   // exhausted on a cliff → slide down
@@ -791,7 +813,7 @@ function frame(now) {
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
-  if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S * (debOn('cold') ? .5 : 1)); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
+  if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S * (debOn('cold') ? .5 : 1) * (TEMPV > D.TEMP.hotAt ? D.TEMP.hotRegen : 1)); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
   const sh = shakeT > 0 ? (shakeT -= dt / speed, Math.sin(now / 25) * .12) : 0;
@@ -836,7 +858,7 @@ function hud() {
   $('hCoin').textContent = fmt(S.coin); $('hGem').textContent = fmt(S.gem);
   heartsHud(st);
   $('hMp').style.width = (pEn() / st.en * 100) + '%'; $('hMp').style.background = S.tired ? '#e8a040' : '#9ad03a'; $('hMpB').style.width = Math.min(100, (S.enB || 0) / st.en * 100) + '%'; $('hMpT').textContent = S.tired ? '💦 เหนื่อย' : `${Math.floor(pEn())}${S.enB >= 1 ? '+' + Math.floor(S.enB) : ''}/${st.en}`;
-  setTime(); $('hClock').textContent = `${isNight() ? '🌙' : '☀️'} ${hhmm(S.time)}`; $('hSun').textContent = isNight() ? '🌅 06:00' : '🌇 22:00'; const tp = D.AREA_TEMP[S.area]; $('hTemp').textContent = tp < 0 ? '🥶' : tp > 0 ? '🥵' : '🙂';
+  setTime(); $('hClock').textContent = `${isNight() ? '🌙' : '☀️'} ${hhmm(S.time)}`; $('hSun').textContent = isNight() ? '🌅 06:00' : '🌇 22:00'; tempHud();
   $('hBuff').style.display = S.buff && S.buff.until > Date.now() ? '' : 'none'; if (S.buff && S.buff.until > Date.now()) $('hBuff').textContent = `${S.buff.icon} ${S.buff.atk ? '⚔️+' + S.buff.atk : '🛡️+' + S.buff.def} ${Math.ceil((S.buff.until - Date.now()) / 60e3)}′`;
   $('bHp').querySelector('small').textContent = '×' + Object.values(S.meals || {}).reduce((a, v) => a + (v > 0 ? v : 0), 0); debHud();
   $('bTool').classList.toggle('dim', !S.shops.tools); $('bShop').classList.toggle('dim', !S.story.town); $('bPets').classList.toggle('dim', !S.pets.length);
@@ -853,7 +875,7 @@ $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) open
 function questCheck() {
   if (S.story.sberhTown && S.shops.potion && !S.story.flashback && !CUT) setTimeout(runFlashback, 1200);
   let q; while ((q = D.QUESTS[S.quest]) && qDone(q)) { const r = q.reward || {}; if (r.coin) S.coin += r.coin; if (r.gem) S.gem += r.gem;
-    toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null;
+    toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null; cheer();
     if (D.SPIRIT_QUESTS.includes(q.id)) { S.spirit.free++; spiritNew = true } }
 
   hud(); save();
@@ -1089,7 +1111,7 @@ function debTick(now) {
   if (debOn('burn') && PL.swim) { delete S.deb.burn; toast('💧 ดับไฟแล้ว!', 1400) }
   if (debOn('cold') && nearFire()) { delete S.deb.cold; toast('🔥 อุ่นขึ้นแล้ว!', 1400) }
   swimT = PL.swim ? swimT + step / 1000 : 0;
-  if (isNight() && !debOn('cold') && !nearFire() && !RIDE && (swimT > D.COLD_SWIM_S || groundH(me().x, me().z) > D.COLD_HIGH)) addDeb('cold');
+  tempTick(); if (!debOn('cold') && !nearFire() && !RIDE && (TEMPV < D.TEMP.coldAt - .05 || isNight() && swimT > D.COLD_SWIM_S)) addDeb('cold');
 }
 function debHud() { const T = Date.now(), ks = Object.keys(S.deb || {}).filter(k => S.deb[k] > T), key = ks.map(k => k + Math.ceil((S.deb[k] - T) / 1000)).join();
   if (key === debK) return; debK = key; document.body.classList.toggle('hasdeb', ks.length > 0); $('debs').innerHTML = ks.map(k => `<button data-deb="${k}">${D.DEBUFF[k].icon}<small>${Math.ceil((S.deb[k] - T) / 1000)}</small></button>`).join('') }
@@ -1129,7 +1151,7 @@ function catchStep(dt, now) {
 { const ui = $('catchUI'), on = e => { e.preventDefault(); if (CATCHING) CATCHING.hold = true }, off = () => { if (CATCHING) CATCHING.hold = false };
   ui.addEventListener('pointerdown', on); ui.addEventListener('pointerup', off); ui.addEventListener('pointercancel', off); ui.addEventListener('pointerleave', off);
   $('bA').addEventListener('pointerdown', () => { if (CATCHING) CATCHING.hold = true }); $('bA').addEventListener('pointerup', off) }
-function endCatch(ok) {
+function endCatch(ok) { if (ok) cheer(2000);
   const c = CATCHING; CATCHING = null; $('catchUI').style.display = 'none'; if (!c) return; const M = c.M, q = M.A.root.position;
   if (!ok) { if (mons.includes(M)) { M.stunT = 0; M.fleeT = performance.now() + 5000; M.A.body.rotation.z = 0 } sfx('hurt'); toast(`💨 ${M.T.name} ดิ้นหลุดไปแล้ว…`, 1800); return }
   const rar = rollRarity(['B', 'R', 'E', 'L']), p = { id: 'p' + Date.now().toString(36), kind: M.kind, name: M.T.name.replace(/^\S+\s/, ''), rar, el: c.C.el, lv: 1, exp: 0, hp: null, mp: null, down: 0 };
@@ -1178,6 +1200,18 @@ function camOcc(q, now) {
     occRay.set(from, dir); occRay.far = 7.5 * zoom; const near = occList.filter(o => !o.geometry.boundingSphere || true); const hit = occRay.intersectObjects(near, false)[0]; occD = hit ? Math.max(2.9, hit.distance - .35) : 99 }
   occDs += (occD - occDs) * (occD < occDs ? .35 : .06); return occDs;
 }
+/* ---------- v1.9.3 temperature: time of day · height · water · fire · forest shade · storm → a dial (blue ◀ green ▶ red) ---------- */
+let TEMPV = 0, cheerT = 0, jumpT = 0;
+const cheer = (ms = 1600) => { cheerT = performance.now() + ms };
+function tempTick() {
+  const q = me(), T = D.TEMP, nk = nightK(), noon = Math.max(0, 1 - Math.abs(S.time - 780) / 210), h = Math.max(0, groundH(q.x, q.z) - T.highFrom);
+  let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
+  TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
+}
+let tempK = '';
+function tempHud() { const el = $('hTemp'); if (!el.querySelector('svg')) { const P = a => [20 + 15 * Math.cos(a * Math.PI / 180), 21 - 15 * Math.sin(a * Math.PI / 180)].map(v => v.toFixed(1)).join(' '), arc = (a0, a1, c) => `<path d="M${P(a0)} A15 15 0 0 1 ${P(a1)}" stroke="${c}" stroke-width="5" fill="none"/>`;
+    el.innerHTML = `<svg viewBox="0 0 40 25" width="40" height="25">${arc(180, 122, '#4aa8ff')}${arc(118, 62, '#5ad06a')}${arc(58, 0, '#ff5a4a')}<g id="tNeedle"><line x1="20" y1="21" x2="20" y2="8" stroke="#2a2030" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="20" cy="21" r="3" fill="#2a2030"/></svg>` }
+  const d = Math.round(TEMPV * 80); if (d + '' === tempK) return; tempK = d + ''; el.querySelector('#tNeedle').setAttribute('transform', `rotate(${d} 20 21)`); el.classList.toggle('cold', TEMPV < D.TEMP.coldAt); el.classList.toggle('hot', TEMPV > D.TEMP.hotAt) }
 /* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
 let bossK = '';
 function bossHud() { const M = LOCK && (LOCK.chief || LOCK.T.hp >= 100 || /King|Chief/.test(LOCK.kind)) ? LOCK : null, el = $('boss');
@@ -1213,7 +1247,7 @@ function spiritCard() { const sp = S.spirit;
     <div class="mut">❤️ หัวใจ ${hearts()} / ${D.HEARTS_MAX} ดวง · ⚡ พลังงาน ×${enMul().toFixed(1)} / ${D.EN_MAX_MUL} · ได้จากภารกิจหลักของ NPC</div>
     ${sp.free > 0 ? `<div class="row2"><button class="btn go" data-sp="hp" ${spiritOk('hp') ? '' : 'disabled'}>❤️ หัวใจ +1</button><button class="btn go" data-sp="en" ${spiritOk('en') ? '' : 'disabled'}>⚡ พลังงาน +20%</button></div>` : ''}</div>` }
 function bindSpirit(b, redraw) { b.querySelectorAll('[data-sp]').forEach(x => x.onclick = () => { spiritUp(x.dataset.sp); redraw() }) }
-function spiritUp(k) {
+function spiritUp(k) { cheer();
   if (!(S.spirit.free > 0) || !spiritOk(k)) return false; S.spirit.free--; S.spirit[k]++; S.hp = null; S.en = null; sfx('level');
   floater(k === 'hp' ? '❤️ +1' : '⚡ +20%', 'heal', me().x, 2.2, me().z); toast(k === 'hp' ? `❤️ หัวใจเพิ่มเป็น ${hearts()} ดวง!` : `⚡ พลังงานเพิ่มเป็น ×${enMul().toFixed(1)}!`, 2200); save(); hud(); return true }
 function openSpirit(isNew) {
@@ -1416,7 +1450,7 @@ function drawSketch(key, obj, h) {
   sheet(first ? '✏️ วาดภาพใหม่!' : '✏️ วาดใหม่แล้ว', b => { b.innerHTML = `<div class="card" style="text-align:center"><img class="sk big" src="${url}" alt=""><b>${name}</b><p class="mut">บันทึกลงสมุดบันทึก 📓 แล้ว</p></div><button class="btn wide" id="oJ">📓 เปิดสมุดบันทึก</button>`; b.querySelector('#oJ').onclick = () => openJournal(D.MON[key] ? 'mons' : 'people') });
 }
 $('bBook').onclick = () => { $('bBook').classList.remove('dot'); openJournal() };
-$('hTemp').onclick = () => { const t = D.AREA_TEMP[S.area]; toast(t < 0 ? '🥶 หนาว · ใส่เสื้อกันหนาว ไม่งั้น HP ลดลงเรื่อยๆ' : t > 0 ? '🥵 ร้อน · ใส่ชุดโปร่ง ไม่งั้น HP ลดลงเรื่อยๆ' : '🙂 อากาศปกติ · ไม่ต้องใส่ชุดพิเศษ', 2400) };
+$('hTemp').onclick = () => { const t = TEMPV; toast(t < D.TEMP.coldAt ? '🥶 หนาวมาก! ⚡ ฟื้นช้าลง · ผิงไฟ กินอาหารร้อน หรือดื่ม 🌶️ ยาอุ่นกาย' : t < -.25 ? '❄️ เริ่มหนาว · ระวังกลางคืน ที่สูง และการว่ายน้ำนาน' : t > D.TEMP.hotAt ? '🥵 ร้อนมาก! ⚡ ฟื้นช้าลง · หาที่ร่มหรือลงน้ำ' : t > .25 ? '☀️ เริ่มร้อน' : '🙂 อุณหภูมิกำลังดี', 2600) };
 
 /* ================= v0.8: GBA-style pad (stick · A · B) · hold A = menu wheel · Zelda HUD · AUTO ================= */
 const OPT = { ctrl: localStorage.getItem('ng_ctrl') || 'pad', hud: localStorage.getItem('ng_hud') || 'z' };
@@ -1457,7 +1491,7 @@ function actA() {
   if (tool === 'hoe') { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (till(cx, cz)) return }
   const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3;
   if (S.has.rod && waterAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return }       // facing water = cast
-  sprintT = now + 700;                                                                                        // nothing here: mash A to run
+  if (!(now < jumpT) && !PL.swim && !RIDE && !S.tired && spendEn(D.JUMP.en)) { jumpT = now + D.JUMP.t * 1000; sfx('tap') }   /* v1.9.3: nothing in front → A = jump */
 }
 let wheelOn = false, wheelI = 0;
 const nearWater = (r = 5) => { const q = me(); for (let a = 0; a < 12; a++) for (const d of [1.5, 3, r]) if (waterAt(q.x + Math.cos(a * .52) * d, q.z + Math.sin(a * .52) * d)) return true; return false };
@@ -2053,7 +2087,7 @@ function bossTick(M, dt, now) {
 function stormLose() { if (!inStorm()) return; bossAct = null; const f = $('sleep'); f.querySelector('b').textContent = '⛈️ พ่ายแพ้… ลมพายุพัดกลับฝั่ง'; f.style.display = 'flex'; f.style.opacity = 1;
   setTimeout(() => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; placeMe(SPAWN.x, SPAWN.z); S.hp = pStats().hp * .5; S.en = null; S.tired = false; enterZone('farm'); save(); hud();
     f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('💪 ลองฟื้นฟูเมือง เพิ่มหัวใจ และหาอุปกรณ์ที่ดีกว่า แล้วกลับไปใหม่!', 3600) }, 1600) }
-function stormWin() {
+function stormWin() { cheer(3000);
   S.story.cloudGone = 1; bossAct = null; BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; S.coin += D.STORM_REWARD.coin; S.gem += D.STORM_REWARD.gem; S.spirit.free++; spiritNew = true; bump('stormWin');
   sfx('level'); VF.ring(me().x, me().y, me().z, '#fff6a0', 14, 1.4); VF.rise(me().x, me().y, me().z, '#fff6a0', 40); SKYCLOUD.visible = false; save(); hud();
   setTimeout(() => talk([['☀️', 'เมฆดำค่อยๆ สลายไป… แสงแดดอุ่นๆ ส่องลงมาทั่วดินแดนอีกครั้ง'], ['👴 ลุงฮาวซิฟ (เสียงจากไกลๆ)', 'เธอทำได้! ทุกคนเห็นท้องฟ้าแล้ว… ขอบคุณนะ ผู้กล้า'],
@@ -2109,7 +2143,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guard = v }, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
