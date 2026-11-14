@@ -126,7 +126,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       return [m([F('minnow'), F('tilapia')]).k, m([F('minnow'), I('mushroom')]).k, m([I('meat'), I('mushroom')]).k, m([I('glowherb'), I('apple')]).k, m([F('minnow'), I('meat'), I('mushroom'), I('berry')]).k, m([I('apple'), I('jelly'), I('meat')]).k, m([I('apple'), I('berry')]).k] })));
     await closeAll(); await E(() => { const N = window.__ng; N.S.ingr = { mushroom: 2, apple: 2, meat: 1 }; N.S.fish.minnow = (N.S.fish.minnow || 0) + 2; const p = N.POT.home; N.look(p.x, p.z) }); await wait(1500); await shot('26-pot');
     await E(() => window.__ng.openPot('home')); await wait(400); await pg.click('#pC'); await wait(300);
-    await pg.click('[data-i="minnow"]'); await pg.click('[data-i="mushroom"]'); await wait(300); await shot('27-cook'); await pg.click('#cGo'); await wait(2500); await shot('27b-cooking'); await E(() => window.__ng.finishJobs()); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(700); await shot('28-dish');
+    await pg.click('[data-i="minnow"]'); await pg.click('[data-i="mushroom"]'); await wait(300); await shot('27-cook'); await pg.click('#cGo'); await wait(2500); await shot('27b-cooking'); await E(() => { const N = window.__ng; N.finishJobs(); if ((N.S.potReady || {}).home) N.openPot('home') }); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(700); await shot('28-dish');
     log('cooked', JSON.stringify(await N(() => window.__ng.S.journal.recipes)), 'meals', JSON.stringify(await N(() => window.__ng.S.meals))); await pg.click('#eN'); await wait(300); await closeAll();
     await E(() => { window.__ng.setTool('sketch'); window.__ng.sketchPick({ kind: 'howsif' }) }); await wait(2500); await shot('29-sketch'); await closeAll();
     log('sketch', JSON.stringify(Object.keys(await N(() => window.__ng.S.journal.sketch))), 'bytes', await N(() => (localStorage.getItem('ng_sk_howsif') || '').length));
@@ -144,7 +144,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('harvested', await N(() => window.__ng.S.stat.harvested || 0), 'ingr', JSON.stringify(await N(() => window.__ng.S.ingr)));
     if (!((await N(() => window.__ng.S.stat.harvested || 0)) >= 1)) errs.push('sickle swipe did not harvest');
     await E(() => { const N = window.__ng; N.S.ingr.carrot = (N.S.ingr.carrot || 0) + 1; N.S.ingr.cabbage = (N.S.ingr.cabbage || 0) + 1; N.openPot('home') }); await wait(300); await pg.click('#pC'); await wait(300);
-    await pg.click('[data-i="carrot"]'); await pg.click('[data-i="cabbage"]'); await pg.click('#cGo'); await wait(500); await E(() => window.__ng.finishJobs()); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(500); await shot('45-salad'); await closeAll();
+    await pg.click('[data-i="carrot"]'); await pg.click('[data-i="cabbage"]'); await pg.click('#cGo'); await wait(500); await E(() => { const N = window.__ng; N.finishJobs(); if ((N.S.potReady || {}).home) N.openPot('home') }); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(500); await shot('45-salad'); await closeAll();
     log('farm quest', await N(() => window.__ng.S.quest), JSON.stringify(await N(() => ({ cookVeg: window.__ng.S.stat.cookVeg, salad: window.__ng.S.journal.recipes.salad }))));
     if (!((await N(() => window.__ng.S.quest)) >= 23)) errs.push('farming quests did not complete');
     /* v0.9 open world: through the island gate on foot · swim the river · freshwater fish · climb the cliff · map + warp */

@@ -1394,7 +1394,7 @@ const cheer = (ms = 1600) => { cheerT = performance.now() + ms };
 const smw01 = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 function tempTick() {
   const q = me(), T = D.TEMP, nk = nightK(), noon = Math.max(0, 1 - Math.abs(S.time - 780) / 210), h = Math.max(0, groundH(q.x, q.z) - T.highFrom);
-  let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
+  const hk = kingdomAt(q.x, q.z); let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM * (hk.k === 'valkara' ? 1 - (1 - hk.home) * hk.w : 1) + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
   { const B = kingdomAt(q.x, q.z), g = (1 - B.home) * B.w, K = KINGDOMS[B.k]; if (g > 0 && K) t += g * (B.k === 'asrah' ? (nk > .5 ? -.35 : K.temp) : B.k === 'valkara' ? K.temp * (1 + smw01(200, 30, B.d) * .7) : K.temp) }   /* v2.7 kingdom weather */
   TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
 }
@@ -1821,7 +1821,7 @@ const TUT = [
   ['swing', '⚔️', 'กด <b>A</b> ชักอาวุธ แล้วกด <b>A</b> อีกครั้งเพื่อฟัน (ฟันพุ่มหญ้าก็ได้)', () => !!weaponOf()],
   ['guard', '🛡️', 'กด <b>B</b> ยกโล่ป้องกัน · กด <b>B</b> อีกครั้งเพื่อเก็บ', () => !!(S.eq.shield && kindOf().shield)],
   ['shoot', '🏹', 'ออกนอกเขตปลอดภัย กด <b>Y</b> ค้างเพื่อเล็ง ปล่อยเพื่อยิง', () => !!(bowOf() && S.arrows > 0)],
-  ['farm', '🪏', 'แตะ 🪏 (ใต้แผนที่ปุ่ม) เพื่อสลับเป็นโหมดฟาร์ม', () => !!S.has.hoe], ['dig', '🟩', 'โหมดฟาร์ม: กด 🪏 ขุดดินตรงกรอบสีเขียว (บนเกาะ)', () => !!S.has.hoe],
+  ['farm', '🪏', 'แตะไอคอน 🪏 (เหนือปุ่ม A) เพื่อสลับเป็นโหมดฟาร์ม', () => !!S.has.hoe], ['dig', '🟩', 'โหมดฟาร์ม: กด 🪏 ขุดดินตรงกรอบสีเขียว (บนเกาะ)', () => !!S.has.hoe],
   ['pick', '⛏️', 'โหมดฟาร์ม: เข้าใกล้หิน กด ⛏️ เพื่อทุบ', () => !!S.has.hoe], ['draw', '🖍️', 'กด 🖍️ ใต้ปุ่ม 🏠 เลือกกรอบ แล้ววาดภาพ', () => !!S.has.hoe],
   ['fight', '⚔️', 'แตะ ⚔️ เพื่อกลับโหมดต่อสู้', () => !!S.has.hoe], ['glide', '🍃', 'กระโดดจากที่สูง แล้วกด <b>X</b> กลางอากาศเพื่อกางใบไม้ร่อน', () => !!S.has.glider]];
 const tutEl = (() => { const e = document.createElement('div'); e.id = 'tut'; document.body.appendChild(e); return e })();
@@ -2153,6 +2153,7 @@ function kingTick(now) {
   if (k && k !== kingNow) { const K = KINGDOMS[k], first = !(S.kseen || {})[k]; (S.kseen = S.kseen || {})[k] = 1; toast(`${first ? '🗺️ ค้นพบ' : '📍'} <b>${K.name}</b><br><small>${K.sub}</small>`, first ? 3400 : 2000); if (first) sfx('level'); save() } kingNow = k;
   /* mini-boss: waits at its lair until beaten */
   for (const kk in D.MINIB) { const [kind, ox, oz] = D.MINIB[kk], K = KINGDOMS[kk], x = K.x + ox, z = K.z + oz, live = mons.find(m => m.kind === kind), d = dist(q.x, q.z, x, z);
+    if (live && d > 160 && !live.aggro) monGone(live);
     if (!live && !(S.minib || {})[kk] && d < 70 && d > 18) { let px = x, pz = z; for (let r = 0; r < 30 && !walkLand(px, pz); r += 2) { px = x + Math.cos(r) * r; pz = z + Math.sin(r) * r } const M = monSpawn(kind, px, pz, { area: 'wild' }); M.chief = 1; M.home = [px, pz]; toast(`⚠️ รู้สึกถึงพลังมหาศาล… <b>${D.MON[kind].name}</b> อยู่ใกล้ๆ`, 2600) } }
   /* hidden chests (caves) + notes appear when you come near */
   for (const c of CHESTS) { const d = dist(q.x, q.z, c.x, c.z); if (d < 55 && !c.g) chestView(c); else if (d > 75 && c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = null } }
@@ -2206,7 +2207,8 @@ function kqDrew() { const k = kingdomAt(me().x, me().z); for (const id in KQS())
 function kqTrack() { const on = Object.keys(KQS()).filter(id => KQS()[id].st === 'on' && KQUEST[id]); if (!on.length) return ''; const id = on.find(i => qProg(i).ok) || on[on.length - 1], p = qProg(id); return `📜 ${KQUEST[id].text} (${p.cur})${p.ok ? ' ✅ กลับไปส่งได้แล้ว' : ''}` }
 function restoreKingdom(k) { (S.restored = S.restored || {})[k] = Date.now(); save(); capCloud(); memoryFx(KQ[k].memory, () => { toast(`🌈 ${KINGDOMS[k].name} ฟื้นฟูแล้ว!<br>☁️ เมฆทมิฬเหนือเมืองหลวงเล็กลง (${restoredN()}/${MAIN_Q.need})`, 3600); if (restoredN() >= MAIN_Q.need) setTimeout(() => toast('🗼 เมฆทมิฬรอบเมืองหลวงสลายไปหมดแล้ว!<br>ไปที่หอคอยแสงในลูมิเนีย', 4000), 3800); hud() }) }
 /* a memory: the game view turns sepia, lines fade in one by one (tap to go on) */
-function memoryFx(lines, done) { CUT = true; document.body.classList.add('cut'); const shot = (() => { try { return R.domElement.toDataURL('image/jpeg', .8) } catch (e) { return '' } })();
+function memoryFx(lines, done) { document.body.classList.add('snap'); SNAP = shot => { document.body.classList.remove('snap'); memoryShow(lines, done, shot) } }   /* grab the next rendered frame for the sepia background */
+function memoryShow(lines, done, shot) { CUT = true; document.body.classList.add('cut');
   const f = document.createElement('div'); f.className = 'memFx'; f.innerHTML = `<div class="mbg" style="background-image:url(${shot})"></div><div class="mtx"></div><small>แตะเพื่อดูต่อ</small>`; document.body.appendChild(f); sfx('sketch'); let i = 0;
   const next = () => { if (i >= lines.length) { f.classList.add('out'); setTimeout(() => { f.remove(); CUT = false; document.body.classList.remove('cut'); done && done() }, 800); return } const t = f.querySelector('.mtx'); t.classList.remove('in'); void t.offsetWidth; t.textContent = lines[i++]; t.classList.add('in') };
   f.onclick = next; next(); }

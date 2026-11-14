@@ -404,9 +404,9 @@ export function wildH(x, z) {
 const _LV = C('#ff5a1a'), _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
 export function grassCol(x, z, out) { out.copy(_GL).lerp(_GD, smw(.5, .62, fbm(x / 60 + 4, z / 60, 3))).multiplyScalar(.93 + .1 * vnoise(x * .35, z * .35)); return out }
 function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -4 ? '#2a5a8a' : '#4a90c0'); grassCol(x, z, out);
-  { const B = kingdomAt(x, z), g = (1 - B.home) * B.w; if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } }   /* v2.7 kingdom ground · lava in the volcano */
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
-  out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl)).lerp(_SN, smw(26, 32, h)); const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
+  const B = kingdomAt(x, z), g = (1 - B.home) * B.w;   /* v2.7 kingdom ground (after the generic rock/snow, so a volcano is never snowy) · lava in the volcano */
+  out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl) * (1 - g * .5)).lerp(_SN, smw(26, 32, h) * (1 - g)); if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
 export function wildColor(x, z) {
   const h = wildH(x, z); if (h < -.45) return h < -4 ? '#2a5a8a' : '#4a90c0'; if (h < .8 && x < coastX(z) + 14) return '#e8dcb8';
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2)); if (h > 30) return '#f0f2f6'; if (sl > 3.2) return '#8a7a6a';
