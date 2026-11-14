@@ -68,7 +68,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await press('bY', 'pointerdown'); await wait(2500); if (await N(() => window.__ng.S.arrows) !== 19) errs.push('holding Y shot an arrow'); await press('bY', 'pointercancel'); await wait(300);
     if (await N(() => !!window.__ng.AIM)) errs.push('aim did not end');
     await E(() => { window.__ng.S.arrows = 0 }); await press('bY', 'pointerdown'); await wait(300); if (await N(() => !!window.__ng.AIM)) errs.push('aimed with no arrows'); await press('bY', 'pointerup');
-    await E(() => document.getElementById('bTools').click()); await wait(600); if (!(await N(() => window.__ng.wheelOn))) errs.push('🧰 did not open the wheel'); await E(() => window.__ng.closeWheel());
+    
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

@@ -147,12 +147,12 @@
   #modeSw button.on{background:var(--paper);opacity:1;transform:scale(1.08)}body.wheel #modeSw,body.aim #modeSw{display:none}
   .fi{font-size:28px;line-height:1}.fl{position:absolute;right:6px;bottom:3px;font:900 12px system-ui;color:#fff;text-shadow:0 1px 2px #0008}
   body.farm #bA,body.farm #bB,body.farm #bX,body.farm #bY{background-color:#f4ecd8}body.farm #bA span{display:block}
-  body.snap .top,body.snap .vit,body.snap #pad,body.snap #quest,body.snap #qIcon,body.snap #bHome,body.snap #bTools,body.snap #hud,body.snap .tag,body.snap #bAuto,body.snap #mini,body.snap #xhair,body.snap .mtag,body.snap .ftext,body.snap #modeSw{visibility:hidden!important}
+  body.snap .top,body.snap .vit,body.snap #pad,body.snap #quest,body.snap #qIcon,body.snap #bHome,body.snap #bTools,body.snap #hud,body.snap .tag,body.snap #bAuto,body.snap #mini,body.snap #xhair,body.snap .mtag,body.snap .flash,body.snap .ftext,body.snap #modeSw{visibility:hidden!important}
   .flash{position:fixed;inset:0;background:#fff;z-index:90;pointer-events:none;opacity:0;animation:flash .45s ease-out}@keyframes flash{from{opacity:.9}to{opacity:0}}body.aim #bY{background-color:#c88a10;transform:scale(1.08)}
   #bTools{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 212px);z-index:5;width:46px;height:46px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font-size:22px;box-shadow:0 3px 0 #0004}
   #xhair{display:none;position:fixed;left:50%;top:50%;width:0;height:0;z-index:5;pointer-events:none}body.aim #xhair{display:block}
   #xhair i{position:absolute;left:-15px;top:-15px;width:30px;height:30px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 3px #000a,inset 0 0 3px #000a;transform:scale(calc(1.5 - .5 * var(--d,0)));transition:border-color .1s}
-  #xhair i::after{content:'';position:absolute;left:12px;top:12px;width:4px;height:4px;border-radius:50%;background:#fff}#xhair.on i{border-color:#ff5a4a}#xhair.on i::after{background:#ff5a4a}
+  #xhair i::after{content:'';position:absolute;left:12px;top:12px;width:4px;height:4px;border-radius:50%;background:#fff}#xhair.on i{border-color:#ff5a4a}#xhair.rod i{border-style:dashed}#xhair.rod.on i{border-color:#7ad8ff}#xhair.on i::after{background:#ff5a4a}
   #xN{position:absolute;left:24px;top:14px;white-space:nowrap;color:#fff;font:800 14px system-ui;text-shadow:0 1px 2px #000}
   body.wheel #bX,body.wheel #bY{display:none}
   body.zhud .vit{background:none;border:none;padding:0;color:#fff;text-shadow:0 1px 2px #000c,0 0 4px #0008}body.zhud .vit .bar{border-color:#fff;box-shadow:0 1px 3px #0008}
@@ -197,7 +197,7 @@
 </div>
 <div class="vit"><div id="hearts"></div><div id="debs"></div>
   <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar en"><i id="hMp" style="background:#9ad03a"></i><i id="hMpB" class="enb"></i></div></div>
-<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button><button id="bHome" aria-label="กระเป๋า">🏠</button><button id="bTools" aria-label="เครื่องมือ">🧰</button><div id="xhair"><i></i><small id="xN"></small></div>
+<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button><button id="bHome" aria-label="กระเป๋า">🏠</button><div id="xhair"><i></i><small id="xN"></small></div>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="hoe" aria-label="จอบ">🪏<small>จอบ</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>
