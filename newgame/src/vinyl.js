@@ -112,6 +112,33 @@ function hair(h, style, col) {
   if (style === 'buns') for (const s of [-1, 1]) { const c = surf(V(s * .55, .85, -.15), .06); ball(h, .085, H, c.toArray(), [1, .95, 1]); ball(h, .03, mat('#f0d040'), c.clone().add(V(-s * .05, -.06, 0)).toArray()) }
 }
 
+/* ── v2.9 hair as ONE sculpted piece worn over the head (like a toy's hair part): a dense sphere shrink-wrapped onto the head,
+   pushed out where the style has hair (soft rounded edges, no gaps) and tucked inside elsewhere · fine flowing grooves · tails / buns are smooth pieces of the same colour ── */
+const sst = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+const HL = {   /* hairline height (head-local y) by angle round the head: front (0) · temple (.9) · ear (1.6) · back (3.14) */
+  messy: [.035, -.02, -.1, -.17], spiky: [.05, 0, -.08, -.15], side: [.03, -.02, -.1, -.17], bob: [.03, -.08, -.23, -.24], pony: [.04, -.03, -.11, -.16], buns: [.04, -.03, -.11, -.16], long: [.03, -.1, -.3, -.5], twin: [.04, -.03, -.12, -.16] };
+function lineAt(st, az) { const L = HL[st] || HL.messy, a = Math.abs(az); return a < .9 ? L[0] + (L[1] - L[0]) * sst(0, .9, a) : a < 1.6 ? L[1] + (L[2] - L[1]) * sst(.9, 1.6, a) : L[2] + (L[3] - L[2]) * sst(1.6, 3.14, a) }
+function hairPiece(h, style, col) {
+  const M = mat(col, { r: .38 }), g = new THREE.SphereGeometry(1, 96, 72), p = g.attributes.position, dv = V(0, 0, 0);
+  for (let i = 0; i < p.count; i++) {
+    dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, back = sst(.4, -.6, dv.z);
+    let line = lineAt(style, az); if (style === 'side') line += .05 * sst(-.6, .4, az) * sst(1.2, .2, Math.abs(az));   /* the fringe sweeps lower to one side */
+    let c = sst(line - .03, line + .015, y); if (style === 'long' || style === 'bob') c = Math.max(c, back * sst(.1, -.2, dv.y) * (style === 'long' ? 1 : .8));
+    const pole = sst(.97, .8, dv.y);   /* fade the az-patterns out at the crown (no seam where they meet) */
+    let t = .03 + .014 * Math.max(0, dv.y) + .018 * sst(.5, 1, dv.z) * sst(line + .14, line + .02, y);   /* volume on top · bangs puff forward */
+    t += (.006 * Math.sin(az * 17 + y * 9) * sst(-.9, .2, dv.y) + .004 * Math.sin(az * 31 - y * 14)) * pole;   /* flowing grooves */
+    if (style === 'messy') t += .024 * Math.max(0, Math.sin(az * 5 + 1.3) * Math.sin(dv.y * 7 + az)) * sst(.2, .8, dv.y) * pole;
+    if (style === 'spiky') t += .17 * Math.pow(Math.max(0, Math.sin(az * 6 + .4)) * Math.max(0, Math.sin(dv.y * 9 - .6)), 3.5) * sst(.15, .55, dv.y) * pole + .1 * Math.pow(sst(.8, 1, dv.y), 2);
+    if (style === 'side') t += .03 * sst(.3, -.5, az) * sst(.3, .9, dv.y) - .022 * Math.exp(-(((az - .45) / .07) ** 2)) * sst(.3, .7, dv.y) * pole;   /* swept volume + the parting */
+    const o = -.02 + (t + .02) * c; let q = surf(dv, o);
+    if ((style === 'long' || style === 'bob') && c > .01) { const k = back * sst(.05, -.9, dv.y), len = style === 'long' ? .5 : .14; q.y -= len * k; q.z -= .05 * k; q.x *= 1 + .12 * k }   /* the drape down the back */
+    p.setXYZ(i, q.x, q.y, q.z) }
+  g.computeVertexNormals(); const m = add(h, g, M); m.name = 'hairPiece';
+  const tail = (pts, r0, r1) => { const n = pts.length; add(h, tube(pts, pts.map((_, i) => r0 + (r1 - r0) * Math.pow(i / (n - 1), 1.3)), 18, 1, true), M) };
+  if (style === 'pony') { const t0 = surf(V(0, .55, -1), .05); ball(h, .04, mat('#d84a4a'), t0.toArray(), null, 16); tail(bez(t0.toArray(), t0.clone().add(V(0, -.04, -.14)).toArray(), t0.clone().add(V(0, -.36, -.17)).toArray(), 12), .07, .025) }
+  if (style === 'twin') for (const s2 of [-1, 1]) { const t0 = surf(V(s2 * .72, .32, -.62), .05); ball(h, .035, mat('#f06a8a'), t0.toArray(), null, 16); tail(bez(t0.toArray(), t0.clone().add(V(s2 * .07, -.05, -.05)).toArray(), t0.clone().add(V(s2 * .1, -.32, -.08)).toArray(), 12), .062, .022) }
+  if (style === 'buns') for (const s2 of [-1, 1]) { const c0 = surf(V(s2 * .55, .85, -.15), .07); ball(h, .085, M, c0.toArray(), [1, .95, 1], 24); ball(h, .03, mat('#f0d040'), c0.clone().add(V(-s2 * .05, -.06, 0)).toArray(), null, 12) }
+}
 /* ── the outfit pieces: torso shells (static) + sleeves / trousers / boots on the joints ── */
 const lathe = (pts, seg = 22) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 function torsoWear(g, w, top) {
@@ -155,7 +182,7 @@ export function vinyl(root, a0 = {}) {
   const head = new THREE.Group(); head.position.y = .74; head.name = 'head'; g.add(head); role(head, 'head');
   const hm = add(head, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm'), roughness: .5 })]); hm.userData.noFacet = 1;
   for (const s of [-1, 1]) ball(head, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
-  hair(head, a.hair || 'messy', a.hairCol || '#7a4428');
+  if (a.hairV === 1) hair(head, a.hair || 'messy', a.hairCol || '#7a4428'); else { hairPiece(head, a.hair || 'messy', a.hairCol || '#7a4428'); head.scale.setScalar(.94) }   /* v2.9 one-piece hair · the head a touch smaller so the hair sits on it */
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
 }

@@ -303,6 +303,9 @@ export function npcHat(g, kind) { HEADX(g, h => { const H = new THREE.Group(); H
   else if (kind === 'hood') { const hd = vm(new THREE.SphereGeometry(.5, 20, 14, 0, 6.3, 0, 2), '#4a3a5a', 0, .02, -.06); hd.material.side = THREE.DoubleSide; H.add(hd) }
   else if (kind === 'helm') H.add(vm(new THREE.SphereGeometry(.46, 18, 12, 0, 6.3, 0, 1.45), '#5a4a48', 0, .08, 0, 1, 1, 1, .35), vm(new THREE.CylinderGeometry(.04, .04, .18, 8), '#ffb040', 0, .52, 0));
   else if (kind === 'cap') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.35), '#3a8aa8', 0, .08, 0), vm(new THREE.CylinderGeometry(.26, .28, .03, 18), '#3a8aa8', 0, .2, .36));
+  else if (kind === 'veil') { const v = vm(new THREE.SphereGeometry(.45, 20, 12, Math.PI * .1, Math.PI * .8, 2.08, .62), '#f0e0c0', 0, -.02, .03, 1.03, 1, 1.08); v.material.side = THREE.DoubleSide; H.add(v) }   /* v2.9 face-wear: a cloth over nose + mouth */
+  else if (kind === 'scarf') { const sc = vm(new THREE.TorusGeometry(.33, .1, 12, 28), '#d84a5a', 0, -.36, .02, 1, 1, .9); sc.rotation.x = Math.PI / 2 - .15; H.add(sc, vm(SPH, '#d84a5a', .18, -.5, .3, .07, .16, .05)) }   /* a knitted scarf pulled up to the chin */
+  else if (kind === 'furmask') { const sc = vm(new THREE.TorusGeometry(.34, .12, 12, 28), '#f0e4d0', 0, -.34, .02, 1, 1, .9); sc.rotation.x = Math.PI / 2 - .2; H.add(sc, vm(SPH, '#c89a6a', 0, -.2, .38, .2, .09, .06)) }   /* a fur collar + a soft muzzle cover */
   else if (kind === 'leaf') { const lf = vm(SPH, '#5ab84a', -.34, .26, .12, .18, .06, .1); lf.rotation.z = .7; H.add(lf) }
   else if (kind === 'wool') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.45), '#d84a5a', 0, .3, 0), vm(new THREE.SphereGeometry(.11, 10, 8), '#f4f0e8', 0, .76, 0));
   else if (kind === 'mask') { H.add(vm(SPH, '#5ab84a', 0, -.06, .42, .3, .17, .08), vm(new THREE.TorusGeometry(.44, .022, 6, 24), '#3a7a3a', 0, -.02, 0)); H.children[1].rotation.x = Math.PI / 2 }
@@ -315,9 +318,9 @@ const VLK = {   /* the three everyday villagers */
   2: { v: 2, sex: 'f', hair: 'bob', hairCol: '#1e1520', skin: '#c28b5c', wear: 'farmer', bottom: 'pants', top: '#d06a8a', eyes: 'smile', eyeCol: '#6a3a20' } };
 export const HUMANS = {
   kealee(g) { vinyl(g, { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#f4f0e8', eyes: 'sparkle', eyeCol: '#3a9a8a' }); HEADX(g, h => h.add(vm(SPH, '#ff4a5a', .38, .18, .12, .07, .05, .045, .3))) },   // red hair clip
-  villager(g, v = 0, look = null, hat = null) { vinyl(g, look || VLK[v % 3]); if (hat) npcHat(g, hat); else if (!look && v % 3 === 0) npcHat(g, 'straw') },
+  villager(g, v = 0, look = null, hat = null) { vinyl(g, look || VLK[v % 3]); if (hat) npcHat(g, hat) },   // v2.9 no hats
   sberh(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#c8803a', skin: '#f2cfa6', wear: 'mage', top: '#7aaa5a', eyes: 'round', eyeCol: '#3a6a2a' }); npcGlasses(g); npcHat(g, 'leaf') },   // young herbalist: glasses + a sprig
-  howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'side', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'sleepy', eyeCol: '#3a3040' }); npcBeard(g); npcHat(g, 'straw') },   // white beard + straw hat
+  howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'sleepy', eyeCol: '#3a3040' }); npcBeard(g) },   // white beard
 };
 /* the shadow that takes Kealee: a black winged shape inside a huge black smoke cloud */
 export function shadowBeast(g) {

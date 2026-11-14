@@ -41,7 +41,7 @@ export function buildWorld(scene, eco) {
   const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); land.receiveShadow = true; land.userData.ground = 1; scene.add(land); W.ground = land;
   /* ---- sea ---- */
   const sg = new THREE.PlaneGeometry(320, 140, 160, 70); sg.rotateX(-Math.PI / 2); sg.translate(40, 0, 0); const SP = sg.attributes.position, sc = [];   // reaches the horizon from the camera behind the character
-  for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
+  for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; if ((coreDist(x, z) > 1 && wildH(x, z) > -.45) || (coreDist(x, z) <= 1 && x > 9)) SP.setY(i, -.6);   /* v2.9 the island's own sea stays at the island (elsewhere the ocean plane / lakes show) */ c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
   sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
   const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .25, transparent: true, opacity: .9, clearcoat: .6 }))); sea.position.y = -.12; scene.add(sea); W.sea = sea;
   const R = rng(5);
@@ -198,7 +198,7 @@ export function buildForest(W, eco) {
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
     grassCol(x, z, c).multiplyScalar(1 - .2 * smw(FX - 13, FX - 8, x)); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
-    const out = Math.max(0, Math.abs(z) - 10, x - FX - 14); P.setY(i, out * .6 + .02 * n) }
+    P.setY(i, .02 * n) }   /* v2.9 no raised forest rim any more (the open world goes on) */
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, FX);
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = FX; g0.receiveShadow = true; scene.add(g0); F.ground = g0;
   /* dense trees around the edge, a few inside (never on the path or in the camp) */

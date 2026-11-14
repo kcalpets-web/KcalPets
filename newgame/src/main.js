@@ -59,7 +59,7 @@ const CAM = { yaw: Math.PI, pitch: .42, manualT: 0 };            // yaw: the dir
 const SKY = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,   /* v1.9: layered clouds lit by the sun · golden horizon at dusk · moon + dense twinkling stars */
   uniforms: { top: { value: C('#5aa8e0') }, bot: { value: C('#cfe8f4') }, stars: { value: 0 }, t: { value: 0 }, glow: { value: 0 }, sun: { value: new THREE.Vector3(0, 1, 0) } },
   vertexShader: 'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-  fragmentShader: `uniform vec3 top,bot,sun;uniform float stars,t,glow;varying vec3 vP;
+  fragmentShader: `precision highp float;uniform vec3 top,bot,sun;uniform float stars,t,glow;varying vec3 vP;   /* v2.9 highp: iPad's mediump broke the cloud noise into hard blue blocks */
     float h(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}
     float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
     float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2(1,0)),f.x),mix(h2(i+vec2(0,1)),h2(i+vec2(1,1)),f.x),f.y);}
@@ -280,7 +280,7 @@ function walkTick(dt, now) {
     else { const up = t < .4 ? t / .4 : 1 - (t - .4) / .6; for (const j of ['armR', 'armL']) if (R[j]) R[j].rotation.x = -3 * up + (t > .4 ? .6 * (t - .4) / .6 : 0); for (const j of ['elR', 'elL']) if (R[j]) R[j].rotation.x = -.6 * up; PL.body.rotation.x = .1 + (t > .4 ? .35 * (1 - up) : 0) } }
   else if (swingT > 0) { swingT -= dt; const a = PL.rig.armR, e = PL.rig.elR, t = 1 - Math.max(0, swingT) / .3;   // v1.8 swing: wind up · strike · follow through
     if (a) a.rotation.x = t < .3 ? -2.8 * (t / .3) : -2.8 + (t - .3) / .7 * 3.5; if (e) e.rotation.x = t < .3 ? -.9 : -.9 + (t - .3) / .7 * .85; PL.body.rotation.y = PL.yaw + (t < .3 ? .4 * t / .3 : .4 - (t - .3) / .7 * .9) }
-  gripTick(); arrowsTick(dt); ctxTick(now, dt, mv); tillTick();
+  gripTick(); arrowsTick(dt); ctxTick(now, dt, mv); tillTick(); twinkleTick(now);
   if (FALLS.tex) FALLS.tex.offset.y += dt * 1.6;
   { const q = me(), w = q.x - WORLD.x0; if (w < 45 && (PL.swim || RIDE)) { q.x += (45 - w) * .9 * dt; if (now > (PL.curT || 0)) { PL.curT = now + 5000; hint('🌊 กระแสน้ำแรงมาก… ออกไปไกลกว่านี้ไม่ได้', 2000) } } }   /* v2.5.1 the western sea's current */
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
@@ -358,7 +358,9 @@ function spendEn(n) {                                          // stamina: yello
 function addEn(n) { S.enB = Math.min(D.EN_BONUS_MAX, (S.enB || 0) + n) }       // food / tea / fish = extra yellow stamina over the max
 /* the tool pops up and swings at the spot it hits (like Pen Suk) */
 const swings = [];
-function swingIcon(ico, x, y, z) { const el = swings.find(e => !e.on) || (() => { const d = document.createElement('div'); d.className = 'swing'; document.body.appendChild(d); const e = { el: d }; swings.push(e); return e })();
+function swingIcon(ico, x, y, z) { return;   /* v2.9 no tool icons popping up on each hit (the player knows what they hold) */
+}
+function swingIconOld(ico, x, y, z) { const el = swings.find(e => !e.on) || (() => { const d = document.createElement('div'); d.className = 'swing'; document.body.appendChild(d); const e = { el: d }; swings.push(e); return e })();
   el.on = true; el.x = x; el.y = y; el.z = z; el.t = 0; el.el.textContent = ico; el.el.style.display = 'block'; el.el.getAnimations().forEach(a => a.cancel());
   el.el.animate([{ transform: 'rotate(-75deg) scale(.6)', opacity: 0 }, { transform: 'rotate(-60deg) scale(1.1)', opacity: 1, offset: .25 }, { transform: 'rotate(30deg) scale(1.15)', opacity: 1, offset: .6 }, { transform: 'rotate(20deg) scale(1)', opacity: 0 }], { duration: 380, easing: 'ease-out' }) }
 function tickSwings(dt) { for (const e of swings) { if (!e.on) continue; e.t += dt; if (e.t > .4 || CUT) { e.on = false; e.el.style.display = 'none'; continue } const q = project(e.x, e.y, e.z); e.el.style.left = q.x + 'px'; e.el.style.top = q.y + 'px' } }
@@ -510,7 +512,13 @@ function dropItem(it, x, z) {
 }
 /* v2.6 loot lies on the ground with a beam of light (seen from far away) until you pick it up with A (✋) · ingredients too · gone after D.DROP_LIFE s */
 const BEAM_G = new THREE.CylinderGeometry(.06, .16, 5, 8, 1, true); BEAM_G.translate(0, 2.5, 0);
-function dropPut(g, x, z, col, data) { const beam = new THREE.Mesh(BEAM_G, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .4, depthWrite: false, blending: THREE.AdditiveBlending })); beam.name = 'beam'; g.add(beam);
+/* v2.9 ✨ little twinkles (not a beam): a few star sprites that pulse round things you can pick up (loot · fruit · flowers) · ticked in twinkleTick */
+const STAR = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,240,1)'); gr.addColorStop(.25, 'rgba(255,240,180,.9)'); gr.addColorStop(1, 'rgba(255,230,150,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+  g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(16, 0); g.lineTo(18, 14); g.lineTo(32, 16); g.lineTo(18, 18); g.lineTo(16, 32); g.lineTo(14, 18); g.lineTo(0, 16); g.lineTo(14, 14); g.fill(); const t = new THREE.CanvasTexture(c); return t })();
+const TWINK = [];
+function twinkle(parent, r, y, n = 3, size = .22) { for (let i = 0; i < n; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: STAR, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: '#fff4c0' })); sp.userData.tw = { a: i / n * 6.28 + Math.random(), r, y, s: size, ph: Math.random() * 6 }; sp.name = 'tw'; parent.add(sp); TWINK.push(sp) } }
+function twinkleTick(now) { for (let i = TWINK.length - 1; i >= 0; i--) { const sp = TWINK[i], u = sp.userData.tw; if (!sp.parent || !sp.parent.parent) { if (!sp.parent || !sp.parent.parent) { TWINK.splice(i, 1); continue } } const k = Math.max(0, Math.sin(now / 260 + u.ph)), a = u.a + now / 2400; sp.position.set(Math.cos(a) * u.r, u.y + Math.sin(now / 700 + u.ph) * .08, Math.sin(a) * u.r); sp.scale.setScalar(u.s * (.25 + k * .9)); sp.material.opacity = .25 + k * .75 } }
+function dropPut(g, x, z, col, data) { twinkle(g, .4, .35, 3, .26);
   const px = x + (Math.random() - .5), pz = z + (Math.random() - .5); g.position.set(px, Math.max(-.3, groundH(px, pz)), pz); scene.add(g); drops.push(Object.assign({ g, t: D.DROP_LIFE }, data)) }
 function dropIngr(k, n, x, z) { const g = new THREE.Group(), glow = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 6, 20), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); glow.rotation.x = -Math.PI / 2; glow.position.y = .05; g.add(glow);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex(D.INGR[k].icon), transparent: true })); sp.scale.setScalar(.55); sp.position.y = .45; g.add(sp); dropPut(g, x, z, '#ffe8a0', { ingr: k, n }) }
@@ -909,7 +917,7 @@ function frame(now) {
   }
   animate(HS, false, dt, now); animate(SB, false, dt, now); if (!S.story.freed) SB.root.position.y = Math.abs(Math.sin(now / 300)) * .05; for (const sh of TW.shops) if (sh.owner) animate(sh.owner, false, dt, now);
   for (const o of W.clear.values()) if (o.shake > 0 && o.g) { o.shake -= dt; o.g.rotation.z = Math.sin(now / 30) * .06 * (o.shake / .25) } else if (o.g && o.g.rotation.z) o.g.rotation.z = 0;
-  for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.g.children[1].rotation.y += dt * 2; const bm = d.g.getObjectByName('beam'); if (bm) bm.material.opacity = .28 + Math.sin(now / 300 + i) * .12; if ((d.t -= dt) <= 0) { scene.remove(d.g); drops.splice(i, 1) } }
+  for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.g.children[1].rotation.y += dt * 2; if ((d.t -= dt) <= 0) { scene.remove(d.g); drops.splice(i, 1) } }
   W.boat.position.y = -.25 + Math.sin(now / 900) * .05; W.boat.rotation.z = Math.sin(now / 1100) * .03;
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
@@ -1840,7 +1848,7 @@ function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f ===
   for (let i = 0; i < (o.t === 'tree' ? 7 : 5); i++) { const a = i * 2.39 + o.ry, e = -.15 + (i % 3) * .2, dir = new THREE.Vector3(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)), org = new THREE.Vector3(c.x, cy, c.z).addScaledVector(dir, rr);
     rc.set(org, dir.clone().negate()); const hit = rc.intersectObject(o.g, true).find(x => x.object.name !== 'fruits' && !(x.object.parent && x.object.parent.name === 'fruits')); if (!hit) continue;
     const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
-  o.g.add(g) }
+  twinkle(g, .55 / (o.g.scale.x || 1), (o.t === 'tree' ? 1.9 : .65) / (o.g.scale.x || 1), o.t === 'tree' ? 3 : 2, .24); o.g.add(g) }
 function pickFruit(o) { tutEv('gather'); const F = fruitOf(o), n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
 const CTX_ICO = { tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
 const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper', 'knpc']);
@@ -2212,7 +2220,7 @@ const KNPC = {};
 /* v2.9 each kingdom dresses its people its own way (vinyl chibi) */
 const KLOOK = { navalee: [['#3a8aa8', '#5ac0c8', '#2a6a8a'], ['#f2cfa6', '#c28b5c', '#e2b183']], sylvaren: [['#6a8a3a', '#9a7a3a', '#4a6a2a'], ['#e2b183', '#f2cfa6', '#8c5a3c']], asrah: [['#e0a040', '#d86a3a', '#f0e0c0'], ['#c28b5c', '#8c5a3c', '#e2b183']],
   frosthelm: [['#d8e4f0', '#7a9ac0', '#c84a4a'], ['#f9e0d2', '#f2cfa6', '#e2b183']], valkara: [['#8a3a2a', '#5a4a48', '#c8602a'], ['#c28b5c', '#8c5a3c', '#e2b183']], deadgar: [['#5a4a6a', '#3a3040', '#7a6a8a'], ['#d8d0d8', '#c8c0d0', '#e8e0e8']] };
-const KHAT = { navalee: 'cap', asrah: 'wrap', frosthelm: 'fur', valkara: 'helm', deadgar: 'hood', sylvaren: 'leaf' };
+const KHAT = { asrah: 'veil', frosthelm: 'scarf', deadgar: 'mask', valkara: 'furmask' };
 const HAIRS = { m: ['messy', 'spiky', 'side'], f: ['long', 'pony', 'buns', 'bob', 'twin'] };
 function npcLook(k, n) { const P = KLOOK[k], h = idHash({ id: n.id }), sex = n.v === 1 || /แม่|ยาย|ราชินี|เจ้าหญิง|มิรา|ซาร่า|ป้า/.test(n.name) ? 'f' : 'm';
   return { v: 2, sex, hair: HAIRS[sex][h % HAIRS[sex].length], hairCol: /ยาย|ตา|ผู้เฒ่า|แม่ชี|อาจารย์/.test(n.name) ? '#e8e8f0' : ['#3a2418', '#7a4428', '#1e1520', '#c8a060', '#b05a30'][h % 5], skin: P[1][h % 3], wear: n.lead ? 'mage' : ['traveler', 'farmer'][h % 2], bottom: sex === 'f' && h % 3 ? 'skirt' : 'pants', top: P[0][h % 3], eyes: ['round', 'smile', 'sparkle', 'round'][h % 4], eyeCol: ['#4a3020', '#3a6a9a', '#3a8a5a', '#8a5ad8'][h % 4] } }

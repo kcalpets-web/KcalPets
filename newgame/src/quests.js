@@ -89,7 +89,7 @@ export const KQUEST = {
   as1: { t: 'killK', n: 6, text: 'คุ้มกันคาราวาน: ปราบมอนสเตอร์ในอัสราห์ 6 ตัว', done: 'ทางสะดวกแล้ว คาราวานออกเดินทางได้!', reward: { coin: 1000, gem: 25 } },
   as2: { t: 'bring', need: { hide: 4 }, text: 'หาหนัง 4 ผืนมาซ่อมกระโจม', done: 'กระโจมใหม่เอี่ยม ขอบใจเพื่อน', reward: { coin: 800 } },
   as3: { t: 'bring', need: { grass: 12 }, text: 'หาหญ้า 12 กำให้ซาร่าทอผ้า', done: 'ผ้าเย็นสบายพร้อมแล้ว นี่ของเธอ', reward: { coin: 500, wear: 'tank' } },
-  as4: { t: 'bring', need: { feather: 5 }, text: 'หาขนนก 5 อันทำหมวกกันแดด', done: 'หมวกกันแดดแบบทะเลทรายแท้ๆ!', reward: { coin: 500, wear: 'strawHat' } },
+  as4: { t: 'bring', need: { feather: 5 }, text: 'หาขนนก 5 อันทำผ้าปิดหน้ากันแดด', done: 'ผ้าปิดหน้าแบบทะเลทรายแท้ๆ!', reward: { coin: 500, wear: 'strawHat' } },
   as5: { t: 'bring', need: { chili: 3 }, text: 'หาพริกป่า 3 เม็ดให้ป้าพริก', done: 'เผ็ดได้ใจ! สอนสูตรให้เลย', reward: { coin: 600, recipe: 'chilisoup' } },
   as6: { t: 'cook', k: 'chilisoup', text: 'ทำซุปพริกร้อนให้ป้าพริกชิม 1 ครั้ง', done: 'อร่อย! ฝีมือไม่เบาเลยนะ', reward: { coin: 900, gem: 30 } },
   asR1: { t: 'chest', n: 2, text: 'ขุดหาตาน้ำโอเอซิส (เปิดหีบลับในอัสราห์ 2 ใบ)', done: 'น้ำพุโอเอซิสกลับมาแล้ว!', reward: { coin: 1000 } },
