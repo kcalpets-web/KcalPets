@@ -201,11 +201,25 @@ function gearView() {
   if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), held = ['sword', 'axe', 'hammer', 'sickle'].includes(tool) ? tool : '', k = held + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
   if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
   const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
-  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15;   /* weapons: tip up / spear forward in the combat stance */ g.position.set(0, -.02, .02); hand.add(g) }   /* tip up and forward */
+  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); hand.add(g) }   /* tip up and forward */
   if (arm && shield && shieldOn()) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
   { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
     if (wpn && held !== 'sword') { const sw = new THREE.Group(); itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55); g.add(sw) }
     if (shield && !shieldOn()) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
+}
+/* v2.0.2 two-handed weapons & spears: the left hand holds the shaft too (a tiny IK on the left shoulder + elbow, warm-started every frame) */
+const GRIP_AT = { two: -.14, spear: .3 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
+function gripTick() {
+  const w = weaponOf(), R = PL.rig, K = w && D.ITEMS[w.t].kind;
+  if (tool !== 'sword' || !w || GRIP_AT[K] == null || PL.swim || RIDE || GLIDE || EAT || !R.armL || !R.elL) { PL.ik = null; return }
+  const hand = PL.body.getObjectByName('handR'), g = hand && hand.children.find(o => o.name === 'gear'); if (!g) return;
+  PL.root.updateMatrixWorld(true);   /* the right arm may move a little too (kept small) so both hands meet in front of the chest */
+  const a = R.armL, e = R.elL, J = [[a, 'x'], [a, 'z'], [e, 'x'], [R.armR, 'z'], [R.armR, 'x']], base = J.map(([o, ax]) => o.rotation[ax]), ik = PL.ik || (PL.ik = [0, 0, 0, 0, 0]);
+  const put = () => J.forEach(([o, ax], i) => { o.rotation[ax] = base[i] + ik[i] }), err = () => { if (e.rotation.x > .05 || e.rotation.x < -2.7) return 1e9; a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
+    return e.localToWorld(_gH.set(0, -.34, 0)).distanceToSquared(_gT) + .01 * (ik[3] * ik[3] + ik[4] * ik[4]) };
+  put(); let best = err();
+  for (let st = .3; st > .01; st *= .5) for (let i = 0; i < 5; i++) for (const sg of [1, -1]) { ik[i] += sg * st; put(); const v = err(); if (v < best) { best = v; break } ik[i] -= sg * st; put() }
+  PL.gripErr = e.localToWorld(_gH.set(0, -.34, 0)).distanceTo(_gT);
 }
 /* v2.0 helpers: a model for any item · auto-equip the first weapon / shield · wear and break */
 function itemMesh(g, t) { const T = D.ITEMS[t]; (T.slot === 'shield' ? SHIELD_MESH[t] : WEAPON_MESH[t])?.(g) }
@@ -244,6 +258,7 @@ function walkTick(dt, now) {
     else { const up = t < .4 ? t / .4 : 1 - (t - .4) / .6; for (const j of ['armR', 'armL']) if (R[j]) R[j].rotation.x = -3 * up + (t > .4 ? .6 * (t - .4) / .6 : 0); for (const j of ['elR', 'elL']) if (R[j]) R[j].rotation.x = -.6 * up; PL.body.rotation.x = .1 + (t > .4 ? .35 * (1 - up) : 0) } }
   else if (swingT > 0) { swingT -= dt; const a = PL.rig.armR, e = PL.rig.elR, t = 1 - Math.max(0, swingT) / .3;   // v1.8 swing: wind up · strike · follow through
     if (a) a.rotation.x = t < .3 ? -2.8 * (t / .3) : -2.8 + (t - .3) / .7 * 3.5; if (e) e.rotation.x = t < .3 ? -.9 : -.9 + (t - .3) / .7 * .85; PL.body.rotation.y = PL.yaw + (t < .3 ? .4 * t / .3 : .4 - (t - .3) / .7 * .9) }
+  gripTick();
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
   if (mv || walkT || now > peekT) { camT.x += (me().x - camT.x) * Math.min(1, dt * 5); camT.z += (me().z + 1 - camT.z) * Math.min(1, dt * 5) }   // the character stays in the middle of the screen
   workTick(now);
