@@ -319,8 +319,8 @@ const VLK = {   /* the three everyday villagers */
 export const HUMANS = {
   kealee(g) { vinyl(g, { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#f4f0e8', eyes: 'sparkle', eyeCol: '#3a9a8a' }); HEADX(g, h => h.add(vm(SPH, '#ff4a5a', .38, .18, .12, .07, .05, .045, .3))) },   // red hair clip
   villager(g, v = 0, look = null, hat = null) { vinyl(g, look || VLK[v % 3]); if (hat) npcHat(g, hat) },   // v2.9 no hats
-  sberh(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#c8803a', skin: '#f2cfa6', wear: 'mage', top: '#7aaa5a', eyes: 'round', eyeCol: '#3a6a2a' }); npcGlasses(g); npcHat(g, 'leaf') },   // young herbalist: glasses + a sprig
-  howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'sleepy', eyeCol: '#3a3040' }); npcBeard(g) },   // white beard
+  sberh(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#c8803a', skin: '#f2cfa6', wear: 'mage', top: '#7aaa5a', eyes: 'round', eyeCol: '#3a6a2a', glasses: 'round', mouth: 'grin' }); npcHat(g, 'leaf') },   // young herbalist: glasses + a sprig
+  howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'smile', eyeCol: '#3a3040', beard: 'full', cheek: 'rosy' }) },   // white beard
 };
 /* the shadow that takes Kealee: a black winged shape inside a huge black smoke cloud */
 export function shadowBeast(g) {
