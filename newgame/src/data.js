@@ -55,6 +55,23 @@ export const MON = {
   grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['branch', 'leafBlade', 'pitchfork', 'leafVest'], tier: 'normal' },
   branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor'], tier: 'normal' },
   rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'greatsword', 'stoneHammer', 'stoneArmor', 'soldierBow'], tier: 'normal' },
+  /* v2.7 kingdom monsters (a base model, recoloured) */
+  sandSlime:  { base: 'slime', cols: ['#c89a3a', '#ffe08a'], ingr: ['jelly', .6], name: '🟡 สไลม์ทราย', lv: 6, hp: 70, atk: 11, def: 3, exp: 40, coin: [120, 220], mat: { stone: 1 }, loot: ['scimitar', 'soldierSpear', 'hunterBow'], tier: 'normal' },
+  iceSlime:   { base: 'slime', cols: ['#4a98d8', '#c8f0ff'], ingr: ['jelly', .6], name: '🔵 สไลม์น้ำแข็ง', lv: 7, hp: 80, atk: 12, def: 4, exp: 45, coin: [140, 240], mat: { stone: 1 }, loot: ['knightSword', 'soldierBow'], tier: 'normal' },
+  lavaSlime:  { base: 'slime', cols: ['#c8401a', '#ffb040'], ingr: ['jelly', .6], name: '🔴 สไลม์ลาวา', lv: 9, hp: 100, atk: 15, def: 5, exp: 60, coin: [180, 300], mat: { ore: 1 }, loot: ['knightSword', 'golemCrusher'], tier: 'normal' },
+  frostGolem: { base: 'rockGolem', tint: '#9ad0f0', name: '🧊 อสูรน้ำแข็ง', lv: 9, hp: 150, atk: 16, def: 9, exp: 70, coin: [200, 320], mat: { stone: 4, ore: 1 }, loot: ['crystalBlade', 'stoneArmor', 'knightBow'], tier: 'normal' },
+  magmaGolem: { base: 'rockGolem', tint: '#e0502a', name: '🔥 อสูรแม็กม่า', lv: 11, hp: 180, atk: 19, def: 10, exp: 90, coin: [240, 380], mat: { stone: 4, ore: 2 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'normal' },
+  ghoul:      { base: 'goblin', tint: '#8a6aa8', ingr: ['meat', .3], name: '🧟 ผีดิบ', lv: 10, hp: 130, atk: 17, def: 6, exp: 80, coin: [220, 360], mat: {}, loot: ['kingSword', 'crystalBow'], tier: 'normal' },
+  witherImp:  { base: 'branchImp', tint: '#a0803a', name: '🍂 ภูตไม้เหี่ยว', lv: 5, hp: 75, atk: 10, def: 3, exp: 35, coin: [100, 200], mat: { wood: 3 }, loot: ['woodSpear', 'hunterBow', 'barkArmor'], tier: 'normal' },
+  marshSprite:{ base: 'grassSprite', tint: '#4aa0a0', ingr: ['berry', .5], name: '🪷 ภูตบึง', lv: 5, hp: 65, atk: 9, def: 3, exp: 32, coin: [90, 180], mat: { grass: 3 }, loot: ['harpoon', 'trident'], tier: 'normal' },
+  shadeKnight:{ base: 'goblinChief', tint: '#5a4a7a', ingr: ['meat', .5], name: '🗡️ อัศวินเงา', lv: 12, hp: 220, atk: 22, def: 12, exp: 120, coin: [300, 500], mat: { ore: 2 }, loot: ['kingSword', 'dragonBlade'], tier: 'normal' },
+  /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
+  mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
+  mbTreant: { base: 'branchImp', tint: '#3a2a1a', mini: 1, scale: 2.4, name: '🌳 รากดำ', lv: 15, hp: 1000, atk: 26, def: 12, exp: 450, coin: [1600, 2600], mat: { wood: 20 }, loot: ['crystalBow', 'dragonBlade'], tier: 'boss' },
+  mbScorp:  { base: 'goblinChief', tint: '#c8902a', mini: 1, scale: 1.9, name: '🦂 ราชาแมงป่อง ซาบัค', lv: 17, hp: 1200, atk: 30, def: 15, exp: 520, coin: [2000, 3000], mat: { ore: 5 }, loot: ['scimitar', 'kingSword'], tier: 'boss' },
+  mbWolf:   { base: 'rockGolem', tint: '#e8f4ff', mini: 1, scale: 2, name: '🐺 ฮาวล์ จ่าฝูงน้ำแข็ง', lv: 18, hp: 1300, atk: 32, def: 16, exp: 560, coin: [2200, 3200], mat: { ore: 5 }, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
+  mbMagma:  { base: 'rockGolem', tint: '#ff4a1a', mini: 1, scale: 2.6, name: '🗿 มักม่า โกเลมลาวา', lv: 20, hp: 1600, atk: 36, def: 20, exp: 700, coin: [2600, 3800], mat: { ore: 8 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
+  mbLich:   { base: 'goblinChief', tint: '#3a2a4a', mini: 1, scale: 2.2, name: '🧟 มอร์กัส ราชันผีดิบ', lv: 22, hp: 1800, atk: 40, def: 20, exp: 800, coin: [3000, 4500], mat: { ore: 8 }, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
 };
 /* drop rarity: base 70/20/9/1 — farm monsters can only drop Basic/Rare → renormalised 77.8 / 22.2 */
 export const RAR = ['B', 'R', 'E', 'L'];
@@ -117,7 +134,28 @@ export const HIT_CD = { s: 300, m: 550, l: 850 };
 export const FRUIT = { tree: [['apple', 1, 2, '#e8403a'], ['peach', 1, 2, '#ffa07a']], bush: [['berry', 1, 3, '#6a5ad8'], ['chili', 1, 2, '#e8302a'], ['mint', 2, 3, '#8ae86a']] }, FRUIT_EVERY = 3,   /* v2.6 [ingredient, min, max, colour] · which one = by the plant's id */ FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
 export const TAG_SHOW = 8;                                       // v2.4.1 seconds a monster's name + HP bar stays after it is hit
 export const HUNT = { chance: .35, r: 7 };                         // v2.6 monsters hunting animals: chance to look for prey (every ~4 s) · how far they see it
-export const DROP_LIFE = 300;                                   // v2.6 seconds loot stays on the ground
+export const DROP_LIFE = 300;
+/* v2.7 the seven kingdoms: wild monsters · mini-boss spot · cycle (every CYCLE_DAYS game days the dark cloud brings every monster back) */
+export const K_MONS = { navalee: ['marshSprite', 'slime', 'marshSprite', 'grassSprite'], sylvaren: ['witherImp', 'branchImp', 'witherImp', 'grassSprite'], luminia: ['shadeKnight', 'goblin', 'rockGolem', 'shadeKnight'], frosthelm: ['iceSlime', 'frostGolem', 'iceSlime', 'iceSlime'], deadgar: ['ghoul', 'ghoul', 'shadeKnight', 'ghoul'], asrah: ['sandSlime', 'sandSlime', 'goblin', 'sandSlime'], valkara: ['lavaSlime', 'magmaGolem', 'lavaSlime', 'lavaSlime'] };
+export const MINIB = { navalee: ['mbCrab', 40, 30], sylvaren: ['mbTreant', -30, 20], asrah: ['mbScorp', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
+export const CYCLE_DAYS = 3;
+export const CHESTS = { n: 34, trap: .22, coin: [300, 1200] };   // hidden chests across the world (some are traps)
+export const NOTES = [
+  'ปีที่หอคอยแสงยังสว่าง ทุกคืนแสงจะส่องไปถึงทุกอาณาจักร… ไม่มีใครกลัวความมืดเลย',
+  'พ่อมดหลวงเฝ้ามองเมฆบนฟ้าทุกคืน เขาบอกว่าเมฆมีเสียงกระซิบ',
+  'คืนที่เมฆทมิฬมาครั้งแรก ระฆังทุกเมืองดังพร้อมกันเอง',
+  'ใครอ่านอยู่ จงจำไว้: เมฆกลัวแสง แต่แสงต้องมาจากหัวใจของผู้คน',
+  'นาวาลีจมเพราะคลื่นที่ไม่มีลม… ทะเลไม่ได้โกรธ มันถูกบังคับ',
+  'ต้นไม้แม่แห่งซิลวาเรนยังไม่ตาย มันแค่หลับรอให้ใครสักคนปลุก',
+  'อัสราห์เคยมีตลาดกลางคืนที่สว่างที่สุด ปีศาจเกลียดแสงโคมพวกนั้น',
+  'ราชินีแห่งฟรอสต์เฮล์มผนึกเมืองไว้เองเพื่อไม่ให้เมฆเข้ามา',
+  'ช่างตีเหล็กวัลคาร่าตีกุญแจดวงหนึ่ง… เขาไม่เคยบอกว่ามันใช้เปิดอะไร',
+  'ในเดดการ์ อากาศถูกขโมยไป ใครจะหายใจได้ต้องมีใบไม้วิเศษ',
+  'คีลีชอบนั่งริมหน้าผาตอนเย็น เธอบอกว่าลมที่นั่นพาเสียงหัวเราะมาด้วย',
+  'ร่างจริงของเมฆทมิฬซ่อนอยู่ในหอคอยแสง… ยิ่งเมฆรอบเมืองบางลง ประตูยิ่งใกล้เปิด',
+  'ถ้ำทุกแห่งในโลกนี้ซ่อนของบางอย่างไว้ ลองเดินเข้าไปดูสิ',
+  'นักเดินทางคนหนึ่งเขียนไว้: ถ้าเหนื่อยนัก ให้ร่อนลงจากที่สูง แล้วมองโลกจากด้านบน',
+];                                   // v2.6 seconds loot stays on the ground
 export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
@@ -410,9 +448,11 @@ export const WEAR = {
   furCoat:  { slot: 'body', icon: '🧥', name: 'เสื้อขนสัตว์', warm: 3, cool: 0, col: '#d8c0a0' },
   shorts:   { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 1 },
   furPants: { slot: 'legs', icon: '👖', name: 'กางเกงขนสัตว์', warm: 2, cool: 0 },
+  leafMask: { slot: 'head', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ', warm: 0, cool: 0, air: 1, hat: 'mask' },   // v2.7 breathe in Deadgar
 };
 export const CLIMATE = { lv: [.6, .75, .9], tick: 4, dmg: 4, fire: 3, swimCool: 2, warn: 'ชุดไม่พอกับอากาศ' };   // TEMPV beyond ±lv[i] = level i+1 · every tick s: −dmg HP × (level − protection)
 export const CRAFT = [
+  { k: 'leafMask', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ (หายใจในเดดการ์)', need: { mint: 3, flower: 2, grass: 6 }, give: { wear: 'leafMask' } },
   { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (อุ่น +2)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
   { k: 'woolCap', icon: '🧶', name: 'หมวกไหมพรม (อุ่น +1)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
   { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (เย็น +2)', need: { grass: 6 }, give: { wear: 'tank' } },

@@ -5,9 +5,10 @@
    No pets yet: the first pet arrives in the forest. Farm monsters only wake once the player has a sword. */
 import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE, STORM } from './clay.js';
 import * as D from './data.js';
+import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, CLOUD } from './world.js';
+import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -376,8 +377,9 @@ function petExp(p, n) { const r = gainPetExp(p, n), e = PA.get(p.id); if (!e) re
 /* ---------- monsters: any number at once (the farm one is saved in S.mon; town slimes respawn on each visit until cleared) ---------- */
 const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbit: .9, chicken: .9, duck: .9, deer: 1, boar: 1, whale: 1.4, hawk: .9, stormLord: 1.7, shade: .9 };
 function monSpawn(kind, x, z, o = {}) {
-  const T = D.MON[kind], A = makeActor(g => (MONS[kind] || ANIMALS[kind] || { stormLord: STORM.lord, shade: STORM.shade }[kind] || MONS.slime)(g, ...(kind === 'slime' ? [['#3fa860', '#8ff0a8']] : kind === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : [])), MSCALE[kind] || .85);
-  if (T.legs) rigOf(A);
+  const T = D.MON[kind], bk = T.base || kind, A = makeActor(g => { (MONS[bk] || ANIMALS[bk] || { stormLord: STORM.lord, shade: STORM.shade }[bk] || MONS.slime)(g, ...(T.cols ? [T.cols] : bk === 'slime' ? [['#3fa860', '#8ff0a8']] : bk === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : []));
+    if (T.tint) { const tc = new THREE.Color(T.tint); g.traverse(o => { if (o.isMesh && o.material && o.material.color) { o.material = o.material.clone(); o.material.color.lerp(tc, .6); if (T.mini && o.material.emissive) { o.material.emissive.copy(tc).multiplyScalar(.12) } } }) } }, T.scale || MSCALE[kind] || MSCALE[bk] || .85);   /* v2.7 recoloured kingdom monsters + mini-bosses */
+  if (T.legs || (T.base && D.MON[T.base].legs)) rigOf(A);
   A.root.position.set(x, groundH(x, z), z); A.root.scale.setScalar(.01);
   const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x, z), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
   m.pick.userData.pick.m = m; if (!S.journal.mons[kind]) { S.journal.mons[kind] = { seen: 1, kills: 0 }; if (S.story.intro) floater('📓 บันทึกใหม่', 'item', x, 2.2, z) } m.tag = document.createElement('div'); m.tag.className = 'mtag'; document.body.appendChild(m.tag); mons.push(m);
@@ -397,8 +399,9 @@ function monDie(m) {
   for (const e of PA.values()) if (e.foe === m) petExp(e.p, Math.round(T.exp * .6));
   const forced = !S.stat.itemDrops && (m.farm || m.kind === 'slimeKing');
   if (!T.animal && S.bowGiven && Math.random() < D.ARROW.drop) { const n = 1 + Math.floor(Math.random() * 3); S.arrows = (S.arrows || 0) + n; floater(`🏹 +${n}`, 'coin', x, 2.3, z) }
-  if (T.ingr && Math.random() < T.ingr[1]) dropIngr(T.ingr[0], T.ingr[2] || 1, x, z); if (isNight()) bump('nightKills'); (S.journal.mons[m.kind] = S.journal.mons[m.kind] || { seen: 1, kills: 0 }).kills++;
+  if (T.ingr && Math.random() < T.ingr[1]) dropIngr(T.ingr[0], T.ingr[2] || 1, x, z); if (isNight()) bump('nightKills'); { const B = kingdomAt(x, z); if (B.home < .5 && B.w > .55) bump('kk_' + B.k) } (S.journal.mons[m.kind] = S.journal.mons[m.kind] || { seen: 1, kills: 0 }).kills++;
   if (T.loot.length && (forced || Math.random() < D.ITEM_DROP * (isNight() ? D.NIGHT.drop : 1))) { const r = forced ? 'R' : rollRarity(D.RAR_OK[T.tier]), t = T.loot[Math.floor(Math.random() * T.loot.length)]; dropItem({ t, r }, x, z) } if (T.animal) bump('hunt');
+  if (T.mini) { const k = Object.keys(D.MINIB).find(k => D.MINIB[k][0] === m.kind); (S.minib = S.minib || {})[k] = Date.now(); dropItem({ t: T.loot[0], r: 'E' }, x, z); dropItem({ t: T.loot[1] || T.loot[0], r: Math.random() < .4 ? 'L' : 'E' }, x + 1, z); sfx('level'); cheer(2400); setTimeout(() => toast(`🏆 ปราบ <b>${T.name}</b> แล้ว!<br>ของรางวัลตกอยู่บนพื้น ✨`, 3200), 600); save() }
   if (m.area === 'town' || m.area === 'forest') S.stat['story_' + m.kind] = sk(m.kind) + 1;
   if (m.camp) campKill(m);
   if (m.T.boss) setTimeout(stormWin, 600);
@@ -815,6 +818,10 @@ function useThing(k) {
     case 'gateF': return goPath(FOREST.gateW.x - 3, 0);
     case 'cage': return openCage();
     case 'pot': return openPot(k.key);
+    case 'wchest': return openWChest(k.id);
+    case 'knpc': return talkNpc(k.key);
+    case 'tower': return towerDoor();
+    case 'note': return readNote(k.id);
     case 'plot': return plotAction(k.key);
     case 'chest': return openChest(k.id);
     case 'build': return openBuilt(k.id);
@@ -970,8 +977,8 @@ function hud() {
   const q = D.QUESTS[S.quest];
   if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '';
     const jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;
-    $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>📜 เรื่องหลัก ${S.quest + 1}/${D.QUESTS.length}</b><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
-  else $('quest').style.display = 'none';
+    $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>${MAIN_Q.icon} ${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}</b><br><small>📖 บทนำ ${S.quest + 1}/${D.QUESTS.length}</small><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
+  else { const kq = kqTrack(); $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>${MAIN_Q.icon} ${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}</b><br>${kq || (restoredN() >= MAIN_Q.need ? '🗼 ไปที่หอคอยแสง กลางเมืองหลวงลูมิเนีย' : '🗺️ ออกเดินทางไปยังอาณาจักรต่างๆ ช่วยผู้คนฟื้นฟูบ้านเมือง')}` }
 }
 $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) openPet(S.pets.find(p => p.id === t.dataset.pet)) };
 function questCheck() {
@@ -1011,6 +1018,7 @@ function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (!H) return; con
   const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .8 });
   if (H.hat === 'straw') { const br = new THREE.Mesh(new THREE.CylinderGeometry(.62, .66, .04, 20), M('#e8cf7a')); br.position.y = .52; const cr = new THREE.Mesh(new THREE.SphereGeometry(.36, 16, 10, 0, 6.3, 0, 1.6), M('#e0c060')); cr.position.y = .5; const bd = new THREE.Mesh(new THREE.CylinderGeometry(.37, .37, .07, 18), M('#c0503a')); bd.position.y = .56; h.add(br, cr, bd) }
   else if (H.hat === 'wool') { const cr = new THREE.Mesh(new THREE.SphereGeometry(.44, 18, 12, 0, 6.3, 0, 1.45), M('#d84a5a')); cr.position.y = .32; const pm = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), M('#f4f0e8')); pm.position.y = .78; h.add(cr, pm) }
+  else if (H.hat === 'mask') { const lf = new THREE.Mesh(new THREE.SphereGeometry(.26, 12, 8), M('#5ab84a')); lf.scale.set(1.3, .75, .35); lf.position.set(0, .02, .4); const st = new THREE.Mesh(new THREE.TorusGeometry(.45, .025, 6, 24), M('#3a7a3a')); st.rotation.x = Math.PI / 2; st.position.y = .05; h.add(lf, st) }
   else { const cr = new THREE.Mesh(new THREE.SphereGeometry(.47, 18, 12, 0, 6.3, 0, 1.75), M('#c89a6a')); cr.position.y = .28; const rim = new THREE.Mesh(new THREE.TorusGeometry(.42, .08, 8, 20), M('#f0e4d0')); rim.rotation.x = 1.75; rim.position.set(0, .2, .12); h.add(cr, rim) }
   h.traverse(o => { if (o.isMesh) { o.castShadow = true; o.userData.noFacet = 1 } }); head.add(h) }
 function openWear() {
@@ -1024,11 +1032,11 @@ function openWear() {
 const playTxt = () => { const m = Math.floor((S.playS || 0) / 60), h = Math.floor(m / 60); return h ? `${h} ชม. ${m % 60} นาที` : `${m} นาที` };
 function openHome() {
   const T = [['bag', '🎒', 'กระเป๋า', ''], ['craft', '🛠️', 'คราฟ', ''], ['build', '🔨', 'ก่อสร้าง', Object.keys(S.bp).length ? '' : 'ยังไม่มีแบบแปลน'], ['map', '🗺️', 'แผนที่', ''], ['book', '📓', 'สมุดบันทึก', ''],
-    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['wear', '👕', 'ชุด', ''], ['album', '🖼️', 'อัลบั้ม', ''], ['me', '👤', 'ตัวละคร', ''], ['set', '⚙️', 'ตั้งค่า', '']];
+    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['wear', '👕', 'ชุด', ''], ['notes', '📜', 'โน้ต', ''], ['album', '🖼️', 'อัลบั้ม', ''], ['me', '👤', 'ตัวละคร', ''], ['set', '⚙️', 'ตั้งค่า', '']];
   sheet('🏠 เมนู', (b, redraw, close) => {
     b.innerHTML = `<p class="mut" style="text-align:center">⏱️ เล่นไปแล้ว ${playTxt()}</p><div class="hgrid">${T.map(([k, i, n, lock]) => `<button class="htile${lock ? ' lock' : ''}" data-h="${k}"><b>${i}</b><span>${n}</span>${lock ? `<small>${lock}</small>` : ''}</button>`).join('')}</div>`;
     b.querySelectorAll('[data-h]').forEach(x => x.onclick = () => { const k = x.dataset.h, t = T.find(t => t[0] === k); if (t[3]) { hint('🔒 ' + t[3], 1500); return } close(); sfx('tap');
-      ({ bag: () => openBag(), craft: openCraft, build: openBuild, map: openMap, book: () => openJournal(), shop: openTown, wear: openWear, album: openAlbum, me: openProfile, set: openMenu })[k]() });
+      ({ bag: () => openBag(), craft: openCraft, build: openBuild, map: openMap, book: () => openJournal(), shop: openTown, wear: openWear, notes: openNotes, album: openAlbum, me: openProfile, set: openMenu })[k]() });
   });
 }
 $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight') }); $('mFarm').addEventListener('click', e => { e.preventDefault(); setMode('farm') }); setTimeout(() => setMode(S.mode || 'fight', true));
@@ -1371,20 +1379,23 @@ let TEMPV = 0, cheerT = 0, jumpT = 0;
 const wearSum = () => { const o = { warm: 0, cool: 0 }; for (const sl in S.wear || {}) { const W2 = D.WEAR[S.wear[sl]]; if (W2) { o.warm += W2.warm; o.cool += W2.cool } } return o };
 function climate() { const L = D.CLIMATE.lv, tv = TEMPV - (nearFire() ? D.TEMP.fire : 0), cold = tv < -L[0] ? L.filter(v => tv < -v).length : 0, hot = tv > L[0] ? L.filter(v => tv > v).length : 0, w = wearSum();   /* a camp fire warms you, it never counts as heat */
   const warm = w.warm + buffOn('warm') + (nearFire() ? D.CLIMATE.fire : 0), cool = w.cool + buffOn('cool') + (PL && PL.swim ? D.CLIMATE.swimCool : 0);
-  return { cold, hot, warm, cool, short: cold ? Math.max(0, cold - warm) : hot ? Math.max(0, hot - cool) : 0 } }
+  const B = PL ? kingdomAt(me().x, me().z) : null, noAir = !!(B && B.k === 'deadgar' && B.home < .5 && B.w > .62 && !Object.values(S.wear || {}).some(k => D.WEAR[k] && D.WEAR[k].air) && !buffOn('air'));   /* v2.7 Deadgar has no air */
+  return { cold, hot, warm, cool, noAir, short: (cold ? Math.max(0, cold - warm) : hot ? Math.max(0, hot - cool) : 0) + (noAir ? 2 : 0) } }
 let climT = 0, climHint = 0, climLast = 0;
 function climateTick() { const now = performance.now(), step = climLast ? Math.min(1000, now - climLast) : 0; climLast = now; if (CUT || !S.avatar || inStorm() || DROWN) { climT = 0; return } const c = climate(); PL.climate = c;
   if (!c.short) { climT = 0; return } climT += step;
-  if (now > climHint) { climHint = now + 20000; hint(c.cold ? `🥶 หนาวสั่น! อากาศหนาวระดับ ${c.cold} แต่ชุดอุ่นแค่ +${c.warm} · ใส่ชุดอุ่น ผิงไฟ หรือกินอาหารร้อน` : `🥵 ร้อนจัด! อากาศร้อนระดับ ${c.hot} แต่ชุดเย็นแค่ +${c.cool} · ใส่ชุดบาง ลงน้ำ หรือกินของเย็น`, 3400) }
-  if (climT < D.CLIMATE.tick * 1000) return; climT = 0; const d = D.CLIMATE.dmg * c.short; S.hp = Math.max(0, pHp() - d); lastHurt = now; floater(`${c.cold ? '🥶' : '🥵'} -${d}`, 'hurt', me().x, 2.1, me().z); sfx('hurt'); hud();
-  if (S.hp <= 0) faint(c.cold ? '🥶 หนาวจนหมดสติ…' : '🥵 ร้อนจนหมดสติ…') }
+  if (now > climHint) { climHint = now + 20000; hint(c.noAir ? '🫁 หายใจไม่ออก! ดินแดนเดดการ์ไม่มีอากาศ · ใส่ 🍃 หน้ากากใบไม้วิเศษ (คราฟได้)' : c.cold ? `🥶 หนาวสั่น! อากาศหนาวระดับ ${c.cold} แต่ชุดอุ่นแค่ +${c.warm} · ใส่ชุดอุ่น ผิงไฟ หรือกินอาหารร้อน` : `🥵 ร้อนจัด! อากาศร้อนระดับ ${c.hot} แต่ชุดเย็นแค่ +${c.cool} · ใส่ชุดบาง ลงน้ำ หรือกินของเย็น`, 3400) }
+  if (climT < D.CLIMATE.tick * 1000) return; climT = 0; const d = D.CLIMATE.dmg * c.short; S.hp = Math.max(0, pHp() - d); lastHurt = now; floater(`${c.noAir ? '🫁' : c.cold ? '🥶' : '🥵'} -${d}`, 'hurt', me().x, 2.1, me().z); sfx('hurt'); hud();
+  if (S.hp <= 0) faint(c.noAir ? '🫁 ขาดอากาศจนหมดสติ…' : c.cold ? '🥶 หนาวจนหมดสติ…' : '🥵 ร้อนจนหมดสติ…') }
 let fainting = false;
 function faint(why) { if (fainting) return; fainting = true; closePara(); if (RIDE) try { unboard() } catch (e) { } walkT = null; work = null; toast(why, 2400);
   loading('😵 หมดสติ', 'ตื่นขึ้นมาที่แคมป์ที่พัก… ระวังอากาศด้วยนะ', () => { const c = CAMPS.home; placeMe(c.x + 1.2, c.z + 1); S.hp = D.HEART * 2; S.en = null; S.tired = false; fainting = false; save(); hud() }) }
 const cheer = (ms = 1600) => { cheerT = performance.now() + ms };
+const smw01 = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 function tempTick() {
   const q = me(), T = D.TEMP, nk = nightK(), noon = Math.max(0, 1 - Math.abs(S.time - 780) / 210), h = Math.max(0, groundH(q.x, q.z) - T.highFrom);
   let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
+  { const B = kingdomAt(q.x, q.z), g = (1 - B.home) * B.w, K = KINGDOMS[B.k]; if (g > 0 && K) t += g * (B.k === 'asrah' ? (nk > .5 ? -.35 : K.temp) : B.k === 'valkara' ? K.temp * (1 + smw01(200, 30, B.d) * .7) : K.temp) }   /* v2.7 kingdom weather */
   TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
 }
 let tempK = '';
@@ -1836,8 +1847,8 @@ function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f ===
     const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
   o.g.add(g) }
 function pickFruit(o) { tutEv('gather'); const F = fruitOf(o), n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
-const CTX_ICO = { talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
-const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper']);
+const CTX_ICO = { tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
+const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper', 'knpc']);
 const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; document.body.appendChild(e); return e })();
 let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
 function ctxTick(now, dt, mv) {
@@ -1937,7 +1948,7 @@ function crayonDraw() {
   SNAP = () => { document.body.classList.remove('snap'); finishDrawing(crayonPaint(R.domElement)) };
 }
 function finishDrawing(pic) {
-  { const url = pic.toDataURL('image/jpeg', .88); bump('drawings'); tutEv('draw'); albumAdd(url);
+  { const url = pic.toDataURL('image/jpeg', .88); bump('drawings'); tutEv('draw'); kqDrew(); albumAdd(url);
     let sub = null, bd = 9; const fy = camTP() ? CAM.yaw : PL.yaw, fx = Math.sin(fy), fz = Math.cos(fy);   /* a subject in front → the journal (centre crop) */
     const cand = [...mons.map(m => [m.kind, m.A.root]), ['howsif', HS.root], ['sberh', SB.root], ...[...PA.values()].map(e => [e.p.kind, e.A.root])];
     for (const [k, o] of cand) { const dx = o.position.x - me().x, dz = o.position.z - me().z, dd = Math.hypot(dx, dz); if (dd < bd && (dx * fx + dz * fz) / (dd || 1) > .55) { bd = dd; sub = k } }
@@ -2050,7 +2061,7 @@ const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) 
   for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) { const i = py * WMW + px, h = H[i], x = WORLD.x0 + (px + .5) / WMk, z = WORLD.z0 + (py + .5) / WMk;
     const sl = Math.abs((H[i + 1] ?? h) - (H[i - 1] ?? h)) + Math.abs((H[i + WMW] ?? h) - (H[i - WMW] ?? h)), shade = 1 - Math.max(-.25, Math.min(.25, ((H[i + 1] ?? h) - (H[i - 1] ?? h)) * .06));
     const hx = h < -.45 ? (h < -4 ? '#2a5a8a' : '#4a90c0') : h < .8 && x < coastX(z) + 14 ? '#e8dcb8' : h > 30 ? '#f0f2f6' : sl > 12 ? '#8a7a6a' : fbm(x / 60 + 4, z / 60, 2) > .55 ? '#3f7a34' : h > 14 ? '#6a9a4a' : '#7cc060';
-    const c = rgb(hx), j = i * 4; img.data[j] = c[0] * shade; img.data[j + 1] = c[1] * shade; img.data[j + 2] = c[2] * shade; img.data[j + 3] = 255 }
+    let c = rgb(hx); if (h >= -.45) { const B = kingdomAt(x, z), g = (1 - B.home) * B.w * .75, kc = rgb(KINGDOMS[B.k].col); if (g > 0) c = c.map((v, n) => v + (kc[n] - v) * g) } const j = i * 4; img.data[j] = c[0] * shade; img.data[j + 1] = c[1] * shade; img.data[j + 2] = c[2] * shade; img.data[j + 3] = 255 }
   g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * WMk, (MAP.z0 - WORLD.z0) * WMk, (MAP.x1 - MAP.x0) * WMk, (MAP.z1 - MAP.z0) * WMk) }
 const FCELL = 8, FC = (WORLD.x1 - WORLD.x0) / FCELL, FR = (WORLD.z1 - WORLD.z0) / FCELL, fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
 if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
@@ -2067,7 +2078,7 @@ function mapTick(now) {
   if (tool === 'rod' && !F && !(AIM && AIM.rod) && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
-  ruinTick(now); shrineTick(now); townLife(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
+  ruinTick(now); shrineTick(now); townLife(now); kingTick(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {
   const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
@@ -2100,6 +2111,8 @@ function openMap() {
     /* v2.5 names of places + people you can visit (only where you have explored) */
     const seen = (x, z) => { const fx = Math.floor((x - WORLD.x0) / FCELL), fz = Math.floor((z - WORLD.z0) / FCELL); return !!S.fog && S.fog[fz * FC + fx] === '1' };
     const label = (x, z, t, big) => { if (!seen(x, z)) return; const [px, py] = P(x, z); g.font = `900 ${fs(big ? 13 : 10.5)} system-ui`; g.lineWidth = 3 / kk; g.strokeStyle = '#1a1424cc'; g.fillStyle = big ? '#fff6d8' : '#ffffff'; g.strokeText(t, px, py); g.fillText(t, px, py); g.font = fs(16) + ' sans-serif' };
+    for (const k in KINGDOMS) { const K = KINGDOMS[k]; if ((S.kseen || {})[k]) label(K.x, K.z, K.name, true) } for (const kk in D.MINIB) if ((S.kseen || {})[kk] && !(S.minib || {})[kk]) { const K = KINGDOMS[kk], [x, y] = P(K.x + D.MINIB[kk][1], K.z + D.MINIB[kk][2]); g.fillText('💀', x, y) }
+    for (const n of NOTES) if ((S.notes || {})[n.id]) { const [x, y] = P(n.x, n.z); g.fillText('📜', x, y) } for (const c of CHESTS) if ((S.chests || {})[c.id]) { const [x, y] = P(c.x, c.z); g.fillText('📦', x, y) }
     if (mapZ >= 4) { for (const [x, z, k] of [[0, -18, 'farm'], [22, 18, 'meadow'], [46, -18, 'town'], [68, 18, 'hills'], [92, -18, 'forest']]) label(x, z, ZONES[k], true) } else label(46, -22, '🏡 ดินแดนบ้านเกิด', true);   /* zoomed out: one name for the home strip */
     const ppl = [[HOUSE.x, HOUSE.z, '🏠', 'บ้าน'], [HOWSIF.x, HOWSIF.z, '👴', 'ลุงฮาวซิฟ'], [TX, 7.5, '🛒', 'ร้านในเมือง']]; if (S.story.freed && SB.root.parent) ppl.push([SB.root.position.x, SB.root.position.z, '🧑‍🔬', 'Sberh']);
     for (const [x, z, ic, n] of ppl) if (seen(x, z)) { const [px, py] = P(x, z); g.fillText(ic, px, py); if (mapZ >= 5) label(x, z + 3.5, n) }   /* small names only when zoomed right in */
@@ -2128,6 +2141,105 @@ function openMap() {
 $('mini').onclick = () => openMap();
 /* ---------- the big world: chunks stream in around the player (terrain + decor near · clearables + wild monsters nearer) ---------- */
 const CHUNKS = new Map(); let chunkT = 0;
+/* ================= v2.7 the seven kingdoms: entering one · mini-bosses · hidden chests / caves / notes · the 3-day dark-cloud cycle ================= */
+const KPOS = {}; for (const k in KINGDOMS) KPOS[k] = { x: KINGDOMS[k].x, z: KINGDOMS[k].z };
+const R7 = (() => { let a = 7919; return () => { a = (a * 16807) % 2147483647; return a / 2147483647 } })();
+const SPOTS = [];   /* deterministic hidden spots on dry land: chests (some in caves) and notes */
+for (let i = 0; i < 900 && SPOTS.length < D.CHESTS.n + D.NOTES.length; i++) { const x = 60 + R7() * 1250, z = -660 + R7() * 1320; if (coreDist(x, z) < 30 || !walkLand(x, z) || waterAt(x, z) || wildH(x, z) > 45 || SPOTS.some(p => Math.hypot(p.x - x, p.z - z) < 70)) continue; SPOTS.push({ x, z }) }
+const CHESTS = SPOTS.slice(0, D.CHESTS.n).map((p, i) => ({ id: 'ch' + i, x: p.x, z: p.z, cave: i % 3 === 0, trap: R7() < D.CHESTS.trap, g: null, pick: null })), NOTES = SPOTS.slice(D.CHESTS.n).map((p, i) => ({ id: i, x: p.x, z: p.z, g: null, pick: null }));
+let kingT = 0, kingNow = '';
+function kingTick(now) {
+  if (now < kingT) return; kingT = now + 700; const q = me(), B = kingdomAt(q.x, q.z), k = B.home < .5 && B.w > .62 ? B.k : '';
+  if (k && k !== kingNow) { const K = KINGDOMS[k], first = !(S.kseen || {})[k]; (S.kseen = S.kseen || {})[k] = 1; toast(`${first ? '🗺️ ค้นพบ' : '📍'} <b>${K.name}</b><br><small>${K.sub}</small>`, first ? 3400 : 2000); if (first) sfx('level'); save() } kingNow = k;
+  /* mini-boss: waits at its lair until beaten */
+  for (const kk in D.MINIB) { const [kind, ox, oz] = D.MINIB[kk], K = KINGDOMS[kk], x = K.x + ox, z = K.z + oz, live = mons.find(m => m.kind === kind), d = dist(q.x, q.z, x, z);
+    if (!live && !(S.minib || {})[kk] && d < 70 && d > 18) { let px = x, pz = z; for (let r = 0; r < 30 && !walkLand(px, pz); r += 2) { px = x + Math.cos(r) * r; pz = z + Math.sin(r) * r } const M = monSpawn(kind, px, pz, { area: 'wild' }); M.chief = 1; M.home = [px, pz]; toast(`⚠️ รู้สึกถึงพลังมหาศาล… <b>${D.MON[kind].name}</b> อยู่ใกล้ๆ`, 2600) } }
+  /* hidden chests (caves) + notes appear when you come near */
+  for (const c of CHESTS) { const d = dist(q.x, q.z, c.x, c.z); if (d < 55 && !c.g) chestView(c); else if (d > 75 && c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = null } }
+  kqTick(q); for (const N of Object.values(KNPC)) { const a = N.A.root.position, dd = dist(q.x, q.z, a.x, a.z); if (dd < 6) N.A.yawT = Math.atan2(q.x - a.x, q.z - a.z) }
+  for (const n of NOTES) { const d = dist(q.x, q.z, n.x, n.z); if (d < 50 && !n.g && !(S.notes || {})[n.id]) noteView(n); else if ((d > 70 || (S.notes || {})[n.id]) && n.g) { scene.remove(n.g); removePick(W, n.pick); n.g = null } }
+  cycleTick();
+}
+function chestView(c) { const g = new THREE.Group(), y = groundH(c.x, c.z); g.position.set(c.x, y, c.z); scene.add(g); c.g = g;
+  if (c.cave) { const rk = new THREE.MeshStandardMaterial({ color: '#7a7068', roughness: 1, flatShading: true }); for (let i = 0; i < 9; i++) { const a = Math.PI * i / 8, b = new THREE.Mesh(new THREE.DodecahedronGeometry(.9 + (i % 3) * .2, 0), rk); b.position.set(Math.cos(a) * 2.1, Math.sin(a) * 2.1, -.4); b.castShadow = true; g.add(b) } const back = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 0), rk); back.position.set(0, .8, -2); back.scale.set(1.3, 1, .8); g.add(back); const dark = new THREE.Mesh(new THREE.CircleGeometry(1.6, 16), new THREE.MeshBasicMaterial({ color: '#141018' })); dark.position.set(0, 1, -.9); g.add(dark) }
+  const ch = new THREE.Group(); CAMP.chest(ch); ch.position.z = c.cave ? -.2 : 0; g.add(ch); c.lid = ch.getObjectByName('lid'); if ((S.chests || {})[c.id] && c.lid) c.lid.rotation.x = -1.9;
+  c.pick = addPick(W, c.x, c.z, .8, 1, { kind: 'wchest', id: c.id }); c.pick.position.y += Math.max(0, y) }
+function noteView(n) { const g = new THREE.Group(), y = groundH(n.x, n.z); g.position.set(n.x, y, n.z); scene.add(g); n.g = g;
+  const st = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .9, 6), new THREE.MeshStandardMaterial({ color: '#6a4024' })); st.position.y = .45; g.add(st); const pp = new THREE.Mesh(new THREE.BoxGeometry(.4, .5, .03), new THREE.MeshStandardMaterial({ color: '#f4ead0', emissive: '#ffe8a0', emissiveIntensity: .25 })); pp.position.set(0, .85, .04); g.add(pp);
+  n.pick = addPick(W, n.x, n.z, .7, 1.4, { kind: 'note', id: n.id }); n.pick.position.y += Math.max(0, y) }
+function openWChest(id) { const c = CHESTS.find(c => c.id === id); if (!c) return; if ((S.chests || {})[id]) { hint('📦 หีบนี้ว่างเปล่าแล้ว', 1200); return } (S.chests = S.chests || {})[id] = Date.now(); if (c.lid) c.lid.rotation.x = -1.9; sfx('done');
+  bump('kc_' + kingdomAt(c.x, c.z).k); if (c.trap) { shakeT = .4; sfx('boom'); const B = kingdomAt(c.x, c.z), L = D.K_MONS[B.k] || WILD_MONS[1]; for (let i = 0; i < 3; i++) monSpawn(L[i % L.length], c.x + Math.cos(i * 2.1) * 2.5, c.z + Math.sin(i * 2.1) * 2.5, { area: 'wild', aggro: true }); if (Math.random() < .5) addDeb('poison'); toast('💥 กับดัก! มอนสเตอร์โผล่ออกมา!', 2400); save(); return }
+  const r = Math.random(), coin = D.CHESTS.coin[0] + Math.floor(Math.random() * (D.CHESTS.coin[1] - D.CHESTS.coin[0])); S.coin += coin; floater(`🪙 +${coin}`, 'coin', c.x, 1.6, c.z);
+  if (r < .35) { const pool = Object.keys(D.ITEMS).filter(k => D.ITEMS[k].tier >= 2); dropItem({ t: pool[Math.floor(Math.random() * pool.length)], r: Math.random() < .25 ? 'E' : 'R' }, c.x, c.z + 1) }
+  else if (r < .55) { const W2 = Object.keys(D.WEAR).filter(k => !(S.clothes || {})[k] && k !== 'tunic' && k !== 'pants'); if (W2.length) { const k = W2[Math.floor(Math.random() * W2.length)]; S.clothes[k] = 1; toast(`👕 ได้ชุด ${D.WEAR[k].icon} ${D.WEAR[k].name}!`, 2400) } }
+  else if (r < .8) { const ks = ['honey', 'chili', 'mint', 'meat', 'peach', 'glowherb']; for (let i = 0; i < 3; i++) dropIngr(ks[Math.floor(Math.random() * ks.length)], 1 + Math.floor(Math.random() * 2), c.x, c.z + 1) }
+  else addMats({ ore: 2 + Math.floor(Math.random() * 3), stone: 4 }, c.x, c.z); bump('chests'); save(); hud() }
+function readNote(id) { const n = NOTES.find(n => n.id === id); (S.notes = S.notes || {})[id] = Date.now(); sfx('sketch'); save();
+  sheet('📜 โน้ตปริศนา', b => { b.innerHTML = `<div class="card" style="background:#f8efd8;font-size:16px;line-height:1.6">“${D.NOTES[id]}”</div><p class="mut">พบโน้ตแล้ว ${Object.keys(S.notes).length}/${D.NOTES.length} · อ่านซ้ำได้ที่ 🏠 → 📜 โน้ต</p>` }) }
+function openNotes() { const L = Object.keys(S.notes || {}).map(Number).sort((a, b) => a - b); sheet(`📜 โน้ตปริศนา ${L.length}/${D.NOTES.length}`, b => { b.innerHTML = L.length ? L.map(i => `<div class="card" style="background:#f8efd8">“${D.NOTES[i]}”</div>`).join('') : '<p class="mut">ยังไม่พบโน้ต · ตามหากระดาษเรืองแสงทั่วแผนที่</p>' }) }
+/* ☁️ every D.CYCLE_DAYS game days: the dark cloud covers the sky, lightning strikes the camps, and every monster comes back */
+function cycleTick() { if (S.lastT != null && S.time < S.lastT - 600) S.dayN = (S.dayN || 0) + 1; S.lastT = S.time; if (S.cycleAt == null) S.cycleAt = (S.dayN || 0) + D.CYCLE_DAYS;
+  if ((S.dayN || 0) >= S.cycleAt && !CUT && !document.querySelector('.ov') && S.story.intro) { S.cycleAt = (S.dayN || 0) + D.CYCLE_DAYS; darkCloud() } }
+function darkCloud() { const f = document.createElement('div'); f.className = 'cloudFx'; f.innerHTML = '<b>☁️ เมฆทมิฬแผ่ปกคลุมท้องฟ้า…</b><small>ฟ้าผ่าลงทุกแคมป์ · มอนสเตอร์ทั่วแผนที่ฟื้นคืนชีพ</small>'; document.body.appendChild(f); sfx('boom');
+  let k = 0; const fl = setInterval(() => { f.classList.toggle('bolt'); if (++k % 3 === 0) { sfx('thunder'); shakeT = .3 } if (k > 9) clearInterval(fl) }, 280);
+  for (const c of WC) if (S.wcamps[c.id]) { S.wcamps[c.id].c = 0; S.wcamps[c.id].o = 0; if (c.g) campDrop(c) } for (const [, ch] of CHUNKS) if (!ch.core) ch.spawned = 0; save();
+  setTimeout(() => { f.classList.add('out'); setTimeout(() => f.remove(), 900) }, 3600) }
+/* ================= v2.8 📜 the kingdoms' quests (src/quests.js): talk to people · bring / hunt / draw / find · the leader's 3 steps restore the kingdom → a memory · 6 restored → the Light Tower ================= */
+const restoredN = () => Object.keys(S.restored || {}).length;
+const KQS = () => S.kq || (S.kq = {});
+const haveOf = k => k === 'fish' ? Object.values(S.fish || {}).reduce((a, b) => a + b, 0) : D.MATS[k] ? S.mats[k] || 0 : S.ingr[k] || 0;
+function takeOf(k, n) { if (k === 'fish') { for (const f in S.fish) { const t = Math.min(n, S.fish[f]); S.fish[f] -= t; n -= t; if (!n) break } return } if (D.MATS[k]) S.mats[k] -= n; else S.ingr[k] -= n }
+const kingOfQ = id => Object.keys(KQ).find(k => KQ[k].restore.includes(id) || KQ[k].npcs.some(n => n.q.includes(id)));
+function qVal(id) { const Q = KQUEST[id], k = kingOfQ(id);
+  switch (Q.t) { case 'kill': return (S.journal.mons[Q.kind] || {}).kills || 0; case 'killK': return S.stat['kk_' + k] || 0; case 'chest': return S.stat['kc_' + k] || 0; case 'cook': return S.journal.recipes[Q.k] || 0; case 'catch': return S.pets.length; default: return 0 } }
+function qProg(id) { const Q = KQUEST[id], st = KQS()[id] || {};
+  switch (Q.t) { case 'bring': { const ks = Object.keys(Q.need); return { cur: ks.map(k => `${(D.MATS[k] ? D.MATS[k][0] : k === 'fish' ? '🐟' : (D.INGR[k] || {}).icon || '')} ${Math.min(haveOf(k), Q.need[k])}/${Q.need[k]}`).join(' · '), ok: ks.every(k => haveOf(k) >= Q.need[k]) } }
+    case 'minib': return { cur: (S.minib || {})[Q.k] ? '✅' : '0/1', ok: !!(S.minib || {})[Q.k] }; case 'restored': return { cur: (S.restored || {})[Q.k] ? '✅' : '0/1', ok: !!(S.restored || {})[Q.k] };
+    case 'draw': return { cur: st.drawn ? '✅' : '0/1', ok: !!st.drawn }; case 'notes': { const n = Object.keys(S.notes || {}).length; return { cur: `${Math.min(n, Q.n)}/${Q.n}`, ok: n >= Q.n } }
+    default: { const n = qVal(id) - (st.b || 0), g = Q.n || 1; return { cur: `${Math.min(n, g)}/${g}`, ok: n >= g } } } }
+function qAccept(id) { KQS()[id] = { st: 'on', b: qVal(id), t: Date.now() }; sfx('tap'); toast(`📜 รับเควส: ${KQUEST[id].text}`, 2200); save(); hud() }
+function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {};
+  if (R.coin) S.coin += R.coin; if (R.gem) S.gem += R.gem; if (R.wear) (S.clothes = S.clothes || {})[R.wear] = 1; if (R.item) dropItem({ t: R.item.t, r: R.item.r }, me().x + .8, me().z); if (R.recipe) S.meals[R.recipe] = (S.meals[R.recipe] || 0) + 2;
+  sfx('level'); cheer(1600); bump('kquests'); toast(`✅ ${npc ? npc.icon + ' ' + npc.name + ': ' : ''}${Q.done}<br>${[R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? (D.RECIPES.find(r => r.k === R.recipe) || {}).icon + ' ×2' : ''].filter(Boolean).join(' · ')}`, 3400);
+  const k = kingOfQ(id); if (KQ[k].restore.every(r => (KQS()[r] || {}).st === 'done') && !(S.restored || {})[k]) setTimeout(() => restoreKingdom(k), 1600); save(); hud(); kqMarks() }
+function kqDrew() { const k = kingdomAt(me().x, me().z); for (const id in KQS()) { const Q = KQUEST[id]; if (Q && Q.t === 'draw' && KQS()[id].st === 'on' && kingOfQ(id) === k.k && k.w > .5) KQS()[id].drawn = 1 } }
+function kqTrack() { const on = Object.keys(KQS()).filter(id => KQS()[id].st === 'on' && KQUEST[id]); if (!on.length) return ''; const id = on.find(i => qProg(i).ok) || on[on.length - 1], p = qProg(id); return `📜 ${KQUEST[id].text} (${p.cur})${p.ok ? ' ✅ กลับไปส่งได้แล้ว' : ''}` }
+function restoreKingdom(k) { (S.restored = S.restored || {})[k] = Date.now(); save(); capCloud(); memoryFx(KQ[k].memory, () => { toast(`🌈 ${KINGDOMS[k].name} ฟื้นฟูแล้ว!<br>☁️ เมฆทมิฬเหนือเมืองหลวงเล็กลง (${restoredN()}/${MAIN_Q.need})`, 3600); if (restoredN() >= MAIN_Q.need) setTimeout(() => toast('🗼 เมฆทมิฬรอบเมืองหลวงสลายไปหมดแล้ว!<br>ไปที่หอคอยแสงในลูมิเนีย', 4000), 3800); hud() }) }
+/* a memory: the game view turns sepia, lines fade in one by one (tap to go on) */
+function memoryFx(lines, done) { CUT = true; document.body.classList.add('cut'); const shot = (() => { try { return R.domElement.toDataURL('image/jpeg', .8) } catch (e) { return '' } })();
+  const f = document.createElement('div'); f.className = 'memFx'; f.innerHTML = `<div class="mbg" style="background-image:url(${shot})"></div><div class="mtx"></div><small>แตะเพื่อดูต่อ</small>`; document.body.appendChild(f); sfx('sketch'); let i = 0;
+  const next = () => { if (i >= lines.length) { f.classList.add('out'); setTimeout(() => { f.remove(); CUT = false; document.body.classList.remove('cut'); done && done() }, 800); return } const t = f.querySelector('.mtx'); t.classList.remove('in'); void t.offsetWidth; t.textContent = lines[i++]; t.classList.add('in') };
+  f.onclick = next; next(); }
+/* people: villagers appear at each kingdom's settlement when you come near · ❗ = has a quest · ❓ = ready to hand in */
+const KNPC = {};
+function kqTick(q) { for (const k in KQ) { const K = KINGDOMS[k], d = dist(q.x, q.z, K.x, K.z);
+    for (const n of KQ[k].npcs) { const key = k + ':' + n.id, A = KNPC[key];
+      if (d < 85 && !A) { let x = K.x + n.dx, z = K.z + n.dz; for (let r = 0; r < 40 && (!walkLand(x, z) || waterAt(x, z)); r += 1.5) { x = K.x + n.dx + Math.cos(r * 2.3) * r; z = K.z + n.dz + Math.sin(r * 2.3) * r }
+        const a = rigOf(makeActor(g => HUMANS.villager(g, n.v), .9)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(K.x - x, K.z - z) + Math.PI; scene.add(a.root);
+        const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
+        KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
+      else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); delete KNPC[key] } } } }
+function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
+  for (const id of ids) { const st = T[id]; if (st && st.st === 'on' && qProg(id).ok) return '❓'; if (!st) return n.lead && ids.indexOf(id) > 0 && (T[ids[ids.indexOf(id) - 1]] || {}).st !== 'done' ? '…' : '❗'; if (st.st === 'on') return '…' } return '' }
+function kqMarks() { for (const key in KNPC) { const N = KNPC[key], s2 = npcState(N.k, N.n); N.mk.visible = !!s2; if (s2 && N.mk.userData.s !== s2) { N.mk.material.map = emojiTex(s2); N.mk.material.needsUpdate = true; N.mk.userData.s = s2 } } }
+function talkNpc(key) { const N = KNPC[key]; if (!N) return; const { k, n } = N, K = KINGDOMS[k], ids = n.lead ? KQ[k].restore : n.q;
+  sheet(`${n.icon} ${n.name}`, (b, redraw, close) => { const T = KQS(); let cur = ids;
+    if (n.lead) { const i = ids.findIndex(id => (T[id] || {}).st !== 'done'); cur = i < 0 ? [] : [ids[i]] }
+    b.innerHTML = `<p class="mut">${K.name} · ${K.sub}</p><div class="card"><p>“${n.lead && (S.restored || {})[k] ? 'ขอบคุณจากใจ… บ้านเมืองของเรากลับมามีชีวิตอีกครั้งเพราะเจ้า' : n.hello}”</p></div>` + (n.lead ? `<p class="mut">🌈 ฟื้นฟูอาณาจักร ${ids.filter(id => (T[id] || {}).st === 'done').length}/3</p>` : '') +
+      cur.map(id => { const Q = KQUEST[id], st = T[id], p = qProg(id), R = Q.reward || {}; return `<div class="card"><b>${n.lead ? '🌈 ' : '📜 '}${Q.text}</b><p class="mut">รางวัล: ${[R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? '🍲 อาหาร' : ''].filter(Boolean).join(' · ')}</p>${!st ? `<button class="btn go wide" data-qa="${id}">รับเควส</button>` : st.st === 'done' ? '<p>✅ เสร็จแล้ว</p>' : `<p>ความคืบหน้า: ${p.cur}</p>${p.ok ? `<button class="btn go wide" data-qt="${id}">ส่งเควส</button>` : ''}`}</div>` }).join('');
+    b.querySelectorAll('[data-qa]').forEach(x => x.onclick = () => { qAccept(x.dataset.qa); kqMarks(); redraw() }); b.querySelectorAll('[data-qt]').forEach(x => x.onclick = () => { qTurnIn(x.dataset.qt, n); redraw() }) }); sfx('tap') }
+/* ☁️ the dark cloud over Luminia shrinks as kingdoms are restored · 🗼 the Light Tower in the middle: the way to the cloud's true form (once all 6 are restored) */
+const CAPC = new THREE.Group(); STORM.cloud(CAPC); CAPC.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.castShadow = false } }); CAPC.position.set(KINGDOMS.luminia.x, 70, KINGDOMS.luminia.z); scene.add(CAPC);
+const TOWER = new THREE.Group(); { const wm = new THREE.MeshStandardMaterial({ color: '#f4f0e6', roughness: .7 }), gm = new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffd860', emissiveIntensity: .6 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 5.5, 4, 12), wm); base.position.y = 2; const mid = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.4, 26, 12), wm); mid.position.y = 17; const top = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 2.6, 4, 12), wm); top.position.y = 32;
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 12), gm); orb.position.y = 36; orb.name = 'orb'; const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3, .3), new THREE.MeshStandardMaterial({ color: '#3a2a4a' })); door.position.set(0, 1.5, 5.4);
+  for (const m of [base, mid, top]) m.castShadow = true; TOWER.add(base, mid, top, orb, door); const tx = KINGDOMS.luminia.x, tz = KINGDOMS.luminia.z; TOWER.position.set(tx, wildH(tx, tz) - .3, tz); scene.add(TOWER); addSol({ x: tx, z: tz, r: 5.5 });
+  addPick(W, tx, tz + 5.6, 1.6, 3.2, { kind: 'tower' }).position.y += wildH(tx, tz) }
+function capCloud() { const left = Math.max(0, MAIN_Q.need - restoredN()) / MAIN_Q.need; CAPC.visible = left > 0 && !S.story.cloudGone; CAPC.scale.setScalar(2.2 + left * 6); const o = TOWER.getObjectByName('orb'); o.material.emissiveIntensity = left > 0 ? .15 : 1.4 }
+capCloud();
+function towerDoor() { if (S.story.cloudGone) { toast('🗼 แสงจากหอคอยส่องไปทั่วแผ่นดินแล้ว ☀️', 2200); return }
+  if (restoredN() < MAIN_Q.need) { hint(`🗼 ประตูหอคอยแสงถูกเมฆทมิฬปิดไว้… ฟื้นฟูอาณาจักรให้ครบก่อน (${restoredN()}/${MAIN_Q.need})`, 2800); return }
+  confirmBox('🗼 เข้าสู่ <b>หอคอยแสง</b> เพื่อเผชิญหน้ากับร่างจริงของเมฆทมิฬ?', () => { S.stormFrom = 'tower'; loading('🗼 หอคอยแสง', 'ชั้นบนสุด… ร่างจริงของเมฆทมิฬรออยู่', () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⚔️ ไปเลย') }
 /* v2.5.1 waterfalls down the rim cliffs (north + south) · a scrolling stripe texture · a pool at the foot */
 const FALLS = []; { const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128; const g = cv.getContext('2d'); g.fillStyle = '#bfe6ff'; g.fillRect(0, 0, 32, 128);
   for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${.35 + Math.random() * .5})`; g.fillRect(Math.random() * 32, Math.random() * 128, 2 + Math.random() * 3, 10 + Math.random() * 30) }
@@ -2156,7 +2268,7 @@ function setNear(ch, on) {
   if (ch.near === on) return; ch.near = on;
   if (on) { for (const o of ch.clears) { if (!W.clear.has(o.id)) W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o) }
     if (!ch.spawned) { ch.spawned = 1; const x = (ch.cx + .5) * CHUNK, z = (ch.cz + .5) * CHUNK, tier = Math.min(2, Math.floor(Math.hypot(x - 46, z) / 220)); if (Math.random() < .55) for (let t = 0; t < 20; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50;
-      if (walkLand(px, pz) && coreDist(px, pz) > 8 && dist(px, pz, me().x, me().z) > 10) { const L = WILD_MONS[tier]; ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })); break } }
+      if (walkLand(px, pz) && coreDist(px, pz) > 8 && dist(px, pz, me().x, me().z) > 10) { const B = kingdomAt(px, pz), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier]; ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })); break } }
       spawnAnimals(ch, x, z) } }
   else { for (const o of ch.clears) { despawnClear(W, o); W.clear.delete(o.id) } for (const m of ch.mons) if (mons.includes(m) && !m.aggro) monGone(m); ch.mons = ch.mons.filter(m => mons.includes(m)) }
 }
@@ -2688,6 +2800,7 @@ function goStorm() {
     leaveRaft(); loading('⛈️ เมฆปริศนา', '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)], () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⛵ ไปเลย');
 }
 function backFromStorm() { loading('🌊 กลับสู่ดินแดน', '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)], () => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m);
+  if (S.stormFrom === 'tower') { S.stormFrom = null; placeMe(KINGDOMS.luminia.x, KINGDOMS.luminia.z + 9); capCloud(); save(); return }
   const rf = S.builds.find(b => b.k === 'raft' && b.done); placeMe(D.STORM_GO_X - 25, 0); if (rf) { rf.x = me().x; rf.z = me().z; bView(rf); board(rf) } else if (hasAbility('swim')) rideWhale(); save() }) }
 function stormHit(dmg, label) { const r = { d: Math.max(1, Math.round(dmg * (.9 + Math.random() * .2) - pStats().def * .5)) }; if (guard && BOSS && facing(BOSS) && spendEn(6)) { r.d = Math.max(1, Math.round(r.d * (S.eq.shield ? .3 : .6))); floater('🛡️', 'tool', me().x, 2.2, me().z) }
   if (now0() < petGuardT) r.d = Math.ceil(r.d * .5); S.hp = Math.max(0, pHp() - r.d); lastHurt = performance.now(); shakeT = .35; sfx('hurt'); floater(`${label} -${r.d}`, 'hurt', me().x, 2.1, me().z); VF.burst(me().x, me().y + 1, me().z, '#ff4a5a', 10, 3); if (S.hp <= 0) stormLose() }
@@ -2714,7 +2827,7 @@ function stormLose() { if (!inStorm()) return; bossAct = null; const f = $('slee
   setTimeout(() => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; placeMe(SPAWN.x, SPAWN.z); S.hp = pStats().hp * .5; S.en = null; S.tired = false; enterZone('farm'); save(); hud();
     f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('💪 ลองฟื้นฟูเมือง เพิ่มหัวใจ และหาอุปกรณ์ที่ดีกว่า แล้วกลับไปใหม่!', 3600) }, 1600) }
 function stormWin() { cheer(3000);
-  S.story.cloudGone = 1; bossAct = null; BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; S.coin += D.STORM_REWARD.coin; S.gem += D.STORM_REWARD.gem; S.spirit.free++; spiritNew = true; bump('stormWin');
+  S.story.cloudGone = 1; capCloud(); bossAct = null; BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; S.coin += D.STORM_REWARD.coin; S.gem += D.STORM_REWARD.gem; S.spirit.free++; spiritNew = true; bump('stormWin');
   sfx('level'); VF.ring(me().x, me().y, me().z, '#fff6a0', 14, 1.4); VF.rise(me().x, me().y, me().z, '#fff6a0', 40); SKYCLOUD.visible = false; save(); hud();
   setTimeout(() => talk([['☀️', 'เมฆดำค่อยๆ สลายไป… แสงแดดอุ่นๆ ส่องลงมาทั่วดินแดนอีกครั้ง'], ['👴 ลุงฮาวซิฟ (เสียงจากไกลๆ)', 'เธอทำได้! ทุกคนเห็นท้องฟ้าแล้ว… ขอบคุณนะ ผู้กล้า'],
     ['🎉 จบภารกิจใหญ่', `ได้รับ 🪙 ${fmt(D.STORM_REWARD.coin)} · 💎 ${D.STORM_REWARD.gem} · ✨ +1<br>โลกยังรอให้สำรวจ ฟื้นฟู และจับน้องตัวใหม่อีกมาก — ขอบคุณที่เล่น KEALEE 💛`]]), 1500);
@@ -2769,7 +2882,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

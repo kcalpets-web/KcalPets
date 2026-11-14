@@ -51,7 +51,7 @@ function village() { const { S, cam, at } = stage({ sky: skyTex('#7ec4ee', '#d8f
   for (let i = 0; i < 12; i++) at(g => PROPS.tree(g, .9 + (i % 3) * .15), -12 + i * 2.2, -10 - (i % 2) * 1.5);
   const walkers = [at(g => HUMANS.villager(g, 0), -3, 1.5, .4, 1.3), at(g => HUMANS.villager(g, 1), 3, 2, -.5, 1.3), at(g => HUMANS.villager(g, 2), .5, -1.5, .2, 1.3), at(PETS.shiba, -1.5, 2.6, .5, .7), at(PETS.chick, 3.4, 2.8, -.3, .6), at(PETS.bunny, 1.2, 3.5, .2, .6)];
   const move = camPath(cam, [-3, 6, 15], [2, 6.5, 13], [0, 1, 0], [0, 1, -1]), wk = walkers.slice(0, 3).map(walker);
-  return { S, cam, dur: 6, bloom: .35, cap: 'หมู่บ้านที่สงบสุข', update(t) { move(t / 5.5); walkers.forEach((w, i) => { w.position.x += Math.sin(t * .6 + i) * .006; w.children[0].position.y = Math.abs(Math.sin(t * 8 + i)) * .05; if (wk[i]) wk[i](t + i, Math.abs(Math.cos(t * .6 + i))) }) } } }
+  return { S, cam, dur: 6, bloom: .35, cap: '💭 ในความฝัน… หมู่บ้านที่สงบสุข', update(t) { move(t / 5.5); walkers.forEach((w, i) => { w.position.x += Math.sin(t * .6 + i) * .006; w.children[0].position.y = Math.abs(Math.sin(t * 8 + i)) * .05; if (wk[i]) wk[i](t + i, Math.abs(Math.cos(t * .6 + i))) }) } } }
 function forest() { const { S, cam, at } = stage({ sky: skyTex('#9fd0e8', '#e8f4e0'), fog: new THREE.Fog('#cfe6d8', 10, 34), fov: 55, sp: [4, 14, -6] }); plane(S, '#5e9e48', 80, 80);
   plane(S, '#c8a070', 2.2, 60, .01, 0, -20);
   for (let i = 0; i < 34; i++) { const s = i % 2 ? 1 : -1, z = 6 - i * 1.6; at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, 1.1 + (i % 4) * .15), s * (2.2 + (i % 3) * 1.2), z) }
@@ -76,12 +76,17 @@ function sunset() { const { S, cam } = stage({ sky: skyTex('#2a1e5a', '#ffb070',
 function strike() { const { S, cam, at } = stage({ sky: skyTex('#120c26', '#5a4a8a'), hemi: '#c8c8ff', hi: .7, si: .8, sp: [3, 8, 6], fov: 50 });
   const c = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 8), new THREE.MeshStandardMaterial({ color: '#4a5a3a', roughness: 1 })); c.position.set(0, -3, 1); S.add(c);
   const k = at(HUMANS.kealee, -.2, -2.7, .4, 1.3);
-  const pts = []; for (let i = 0; i <= 8; i++) pts.push(new THREE.Vector3(1.7 + (i % 2 ? .45 : -.35) * (i < 8 ? 1 : 0), 10 - i * 1.25, -2.4));
-  const bolt = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), 40, .09, 6), new THREE.MeshBasicMaterial({ color: '#fff8c0' })); S.add(bolt);
-  const fl = new THREE.PointLight('#fff2a0', 0, 10); fl.position.set(1.7, .8, -2); S.add(fl);
-  return { S, cam, min: 3.3, lead: 1.6, bloom: .9, flashAt: .35, lines: [['ผู้เล่น', 'คีลี!!', .8]], update(t) { cam.position.set(0, 1.7, 4.5); cam.lookAt(0, 1.2, -2); bolt.visible = t > .3 && t < .9 && Math.floor(t * 20) % 3 !== 0; fl.intensity = bolt.visible ? 60 : 0;
-    const f = Math.max(0, t - .6); k.rotation.x = -Math.min(1.4, f * 2.2); k.position.y = -f * f * 6; k.position.z = -2.7 - f * 1.2;
-    if (t > 1.6) { const d = t - 1.6; cam.position.set(0, 1.7 - d * d * 5, 4.5 - d * 3); cam.lookAt(0, -3 - d * 4, -4) } } } }   // you jump after her
+  /* v2.8 a swarm of bats sweeps over the cliff and knocks Kealee off (it used to be lightning) */
+  const batM = new THREE.MeshStandardMaterial({ color: '#1a1420', roughness: .8, side: THREE.DoubleSide }), wingG = new THREE.BufferGeometry(); wingG.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, .34, .06, -.05, .3, -.04, .12, 0, 0, 0, .3, -.04, .12, .12, -.02, .16], 3)); wingG.computeVertexNormals();
+  const bats = []; for (let i = 0; i < 46; i++) { const b = new THREE.Group(), body = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6), batM); body.scale.set(1, .9, 1.4); b.add(body); const wl = new THREE.Mesh(wingG, batM), wr = new THREE.Mesh(wingG, batM); wr.scale.x = -1; b.add(wl, wr);
+    for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.012, 4, 3), new THREE.MeshBasicMaterial({ color: '#ff4a4a' })); e.position.set(sx * .03, .02, .09); b.add(e) }
+    b.userData = { wl, wr, y: .6 + Math.random() * 2.4, z: -3.6 + Math.random() * 2.6, d: Math.random() * .35, sp: 9 + Math.random() * 4, ph: Math.random() * 6 }; b.scale.setScalar(1.4 + Math.random() * .8); b.visible = false; S.add(b); bats.push(b) }
+  const fl = new THREE.PointLight('#c0a0ff', 0, 10); fl.position.set(0, 2, -2); S.add(fl);
+  return { S, cam, min: 3.6, lead: 1.8, bloom: .5, lines: [['ผู้เล่น', 'ค้างคาว!? คีลีระวัง!!', 1]], update(t) { cam.position.set(0, 1.7, 4.5); cam.lookAt(0, 1.2, -2);
+    bats.forEach(b => { const u = b.userData, k = t - .15 - u.d; b.visible = k > 0 && k < 1.6; if (!b.visible) return; b.position.set(9 - k * u.sp, u.y + Math.sin(k * 7 + u.ph) * .25, u.z); b.rotation.y = -Math.PI / 2; const f = Math.sin(t * 38 + u.ph) * .9; u.wl.rotation.z = f; u.wr.rotation.z = -f });
+    fl.intensity = 0; const bolt = { visible: false }; fl.intensity = bolt.visible ? 60 : 0;
+    const f = Math.max(0, t - 1); k.rotation.x = -Math.min(1.4, f * 2.2); k.position.y = -f * f * 6; k.position.z = -2.7 - f * 1.2;
+    if (t > 2) { const d = t - 2; cam.position.set(0, 1.7 - d * d * 5, 4.5 - d * 3); cam.lookAt(0, -3 - d * 4, -4) } } } }   // you jump after her
 function water() { const S = new THREE.Scene(); S.background = C('#123a6a'); const cam = new THREE.PerspectiveCamera(50, W() / H(), .1, 100); cam.position.set(0, 0, 5); cam.lookAt(0, 0, 0);
   S.add(new THREE.HemisphereLight('#9ad0ff', '#0a1a3a', 1.2)); const bub = []; for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.05 + Math.random() * .08, 10, 8), new THREE.MeshBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: .7 })); m.position.set((Math.random() - .5) * 6, -4 + Math.random() * 8, (Math.random() - .5) * 2); S.add(m); bub.push(m) }
   return { S, cam, min: 4, bloom: .5, lines: [['ผู้เล่น', 'แค่ก… คีลี! ยังอยู่ไหม?']], update(t, dt) { bub.forEach((b, i) => { b.position.y += dt * (1 + i % 3 * .4); if (b.position.y > 4) b.position.y = -4 }); S.background.setHSL(.6, .7, Math.min(.35, .12 + t * .05)) } } }

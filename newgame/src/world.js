@@ -369,19 +369,42 @@ const hsh = (i, j) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263
 function vnoise(x, z) { const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz), a = hsh(i, j), b = hsh(i + 1, j), c = hsh(i, j + 1), d = hsh(i + 1, j + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v }
 export function fbm(x, z, o = 5) { let s = 0, a = .5, f = 1; for (let k = 0; k < o; k++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5 } return s }
 export const coastX = z => { const k = smw(18, 70, Math.abs(z)); return shore(z) * (1 - k) + (-14 + 40 * (fbm(z / 260 + 3.3, 1.7, 3) - .5)) * k };
+/* ================= v2.7 the seven kingdoms: each region of the big world has its own ground, height, weather, plants and monsters ================= */
+export const KINGDOMS = {
+  navalee:   { x: 250, z: -230, name: '🌊 นาวาลี', sub: 'อาณาจักรแห่งน้ำที่ล่มสลาย', col: '#62bc5a', temp: 0 },
+  sylvaren:  { x: 270, z: 330, name: '🌿 ซิลวาเรน', sub: 'อาณาจักรป่าไม้ที่เหี่ยวเฉา', col: '#9a9a52', temp: 0 },
+  luminia:   { x: 690, z: 0, name: '🏰 ลูมิเนีย', sub: 'เมืองหลวงใต้เมฆทมิฬ', col: '#86c86a', temp: 0 },
+  frosthelm: { x: 650, z: -520, name: '❄️ ฟรอสต์เฮล์ม', sub: 'อาณาจักรน้ำแข็งที่ถูกผนึก', col: '#eef2f8', temp: -.8 },
+  deadgar:   { x: 1150, z: -420, name: '💀 เดดการ์', sub: 'ดินแดนไร้อากาศ', col: '#5e4e66', temp: -.15 },
+  asrah:     { x: 1130, z: 240, name: '🏜️ อัสราห์', sub: 'ทะเลทรายที่ปีศาจยึดครอง', col: '#e4c47a', temp: .6 },
+  valkara:   { x: 690, z: 530, name: '🌋 วัลคาร่า', sub: 'ภูเขาไฟที่ร้อนระอุ', col: '#3f3536', temp: .55 },
+};
+const KL = Object.entries(KINGDOMS);
+/* nearest kingdom + how sure (0 at a border … 1 well inside) · near the hand-made home strip there is none */
+export function kingdomAt(x, z) { let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(x - K.x, z - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
+  const home = smw(150, 60, coreDist(x, z) + Math.max(0, 40 - x)); return { k: a, w: smw(0, 70, db - da) * .5 + .5, home, d: da } }
+const _KC = {}; for (const [k, K] of KL) _KC[k] = C(K.col);
 export function wildH(x, z) {
+
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));
   let h = (n - .47) * 30 + Math.pow(r, 3) * 46 * far + 4 * far;                                                                   // rolling land · mountain ridges farther out
   const dc = coreDist(x, z), k = smw(0, 50, dc), f = fbm(x / 40, z / 40, 2) - .5; h = h * k + (.04 + f * .25 * smw(0, 8, dc)) * (1 - k) + f * 1.2 * k;   // v2.4.1 the same height as the core at its edge (no step, no sinking)
   const c = coastX(z), kb = smw(0, 30, dc); h = h - smw(c + 1 + 15 * kb, c - 2 - 2 * kb, x) * (Math.max(0, h) + 6);
+  { const B = kingdomAt(x, z), g = (1 - B.home) * B.w, K = B.k;   /* v2.7 kingdom shapes */
+    if (K === 'valkara') { const r = B.d; h += g * 75 * Math.pow(Math.max(0, 1 - r / 160), 1.7); if (r < 22) h -= g * (22 - r) * 2.4 }   // the volcano + its crater (lava inside)
+    else if (K === 'frosthelm') h += g * 9;                                                                                               // a snowy plateau
+    else if (K === 'navalee') h -= g * 5.5 * smw(.3, .6, fbm(x / 70 + 2, z / 70, 3));                                                    // flooded: many lakes
+    else if (K === 'asrah') h = h * (1 - g * .7) + g * .7 * (2.5 + Math.sin(x / 9 + Math.sin(z / 23) * 2) * 1.6 + Math.sin(z / 13) * .8);   // dunes
+    else if (K === 'luminia') { const r = B.d; h = h * (1 - g * smw(150, 60, r)) + g * smw(150, 60, r) * (2 + fbm(x / 50, z / 50, 2)) } }   // the capital's plain
   /* v2.5.1 the world's rim: huge cliffs north and south (and east where there is land) · the west is the open sea (a current pushes you back) */
   const rN = smw(75, 6, z - WORLD.z0), rS = smw(75, 6, WORLD.z1 - z), rE = h > -1 ? smw(75, 6, WORLD.x1 - x) : 0, rim = Math.max(rN, rS, rE); if (rim > 0) h += rim * rim * (70 + 18 * fbm(x / 30, z / 30, 2));   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
   return h;
 }
 /* v2.4.2 ONE grass colour for every ground mesh (core + streamed land) · smooth, so no lines or blocks where meshes meet */
-const _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
+const _LV = C('#ff5a1a'), _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
 export function grassCol(x, z, out) { out.copy(_GL).lerp(_GD, smw(.5, .62, fbm(x / 60 + 4, z / 60, 3))).multiplyScalar(.93 + .1 * vnoise(x * .35, z * .35)); return out }
 function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -4 ? '#2a5a8a' : '#4a90c0'); grassCol(x, z, out);
+  { const B = kingdomAt(x, z), g = (1 - B.home) * B.w; if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } }   /* v2.7 kingdom ground · lava in the volcano */
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
   out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl)).lerp(_SN, smw(26, 32, h)); const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
 export function wildColor(x, z) {
@@ -392,6 +415,8 @@ export function wildColor(x, z) {
 const TREE_TRUNK = new THREE.CylinderGeometry(.18, .28, 1.6, 6); TREE_TRUNK.translate(0, .8, 0);
 const TREE_TOP = new THREE.IcosahedronGeometry(1.15, 1); TREE_TOP.translate(0, 2.3, 0); const PINE_TOP = new THREE.ConeGeometry(1.1, 2.6, 7); PINE_TOP.translate(0, 2.6, 0);
 const ROCK_G = new THREE.DodecahedronGeometry(.8, 0);
+const CACT = (() => { const a = new THREE.CylinderGeometry(.22, .26, 2.2, 8); a.translate(0, 1.1, 0); const b = new THREE.CylinderGeometry(.13, .13, .8, 7); b.rotateZ(Math.PI / 2); b.translate(.45, 1.1, 0); const c = new THREE.CylinderGeometry(.12, .12, .7, 7); c.translate(.8, 1.45, 0); const d = new THREE.CylinderGeometry(.11, .11, .6, 7); d.rotateZ(Math.PI / 2); d.translate(-.4, 1.5, 0); const e = new THREE.CylinderGeometry(.1, .1, .55, 7); e.translate(-.68, 1.75, 0);
+  const G = [a, b, c, d, e].map(g => g.toNonIndexed()), n = G.reduce((s, g) => s + g.attributes.position.count, 0), pos = new Float32Array(n * 3); let o = 0; for (const g of G) { pos.set(g.attributes.position.array, o); o += g.attributes.position.array.length } const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(pos, 3)); m.computeVertexNormals(); return m })(), M_CACT = new THREE.MeshStandardMaterial({ color: '#4a9a4a', roughness: .8, flatShading: true });
 const M_TRUNK = new THREE.MeshStandardMaterial({ color: '#7a4a28', roughness: .9 }), M_TOP = addWind(new THREE.MeshStandardMaterial({ roughness: .85 })), M_ROCK = new THREE.MeshStandardMaterial({ color: '#9a948a', roughness: .95, flatShading: true });
 const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), BLADE = new THREE.ConeGeometry(.04, .3, 4); BLADE.translate(0, .15, 0);
 const M_LAND = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 });
@@ -412,23 +437,26 @@ export function buildChunk(W, cx, cz) {
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
   for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3) continue; const h = wildH(x, z); if (h < .3 || x < coastX(z) + 12) continue;
-    const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60) }) }
-  const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6);
+    const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
+  const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
+  const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
   const inst = (geo, mat, list, place) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c) }); m.castShadow = true; m.receiveShadow = true; g.add(m) };
-  const pines = trees.filter(p => p.h > 9 || R() < .3), broad = trees.filter(p => !pines.includes(p));
+  const pines = trees.filter(p => p.kk !== 'deadgar' && (p.h > 9 || p.kk === 'frosthelm' || R() < .3)), broad = trees.filter(p => !pines.includes(p) && p.kk !== 'deadgar');
   const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) }; out.sols = [];
-  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
-  inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
+  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6; out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
+  inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(p.kk === 'sylvaren' ? ['#b8a040', '#a07a30', '#8a8a3a', '#9a6a2a'][Math.floor(R() * 4)] : ['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });
+  inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'frosthelm' ? (R() < .5 ? '#e8f0f4' : '#c8dce4') : R() < .5 ? '#2f6a3a' : '#3f7a44') });   /* v2.7 pine tops are back (snowy in the north) */   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
   inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z) })) });
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
   /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
-  const lush = []; for (const p of spots) if (p.sl < 1.6 && p.h < 20 && R() < (p.f > .55 ? .5 : .22)) { const k = lushKind(R, p.f, p.h); if (k === 'blossom' && R() < .6) continue; lush.push({ k, x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2, r: R() * 6, s: k === 'blossom' ? .8 + R() * .5 : .7 + R() * .7 }) }
+  /* v2.7 cacti in the desert */ const cac = spots.filter(p => p.kk === 'asrah' && p.sl < 2 && R() < .07); inst(CACT, M_CACT, cac, (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.8 + R() * .7); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .3 * ob.scale.x })) });
+  const lush = []; for (const p of spots) if (!BARE[p.kk] && p.sl < 1.6 && p.h < 20 && R() < (p.f > .55 ? .5 : .22)) { const k = lushKind(R, p.f, p.h); if (k === 'blossom' && R() < .6) continue; lush.push({ k, x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2, r: R() * 6, s: k === 'blossom' ? .8 + R() * .5 : .7 + R() * .7 }) }
   for (const p of lush) p.y = wildH(p.x, p.z) - .05; lushPlace(g, lush, R);
   g.children.forEach(m => { if (m.isInstancedMesh && (m.geometry === TREE_TRUNK || m.geometry === LG.crown || m.geometry === PINE_TOP)) m.userData.occ = 1 });
   /* clearables: 5 per chunk on gentle ground (regrow like the others) */
-  const types = [['tree', 'bush', 'flower', 'pebble', 'tree', 'hive', 'flower'], ['rock', 'pine', 'rock', 'boulder', 'pebble', 'flower', 'rock']];
-  for (let i = 0, n = 0; i < 50 && n < 7; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 7)];
+  const types = [['tree', 'bush', 'flower', 'pebble', 'tree', 'hive', 'flower'], ['rock', 'pine', 'rock', 'boulder', 'pebble', 'flower', 'rock']], KT = { asrah: ['rock', 'pebble', 'boulder', 'bush', 'pebble', 'rock', 'flower'], valkara: ['rock', 'boulder', 'pebble', 'rock', 'boulder', 'pebble', 'rock'], frosthelm: ['rock', 'pine', 'pebble', 'boulder', 'pine', 'rock', 'pebble'], deadgar: ['rock', 'pebble', 'boulder', 'rock', 'pebble', 'boulder', 'flower'] };
+  for (let i = 0, n = 0; i < 50 && n < 7; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = (KT[p.kk] || types[p.h > 12 ? 1 : 0])[Math.floor(R() * 7)];
     out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
   W.scene.add(g); return out;
 }
