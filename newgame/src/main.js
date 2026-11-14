@@ -593,8 +593,9 @@ function openHowsif() {
   if (S.story.farmGift) return talk([['👴 ลุงฮาวซิฟ', 'ผักเป็นยังไงบ้าง? อยากได้เมล็ดเพิ่มไหม']], seedShop);
   talk([['👴 ลุงฮาวซิฟ', S.story.town ? 'เมืองเป็นยังไงบ้าง… ระวังตัวด้วยนะ' : 'ทางขวามือผ่านซุ้มประตูไม้คือทางไปเมือง… ไปดูหน่อยเถอะว่าเกิดอะไรขึ้น']]);
 }
-const hasCost = c => Object.keys(c).every(k => k === 'coin' ? S.coin >= c.coin : (S.mats[k] || 0) >= c[k]);
-const payCost = c => { for (const k in c) { if (k === 'coin') S.coin -= c.coin; else S.mats[k] -= c[k] } };
+const costHave = k => D.MATS[k] ? S.mats[k] || 0 : S.ingr[k] || 0, costName = k => D.MATS[k] ? D.MATS[k][0] + ' ' + D.MATS[k][1] : D.INGR[k] ? D.INGR[k].icon + ' ' + D.INGR[k].name : k;
+const hasCost = c => Object.keys(c).every(k => k === 'coin' ? S.coin >= c.coin : (D.MATS[k] ? S.mats[k] || 0 : S.ingr[k] || 0) >= c[k]);   /* v2.7 a cost may use cooking ingredients too */
+const payCost = c => { for (const k in c) { if (k === 'coin') S.coin -= c.coin; else if (D.MATS[k]) S.mats[k] -= c[k]; else S.ingr[k] -= c[k] } };
 const costTxt = c => Object.keys(c).map(k => k === 'coin' ? '🪙 ' + fmt(c.coin) : `${D.MATS[k][0]} ${S.mats[k] || 0}/${c[k]}`).join(' · ');
 function openWreck() {
   if (jobLeft('boat')) return;
@@ -2764,7 +2765,7 @@ function learnCraft(from) {   /* talking to an NPC teaches the recipes they know
 function openCraft() {
   sheet('🛠️ คราฟ', (b, redraw) => {
     const K = D.CRAFT.filter(r => knowsCraft(r) && !(r.give.has && S.has[r.give.has]) && !(r.give.wear && (S.clothes || {})[r.give.wear])), U = D.CRAFT.filter(r => !knowsCraft(r));
-    b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่ · สูตรใหม่เรียนได้จากผู้คนทั่วแผนที่</p>' + K.map(r => { const i = D.CRAFT.indexOf(r); return `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${(S.mats[k] || 0) >= n ? '' : 'dn'}">${D.MATS[k][0]} ${D.MATS[k][1]} ${S.mats[k] || 0}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>` }).join('') +
+    b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่ · สูตรใหม่เรียนได้จากผู้คนทั่วแผนที่</p>' + K.map(r => { const i = D.CRAFT.indexOf(r); return `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${costHave(k) >= n ? '' : 'dn'}">${costName(k)} ${costHave(k)}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>` }).join('') +
       (U.length ? `<h3>🔒 สูตรที่ยังไม่รู้ (${U.length})</h3>` + U.map(r => `<div class="card lock"><div class="row"><b>❔ ???</b></div><p class="mut">💬 เรียนได้จาก ${r.who}</p></div>`).join('') : '') +
       `<p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>`;
     b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; payCost(r.need); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows; if (r.give.wear) { (S.clothes = S.clothes || {})[r.give.wear] = 1; setTimeout(() => toast(`👕 ได้ ${r.icon} ${D.WEAR[r.give.wear].name}! ใส่ได้ที่ 🏠 → 👕 ชุด`, 2600), 1200) } if (r.give.has) { S.has[r.give.has] = 1; if (r.give.has === 'glider') setTimeout(() => toast('🍃 ได้ใบไม้ร่อน! กระโดดจากที่สูง แล้วกด X กลางอากาศ', 3200), 1500) }
