@@ -31,7 +31,7 @@ export function buildWorld(scene, eco) {
   const P = geo.attributes.position, col = [], c = new THREE.Color(), G = C('#6fbf55'), SA = C('#efe2c4'), EA = C('#c49a68'), WET = C('#d8c9a4');
   for (let i = 0; i < P.count; i++) {
     const x = P.getX(i), z = P.getZ(i), n = nz(x, z), d = x - shore(z);
-    let y = 0; c.copy(G).multiplyScalar(.9 + .12 * n / 1.95);
+    let y = 0; grassCol(x, z, c);
     if (earth(x, z)) c.lerp(EA, .85);
     c.lerp(SA, 1 - sm(1.6, 3.6, d + .35 * n));
     if (d < 0) { y = Math.max(-1.2, d * .35); c.lerp(WET, .5) }
@@ -193,7 +193,7 @@ export function buildForest(W, eco) {
   Q.seg = eco ? 10 : 14;
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
-    c.set('#4f8a3a').multiplyScalar(.85 + .1 * n); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
+    grassCol(x, z, c).multiplyScalar(1 - .2 * smw(FX - 13, FX - 8, x)); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
     const out = Math.max(0, Math.abs(z) - 10, x - FX - 14); P.setY(i, out * .6 + .02 * n) }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, FX);
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = FX; g0.receiveShadow = true; scene.add(g0); F.ground = g0;
@@ -237,7 +237,7 @@ export function buildTown(W, eco) {
   Q.seg = eco ? 10 : 14;
   const geo = new THREE.PlaneGeometry(22, 34, 44, 68); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), r = Math.hypot(x, z), n = Math.sin(x * .7 + z * .3) * .5 + Math.sin(z * .9 - x * .4) * .5;
-    c.set(r < 4.2 ? '#cfc6b4' : (Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12 ? '#c4b49a' : '#6aa850'); if (r >= 4.2) c.multiplyScalar(.92 + .08 * n); col.push(c.r, c.g, c.b); P.setY(i, 0) }
+    if (r < 4.2) c.set('#cfc6b4'); else if ((Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12) c.set('#c4b49a'); else grassCol(x + TX, z, c); col.push(c.r, c.g, c.b); P.setY(i, 0) }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, TX);
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = TX; g0.receiveShadow = true; scene.add(g0); T.ground = g0;
   /* broken fountain in the plaza */
@@ -327,8 +327,8 @@ export function buildWild(W, eco) {
   Q.seg = eco ? 10 : 14;
   const ground = (x0, x1) => { const w = x1 - x0, geo = new THREE.PlaneGeometry(w, 34, Math.round(w * 3), 102); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
     for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + w / 2, z = P.getZ(i), n = nz(x, z), h = groundH(x, z), edge = Math.max(0, Math.abs(z) - 11.5);
-      c.set(h > .35 ? '#8aa05a' : '#6fbf55').multiplyScalar(.9 + .08 * n); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
-      if (h < -.05) c.lerp(C('#c8b890'), .8); if (Math.abs(z - roadZ(x)) < .9) c.lerp(C('#c8a878'), .85); if (edge > 0) c.lerp(C('#4a8a3a'), .5);
+      grassCol(x, z, c); if (h > .35) c.lerp(C('#8aa05a'), .5); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
+      if (h < -.05) c.lerp(C('#c8b890'), .8); if (Math.abs(z - roadZ(x)) < .9) c.lerp(C('#c8a878'), .85); 
       col.push(c.r, c.g, c.b); P.setY(i, h - edge * .03 + .02 * n) }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, x0 + w / 2);
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); m.position.x = x0 + w / 2; m.receiveShadow = true; scene.add(m); return m };
@@ -372,6 +372,12 @@ export function wildH(x, z) {
   const c = coastX(z), kb = smw(0, 30, dc); h = h - smw(c + 1 + 15 * kb, c - 2 - 2 * kb, x) * (Math.max(0, h) + 6);   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
   return h;
 }
+/* v2.4.2 ONE grass colour for every ground mesh (core + streamed land) · smooth, so no lines or blocks where meshes meet */
+const _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
+export function grassCol(x, z, out) { out.copy(_GL).lerp(_GD, smw(.5, .62, fbm(x / 60 + 4, z / 60, 3))).multiplyScalar(.93 + .1 * vnoise(x * .35, z * .35)); return out }
+function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -4 ? '#2a5a8a' : '#4a90c0'); grassCol(x, z, out);
+  const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
+  out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl)).lerp(_SN, smw(26, 32, h)); const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
 export function wildColor(x, z) {
   const h = wildH(x, z); if (h < -.45) return h < -4 ? '#2a5a8a' : '#4a90c0'; if (h < .8 && x < coastX(z) + 14) return '#e8dcb8';
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2)); if (h > 30) return '#f0f2f6'; if (sl > 3.2) return '#8a7a6a';
@@ -387,7 +393,7 @@ const _col = new THREE.Color();
 function landGeo(x0, z0, size, seg, sink) {
   const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + size / 2, z = P.getZ(i) + z0 + size / 2, dc = coreDist(x, z), h = dc > 0 ? wildH(x, z) : waterAt(x, z) ? -2 : groundH(x, z) - .25;
-    P.setY(i, h - sink); _col.set(wildColor(x, z)).multiplyScalar(.92 + .1 * vnoise(x * .3, z * .3)); col.push(_col.r, _col.g, _col.b) }
+    P.setY(i, h - sink); landCol(x, z, _col); col.push(_col.r, _col.g, _col.b) }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 }
 /* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */

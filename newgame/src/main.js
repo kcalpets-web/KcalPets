@@ -336,6 +336,12 @@ let camY = 0, stopT = 0, potT = 0, speed = 1, tool = '', prevTool = '', tipT = 0
 let down = null, stroke = null, pinch = null; const ptrs = new Map(), drops = [];
 /* ⚡ energy: tools spend it, the sword does not · rest in the tree house, herbal tea or a fish refill it */
 let enT = 0;
+/* v2.4.2 ⚡ stamina wheel beside the player: appears while it drains or refills · fades D.STAM_FADE s after it is full · red and stays while exhausted */
+let stamFullT = 0;
+function stamTick() { const el = $('stam'); if (!PL || !S.avatar) return; const now = performance.now(), mx = pStats().en, e = pEn(), full = e >= mx - .01 && !S.tired;
+  if (!full) stamFullT = now; const on = !CUT && (!full || now - stamFullT < D.STAM_FADE * 1000); el.classList.toggle('on', on); el.classList.toggle('tired', !!S.tired); if (!on && now - stamFullT > D.STAM_FADE * 1000 + 700) return;
+  const q = me(), p = project(q.x, q.y + 1.25, q.z); el.style.transform = `translate(${p.x + 30}px,${p.y - 20}px) translate(-50%,-50%)`;
+  $('stamF').style.strokeDasharray = `${Math.max(0, Math.min(100, e / mx * 100))} 100`; $('stamX').style.strokeDasharray = `${Math.max(0, Math.min(100, (S.enB || 0) / mx * 100))} 100` }
 function spendEn(n) {                                          // stamina: yellow bonus first, then the bar · empty = exhausted until full again
   if (S.tired) { hint('💦 เหนื่อยแล้ว… หยุดพักสักครู่ให้หลอด ⚡ เต็มก่อน', 1800); return false }
   const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; n -= b; S.en = pEn() - n; enT = performance.now();
@@ -908,7 +914,7 @@ function frame(now) {
   sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
   if (GR) { GR.auto(nightK(), Math.min(1, glowK()), S.area, inStorm() && !S.story.cloudGone); GR.render(dt / speed) } else R.render(scene, cam);
   if (SNAP) { const f = SNAP; SNAP = null; let u = ''; try { u = R.domElement.toDataURL('image/jpeg', .92) } catch (e) { } f(u) }
-  tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall);
+  tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall); stamTick();
   fpsN++; if (wall - fpsT > 500) { $('fps').textContent = Math.round(fpsN * 1000 / (wall - fpsT)) + ' fps'; fpsN = 0; fpsT = wall }
   if ((hudT -= dt) <= 0) { hudT = .25; hud() }
   if ((saveT -= dt) <= 0) { saveT = 5; S.cam = [camT.x, camT.z]; S.pos = [me().x, me().z]; boatTick(); save() }

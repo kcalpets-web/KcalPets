@@ -153,7 +153,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.placeMe(19.4, 5); N.walkTo(22, 5) }); await pg.waitForFunction(() => window.__ng.envState().swim, null, { timeout: 30000 }).catch(() => errs.push('did not start swimming in the river'));
     await wait(800); await shot('33-swim'); log('swim', JSON.stringify(await N(() => window.__ng.envState())));
     await E(() => { const N = window.__ng; N.placeMe(19.4, 6); N.S.en = null; N.S.tired = false; N.castAt(22, 6) }); log('fresh fish', await N(() => window.__ng.F && window.__ng.F.k)); await E(() => { window.__ng.hold(false) });
-    await E(() => { const N = window.__ng; N.placeMe(61.5, 6.2); N.S.en = null; N.S.tired = false; N.walkTo(69, 6.2) }); await wait(1500); await shot('34-climb');
+    await E(() => { const N = window.__ng; N.placeMe(61.5, 7.6); N.S.en = null; N.S.tired = false; N.walkTo(69, 6.2) }); await wait(1500); await shot('34-climb');
     await pg.waitForFunction(() => window.__ng.envState().y > 2, null, { timeout: 60000 }).catch(() => errs.push('could not climb the mesa'));
     await wait(1200); log('climb', JSON.stringify(await N(() => window.__ng.envState())), 'camps', JSON.stringify(await N(() => window.__ng.S.camps))); await shot('35-mesa-top');
     await E(() => window.__ng.openMap()); await wait(800); await shot('36-worldmap');

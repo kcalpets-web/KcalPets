@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.4.1';
+export const APP_VER = '2.4.2';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -114,6 +114,7 @@ export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3,
 export const HIT_CD = { s: 300, m: 550, l: 850 };
 export const FRUIT = { tree: ['apple', 1, 2], bush: ['berry', 1, 3] }, FRUIT_EVERY = 3, FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
 export const TAG_SHOW = 8;                                       // v2.4.1 seconds a monster's name + HP bar stays after it is hit
+export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
