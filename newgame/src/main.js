@@ -894,7 +894,7 @@ function frame(now) {
     let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); { const pT = still ? Math.min(CAM.pitch, .03) : CAM.pitch; CAM.ps = (CAM.ps ?? CAM.pitch) + (pT - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * (still ? .5 : 7)) }   // eased
     const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
     py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
-    AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz);
+    AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz); else if (PL && !PL.root.visible && S.avatar && !CUT) PL.root.visible = true;
     if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 }
     { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; scene.fog.near += (60 - 52 * mist - scene.fog.near) * dt; scene.fog.far += (420 - 330 * mist - scene.fog.far) * dt } }   /* forest + dawn mist */
   else { cam.fov = 36; cam.near = .1; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
@@ -1610,17 +1610,45 @@ function aimTick(now) {
   { const bm = g.children[0], tips = bm && bm.userData.tips; if (tips) { const h = bm.worldToLocal(_aT.copy(NOCK.position)); bm.getObjectByName('string').visible = false;   /* v2.1.1 the string pulls back to the right hand */
     ['strA', 'strB'].forEach((k, i) => { const m = bm.getObjectByName(k), t = _aL.set(...tips[i]), v = _aX.copy(h).sub(t), L = v.length(); m.visible = true; m.position.copy(t); m.scale.set(1, L, 1); m.quaternion.setFromUnitVectors(_UP, v.normalize()) }) } }
 }
-function aimCam(tx, ty, tz) {   /* over the right shoulder, looking down the aim line */
-  const y = CAM.ys ?? CAM.yaw, p = AIM ? AIM.p : (CAM.aimP || 0), cp = Math.cos(p); if (AIM) CAM.aimP = p; const dx = Math.sin(y) * cp, dy = -Math.sin(p), dz = Math.cos(y) * cp, rx = -Math.cos(y), rz = Math.sin(y);
-  const ax = tx - dx * 3.3 + rx * .36, az = tz - dz * 3.3 + rz * .36, ay = Math.max(ty + .35 - dy * 3.3, groundH(ax, az) + .3);   /* portrait screens are narrow: a small shoulder offset */
-  _aL.set(tx + Math.sin(y) * 1.5, ty - .2, tz + Math.cos(y) * 1.5).lerp(_aT.set(ax + dx * 20, ay + dy * 20, az + dz * 20), AIMK); cam.position.lerp(_aP.set(ax, ay, az), AIMK); cam.lookAt(_aL); cam.near = .1;
+/* v2.1.2 first-person bow (FPS feel): the camera goes to the eyes and zooms in while you draw · the body hides · you see only your arms, the bow and the arrow */
+const VM = new THREE.Group(); VM.visible = false; scene.add(VM); let VMk = '';
+const _vQ = new THREE.Quaternion(), _vA = new THREE.Vector3(), _vB = new THREE.Vector3();
+function vmBuild() {
+  const b = bowOf(), k = (b ? b.t : '') + '|' + (S.avatar && S.avatar.top || ''); if (k === VMk) return; VMk = k; while (VM.children.length) VM.remove(VM.children[0]);
+  const skinM = new THREE.MeshStandardMaterial({ color: '#f2c9a2', roughness: .7, flatShading: true }), slM = new THREE.MeshStandardMaterial({ color: (S.avatar && S.avatar.top) || '#4a8ad8', roughness: .8, flatShading: true }),
+    glM = new THREE.MeshStandardMaterial({ color: '#7a4a2a', roughness: .8, flatShading: true }), seg = (a, c, r0, r1, m) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...c), L = A.distanceTo(C), o = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, L, 7), m); o.position.copy(A).add(C).multiplyScalar(.5); o.quaternion.setFromUnitVectors(_UP, C.sub(A).normalize()); VM.add(o); return o };
+  /* camera space: −z forward · +x right · +y up */
+  const bow = new THREE.Group(); if (b) itemMesh(bow, b.t); bow.rotation.set(0, Math.PI, .3);   /* canted like an FPS bow · portrait screens are narrow: keep it near the middle */ bow.position.set(-.06, -.04, -.62); bow.scale.setScalar(.34); bow.name = 'bow'; VM.add(bow);
+  seg([-.06, -.055, -.6], [-.13, -.27, -.28], .011, .018, slM); seg([-.06, -.05, -.6], [-.08, -.1, -.5], .009, .011, skinM);   // left forearm in its sleeve → wrist
+  const hl = new THREE.Mesh(new THREE.IcosahedronGeometry(.013, 1), glM); hl.position.set(-.06, -.04, -.6); hl.scale.set(1, 1.3, 1); VM.add(hl);   // left fist on the grip
+  const hr = new THREE.Mesh(new THREE.IcosahedronGeometry(.012, 1), glM); hr.name = 'hr'; VM.add(hr);   // right hand on the string
+  const fr = new THREE.Mesh(new THREE.CylinderGeometry(.011, .016, .26, 7), slM); fr.name = 'fr'; VM.add(fr);   // right forearm
+  for (const n of ['s1', 's2']) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.0025, .0025, 1, 3).translate(0, .5, 0), new THREE.MeshBasicMaterial({ color: '#f4ecd8' })); m.name = n; VM.add(m) }
+  const ar = new THREE.Group(); ARROW_MESH(ar); ar.name = 'ar'; VM.add(ar);
+  VM.traverse(o => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 10; o.material.depthTest = true } });
 }
-function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; NOCK.visible = false; document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) shoot(a); gearView() }
+function vmTick(draw) {
+  vmBuild(); NOCK.visible = false; VM.position.copy(cam.position); VM.quaternion.copy(cam.quaternion);
+  const bow = VM.getObjectByName('bow'), hr = VM.getObjectByName('hr'), fr = VM.getObjectByName('fr'), ar = VM.getObjectByName('ar'), bb = new THREE.Box3();
+  const hx = .03, hy = -.06, hz = -.56 + .14 * draw; hr.position.set(hx, hy, hz);   // the string hand comes back toward the eye as you draw
+  fr.position.set(hx + .045, hy - .08, hz + .11); fr.quaternion.setFromUnitVectors(_UP, _vA.set(.5, -.5, .7).normalize());
+  /* the string: from the bow's two tips to the right hand */
+  bow.updateMatrix(); for (const [n, sy] of [['s1', 1], ['s2', -1]]) { const m = VM.getObjectByName(n), t = _vA.set(0, sy * .5, -.14).applyMatrix4(bow.matrix), v = _vB.set(hx, hy, hz).sub(t); m.position.copy(t); m.scale.set(1, v.length(), 1); m.quaternion.setFromUnitVectors(_UP, v.normalize()) }
+  ar.position.set(hx, hy, hz); ar.quaternion.setFromUnitVectors(_UP, _vA.set(-.055 - hx, -.04 - hy, -.62 - hz).normalize()); ar.scale.setScalar(.4);
+}
+function aimCam(tx, ty, tz) {   /* third person → first person at the eyes, looking down the aim line · zoom in while drawing */
+  const y = CAM.ys ?? CAM.yaw, p = AIM ? AIM.p : (CAM.aimP || 0), cp = Math.cos(p); if (AIM) CAM.aimP = p; const dx = Math.sin(y) * cp, dy = -Math.sin(p), dz = Math.cos(y) * cp;
+  const ex = me().x + Math.sin(y) * .12, ez = me().z + Math.cos(y) * .12, ey = me().y + 1.38;
+  _aL.set(tx + Math.sin(y) * 1.5, ty - .2, tz + Math.cos(y) * 1.5).lerp(_aT.set(ex + dx * 20, ey + dy * 20, ez + dz * 20), AIMK); cam.position.lerp(_aP.set(ex, ey, ez), AIMK); cam.lookAt(_aL); cam.near = .05;
+  const draw = AIM ? Math.min(1, (performance.now() - AIM.t0) / (D.ARROW.draw * 1000)) : 0; cam.fov = 52 - AIMK * (4 + 8 * draw);   // zoom (gentle: portrait screens are already narrow)
+  const fps = AIMK > .6; PL.root.visible = !fps && !!S.avatar; VM.visible = fps && !!AIM; if (VM.visible) vmTick(draw);
+}
+function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; NOCK.visible = false; VM.visible = false; document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) shoot(a); gearView() }
 function aimHud() { $('xN').textContent = '🏹 ×' + (S.arrows || 0) }
 function shoot(a) {
   const b = bowOf(), now = performance.now(); if (!b || !(S.arrows > 0)) return; if (!spendEn(D.ARROW.en)) { hint('⚡ เหนื่อยเกินกว่าจะง้างธนู', 1200); return }
   const dr = Math.min(1, (now - a.t0) / (D.ARROW.draw * 1000)), st = itemStats(b), tgt = a.tgt && mons.includes(a.tgt) ? a.tgt : null; S.arrows--;
-  PL.root.updateMatrixWorld(true); const o = NOCK.visible ? NOCK.position.clone() : new THREE.Vector3(me().x, me().y + 1.35, me().z);
+  PL.root.updateMatrixWorld(true); const o = camTP() ? cam.position.clone().addScaledVector(_aD, .7).add(new THREE.Vector3(0, -.06, 0)) : NOCK.visible ? NOCK.position.clone() : new THREE.Vector3(me().x, me().y + 1.35, me().z);
   const end = tgt ? (() => { const q = tgt.A.root.position; return new THREE.Vector3(q.x, q.y + .6 * (MSCALE[tgt.kind] || .85), q.z) })() : o.clone().addScaledVector(_aD, 40);
   const sp = D.ARROW.speed * (.6 + .4 * dr), v = end.clone().sub(o).normalize().multiplyScalar(sp); v.y += D.ARROW.grav * Math.min(1.2, end.distanceTo(o) / sp) * .5;   /* aim a little high so the drop lands on the crosshair */
   const m = new THREE.Group(); ARROW_MESH(m); m.position.copy(o); scene.add(m);
@@ -2300,7 +2328,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { waterAt, nearTarget, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
