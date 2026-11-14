@@ -166,6 +166,7 @@
   .invhint{margin-top:auto;text-align:center;font-size:11px;color:#fffa;padding:6px 0}
   #hTemp{width:52px;padding:2px 0 0}#hTemp.cold{box-shadow:0 0 0 3px #4aa8ff99,0 3px 0 #0003}#hTemp.hot{box-shadow:0 0 0 3px #ff5a4a99,0 3px 0 #0003}#tNeedle{transition:transform .5s}
   #qIcon{display:none;position:fixed;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + 70px);z-index:5;width:44px;height:44px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font-size:22px;box-shadow:0 3px 0 #0004}
+  #bHome{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 158px);z-index:5;width:46px;height:46px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font-size:24px;box-shadow:0 3px 0 #0004}#bHome:active{box-shadow:0 1px 0 #0004}
   body.qhide #quest{display:none!important}body.qhide #qIcon{display:block}
   body.zhud #quest{top:calc(max(10px,env(safe-area-inset-top)) + 70px);left:10px}#quest .qx{float:right;margin:-3px -4px 0 6px;font-size:15px;opacity:.85;padding:0 4px}
   .wh button.lock{opacity:.4;filter:grayscale(1)}.wh button.lock::after{content:'🔒';position:absolute;right:-4px;bottom:-4px;font-size:16px}.whc .lk{color:#ffb0a0;font-size:12px}
@@ -183,7 +184,7 @@
 </div>
 <div class="vit"><div id="hearts"></div><div id="debs"></div>
   <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar en"><i id="hMp" style="background:#9ad03a"></i><i id="hMpB" class="enb"></i></div></div>
-<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button>
+<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button><button id="bHome" aria-label="กระเป๋า">🏠</button>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="hoe" aria-label="จอบ">🪏<small>จอบ</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>

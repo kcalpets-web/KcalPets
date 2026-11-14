@@ -380,4 +380,5 @@ export const STORM_REWARD = { coin: 10000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 export const TEMP = { night: -.4, noon: .3, perM: -.06, highFrom: 2, swim: -.45, fire: .7, forest: -.12, storm: -.35, sun: .15, coldAt: -.6, hotAt: .6, hotRegen: .6 };
+export const SIT_REGEN = 3;   // v2.0.2: sitting (X) refills energy 3× faster
 export const JUMP = { h: .75, t: .55, en: 3 };

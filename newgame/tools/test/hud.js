@@ -22,8 +22,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll();
     await wait(3000); await closeAll(); await E(() => { const N = window.__ng; N.placeMe(3, -2); N.S.time = 600; N.PL.yaw = N.PL.yawT = 2.6; N.CAM.yaw = 2.6; N.CAM.pitch = .35; window.__hold = setInterval(() => { N.CAM.yaw = 2.6; N.CAM.pitch = .35; N.CAM.manualT = performance.now(); N.S.time = 600 }, 50) });   /* same view in every shot */ await wait(2500); await closeAll(); await shot('hud-pad');
     await E(() => document.querySelector('#quest [data-qx]').click()); await wait(500); await shot('hud-qhide');
-    await E(() => { const b = document.getElementById('bY'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-wheel'); await E(() => window.__ng.closeWheel());
-    await E(() => { const b = document.getElementById('bX'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })) }); await wait(800); await shot('hud-bag'); await closeAll();
+    await E(() => window.__ng.openWheel()); await wait(800); await shot('hud-wheel'); await E(() => window.__ng.closeWheel());
+    const press = id => E(id => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })), id);
+    await press('bX'); await wait(1200); if (!(await N(() => window.__ng.PL.pose.sit))) errs.push('X did not sit'); await shot('hud-sit');
+    const en0 = await N(() => window.__ng.S.en); await press('bY'); let jumped = false; for (let i = 0; i < 20 && !jumped; i++) { await wait(100); jumped = await N(() => window.__ng.PL.pose.jump > 0) } if (!jumped) errs.push('Y did not jump'); if (await N(() => window.__ng.PL.pose.sit)) errs.push('jump did not stand up'); await wait(900);
+    await E(() => document.getElementById('bHome').click()); await wait(800); if (!(await N(() => !!document.querySelector('.ov.inv')))) errs.push('home did not open the bag'); await shot('hud-bag'); await closeAll();
     for (const t of ['sword', 'shield', 'pets', 'mats', 'food', 'quest']) { await E(t => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag(t) }, t); await wait(1500); await shot('inv-' + t) } await closeAll();
     await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => window.__ng.setOpt('touch', 'z')); await wait(800); await shot('hud-touch');
   } catch (e) { errs.push('X ' + e.stack) }
