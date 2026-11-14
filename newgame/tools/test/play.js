@@ -74,7 +74,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await clearSome('axe', "o => o.t === 'debris'", () => !!window.__ng.S.story.howsif, 30);
     await wait(500); await shot('06-howsif'); await clickAll('#tN');
     log('howsif', await N(() => window.__ng.S.story.howsif), 'rod', await N(() => window.__ng.S.has.rod));
-    for (let k = 0; k < 6 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
+    for (let k = 0; k < 12 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
       await E(() => { const N = window.__ng; N.setTool('rod'); N.look(-4.5, 1); N.castAt(-5.5, 1) });
       log('cast', await N(() => JSON.stringify({ F: !!window.__ng.F, en: window.__ng.S.en, tired: window.__ng.S.tired, tool: window.__ng.tool, me: [window.__ng.me.x, window.__ng.me.z] })));
       for (let i = 0; i < 420; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) break;
