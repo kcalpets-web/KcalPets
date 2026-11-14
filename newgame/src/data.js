@@ -375,7 +375,7 @@ export const CATCH = {                     // diff: harder = smaller zone, wilde
 export const CATCH_RANGE = 4.2, PET_MAX = 12;   // v2.4: a longer reach
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
 export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };
-export const GLIDER = { sink: 1.5, sp: 5.4, en: 3.2, drop: 10, fallMax: 14, lift: 3.4, liftR: 1.8, liftTop: 9 };   // v2.5 🪂 fall speed · forward speed · ⚡/s · let-go fall · free-fall max · warm-air lift (over cook fires)         // hold the hawk's legs: fall speed · forward speed · how high you must stand
+export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 1.5, sp: 5.4, en: 3.2, drop: 10, fallMax: 14, lift: 3.4, liftR: 1.8, liftTop: 9 };   // v2.5 🪂 fall speed · forward speed · ⚡/s · let-go fall · free-fall max · warm-air lift (over cook fires)         // hold the hawk's legs: fall speed · forward speed · how high you must stand
 
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
 /* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
@@ -383,7 +383,7 @@ export const GLIDER = { sink: 1.5, sp: 5.4, en: 3.2, drop: 10, fallMax: 14, lift
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
-  { k: 'glider', icon: '🪂', name: 'เครื่องร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
+  { k: 'glider', icon: '🍃', name: 'ใบไม้ร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
   { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
