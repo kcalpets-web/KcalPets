@@ -118,7 +118,7 @@ def paint_face():
     d.chord([X(-.02), Z(ez - .07), X(.02), Z(ez - .1)], 0, 180, fill=(138, 42, 42, 255)); ell(0, ez - .091, .009, .0045, (232, 106, 106, 255))
     im.save(FACE_PNG)
 
-HEADC = (0, 0, 1.08)
+HEADC = (0, 0, 1.08); BODY_S, HEAD_S = .78, 1.22   # v4: small body, big head (≈ 1 : 1)
 def head():
     bm = quadsphere(8); uv = bm.loops.layers.uv.new('UV'); R = .255
     for v in bm.verts:
@@ -126,7 +126,7 @@ def head():
         # v2 "mochi" chibi head (designer's reference): a broad round cranium · full cheeks · a short, soft, round chin (never pointy)
         if z >= .15: k, zz = 1., z * .265
         else: t = (.15 - z) / 1.15; k, zz = 1 - .4 * t ** 1.6, z * .205 if z < 0 else z * .265   # v3: the face narrows from the cheekbones down to a small round chin
-        v.co = Vector((x * .272 * k, y * .25 * (1 - .15 * (1 - k)), zz)) + Vector(HEADC) + Vector((0, 0, .015))
+        v.co = Vector((x * .272 * k, y * (.29 if y > 0 else .235) * (1 - .15 * (1 - k)), zz)) + Vector(HEADC) + Vector((0, 0, .015))   # side view: the back of the head bulges, the face is flatter
     for f in bm.faces:
         for l in f.loops: l[uv].uv = (l.vert.co.x / .6 + .5, (l.vert.co.z - HEADC[2]) / .6 + .5)
         f.material_index = 1 if (f.calc_center_median() - Vector(HEADC)).normalized().y < -.2 else 0   # the front of the head wears the painted face
@@ -187,8 +187,10 @@ def build(pose='ready', at=(0, 0, 0), rot=0.):
         add(lock('back', (x, .2, z), (x + dx * .6, .29, z - ln * .45), (x + dx, .27, z - ln), .065, HAIR, .5))   # hugging the back of the head, pointing down
     add(lock('ahoge', (.02, -.02, 1.33), (.06, -.04, 1.43), (.12, .02, 1.45), .022, HAIR, .6))
     # a bigger head (≈ 1 : 1.3 head to body, like the reference) — scaled from the chin so the neck still meets it
-    Mh = Matrix.Translation((0, 0, .89)) @ Matrix.Diagonal((1.14, 1.14, 1.14, 1)) @ Matrix.Translation((0, 0, -.89))
+    # head ≈ body (designer's sheet: the head is a little bigger than the whole body) → a bigger head on a smaller body
+    Mh = Matrix.Translation((0, 0, .89 * BODY_S)) @ Matrix.Diagonal((HEAD_S, HEAD_S, HEAD_S, 1)) @ Matrix.Translation((0, 0, -.89))
     for o in objs[h0:]: o.data.transform(Mh)
+    h1 = len(objs)
     # tunic tabs (a split skirt) · belt with buckle and pouch · chest plate · scarf
     for a0, a1 in [(-.38, .38), (.5, 1.25), (-1.25, -.5), (1.35, 2.1), (-2.1, -1.35), (2.25, 4.03)]:
         add(lathe('tab', [(.13, .53), (.145, .47), (.165, .4), (.172, .37)], 6, a0, a1, BLUE, subsurf=2, solid=.012))
@@ -218,6 +220,9 @@ def build(pose='ready', at=(0, 0, 0), rot=0.):
     sh = add(lathe('shield', [(0, 0), (.15, 0), (.17, .012), (.17, .03), (.15, .04), (0, .045)], 20, material=BROWN)); sh.rotation_euler = (-math.pi / 2, 0, 0); sh.location = (0, .135, .63)
     rim = add(lathe('shield_rim', [(.165, .0), (.178, .02), (.165, .045)], 20, material=STEEL)); rim.rotation_euler = (-math.pi / 2, 0, 0); rim.location = (0, .135, .63)
     boss = add(ball('shield_boss', .045, (0, 0, 0), GOLD, (1, 1, .6))); boss.rotation_euler = (-math.pi / 2, 0, 0); boss.location = (0, .185, .63)
+    bpy.context.view_layer.update()   # matrix_world must include the loc/rot set above (shield, sword)
+    for o in objs[:h0] + objs[h1:]:
+        if o.parent is None: o.matrix_world = Matrix.Diagonal((BODY_S, BODY_S, BODY_S, 1)) @ o.matrix_world
     root = bpy.data.objects.new('hero', None); SC.collection.objects.link(root)
     for o in objs:
         if o.parent is None: o.parent = root
@@ -286,7 +291,7 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True); addon_utils.enable('cycles', default_set=True); COL.clear(); SC = bpy.context.scene
     globals().update(SKIN=M('skin', '#f6d2b4', rough=.55), BLUE=M('tunic', '#3d6fc4'), NAVY=M('pants', '#3a3f58'), BROWN=M('leather', '#7a4a2a'), BELT=M('belt', '#6a3e22'), STEEL=M('steel', '#dfe4ee', rough=.32, metal=.7), GOLD=M('gold', '#e0b84a', rough=.3, metal=.85), HAIR=M('hair', '#7a4428', rough=.5), RED=M('scarf', '#d8483a', rough=.7), WHITE=M('cloth', '#f0ece0'), GEM=M('gem', '#4ab0ff', rough=.1, emit=hexc('#4ab0ff')), GLOVE=M('glove', '#6a4428'), SOLE=M('sole', '#3a2416'))
 paint_face()
-CAMV = ((0, -2.4, 1.15), (0, 0, 1.1), 80) if os.environ.get('FACE') else ((-1.0, -3.2, 1.25), (0, 0, .74), 72)
+CAMV = ((0, -2.2, 1.0), (0, 0, .95), 80) if os.environ.get('FACE') else ((-1.0, -3.0, 1.1), (0, 0, .62), 72)
 if 'beauty' in VIEWS:
     root, objs = build('ready', rot=math.radians(20)); stage(); camera(*CAMV); render(os.path.join(OUT, 'hero-beauty.png'), (1300, 1500))
 if 'clay' in VIEWS:
@@ -296,8 +301,8 @@ if 'turn' in VIEWS:
     reset()
     allo = []
     for i, r in enumerate((0, -90, 180)):
-        root, objs = build('A', at=(-.75 + i * .75, 0, 0), rot=math.radians(r)); allo += objs
-    clayify(allo); stage(clay=True); camera((0, -5.9, .8), (0, 0, .74), 60); render(os.path.join(OUT, 'hero-turn.png'), (1800, 1000))
+        root, objs = build('A', at=(-1.0 + i * 1.0, 0, 0), rot=math.radians(r)); allo += objs
+    clayify(allo); stage(clay=True); camera((0, -6.3, .7), (0, 0, .62), 60); render(os.path.join(OUT, 'hero-turn.png'), (1800, 1000))
 if 'glb' in VIEWS:
     reset(); build('A')
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, 'hero.glb'), export_apply=True); print('wrote glb')
