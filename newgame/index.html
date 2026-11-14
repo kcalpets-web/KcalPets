@@ -160,6 +160,9 @@
   #modeSw button{width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);background:#fff9;font-size:19px;box-shadow:0 2px 0 #0004;opacity:.6;padding:0}
   #modeSw button.on{background:var(--paper);opacity:1;transform:scale(1.08)}body.wheel #modeSw,body.aim #modeSw{display:none}
   .fi{font-size:28px;line-height:1}
+  #tut{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 122px);z-index:6;display:none;max-width:58vw;background:#fff8eef0;color:var(--ink);border:3px solid var(--ink);border-radius:14px;padding:6px 12px;font:700 13px system-ui;line-height:1.35;text-align:center;box-shadow:0 3px 0 #0003;pointer-events:none}
+  #tut small{display:block;font-size:10px;color:#a0702a;letter-spacing:.5px}#tut b{font-size:16px}#tut.pop{animation:tutP .45s ease-out}@keyframes tutP{0%{transform:translateX(-50%) scale(.8);opacity:0}100%{transform:translateX(-50%) scale(1);opacity:1}}
+  body.snap #tut,body.cut #tut{display:none!important}
   /* v2.4.2 ⚡ stamina wheel next to the player (Zelda-like): shows while used · fades when full · stays while tired */
   .vit .enrow,.vit .bar.en{display:none}
   #stam{position:fixed;left:0;top:0;width:40px;height:40px;pointer-events:none;opacity:0;transition:opacity .5s;z-index:4;will-change:transform}#stam.on{opacity:1}

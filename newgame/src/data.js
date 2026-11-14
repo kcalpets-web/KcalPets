@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.5';
+export const APP_VER = '2.6';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -11,6 +11,8 @@ export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.a
 export const CLEAR = {
   herb:    { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'สมุนไพรเรืองแสง', ingr: ['glowherb', 1], regrow: 40 * 60e3 },   // chapter 2: for Uncle Howsif · later a rare cooking ingredient
   mushroom:{ tool: 'sickle', size: 's', mat: {}, mon: null, name: 'เห็ดป่า', ingr: ['mushroom', 1], regrow: 12 * 60e3 }, // forest floor
+  flower:  { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'ดอกไม้ป่า', ingr: ['flower', 1], regrow: 10 * 60e3 },   // v2.6
+  hive:    { tool: 'axe', size: 's', mat: { wood: 1 }, mon: null, name: 'รังผึ้ง', ingr: ['honey', .8], regrow: 30 * 60e3 },   // v2.6 on stumps
   debris:  { tool: 'axe',    size: 'm', mat: { wood: 2 }, mon: null, name: 'ซากเรือ' },     // story: the wreck over Uncle Howsif
   grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3 },
   bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3 },
@@ -112,8 +114,10 @@ export const KIND = {                                          // cd = swing tim
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 20, shopN: 10, shopPrice: 50, assist: 1.1 };
 /* v2.4 the A-prompt: hit cooldown by size (ms) · fruit on some trees/bushes · run after walking · swim burst */
 export const HIT_CD = { s: 300, m: 550, l: 850 };
-export const FRUIT = { tree: ['apple', 1, 2], bush: ['berry', 1, 3] }, FRUIT_EVERY = 3, FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
+export const FRUIT = { tree: [['apple', 1, 2, '#e8403a'], ['peach', 1, 2, '#ffa07a']], bush: [['berry', 1, 3, '#6a5ad8'], ['chili', 1, 2, '#e8302a'], ['mint', 2, 3, '#8ae86a']] }, FRUIT_EVERY = 3,   /* v2.6 [ingredient, min, max, colour] · which one = by the plant's id */ FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
 export const TAG_SHOW = 8;                                       // v2.4.1 seconds a monster's name + HP bar stays after it is hit
+export const HUNT = { chance: .35, r: 7 };                         // v2.6 monsters hunting animals: chance to look for prey (every ~4 s) · how far they see it
+export const DROP_LIFE = 300;                                   // v2.6 seconds loot stays on the ground
 export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
@@ -279,6 +283,12 @@ export const INGR = {
   strawberry:{ icon: '🍓', name: 'สตรอว์เบอร์รี', tag: 'fruit', price: 50 },
   corn:     { icon: '🌽', name: 'ข้าวโพด', tag: 'veg', price: 60 },
   pumpkin:  { icon: '🎃', name: 'ฟักทอง', tag: 'veg', price: 120 },
+  /* v2.6 wild ingredients with effects */
+  peach:    { icon: '🍑', name: 'ลูกพีช', tag: 'fruit', price: 20 },
+  chili:    { icon: '🌶️', name: 'พริกป่า', tag: 'spice', price: 25 },
+  mint:     { icon: '🌱', name: 'ใบมินต์', tag: 'cool', price: 20 },
+  flower:   { icon: '🌼', name: 'ดอกไม้ป่า', tag: 'flower', price: 15 },
+  honey:    { icon: '🍯', name: 'น้ำผึ้งป่า', tag: 'sweet', price: 60 },
 };
 export const CLEAR_INGR = { tree: ['apple', .35], bush: ['berry', .5], grass: ['berry', .12] };   // chance to find an ingredient while clearing
 /* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
@@ -299,6 +309,14 @@ export const RECIPES = [
   { k: 'seafeast', desc: 'แกงรวมปลาหลายชนิด จานใหญ่อิ่มนาน', icon: '🍛', name: 'แกงทะเลรวมมิตร', need: { fish: 3 }, eff: { hp: 110 }, hint: 'ปลาหลายตัวในหม้อเดียว' },
   { k: 'glowtonic', desc: 'น้ำยาเรืองแสงจางๆ ร่างกายเบาสบายทันที', icon: '🍵', name: 'ยาบำรุงเรืองแสง', need: { glowherb: 1, fruit: 1 }, eff: { hp: 150, en: 80 }, hint: 'สมุนไพรหายากจากป่า + ผลไม้', secret: 1 },
   { k: 'bento', desc: 'กล่องข้าวครบห้าหมู่ของนักผจญภัยตัวจริง', icon: '🍱', name: 'ข้าวกล่องนักผจญภัย', need: { fish: 1, meat: 1, mushroom: 1, fruit: 1 }, eff: { hp: 140, en: 60, buff: { def: 4, min: 10 } }, hint: 'ทะเล + เนื้อ + ป่า + ผลไม้ ครบในกล่องเดียว', secret: 1 },
+  /* v2.6 buff dishes: ❄️ warm · 🔥 cool · ⚡ stamina lasts longer · 💛 extra hearts */
+  { k: 'chilisoup', desc: 'ซุปพริกเผ็ดร้อน กินแล้วตัวอุ่นไปทั้งตัว', icon: '🌶️', name: 'ซุปพริกร้อน', need: { spice: 1, meat: 1 }, eff: { hp: 45, buff: { warm: 2, min: 8 } }, hint: 'ของเผ็ด + เนื้อ' },
+  { k: 'chilifish', desc: 'ปลาย่างพริกเกลือ เผ็ดจัดจ้าน อุ่นท้อง', icon: '🐟', name: 'ปลาย่างพริกเกลือ', need: { spice: 1, fish: 1 }, eff: { hp: 40, buff: { warm: 1, min: 10 } }, hint: 'ของเผ็ด + ปลา' },
+  { k: 'mintcool', desc: 'น้ำมินต์เย็นชื่นใจ คลายร้อนได้ดี', icon: '🧊', name: 'น้ำมินต์เย็น', need: { cool: 2 }, only: 1, eff: { en: 30, buff: { cool: 2, min: 8 } }, hint: 'ใบไม้กลิ่นเย็นล้วนๆ' },
+  { k: 'fruitcool', desc: 'ผลไม้ปั่นกับใบมินต์ หวานเย็น', icon: '🍹', name: 'ผลไม้ปั่นมินต์', need: { cool: 1, fruit: 1 }, eff: { en: 45, buff: { cool: 1, min: 12 } }, hint: 'ใบไม้กลิ่นเย็น + ผลไม้' },
+  { k: 'flowertea', desc: 'ชาดอกไม้หอมๆ หายใจโล่ง เดินได้ทั้งวัน', icon: '🌼', name: 'ชาดอกไม้', need: { flower: 2 }, only: 1, eff: { en: 50, buff: { stam: .35, min: 8 } }, hint: 'ดอกไม้ล้วน 2 ดอก' },
+  { k: 'honeytoast', desc: 'ผลไม้ราดน้ำผึ้ง หวานหอม มีแรงเต็มที่', icon: '🍯', name: 'ผลไม้น้ำผึ้ง', need: { sweet: 1, fruit: 1 }, eff: { en: 70, buff: { stam: .25, min: 10 } }, hint: 'ของหวานจากผึ้ง + ผลไม้' },
+  { k: 'heartstew', desc: 'สตูว์เนื้อดอกไม้ ตำรับนักเดินทาง กินแล้วหัวใจพองโต', icon: '💛', name: 'สตูว์หัวใจ', need: { meat: 1, flower: 1, veg: 1 }, eff: { hp: 80, buff: { heart: 2, min: 10 } }, hint: 'เนื้อ + ดอกไม้ + ผัก' },
   { k: 'mystery', desc: '…หน้าตาแปลกๆ แต่ก็กินได้นะ', icon: '❓', name: 'อาหารปริศนา', need: {}, eff: { hp: 8 }, hint: 'ผสมมั่วๆ ก็ได้อันนี้…' },
 ];
 export const COOK_TIME = 15;                                   // seconds the pot needs (a ladle stirs meanwhile)
@@ -380,7 +398,29 @@ export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 1.5,
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
 /* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
 /* v2.3.1: known from the start = no `from` · the rest are taught by NPCs (talk to them: `from` = the NPC's pick kind, or 'ruin:<town k>') */
+/* v2.6 👕 clothes: 3 slots (head · body · legs) · warm ❄️ = cold protection · cool 🔥 = heat protection · a place that is cold level N needs warm ≥ N (fire / hot food help) */
+export const WEAR = {
+  tunic:    { slot: 'body', icon: '👕', name: 'เสื้อผ้าฝ้าย', warm: 1, cool: 0, col: null },
+  pants:    { slot: 'legs', icon: '👖', name: 'กางเกงขายาว', warm: 1, cool: 0 },
+  strawHat: { slot: 'head', icon: '👒', name: 'หมวกฟาง', warm: 0, cool: 1, hat: 'straw' },
+  woolCap:  { slot: 'head', icon: '🧶', name: 'หมวกไหมพรม', warm: 1, cool: 0, hat: 'wool' },
+  furHood:  { slot: 'head', icon: '🦊', name: 'หมวกขนสัตว์', warm: 2, cool: 0, hat: 'fur' },
+  tank:     { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 2, col: '#f4f0e8' },
+  coat:     { slot: 'body', icon: '🧥', name: 'เสื้อกันหนาว', warm: 2, cool: 0, col: '#b8503a' },
+  furCoat:  { slot: 'body', icon: '🧥', name: 'เสื้อขนสัตว์', warm: 3, cool: 0, col: '#d8c0a0' },
+  shorts:   { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 1 },
+  furPants: { slot: 'legs', icon: '👖', name: 'กางเกงขนสัตว์', warm: 2, cool: 0 },
+};
+export const CLIMATE = { lv: [.6, .75, .9], tick: 4, dmg: 4, fire: 3, swimCool: 2, warn: 'ชุดไม่พอกับอากาศ' };   // TEMPV beyond ±lv[i] = level i+1 · every tick s: −dmg HP × (level − protection)
 export const CRAFT = [
+  { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (อุ่น +2)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
+  { k: 'woolCap', icon: '🧶', name: 'หมวกไหมพรม (อุ่น +1)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
+  { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (เย็น +2)', need: { grass: 6 }, give: { wear: 'tank' } },
+  { k: 'shorts', icon: '🩳', name: 'กางเกงขาสั้น (เย็น +1)', need: { grass: 4 }, give: { wear: 'shorts' } },
+  { k: 'strawHat', icon: '👒', name: 'หมวกฟาง (เย็น +1)', need: { grass: 5 }, give: { wear: 'strawHat' } },
+  { k: 'furHood', icon: '🦊', name: 'หมวกขนสัตว์ (อุ่น +2)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furCoat', icon: '🧥', name: 'เสื้อขนสัตว์ (อุ่น +3)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furPants', icon: '👖', name: 'กางเกงขนสัตว์ (อุ่น +2)', need: { hide: 5, grass: 4 }, give: { wear: 'furPants' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
   { k: 'glider', icon: '🍃', name: 'ใบไม้ร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },

@@ -156,6 +156,10 @@ export function spawnClear(W, o) {
        part(g, '#3f8a3a', '#7ac860', [0, .3, 0], [.025, .22, .025], [0, 0, 0], { A: 0 }); const f = new THREE.Mesh(new THREE.SphereGeometry(.11, 14, 10), GLOW); f.position.y = .55; g.add(f);
        for (let i = 0; i < 4; i++) { const p2 = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), GLOW2); p2.position.set(Math.cos(i * 1.57) * .1, .55, Math.sin(i * 1.57) * .1); p2.scale.set(1, .5, 1); g.add(p2) } },
      debris: () => { part(g, '#3a2418', '#7a4a30', [0, .12, 0], [.6, .12, .25], [0, 0, .2], { A: .05 }); part(g, '#4a2a18', '#8a5a30', [.2, .3, .1], [.45, .05, .1], [0, .6, .4], { A: 0 }) }, grass: () => PROPS.grassClump(g, 1.1), bush: () => PROPS.bush(g, .7), tree: () => PROPS.tree(g, .8, o.x > 4 ? 1 : 0), bigtree: () => PROPS.tree(g, 1.25, 1),
+     flower: () => { const cols = ['#ff7a9a', '#ffd23f', '#ffffff', '#b07aff', '#ff9a4a'], c0 = cols[Math.abs(Math.round(o.x * 7 + o.z * 13)) % cols.length];   /* v2.6 a little clump of wild flowers */
+       for (let i = 0; i < 4; i++) { const a = i * 1.7, r = .1 + (i % 2) * .08, x = Math.cos(a) * r, z = Math.sin(a) * r, h = .22 + (i % 3) * .06; part(g, '#3f8a3a', '#7ac860', [x, h / 2, z], [.015, h / 2, .015], [0, 0, 0], { A: 0 });
+         for (let k = 0; k < 5; k++) part(g, c0, '#ffffff', [x + Math.cos(k * 1.26) * .045, h, z + Math.sin(k * 1.26) * .045], [.04, .015, .03], [0, -k * 1.26, 0], { A: 0 }); part(g, '#e8a020', '#ffe080', [x, h + .01, z], [.025, .02, .025], [0, 0, 0], { A: 0 }) } },
+     hive: () => { part(g, '#5a3a20', '#9a6a3a', [0, .22, 0], [.26, .22, .26], [0, 0, 0], { A: .05 }); part(g, '#d89a20', '#ffd060', [0, .55, 0], [.2, .17, .2], [0, 0, 0], { A: .1 }); part(g, '#a86a10', '#e8a030', [0, .62, .16], [.05, .04, .02], [0, 0, 0], { A: 0 }) },
      pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
@@ -347,7 +351,7 @@ export function buildWild(W, eco) {
   /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
   for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28, rx = MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), rz = MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1; at(g => PROPS.rock(g, .8 + R() * .5), rx, rz, R() * 6); addSol({ x: rx, z: rz, r: .45 }) }
   /* wild clearables (regrow): trees · bushes · rocks · grass, never on the road, in water or on the cliff band */
-  let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'grass', 'rock', 'pebble', 'pebble', 'bigtree', 'boulder'];
+  let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'flower', 'rock', 'pebble', 'flower', 'bigtree', 'boulder', 'hive'];
   for (const [x0, x1, n] of [[9.8, 33, 46], [58.5, 78.5, 40]]) for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
     if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
     const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
@@ -369,7 +373,9 @@ export function wildH(x, z) {
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));
   let h = (n - .47) * 30 + Math.pow(r, 3) * 46 * far + 4 * far;                                                                   // rolling land · mountain ridges farther out
   const dc = coreDist(x, z), k = smw(0, 50, dc), f = fbm(x / 40, z / 40, 2) - .5; h = h * k + (.04 + f * .25 * smw(0, 8, dc)) * (1 - k) + f * 1.2 * k;   // v2.4.1 the same height as the core at its edge (no step, no sinking)
-  const c = coastX(z), kb = smw(0, 30, dc); h = h - smw(c + 1 + 15 * kb, c - 2 - 2 * kb, x) * (Math.max(0, h) + 6);   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
+  const c = coastX(z), kb = smw(0, 30, dc); h = h - smw(c + 1 + 15 * kb, c - 2 - 2 * kb, x) * (Math.max(0, h) + 6);
+  /* v2.5.1 the world's rim: huge cliffs north and south (and east where there is land) · the west is the open sea (a current pushes you back) */
+  const rN = smw(75, 6, z - WORLD.z0), rS = smw(75, 6, WORLD.z1 - z), rE = h > -1 ? smw(75, 6, WORLD.x1 - x) : 0, rim = Math.max(rN, rS, rE); if (rim > 0) h += rim * rim * (70 + 18 * fbm(x / 30, z / 30, 2));   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
   return h;
 }
 /* v2.4.2 ONE grass colour for every ground mesh (core + streamed land) · smooth, so no lines or blocks where meshes meet */
@@ -421,8 +427,8 @@ export function buildChunk(W, cx, cz) {
   for (const p of lush) p.y = wildH(p.x, p.z) - .05; lushPlace(g, lush, R);
   g.children.forEach(m => { if (m.isInstancedMesh && (m.geometry === TREE_TRUNK || m.geometry === LG.crown || m.geometry === PINE_TOP)) m.userData.occ = 1 });
   /* clearables: 5 per chunk on gentle ground (regrow like the others) */
-  const types = [['tree', 'bush', 'grass', 'pebble', 'tree'], ['rock', 'pine', 'rock', 'boulder', 'pebble']];
-  for (let i = 0, n = 0; i < 40 && n < 5; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 5)];
+  const types = [['tree', 'bush', 'flower', 'pebble', 'tree', 'hive', 'flower'], ['rock', 'pine', 'rock', 'boulder', 'pebble', 'flower', 'rock']];
+  for (let i = 0, n = 0; i < 50 && n < 7; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = types[p.h > 12 ? 1 : 0][Math.floor(R() * 7)];
     out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
   W.scene.add(g); return out;
 }
