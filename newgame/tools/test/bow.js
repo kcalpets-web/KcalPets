@@ -1,4 +1,4 @@
-/* v2.1 buttons + bow test: X = jump (hold 3 s = sit, tap = stand) · A hold 3 s = AUTO · Y = aim (camera over the shoulder, crosshair) → let go = arrow flies and hits a slime · arrows run out · old saves get the starter bow.
+/* v2.1 buttons + bow test: X = jump (hold 3 s = crouch, tap = stand) · A hold 3 s = AUTO · Y = aim (camera over the shoulder, crosshair) → let go = arrow flies and hits a slime · arrows run out · old saves get the starter bow.
    NODE_PATH=$(npm root -g) node newgame/tools/test/bow.js outDir   (~3 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -28,8 +28,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.S.time = 600; N.setTemp(0); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(600); await shot('b0-idle');
     /* X: tap = jump · hold 3 s = sit · tap = stand */
     await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump');
-    if (!(await until(() => window.__ng.SIT, 5000))) errs.push('holding X 3 s did not sit'); await press('bX', 'pointerup'); await wait(800); await shot('b1-sit');
-    await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.SIT, 2000))) errs.push('tap X did not stand up'); await wait(400);
+    if (!(await until(() => window.__ng.CROUCH, 5000))) errs.push('holding X 3 s did not crouch'); await press('bX', 'pointerup'); await wait(800); await shot('b1-crouch');
+    { const p0 = await N(() => [window.__ng.me.x, window.__ng.me.z]); await E(() => { const N = window.__ng; N.walkTo(N.me.x, N.me.z + 3) }); await wait(1500); await shot('b1b-sneak');
+      const r = await N(() => ({ c: window.__ng.CROUCH, sneak: window.__ng.PL.pose.sneak })); if (!r.c || !r.sneak) errs.push('walking stood up from the crouch (should sneak)'); }
+    await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.CROUCH, 2000))) errs.push('tap X did not stand up from the crouch'); await wait(400);
     if (await N(() => window.__ng.PL.pose.jump > 0)) errs.push('standing up should not jump');
     /* A: hold 3 s = AUTO */
     await press('bA', 'pointerdown'); if (!(await until(() => window.__ng.S.auto, 5000))) errs.push('holding A 3 s did not turn AUTO on'); await press('bA', 'pointerup');

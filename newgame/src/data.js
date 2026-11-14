@@ -110,7 +110,9 @@ export const KIND = {                                          // cd = swing tim
 };
 /* v2.1 arrows: draw = seconds to a full draw (damage 50 % → 100 %) · speed m/s · grav m/s² · drop = chance a monster leaves 1–3 · shop = 10 for 50 */
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 20, shopN: 10, shopPrice: 50, assist: 1.1 };
-export const HOLD_AUTO = 3, HOLD_SIT = 3;   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = sit
+export const HOLD_AUTO = 3, HOLD_CROUCH = 3;   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
+/* v2.1.1 crouch: walk speed × · monster sight × · animals bolt at × distance · hitting / shooting an unaware monster = damage × */
+export const SNEAK = { sp: .5, sight: .45, flee: .45, dmg: 2 };
 export const RAR_BONUS = { B: [[0, 0], [0, 0]], R: [[2, 4], [0, 4]], E: [[5, 9], [3, 8]], L: [[10, 16], [8, 14]] };   // [atk (def ÷2) min-max, durability min-max]
 export const OLD_ITEM = { leafBlade: [6], branchSword: [10], stoneClub: [14, 1], leafVest: [0, 3], barkArmor: [0, 5], stoneArmor: [0, 8] };   // v1.x stats (× RAR_MUL) → bonus on upgrade
 
@@ -389,5 +391,4 @@ export const STORM_REWARD = { coin: 10000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 export const TEMP = { night: -.4, noon: .3, perM: -.06, highFrom: 2, swim: -.45, fire: .7, forest: -.12, storm: -.35, sun: .15, coldAt: -.6, hotAt: .6, hotRegen: .6 };
-export const SIT_REGEN = 3;   // v2.0.2: sitting (X) refills energy 3× faster
 export const JUMP = { h: .75, t: .55, en: 3 };
