@@ -291,6 +291,64 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True); addon_utils.enable('cycles', default_set=True); COL.clear(); SC = bpy.context.scene
     globals().update(SKIN=M('skin', '#f6d2b4', rough=.55), BLUE=M('tunic', '#3d6fc4'), NAVY=M('pants', '#3a3f58'), BROWN=M('leather', '#7a4a2a'), BELT=M('belt', '#6a3e22'), STEEL=M('steel', '#dfe4ee', rough=.32, metal=.7), GOLD=M('gold', '#e0b84a', rough=.3, metal=.85), HAIR=M('hair', '#7a4428', rough=.5), RED=M('scarf', '#d8483a', rough=.7), WHITE=M('cloth', '#f0ece0'), GEM=M('gem', '#4ab0ff', rough=.1, emit=hexc('#4ab0ff')), GLOVE=M('glove', '#6a4428'), SOLE=M('sole', '#3a2416'))
 paint_face()
+
+# ───────── v5 base body (designer's sheet): head = a big cranium sphere + a smaller jaw/cheek sphere below and in front, smoothly merged ─────────
+SA, RA = Vector((0, .025, .05)), .265                  # cranium (a sphere)
+SB, RBv = Vector((0, -.035, -.11)), Vector((.24, .215, .175))   # jaw + cheeks: a wide, slightly flattened ball, lower and a little forward
+RB = .2
+def smin(a, b, k=.06): h = max(k - abs(a - b), 0) / k; return min(a, b) - h * h * k * .25
+def dB(p): q = p - SB; return (Vector((q.x / RBv.x, q.y / RBv.y, q.z / RBv.z)).length - 1) * min(RBv)
+def head_sdf(p): return smin((p - SA).length - RA, dB(p))
+def head2(two_tone=False):
+    """one clean quad-sphere mesh shrink-wrapped onto the merged two-sphere shape (ray-marched), front-projected face UVs"""
+    bm = quadsphere(16 if two_tone else 10); uv = bm.loops.layers.uv.new('UV'); O = Vector((0, -.01, -.03))
+    for v in bm.verts:
+        d = v.co.normalized(); lo, hi = 0., .6
+        for _ in range(40):
+            m = (lo + hi) / 2
+            if head_sdf(O + d * m) < 0: lo = m
+            else: hi = m
+        v.co = O + d * lo + Vector(HEADC)
+    bm.normal_update()
+    for f in bm.faces:
+        for l in f.loops: l[uv].uv = (l.vert.co.x / .6 + .5, (l.vert.co.z - HEADC[2]) / .6 + .5)
+        c = f.calc_center_median() - Vector(HEADC)
+        if two_tone: f.material_index = 0 if (c - SA).length - RA < dB(c) - .004 else 1
+        else: f.material_index = 1 if (c - O).normalized().y < -.2 else 0
+    o = obj_from_bm('head', bm, M('cranium', '#f08080', rough=.5) if two_tone else SKIN, 2)
+    o.data.materials.append(M('jaw', '#9a9cf0', rough=.5) if two_tone else mat('face', hexc('#f6d2b4'), rough=.55, tex=FACE_PNG)); return o
+
+def base_figure(at=(0, 0, 0), rot=0., two_tone=False, vinyl='#f0e6e2'):
+    """the naked vinyl-toy base: a soft bean torso · short chubby arms and legs · mitten hands · big head on a short neck"""
+    VIN = M('vinyl', vinyl, rough=.45)
+    J = {'pelvis': (0, 0, .2), 'waist': (0, 0, .28), 'chest': (0, 0, .36), 'neck': (0, 0, .45), 'neckT': (0, 0, .5),
+         'shR': (-.11, 0, .38), 'wrR': (-.18, -.005, .25), 'shL': (.11, 0, .38), 'wrL': (.18, -.005, .25),
+         'hipR': (-.062, 0, .16), 'anR': (-.068, 0, .05), 'hipL': (.062, 0, .16), 'anL': (.068, 0, .05)}
+    RAD = {'pelvis': (.175, .165), 'waist': (.165, .155), 'chest': (.17, .155), 'neck': (.06, .06), 'neckT': (.055, .055),   # (subdivision shrinks the skin hull ~30 %: these give a ~.12 m round bean)
+           'shR': (.058, .058), 'wrR': (.052, .052), 'shL': (.058, .058), 'wrL': (.052, .052),
+           'hipR': (.08, .08), 'anR': (.072, .072), 'hipL': (.08, .08), 'anL': (.072, .072)}
+    E = [('pelvis', 'waist'), ('waist', 'chest'), ('chest', 'neck'), ('neck', 'neckT'), ('chest', 'shR'), ('shR', 'wrR'), ('chest', 'shL'), ('shL', 'wrL'), ('pelvis', 'hipR'), ('hipR', 'anR'), ('pelvis', 'hipL'), ('hipL', 'anL')]
+    names = list(J); bm = bmesh.new(); L = bm.verts.layers.skin.verify(); V = {}
+    for n in names: v = bm.verts.new(J[n]); v[L].radius = RAD[n]; V[n] = v
+    V['pelvis'][L].use_root = True
+    for a, c in E: bm.edges.new((V[a], V[c]))
+    me = bpy.data.meshes.new('body'); bm.to_mesh(me); bm.free(); o = bpy.data.objects.new('body', me); SC.collection.objects.link(o)
+    sk = o.modifiers.new('skin', 'SKIN'); sk.use_smooth_shade = True; sk.branch_smoothing = .8; sd = o.modifiers.new('sub', 'SUBSURF'); sd.levels = sd.render_levels = 2; o.data.materials.append(VIN)
+    objs = [o]
+    for s, side in ((-1, 'R'), (1, 'L')):
+        w = Vector(J['wr' + side]); objs.append(ball('hand', .056, tuple(w + Vector((s * .012, 0, -.03))), VIN, (.95, .85, 1.05)))
+        a = Vector(J['an' + side]); objs.append(ball('foot', .072, (a.x, a.y - .018, a.z - .02), VIN, (1.0, 1.25, .62)))
+    h = head2(two_tone); objs.append(h)
+    for s in (-1, 1): objs.append(ball('ear', .085, (s * .262, .035, HEADC[2] - .065), M('ear2', '#c8bcf0', rough=.5) if two_tone else (SKIN if not vinyl else VIN), (.42, .72, .92)))
+    # the head was built around HEADC → put its chin on the neck
+    Mh = Matrix.Translation((0, 0, .44 - (HEADC[2] - .3) * 1.0)) @ Matrix.Translation((0, 0, 0))
+    for x in objs[-3:]: x.data.transform(Matrix.Translation((0, 0, .44 - (HEADC[2] - .3))))
+    if vinyl:   # a plain vinyl head like the sheet (no face paint)
+        h.data.materials[0] = VIN if not two_tone else h.data.materials[0]
+        if not two_tone: h.data.materials[1] = VIN
+    root = bpy.data.objects.new('base', None); SC.collection.objects.link(root)
+    for x in objs: x.parent = root
+    root.rotation_euler = (0, 0, rot); root.location = at; return root, objs
 CAMV = ((0, -2.2, 1.0), (0, 0, .95), 80) if os.environ.get('FACE') else ((-1.0, -3.0, 1.1), (0, 0, .62), 72)
 if 'beauty' in VIEWS:
     root, objs = build('ready', rot=math.radians(20)); stage(); camera(*CAMV); render(os.path.join(OUT, 'hero-beauty.png'), (1300, 1500))
@@ -309,3 +367,16 @@ if 'glb' in VIEWS:
 if 'blend' in VIEWS:   # a .blend the designer can open in Blender (modifiers kept live: Skin baked, Subdivision/Solidify/Bevel editable)
     reset(); build('ready', rot=math.radians(20)); stage(); camera(*CAMV)
     bpy.ops.file.pack_all(); bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, 'kealee-hero.blend')); print('wrote blend')
+
+if 'base' in VIEWS:   # the vinyl base like the designer's sheet: front · side · back
+    reset(); allo = []
+    for i, r in enumerate((0, -90, 180)): root, objs = base_figure(at=(-.95 + i * .95, 0, 0), rot=math.radians(r)); allo += objs
+    stage(clay=True); camera((0, -5.0, .62), (0, 0, .5), 60); render(os.path.join(OUT, 'base-turn.png'), (1800, 900))
+if 'basehead' in VIEWS:   # the head structure: red cranium + blue jaw (front · 3/4 side)
+    reset()
+    for i, r in enumerate((0, -60)): base_figure(at=(-.45 + i * .9, 0, 0), rot=math.radians(r), two_tone=True)
+    stage(clay=True); camera((0, -3.6, .95), (0, 0, .8), 60); render(os.path.join(OUT, 'base-head.png'), (1600, 900))
+if 'basewire' in VIEWS:
+    reset(); allo = []
+    for i, r in enumerate((0, -90, 180)): root, objs = base_figure(at=(-.95 + i * .95, 0, 0), rot=math.radians(r)); allo += objs
+    clayify(allo); stage(clay=True); camera((0, -5.0, .62), (0, 0, .5), 60); render(os.path.join(OUT, 'base-wire.png'), (1800, 900))
