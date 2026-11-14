@@ -23,8 +23,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(3000); await closeAll();
     /* a calm rabbit right next to you → 🫳 → tug-of-war (an in-page bot holds when ▼ is left of the zone) */
     await E(() => { const N = window.__ng, q = N.me; N.__r = N.monSpawn('rabbit', q.x + 1.6, q.z + .4, { area: 'farm' }); N.__r.fleeT = 0; N.__r.T = Object.assign({}, N.__r.T, { flee: 0 }) }); await wait(1500);
-    const bc = await N(() => getComputedStyle(document.getElementById('bCatch')).display + ' ' + document.getElementById('bCatch').textContent); log('catch button', bc); if (!/block/.test(bc)) errs.push('no catch button next to the rabbit');
-    await shot('01-catch-button'); await E(() => document.getElementById('bCatch').click()); await wait(300);
+    const bc = await N(() => (window.__ng.CTX && window.__ng.CTX.k) + ' ' + document.getElementById('bA').textContent); log('catch prompt', bc); if (!/catch/.test(bc)) errs.push('v2.4: no 🫳 prompt on A next to the rabbit');
+    await shot('01-catch-button'); await E(() => window.__ng.actA()); await wait(300);
     await E(() => { window.__bot = setInterval(() => { const c = window.__ng.CATCHING; if (c) c.hold = c.pos + c.v * .25 < c.zone }, 40) }); await wait(1800); await shot('02-tug');
     for (let k = 0; k < 40 && await N(() => !!window.__ng.CATCHING); k++) await wait(500);
     await wait(800); await shot('03-caught'); const pc = await N(() => window.__ng.S.pets.map(p => p.kind + ':' + p.rar)); log('pets', JSON.stringify(pc)); if (!pc.some(x => /rabbit/.test(x))) errs.push('the rabbit was not caught');

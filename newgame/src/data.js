@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.3.1';
+export const APP_VER = '2.4';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -110,6 +110,10 @@ export const KIND = {                                          // cd = swing tim
 };
 /* v2.1 arrows: draw = seconds to a full draw (damage 50 % → 100 %) · speed m/s · grav m/s² · drop = chance a monster leaves 1–3 · shop = 10 for 50 */
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 20, shopN: 10, shopPrice: 50, assist: 1.1 };
+/* v2.4 the A-prompt: hit cooldown by size (ms) · fruit on some trees/bushes · run after walking · swim burst */
+export const HIT_CD = { s: 300, m: 550, l: 850 };
+export const FRUIT = { tree: ['apple', 1, 2], bush: ['berry', 1, 3] }, FRUIT_EVERY = 3, FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
+export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
 export const HOLD_AUTO = 3, HOLD_CROUCH = 3;   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
 /* v2.1.1 crouch: walk speed × · monster sight × · animals bolt at × distance · hitting / shooting an unaware monster = damage × */
@@ -364,7 +368,7 @@ export const CATCH = {                     // diff: harder = smaller zone, wilde
   rabbit:  { el: '🌱', diff: .7 }, chicken: { el: '🔥', diff: .8 }, duck: { el: '💧', diff: .8 }, deer: { el: '❄️', diff: 1.15 }, boar: { el: '🪨', diff: 1.3 },
   whale:   { el: '💧', diff: 1.4, ability: 'swim' }, hawk: { el: '⚡', diff: 1.3, ability: 'glide' },
 };
-export const CATCH_RANGE = 2.8, PET_MAX = 12;
+export const CATCH_RANGE = 4.2, PET_MAX = 12;   // v2.4: a longer reach
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
 export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };         // hold the hawk's legs: fall speed · forward speed · how high you must stand
 

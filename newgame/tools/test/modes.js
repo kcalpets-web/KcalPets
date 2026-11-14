@@ -24,12 +24,12 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const face = id => E(id => { const N = window.__ng, o = N.W.clear.get(id); N.placeMe(o.x - 1.1, o.z); N.PL.yaw = N.PL.yawT = Math.PI / 2 }, id);
     /* ⚔️ sword mode: A on a tree draws, then cuts it with the weapon */
     const tree = await N(() => { const o = window.__ng.nearestClear(o => o.t === 'tree'); return o.id }); await face(tree); await wait(700);
-    await press('bA'); await press('bA', 'pointerup'); await wait(300); if (!(await N(() => window.__ng.DRAWN))) errs.push('A did not draw the weapon');
+    await press('bA'); await press('bA', 'pointerup'); await wait(300); if (!(await N(() => window.__ng.DRAWN || window.__ng.tool === 'axe'))) errs.push('A did nothing at the tree');
     for (let i = 0; i < 3; i++) { await press('bA'); await press('bA', 'pointerup'); await wait(500) }
-    const tr = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, g: !!o.g, tool: window.__ng.tool } }, tree); log('tree', JSON.stringify(tr)); if (tr.g && !(tr.left >= 0 && tr.left < 9)) errs.push('the weapon did not cut the tree'); if (tr.tool !== 'sword') errs.push('cutting switched away from the weapon'); await shot('m1-cut');
+    const tr = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, g: !!o.g, tool: window.__ng.tool } }, tree); log('tree', JSON.stringify(tr)); if (tr.g && !(tr.left >= 0 && tr.left < 9)) errs.push('the weapon did not cut the tree'); if (tr.tool !== 'axe') errs.push('v2.4: trees should use the axe (🪓 prompt)'); await shot('m1-cut');
     /* 🪏 farm mode */
     await E(() => document.getElementById('mFarm').click()); await wait(500); await closeAll();
-    const lab = await N(() => ['bA', 'bB', 'bX', 'bY'].map(id => document.getElementById(id).textContent).join('|')); log('labels', lab); if (!/🪏/.test(lab) || !/🖍️/.test(lab) || /[ABXY]/.test(lab)) errs.push('farm icons wrong (icons only)');
+    const lab = await N(() => ['bA', 'bB', 'bX', 'bY'].map(id => document.getElementById(id).textContent).join('|')); log('labels', lab); if (!/🪏|🪓|⛏️|✋|🌾/.test(lab) || !/🖍️/.test(lab) || /[ABXY]/.test(lab)) errs.push('farm icons wrong (icons only)');
     await shot('m2-farm');
     const rock = await N(() => { const o = window.__ng.nearestClear(o => o.t === 'rock' || o.t === 'pebble'); return o.id }); await face(rock); await wait(700);
     await press('bX'); await press('bX', 'pointerup'); await wait(600); const rk = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, g: !!o.g, tool: window.__ng.tool, jump: window.__ng.PL.pose.jump } }, rock); log('rock', JSON.stringify(rk));
