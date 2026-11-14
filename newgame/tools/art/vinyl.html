@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE vinyl cast</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+/* the in-game vinyl chibi (src/vinyl.js) — a lineup of boys and girls with every hair style · #n = which lineup */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1800, H = 760, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; document.body.appendChild(r.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color('#eef4f8'); S.add(new THREE.HemisphereLight('#fff6ec', '#b8a890', 1.3)); const k = new THREE.DirectionalLight('#fff1dc', 2.2); k.position.set(-2, 4, 5); S.add(k); const rl = new THREE.DirectionalLight('#dce8ff', .9); rl.position.set(3, 2, -4); S.add(rl);
+const L = location.hash === '#2' ? [
+  { sex: 'f', hair: 'bob', hairCol: '#4a2e22', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#d8483a', eyes: 'round' },
+  { sex: 'f', hair: 'pony', hairCol: '#e8c060', skin: '#f2cfa6', wear: 'farmer', bottom: 'skirt', eyes: 'smile', eyeCol: '#3aa86a' },
+  { sex: 'f', hair: 'buns', hairCol: '#f0a0c0', skin: '#e2b183', wear: 'mage', eyes: 'sparkle', eyeCol: '#8a5ad8' },
+  { sex: 'f', hair: 'long', hairCol: '#2a2228', skin: '#c28b5c', wear: 'traveler', bottom: 'skirt', top: '#3aa86a', eyes: 'round', eyeCol: '#6a3a20' },
+  { sex: 'f', hair: 'twin', hairCol: '#5a8ad8', skin: '#8c5a3c', wear: 'traveler', bottom: 'pants', top: '#e0a030', eyes: 'sleepy', eyeCol: '#3a7ad8' }] : [
+  { sex: 'm', hair: 'messy', hairCol: '#7a4428', skin: '#f2cfa6', wear: 'traveler', bottom: 'pants', top: '#3d6fc4', eyes: 'round' },
+  { sex: 'm', hair: 'spiky', hairCol: '#2a2228', skin: '#e2b183', wear: 'traveler', bottom: 'pants', top: '#d8483a', eyes: 'round', eyeCol: '#6a3a20' },
+  { sex: 'm', hair: 'side', hairCol: '#b05a30', skin: '#f9e0d2', wear: 'farmer', bottom: 'pants', eyes: 'smile', eyeCol: '#3aa86a' },
+  { sex: 'm', hair: 'messy', hairCol: '#d8d8e8', skin: '#8c5a3c', wear: 'mage', eyes: 'sparkle', eyeCol: '#3a7ad8' },
+  { sex: 'm', hair: 'spiky', hairCol: '#e8c060', skin: '#c28b5c', wear: 'traveler', bottom: 'pants', top: '#3aa86a', eyes: 'sleepy', eyeCol: '#d84a4a' }];
+L.forEach((a, i) => { const g = new THREE.Group(); vinyl(g, Object.assign({ v: 2 }, a)); g.position.x = (i - 2) * .95; g.rotation.y = .25; S.add(g) });
+const c = new THREE.PerspectiveCamera(26, W / H, .1, 50); c.position.set(0, 1.0, 5.3); c.lookAt(0, .72, 0); r.render(S, c); window.__done = 1;
+</script></body></html>

@@ -2029,7 +2029,7 @@ setTimeout(updCheck, 3000); setTimeout(whatsNew, 2500); document.addEventListene
 /* ---------- character creator (v0.7): hair · hair colour · skin · top colour · trousers or long skirt · live clay preview ---------- */
 function openCreator(first) {
   return new Promise(done => {
-    const a = Object.assign({ v: 2, skin: VLOOK.skin[1][0], eyes: 'round', eyeCol: VLOOK.eyeCol[0], hair: 'messy', hairCol: VLOOK.hairCol[2], wear: 'traveler', top: VLOOK.top[0] }, vinylFrom(S.avatar || {}));   /* v2.3 the vinyl chibi creator */
+    const a = Object.assign({ v: 2, sex: 'm', skin: VLOOK.skin[1][0], eyes: 'round', eyeCol: VLOOK.eyeCol[0], hair: 'messy', hairCol: VLOOK.hairCol[2], wear: 'traveler', bottom: 'pants', top: VLOOK.top[0] }, vinylFrom(S.avatar || {}));   /* v2.3 the vinyl chibi creator */
     const el = document.createElement('div'); el.id = 'maker'; document.body.appendChild(el); CUT = true;
     el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><canvas id="mkCv"></canvas><button class="btn sm" id="mkR">🎲 สุ่ม</button><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
     const cv3 = el.querySelector('#mkCv'), r3 = new THREE.WebGLRenderer({ canvas: cv3, antialias: true, alpha: true }); r3.setPixelRatio(Math.min(devicePixelRatio, 2)); r3.setSize(220, 250, false); r3.outputColorSpace = THREE.SRGBColorSpace; r3.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2038,13 +2038,14 @@ function openCreator(first) {
     const rebuild = () => { if (doll) sc.remove(doll); doll = new THREE.Group(); vinyl(doll, a); sc.add(doll) };
     const loop = () => { if (!alive) return; requestAnimationFrame(loop); spin += .012; doll.rotation.y = Math.sin(spin) * .7; r3.render(sc, c3) };
     const row = (t, items, cur, key) => `<div class="mkr"><b>${t}</b><div>${items.map((it, i) => `<button data-k="${key}" data-i="${i}" class="${cur(it) ? 'on' : ''}" ${it.c ? `style="background:${it.c}"` : ''}>${it.t || ''}</button>`).join('')}</div></div>`;
-    const OPTS = { skin: VLOOK.skin.map(x => x[0]), eyes: VLOOK.eyes.map(x => x[0]), eyeCol: VLOOK.eyeCol, hair: VLOOK.hair.map(x => x[0]), hairCol: VLOOK.hairCol, wear: VLOOK.wear.map(x => x[0]), top: VLOOK.top };
+    const OPTS = { sex: VLOOK.sex.map(x => x[0]), bottom: VLOOK.bottom.map(x => x[0]), skin: VLOOK.skin.map(x => x[0]), eyes: VLOOK.eyes.map(x => x[0]), eyeCol: VLOOK.eyeCol, hair: VLOOK.hair.map(x => x[0]), hairCol: VLOOK.hairCol, wear: VLOOK.wear.map(x => x[0]), top: VLOOK.top };
     const draw = () => { el.querySelector('.mk').innerHTML =
-      row('ทรงผม', VLOOK.hair.map(([k, t]) => ({ k, t })), it => it.k === a.hair, 'hair') + row('สีผม', VLOOK.hairCol.map(c => ({ c, k: c })), it => it.k === a.hairCol, 'hairCol') +
+      row('เพศ', VLOOK.sex.map(([k, t]) => ({ k, t })), it => it.k === a.sex, 'sex') + row('ทรงผม', VLOOK.hair.map(([k, t, g]) => ({ k, t: (g === a.sex ? '⭐' : '') + t })), it => it.k === a.hair, 'hair') + row('สีผม', VLOOK.hairCol.map(c => ({ c, k: c })), it => it.k === a.hairCol, 'hairCol') +
       row('สีผิว', VLOOK.skin.map(([c]) => ({ c, k: c })), it => it.k === a.skin, 'skin') + row('ตา', VLOOK.eyes.map(([k, t]) => ({ k, t })), it => it.k === a.eyes, 'eyes') + row('สีตา', VLOOK.eyeCol.map(c => ({ c, k: c })), it => it.k === a.eyeCol, 'eyeCol') +
-      row('ชุด', VLOOK.wear.map(([k, t]) => ({ k, t })), it => it.k === a.wear, 'wear') + (a.wear === 'traveler' ? row('สีเสื้อ', VLOOK.top.map(c => ({ c, k: c })), it => it.k === a.top, 'top') : '');
-      el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; a[k] = OPTS[k][+b.dataset.i]; sfx('tap'); rebuild(); draw() }) };
-    el.querySelector('#mkR').onclick = () => { const pick = arr => arr[Math.floor(Math.random() * arr.length)]; for (const k in OPTS) a[k] = pick(OPTS[k]); sfx('tap'); rebuild(); draw() };
+      row('ชุด', VLOOK.wear.map(([k, t]) => ({ k, t })), it => it.k === a.wear, 'wear') + (a.wear !== 'mage' ? row('ท่อนล่าง', VLOOK.bottom.map(([k, t]) => ({ k, t })), it => it.k === a.bottom, 'bottom') : '') + (a.wear === 'traveler' ? row('สีเสื้อ', VLOOK.top.map(c => ({ c, k: c })), it => it.k === a.top, 'top') : '');
+      el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; a[k] = OPTS[k][+b.dataset.i];   /* picking a sex suggests a matching hair + bottom (everything stays free to change) */
+        if (k === 'sex') { if (VLOOK.hair.find(h => h[0] === a.hair)[2] !== a.sex) a.hair = a.sex === 'f' ? 'long' : 'messy'; a.bottom = a.sex === 'f' ? 'skirt' : 'pants' } sfx('tap'); rebuild(); draw() }) };
+    el.querySelector('#mkR').onclick = () => { const pick = arr => arr[Math.floor(Math.random() * arr.length)]; for (const k in OPTS) if (k !== 'sex') a[k] = pick(OPTS[k]); a.hair = pick(VLOOK.hair.filter(h => h[2] === a.sex))[0]; a.bottom = a.sex === 'f' ? pick(['skirt', 'skirt', 'pants']) : 'pants'; sfx('tap'); rebuild(); draw() };   /* random within the chosen sex */
     rebuild(); draw(); loop();
     el.querySelector('#mkOk').onclick = () => { alive = false; r3.dispose(); el.remove(); CUT = false; last = performance.now(); S.avatar = a; buildPlayer(); save(); done() };
     window.__mk = { ok: () => el.querySelector('#mkOk').click(), set: (k, v) => { a[k] = v; rebuild(); draw() } };
