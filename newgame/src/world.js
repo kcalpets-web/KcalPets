@@ -37,7 +37,7 @@ export function buildWorld(scene, eco) {
     if (d < 0) { y = Math.max(-1.2, d * .35); c.lerp(WET, .5) }
     P.setY(i, y + .03 * n); col.push(c.r, c.g, c.b);
   }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, 0);
   const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); land.receiveShadow = true; land.userData.ground = 1; scene.add(land); W.ground = land;
   /* ---- sea ---- */
   const sg = new THREE.PlaneGeometry(320, 140, 160, 70); sg.rotateX(-Math.PI / 2); sg.translate(40, 0, 0); const SP = sg.attributes.position, sc = [];   // reaches the horizon from the camera behind the character
@@ -81,7 +81,8 @@ export function buildWorld(scene, eco) {
     wall(-.5, -.7, 1.8, 1.3, 0); wall(.8, -.3, 1.1, .8, 1.5, .1); wall(-1.1, .4, .9, .6, 1.6, -.15); cone(g, '#5a2a1a', '#a84a30', [.4, .3, .5], [1, .35, .8], [.5, .6, .9], .98);
     for (let i = 0; i < 5; i++) part(g, '#6a6460', '#b8b0a6', [-.7 + (i % 3) * .6, .1, .9 + Math.floor(i / 3) * .35], [.2, .14, .16], [0, i, 0], { A: .2 }) }, x, z, ry);
   ruin(-.6, 9.6, .4); ruin(5.6, 8.8, -.3); ruin(5.9, -12.2, .2);
-  addPick(W, HOUSE.x, HOUSE.z + .6, 1.4, 4, { kind: 'house' });
+  addPick(W, HOUSE.x, HOUSE.z + .6, 1.4, 4, { kind: 'house' }); addSol({ x: HOUSE.x, z: HOUSE.z, r: .5 });
+  for (const [rx, rz] of [[-.6, 9.6], [5.6, 8.8], [5.9, -12.2]]) addSol({ x: rx, z: rz - .3, r: .95 });
   /* ---- the boat vault + jetty (tap = collect / upgrade) ---- */
   W.boat = at(g => { part(g, '#7a4422', '#c8843a', [0, .05, 0], [1.25, .32, .5], [0, 0, 0], { A: .04 }); part(g, '#d8d8e0', '#ffffff', [.35, .55, 0], [.32, .22, .26]); part(g, '#a8342e', '#ff6a58', [.35, .8, 0], [.38, .07, .3]); part(g, '#6a4024', '#a8703e', [-.25, 1.35, 0], [.05, 1.1, .05], [0, 0, 0], { A: 0 });
     const s2 = new THREE.BufferGeometry(); s2.setAttribute('position', new THREE.Float32BufferAttribute([-.3, .55, 0, -.3, 2.2, 0, -1.25, .6, 0], 3)); s2.computeVertexNormals(); const sl = new THREE.Mesh(s2, new THREE.MeshStandardMaterial({ color: '#f6f4f0', side: THREE.DoubleSide })); sl.castShadow = true; g.add(sl);
@@ -117,6 +118,17 @@ export function buildWorld(scene, eco) {
   Q.seg = 32;
   return W;
 }
+/* v2.4.1 solid things (trees · rocks · walls · houses · pots): circles {x,z,r} or boxes {x,z,hw,hd,ry} in a 4 m grid · e.o = a clearable (solid only while it stands) */
+const SOLC = new Map(), SCELL = 4;
+export function addSol(e) { const R = (e.r || Math.hypot(e.hw, e.hd)) + 1; e.cells = [];
+  for (let i = Math.floor((e.x - R) / SCELL); i <= Math.floor((e.x + R) / SCELL); i++) for (let j = Math.floor((e.z - R) / SCELL); j <= Math.floor((e.z + R) / SCELL); j++) { const k = i + ',' + j; let l = SOLC.get(k); if (!l) SOLC.set(k, l = []); l.push(e); e.cells.push(k) } return e }
+export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells) { const l = SOLC.get(k); if (!l) continue; const i = l.indexOf(e); if (i >= 0) l.splice(i, 1) } e.cells = null }
+export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
+  for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
+    if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
+const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 };
+/* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
+function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
 const PICK_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
 export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
@@ -133,7 +145,7 @@ export function cookPot(W, key, x, z) {
   part(pot, '#22222a', '#5a5a68', [0, .5, 0], [.2, .01, .01], [0, 0, 0], { A: 0 }); const lid = new THREE.Group(); part(lid, '#2a2a32', '#6a6a78', [0, 0, 0], [.3, .05, .3], [0, 0, 0], { A: 0 }); part(lid, '#2a2a32', '#6a6a78', [0, .07, 0], [.06, .04, .06], [0, 0, 0], { A: 0 }); lid.position.y = .5; lid.visible = false; pot.add(lid);
   const steam = []; for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); g.add(m); steam.push(m) }
   const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light);
-  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }).position.y += groundH(x, z); return { g, pot, lid, fire, steam, light, x, z };
+  addPick(W, x, z, .9, 1.4, { kind: 'pot', key }).position.y += groundH(x, z); addSol({ x, z, r: .5 }); return { g, pot, lid, fire, steam, light, x, z };
 }
 /* show / hide one clearable */
 export function spawnClear(W, o) {
@@ -147,6 +159,7 @@ export function spawnClear(W, o) {
      pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
+  if (SOL_R[o.t] && !o.sol) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t], o });
   o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z);
 }
 export function despawnClear(W, o) { if (!o.g) return; W.scene.remove(o.g); o.g = null; removePick(W, o.pick); o.pick = null }
@@ -182,14 +195,14 @@ export function buildForest(W, eco) {
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
     c.set('#4f8a3a').multiplyScalar(.85 + .1 * n); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
     const out = Math.max(0, Math.abs(z) - 10, x - FX - 14); P.setY(i, out * .6 + .02 * n) }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, FX);
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = FX; g0.receiveShadow = true; scene.add(g0); F.ground = g0;
   /* dense trees around the edge, a few inside (never on the path or in the camp) */
   for (let i = 0; i < 70; i++) { const side = i % 4, t = R(); let x, z;
     if (side === 0) { x = FX - 14 + t * 28; z = -9.8 - R() * 2 } else if (side === 1) { x = FX - 14 + t * 28; z = 9.8 + R() * 2 } else if (side === 2) { x = FX - 13.8 - R() * 2; z = -10 + t * 20; if (Math.abs(z) < 1.6) continue } else { x = FX + 13.8 + R() * 2; z = -10 + t * 20 }
-    at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x, z, R() * 6) }
+    at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x, z, R() * 6); addSol({ x, z, r: .35 }) }
   for (let i = 0; i < 26; i++) { const x = FX - 11 + R() * 16, z = -8.5 + R() * 17; if (Math.abs(z - pathZ(x)) < 2.2 || Math.hypot(x - FOREST.camp.x, z) < 5.5) continue;
-    at(g => (R() < .4 ? PROPS.pine : R() < .5 ? PROPS.tree : PROPS.bush)(g, .8 + R() * .5), x, z, R() * 6) }
+    { const k = R(); at(g => (k < .4 ? PROPS.pine : R() < .5 ? PROPS.tree : PROPS.bush)(g, .8 + R() * .5), x, z, R() * 6); if (k < .4) addSol({ x, z, r: .3 }) } }
   const blade = new THREE.ConeGeometry(.03, .26, 4); blade.translate(0, .13, 0);
   const bm = new THREE.InstancedMesh(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 300 : 700), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
   for (let i = 0; i < 3000 && k < bm.count; i++) { const x = FX - 13 + R() * 26, z = -9 + R() * 18; if (Math.abs(z - pathZ(x)) < 1.2 || Math.hypot(x - FOREST.camp.x, z) < 4.6) continue;
@@ -197,7 +210,7 @@ export function buildForest(W, eco) {
   bm.count = k; scene.add(bm);
   /* goblin camp: tents, a fire, crude stakes, the cage */
   const cx = FOREST.camp.x, cz = FOREST.camp.z;
-  for (const [dx, dz, col] of [[-1.5, -3, '#8a6a4a'], [2.6, -2.4, '#7a5a3a'], [1.5, 3.4, '#8a6a4a']]) at(g => { cone(g, '#4a3220', col, [0, .9, 0], [1.1, .95, 1.1], [0, 0, 0], .95); part(g, '#2a1a10', '#4a3020', [0, .4, .9], [.3, .4, .05], [0, 0, 0], { A: 0 }) }, cx + dx, cz + dz, R() * 6);
+  for (const [dx, dz, col] of [[-1.5, -3, '#8a6a4a'], [2.6, -2.4, '#7a5a3a'], [1.5, 3.4, '#8a6a4a']]) at(g => { cone(g, '#4a3220', col, [0, .9, 0], [1.1, .95, 1.1], [0, 0, 0], .95); part(g, '#2a1a10', '#4a3020', [0, .4, .9], [.3, .4, .05], [0, 0, 0], { A: 0 }) }, cx + dx, cz + dz, R() * 6), addSol({ x: cx + dx, z: cz + dz, r: .95 });
   at(g => { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .45, .1, Math.sin(a) * .45], [.16, .11, .14], [0, a, 0], { A: .2 }) } for (let i = 0; i < 4; i++) part(g, '#4a2a18', '#7a4a28', [0, .12, 0], [.4, .05, .05], [0, i * .8, .2], { A: 0 }) }, cx, cz);
   F.fire = at(g => { cone(g, '#e0402a', '#ffd23f', [0, .35, 0], [.2, .4, .2], [0, 0, 0], .95); cone(g, '#ff8a2a', '#fff2a0', [0, .3, 0], [.12, .28, .12], [0, 0, 0], .95) }, cx, cz, 0, 1, 0, true);
   for (let i = 0; i < 12; i++) { const a = -1.2 + i * .22; at(g => cone(g, '#5a3a20', '#a8703e', [0, .55, 0], [.08, .55, .08], [0, 0, 0], .9), cx + Math.cos(a) * 5.6, cz + Math.sin(a) * 5.6, 0, 1, 0) }
@@ -225,7 +238,7 @@ export function buildTown(W, eco) {
   const geo = new THREE.PlaneGeometry(22, 34, 44, 68); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), r = Math.hypot(x, z), n = Math.sin(x * .7 + z * .3) * .5 + Math.sin(z * .9 - x * .4) * .5;
     c.set(r < 4.2 ? '#cfc6b4' : (Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12 ? '#c4b49a' : '#6aa850'); if (r >= 4.2) c.multiplyScalar(.92 + .08 * n); col.push(c.r, c.g, c.b); P.setY(i, 0) }
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, TX);
   const g0 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); g0.position.x = TX; g0.receiveShadow = true; scene.add(g0); T.ground = g0;
   /* broken fountain in the plaza */
   at(g => { part(g, '#8a8478', '#d8d2c6', [0, .25, 0], [1.6, .25, 1.6], [0, 0, 0], { A: .03 }); part(g, '#3a6a9a', '#7ab0d8', [0, .42, 0], [1.3, .05, 1.3], [0, 0, 0], { A: 0 }); part(g, '#8a8478', '#d8d2c6', [.2, .9, 0], [.25, .5, .25], [0, 0, .3], { A: .1 }) }, TX, 0);
@@ -239,7 +252,7 @@ export function buildTown(W, eco) {
     for (let i = 0; i < 6; i++) part(g, '#6a6460', '#b8b0a6', [-.9 + (i % 3) * .8, .12, 1.0 + Math.floor(i / 3) * .4], [.24, .16, .2], [0, i, 0], { A: .2 }) };
   const ROOF = ['#3a8a5a', '#d08a30', '#4a7ac0', '#7a7a8a', '#c0503a', '#8a4ac0', '#d84a8a'];
   SHOP_POS.forEach(([dx, dz, ry], i) => { const x = TX + dx, z = dz;
-    T.shops.push({ i, x, z, fixed: at(g => shop(g, ROOF[i]), x, z, ry, 1, 0, true), ruin: at(broken, x, z, ry, 1, 0, true), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }) });
+    T.shops.push({ i, x, z, fixed: at(g => shop(g, ROOF[i]), x, z, ry, 1, 0, true), ruin: at(broken, x, z, ry, 1, 0, true), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); addSol({ x, z, hw: 1.25, hd: .95, ry }) });
   /* the sword on the ground, the west gate (back to the island) and the east gate (forest, locked for now) */
   T.sword = at(g => { const s = new THREE.Group(); part(s, '#8a8fa8', '#eef2ff', [0, .32, 0], [.05, .4, .02], [0, 0, 0], { A: 0 }); part(s, '#7a4422', '#c8843a', [0, -.12, 0], [.05, .12, .05], [0, 0, 0], { A: 0 }); part(s, '#c7891c', '#ffe27a', [0, 0, 0], [.18, .03, .05], [0, 0, 0], { A: 0 }); s.rotation.z = 1.35; s.position.y = .08; g.add(s);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.45, .04, 6, 24), new THREE.MeshBasicMaterial({ color: '#ffd23f' })); ring.rotation.x = -Math.PI / 2; ring.position.y = .03; g.add(ring) }, TOWN.sword.x, TOWN.sword.z, .3, 1, 0, true);
@@ -317,7 +330,7 @@ export function buildWild(W, eco) {
       c.set(h > .35 ? '#8aa05a' : '#6fbf55').multiplyScalar(.9 + .08 * n); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
       if (h < -.05) c.lerp(C('#c8b890'), .8); if (Math.abs(z - roadZ(x)) < .9) c.lerp(C('#c8a878'), .85); if (edge > 0) c.lerp(C('#4a8a3a'), .5);
       col.push(c.r, c.g, c.b); P.setY(i, h - edge * .03 + .02 * n) }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, x0 + w / 2);
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); m.position.x = x0 + w / 2; m.receiveShadow = true; scene.add(m); return m };
   out.meadow = ground(17, 35); out.hills = ground(57, 74.5);
   /* island ground east of the palisade (17 → 9) gets a road strip; the meadow mesh starts at 17 */
@@ -328,11 +341,11 @@ export function buildWild(W, eco) {
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
   at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
   /* edges: forest walls north/south · signposts at the zone borders */
-  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x + R() * 3, sd * (13 + R() * 3), R() * 6);   // a few trees on the edges (the land goes on)
+  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) { const tx = x + R() * 3, tz = sd * (13 + R() * 3); at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), tx, tz, R() * 6); addSol({ x: tx, z: tz, r: .35 }) }   // a few trees on the edges (the land goes on)
   const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z);
   sign(10.5, 3.8); sign(33, 1.8); sign(59, -2.4); sign(77.5, 1.8);
   /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
-  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; at(g => PROPS.rock(g, .8 + R() * .5), MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1, R() * 6) }
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28, rx = MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), rz = MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1; at(g => PROPS.rock(g, .8 + R() * .5), rx, rz, R() * 6); addSol({ x: rx, z: rz, r: .45 }) }
   /* wild clearables (regrow): trees · bushes · rocks · grass, never on the road, in water or on the cliff band */
   let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'grass', 'rock', 'pebble', 'pebble', 'bigtree', 'boulder'];
   for (const [x0, x1, n] of [[9.8, 33, 46], [58.5, 78.5, 40]]) for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
@@ -355,8 +368,8 @@ export const coastX = z => { const k = smw(18, 70, Math.abs(z)); return shore(z)
 export function wildH(x, z) {
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));
   let h = (n - .47) * 30 + Math.pow(r, 3) * 46 * far + 4 * far;                                                                   // rolling land · mountain ridges farther out
-  const k = smw(0, 50, coreDist(x, z)); h = h * k + (.45 + (fbm(x / 40, z / 40, 2) - .5) * .8) * (1 - k) + (fbm(x / 40, z / 40, 2) - .5) * 1.2 * k;   // gentle and dry next to the core
-  const c = coastX(z); h = h - smw(c + 16, c - 4, x) * (Math.max(0, h) + 6);                                                            // the western sea (a 20 m beach band)
+  const dc = coreDist(x, z), k = smw(0, 50, dc), f = fbm(x / 40, z / 40, 2) - .5; h = h * k + (.04 + f * .25 * smw(0, 8, dc)) * (1 - k) + f * 1.2 * k;   // v2.4.1 the same height as the core at its edge (no step, no sinking)
+  const c = coastX(z), kb = smw(0, 30, dc); h = h - smw(c + 1 + 15 * kb, c - 2 - 2 * kb, x) * (Math.max(0, h) + 6);   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
   return h;
 }
 export function wildColor(x, z) {
@@ -373,8 +386,8 @@ const M_LAND = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .
 const _col = new THREE.Color();
 function landGeo(x0, z0, size, seg, sink) {
   const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
-  for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + size / 2, z = P.getZ(i) + z0 + size / 2, dc = coreDist(x, z), h = dc > 0 ? wildH(x, z) : 0;
-    P.setY(i, (dc > 0 ? h : -2) - sink); _col.set(wildColor(x, z)).multiplyScalar(.92 + .1 * vnoise(x * .3, z * .3)); col.push(_col.r, _col.g, _col.b) }
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + size / 2, z = P.getZ(i) + z0 + size / 2, dc = coreDist(x, z), h = dc > 0 ? wildH(x, z) : waterAt(x, z) ? -2 : groundH(x, z) - .25;
+    P.setY(i, h - sink); _col.set(wildColor(x, z)).multiplyScalar(.92 + .1 * vnoise(x * .3, z * .3)); col.push(_col.r, _col.g, _col.b) }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 }
 /* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */
@@ -391,10 +404,10 @@ export function buildChunk(W, cx, cz) {
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6);
   const inst = (geo, mat, list, place) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c) }); m.castShadow = true; m.receiveShadow = true; g.add(m) };
   const pines = trees.filter(p => p.h > 9 || R() < .3), broad = trees.filter(p => !pines.includes(p));
-  const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) };
-  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff') }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
+  const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) }; out.sols = [];
+  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
   inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
-  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff') });
+  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z) })) });
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
   /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
@@ -407,4 +420,4 @@ export function buildChunk(W, cx, cz) {
     out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
   W.scene.add(g); return out;
 }
-export function dropChunk(W, ch) { W.scene.remove(ch.g); ch.g.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'PlaneGeometry') o.geometry.dispose(); if (o.isInstancedMesh) o.dispose() }) }
+export function dropChunk(W, ch) { (ch.sols || []).forEach(delSol); W.scene.remove(ch.g); ch.g.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'PlaneGeometry') o.geometry.dispose(); if (o.isInstancedMesh) o.dispose() }) }

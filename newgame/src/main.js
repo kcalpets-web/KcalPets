@@ -7,7 +7,7 @@ import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK,
 import * as D from './data.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, CLOUD } from './world.js';
+import { buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -217,7 +217,7 @@ function gearView() {
 /* v2.0.2 two-handed weapons & spears: the left hand holds the shaft too (a tiny IK on the left shoulder + elbow, warm-started every frame) */
 const GRIP_AT = { two: -.16, spear: .42 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
 /* v2.0.2 in the ready stance the weapon points a set way in body space (blade dir · edge dir; +x = the right hand side, +z = forward) · blended back to the plain grip for swings */
-const READY_DIR = { one: [[.3, -.6, .75], [0, -1, 0]], two: [[-.6, -.08, .8], [0, -1, .3]], spear: [[-.42, .55, .72], [1, 0, 0]] };
+const READY_DIR = { one: [[.3, -.6, .75], [0, -1, 0]], two: [[.5, .62, .6], [-.25, -.35, 1]], spear: [[-.42, .55, .72], [1, 0, 0]] };
 const _gQ = new THREE.Quaternion(), _gQ2 = new THREE.Quaternion(), _gM = new THREE.Matrix4(), _gX = new THREE.Vector3(), _gY = new THREE.Vector3(), _gZ = new THREE.Vector3();
 function gripTick() {
   const w = weaponOf(), R = PL.rig, K = w && D.ITEMS[w.t].kind, dt = Math.min(.05, (performance.now() - (PL.gt || 0)) / 1000); PL.gt = performance.now();
@@ -286,7 +286,7 @@ function walkTick(dt, now) {
 /* tap a thing = walk over and do the job: trees → chop, rocks → break, grass → cut, monsters → fight (picks the right tool by itself) */
 function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!walkWorld(px, pz)) break; bx = px; bz = pz } return [bx, bz] }
 /* the player may swim; climbing a steep slope needs stamina (and stops when exhausted) */
-function okMe(x, z) { if (GLIDE) return x > WORLD.x0 && x < WORLD.x1 && z > WORLD.z0 && z < WORLD.z1; if (RIDE) return sailable(x, z) && !(S.builds.length && solidAt(x, z)); const w = walkWorld(x, z); if (!w) return false; if (S.builds.length && !solidAt(me().x, me().z) && (solidAt(x, z) || solidAt((x + me().x) / 2, (z + me().z) / 2))) return false; const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
+function okMe(x, z) { if (GLIDE) return x > WORLD.x0 && x < WORLD.x1 && z > WORLD.z0 && z < WORLD.z1; if (RIDE) return sailable(x, z) && !(S.builds.length && solidAt(x, z)); const w = walkWorld(x, z); if (!w) return false; if (S.builds.length && !solidAt(me().x, me().z) && (solidAt(x, z) || solidAt((x + me().x) / 2, (z + me().z) / 2))) return false; if (!solHit(me().x, me().z) && (solHit(x, z) || solHit((x + me().x) / 2, (z + me().z) / 2))) return false; const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
   if ((h1 - h0) / d > D.SLOPE && S.tired) { blocked(x, z, 'climb'); return false } return true }
 let bumpT = 0;
 function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) return; bumpT = now + 2500;
@@ -375,7 +375,7 @@ function callPets(m) { const q = m.A.root.position; for (const e of PA.values())
 function monGone(m) { scene.remove(m.A.root); m.tag.remove(); removePick(W, m.pick); mons.splice(mons.indexOf(m), 1); for (const e of PA.values()) if (e.foe === m) { e.mode = 'wander'; e.foe = null }
   if (m.farm) { S.mon = null; setTool(prevTool) } }
 const farmMon = () => mons.find(m => m.farm);
-function hurtMon(m, d, cls, label) { const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
+function hurtMon(m, d, cls, label) { const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
 function monDie(m) {
   { const q = m.A.root.position, big = (MSCALE[m.kind] || .85) > 1; VF.burst(q.x, q.y + .6, q.z, m.T.animal ? '#ffffff' : '#c8a0ff', big ? 30 : 16, big ? 5 : 3.5); VF.ring(q.x, q.y, q.z, '#ffffff', big ? 3.2 : 1.8, .45) }
   const T = m.T, q = m.A.root.position, x = q.x, z = q.z, coin = T.coin[0] + Math.floor(Math.random() * (T.coin[1] - T.coin[0]));
@@ -848,7 +848,7 @@ function frame(now) {
     const M = mons[i]; if (!nearMe(M)) continue;
     if (M.T.boss) { bossTick(M, dt, now); continue }
     if (M.stunT > now) { M.A.body.rotation.z = Math.sin(now / 50) * .12; continue } else if (M.stunT) { M.stunT = 0; M.A.body.rotation.z = 0 }
-    const m = M.A.root.position, age = (now - M.born) / 400, ok = M.T.swim ? swimOk : walkMon, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
+    const m = M.A.root.position, age = (now - M.born) / 400, ok = M.T.swim ? swimOk : M.T.animal ? walkMon : walkMonH, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     const pd = dist(me().x, me().z, m.x, m.z), sp = M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5, AN = M.T.animal && !(M.T.charge && M.aggro);
     if (AN) {                                                       // v1.2 wild animals: graze · bolt when you come close (hold B = sneak) · run when hit
@@ -918,8 +918,10 @@ function labels() {
   arrowTick(performance.now());
   for (const M of mons) { const el = M.tag; if (!nearMe(M, 22) || CUT) { el.style.display = 'none'; continue }
     const m = M.A.root.position, q = project(m.x, M.kind === 'slimeKing' ? 2.3 : 1.55, m.z); if (q.z > 1) { el.style.display = 'none'; continue }
+    const full = performance.now() - (M.hitT || 0) < D.TAG_SHOW * 1000 || LOCK === M;   /* v2.4.1 name + HP only after it is hit (or locked on) · otherwise just the ! / ? mark */
+    if (!full && !M.alert) { el.style.display = 'none'; continue }
     el.style.display = 'block'; el.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
-    el.innerHTML = `${M.alert ? `<span class="mk a${M.alert}${performance.now() - (M.markT || 0) < 400 ? ' pop' : ''}">${M.alert === 3 ? '?' : '!'}</span>` : ''}${M.T.name} <small>Lv${M.T.lv}</small><div class="mb"><i style="width:${Math.max(0, M.hp / M.T.hp * 100)}%"></i></div>` }
+    const html = `${M.alert ? `<span class="mk a${M.alert}${performance.now() - (M.markT || 0) < 400 ? ' pop' : ''}">${M.alert === 3 ? '?' : '!'}</span>` : ''}${full ? `${M.T.name} <small>Lv${M.T.lv}</small><div class="mb"><i style="width:${Math.max(0, M.hp / M.T.hp * 100)}%"></i></div>` : ''}`; if (el.innerHTML !== html) el.innerHTML = html }
 }
 function regrow() { const now = Date.now(); for (const o of W.clear.values()) { const T = D.CLEAR[o.t], t = S.cleared[o.id]; if (!t || !T.regrow || now - t < T.regrow) continue; delete S.cleared[o.id]; spawnClear(W, o) } }
 
@@ -1263,7 +1265,7 @@ const WH = makeActor(g => ANIMALS.whale(g), 1.25);
 function rideWhale() {
   if (RIDE || !hasAbility('swim')) return; const q = me(); let sp = PL.swim ? [q.x, q.z] : null;
   if (!sp) for (let r = 1; r <= 3.5 && !sp; r += .5) for (let a = 0; a < 16; a++) { const x = q.x + Math.sin(a * .39) * r, z = q.z + Math.cos(a * .39) * r; if (swimOk(x, z)) { sp = [x, z]; break } }
-  if (!sp) { hint('🐋 ต้องอยู่ในน้ำหรือริมน้ำ'); return } fishEnd(); placeMe(sp[0], sp[1]); RIDE = { id: 'whale', whale: 1 }; scene.add(WH.root); document.body.classList.add('ride'); sfx('dive'); VF.ring(sp[0], -.4, sp[1], '#cfefff', 2.5, .6);
+  if (!sp) { hint('🐋 ต้องอยู่ในน้ำหรือริมน้ำ'); return } fishEnd(); placeMe(sp[0], sp[1]); RIDE = { id: 'whale', whale: 1 }; scene.add(WH.root); document.body.classList.add('ride'); CTX = null; sfx('dive'); VF.ring(sp[0], -.4, sp[1], '#cfefff', 2.5, .6);
   toast('🐋 ขี่น้องวาฬ! พายข้ามทะเลได้เร็ว ไม่เสียพลังงาน · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3000);
 }
 /* 🦅 glide: hold the hawk's legs and drift down from high ground */
@@ -1582,6 +1584,7 @@ function actA() {
   if (CATCHING) return;
   if (!RIDE && PL.swim && hasAbility('swim')) { rideWhale(); return }
   if (!RIDE && !GLIDE && hasAbility('glide') && canGlide() === PL.yaw && !(nearTarget() || {}).m) { startGlide(); return }   /* facing a drop on high ground */
+  if (RIDE && catchFor && mons.includes(catchFor)) { startCatch(catchFor); return }   /* v2.4.1 catch (the whale) from the raft */
   if (RIDE) { const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (!landNear() && S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return } if (!unboard()) { if (S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz) } else hint('🛶 พายเข้าใกล้ฝั่ง แล้วกด A เพื่อขึ้นฝั่ง') } return }
   if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
@@ -1590,6 +1593,7 @@ function actA() {
   const t = nearTarget(), c = CTX;
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (S.mode === 'farm') return farmA(t);
+  if (safeHere() && (!t || t.m)) { safeHint(); return }
   if (t && t.o && weaponOf() && D.CLEAR[t.o.t] && D.CLEAR[t.o.t].tool !== 'hammer') {   /* v2.1.3 sword mode: grass, bushes and trees are cut with the weapon */
     if (!DRAWN) { drawWeapon(); return } const o = t.o, go = () => { setTool('sword'); DRAWN = true; toolHit({ kind: 'clear', id: o.id, w: 1 }) };
     if (dist(me().x, me().z, o.x, o.z) > D.REACH_TOOL) walkTo(o.x, o.z, go, 1.1); else go(); return }
@@ -1608,7 +1612,7 @@ let GY = null, gyroOK = false;
 const ARROWS = [], bowOf = () => S.bag.find(x => x.id === S.eq.bow) || null, _aD = new THREE.Vector3(), _aP = new THREE.Vector3(), _aL = new THREE.Vector3(), _aO = new THREE.Vector3(), _aT = new THREE.Vector3(), _aQ = new THREE.Quaternion(), _aM = new THREE.Matrix4(), _aX = new THREE.Vector3(), _aY = new THREE.Vector3(), _UP = new THREE.Vector3(0, 1, 0);
 const NOCK = new THREE.Group(); ARROW_MESH(NOCK); NOCK.visible = false; scene.add(NOCK);
 function aimStart(kind = 'bow') {
-  if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; const b = bowOf();
+  if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
   if (kind === 'rod') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .14, tgt: null, rod: 1 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (!(S.arrows > 0)) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
@@ -1716,20 +1720,25 @@ function doJump() { const now = performance.now(); CROUCH = false; if (!(now < j
 const fruitOn = o => { const F = D.FRUIT[o.t]; if (!F || !o.g) return false; let h = 0; for (const ch of String(o.id)) h = (h * 31 + ch.charCodeAt(0)) % 997; if (h % D.FRUIT_EVERY) return false; return Date.now() - ((S.fruit || {})[o.id] || 0) > D.FRUIT_REGROW };
 function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f === on) return; if (!on) { o.g.remove(f); return }
   const g = new THREE.Group(); g.name = 'fruits'; const col = o.t === 'tree' ? '#e8403a' : '#6a5ad8', m = new THREE.MeshStandardMaterial({ color: col, roughness: .4, emissive: col, emissiveIntensity: .15 }), h = o.t === 'tree' ? 2.1 : .6, r = o.t === 'tree' ? .9 : .45;
-  for (let i = 0; i < (o.t === 'tree' ? 6 : 5); i++) { const a = i * 2.39, b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .11 : .07, 8, 6), m); b.position.set(Math.cos(a) * r * (.6 + (i % 2) * .4), h + Math.sin(i * 1.7) * .3, Math.sin(a) * r * (.6 + (i % 3) * .2)); b.castShadow = true; g.add(b) }
+  /* v2.4.1 fruit sits ON the leaves: cast rays from outside toward the canopy and put each fruit where it hits */
+  o.g.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o.g), c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3()), cy = o.t === 'tree' ? bb.max.y - sz.y * .3 : c.y, rc = new THREE.Raycaster(), rr = Math.max(sz.x, sz.z) + 2;
+  for (let i = 0; i < (o.t === 'tree' ? 7 : 5); i++) { const a = i * 2.39 + o.ry, e = -.15 + (i % 3) * .2, dir = new THREE.Vector3(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)), org = new THREE.Vector3(c.x, cy, c.z).addScaledVector(dir, rr);
+    rc.set(org, dir.clone().negate()); const hit = rc.intersectObject(o.g, true).find(x => x.object.name !== 'fruits' && !(x.object.parent && x.object.parent.name === 'fruits')); if (!hit) continue;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
   o.g.add(g) }
 function pickFruit(o) { const F = D.FRUIT[o.t], n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
-const CTX_ICO = { talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', use: '✋' };
+const CTX_ICO = { talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', use: '✋' };
 const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper']);
 const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; document.body.appendChild(e); return e })();
-let ctxT = 0, fruitT = 0;
+let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
 function ctxTick(now, dt, mv) {
   walkS = mv && !PL.swim && !RIDE ? walkS + dt : 0; if (!mv && RUNON && (now - (PL.stopT || 0)) > 600) RUNON = false; if (mv) PL.stopT = now;
   if (now > fruitT) { fruitT = now + 1000; const q = me(); for (const o of W.clear.values()) if (o.g && D.FRUIT[o.t] && Math.abs(o.x - q.x) < 40 && Math.abs(o.z - q.z) < 40) fruitView(o, fruitOn(o)) }
-  if (now < ctxT) return; ctxT = now + 120; CTX = null;
+  if (mv) ctxStill = now; if (now < ctxT) { ctxPos(now); return } ctxT = now + 120; CTX = null;
   if (!CUT && !CATCHING && !AIM && !F && !BM && !document.querySelector('.ov') && PL && S.avatar) {
     const t = nearTarget(), farm = S.mode === 'farm', q = me();
-    if (PL.swim && !RIDE) CTX = hasAbility('swim') ? null : { k: 'swim', go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
+    if (PL.swim && !RIDE && hasAbility('swim')) CTX = { k: 'whale', go: rideWhale };
+    else if (PL.swim && !RIDE) CTX = { k: 'swim', go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
     else if (catchFor && mons.includes(catchFor) && !(t && t.m && !catchFor.T.animal)) { const M = catchFor; CTX = { k: 'catch', at: M.A.root.position, go: () => startCatch(M) } }
     else if (t && t.k) { const k = t.k.kind, ic = TALK.has(k) ? 'talk' : CTX_ICO[k] ? k : 'use'; CTX = { k: ic, at: t.p ? t.p.position : null, h: 1.2, go: null } }
     else if (t && t.o) { const o = t.o, T = D.CLEAR[o.t];
@@ -1740,13 +1749,17 @@ function ctxTick(now, dt, mv) {
     else if (t && t.m && !farm) CTX = { k: 'fight', at: t.m.A.root.position, h: 1.8, go: null };
     else if (!farm && walkS > D.RUN_AFTER && !RUNON && !S.tired && !CROUCH) CTX = { k: 'run', go: () => { RUNON = true; sfx('tap') } };
   }
-  /* the A button shows the prompt icon · a bubble floats over the thing */
-  const a = $('bA').querySelector('span'), farmIco = S.mode === 'farm' ? '<b class="fi">🪏</b>' : 'A', want = CTX ? `<b class="fi">${CTX_ICO[CTX.k]}</b>` : farmIco; if (a.innerHTML !== want) a.innerHTML = want;
-  $('bA').classList.toggle('ctx', !!CTX); ctxPos();
+  /* v2.4.1 the A button keeps its label (no switching) · a bubble floats over the thing once you have stood near it for a while */
+  const a = $('bA').querySelector('span'), want = S.mode === 'farm' ? '<b class="fi">🪏</b>' : 'A'; if (a.innerHTML !== want) a.innerHTML = want;
+  const key = CTX ? CTX.k + ':' + (CTX.xz ? CTX.xz.join() : CTX.at ? CTX.at.x.toFixed(0) + ',' + CTX.at.z.toFixed(0) : '') : ''; if (key !== ctxKey) { ctxKey = key; ctxKeyT = now }
+  ctxPos(now);
 }
-function ctxPos() {
+const CTX_NOW = new Set(['run', 'swim', 'whale', 'catch']);
+function ctxPos(now = performance.now()) {
   const c = CTX; let p = null; if (c && c.at) p = [c.at.x, (c.at.y || 0) + (c.h || 1.8), c.at.z]; else if (c && c.xz) p = [c.xz[0], groundH(c.xz[0], c.xz[1]) + (c.h || 1.6), c.xz[1]];
-  if (!p || ['run', 'swim'].includes(c.k)) { ctxEl.style.display = 'none'; return } const s = project(p[0], p[1], p[2]); if (s.z > 1) { ctxEl.style.display = 'none'; return }
+  if (c && CTX_NOW.has(c.k) && !c.at) { const q = me(); p = [q.x, q.y + 2.1, q.z] }
+  const show = c && (CTX_NOW.has(c.k) || now - Math.max(ctxStill, ctxKeyT) > D.CTX_WAIT * 1000); $('bA').classList.toggle('ctx', !!show);
+  if (!p || !show) { ctxEl.style.display = 'none'; return } const s = project(p[0], p[1], p[2]); if (s.z > 1) { ctxEl.style.display = 'none'; return }
   ctxEl.style.display = 'block'; ctxEl.textContent = CTX_ICO[c.k]; ctxEl.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
 }
 /* 🪏 farm mode: a frame on the ground where the shovel will dig (green = ok · red = can't) */
@@ -2136,6 +2149,7 @@ function campProps(c) {
   const ch = new THREE.Group(); CAMP.chest(ch); ch.position.set(0, 0, 0); g.add(ch); const lid = ch.getObjectByName('lid'); if (S.wcamps[c.id] && S.wcamps[c.id].o) lid.rotation.x = -1.9;
   const glow = new THREE.Mesh(new THREE.OctahedronGeometry(.12), SPARK); glow.position.y = 1.15; glow.visible = false; g.add(glow);
   c.g = g; c.lid = lid; c.fire = fire; c.glow = glow; c.pick = addPick(W, c.x, c.z, .7, .9, { kind: 'chest', id: c.id });
+  if (!c.sols) { c.sols = [addSol({ x: c.x, z: c.z, r: .45, o: c }), addSol({ x: c.x + 1.6, z: c.z + 1.2, r: .45, o: c })]; for (let i = 0; i < 3; i++) { const a = i * 2.1 + .5; c.sols.push(addSol({ x: c.x + Math.cos(a) * 4.2, z: c.z + Math.sin(a) * 4.2, r: .9, o: c })) } }
 }
 function campDrop(c) { if (c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = c.pick = null } for (const m of c.mons || []) if (mons.includes(m)) monGone(m); c.mons = []; c.spawned = 0 }
 function campSpawn(c) {
@@ -2185,6 +2199,11 @@ function inRect(b, x, z, pad = 0) { const B = BP[b.k], c = Math.cos(b.r || 0), s
 function solidAt(x, z) { for (const b of S.builds) if (BP[b.k].solid && Math.abs(b.x - x) < 3 && Math.abs(b.z - z) < 3 && inRect(b, x, z, .3)) return true; return false }
 function onPath(x, z) { for (const b of S.builds) if (b.k === 'path' && b.done && Math.abs(b.x - x) < 2 && Math.abs(b.z - z) < 2 && inRect(b, x, z)) return true; return false }
 function walkMon(x, z) { return walkLand(x, z) && !(S.builds.length && solidAt(x, z)) }
+/* v2.4.1 safe zones: the home island (once its monster is gone) and the town (once cleared) · no monsters walk in · no attacking there */
+function safeAt(x, z) { const zn = zoneOf(x, z); return (zn === 'farm' && !S.mon) || (zn === 'town' && !!S.story.townClear) }
+const safeHere = () => safeAt(me().x, me().z);
+function walkMonH(x, z) { return walkMon(x, z) && !safeAt(x, z) }
+let safeHintT = 0; function safeHint() { const n = performance.now(); if (n > safeHintT) { safeHintT = n + 2500; hint('🕊️ เขตปลอดภัย · ที่นี่ใช้อาวุธไม่ได้', 1600) } }
 const nearB = (k, x, z, r) => S.builds.some(b => b.k === k && b.done && dist(b.x, b.z, x, z) < r);
 
 /* placing: a green / red ghost in front of you · ↻ turns it · A (or 🔨) places it · B cancels */
@@ -2339,7 +2358,7 @@ function ruinView(r, on) {
   if (!on) { if (r.g) { scene.remove(r.g); for (const p of r.picks) removePick(W, p); r.g = null; r.picks = []; r.vill = [] } return }
   if (r.g) return; const st = S.ruins[r.id] || {}, g = new THREE.Group(); r.picks = []; r.vill = []; scene.add(g); r.g = g;
   r.spots.forEach((o, i) => { const m = new THREE.Group(), done = st.done && st.done[i], kind = r.def.projects[i][0]; if (done) (kind === 'house' ? (gg => VILLAGE.house(gg, ['#d0503a', '#3a7ac0', '#7a4ab0'][i % 3])) : VILLAGE[kind])(m); else VILLAGE.rubble(m);
-    m.position.set(o.x, groundH(o.x, o.z), o.z); m.rotation.y = Math.atan2(r.x - o.x, r.z - o.z); g.add(m); o.m = m; const pk = addPick(W, o.x, o.z, 1.3, 1.6, { kind: 'ruin', id: r.id, i }); pk.position.y += Math.max(0, groundH(o.x, o.z)); r.picks.push(pk) });
+    m.position.set(o.x, groundH(o.x, o.z), o.z); m.rotation.y = Math.atan2(r.x - o.x, r.z - o.z); g.add(m); o.m = m; const pk = addPick(W, o.x, o.z, 1.3, 1.6, { kind: 'ruin', id: r.id, i }); pk.position.y += Math.max(0, groundH(o.x, o.z)); r.picks.push(pk); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: 1.05, o: r }) });
   const npc = rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .9)); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
   const pk = addPick(W, r.x, r.z, .7, 1.8, { kind: 'rnpc', id: r.id }); pk.position.y += Math.max(0, groundH(r.x, r.z)); r.picks.push(pk);
   if (st.fin) { for (let i = 0; i < 3; i++) { const v = rigOf(makeActor(gg => HUMANS.villager(gg, (r.def.v + i + 1) % 3), .85)), a = i * 2.1 + .7; v.root.position.set(r.x + Math.cos(a) * 3, groundH(r.x, r.z), r.z + Math.sin(a) * 3); g.add(v.root); r.vill.push({ A: v, a, t: Math.random() * 6 }) }
@@ -2389,7 +2408,7 @@ function shrineView(s, on) {
     const base = new THREE.Mesh(new THREE.CylinderGeometry(.9, 1.1, .25, 8), new THREE.MeshStandardMaterial({ color: '#a8a2b8', roughness: .9, flatShading: true })); base.position.y = .12; g.add(base) }
   else { const t = new THREE.Group(); VILLAGE.rubble(t); g.add(t); const p = new THREE.Group(); VILLAGE.shrine(p); p.rotation.z = .5; p.position.set(.6, -.5, 0); p.scale.setScalar(.8); g.add(p);
     const cr = new THREE.Mesh(new THREE.OctahedronGeometry(.3, 0), new THREE.MeshStandardMaterial({ color: '#6a6a7a', roughness: .8, flatShading: true })); cr.position.set(-.4, .25, .3); cr.rotation.set(.6, .3, .9); g.add(cr) }
-  s.pick = addPick(W, s.x, s.z, 1.3, 2, { kind: 'shrine', id: s.id }); s.pick.position.y += Math.max(0, y);
+  s.pick = addPick(W, s.x, s.z, 1.3, 2, { kind: 'shrine', id: s.id }); s.pick.position.y += Math.max(0, y); if (!s.sol) s.sol = addSol({ x: s.x, z: s.z, r: .75, o: s });
 }
 let shT = 0;
 function shrineTick(now) {
@@ -2580,7 +2599,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
