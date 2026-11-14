@@ -43,7 +43,8 @@ const bob = (g, t, a = .06, f = 9) => { g.position.y = Math.abs(Math.sin(t * f))
 /* walk cycle for a clay person: feet step and lift, arms swing (reads the userData.role parts) */
 function walker(g) { const r = {}; g.traverse(o => { if (o.userData.role) r[o.userData.role] = o }); return (t, k = 1, rate = 7) => { const s = Math.sin(t * rate);
   for (const [n, sg] of [['footL', 1], ['footR', -1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.position.z = b[2] + sg * s * .13 * k; m.position.y = b[1] + Math.max(0, sg * s) * .07 * k; m.rotation.x = -sg * s * .35 * k }
-  for (const [n, sg] of [['armL', -1], ['armR', 1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .6 * k } } }
+  for (const [n, sg] of [['armL', -1], ['armR', 1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .6 * k }
+  for (const [n, sg] of [['hipL', 1], ['hipR', -1]]) { const m = r[n]; if (!m) continue; const b = m.userData.base; m.rotation.x = b[3] + sg * s * .5 * k; const kn = r[n === 'hipL' ? 'kneeL' : 'kneeR']; if (kn) kn.rotation.x = Math.max(0, -sg * s) * .6 * k } } }   /* v2.9 vinyl chibi legs */
 
 /* ---------------- the beats ---------------- */
 function village() { const { S, cam, at } = stage({ sky: skyTex('#7ec4ee', '#d8f0ff') }); plane(S, '#7cc060', 80, 80);

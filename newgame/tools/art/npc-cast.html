@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE NPC cast</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+/* v2.9 the people of KEALEE as vinyl chibis · #1 = story cast + villagers · #2 = one person from each kingdom (same look rules as main.js npcLook) */
+import * as THREE from '../../lib/three.module.min.js';
+import { HUMANS } from '../../src/clay.js';
+import { KQ } from '../../src/quests.js';
+const W = 1800, H = 760, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; document.body.appendChild(r.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color('#eaf4ec'); S.add(new THREE.HemisphereLight('#fff6ec', '#a8b890', 1.3)); const k = new THREE.DirectionalLight('#fff1dc', 2.2); k.position.set(-2, 4, 5); S.add(k); const rim = new THREE.DirectionalLight('#d8ecff', 1); rim.position.set(3, 2, -4); S.add(rim);
+const idHash = id => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) % 997; return h };
+const KLOOK = { navalee: [['#3a8aa8', '#5ac0c8', '#2a6a8a'], ['#f2cfa6', '#c28b5c', '#e2b183']], sylvaren: [['#6a8a3a', '#9a7a3a', '#4a6a2a'], ['#e2b183', '#f2cfa6', '#8c5a3c']], asrah: [['#e0a040', '#d86a3a', '#f0e0c0'], ['#c28b5c', '#8c5a3c', '#e2b183']],
+  frosthelm: [['#d8e4f0', '#7a9ac0', '#c84a4a'], ['#f9e0d2', '#f2cfa6', '#e2b183']], valkara: [['#8a3a2a', '#5a4a48', '#c8602a'], ['#c28b5c', '#8c5a3c', '#e2b183']], deadgar: [['#5a4a6a', '#3a3040', '#7a6a8a'], ['#d8d0d8', '#c8c0d0', '#e8e0e8']] };
+const KHAT = { navalee: 'cap', asrah: 'wrap', frosthelm: 'fur', valkara: 'helm', deadgar: 'hood', sylvaren: 'leaf' }, HAIRS = { m: ['messy', 'spiky', 'side'], f: ['long', 'pony', 'buns', 'bob', 'twin'] };
+function npcLook(k, n) { const P = KLOOK[k], h = idHash(n.id), sex = n.v === 1 || /แม่|ยาย|ราชินี|เจ้าหญิง|มิรา|ซาร่า|ป้า/.test(n.name) ? 'f' : 'm';
+  return { v: 2, sex, hair: HAIRS[sex][h % HAIRS[sex].length], hairCol: /ยาย|ตา|ผู้เฒ่า|แม่ชี|อาจารย์/.test(n.name) ? '#e8e8f0' : ['#3a2418', '#7a4428', '#1e1520', '#c8a060', '#b05a30'][h % 5], skin: P[1][h % 3], wear: n.lead ? 'mage' : ['traveler', 'farmer'][h % 2], bottom: sex === 'f' && h % 3 ? 'skirt' : 'pants', top: P[0][h % 3], eyes: ['round', 'smile', 'sparkle', 'round'][h % 4], eyeCol: ['#4a3020', '#3a6a9a', '#3a8a5a', '#8a5ad8'][h % 4] } }
+const L = location.hash === '#2' ? Object.keys(KLOOK).flatMap(k => KQ[k].npcs.slice(0, 2).map(n => g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash(n.id) % 2) ? KHAT[k] : null)))
+  : [HUMANS.howsif, HUMANS.sberh, HUMANS.kealee, g => HUMANS.villager(g, 0), g => HUMANS.villager(g, 1), g => HUMANS.villager(g, 2)];
+const n = L.length, sp = n > 8 ? .78 : 1.05; L.forEach((f, i) => { const g = new THREE.Group(); f(g); g.position.x = (i - (n - 1) / 2) * sp; g.rotation.y = .3; S.add(g) });
+const c = new THREE.PerspectiveCamera(n > 8 ? 30 : 26, W / H, .1, 50); c.position.set(0, 1.0, n > 8 ? 7.2 : 5.6); c.lookAt(0, .72, 0); r.render(S, c); window.__done = 1;
+</script></body></html>

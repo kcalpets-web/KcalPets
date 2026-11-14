@@ -4,11 +4,12 @@
 import * as THREE from '../lib/three.module.min.js';
 export { THREE };
 import { figure } from './figure.js';
+import { vinyl } from './vinyl.js';
 export const C = h => new THREE.Color(h);
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const GEO = new Map();
 /* Q.seg = sphere detail for blobs; the world drops it while building scenery (pets keep 32) */
-export const Q = { seg: 32, facet: (() => { try { return localStorage.getItem('ng_style') !== 'smooth' } catch (e) { return true } })() };   // facet (default since v1.9) = low-poly · ng_style=smooth = the old soft clay   // facet = v1.8 preview: low-poly papercraft
+export const Q = { seg: 32, facet: (() => { try { return localStorage.getItem('ng_style') === 'facet' } catch (e) { return false } })() };   /* v2.9 the soft clay / vinyl look is the default again (ng_style=facet = old low-poly) */   // facet (default since v1.9) = low-poly · ng_style=smooth = the old soft clay   // facet = v1.8 preview: low-poly papercraft
 export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
   if (Q.facet) seg = Math.min(seg, 9); const key = [lo, hi, A, f, seed.toFixed(2), seg].join('|'); if (GEO.has(key)) return GEO.get(key);
   const g = new THREE.SphereGeometry(1, seg, Math.round(seg * .7)), p = g.attributes.position, col = [], L = C(lo), H = C(hi), v = new THREE.Vector3(), c = new THREE.Color();
@@ -117,13 +118,14 @@ export const SICK = {
     part(g, '#5a7ab8', '#8ab0e8', [0, .34, .3], [.52, .14, .68], [0, 0, 0], { A: .06 }); part(g, '#c8a040', '#ffe27a', [0, .4, -.32], [.5, .04, .1], [0, 0, 0], { A: 0 }) },   // blanket
 };
 export const PROPS = {
-  tree(g, s = 1, kind = 0) {
-    part(g, '#6a4024', '#a8703e', [0, .7 * s, 0], [.16 * s, .7 * s, .16 * s]);
-    const L = kind ? ['#2f7a3a', '#7ccf6a'] : ['#3d8a3a', '#9ade6c'];
-    [[0, 1.6, 0, .7], [-.4, 1.35, .1, .5], [.4, 1.4, -.05, .52], [0, 2.05, 0, .5]].forEach(([x, y, z, r]) => part(g, L[0], L[1], [x * s, y * s, z * s], [r * s, r * .85 * s, r * s], [0, 0, 0], { A: .1, f: 1.6 }));
+  tree(g, s = 1, kind = 0) {   /* v2.9 a soft round tree: a slightly leaning trunk with a root flare + a full canopy of smooth clay blobs (light on top) */
+    part(g, '#5a3420', '#b07a48', [0, .72 * s, 0], [.15 * s, .74 * s, .15 * s], [0, 0, .04], { A: .03, f: 1 }); part(g, '#5a3420', '#9a6a3e', [0, .1 * s, 0], [.27 * s, .14 * s, .27 * s], [0, 0, 0], { A: .06, f: 1.4 });
+    part(g, '#5a3420', '#9a6a3e', [.2 * s, 1.15 * s, 0], [.06 * s, .26 * s, .06 * s], [0, 0, -.7], { A: .02, f: 1 });
+    const L = kind ? ['#2a6e36', '#86d870'] : ['#3a8a3a', '#a8e878'];
+    [[0, 1.62, 0, .72], [-.46, 1.42, .14, .52], [.46, 1.46, -.08, .54], [.05, 2.08, -.04, .55], [-.2, 1.9, -.36, .44], [.26, 1.86, .34, .42]].forEach(([x, y, z, r], i) => part(g, L[0], L[1], [x * s, y * s, z * s], [r * s, r * .86 * s, r * s], [0, i, 0], { A: .05, f: 1.1, seed: i * 1.3 + kind }));
   },
   pine(g, s = 1) { part(g, '#6a4024', '#a8703e', [0, .4 * s, 0], [.12 * s, .4 * s, .12 * s]); for (let i = 0; i < 3; i++) cone(g, '#245e34', '#5fb062', [0, (.9 + i * .45) * s, 0], [(.62 - i * .14) * s, (.55) * s, (.62 - i * .14) * s], [0, 0, 0], .95) },
-  rock(g, s = 1) { part(g, '#7f7a74', '#e0dbd2', [0, .25 * s, 0], [.45 * s, .3 * s, .38 * s], [0, 0, 0], { A: .18, f: 1.3 }) },
+  rock(g, s = 1) { part(g, '#7a756e', '#e4dfd6', [0, .25 * s, 0], [.45 * s, .3 * s, .38 * s], [0, .4, 0], { A: .09, f: 1.1 }); part(g, '#7a756e', '#d8d2c8', [.36 * s, .08 * s, .18 * s], [.14 * s, .1 * s, .12 * s], [0, 0, 0], { A: .08, f: 1.2 }) },
   bush(g, s = 1, c = ['#3d8a3a', '#9ade6c']) { [[-.25, 0], [.25, .05], [0, -.15]].forEach(([x, z]) => part(g, c[0], c[1], [x * s, .3 * s, z * s], [.35 * s, .3 * s, .35 * s], [0, 0, 0], { A: .12, f: 1.6 })) },
   coin(g) {
     const ge = new THREE.CylinderGeometry(.3, .3, .08, 32), p = ge.attributes.position, col = [], c = new THREE.Color();
@@ -286,29 +288,36 @@ export function playerLook(g, a = {}) {
   human(g, { adult: 1, skin: a.skin || LOOK.skin[0], cl: top, clD: shade(top, .7), hair: hc, hairD: shade(hc, .65), fringe: 1, longHair: h === 'long', bun: h === 'bun', pony: h === 'pony', spiky: h === 'spiky',
     skirt: a.bottom === 'skirt', sk: shade(top, .55), skD: shade(top, .4), leg: a.bottom === 'skirt' ? a.skin ? a.skin[1] : LOOK.skin[0][1] : '#4a5a7a', legD: a.bottom === 'skirt' ? a.skin ? a.skin[0] : LOOK.skin[0][0] : '#2a3450', belt: a.bottom !== 'skirt' });
 }
+/* v2.9 everyone is a vinyl chibi like the player (src/vinyl.js) · little extras (hats, beards, glasses, clips) sit on the 'head' joint */
+const _hb = new THREE.Box3(), _hv = new THREE.Vector3(), _hs = new THREE.Vector3();
+/* extras are modelled for a head of radius .42 centred at 0 · HEADX measures the real head (hair included) and fits a holder group to it */
+const HEADX = (g, fn) => { const h = g.getObjectByName('head'); if (!h) return; let F = h.getObjectByName('fit');
+  if (!F) { g.updateWorldMatrix(true, true); _hb.makeEmpty(); h.traverse(o => { if (o.isMesh) _hb.expandByObject(o) }); h.getWorldScale(_hs); const c = _hb.getCenter(_hv.set(0, 0, 0)), r = (_hb.max.x - _hb.min.x) / 2 / _hs.x;
+    F = new THREE.Group(); F.name = 'fit'; h.add(F); F.position.copy(h.worldToLocal(c.clone())); F.scale.setScalar(r / .42 * .92) } fn(F) }, VM = (c, r = .55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+const vm = (geo, c, x, y, z, sx = 1, sy = 1, sz = 1, r) => { const m = new THREE.Mesh(geo, VM(c, r)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; m.userData.noFacet = 1; return m };
+const SPH = new THREE.SphereGeometry(1, 20, 14);
+export function npcHat(g, kind) { HEADX(g, h => { const H = new THREE.Group(); H.name = 'hat';
+  if (kind === 'straw') H.add(vm(new THREE.CylinderGeometry(.62, .66, .04, 24), '#e8cf7a', 0, .3, 0), vm(new THREE.SphereGeometry(.36, 18, 10, 0, 6.3, 0, 1.6), '#e0c060', 0, .3, 0), vm(new THREE.CylinderGeometry(.37, .37, .07, 18), '#c0503a', 0, .35, 0));
+  else if (kind === 'fur') { H.add(vm(new THREE.SphereGeometry(.47, 18, 12, 0, 6.3, 0, 1.7), '#c89a6a', 0, .04, -.02), vm(new THREE.TorusGeometry(.4, .08, 8, 24), '#f0e4d0', 0, .1, .1)); H.children[1].rotation.x = -.25 }
+  else if (kind === 'wrap') { H.add(vm(new THREE.SphereGeometry(.46, 18, 12, 0, 6.3, 0, 1.45), '#f0e0c0', 0, .06, -.02)); H.add(vm(SPH, '#d86a3a', 0, .42, .02, .13, .09, .13)) }
+  else if (kind === 'hood') { const hd = vm(new THREE.SphereGeometry(.5, 20, 14, 0, 6.3, 0, 2), '#4a3a5a', 0, .02, -.06); hd.material.side = THREE.DoubleSide; H.add(hd) }
+  else if (kind === 'helm') H.add(vm(new THREE.SphereGeometry(.46, 18, 12, 0, 6.3, 0, 1.45), '#5a4a48', 0, .08, 0, 1, 1, 1, .35), vm(new THREE.CylinderGeometry(.04, .04, .18, 8), '#ffb040', 0, .52, 0));
+  else if (kind === 'cap') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.35), '#3a8aa8', 0, .08, 0), vm(new THREE.CylinderGeometry(.26, .28, .03, 18), '#3a8aa8', 0, .2, .36));
+  else if (kind === 'leaf') { const lf = vm(SPH, '#5ab84a', -.34, .26, .12, .18, .06, .1); lf.rotation.z = .7; H.add(lf) }
+  else if (kind === 'wool') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.45), '#d84a5a', 0, .3, 0), vm(new THREE.SphereGeometry(.11, 10, 8), '#f4f0e8', 0, .76, 0));
+  else if (kind === 'mask') { H.add(vm(SPH, '#5ab84a', 0, -.06, .42, .3, .17, .08), vm(new THREE.TorusGeometry(.44, .022, 6, 24), '#3a7a3a', 0, -.02, 0)); H.children[1].rotation.x = Math.PI / 2 }
+  H.traverse(o => o.userData.noFacet = 1); h.add(H) }) }
+export function npcBeard(g, col = '#f4f0f0') { HEADX(g, h => { h.add(vm(SPH, col, 0, -.22, .34, .26, .2, .14, .8), vm(SPH, col, -.12, -.1, .38, .1, .05, .05, .8), vm(SPH, col, .12, -.1, .38, .1, .05, .05, .8)) }) }
+export function npcGlasses(g) { HEADX(g, h => { for (const s2 of [-1, 1]) h.add(vm(new THREE.TorusGeometry(.085, .014, 8, 24), '#2a2030', s2 * .14, .02, .43, 1, 1, 1, .2)); h.add(vm(new THREE.CylinderGeometry(.01, .01, .1, 6), '#2a2030', 0, .03, .44)); h.children[h.children.length - 1].rotation.z = Math.PI / 2 }) }
+const VLK = {   /* the three everyday villagers */
+  0: { v: 2, sex: 'm', hair: 'side', hairCol: '#3a2418', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#e0a040', eyes: 'smile', eyeCol: '#4a3020' },
+  1: { v: 2, sex: 'f', hair: 'buns', hairCol: '#c8a060', skin: '#f2cfa6', wear: 'traveler', bottom: 'skirt', top: '#6aa0e0', eyes: 'round', eyeCol: '#3a6a9a' },
+  2: { v: 2, sex: 'f', hair: 'bob', hairCol: '#1e1520', skin: '#c28b5c', wear: 'farmer', bottom: 'pants', top: '#d06a8a', eyes: 'smile', eyeCol: '#6a3a20' } };
 export const HUMANS = {
-  kealee(g) { human(g, { adult: 1, cl: '#ffffff', clD: '#d8dce8', skirt: 1, sk: '#3fb8a8', skD: '#2a8a80', hair: '#8a5030', hairD: '#5a3018', fringe: 1, longHair: 1, leg: '#ffe0c8', legD: '#e8b48a' });
-    if (Q.facet) part(g, '#c0303a', '#ff5a5a', [.12, 1.82, .04], [.05, .035, .03], [0, 0, .4], { A: 0 }); else part(g, '#c0303a', '#ff5a5a', [.18, 1.88, .06], [.09, .06, .05], [0, 0, .4], { A: 0 }) },                                  // red hair clip
-  villager(g, v = 0) { const C2 = [['#e0a040', '#b07020'], ['#6aa0e0', '#3a6aa8'], ['#d06a8a', '#a04060']][v % 3];
-    human(g, { cl: C2[0], clD: C2[1], hair: ['#3a2418', '#c8a060', '#1e1520'][v % 3], hairD: '#1e1410', leg: '#4a3a5a' });
-    if (Q.facet) part(g, '#e8e0d0', '#ffffff', [0, .82, .11], [.12, .17, .02], [0, 0, 0], { A: 0 }); else part(g, '#e8e0d0', '#ffffff', [0, .6, .2], [.2, .22, .05], [0, 0, 0], { A: 0 }) },   // apron
-  sberh(g) {                                                                     // young herbalist: small, green robe, round glasses, satchel, a sprig behind the ear
-    human(g, { adult: 1, cl: '#7aaa5a', clD: '#4a7a3a', hair: '#c8803a', hairD: '#8a4a1a', fringe: 1, leg: '#7a5a3a', legD: '#4a3020' });
-    if (Q.facet) { for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(.035, .007, 6, 16), MAT_EYE); r.position.set(s * .045, 1.7, .125); g.add(r) }
-      part(g, '#7a4a20', '#c08848', [.2, .95, .08], [.09, .09, .05], [0, 0, 0], { A: .05 }); part(g, '#6a3a1a', '#a8703a', [0, 1.2, .1], [.2, .02, .02], [0, 0, -.8], { A: 0 });
-      for (let i = 0; i < 3; i++) part(g, '#2f7a3a', '#8ad86a', [-.15, 1.76 + i * .03, .02], [.03, .06, .015], [0, 0, .5 - i * .4], { A: 0 }); part(g, '#3a6a2a', '#6a9a4a', [0, 1.86, -.02], [.15, .05, .15], [0, 0, 0], { A: .05 }); return }
-    cone(g, '#4a7a3a', '#7aaa5a', [0, .66, 0], [.3, .2, .24], [0, 0, 0], .35); part(g, '#6a3a1a', '#a8703a', [0, .82, 0], [.26, .04, .2], [0, 0, 0], { A: 0 });   // tunic hem · belt
-    for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(.085, .014, 8, 24), MAT_EYE); r.position.set(s * .1, 1.6, .27); g.add(r) }
-    part(g, '#2a2030', '#4a4050', [0, 1.6, .28], [.04, .012, .012], [0, 0, 0], { A: 0 });                                             // glasses bridge
-    part(g, '#6a3a1a', '#a8703a', [0, 1.02, 0], [.26, .03, .2], [0, 0, -.7], { A: 0 }); part(g, '#7a4a20', '#c08848', [.24, .64, .12], [.13, .13, .07], [0, 0, 0], { A: .05 });   // strap · satchel
-    for (let i = 0; i < 3; i++) part(g, '#2f7a3a', '#8ad86a', [-.26, 1.72 + i * .05, .02], [.05, .1, .02], [0, 0, .5 - i * .4], { A: 0 }); // sprig
-    part(g, '#3a6a2a', '#6a9a4a', [0, 1.95, -.05], [.2, .1, .2], [0, 0, 0], { A: .05 });                                             // little cap
-  },
-  howsif(g) { human(g, { cl: '#4a6a8a', clD: '#2a3a5a', hair: '#e8e8f0', hairD: '#b8b8c8', leg: '#5a4a3a' });
-    if (Q.facet) { const s = FIG_SC({}); part(g, '#d8d8e0', '#ffffff', [0, 1.6 * s, .1 * s], [.1 * s, .09 * s, .05 * s], [0, 0, 0], { A: .1 });
-      part(g, '#b8903a', '#ecc870', [0, 1.84 * s, 0], [.3 * s, .03 * s, .3 * s], [0, 0, 0], { A: .02 }).userData.hat = 1; cone(g, '#b8903a', '#ecc870', [0, 1.92 * s, 0], [.15 * s, .1 * s, .15 * s], [0, 0, 0], .6).userData.hat = 1; return }
-    part(g, '#d8d8e0', '#ffffff', [0, 1.06, .26], [.2, .18, .1], [0, 0, 0], { A: .1 });          // white beard
-    part(g, '#b8903a', '#ecc870', [0, 1.55, 0], [.5, .06, .5], [0, 0, 0], { A: .02 }).userData.hat = 1; cone(g, '#b8903a', '#ecc870', [0, 1.66, 0], [.22, .16, .22], [0, 0, 0], .6).userData.hat = 1 },  // straw hat
+  kealee(g) { vinyl(g, { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#f4f0e8', eyes: 'sparkle', eyeCol: '#3a9a8a' }); HEADX(g, h => h.add(vm(SPH, '#ff4a5a', .38, .18, .12, .07, .05, .045, .3))) },   // red hair clip
+  villager(g, v = 0, look = null, hat = null) { vinyl(g, look || VLK[v % 3]); if (hat) npcHat(g, hat); else if (!look && v % 3 === 0) npcHat(g, 'straw') },
+  sberh(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#c8803a', skin: '#f2cfa6', wear: 'mage', top: '#7aaa5a', eyes: 'round', eyeCol: '#3a6a2a' }); npcGlasses(g); npcHat(g, 'leaf') },   // young herbalist: glasses + a sprig
+  howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'side', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'sleepy', eyeCol: '#3a3040' }); npcBeard(g); npcHat(g, 'straw') },   // white beard + straw hat
 };
 /* the shadow that takes Kealee: a black winged shape inside a huge black smoke cloud */
 export function shadowBeast(g) {

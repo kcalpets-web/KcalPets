@@ -9,17 +9,17 @@ function merge(parts) {                     // [geometry, matrix][] → one non-
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); return g;
 }
 const M4 = (x, y, z, rx, ry, rz, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(sx, sy, sz));
-const LEAF = new THREE.SphereGeometry(.5, 8, 4), BALL = new THREE.IcosahedronGeometry(.5, 1);
+const LEAF = new THREE.SphereGeometry(.5, 14, 7), BALL = new THREE.SphereGeometry(.5, 18, 12);   // v2.9 smooth
 const fan = (n, len, wid, tilt, lift) => merge(Array.from({ length: n }, (_, i) => { const a = i / n * 6.283; return [LEAF, M4(Math.sin(a) * len * .45, lift, Math.cos(a) * len * .45, tilt, a, 0, wid, .07, len)] }));
 export const G = {
   fern: fan(7, .9, .22, -.75, .28),
   bigleaf: merge([...Array.from({ length: 4 }, (_, i) => { const a = i * 1.7; return [LEAF, M4(Math.sin(a) * .35, .55, Math.cos(a) * .35, -1.05, a, 0, .55, .06, 1.1)] }), [new THREE.CylinderGeometry(.04, .05, .6, 5), M4(0, .3, 0, 0, 0, 0, 1, 1, 1)]]),
-  stem: merge([[new THREE.CylinderGeometry(.06, .08, .32, 6), M4(0, .16, 0, 0, 0, 0, 1, 1, 1)]]),
-  cap: merge([[new THREE.SphereGeometry(.2, 10, 6, 0, 6.283, 0, 1.6), M4(0, .3, 0, 0, 0, 0, 1, .65, 1)]]),
-  stump: merge([[new THREE.CylinderGeometry(.3, .38, .45, 9), M4(0, .22, 0, 0, 0, 0, 1, 1, 1)], [new THREE.CylinderGeometry(.08, .12, .4, 5), M4(.3, .12, .1, 0, 0, -1.2, 1, 1, 1)]]),
+  stem: merge([[new THREE.CylinderGeometry(.06, .08, .32, 12), M4(0, .16, 0, 0, 0, 0, 1, 1, 1)]]),
+  cap: merge([[new THREE.SphereGeometry(.2, 18, 9, 0, 6.283, 0, 1.6), M4(0, .3, 0, 0, 0, 0, 1, .65, 1)]]),
+  stump: merge([[new THREE.CylinderGeometry(.3, .38, .45, 16), M4(0, .22, 0, 0, 0, 0, 1, 1, 1)], [new THREE.CylinderGeometry(.08, .12, .4, 10), M4(.3, .12, .1, 0, 0, -1.2, 1, 1, 1)]]),
   bush: merge([[BALL, M4(0, .4, 0, 0, 0, 0, 1.1, .9, 1.1)], [BALL, M4(.35, .32, .15, 0, 0, 0, .8, .7, .8)], [BALL, M4(-.3, .3, -.15, 0, 0, 0, .75, .65, .75)]]),
-  dots: merge(Array.from({ length: 9 }, (_, i) => { const a = i * 2.4, r = .25 + (i % 3) * .14; return [new THREE.IcosahedronGeometry(.06, 0), M4(Math.cos(a) * r, .78 - (i % 3) * .08, Math.sin(a) * r, 0, 0, 0, 1, 1, 1)] })),
-  trunk: merge([[new THREE.CylinderGeometry(.16, .26, 1.8, 7), M4(0, .9, 0, 0, 0, 0, 1, 1, 1)], [new THREE.CylinderGeometry(.06, .09, .8, 5), M4(.28, 1.5, 0, 0, 0, -.8, 1, 1, 1)]]),
+  dots: merge(Array.from({ length: 9 }, (_, i) => { const a = i * 2.4, r = .25 + (i % 3) * .14; return [new THREE.SphereGeometry(.06, 8, 6), M4(Math.cos(a) * r, .78 - (i % 3) * .08, Math.sin(a) * r, 0, 0, 0, 1, 1, 1)] })),
+  trunk: merge([[new THREE.CylinderGeometry(.16, .26, 1.8, 14), M4(0, .9, 0, 0, 0, 0, 1, 1, 1)], [new THREE.CylinderGeometry(.06, .09, .8, 10), M4(.28, 1.5, 0, 0, 0, -.8, 1, 1, 1)]]),
   crown: merge([[BALL, M4(0, 2.4, 0, 0, 0, 0, 2.2, 1.7, 2.2)], [BALL, M4(.75, 2.15, .3, 0, 0, 0, 1.5, 1.2, 1.5)], [BALL, M4(-.65, 2.2, -.35, 0, 0, 0, 1.6, 1.3, 1.6)], [BALL, M4(.1, 2.95, -.2, 0, 0, 0, 1.4, 1.1, 1.4)]]),
 };
 const M = {

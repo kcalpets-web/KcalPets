@@ -3,7 +3,7 @@
    he gives the rod → bring him fish → repair his boat (it becomes the coin vault) → the ruined town: pick up the sword,
    clear the slimes and the Slime King → repair the shops → the way to the forest opens (next update).
    No pets yet: the first pet arrives in the forest. Farm monsters only wake once the player has a sword. */
-import { THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE, STORM } from './clay.js';
+import { npcHat, THREE, C, part, cone, Q, PETS, MONS, TOOLMESH, ACC, HUMANS, SICK, LOOK, playerLook, ANIMALS, CAMP, BUILDS, VILLAGE, STORM } from './clay.js';
 import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
@@ -93,7 +93,7 @@ function storyProps() {
   W.boat.visible = !!S.story.boatFixed; W.wreck.visible = !S.story.boatFixed; W.bubble.visible = false;
   TW.sword.visible = !S.has.sword; TW.lock.visible = !S.story.townClear;
   TW.shops.forEach((sh, i) => { const k = D.SHOPS[i].k, ok = !!S.shops[k]; sh.fixed.visible = ok; sh.ruin.visible = !ok;
-    if (ok && !sh.owner && D.SHOPS[i].owner && k !== 'potion') { sh.owner = makeActor(g => HUMANS.villager(g, i), .9); rigOf(sh.owner); sh.owner.root.position.set(sh.x + (sh.z < 0 ? .9 : -.9), 0, sh.z + (sh.z < 0 ? 1.8 : -1.8)); sh.owner.yawT = sh.owner.yaw = sh.z < 0 ? 0 : Math.PI } });
+    if (ok && !sh.owner && D.SHOPS[i].owner && k !== 'potion') { sh.owner = makeActor(g => HUMANS.villager(g, i), .84); rigOf(sh.owner); sh.owner.root.position.set(sh.x + (sh.z < 0 ? .9 : -.9), 0, sh.z + (sh.z < 0 ? 1.8 : -1.8)); sh.owner.yawT = sh.owner.yaw = sh.z < 0 ? 0 : Math.PI } });
   document.querySelector('#tools [data-tool="sword"]').style.display = S.has.sword ? '' : 'none';
   document.querySelector('#tools [data-tool="rod"]').style.display = S.has.rod ? '' : 'none'; document.querySelector('#tools [data-tool="hoe"]').style.display = S.has.hoe ? '' : 'none';
   GATE.exit = true; GATE.east = true;   /* v1.2 open world: no story locks */ TW.lock.visible = false; FBAR.visible = !GATE.east; BARRIER.visible = !GATE.exit;
@@ -1015,13 +1015,7 @@ $('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return;
 /* v2.6 👕 wardrobe: 3 slots · tap a piece to wear it · shows what the weather here needs */
 function wearView() { if (!PL) return; const body = D.WEAR[S.wear.body], top = body && body.col; const a = Object.assign({}, S.avatar || {}, top ? { top } : {}); const key = JSON.stringify(a) + (S.wear.head || '');
   if (key === PL.wearK) return; const at = PL.root.position.clone(), yaw = PL.yaw; S.avatarWorn = a; buildPlayer(); PL.wearK = key; PL.root.position.copy(at); PL.yaw = PL.yawT = yaw }
-function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (!H) return; const head = g.getObjectByName('head'); if (!head) return; const h = new THREE.Group(); h.name = 'hat';
-  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .8 });
-  if (H.hat === 'straw') { const br = new THREE.Mesh(new THREE.CylinderGeometry(.62, .66, .04, 20), M('#e8cf7a')); br.position.y = .52; const cr = new THREE.Mesh(new THREE.SphereGeometry(.36, 16, 10, 0, 6.3, 0, 1.6), M('#e0c060')); cr.position.y = .5; const bd = new THREE.Mesh(new THREE.CylinderGeometry(.37, .37, .07, 18), M('#c0503a')); bd.position.y = .56; h.add(br, cr, bd) }
-  else if (H.hat === 'wool') { const cr = new THREE.Mesh(new THREE.SphereGeometry(.44, 18, 12, 0, 6.3, 0, 1.45), M('#d84a5a')); cr.position.y = .32; const pm = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), M('#f4f0e8')); pm.position.y = .78; h.add(cr, pm) }
-  else if (H.hat === 'mask') { const lf = new THREE.Mesh(new THREE.SphereGeometry(.26, 12, 8), M('#5ab84a')); lf.scale.set(1.3, .75, .35); lf.position.set(0, .02, .4); const st = new THREE.Mesh(new THREE.TorusGeometry(.45, .025, 6, 24), M('#3a7a3a')); st.rotation.x = Math.PI / 2; st.position.y = .05; h.add(lf, st) }
-  else { const cr = new THREE.Mesh(new THREE.SphereGeometry(.47, 18, 12, 0, 6.3, 0, 1.75), M('#c89a6a')); cr.position.y = .28; const rim = new THREE.Mesh(new THREE.TorusGeometry(.42, .08, 8, 20), M('#f0e4d0')); rim.rotation.x = 1.75; rim.position.set(0, .2, .12); h.add(cr, rim) }
-  h.traverse(o => { if (o.isMesh) { o.castShadow = true; o.userData.noFacet = 1 } }); head.add(h) }
+function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (H) npcHat(g, H.hat) }   /* v2.9 the same fitted hats as the people */
 function openWear() {
   sheet('👕 ชุด', (b, redraw) => { const c = climate(), w = wearSum(), own = Object.keys(S.clothes || {}).filter(k => D.WEAR[k]);
     const need = c.cold ? `🥶 อากาศตอนนี้หนาวระดับ <b>${c.cold}</b> · ต้องอุ่น ≥ ${c.cold}` : c.hot ? `🥵 อากาศตอนนี้ร้อนระดับ <b>${c.hot}</b> · ต้องเย็น ≥ ${c.hot}` : '🙂 อากาศตอนนี้สบายๆ';
@@ -2215,10 +2209,17 @@ function memoryShow(lines, done, shot) { CUT = true; document.body.classList.add
   f.onclick = next; next(); }
 /* people: villagers appear at each kingdom's settlement when you come near · ❗ = has a quest · ❓ = ready to hand in */
 const KNPC = {};
+/* v2.9 each kingdom dresses its people its own way (vinyl chibi) */
+const KLOOK = { navalee: [['#3a8aa8', '#5ac0c8', '#2a6a8a'], ['#f2cfa6', '#c28b5c', '#e2b183']], sylvaren: [['#6a8a3a', '#9a7a3a', '#4a6a2a'], ['#e2b183', '#f2cfa6', '#8c5a3c']], asrah: [['#e0a040', '#d86a3a', '#f0e0c0'], ['#c28b5c', '#8c5a3c', '#e2b183']],
+  frosthelm: [['#d8e4f0', '#7a9ac0', '#c84a4a'], ['#f9e0d2', '#f2cfa6', '#e2b183']], valkara: [['#8a3a2a', '#5a4a48', '#c8602a'], ['#c28b5c', '#8c5a3c', '#e2b183']], deadgar: [['#5a4a6a', '#3a3040', '#7a6a8a'], ['#d8d0d8', '#c8c0d0', '#e8e0e8']] };
+const KHAT = { navalee: 'cap', asrah: 'wrap', frosthelm: 'fur', valkara: 'helm', deadgar: 'hood', sylvaren: 'leaf' };
+const HAIRS = { m: ['messy', 'spiky', 'side'], f: ['long', 'pony', 'buns', 'bob', 'twin'] };
+function npcLook(k, n) { const P = KLOOK[k], h = idHash({ id: n.id }), sex = n.v === 1 || /แม่|ยาย|ราชินี|เจ้าหญิง|มิรา|ซาร่า|ป้า/.test(n.name) ? 'f' : 'm';
+  return { v: 2, sex, hair: HAIRS[sex][h % HAIRS[sex].length], hairCol: /ยาย|ตา|ผู้เฒ่า|แม่ชี|อาจารย์/.test(n.name) ? '#e8e8f0' : ['#3a2418', '#7a4428', '#1e1520', '#c8a060', '#b05a30'][h % 5], skin: P[1][h % 3], wear: n.lead ? 'mage' : ['traveler', 'farmer'][h % 2], bottom: sex === 'f' && h % 3 ? 'skirt' : 'pants', top: P[0][h % 3], eyes: ['round', 'smile', 'sparkle', 'round'][h % 4], eyeCol: ['#4a3020', '#3a6a9a', '#3a8a5a', '#8a5ad8'][h % 4] } }
 function kqTick(q) { for (const k in KQ) { const K = KINGDOMS[k], d = dist(q.x, q.z, K.x, K.z);
     for (const n of KQ[k].npcs) { const key = k + ':' + n.id, A = KNPC[key];
       if (d < 85 && !A) { let x = K.x + n.dx, z = K.z + n.dz; for (let r = 0; r < 40 && (!walkLand(x, z) || waterAt(x, z)); r += 1.5) { x = K.x + n.dx + Math.cos(r * 2.3) * r; z = K.z + n.dz + Math.sin(r * 2.3) * r }
-        const a = rigOf(makeActor(g => HUMANS.villager(g, n.v), .9)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(K.x - x, K.z - z) + Math.PI; scene.add(a.root);
+        const a = rigOf(makeActor(g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash({ id: n.id }) % 2) ? KHAT[k] : null), .82)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(K.x - x, K.z - z) + Math.PI; scene.add(a.root);
         const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
         KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
       else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); delete KNPC[key] } } } }
@@ -2644,9 +2645,9 @@ function ruinView(r, on) {
   if (r.g) return; const st = S.ruins[r.id] || {}, g = new THREE.Group(); r.picks = []; r.vill = []; scene.add(g); r.g = g;
   r.spots.forEach((o, i) => { const m = new THREE.Group(), done = st.done && st.done[i], kind = r.def.projects[i][0]; if (done) (kind === 'house' ? (gg => VILLAGE.house(gg, ['#d0503a', '#3a7ac0', '#7a4ab0'][i % 3])) : VILLAGE[kind])(m); else VILLAGE.rubble(m);
     m.position.set(o.x, groundH(o.x, o.z), o.z); m.rotation.y = Math.atan2(r.x - o.x, r.z - o.z); g.add(m); o.m = m; const pk = addPick(W, o.x, o.z, 1.3, 1.6, { kind: 'ruin', id: r.id, i }); pk.position.y += Math.max(0, groundH(o.x, o.z)); r.picks.push(pk); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: 1.05, o: r }) });
-  const npc = rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .9)); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
+  const npc = rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .84)); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
   const pk = addPick(W, r.x, r.z, .7, 1.8, { kind: 'rnpc', id: r.id }); pk.position.y += Math.max(0, groundH(r.x, r.z)); r.picks.push(pk);
-  if (st.fin) { for (let i = 0; i < 3; i++) { const v = rigOf(makeActor(gg => HUMANS.villager(gg, (r.def.v + i + 1) % 3), .85)), a = i * 2.1 + .7; v.root.position.set(r.x + Math.cos(a) * 3, groundH(r.x, r.z), r.z + Math.sin(a) * 3); g.add(v.root); r.vill.push({ A: v, a, t: Math.random() * 6 }) }
+  if (st.fin) { for (let i = 0; i < 3; i++) { const v = rigOf(makeActor(gg => HUMANS.villager(gg, (r.def.v + i + 1) % 3), .82)), a = i * 2.1 + .7; v.root.position.set(r.x + Math.cos(a) * 3, groundH(r.x, r.z), r.z + Math.sin(a) * 3); g.add(v.root); r.vill.push({ A: v, a, t: Math.random() * 6 }) }
     for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, rr = 7 + (i % 3); part(g, '#3a8a3a', '#6ac060', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .15, r.z + Math.sin(a) * rr], [.25, .18, .22], [0, a, 0], { A: .15, f: 2 }); part(g, ['#ff7a9a', '#ffd23f', '#9a7aff'][i % 3], '#ffffff', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .38, r.z + Math.sin(a) * rr], [.07, .06, .07]) } }
 }
 let rvT = 0;
