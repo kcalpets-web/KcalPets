@@ -13,7 +13,7 @@ export const VLOOK = {
   bottom: [['pants', 'กางเกง'], ['skirt', 'กระโปรง']],
   hairCol: ['#2a2228', '#4a2e22', '#7a4428', '#b05a30', '#e8c060', '#d8d8e8', '#f0a0c0', '#5a8ad8'],
   wear: [['traveler', 'นักเดินทาง'], ['farmer', 'ชาวไร่'], ['mage', 'นักเรียนเวทย์']],
-  top: ['#3d6fc4', '#d8483a', '#3aa86a', '#e0a030', '#8a5ad8', '#f4f0e8'],
+  top: ['#d83a3a', '#e8603a', '#f08a30', '#f0b830', '#f0d850', '#b8d040', '#6ac04a', '#3aa86a', '#2a9a8a', '#3ab0c8', '#3a8ad8', '#3d6fc4', '#4a4ab8', '#7a4ac8', '#a84ac0', '#d84a9a', '#f07aa8', '#a8604a', '#7a4a2a', '#c8a878', '#f4f0e8', '#a8a8b0', '#5a5a68', '#2a2a34'],   /* v2.9 24 colours */
   /* v2.9 more face choices */
   cheek: [['', 'อัตโนมัติ'], ['rosy', 'แก้มแดง'], ['freckle', 'กระ'], ['none', 'ไม่มี']],
   mouth: [['smile', 'ยิ้ม'], ['grin', 'ยิ้มกว้าง'], ['cat', 'ปากแมว'], ['o', 'ปากโอ'], ['flat', 'นิ่งๆ']],
@@ -157,19 +157,20 @@ function hairPiece(h, style, col) {
 function faceAt(x, y, off = 0) { let lo = 0, hi = .6; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (sdf(V(x, y, m)) < off) lo = m; else hi = m } return V(x, y, lo) }
 function faceN(x, y) { const e = .004, d = sdf(V(x, y, faceAt(x, y).z)); return V(sdf(V(x + e, y, faceAt(x, y).z)) - d, sdf(V(x, y + e, faceAt(x, y).z)) - d, sdf(V(x, y, faceAt(x, y).z + e)) - d).normalize() }
 function beardPiece(h, kind, col) { const M = mat(shade(col, .92), { r: .4 }), ey = -.066, my = ey - .074;
-  if (kind === 'stache' || kind === 'full') for (const s2 of [-1, 1]) { const p0 = faceAt(s2 * .004, my + .022, .012), p1 = faceAt(s2 * .05, my + .008, .016), p2 = faceAt(s2 * .1, my + .03, .01);
-    add(h, tube(bez(p0.toArray(), p1.toArray(), p2.toArray(), 9), [.026, .029, .028, .024, .02, .016, .013, .01, .008], 14, .55, true), M) }
-  if (kind === 'goatee') { const c = faceAt(0, my - .07, .008); ball(h, .03, M, c.toArray(), [1.1, 1.4, .6], 20) }
+  /* v2.9 minimal: a thin curled moustache just under the nose · a small pointed tuft under the lip (darker than the hair so it reads) */
+  const D = mat(shade(col, .6), { r: .4 });
+  if (kind === 'stache' || kind === 'full') for (const s2 of [-1, 1]) { const c = faceAt(s2 * .024, my + .025, .006), m = ball(h, .02, kind === 'full' ? M : D, c.toArray(), [1.5, .5, .45], 16); m.rotation.set(0, s2 * .35, -s2 * .28) }   /* two small soft tufts */
+  if (kind === 'goatee') { const top = faceAt(0, my - .018, .004), mid = faceAt(0, my - .034, .007), tip = faceAt(0, my - .052, .003).add(V(0, 0, .006)); add(h, tube([top.toArray(), mid.toArray(), tip.toArray()], [.014, .012, .003], 12, .55, true), D) }
   if (kind === 'full') { const g = new THREE.SphereGeometry(1, 64, 48), p = g.attributes.position, dv = V(0, 0, 0);
-    for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const b = surf(dv, 0), front = sst(-.3, .2, dv.z), low = sst(my + .015, my - .03, b.y), mouthHole = sst(.05, .025, Math.hypot(b.x * .8, b.y - my)) * sst(.4, .8, dv.z);
-      const c = front * low * (1 - mouthHole), q = surf(dv, -.015 + c * (.045 + .03 * sst(my - .05, my - .2, b.y))); if (c > .01) q.y -= .05 * c * sst(my - .1, my - .25, b.y); p.setXYZ(i, q.x, q.y, q.z) }
+    for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const b = surf(dv, 0), front = sst(-.3, .2, dv.z), edge = my - .03 + .085 * sst(.13, .22, Math.abs(b.x)), low = sst(edge + .01, edge - .016, b.y);   /* starts under the lip, climbs the cheeks as sideburns */
+      const c = front * low, q = surf(dv, -.012 + c * (.016 + .026 * sst(my - .05, my - .2, b.y))); if (c > .01) q.y -= .05 * c * sst(my - .1, my - .25, b.y); p.setXYZ(i, q.x, q.y, q.z) }
     g.computeVertexNormals(); add(h, g, M) } }
 function glasses(h, kind) { const F = mat(kind === 'sun' ? '#1a1418' : '#2a2030', { r: .25, m: .3 }), ey = -.066;
-  for (const s2 of [-1, 1]) { const c = faceAt(s2 * .095, ey, .02), n = faceN(s2 * .095, ey), ry = Math.atan2(n.x, n.z) * .6;
-    const m = add(h, kind === 'square' ? new THREE.TorusGeometry(.058, .009, 8, 4) : new THREE.TorusGeometry(.054, .008, 10, 28), F, c.toArray()); m.rotation.set(0, ry, kind === 'square' ? Math.PI / 4 : 0);
-    if (kind === 'sun') { const L = add(h, new THREE.CircleGeometry(.052, 24), mat('#141018', { r: .1, m: .2, ds: 1 }), c.clone().add(V(0, 0, -.002)).toArray()); L.rotation.set(0, ry, 0); L.material.transparent = true; L.material.opacity = .85 }
-    const arm = add(h, new THREE.CylinderGeometry(.006, .006, .2, 6), F, faceAt(s2 * .2, ey + .01, .02).add(V(0, 0, -.08)).toArray()); arm.rotation.x = Math.PI / 2 }
-  const b0 = faceAt(0, ey + .01, .022), br = add(h, new THREE.CylinderGeometry(.007, .007, .085, 8), F, b0.toArray()); br.rotation.z = Math.PI / 2 }
+  for (const s2 of [-1, 1]) { const c = faceAt(s2 * .095, ey - .002, .016), n = faceN(s2 * .095, ey), ry = Math.atan2(n.x, n.z) * .6;   /* centred on the painted eye */
+    const m = add(h, kind === 'square' ? new THREE.TorusGeometry(.056, .007, 8, 4) : new THREE.TorusGeometry(.05, .0065, 10, 32), F, c.toArray()); m.rotation.set(0, ry, kind === 'square' ? Math.PI / 4 : 0);
+    if (kind === 'sun') { const L = add(h, new THREE.CircleGeometry(.049, 28), mat('#141018', { r: .1, m: .2, ds: 1 }), c.clone().add(V(0, 0, -.002)).toArray()); L.rotation.set(0, ry, 0); L.material.transparent = true; L.material.opacity = .85 }
+    const e0 = faceAt(s2 * .15, ey + .004, .014), e1 = surf(V(s2, .05, -.25), .012); add(h, tube([e0.toArray(), e0.clone().lerp(e1, .5).add(V(s2 * .01, 0, 0)).toArray(), e1.toArray()], [.005, .005, .005], 6, 1, false), F) }   /* the arms go back over the ears */
+  const b0 = faceAt(0, ey + .006, .02), br = add(h, new THREE.CylinderGeometry(.0055, .0055, .09, 8), F, b0.toArray()); br.rotation.z = Math.PI / 2 }
 /* ── the outfit pieces: torso shells (static) + sleeves / trousers / boots on the joints ── */
 const lathe = (pts, seg = 22) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 function torsoWear(g, w, top) {
@@ -212,7 +213,7 @@ export function vinyl(root, a0 = {}) {
   /* the head: face + ears + hair */
   const head = new THREE.Group(); head.position.y = .74; head.name = 'head'; g.add(head); role(head, 'head');
   const hm = add(head, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile'), roughness: .5 })]); hm.userData.noFacet = 1;
-  for (const s of [-1, 1]) ball(head, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
+  if (!['long', 'bob'].includes(a.hair) || a.hairV === 1) for (const s of [-1, 1]) ball(head, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);   /* ears (hidden under long hair) */
   if (a.beard && a.beard !== 'none') beardPiece(head, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(head, a.glasses);
   if (a.hairV === 1) hair(head, a.hair || 'messy', a.hairCol || '#7a4428'); else { hairPiece(head, a.hair || 'messy', a.hairCol || '#7a4428'); head.scale.setScalar(.94) }   /* v2.9 one-piece hair · the head a touch smaller so the hair sits on it */
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
