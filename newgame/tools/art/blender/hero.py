@@ -106,7 +106,7 @@ def paint_face():
         pts = [(X(cx + math.cos(a) * rx), Z(cz + math.sin(a) * rz)) for a in [a0 + (a1 - a0) * i / 30 for i in range(31)]]; d.line(pts, fill=col, width=int(w), joint='curve')
     ez = HEADC[2] - .055
     for s in (-1, 1):
-        for k, a in ((1.4, 50), (1., 70)): ell(s * .15, ez - .062, .032 * k, .017 * k, (236, 120, 130, a))     # blush
+        for k, a in ((1.4, 50), (1., 70)): ell(s * .128, ez - .066, .028 * k, .015 * k, (236, 120, 130, a))     # blush
         cx = s * .1; ell(cx, ez, .056, .07, (255, 255, 255, 255))                                          # white
         for i in range(24):                                                                                 # iris: dark top → amber → light bottom
             t = i / 23; c = [int(a + (b - a) * t) for a, b in zip((58, 28, 10), (255, 214, 120))]; c = [int(a * .45 + b * .55) for a, b in zip(c, (208, 128, 42))] if .25 < t < .8 else c
@@ -124,9 +124,9 @@ def head():
     for v in bm.verts:
         x, y, z = v.co
         # v2 "mochi" chibi head (designer's reference): a broad round cranium · full cheeks · a short, soft, round chin (never pointy)
-        if z >= 0: k, zz = 1., z * .265
-        else: k, zz = 1 - .17 * z * z, z * .205
-        v.co = Vector((x * .272 * k, y * .25 * k, zz)) + Vector(HEADC) + Vector((0, 0, .015))
+        if z >= .15: k, zz = 1., z * .265
+        else: t = (.15 - z) / 1.15; k, zz = 1 - .4 * t ** 1.6, z * .205 if z < 0 else z * .265   # v3: the face narrows from the cheekbones down to a small round chin
+        v.co = Vector((x * .272 * k, y * .25 * (1 - .15 * (1 - k)), zz)) + Vector(HEADC) + Vector((0, 0, .015))
     for f in bm.faces:
         for l in f.loops: l[uv].uv = (l.vert.co.x / .6 + .5, (l.vert.co.z - HEADC[2]) / .6 + .5)
         f.material_index = 1 if (f.calc_center_median() - Vector(HEADC)).normalized().y < -.2 else 0   # the front of the head wears the painted face
@@ -166,7 +166,7 @@ def body(pose):
 def build(pose='ready', at=(0, 0, 0), rot=0.):
     objs = []; add = lambda o: objs.append(o) or o
     b, J = body(pose); add(b); h0 = len(objs); add(head())
-    for s in (-1, 1): add(ball('ear', .045, (s * .262, .01, HEADC[2] - .045), SKIN, (.5, .75, 1)))   # ears at eye level
+    for s in (-1, 1): add(ball('ear', .045, (s * .248, .01, HEADC[2] - .045), SKIN, (.5, .75, 1)))   # ears at eye level
     # hair: a crown shell + locks (bangs, sides, back, ahoge)
     cap = quadsphere(6)
     bmesh.ops.delete(cap, geom=[v for v in cap.verts if (v.co.z + v.co.y * .38) < .08], context='VERTS')   # high over the forehead (−Y), low at the back
