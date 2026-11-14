@@ -22,7 +22,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll();
     await wait(2500); await closeAll();
     const rig = await N(() => Object.keys(window.__ng.PL.rig).sort().join(',')); log('rig', rig); if (!/hipL/.test(rig) || !/elR/.test(rig)) errs.push('player has no jointed limbs');
-    const gear = await N(() => { let n = 0; window.__ng.PL.body.traverse(o => { if (o.name === 'gear') n++ }); return n }); log('gear groups', gear); if (gear < 2) errs.push('gear not visible');
+    const gear = await N(() => { let n = 0; window.__ng.PL.body.traverse(o => { if (o.name === 'gear') n++ }); return n }); log('gear groups', gear); if (gear < 1) errs.push('gear not visible');   /* v2.1.1: idle = everything on the back (one group) */
     const setup = () => E(() => { const N = window.__ng; N.placeMe(20, -6); N.PL.yaw = N.PL.yawT = Math.PI / 2 + .6; N.CAM.yaw = Math.PI / 2 + 2.2; N.CAM.pitch = .3 });
     await setup(); await wait(1500); await shot('a0-idle');
     await E(() => { const N = window.__ng; N.walkTo(N.me.x + 30, N.me.z) }); for (let i = 1; i <= 3; i++) { await wait(260); await E(() => { window.__ng.CAM.yaw = Math.atan2(1, 0) + 2.2 }); await shot('a' + i + '-walk') }

@@ -200,16 +200,16 @@ function buildPlayer() {
 }
 /* v1.8 gear you can see: the tool / sword in the right hand · the shield on the left arm · a backpack (+ the sword on the back when not in hand) */
 function gearView() {
-  if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), bow = bowOf(), held = !AIM && ['sword', 'axe', 'hammer', 'sickle'].includes(tool) ? tool : '', k = (AIM ? 'aim' : '') + (bow ? bow.id : '') + '|' + held + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
+  if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), bow = bowOf(), held = inHand(), k = (AIM ? 'aim' : '') + (bow ? bow.id : '') + '|' + held + (guard ? 'g' : '') + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
   if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
   const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
   if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); g.userData.q0 = g.quaternion.clone(); hand.add(g) }   /* tip up and forward */
   if (AIM && bow) { const el = PL.rig.elL, g = new THREE.Group(); g.name = 'gear'; g.position.set(0, -.34, 0); const m = new THREE.Group(); itemMesh(m, bow.t); m.scale.setScalar(1.15); g.add(m); g.userData.bow = 1; el && el.add(g) }   /* v2.1 the bow in the left hand while aiming */
-  if (arm && shield && shieldOn() && !AIM) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
+  if (arm && shield && shieldOn() && !AIM && (held === 'sword' || guard)) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
   { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
-    if (wpn && held !== 'sword') { const sw = new THREE.Group(); itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55); g.add(sw) }
+    if (wpn && held !== 'sword') { const sw = new THREE.Group(), sp = D.ITEMS[wpn.t].kind === 'spear'; itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); if (sp) { sw.position.set(.18, F ? .55 : .45, F ? -.3 : -.37); sw.rotation.set(0, 0, .45) } else { sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55) } g.add(sw) }   /* spears ride head-up */
     if (bow && !AIM) { const bw = new THREE.Group(); itemMesh(bw, bow.t); bw.position.set(.12, F ? 1.35 : 1.1, F ? -.25 : -.32); bw.rotation.set(0, Math.PI / 2, .5); g.add(bw) }   /* bow across the back */
-    if (shield && (!shieldOn() || AIM)) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
+    if (shield && !(shieldOn() && !AIM && (held === 'sword' || guard))) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
 }
 /* v2.0.2 two-handed weapons & spears: the left hand holds the shaft too (a tiny IK on the left shoulder + elbow, warm-started every frame) */
 const GRIP_AT = { two: -.16, spear: .42 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
@@ -265,7 +265,7 @@ function walkTick(dt, now) {
   envTick(dt, now, mv);
   if (AIM) { aimTick(now); PL.yawT = camTP() ? CAM.yaw : PL.yawT }
   if (CROUCH && (PL.swim || RIDE || GLIDE || now < jumpT || CUT)) CROUCH = false;
-  PL.pose = { aim: AIM ? Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, ready: !AIM && tool === 'sword' && weaponOf() && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: (guard && !LOCK || CROUCH) && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
+  PL.pose = { aim: AIM ? Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, ready: inHand() === 'sword' && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: (guard && !LOCK || CROUCH) && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
   gearView(); animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); PL.body.position.y = PL.bob;
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
@@ -316,7 +316,12 @@ function workTick(now) {
   else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
     if (d > 1.6) { if (!walkT || dist(walkT.x, walkT.z, q.x, q.z) > 1.2) walkTo(q.x, q.z, null, 1.3); work.t = now + 120; return } walkT = null; toolHit({ kind: 'mon', m }) }
 }
-function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .3 }
+function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .3; drawT = performance.now() + (tool === 'sword' ? D.SHEATHE.sword : D.SHEATHE.tool) * 1000 }
+/* v2.1.1 gear lives on the back (Zelda-like) · it comes out only when used: attack / lock-on / guard → sword (+ shield) · working → the tool · Y → the bow */
+let drawT = 0;
+function inHand() { if (AIM || !PL || PL.swim || RIDE || GLIDE) return ''; const now = performance.now();
+  if (tool === 'sword') return weaponOf() && (LOCK || guard || swingT > 0 || now < drawT) ? 'sword' : '';
+  return ['axe', 'hammer', 'sickle'].includes(tool) && (work || swingT > 0 || now < drawT) ? tool : '' }
 
 /* ---------- transient state ---------- */
 let camY = 0, stopT = 0, potT = 0, speed = 1, tool = '', prevTool = '', tipT = 0, slashT = 0, lastHurt = 0, shakeT = 0, F = null, CUT = false;
@@ -1679,7 +1684,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
 /* B: tap = back (close the top window · stop what you're doing) · hold = guard (−70 % damage, uses stamina) */
 let guard = false;
 { const B = $('bB'); let t0 = 0;
-  B.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guard = true; document.body.classList.add('guard') } }, 250) });
+  B.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guard = true; drawT = performance.now() + D.SHEATHE.sword * 1000; document.body.classList.add('guard') } }, 250) });
   const up = () => { const short = performance.now() - t0 < 240; t0 = 0; guard = false; document.body.classList.remove('guard'); if (!short || wheelOn) return;
     const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } walkT = null; work = null; stopAuto(); if (tool) setTool('') };
   B.addEventListener('pointerup', up); B.addEventListener('pointercancel', up); B.addEventListener('contextmenu', e => e.preventDefault()) }
