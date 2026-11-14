@@ -14,15 +14,16 @@ export const CLEAR = {
   flower:  { tool: 'sickle', size: 's', mat: {}, mon: null, name: 'ดอกไม้ป่า', ingr: ['flower', 1], regrow: 10 * 60e3 },   // v2.6
   hive:    { tool: 'axe', size: 's', mat: { wood: 1 }, mon: null, name: 'รังผึ้ง', ingr: ['honey', .8], regrow: 30 * 60e3 },   // v2.6 on stumps
   debris:  { tool: 'axe',    size: 'm', mat: { wood: 2 }, mon: null, name: 'ซากเรือ' },     // story: the wreck over Uncle Howsif
-  grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3 },
-  bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3 },
-  tree:    { tool: 'axe',    size: 'm', mat: { wood: 3 }, mon: 'branchImp', name: 'ต้นไม้', regrow: 20 * 60e3 },
-  bigtree: { tool: 'axe',    size: 'l', mat: { wood: 6 }, mon: 'branchImp', name: 'ต้นไม้ใหญ่', minTier: 1 },
-  pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด', regrow: 15 * 60e3 },
-  rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน', regrow: 20 * 60e3 },
-  boulder: { tool: 'hammer', size: 'l', mat: { stone: 6, ore: 1 }, mon: 'rockGolem', name: 'หินก้อนใหญ่', minTier: 1 },
+  grass:   { tool: 'sickle', size: 's', mat: { grass: 2 }, mon: 'grassSprite', name: 'หญ้ารก', regrow: 15 * 60e3, regrowD: .5 },
+  bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3, regrowD: 1 },
+  tree:    { tool: 'axe',    size: 'm', mat: { wood: 3 }, mon: 'branchImp', name: 'ต้นไม้', regrow: 20 * 60e3, regrowD: 2 },   // v2.9 regrowD = game days (a stump stays meanwhile)
+  bigtree: { tool: 'axe',    size: 'l', mat: { wood: 6 }, mon: 'branchImp', name: 'ต้นไม้ใหญ่', minTier: 1, fixed: 1 },   // v2.9 big = a landmark (can't be cut)
+  pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด', regrow: 15 * 60e3, regrowD: 1 },
+  rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน', regrow: 20 * 60e3, regrowD: 1.5, oreP: .3 },
+  boulder: { tool: 'hammer', size: 'l', mat: { stone: 6, ore: 1 }, mon: 'rockGolem', name: 'หินก้อนใหญ่', minTier: 1, fixed: 1 },
 };
 export const HITS = { s: 1, m: 3, l: 6 };
+export const DAY_MS = 1440 * 1000;   // v2.9 one game day in real ms (1 game minute = 1 s)
 /* hits with tier t: ceil(base / (1 + 0.5·t)) → medium 3·2·2·1 · large 6·4·3·3 */
 export const hitsFor = (size, tier) => Math.max(1, Math.ceil(HITS[size] / (1 + .5 * tier)));
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)

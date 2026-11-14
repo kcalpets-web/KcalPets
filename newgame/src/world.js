@@ -149,7 +149,8 @@ export function cookPot(W, key, x, z) {
 }
 /* show / hide one clearable */
 export function spawnClear(W, o) {
-  if (o.g) return; const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
+  if (o.g) return; remnant(W, o, false);
+  if (o.inst) { for (const [m, i, M] of o.inst) { m.setMatrixAt(i, M); m.instanceMatrix.needsUpdate = true } o.g = new THREE.Group(); o.g.position.set(o.x, groundH(o.x, o.z), o.z); W.scene.add(o.g); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: .3 * (o.sc || 1), o }); return }   /* v2.9 a streamed (instanced) tree: just show it again */ const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
   const seg0 = Q.seg; Q.seg = W.eco ? 14 : 22;
   ({ mushroom: () => { for (const [dx, dz, k] of [[0, 0, 1], [.16, .1, .7], [-.12, .14, .55]]) { part(g, '#e8dcc8', '#fff8ec', [dx, .1 * k, dz], [.05 * k, .1 * k, .05 * k], [0, 0, 0], { A: 0 }); part(g, '#a8301e', '#e8604a', [dx, .2 * k, dz], [.16 * k, .09 * k, .16 * k], [0, 0, 0], { A: .04 }); part(g, '#fff4e0', '#ffffff', [dx + .05 * k, .27 * k, dz + .04 * k], [.03 * k, .015, .03 * k], [0, 0, 0], { A: 0 }) } },
      herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
@@ -166,7 +167,19 @@ export function spawnClear(W, o) {
   if (SOL_R[o.t] && !o.sol) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t], o });
   o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z);
 }
-export function despawnClear(W, o) { if (!o.g) return; W.scene.remove(o.g); o.g = null; removePick(W, o.pick); o.pick = null }
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+export function despawnClear(W, o) { if (!o.g) return; if (o.inst) for (const [m, i] of o.inst) { m.setMatrixAt(i, ZERO); m.instanceMatrix.needsUpdate = true } W.scene.remove(o.g); o.g = null; removePick(W, o.pick); o.pick = null }
+/* v2.9 what is left after cutting / breaking, until it grows back: a stump · a bare bush · rubble · stubble */
+const RM = { wood: new THREE.MeshStandardMaterial({ color: '#8a5a32', roughness: .8 }), ring: new THREE.MeshStandardMaterial({ color: '#e8c890', roughness: .7 }), twig: new THREE.MeshStandardMaterial({ color: '#7a5030', roughness: .8 }), stone: new THREE.MeshStandardMaterial({ color: '#a8a296', roughness: .7 }), stub: new THREE.MeshStandardMaterial({ color: '#8ab860', roughness: .8 }) };
+const RG = { stump: new THREE.CylinderGeometry(.2, .27, .28, 16), top: new THREE.CylinderGeometry(.19, .19, .02, 16), twig: new THREE.CylinderGeometry(.015, .025, .5, 6), chip: new THREE.SphereGeometry(.09, 10, 8), blade: new THREE.ConeGeometry(.025, .12, 5) };
+export function remnant(W, o, on) {
+  if (!on) { if (o.rem) { W.scene.remove(o.rem); o.rem = null } return } if (o.rem) return; const t = o.t, g = new THREE.Group(), y = groundH(o.x, o.z); g.position.set(o.x, y, o.z); g.rotation.y = o.ry || 0;
+  const add = (geo, m, x, yy, z, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) => { const k = new THREE.Mesh(geo, m); k.position.set(x, yy, z); k.scale.set(sx, sy, sz); k.rotation.set(rx, 0, rz); k.castShadow = true; k.receiveShadow = true; g.add(k) };
+  if (t === 'tree') { const sc = (o.sc || 1) * (o.inst ? 1 : .85); add(RG.stump, RM.wood, 0, .14 * sc, 0, sc, sc, sc); add(RG.top, RM.ring, 0, .29 * sc, 0, sc, 1, sc) }
+  else if (t === 'bush') for (let i = 0; i < 6; i++) { const a = i * 1.05; add(RG.twig, RM.twig, Math.cos(a) * .08, .2, Math.sin(a) * .08, 1, .7 + (i % 3) * .2, 1, Math.sin(a) * .5, -Math.cos(a) * .5) }
+  else if (t === 'rock' || t === 'pebble') for (let i = 0; i < (t === 'rock' ? 5 : 3); i++) { const a = i * 2.3; add(RG.chip, RM.stone, Math.cos(a) * .22, .04, Math.sin(a) * .2, 1 + (i % 2) * .4, .55, 1 + (i % 3) * .3) }
+  else if (t === 'grass' || t === 'flower') for (let i = 0; i < 5; i++) { const a = i * 1.26; add(RG.blade, RM.stub, Math.cos(a) * .1, .05, Math.sin(a) * .1) }
+  else return; W.scene.add(g); o.rem = g }
 
 /* merge every static mesh into one mesh per material (non-indexed, world space) → a handful of draw calls instead of ~1,000 */
 function mergeStatic(root) {
@@ -440,12 +453,13 @@ export function buildChunk(W, cx, cz) {
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
-  const inst = (geo, mat, list, place) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c) }); m.castShadow = true; m.receiveShadow = true; g.add(m) };
+  const inst = (geo, mat, list, place, key) => { if (!list.length) return; const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((p, i) => { place(p, o, c); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, c); if (key) (p.parts = p.parts || []).push([m, i, o.matrix.clone()]) }); m.castShadow = true; m.receiveShadow = true; g.add(m); return m };
   const pines = trees.filter(p => p.kk !== 'deadgar' && (p.h > 9 || p.kk === 'frosthelm' || R() < .3)), broad = trees.filter(p => !pines.includes(p) && p.kk !== 'deadgar');
-  const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, R() * 6, 0); ob.scale.setScalar(.9 + R() * .8) }; out.sols = [];
-  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6; out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
-  inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4; cc.set(p.kk === 'sylvaren' ? ['#b8a040', '#a07a30', '#8a8a3a', '#9a6a2a'][Math.floor(R() * 4)] : ['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) });
-  inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'frosthelm' ? (R() < .5 ? '#e8f0f4' : '#c8dce4') : R() < .5 ? '#2f6a3a' : '#3f7a44') });   /* v2.7 pine tops are back (snowy in the north) */   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
+  for (const p of trees) { p.ry = R() * 6; p.sc = .9 + R() * .8 }   /* v2.9 one transform per tree (trunk + crown match) */
+  const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, p.ry, 0); ob.scale.setScalar(p.sc) }; out.sols = [];
+  inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6; if (p.sc > 1.5) out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }, 1); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
+  inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4 * p.sc; cc.set(p.kk === 'sylvaren' ? ['#b8a040', '#a07a30', '#8a8a3a', '#9a6a2a'][Math.floor(R() * 4)] : ['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) }, 1);
+  inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'frosthelm' ? (R() < .5 ? '#e8f0f4' : '#c8dce4') : R() < .5 ? '#2f6a3a' : '#3f7a44') }, 1);   /* v2.7 pine tops are back (snowy in the north) */   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
   inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z) })) });
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
@@ -458,6 +472,7 @@ export function buildChunk(W, cx, cz) {
   const types = [['tree', 'bush', 'flower', 'pebble', 'tree', 'hive', 'flower'], ['rock', 'pine', 'rock', 'boulder', 'pebble', 'flower', 'rock']], KT = { asrah: ['rock', 'pebble', 'boulder', 'bush', 'pebble', 'rock', 'flower'], valkara: ['rock', 'boulder', 'pebble', 'rock', 'boulder', 'pebble', 'rock'], frosthelm: ['rock', 'pine', 'pebble', 'boulder', 'pine', 'rock', 'pebble'], deadgar: ['rock', 'pebble', 'boulder', 'rock', 'pebble', 'boulder', 'flower'] };
   for (let i = 0, n = 0; i < 50 && n < 7; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = (KT[p.kk] || types[p.h > 12 ? 1 : 0])[Math.floor(R() * 7)];
     out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
+  trees.forEach((p, i) => { if (p.sc <= 1.5 && p.parts) out.clears.push({ id: `kt${cx}_${cz}_${i}`, t: 'tree', x: p.x, z: p.z, ry: p.ry, sc: p.sc, inst: p.parts, g: null, pick: null, left: 0 }) });   /* v2.9 medium trees can be chopped (big ones are landmarks) */
   W.scene.add(g); return out;
 }
 export function dropChunk(W, ch) { (ch.sols || []).forEach(delSol); W.scene.remove(ch.g); ch.g.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'PlaneGeometry') o.geometry.dispose(); if (o.isInstancedMesh) o.dispose() }) }
