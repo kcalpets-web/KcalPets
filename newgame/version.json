@@ -21,6 +21,7 @@
   "lib/pp/shaders/OutputShader.js",
   "lib/three.module.min.js",
   "src/audio.js",
+  "src/chibi.js",
   "src/clay.js",
   "src/cutscene.js",
   "src/data.js",

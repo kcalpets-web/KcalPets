@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE chibi cast</title><style>body{margin:0;background:#fff}</style></head><body>
+<script type="module">
+/* chibi cast preview (WIP · not in the game yet): #cast = swordsman · archer · mage in action poses · #turn = swordsman front / side / back · #vs = next to today's figure */
+import * as THREE from '../../lib/three.module.min.js';
+import { chibi, CHIBI, chibiSword, chibiBow, chibiQuiver, chibiStaff, inkOutline } from '../../src/chibi.js';
+import { figure, sword as oldSword } from '../../src/figure.js';
+const V = location.hash.slice(1) || 'cast', W = V === 'cast' ? 1800 : 1500, H = V === 'cast' ? 1100 : 1000;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+const S = new THREE.Scene();
+{ const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#bfe0f4'); g.addColorStop(.62, '#f4f1e6'); g.addColorStop(1, '#e8e2cc'); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; S.background = t }
+S.add(new THREE.HemisphereLight('#fff6e8', '#7a8a6a', 1.15));
+const key = new THREE.DirectionalLight('#fff2dc', 2.6); key.position.set(-2.5, 4.5, 4); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -.0004; key.shadow.normalBias = .02; Object.assign(key.shadow.camera, { left: -3, right: 3, top: 3, bottom: -1, near: .5, far: 15 }); S.add(key);
+const rim = new THREE.DirectionalLight('#cfe4ff', 1.3); rim.position.set(3, 2.5, -4); S.add(rim);
+const fill = new THREE.DirectionalLight('#ffe0d0', .45); fill.position.set(3, 1, 3); S.add(fill);
+/* ground: a grassy disc with a soft rim + a few tufts and pebbles (low-poly like the world) */
+{ const gm = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.3, .12, 40), new THREE.MeshStandardMaterial({ color: '#8cc86a', roughness: .95, flatShading: true })); gm.position.y = -.06; gm.receiveShadow = true; S.add(gm);
+  const dirt = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.1, .3, 40), new THREE.MeshStandardMaterial({ color: '#a8845a', roughness: 1, flatShading: true })); dirt.position.y = -.27; S.add(dirt);
+  const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
+  for (let i = 0; i < 70; i++) { const a = rnd() * 6.28, d = .6 + rnd() * 2.4, t = new THREE.Mesh(new THREE.ConeGeometry(.03 + rnd() * .03, .12 + rnd() * .12, 4), new THREE.MeshStandardMaterial({ color: rnd() < .5 ? '#6aa84a' : '#7ab858', flatShading: true }));
+    t.position.set(Math.cos(a) * d, .06, Math.sin(a) * d - .3); t.rotation.set((rnd() - .5) * .5, rnd() * 3, (rnd() - .5) * .5); S.add(t) }
+  for (let i = 0; i < 14; i++) { const a = rnd() * 6.28, d = 1 + rnd() * 2, p = new THREE.Mesh(new THREE.IcosahedronGeometry(.04 + rnd() * .05, 0), new THREE.MeshStandardMaterial({ color: '#b8b0a0', flatShading: true })); p.position.set(Math.cos(a) * d, .02, Math.sin(a) * d - .4); p.castShadow = true; S.add(p) }
+  for (let i = 0; i < 18; i++) { const a = rnd() * 6.28, d = .9 + rnd() * 2.2, f = new THREE.Mesh(new THREE.IcosahedronGeometry(.028, 0), new THREE.MeshStandardMaterial({ color: ['#f4a0c0', '#ffe070', '#ffffff', '#b8a0f0'][i % 4], flatShading: true })); f.position.set(Math.cos(a) * d, .1, Math.sin(a) * d - .3); S.add(f) } }
+const rig = g => { const R = {}; g.traverse(o => { if (o.userData.role) R[o.userData.role] = o }); return R };
+const set = (o, x = 0, z = 0, y = 0) => { if (!o) return; o.rotation.x = x; o.rotation.z = (o.userData.base?.[4] || 0) + z; o.rotation.y = y };
+/* point a prop held in a hand: its +y along `up` (world), its +z toward `fw` */
+const hold = (prop, hand, up, fw) => { hand.add(prop); hand.updateWorldMatrix(true, false); const Y = new THREE.Vector3(...up).normalize(), Z0 = new THREE.Vector3(...fw), Z = Z0.addScaledVector(Y, -Z0.dot(Y)).normalize(), X = new THREE.Vector3().crossVectors(Y, Z);
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, Z)), hq = hand.getWorldQuaternion(new THREE.Quaternion()); prop.quaternion.copy(hq.invert().multiply(q)) };
+const make = (k, x, ry) => { const g = chibi(new THREE.Group(), k); g.position.x = x; g.rotation.y = ry; S.add(g); g.updateWorldMatrix(true, true); return g };
+const P = {
+  swordsman(g) { const R = rig(g); set(R.hipL, -.45, -.12); set(R.kneeL, .5); set(R.hipR, .35, .14); set(R.kneeR, .35);
+    set(R.armR, -.75, .18); set(R.elR, -.85); set(R.armL, -.35, -.42); set(R.elL, -1.25); set(R.head, .06, 0, -.12); g.position.y = -.035; g.rotation.x = .04;
+    g.updateWorldMatrix(true, true); const sw = chibiSword(new THREE.Group(), {}); sw.scale.setScalar(1.25); hold(sw, g.getObjectByName('handR'), [.55, .62, .45], [0, 0, 1]);
+    const sh = new THREE.Group(); { const m = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, .035, 12), new THREE.MeshStandardMaterial({ color: '#8a5a32', flatShading: true })); m.rotation.x = Math.PI / 2; m.castShadow = true; sh.add(m);
+      const b = new THREE.Mesh(new THREE.TorusGeometry(.17, .016, 5, 14), new THREE.MeshStandardMaterial({ color: '#c8d0e0', metalness: .6, roughness: .3, flatShading: true })); sh.add(b);
+      const c = new THREE.Mesh(new THREE.IcosahedronGeometry(.045, 0), new THREE.MeshStandardMaterial({ color: '#e0b84a', metalness: .6, roughness: .3, flatShading: true })); c.position.z = .03; sh.add(c) }
+    sh.position.set(0, .66, -.17); g.add(sh) },
+  archer(g) { const R = rig(g); set(R.hipL, -.3, -.22); set(R.kneeL, .3); set(R.hipR, .25, .2); set(R.kneeR, .35);
+    set(R.armL, -1.5, -.05, .0); set(R.elL, -.05); set(R.armR, -1.45, .55); set(R.elR, -2.05); set(R.head, 0, 0, .35); g.updateWorldMatrix(true, true);
+    const fw = new THREE.Vector3(0, 0, 1).applyQuaternion(g.getObjectByName('head').getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
+    const bow = chibiBow(new THREE.Group(), { wood: '#8a5a32', wrap: '#3a6a3a', metal: '#d8b048' }); bow.scale.setScalar(1.15); hold(bow, g.getObjectByName('handL'), [.18, 1, 0], fw.toArray());
+    const q = chibiQuiver(new THREE.Group(), { quiver: '#6a4428', belt: '#d8b048', fletch: '#f4ecd8' }); q.position.set(.08, .7, -.16); q.rotation.set(.25, 0, -.35); g.add(q);
+    /* the string pulled back to the right hand + an arrow on it */
+    const hp = g.getObjectByName('handR').getWorldPosition(new THREE.Vector3()), bp = g.getObjectByName('handL').getWorldPosition(new THREE.Vector3()), bq = bow.getWorldQuaternion(new THREE.Quaternion()), bwp = bow.getWorldPosition(new THREE.Vector3());
+    const tip = s => new THREE.Vector3(0, s * .5 * 1.15, -.02 * 1.15).applyQuaternion(bq).add(bwp), sm = new THREE.MeshStandardMaterial({ color: '#f4ecd8' });
+    for (const s of [-1, 1]) { const a = tip(s), L = a.distanceTo(hp), m = new THREE.Mesh(new THREE.CylinderGeometry(.004, .004, L, 3), sm); m.position.copy(a).add(hp).multiplyScalar(.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), hp.clone().sub(a).normalize()); m.userData.noInk = 1; S.add(m) }
+    const dir = bp.clone().sub(hp).normalize(), ar = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, .75, 4), new THREE.MeshStandardMaterial({ color: '#c8a070', flatShading: true })); ar.position.copy(hp).addScaledVector(dir, .37); ar.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); S.add(ar);
+    const hd = new THREE.Mesh(new THREE.ConeGeometry(.024, .08, 4), new THREE.MeshStandardMaterial({ color: '#c8d0e0', metalness: .6, roughness: .3, flatShading: true })); hd.position.copy(hp).addScaledVector(dir, .78); hd.quaternion.copy(ar.quaternion); S.add(hd) },
+  mage(g) { const R = rig(g); set(R.hipL, -.12, -.1); set(R.kneeL, .12); set(R.hipR, .1, .1); set(R.kneeR, .05);
+    set(R.armR, -.32, .32); set(R.elR, -.7); set(R.armL, -1.05, -.62); set(R.elL, -.7); set(R.head, -.05, 0, .15); g.updateWorldMatrix(true, true);
+    const st = chibiStaff(new THREE.Group(), { wood: '#6a4428', trim: '#e0b84a', orb: '#7ad8ff' }); st.scale.setScalar(1.2); hold(st, g.getObjectByName('handR'), [.08, 1, 0], [0, 0, 1]);
+    /* a little spell in the open hand */
+    const hp = g.getObjectByName('handL').getWorldPosition(new THREE.Vector3());
+    for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28, s = new THREE.Mesh(new THREE.OctahedronGeometry(.018 + (i % 3) * .008, 0), new THREE.MeshStandardMaterial({ color: '#d8c8ff', emissive: '#b89aff', emissiveIntensity: 1.4 })); s.position.copy(hp).add(new THREE.Vector3(Math.cos(a) * .12, .09 + Math.sin(a * 2) * .05, Math.sin(a) * .12)); s.userData.noInk = 1; S.add(s) }
+    const glow = new THREE.PointLight('#b89aff', .3, .6); glow.position.copy(hp).add(new THREE.Vector3(0, .1, 0)); S.add(glow) },
+};
+let cam;
+if (V === 'cast') {
+  const a = make(CHIBI.mage, -1.05, .35), b = make(CHIBI.swordsman, 0, .05), c = make(CHIBI.archer, 1.05, -.45);
+  P.mage(a); P.swordsman(b); P.archer(c); for (const g of [a, b, c]) inkOutline(g, .0062);
+  cam = new THREE.PerspectiveCamera(24, W / H, .1, 50); cam.position.set(0, 1.25, 6.2); cam.lookAt(0, .66, 0);
+} else if (V === 'face' || V === 'face2') {
+  const g = make(CHIBI.swordsman, 0, 0); if (V === 'face2') g.traverse(o => { if (o.isMesh && o.parent && o.parent.name === 'head' && !(o.material && o.material.map)) o.visible = false }); inkOutline(g, .0062);
+  cam = new THREE.PerspectiveCamera(24, W / H, .1, 50); cam.position.set(0, 1.1, 2.2); cam.lookAt(0, 1.06, 0);
+} else if (V === 'turn') {
+  for (const [i, ry] of [[-1, 0], [0, -Math.PI / 2], [1, Math.PI]]) { const g = make(CHIBI.swordsman, i * .78, ry); const R = rig(g); set(R.armL, 0, -.32); set(R.armR, 0, .32); set(R.elL, -.15); set(R.elR, -.15); inkOutline(g, .0062) }
+  cam = new THREE.OrthographicCamera(-.82 * W / H, .82 * W / H, .82, -.82, .1, 50); cam.position.set(0, .7, 10); cam.lookAt(0, .7, 0);
+} else if (V === 'vs') {
+  /* today's game figure next to the chibi, both at the size they would stand in the game */
+  const old = figure(new THREE.Group(), { skin: '#f2c9a2', hair: '#7a4428', cloth: '#3d6fc4', clothD: '#2e5aa8', belt: '#6a3e22', boot: '#7a4a2a', leg: '#3a3f58' }); old.scale.setScalar(.82); old.position.x = -.55; old.rotation.y = .25; S.add(old); old.traverse(o => { if (o.isMesh) o.castShadow = true });
+  const g = make(CHIBI.swordsman, .55, -.15); P.swordsman(g); inkOutline(g, .0062);
+  cam = new THREE.PerspectiveCamera(26, W / H, .1, 50); cam.position.set(0, 1.2, 5.6); cam.lookAt(0, .8, 0);
+}
+r.render(S, cam); window.__done = 1;
+</script></body></html>
