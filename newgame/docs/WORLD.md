@@ -1,4 +1,5 @@
 # KEALEE — แผนที่อาณาจักร + แผนบท (ร่าง 12 พ.ย.)
+> ⚠️ แผนบทด้านล่างถูกแทนด้วย `docs/KINGDOMS.md` (7 อาณาจักร · 14 พ.ย.)
 ภาพ: `docs/art/kingdom-map-draft.png` (วาดจาก `tools/art/kingdom-map.html`) · ชื่ออาณาจักรยังไม่ตั้ง
 
 ## โครง
