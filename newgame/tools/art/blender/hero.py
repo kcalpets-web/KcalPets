@@ -104,10 +104,10 @@ def paint_face():
     def ell(cx, cz, rx, rz, fill): d.ellipse([X(cx - rx), Z(cz + rz), X(cx + rx), Z(cz - rz)], fill=fill)
     def arc(cx, cz, rx, rz, a0, a1, col, w):
         pts = [(X(cx + math.cos(a) * rx), Z(cz + math.sin(a) * rz)) for a in [a0 + (a1 - a0) * i / 30 for i in range(31)]]; d.line(pts, fill=col, width=int(w), joint='curve')
-    ez = HEADC[2] - .025
+    ez = HEADC[2] - .012
     for s in (-1, 1):
         for k, a in ((1.4, 50), (1., 70)): ell(s * .125, ez - .07, .032 * k, .017 * k, (236, 120, 130, a))     # blush
-        cx = s * .09; ell(cx, ez, .05, .066, (255, 255, 255, 255))                                          # white
+        cx = s * .088; ell(cx, ez, .046, .052, (255, 255, 255, 255))                                          # white
         for i in range(24):                                                                                 # iris: dark top → amber → light bottom
             t = i / 23; c = [int(a + (b - a) * t) for a, b in zip((58, 28, 10), (255, 214, 120))]; c = [int(a * .45 + b * .55) for a, b in zip(c, (208, 128, 42))] if .25 < t < .8 else c
             ell(cx + s * .004, ez - .006 - (t - .5) * .03, .043 * (1 - abs(t - .5) * .5), .058 - t * .02, (*c, 255))
@@ -118,7 +118,7 @@ def paint_face():
     d.chord([X(-.026), Z(ez - .078), X(.026), Z(ez - .118)], 0, 180, fill=(138, 42, 42, 255)); ell(0, ez - .106, .012, .006, (232, 106, 106, 255))
     im.save(FACE_PNG)
 
-HEADC = (0, 0, 1.08)
+HEADC = (0, 0, 1.08); HEAD2 = (0, 0, 1.53)   # chibi build centre → the real head centre
 def head():
     bm = quadsphere(8); uv = bm.loops.layers.uv.new('UV'); R = .255
     for v in bm.verts:
@@ -133,18 +133,23 @@ def head():
 
 # ───────── the body: one Skin-modifier mesh (torso + arms + legs) → quad topology like a sculpt base ─────────
 def body(pose):
-    J = {'pelvis': (0, 0, .45), 'waist': (0, 0, .56), 'chest': (0, .005, .69), 'neck': (0, 0, .83),
-         'shR': (-.155, 0, .78), 'shL': (.155, 0, .78), 'hipR': (-.072, 0, .44), 'hipL': (.072, 0, .44)}
+    # v2: Zelda-like proportions (~1.65 tall · head ≈ 1/6.3 · long legs · slim waist)
+    J = {'pelvis': (0, 0, .9), 'waist': (0, 0, 1.03), 'chest': (0, .005, 1.19), 'neck': (0, 0, 1.38), 'neckT': (0, .01, 1.47),
+         'shR': (-.18, 0, 1.31), 'shL': (.18, 0, 1.31), 'hipR': (-.085, 0, .87), 'hipL': (.085, 0, .87)}
     if pose == 'ready':
-        J.update({'elR': (-.23, -.07, .66), 'wrR': (-.22, -.19, .62), 'elL': (.22, -.03, .65), 'wrL': (.17, -.15, .62),
-                  'knR': (-.085, .04, .27), 'anR': (-.095, .075, .13), 'knL': (.09, -.07, .275), 'anL': (.1, -.06, .13)})
+        J.update({'elR': (-.27, -.08, 1.1), 'wrR': (-.25, -.25, 1.0), 'elL': (.26, -.04, 1.08), 'wrL': (.2, -.2, .99),
+                  'knR': (-.1, .07, .47), 'anR': (-.11, .13, .09), 'knL': (.105, -.1, .48), 'anL': (.115, -.07, .09)})
     else:
-        J.update({'elR': (-.21, 0, .64), 'wrR': (-.245, -.01, .52), 'elL': (.21, 0, .64), 'wrL': (.245, -.01, .52),
-                  'knR': (-.08, 0, .27), 'anR': (-.085, 0, .13), 'knL': (.08, 0, .27), 'anL': (.085, 0, .13)})
-    E = [('pelvis', 'waist'), ('waist', 'chest'), ('chest', 'neck'), ('chest', 'shR'), ('shR', 'elR'), ('elR', 'wrR'), ('chest', 'shL'), ('shL', 'elL'), ('elL', 'wrL'),
+        J.update({'elR': (-.24, 0, 1.07), 'wrR': (-.28, -.01, .84), 'elL': (.24, 0, 1.07), 'wrL': (.28, -.01, .84),
+                  'knR': (-.09, 0, .47), 'anR': (-.095, 0, .09), 'knL': (.09, 0, .47), 'anL': (.095, 0, .09)})
+    E = [('pelvis', 'waist'), ('waist', 'chest'), ('chest', 'neck'), ('neck', 'neckT'), ('chest', 'shR'), ('shR', 'elR'), ('elR', 'wrR'), ('chest', 'shL'), ('shL', 'elL'), ('elL', 'wrL'),
          ('pelvis', 'hipR'), ('hipR', 'knR'), ('knR', 'anR'), ('pelvis', 'hipL'), ('hipL', 'knL'), ('knL', 'anL')]
-    RAD = {'pelvis': (.12, .1), 'waist': (.115, .09), 'chest': (.135, .1), 'neck': (.045, .045), 'shR': (.055, .055), 'shL': (.055, .055), 'elR': (.043, .043), 'elL': (.043, .043),
-           'wrR': (.04, .04), 'wrL': (.04, .04), 'hipR': (.066, .066), 'hipL': (.066, .066), 'knR': (.054, .054), 'knL': (.054, .054), 'anR': (.048, .048), 'anL': (.048, .048)}
+    RAD = {'pelvis': (.13, .1), 'waist': (.11, .085), 'chest': (.15, .1), 'neck': (.046, .046), 'neckT': (.044, .044), 'shR': (.052, .052), 'shL': (.052, .052), 'elR': (.04, .04), 'elL': (.04, .04),
+           'wrR': (.034, .034), 'wrL': (.034, .034), 'hipR': (.075, .075), 'hipL': (.075, .075), 'knR': (.052, .052), 'knL': (.052, .052), 'anR': (.042, .042), 'anL': (.042, .042)}
+    # mid joints give the limbs muscle shape (thigh, calf, upper arm, forearm)
+    for a, c, nm, r, t in [('hipR', 'knR', 'thR', .084, .4), ('hipL', 'knL', 'thL', .084, .4), ('knR', 'anR', 'caR', .058, .35), ('knL', 'anL', 'caL', .058, .35),
+                           ('shR', 'elR', 'uaR', .043, .45), ('shL', 'elL', 'uaL', .043, .45), ('elR', 'wrR', 'faR', .038, .4), ('elL', 'wrL', 'faL', .038, .4)]:
+        A, C = Vector(J[a]), Vector(J[c]); J[nm] = tuple(A.lerp(C, t)); RAD[nm] = (r, r * .95); E.remove((a, c)); E += [(a, nm), (nm, c)]
     names = list(J); bm = bmesh.new(); L = bm.verts.layers.skin.verify(); V = {}
     for n in names: v = bm.verts.new(J[n]); v[L].radius = RAD[n]; V[n] = v
     V['pelvis'][L].use_root = True
@@ -158,20 +163,20 @@ def body(pose):
     ob = bpy.data.objects.new('body', me2); SC.collection.objects.link(ob)
     for m in (BLUE, NAVY, SKIN): me2.materials.append(m)
     for p in me2.polygons:
-        c = p.center; p.material_index = 1 if c.z < .47 and abs(c.x) < .2 else (2 if c.z > .8 else 0)
+        c = p.center; p.material_index = 1 if c.z < .92 and abs(c.x) < .25 else (2 if c.z > 1.36 else 0)
     me2.shade_smooth(); return ob, J
 
 # ───────── outfit + hair + props ─────────
 def build(pose='ready', at=(0, 0, 0), rot=0.):
     objs = []; add = lambda o: objs.append(o) or o
-    b, J = body(pose); add(b); add(head())
+    b, J = body(pose); add(b); h0 = len(objs); add(head())
     for s in (-1, 1): add(ball('ear', .04, (s * .235, 0, 1.05), SKIN, (.55, .8, 1)))
     # hair: a crown shell + locks (bangs, sides, back, ahoge)
     cap = quadsphere(6)
     bmesh.ops.delete(cap, geom=[v for v in cap.verts if (v.co.z + v.co.y * .38) < .08], context='VERTS')   # high over the forehead (−Y), low at the back
     for v in cap.verts: v.co = Vector((v.co.x * .272, v.co.y * .262, v.co.z * .268)) + Vector((0, .012, 1.095))
     add(obj_from_bm('hair_cap', cap, HAIR, 2, solid=.012))
-    for deg in list(range(-120, -40, 13)) + list(range(53, 125, 13)) + list(range(140, 225, 16)):   # a fringe of locks along the cap edge (sides + back) hides the seam
+    for deg in list(range(-125, -38, 9)) + list(range(47, 130, 9)) + list(range(140, 225, 14)):   # a fringe of locks along the cap edge (sides + back) hides the seam
         a = math.radians(deg); dx, dy = math.sin(a), -math.cos(a)
         zc = .08 - dy * .38 + .02; zc = max(-.35, min(.6, zc)); r = math.sqrt(max(0, 1 - zc * zc)); root = Vector((dx * r * .272, dy * r * .262 + .012, 1.095 + zc * .268))
         out = Vector((dx, dy, 0)); ln = .13 + .05 * (abs(deg) > 130)
@@ -185,6 +190,13 @@ def build(pose='ready', at=(0, 0, 0), rot=0.):
     for x, z, dx, ln in [(0, 1.25, 0, .2), (-.12, 1.22, -.06, .19), (.12, 1.22, .06, .19), (-.2, 1.13, -.07, .17), (.2, 1.13, .07, .17), (-.07, 1.08, -.03, .18), (.07, 1.08, .03, .18)]:
         add(lock('back', (x, .2, z), (x + dx * .6, .29, z - ln * .45), (x + dx, .27, z - ln), .065, HAIR, .5))   # hugging the back of the head, pointing down
     add(lock('ahoge', (.02, -.02, 1.33), (.06, -.04, 1.43), (.12, .02, 1.45), .022, HAIR, .6))
+    # the head + hair were built at chibi size around HEADC → shrink to a natural head on top of the long neck (a slightly long oval face)
+    Mh = Matrix.Translation((0, 0, HEAD2[2])) @ Matrix.Diagonal((.55, .57, .6, 1)) @ Matrix.Translation((0, 0, -HEADC[2]))
+    for o in objs[h0:]:
+        o.data.transform(Mh)
+        for md in o.modifiers:
+            if md.type == 'SOLIDIFY': md.thickness *= .55
+    t0 = len(objs)
     # tunic tabs (a split skirt) · belt with buckle and pouch · chest plate · scarf
     for a0, a1 in [(-.38, .38), (.5, 1.25), (-1.25, -.5), (1.35, 2.1), (-2.1, -1.35), (2.25, 4.03)]:
         add(lathe('tab', [(.13, .53), (.145, .47), (.165, .4), (.172, .37)], 6, a0, a1, BLUE, subsurf=2, solid=.012))
@@ -194,26 +206,32 @@ def build(pose='ready', at=(0, 0, 0), rot=0.):
     add(boxm('plate_ridge', (.016, .02, .15), (0, -.128, .69), STEEL, rot=(-.15, 0, 0), bevel=.006))
     add(lathe('scarf', [(.05, .79), (.085, .785), (.105, .81), (.092, .845), (.046, .852)], 16, material=RED))
     add(lock('scarf_tail', (-.04, .07, .81), (-.08, .2, .74), (-.06, .23, .6), .035, RED, .35)); add(lock('scarf_tail2', (.0, .08, .81), (.02, .19, .72), (.05, .2, .63), .03, RED, .35))
+    # the tunic, belt, plate and scarf were built around the chibi torso (z .37–.85) → stretch onto the tall torso
+    Mt = Matrix.Translation((0, 0, .86)) @ Matrix.Diagonal((1.12, 1.12, 1.31, 1)) @ Matrix.Translation((0, 0, -.44))
+    for o in objs[t0:]:
+        o.data.transform(Mt)
+        if o.name.startswith('scarf'): o.data.transform(Matrix.Translation((0, 0, 1.37)) @ Matrix.Diagonal((.72, .72, .6, 1)) @ Matrix.Translation((0, 0, -1.37)))   # a slimmer scarf on the long neck
+        if o.name.startswith('plate'): o.data.transform(Matrix.Diagonal((.92, .9, 1, 1)))
     # shoulders · bracers · gloves · knee pads · boots
     for s, side in ((-1, 'R'), (1, 'L')):
         sh = Vector(J['sh' + side]); add(ball('pauldron', .085, tuple(sh + Vector((s * .01, 0, .01))), STEEL, (1.05, 1, .85), (0, s * .5, 0), cut_below=-.05))
         el, wr = Vector(J['el' + side]), Vector(J['wr' + side]); d = (wr - el).normalized()
         br = add(tube('bracer', [el + d * .03, el + d * .09, el + d * .12], [.05, .054, .052], BROWN, 10))
-        hc = wr + d * .045; add(ball('glove', .05, tuple(hc), GLOVE, (.95, .85, 1.05)))
-        add(ball('thumb', .022, tuple(hc + Vector((-s * .035, -.02, .015))), GLOVE, (1, 1, 1.4)))
+        hc = wr + d * .04; add(ball('glove', .044, tuple(hc), GLOVE, (.9, .8, 1.15)))
+        add(ball('thumb', .018, tuple(hc + Vector((-s * .03, -.018, .012))), GLOVE, (1, 1, 1.5)))
         kn, an = Vector(J['kn' + side]), Vector(J['an' + side])
         add(ball('kneepad', .058, tuple(kn + Vector((0, -.03, .005))), STEEL, (1.05, 1.15, .55), (math.pi / 2, 0, 0), cut_below=0))
-        add(lathe('boot', [(.0, -.01), (.07, -.0), (.072, .06), (.068, .13), (.074, .15), (.07, .17)], 14, material=BROWN, at=(an.x, an.y, an.z - .13)))
-        add(ball('foot', .07, (an.x, an.y - .05, an.z - .085), BROWN, (1.05, 1.55, .7)))
-        add(ball('toecap', .05, (an.x, an.y - .14, an.z - .09), STEEL, (1.1, .8, .65)))
-        add(boxm('sole', (.135, .23, .022), (an.x, an.y - .045, an.z - .128), SOLE, bevel=.008))
+        sd = (kn - an).normalized(); add(tube('boot', [an - sd * .06, an, an + sd * .1, an + sd * .2, an + sd * .26], [.06, .062, .058, .062, .07], BROWN, 12))   # tall boot along the shin
+        add(ball('foot', .06, (an.x, an.y - .045, an.z - .04), BROWN, (1.0, 1.65, .7)))
+        add(ball('toecap', .042, (an.x, an.y - .13, an.z - .045), STEEL, (1.1, .8, .65)))
+        add(boxm('sole', (.115, .22, .02), (an.x, an.y - .04, an.z - .077), SOLE, bevel=.007))
     # props: sword in the right hand · round shield on the back
     if pose == 'ready':
         g = Vector(J['wrR']) + (Vector(J['wrR']) - Vector(J['elR'])).normalized() * .045
-        up = Vector((-.78, -.2, .6)).normalized(); add_sword(objs, g, up, 1.35)
-    sh = add(lathe('shield', [(0, 0), (.15, 0), (.17, .012), (.17, .03), (.15, .04), (0, .045)], 20, material=BROWN)); sh.rotation_euler = (-math.pi / 2, 0, 0); sh.location = (0, .135, .63)
-    rim = add(lathe('shield_rim', [(.165, .0), (.178, .02), (.165, .045)], 20, material=STEEL)); rim.rotation_euler = (-math.pi / 2, 0, 0); rim.location = (0, .135, .63)
-    boss = add(ball('shield_boss', .045, (0, 0, 0), GOLD, (1, 1, .6))); boss.rotation_euler = (-math.pi / 2, 0, 0); boss.location = (0, .185, .63)
+        up = Vector((-.7, -.25, .67)).normalized(); add_sword(objs, g, up, 1.55)
+    sh = add(lathe('shield', [(0, 0), (.15, 0), (.17, .012), (.17, .03), (.15, .04), (0, .045)], 20, material=BROWN)); sh.rotation_euler = (-math.pi / 2, 0, 0); sh.location = (0, .135, 1.1); sh.scale = (1.15, 1.15, 1.15)
+    rim = add(lathe('shield_rim', [(.165, .0), (.178, .02), (.165, .045)], 20, material=STEEL)); rim.rotation_euler = (-math.pi / 2, 0, 0); rim.location = (0, .135, 1.1); rim.scale = (1.15, 1.15, 1.15)
+    boss = add(ball('shield_boss', .045, (0, 0, 0), GOLD, (1, 1, .6))); boss.rotation_euler = (-math.pi / 2, 0, 0); boss.location = (0, .19, 1.1)
     root = bpy.data.objects.new('hero', None); SC.collection.objects.link(root)
     for o in objs:
         if o.parent is None: o.parent = root
@@ -221,7 +239,7 @@ def build(pose='ready', at=(0, 0, 0), rot=0.):
 
 def add_sword(objs, grip, up, sc=1.):
     up = up.normalized(); side = up.cross(Vector((0, -1, 0))).normalized(); fw = side.cross(up).normalized()
-    R = Matrix((side * sc, fw * sc, up * sc)).transposed()
+    R = Matrix((side * sc * .72, fw * sc, up * sc)).transposed()   # long but not too wide
     def place(o):
         o.matrix_world = Matrix.Translation(grip) @ R.to_4x4() @ o.matrix_world; objs.append(o)
     bm = bmesh.new(); pts = [(-.055, 0), (.055, 0), (.06, .44), (0, .56), (-.06, .44)]
@@ -282,7 +300,7 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True); addon_utils.enable('cycles', default_set=True); COL.clear(); SC = bpy.context.scene
     globals().update(SKIN=M('skin', '#f6d2b4', rough=.55), BLUE=M('tunic', '#3d6fc4'), NAVY=M('pants', '#3a3f58'), BROWN=M('leather', '#7a4a2a'), BELT=M('belt', '#6a3e22'), STEEL=M('steel', '#dfe4ee', rough=.32, metal=.7), GOLD=M('gold', '#e0b84a', rough=.3, metal=.85), HAIR=M('hair', '#7a4428', rough=.5), RED=M('scarf', '#d8483a', rough=.7), WHITE=M('cloth', '#f0ece0'), GEM=M('gem', '#4ab0ff', rough=.1, emit=hexc('#4ab0ff')), GLOVE=M('glove', '#6a4428'), SOLE=M('sole', '#3a2416'))
 paint_face()
-CAMV = ((0, -2.2, 1.1), (0, 0, 1.06), 80) if os.environ.get('FACE') else ((-.95, -3.0, 1.2), (0, 0, .7), 72)
+CAMV = ((0, -1.5, 1.55), (0, 0, 1.5), 85) if os.environ.get('FACE') else ((-1.35, -4.0, 1.5), (0, 0, .9), 70)
 if 'beauty' in VIEWS:
     root, objs = build('ready', rot=math.radians(20)); stage(); camera(*CAMV); render(os.path.join(OUT, 'hero-beauty.png'), (1300, 1500))
 if 'clay' in VIEWS:
@@ -292,8 +310,8 @@ if 'turn' in VIEWS:
     reset()
     allo = []
     for i, r in enumerate((0, -90, 180)):
-        root, objs = build('A', at=(-.75 + i * .75, 0, 0), rot=math.radians(r)); allo += objs
-    clayify(allo); stage(clay=True); camera((0, -5.2, .72), (0, 0, .66), 60); render(os.path.join(OUT, 'hero-turn.png'), (1800, 1000))
+        root, objs = build('A', at=(-.85 + i * .85, 0, 0), rot=math.radians(r)); allo += objs
+    clayify(allo); stage(clay=True); camera((0, -6.6, .9), (0, 0, .84), 60); render(os.path.join(OUT, 'hero-turn.png'), (1800, 1000))
 if 'glb' in VIEWS:
     reset(); build('A')
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, 'hero.glb'), export_apply=True); print('wrote glb')
