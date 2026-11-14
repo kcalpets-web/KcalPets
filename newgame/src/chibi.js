@@ -8,19 +8,22 @@ import * as THREE from '../lib/three.module.min.js';
 const MATS = new Map();
 const mat = (c, o = {}) => { const k = c + JSON.stringify(o); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: o.r ?? .7, metalness: o.m ?? .02, flatShading: o.flat ?? true, emissive: o.e || '#000000', emissiveIntensity: o.ei ?? 1, map: o.map || null, side: o.ds ? THREE.DoubleSide : THREE.FrontSide })); return MATS.get(k) };
 const GC = new Map(), G = (k, f) => GC.get(k) || (GC.set(k, f()), GC.get(k));
+/* mesh density: 1 = game-light · 2–3 = sheet / close-up (call setDetail before building) */
+let QD = 1; export const setDetail = k => { QD = k; GC.clear() }; const q = n => Math.max(3, Math.round(n * QD)), hs = () => Math.max(1, Math.round(QD * 1.5));
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 function mesh(g, geo, c, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], o) { const m = new THREE.Mesh(geo, typeof c === 'string' ? mat(c, o) : c); m.position.set(...p); m.rotation.set(...r); m.scale.set(...s); m.castShadow = true; m.receiveShadow = true; g.add(m); return m }
-const lathe = (key, pts, seg = 10, ps = 0) => G(key, () => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(Math.max(r, 0.0001), y)), seg, ps));
-const ball = (g, r, c, p, s, o, d = 1) => mesh(g, G(`b${r}|${d}`, () => new THREE.IcosahedronGeometry(r, d)), c, p, [0, 0, 0], s || [1, 1, 1], o);
+const resample = (pts, k) => { if (k <= 1) return pts; const o = []; for (let i = 0; i < pts.length - 1; i++) for (let j = 0; j < k; j++) { const t = j / k; o.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t]) } o.push(pts[pts.length - 1]); return o };
+const lathe = (key, pts, seg = 10, ps = 0) => G(key, () => new THREE.LatheGeometry(resample(pts, Math.round(QD)).map(([r, y]) => new THREE.Vector2(Math.max(r, 0.0001), y)), q(seg), ps));
+const ball = (g, r, c, p, s, o, d = 1) => mesh(g, G(`b${r}|${d}`, () => new THREE.IcosahedronGeometry(r, d + (QD > 1.5 ? 1 : 0))), c, p, [0, 0, 0], s || [1, 1, 1], o);
 const box = (g, w, h, d, c, p, r, o) => mesh(g, G(`x${w}|${h}|${d}`, () => new THREE.BoxGeometry(w, h, d)), c, p, r, [1, 1, 1], o);
-const cyl = (g, r0, r1, h, c, p, r, n = 8, o) => mesh(g, G(`c${r0}|${r1}|${h}|${n}`, () => new THREE.CylinderGeometry(r1, r0, h, n)), c, p, r, [1, 1, 1], o);
+const cyl = (g, r0, r1, h, c, p, r, n = 8, o) => mesh(g, G(`c${r0}|${r1}|${h}|${n}`, () => new THREE.CylinderGeometry(r1, r0, h, q(n), hs())), c, p, r, [1, 1, 1], o);
 /* a piece from a to b (a tapered prism) */
-function seg(g, a, b, r0, r1, c, n = 6, o) { const A = V3(...a), B = V3(...b), L = A.distanceTo(B), m = mesh(g, G(`s${r0}|${r1}|${L.toFixed(3)}|${n}`, () => new THREE.CylinderGeometry(r1, r0, L, n)), c, [0, 0, 0], [0, 0, 0], [1, 1, 1], o);
+function seg(g, a, b, r0, r1, c, n = 6, o) { const A = V3(...a), B = V3(...b), L = A.distanceTo(B), m = mesh(g, G(`s${r0}|${r1}|${L.toFixed(3)}|${n}`, () => new THREE.CylinderGeometry(r1, r0, L, q(n), hs())), c, [0, 0, 0], [0, 0, 0], [1, 1, 1], o);
   m.position.copy(A).add(B).multiplyScalar(.5); m.quaternion.setFromUnitVectors(V3(0, 1, 0), B.sub(A).normalize()); return m }
 /* a hair lock / spike: a flattened cone from its root along dir (bent by `bend`) */
 function lock(g, root, dir, len, w, c, flat = .55, bend = 0) {
-  const geo = G(`lk${len}|${w}|${flat}|${bend}`, () => { const q = new THREE.ConeGeometry(w, len, 5, 3); q.translate(0, len / 2, 0); const p = q.attributes.position;
-    for (let i = 0; i < p.count; i++) { const y = p.getY(i) / len; p.setZ(i, p.getZ(i) * flat + bend * y * y * len) } q.computeVertexNormals(); return q });
+  const geo = G(`lk${len}|${w}|${flat}|${bend}`, () => { const cg = new THREE.ConeGeometry(w, len, q(5), q(3)); cg.translate(0, len / 2, 0); const p = cg.attributes.position;
+    for (let i = 0; i < p.count; i++) { const y = p.getY(i) / len; p.setZ(i, p.getZ(i) * flat + bend * y * y * len) } cg.computeVertexNormals(); return cg });
   const m = mesh(g, geo, c); m.position.set(...root); m.quaternion.setFromUnitVectors(V3(0, 1, 0), V3(...dir).normalize()); return m }
 const role = (o, r) => { o.userData.role = r; o.userData.base = [o.position.x, o.position.y, o.position.z, o.rotation.x, o.rotation.z]; return o };
 /* a flat panel (cloth tab, cape, coat tail) hanging down from 0: top width a, bottom width b, height h, curved by c */
@@ -32,7 +35,7 @@ const HEAD = { r: .255, c: .02, ry: .245, n: 30 }; HEAD.y0 = HEAD.c - HEAD.ry; H
 /* a round, slightly wide skull · full cheeks narrowing to a small soft chin */
 const headR = y => { const u = Math.max(-1, Math.min(1, (y - HEAD.c) / HEAD.ry)), base = HEAD.r * Math.sqrt(Math.max(0, 1 - u * u));
   return u >= 0 ? base * (1 + .04 * u * (1 - u)) : base * (1 - .22 * u * u) * (1 + .06 * Math.exp(-(((u + .35) / .25) ** 2))) };
-const headPts = () => { const P = []; for (let i = 0; i < HEAD.n; i++) { const y = HEAD.y0 + (HEAD.y1 - HEAD.y0) * i / (HEAD.n - 1); P.push([headR(y), y]) } return P };
+const headPts = () => { const P = [], N = q(HEAD.n); for (let i = 0; i < N; i++) { const y = HEAD.y0 + (HEAD.y1 - HEAD.y0) * i / (N - 1); P.push([headR(y), y]) } return P };
 function faceTex(k) {
   const W = 1024, H = 512, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
   x.fillStyle = k.skin; x.fillRect(0, 0, W, H);
@@ -71,6 +74,23 @@ const INK = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: { w: { va
 export function inkOutline(root, w = .0065) { const list = []; root.traverse(o => { if (o.isMesh && !o.userData.noInk && o.material !== INK) list.push(o) });
   for (const o of list) { const m = new THREE.Mesh(o.geometry, INK); m.userData.noInk = 1; m.scale.setScalar(1); o.add(m) } INK.uniforms.w.value = w }
 
+/* ── quad wireframe (the "topology sheet" look): rings + meridians of lathes / spheres / cylinders / cones / tori, crease edges for the rest ── */
+const WIRE = new THREE.LineBasicMaterial({ color: '#2a2a30', transparent: true, opacity: .55 });
+function quadLines(geo) {
+  const P = geo.attributes.position, pr = geo.parameters || {}, L = [], at = i => [P.getX(i), P.getY(i), P.getZ(i)];
+  const grid = (cols, rows, idx) => { for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const a = idx(c, r); if (c + 1 < cols) L.push(...at(a), ...at(idx(c + 1, r))); if (r + 1 < rows) L.push(...at(a), ...at(idx(c, r + 1))) } };
+  const t = geo.type;
+  if (t === 'LatheGeometry') { const n = pr.points.length; grid(pr.segments + 1, n, (c, r) => c * n + r) }
+  else if (t === 'SphereGeometry') { const w = pr.widthSegments + 1; grid(w, pr.heightSegments + 1, (c, r) => r * w + c) }
+  else if (t === 'CylinderGeometry' || t === 'ConeGeometry') { const w = pr.radialSegments + 1; grid(w, pr.heightSegments + 1, (c, r) => r * w + c) }
+  else if (t === 'TorusGeometry') { const w = pr.tubularSegments + 1; grid(w, pr.radialSegments + 1, (c, r) => r * w + c) }
+  else return new THREE.EdgesGeometry(geo, 18);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(L, 3)); return g }
+export function wireSheet(root, o = {}) { const list = []; root.traverse(m => { if (m.isMesh && !m.userData.glow && !(m.material && m.material.isShaderMaterial)) list.push(m) });
+  const grey = new THREE.MeshStandardMaterial({ color: o.color || '#cfcdc8', roughness: .8, flatShading: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, side: THREE.DoubleSide });
+  for (const m of list) { if (o.grey && !(o.keepFace && m.material.map)) m.material = grey; else if (m.material) { m.material = m.material.clone(); m.material.polygonOffset = true; m.material.polygonOffsetFactor = 1; m.material.polygonOffsetUnits = 1 }
+    const w = new THREE.LineSegments(G('w' + m.geometry.uuid, () => quadLines(m.geometry)), WIRE); w.userData.noInk = 1; m.add(w) } }
+
 /* ── the body ── */
 export function chibi(g, k) {
   const skin = k.skin, R = {};
@@ -79,11 +99,11 @@ export function chibi(g, k) {
     const hip = new THREE.Group(); hip.position.set(s * .075, .44, 0); g.add(hip);
     seg(hip, [0, 0, 0], [0, -.17, 0], .066, .056, k.leg, 7); ball(hip, .064, k.leg, [0, 0, 0]);
     const knee = new THREE.Group(); knee.position.y = -.17; hip.add(knee); ball(knee, .057, k.knee || k.leg, [0, 0, .004]);
-    if (k.kneePad) mesh(knee, G('kpad', () => new THREE.SphereGeometry(.058, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2)), k.kneePad, [0, .005, .02], [Math.PI / 2, 0, 0], [1, .6, 1.1], { m: .45, r: .35, ds: 1 }).userData.noInk = 1;
+    if (k.kneePad) mesh(knee, G('kpad', () => new THREE.SphereGeometry(.058, q(10), q(5), 0, Math.PI * 2, 0, Math.PI / 2)), k.kneePad, [0, .005, .02], [Math.PI / 2, 0, 0], [1, .6, 1.1], { m: .45, r: .35, ds: 1 }).userData.noInk = 1;
     seg(knee, [0, 0, 0], [0, -.13, 0], .055, .05, k.shin || k.leg, 7);
     /* boot: cuff · shaft · foot with a round toe · sole */
     cyl(knee, .07, .064, .055, k.bootC || k.boot, [0, -.1, 0], [0, 0, 0], 8); cyl(knee, .066, .07, .1, k.boot, [0, -.17, 0], [0, 0, 0], 8);
-    mesh(knee, G('foot', () => { const q = new THREE.SphereGeometry(.07, 9, 6, 0, Math.PI * 2, 0, Math.PI / 2); return q }), k.boot, [0, -.24, .045], [0, 0, 0], [1.05, .8, 1.55]);
+    mesh(knee, G('foot', () => { return new THREE.SphereGeometry(.07, q(9), q(6), 0, Math.PI * 2, 0, Math.PI / 2) }), k.boot, [0, -.24, .045], [0, 0, 0], [1.05, .8, 1.55]);
     box(knee, .135, .022, .23, k.sole || '#3a2416', [0, -.245, .04]);
     if (k.toeCap) ball(knee, .05, k.toeCap, [0, -.215, .13], [1.15, .7, .8], { m: .5, r: .35 });
     role(hip, s < 0 ? 'hipL' : 'hipR'); role(knee, s < 0 ? 'kneeL' : 'kneeR') }
@@ -104,18 +124,18 @@ export function chibi(g, k) {
   if (k.plate) { mesh(g, lathe('plate', [[0, 0], [.14, 0], [.155, .07], [.15, .14], [.12, .18], [0, .19]], 10, Math.PI * .1), k.plate, [0, .6, .012], [0, 0, 0], [1.02, 1, .82], { m: .55, r: .35 });
     box(g, .02, .16, .02, k.plateL || '#e8ecf4', [0, .69, .126], [-.15, 0, 0], { m: .6, r: .3 }) }
   if (k.vest) mesh(g, lathe('vest', [[.13, 0], [.148, .08], [.155, .17], [.14, .23]], 10, 0), k.vest, [0, .55, 0], [0, 0, 0], [1.02, 1, .8]);
-  if (k.scarf) { mesh(g, G('scarf', () => new THREE.TorusGeometry(.085, .035, 6, 12)), k.scarf, [0, .815, 0], [Math.PI / 2 + .12, 0, 0], [1, .9, 1]);
+  if (k.scarf) { mesh(g, G('scarf', () => new THREE.TorusGeometry(.085, .035, q(6), q(12))), k.scarf, [0, .815, 0], [Math.PI / 2 + .12, 0, 0], [1, .9, 1]);
     for (const [x, l, a] of [[-.05, .2, .25], [.0, .16, -.1]]) panel(g, .055, .05, l, k.scarf, [x, .8, -.09], [.5 + a * .2, 0, a], .018, .02) }
-  if (k.cape) { panel(g, .26, .36, .42, k.cape, [0, .8, -.115], [.12, 0, 0], .02, .05); mesh(g, G('capeC', () => new THREE.TorusGeometry(.1, .03, 6, 12, Math.PI)), k.cape, [0, .8, -.01], [Math.PI / 2 + .25, 0, Math.PI], [1.2, .9, 1]) }
-  if (k.hood) mesh(g, G('hoodB', () => new THREE.SphereGeometry(.15, 10, 6, 0, Math.PI * 2, 0, Math.PI * .55)), k.hood, [0, .8, -.07], [-1.9, 0, 0], [1, 1, .7]);
+  if (k.cape) { panel(g, .26, .36, .42, k.cape, [0, .8, -.115], [.12, 0, 0], .02, .05); mesh(g, G('capeC', () => new THREE.TorusGeometry(.1, .03, q(6), q(12), Math.PI)), k.cape, [0, .8, -.01], [Math.PI / 2 + .25, 0, Math.PI], [1.2, .9, 1]) }
+  if (k.hood) mesh(g, G('hoodB', () => new THREE.SphereGeometry(.15, q(10), q(6), 0, Math.PI * 2, 0, Math.PI * .55)), k.hood, [0, .8, -.07], [-1.9, 0, 0], [1, 1, .7]);
   /* neck */
   cyl(g, .048, .05, .06, skin, [0, .84, 0], [0, 0, 0], 8);
   /* arms: shoulder (pauldron) · upper · elbow · forearm (glove / bracer / sleeve) · chunky hand with a thumb */
   for (const s of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(s * .17, .79, 0); g.add(sh);
     ball(sh, .058, k.sleeve || k.top, [0, -.01, 0]);
-    if (k.pauldron) { mesh(sh, G('pauld', () => new THREE.SphereGeometry(.082, 9, 5, 0, Math.PI * 2, 0, Math.PI * .5)), k.pauldron, [s * .012, .005, 0], [0, 0, s * -.5], [1, .85, 1.05], { m: .55, r: .35, ds: 1 }).userData.noInk = 1;
-      mesh(sh, G('pauldT', () => new THREE.TorusGeometry(.078, .01, 4, 14)), k.pauldronT || k.plateL || '#d8dce8', [s * .028, -.035, 0], [Math.PI / 2, s * .5, 0], [1, 1.05, 1], { m: .6, r: .3 }) }
+    if (k.pauldron) { mesh(sh, G('pauld', () => new THREE.SphereGeometry(.082, q(9), q(5), 0, Math.PI * 2, 0, Math.PI * .5)), k.pauldron, [s * .012, .005, 0], [0, 0, s * -.5], [1, .85, 1.05], { m: .55, r: .35, ds: 1 }).userData.noInk = 1;
+      mesh(sh, G('pauldT', () => new THREE.TorusGeometry(.078, .01, q(4), q(14))), k.pauldronT || k.plateL || '#d8dce8', [s * .028, -.035, 0], [Math.PI / 2, s * .5, 0], [1, 1.05, 1], { m: .6, r: .3 }) }
     seg(sh, [0, 0, 0], [0, -.14, 0], .046, .041, k.sleeve || k.top, 7);
     const el = new THREE.Group(); el.position.y = -.145; sh.add(el); ball(el, .042, k.sleeve || k.top);
     if (k.sleeveW) mesh(el, lathe('slw', [[.044, 0], [.05, -.04], [.072, -.1], [.08, -.115]], 9), k.sleeveW, [0, -.13, 0], [0, 0, 0], [1, 1, 1], { ds: 1 });
@@ -128,7 +148,7 @@ export function chibi(g, k) {
     role(sh, s < 0 ? 'armL' : 'armR'); role(el, s < 0 ? 'elL' : 'elR'); R[s < 0 ? 'handL' : 'handR'] = hand }
   /* the head: a smooth-ish lathe wearing the painted face · ears · hair · hat */
   const head = new THREE.Group(); head.position.y = 1.08; head.name = 'head'; g.add(head); role(head, 'head');
-  const face = mesh(head, G('head', () => new THREE.LatheGeometry(headPts().map(([r, y]) => new THREE.Vector2(Math.max(r, .0001), y)), 22, Math.PI)), (() => { const t = faceTex(k); return new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: .3, roughness: .85, flatShading: false }) })(), [0, 0, 0], [0, 0, 0], [1, 1, .93]); face.receiveShadow = false; face.castShadow = false;   /* anime faces stay clean: no self-shadow from the hair */
+  const face = mesh(head, G('head', () => new THREE.LatheGeometry(headPts().map(([r, y]) => new THREE.Vector2(Math.max(r, .0001), y)), q(22), Math.PI)), (() => { const t = faceTex(k); return new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: .3, roughness: .85, flatShading: false }) })(), [0, 0, 0], [0, 0, 0], [1, 1, .93]); face.receiveShadow = false; face.castShadow = false;   /* anime faces stay clean: no self-shadow from the hair */
   for (const s of [-1, 1]) ball(head, .04, skin, [s * .235, -.03, -.01], [.55, 1, .8]);
   hair(head, k);
   if (k.hat) hat(head, k);
@@ -138,11 +158,11 @@ export function chibi(g, k) {
 /* ── hair: a cap + many locks (bangs, sides, back, an ahoge) · styles: spiky (swordsman) · pony (archer) · bob (mage) ── */
 function hair(h, k) {
   const c = k.hair, cD = k.hairD || c, st = k.hairStyle;
-  mesh(h, G('hcap', () => new THREE.SphereGeometry(.274, 16, 9, 0, Math.PI * 2, 0, Math.PI * .47)), c, [0, .015, -.02], [-.42, 0, 0], [1.04, 1.03, 1.02]);   // the crown (tilted back: its front edge sits on the forehead, above the eyes)
-  mesh(h, G('hback', () => new THREE.SphereGeometry(.27, 14, 8, Math.PI * 1.08, Math.PI * .84, Math.PI * .18, Math.PI * .62)), cD, [0, -.01, -.025], [0, 0, 0], [1.03, 1, 1.03], { ds: 1 });   // the back of the head (the back half only)
+  mesh(h, G('hcap', () => new THREE.SphereGeometry(.274, q(16), q(9), 0, Math.PI * 2, 0, Math.PI * .47)), c, [0, .015, -.02], [-.42, 0, 0], [1.04, 1.03, 1.02]);   // the crown (tilted back: its front edge sits on the forehead, above the eyes)
+  mesh(h, G('hback', () => new THREE.SphereGeometry(.27, q(14), q(8), Math.PI * 1.08, Math.PI * .84, Math.PI * .18, Math.PI * .62)), cD, [0, -.01, -.025], [0, 0, 0], [1.03, 1, 1.03], { ds: 1 });   // the back of the head (the back half only)
   /* bangs: a fan of locks over the forehead (leaving the eyes clear) */
   const bang = st === 'bob' ? [[-.17, .1, -.25, .14], [-.09, .13, -.08, .16], [0, .14, .04, .15], [.09, .13, .1, .16], [.17, .1, .25, .14]] : [[-.18, .1, -.35, .17], [-.11, .14, -.14, .19], [-.03, .15, .02, .17], [.05, .15, .12, .19], [.13, .14, .28, .17], [.19, .09, .45, .14]];
-  for (const [x, y, tilt, len] of bang) lock(h, [x * .95, y + .03, .2], [tilt * .6 + x * .4, -1, .32], len, .055, c, .45, .03);
+  for (const [x, y, tilt, len] of bang) lock(h, [x * .95, y + .03, .2], [tilt * .6 + x * .4, -1, .32], len, .06, c, .28, .045);
   /* side locks framing the face */
   for (const s of [-1, 1]) { lock(h, [s * .232, .06, .02], [s * .14, -1, .06], st === 'bob' ? .27 : .2, .06, c, .5); lock(h, [s * .24, .04, -.05], [s * .2, -1, -.05], st === 'bob' ? .28 : .17, .065, cD, .5) }
   if (st === 'spiky') { for (const [x, y, z, dx, dy, dz, l] of [[0, .17, -.2, 0, -.25, -1, .2], [-.13, .14, -.19, -.5, -.3, -1, .19], [.13, .14, -.19, .5, -.3, -1, .19], [-.2, .05, -.14, -.8, -.3, -.8, .18], [.2, .05, -.14, .8, -.3, -.8, .18], [0, .02, -.24, 0, -.6, -1, .17]]) lock(h, [x, y, z], [dx, dy, dz], l, .075, cD, .6);
@@ -154,18 +174,18 @@ function hair(h, k) {
 }
 /* ── hats: the archer's feathered cap · the mage's wide witch hat with a bent tip and a star ── */
 function hat(h, k) {
-  if (k.hat === 'cap') { mesh(h, G('capH', () => new THREE.SphereGeometry(.285, 12, 7, 0, Math.PI * 2, 0, Math.PI * .42)), k.hatC, [0, .06, -.02], [-.25, .25, 0], [1, 1.05, 1.08]);
-    mesh(h, G('capB', () => new THREE.ConeGeometry(.12, .2, 5)), k.hatC, [.03, .16, .25], [1.75, 0, 0], [1.6, 1, .35]);                       // the brim / peak
-    mesh(h, G('capR', () => new THREE.TorusGeometry(.27, .018, 5, 18)), k.hatB, [0, .125, -.05], [Math.PI / 2 - .5, 0, 0], [1, 1.08, 1]);
+  if (k.hat === 'cap') { mesh(h, G('capH', () => new THREE.SphereGeometry(.285, q(12), q(7), 0, Math.PI * 2, 0, Math.PI * .42)), k.hatC, [0, .06, -.02], [-.25, .25, 0], [1, 1.05, 1.08]);
+    mesh(h, G('capB', () => new THREE.ConeGeometry(.12, .2, q(5), hs())), k.hatC, [.03, .16, .25], [1.75, 0, 0], [1.6, 1, .35]);                       // the brim / peak
+    mesh(h, G('capR', () => new THREE.TorusGeometry(.27, .018, q(5), q(18))), k.hatB, [0, .125, -.05], [Math.PI / 2 - .5, 0, 0], [1, 1.08, 1]);
     const f = new THREE.Group(); f.position.set(-.2, .19, -.08); f.rotation.set(-.6, 0, .55); h.add(f);   // the feather
     lock(f, [0, 0, 0], [0, 1, 0], .3, .034, k.feather, .18, .09); seg(f, [0, 0, 0], [0, .33, .02], .005, .003, '#f4ecd8', 3) }
   if (k.hat === 'witch') {
-    mesh(h, G('brim', () => new THREE.CylinderGeometry(.5, .52, .025, 20)), k.hatC, [0, .13, 0], [-.12, 0, 0]);
-    mesh(h, G('brimU', () => new THREE.CylinderGeometry(.42, .5, .04, 20)), k.hatC, [0, .155, -.004], [-.12, 0, 0]);
-    mesh(h, G('band', () => new THREE.CylinderGeometry(.262, .27, .06, 16)), k.hatB, [0, .19, -.01], [-.12, 0, 0], [1, 1, 1], { m: .45, r: .4 });
+    mesh(h, G('brim', () => new THREE.CylinderGeometry(.5, .52, .025, q(20), hs())), k.hatC, [0, .13, 0], [-.12, 0, 0]);
+    mesh(h, G('brimU', () => new THREE.CylinderGeometry(.42, .5, .04, q(20), hs())), k.hatC, [0, .155, -.004], [-.12, 0, 0]);
+    mesh(h, G('band', () => new THREE.CylinderGeometry(.262, .27, .06, q(16), hs())), k.hatB, [0, .19, -.01], [-.12, 0, 0], [1, 1, 1], { m: .45, r: .4 });
     /* the crown: a stack of shrinking rings that bends back and droops at the tip */
     let p = V3(0, .17, -.01), r = .265, dir = V3(0, 1, -.12).normalize();
-    for (let i = 0; i < 7; i++) { const L = .1 - i * .006, q = p.clone().addScaledVector(dir, L), r2 = r * .78; seg(h, p.toArray(), q.toArray(), r, r2, k.hatC, 10); p = q; r = r2; dir.applyAxisAngle(V3(1, 0, .2).normalize(), -.2 - i * .06).normalize() }
+    for (let i = 0; i < 7; i++) { const L = .1 - i * .006, p2 = p.clone().addScaledVector(dir, L), r2 = r * .78; seg(h, p.toArray(), p2.toArray(), r, r2, k.hatC, 10); p = p2; r = r2; dir.applyAxisAngle(V3(1, 0, .2).normalize(), -.2 - i * .06).normalize() }
     ball(h, .035, k.hatB, p.toArray(), [1, 1, 1], { m: .5, r: .35 });
     const st = new THREE.Group(); st.position.set(.2, .25, .19); st.rotation.set(-.3, .3, .2); h.add(st);   // the star ornament
     mesh(st, G('star', () => { const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, rr = i % 2 ? .03 : .072; i ? s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr) }
@@ -188,9 +208,9 @@ export function chibiBow(g, k) {
 export function chibiQuiver(g, k) { cyl(g, .055, .065, .3, k.quiver, [0, 0, 0], [0, 0, 0], 8); cyl(g, .068, .068, .03, k.belt, [0, .13, 0], [0, 0, 0], 8);
   for (const [x, z] of [[-.02, .01], [.02, -.015], [0, .025], [.03, .02]]) { seg(g, [x, .1, z], [x * 1.4, .3, z * 1.4], .005, .005, '#c8a070', 3); lock(g, [x * 1.4, .25, z * 1.4], [0, 1, 0], .07, .02, k.fletch, .2) } return g }
 export function chibiStaff(g, k) { seg(g, [0, -.55, 0], [0, .42, 0], .02, .024, k.wood, 6); for (const y of [-.1, .2]) cyl(g, .03, .03, .03, k.trim, [0, y, 0], [0, 0, 0], 6, { m: .6, r: .3 });
-  mesh(g, G('sring', () => new THREE.TorusGeometry(.1, .016, 5, 14)), k.trim, [0, .53, 0], [0, 0, 0], [1, 1, 1], { m: .6, r: .3 });
+  mesh(g, G('sring', () => new THREE.TorusGeometry(.1, .016, q(5), q(14))), k.trim, [0, .53, 0], [0, 0, 0], [1, 1, 1], { m: .6, r: .3 });
   for (const a of [0, 2.1, 4.2]) seg(g, [0, .42, 0], [Math.sin(a) * .08, .5, Math.cos(a) * .02], .012, .008, k.trim, 4, { m: .6, r: .3 });
-  const orb = ball(g, .07, k.orb, [0, .53, 0], [1, 1, 1], { m: .1, r: .2, e: k.orb, ei: 1.2, flat: false }, 2); orb.userData.noInk = 1;
+  const orb = ball(g, .07, k.orb, [0, .53, 0], [1, 1, 1], { m: .1, r: .2, e: k.orb, ei: 1.2, flat: false }, 2); orb.userData.noInk = 1; orb.userData.glow = 1;
   const gl = new THREE.PointLight(k.orb, .9, 1.2); gl.position.set(0, .53, 0); g.add(gl); return g }
 
 /* the cast — colours chosen to sit with the world's palette */

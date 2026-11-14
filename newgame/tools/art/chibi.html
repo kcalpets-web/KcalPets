@@ -2,12 +2,13 @@
 <script type="module">
 /* chibi cast preview (WIP · not in the game yet): #cast = swordsman · archer · mage in action poses · #turn = swordsman front / side / back · #vs = next to today's figure */
 import * as THREE from '../../lib/three.module.min.js';
-import { chibi, CHIBI, chibiSword, chibiBow, chibiQuiver, chibiStaff, inkOutline } from '../../src/chibi.js';
+import { chibi, CHIBI, chibiSword, chibiBow, chibiQuiver, chibiStaff, inkOutline, setDetail, wireSheet } from '../../src/chibi.js';
 import { figure, sword as oldSword } from '../../src/figure.js';
-const V = location.hash.slice(1) || 'cast', W = V === 'cast' ? 1800 : 1500, H = V === 'cast' ? 1100 : 1000;
+const V = location.hash.slice(1) || 'cast', SHEET = V.startsWith('sheet'), W = V === 'cast' ? 1800 : SHEET ? 1800 : 1500, H = V === 'cast' ? 1100 : SHEET ? 1300 : 1000;
+if (SHEET) setDetail(2.4);
 const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
-const S = new THREE.Scene();
+const S = new THREE.Scene(); if (SHEET) S.userData.sheet = 1;
 { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#bfe0f4'); g.addColorStop(.62, '#f4f1e6'); g.addColorStop(1, '#e8e2cc'); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; S.background = t }
 S.add(new THREE.HemisphereLight('#fff6e8', '#7a8a6a', 1.15));
@@ -63,6 +64,13 @@ if (V === 'cast') {
 } else if (V === 'face' || V === 'face2') {
   const g = make(CHIBI.swordsman, 0, 0); if (V === 'face2') g.traverse(o => { if (o.isMesh && o.parent && o.parent.name === 'head' && !(o.material && o.material.map)) o.visible = false }); inkOutline(g, .0062);
   cam = new THREE.PerspectiveCamera(24, W / H, .1, 50); cam.position.set(0, 1.1, 2.2); cam.lookAt(0, 1.06, 0);
+} else if (SHEET) {
+  /* one main model, topology-sheet style: a big 3/4 hero in the ready stance + front / side / back */
+  S.background = new THREE.Color('#ffffff'); S.children.filter(o => o.isMesh).forEach(o => o.visible = false);   // no grass island
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(4, 32), new THREE.ShadowMaterial({ opacity: .18 })); sh.rotation.x = -Math.PI / 2; sh.receiveShadow = true; S.add(sh);
+  const grey = V === 'sheet', hero = make(CHIBI.swordsman, -.75, .3); P.swordsman(hero); wireSheet(hero, { grey, keepFace: true }); inkOutline(hero, .0055);
+  for (const [i, ry] of [[0, 0], [1, -Math.PI / 2], [2, Math.PI]]) { const g = make(CHIBI.swordsman, .32 + i * .48, ry); g.scale.setScalar(.48); g.position.z = .2; const R = rig(g); set(R.armL, 0, -.32); set(R.armR, 0, .32); set(R.elL, -.15); set(R.elR, -.15); wireSheet(g, { grey, keepFace: true }); inkOutline(g, .004) }
+  cam = new THREE.PerspectiveCamera(22, W / H, .1, 50); cam.position.set(.1, 1.0, 5.4); cam.lookAt(.1, .62, 0);
 } else if (V === 'turn') {
   for (const [i, ry] of [[-1, 0], [0, -Math.PI / 2], [1, Math.PI]]) { const g = make(CHIBI.swordsman, i * .78, ry); const R = rig(g); set(R.armL, 0, -.32); set(R.armR, 0, .32); set(R.elL, -.15); set(R.elR, -.15); inkOutline(g, .0062) }
   cam = new THREE.OrthographicCamera(-.82 * W / H, .82 * W / H, .82, -.82, .1, 50); cam.position.set(0, .7, 10); cam.lookAt(0, .7, 0);
