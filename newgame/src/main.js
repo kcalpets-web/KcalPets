@@ -126,9 +126,10 @@ function poseOf(A, c, now) {
   if (P.cold) { const sh = Math.sin(n * 38) * .035; return { b: [.12, -.02], rz: sh, armL: [-1.05, .75], armR: [-1.05, -.75], elL: [-1.7, 0], elR: [-1.7, 0], walk: .8 } }
   if (P.hot && c < .3) { const f = Math.sin(n * 14) * .35; return { b: [.04, 0], armR: [-2.3, .35 + f], elR: [-1.7, 0], armL: [.1, -.15], elL: [-.2, 0] } }
   if (P.ready && !P.guard) { const b = Math.sin(n * 2.4) * .04, m = c;   /* v2.0.1 combat stance by weapon type · the legs keep walking */
-    if (P.ready === 'two') return { b: [.12, -.03 * (1 - m)], hipL: [-.3 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.35 * (1 - m), 0], kneeR: [.3 * (1 - m), 0], armR: [-.95 + b, .25], elR: [-1.05, 0], armL: [-1.25 + b, -.55], elL: [-1.25, 0], walk: m };
-    if (P.ready === 'spear') return { b: [.1, -.02 * (1 - m)], hipL: [-.35 * (1 - m), 0], hipR: [.25 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.35 * (1 - m), 0], armR: [-.55 + b, .2], elR: [-1.5, 0], armL: [-1.15 + b, -.35], elL: [-.7, 0], walk: m };
-    return { b: [.08, -.02 * (1 - m)], hipL: [-.25 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.25 * (1 - m), 0], armR: [-.85 + b, .15], elR: [-1.15, 0], armL: [-1.0 + b, .25], elL: [-1.45, 0], walk: m } }
+    /* v2.0.2 held low and relaxed (like the reference): two-handed at the hip · spear across the body · sword low at the side with the shield in front */
+    if (P.ready === 'two') return { b: [.1, -.03 * (1 - m)], hipL: [-.3 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.35 * (1 - m), 0], kneeR: [.3 * (1 - m), 0], armR: [-.45 + b, .05], elR: [-.75, 0], armL: [-.7 + b, -.3], elL: [-1.1, 0], walk: m };
+    if (P.ready === 'spear') return { b: [.08, -.02 * (1 - m)], hipL: [-.35 * (1 - m), 0], hipR: [.25 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.35 * (1 - m), 0], armR: [-.3 + b, .1], elR: [-.95, 0], armL: [-.9 + b, -.3], elL: [-1.3, 0], walk: m };
+    return { b: [.06, -.02 * (1 - m)], hipL: [-.25 * (1 - m), 0], hipR: [.2 * (1 - m), 0], kneeL: [.3 * (1 - m), 0], kneeR: [.25 * (1 - m), 0], armR: [-.3 + b, .12], elR: [-.4, 0], armL: [-.75 + b, .2], elL: [-1.35, 0], walk: m } }
   if (P.tired) { const pant = Math.sin(n * 9) * .03; return c < .3 ? { b: [.55 + pant, -.1], hipL: [-.35, 0], hipR: [-.35, 0], kneeL: [.45, 0], kneeR: [.45, 0], armL: [-.75, .1], armR: [-.75, -.1], elL: [-.15, 0], elR: [-.15, 0] } : { b: [.28 + pant, 0], armL: [.15, -.1], armR: [.15, .1], walk: .9 } }
   return null;
 }
@@ -201,24 +202,33 @@ function gearView() {
   if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), held = ['sword', 'axe', 'hammer', 'sickle'].includes(tool) ? tool : '', k = held + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
   if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
   const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
-  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); hand.add(g) }   /* tip up and forward */
+  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); g.userData.q0 = g.quaternion.clone(); hand.add(g) }   /* tip up and forward */
   if (arm && shield && shieldOn()) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
   { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
     if (wpn && held !== 'sword') { const sw = new THREE.Group(); itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55); g.add(sw) }
     if (shield && !shieldOn()) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
 }
 /* v2.0.2 two-handed weapons & spears: the left hand holds the shaft too (a tiny IK on the left shoulder + elbow, warm-started every frame) */
-const GRIP_AT = { two: -.14, spear: .3 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
+const GRIP_AT = { two: -.16, spear: .42 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
+/* v2.0.2 in the ready stance the weapon points a set way in body space (blade dir · edge dir; +x = the right hand side, +z = forward) · blended back to the plain grip for swings */
+const READY_DIR = { one: [[.3, -.6, .75], [0, -1, 0]], two: [[-.6, -.08, .8], [0, -1, .3]], spear: [[-.42, .55, .72], [1, 0, 0]] };
+const _gQ = new THREE.Quaternion(), _gQ2 = new THREE.Quaternion(), _gM = new THREE.Matrix4(), _gX = new THREE.Vector3(), _gY = new THREE.Vector3(), _gZ = new THREE.Vector3();
 function gripTick() {
-  const w = weaponOf(), R = PL.rig, K = w && D.ITEMS[w.t].kind;
-  if (tool !== 'sword' || !w || GRIP_AT[K] == null || PL.swim || RIDE || GLIDE || EAT || !R.armL || !R.elL) { PL.ik = null; return }
-  const hand = PL.body.getObjectByName('handR'), g = hand && hand.children.find(o => o.name === 'gear'); if (!g) return;
+  const w = weaponOf(), R = PL.rig, K = w && D.ITEMS[w.t].kind, dt = Math.min(.05, (performance.now() - (PL.gt || 0)) / 1000); PL.gt = performance.now();
+  const hand = PL.body.getObjectByName('handR'), g = hand && tool === 'sword' && hand.children.find(o => o.name === 'gear' && o.userData.q0); if (!g || !w) { PL.ik = null; return }
+  PL.rw = (PL.rw || 0) + ((PL.pose && PL.pose.ready && !PL.pose.guard ? 1 : 0) - (PL.rw || 0)) * Math.min(1, dt * 10);
+  const aim = () => { if (PL.rw > .01) { const [d, e] = READY_DIR[K]; _gY.set(...d).normalize(); _gX.set(...e); _gX.addScaledVector(_gY, -_gX.dot(_gY)).normalize(); _gZ.crossVectors(_gX, _gY);
+    _gQ.setFromRotationMatrix(_gM.makeBasis(_gX, _gY, _gZ)); PL.body.getWorldQuaternion(_gQ2); _gQ.premultiply(_gQ2); hand.getWorldQuaternion(_gQ2); _gQ.premultiply(_gQ2.invert());
+    g.quaternion.copy(g.userData.q0).slerp(_gQ, PL.rw) } else g.quaternion.copy(g.userData.q0); g.updateMatrixWorld(true) };
+  PL.root.updateMatrixWorld(true); aim();
+  if (GRIP_AT[K] == null || PL.swim || RIDE || GLIDE || EAT || !R.armL || !R.elL) { PL.ik = null; return }
   PL.root.updateMatrixWorld(true);   /* the right arm may move a little too (kept small) so both hands meet in front of the chest */
   const a = R.armL, e = R.elL, J = [[a, 'x'], [a, 'z'], [e, 'x'], [R.armR, 'z'], [R.armR, 'x']], base = J.map(([o, ax]) => o.rotation[ax]), ik = PL.ik || (PL.ik = [0, 0, 0, 0, 0]);
-  const put = () => J.forEach(([o, ax], i) => { o.rotation[ax] = base[i] + ik[i] }), err = () => { if (e.rotation.x > .05 || e.rotation.x < -2.7) return 1e9; a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
-    return e.localToWorld(_gH.set(0, -.34, 0)).distanceToSquared(_gT) + .01 * (ik[3] * ik[3] + ik[4] * ik[4]) };
+  const put = () => J.forEach(([o, ax], i) => { o.rotation[ax] = base[i] + ik[i] }), err = () => { if (e.rotation.x > .05 || e.rotation.x < -2.7) return 1e9; a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); aim(); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
+    return e.localToWorld(_gH.set(0, -.34, 0)).distanceToSquared(_gT) + .02 * (ik[3] * ik[3] + ik[4] * ik[4]) };
   put(); let best = err();
   for (let st = .3; st > .01; st *= .5) for (let i = 0; i < 5; i++) for (const sg of [1, -1]) { ik[i] += sg * st; put(); const v = err(); if (v < best) { best = v; break } ik[i] -= sg * st; put() }
+  a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); aim(); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
   PL.gripErr = e.localToWorld(_gH.set(0, -.34, 0)).distanceTo(_gT);
 }
 /* v2.0 helpers: a model for any item · auto-equip the first weapon / shield · wear and break */
@@ -520,7 +530,7 @@ function talk(lines, done) {          // a small dialogue sheet: tap to advance
 function rescueHowsif() {
   S.story.howsif = 1; S.has.rod = true; placeHowsif(); storyProps(); save();
   talk([['👴 ???', 'โอย… ขอบใจมากนะ ลุงติดอยู่ใต้ซากเรือมาทั้งคืน'], ['👴 ลุงฮาวซิฟ', 'ลุงชื่อฮาวซิฟ เป็นชาวประมงที่นี่ คืนนั้นมีเมฆดำก้อนใหญ่พัดผ่าน… ทุกคนหายไปหมด'],
-    ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🎣 เบ็ดของลุง · แตะ 🧰 ขวาล่าง เลือกเบ็ด แล้วแตะที่น้ำทะเล รอจนปลากิน แล้วกดค้างเพื่อรอก<br>ช่วยตกปลา ${D.HOWSIF_FISH} ตัวมาให้ลุงหน่อยนะ หิวเหลือเกิน`]], () => { setTool('rod'); questCheck() });
+    ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🎣 เบ็ดของลุง · กดปุ่ม Y เลือกเบ็ด แล้วแตะที่น้ำทะเล รอจนปลากิน แล้วกดค้างเพื่อรอก<br>ช่วยตกปลา ${D.HOWSIF_FISH} ตัวมาให้ลุงหน่อยนะ หิวเหลือเกิน`]], () => { setTool('rod'); questCheck() });
 }
 function openHowsif() {
   if (sick()) { if (S.story.medicine) cureHowsif(); else talk([['👴 ลุงฮาวซิฟ', S.stat.clr_herb >= D.HERBS ? 'แค่ก… สมุนไพรนี่ต้องให้คนที่รู้วิธีปรุงยา… ได้ยินว่ามีนักปรุงยาอยู่ในเมือง แต่เขาหายไป…' : `แค่ก แค่ก… สมุนไพรเรืองแสงในป่าตะวันออก… ${Math.min(D.HERBS, S.stat.clr_herb || 0)}/${D.HERBS} ต้น`]]); return }
@@ -771,7 +781,7 @@ function useThing(k) {
     case 'sword': return pickSword();
     case 'shop': return openShopBuilding(k.i);
     case 'mon': if (S.has.sword) { setTool('sword'); hint('⚔️ ลากนิ้วผ่านมอนสเตอร์เพื่อฟัน') } else hint('ยังไม่มีอาวุธ… หาอะไรมาสู้ก่อน'); return;
-    case 'clear': { const o = W.clear.get(k.id), T = o && D.CLEAR[o.t]; if (T) hint(`${T.name}: เลือก ${D.TOOLS[T.tool][0]} ${D.TOOLS[T.tool][1]}  (แตะ 🧰 ขวาล่าง) แล้วลากนิ้วผ่าน`) }
+    case 'clear': { const o = W.clear.get(k.id), T = o && D.CLEAR[o.t]; if (T) hint(`${T.name}: เลือก ${D.TOOLS[T.tool][0]} ${D.TOOLS[T.tool][1]}  (กดปุ่ม Y) แล้วลากนิ้วผ่าน`) }
   }
 }
 function openForest() {
@@ -1359,7 +1369,7 @@ function showLogin() {
     google.accounts.id.renderButton($('lG'), { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'continue_with', locale: 'th' }) } catch (e) { $('lG').innerHTML = '<p class="mut">ล็อกอิน Google ไม่ได้ตอนนี้ · เล่นแบบไม่ล็อกอินไปก่อนได้</p>' } };
   if (window.google && google.accounts) go(); else { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = go; s.onerror = () => { $('lG').innerHTML = '<p class="mut">โหลดปุ่ม Google ไม่ได้ · เล่นแบบไม่ล็อกอินได้</p>' }; document.head.appendChild(s) }
 }
-function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('ลากนิ้วเลื่อนแผนที่ · สองนิ้วซูม<br>แตะ 🧰 ขวาล่างเพื่อเลือกอุปกรณ์ แล้วลากผ่านของ<br>แตะการ์ดเรื่องหลักซ้ายล่างเพื่อเริ่ม', 5200), 400) }
+function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('ลากนิ้วเลื่อนแผนที่ · สองนิ้วซูม<br>กดปุ่ม Y เพื่อเลือกอุปกรณ์ แล้วลากผ่านของ<br>แตะการ์ดเรื่องหลักซ้ายล่างเพื่อเริ่ม', 5200), 400) }
 
 /* ================= v0.6: camp pots · cooking · sleep · journal · sketching · achievements ================= */
 const POT = {}; for (const k in CAMPS) POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);
