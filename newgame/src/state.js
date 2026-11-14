@@ -13,7 +13,7 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false, hoe: false },
     plots: {}, seeds: {},                                   // v1.0 farm: 'x,z' → { c: crop|null, t: planted at (ms) } · seed counts
     mats: {}, potions: { antidote: 1, mpS: 1 }, deb: {}, food: {}, fish: {},
-    bag: [], eq: { sword: null, shield: null }, nextItem: 1, itemV: 2,
+    bag: [], eq: { sword: null, shield: null, bow: null }, arrows: 0, nextItem: 1, itemV: 2,
     camps: {}, zones: {}, fog: '', bp: {}, wcamps: {}, builds: [], scrolls: {}, ride: null, spirit: { hp: 0, en: 0, free: 0 }, spiritV: 1, ruins: {},     /* v1.2: blueprints owned · wild monster camps { seen, c: cleared, o: chest opened } */                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
     time: DAY.first, ingr: {}, meals: {}, buff: null, ach: {},                // v0.6: game clock (minutes 0–1439) · cooking ingredients · cooked dishes · food buff · claimed achievements
     journal: { recipes: {}, mons: {}, gear: {}, sketch: {} },               // the notebook: discovered recipes · monsters seen/killed · gear collected · sketches drawn (images in localStorage ng_sk_<key>)
@@ -49,7 +49,7 @@ export const shieldOn = () => kindOf().shield && !!S.eq.shield;
 export function pStats() {
   const sp = S.spirit || { hp: 0, en: 0 }, s = { hp: PLAYER_BASE.hp + HEART * sp.hp, en: Math.round(PLAYER_BASE.en * (1 + EN_STEP * sp.en)), atk: PLAYER_BASE.atk, def: PLAYER_BASE.def };   // v1.4: ✨ spirits + gear
   if (S.buff && S.buff.until > Date.now()) { s.atk += S.buff.atk || 0; s.def += S.buff.def || 0 }
-  for (const slot in S.eq) { if (slot === 'shield' && !kindOf().shield) continue; const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def } }
+  for (const slot in S.eq) { if (slot === 'bow' || slot === 'shield' && !kindOf().shield) continue;   /* the bow only counts for arrows */ const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def } }
   return s;
 }
 export function pHp() { const m = pStats().hp; if (S.hp == null || S.hp > m) S.hp = m; return S.hp }

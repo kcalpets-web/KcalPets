@@ -53,3 +53,21 @@ export const SHIELD_MESH = {
   crystalShield(g) { add(g, heater('cs', .19, .52), '#5a7a9a'); add(g, heater('cs2', .14, .4, .03), '#8ae0ff', [0, 0, .015]); ico(g, .06, '#bff4ff', [0, .04, .04], [1, 1.3, .6]) },
   kingShield(g) { add(g, heater('ks', .21, .58), GOLD); add(g, heater('ks2', .17, .48, .02), '#7a1a2a', [0, 0, .015]); ico(g, .05, GOLD, [0, .05, .035]); for (const s of [-1, 1]) ico(g, .025, '#fff0b0', [s * .12, .17, .03]) },
 };
+/* ── v2.1 bows: the grip at the origin, limbs up/down (±y), the arc bulges toward the target (+z), the string behind (−z) ── */
+const seg = (g, a, b, r, c, n = 5) => { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), L = A.distanceTo(B), m = add(g, G(`s${r}|${L.toFixed(3)}|${n}`, () => new THREE.CylinderGeometry(r * .8, r, L, n)), c);
+  m.position.copy(A).add(B).multiplyScalar(.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.sub(A).normalize()); return m };
+function bowOf(g, half, depth, limb, wrap, string = '#f0ead8', tip) {
+  const pts = [[0, .07, 0], [0, half * .45, -depth * .25], [0, half * .8, -depth * .7], [0, half, -depth]];
+  for (const s of [1, -1]) for (let i = 0; i < 3; i++) seg(g, [0, pts[i][1] * s, pts[i][2]], [0, pts[i + 1][1] * s, pts[i + 1][2]], .022 - i * .004, limb);
+  box(g, .045, .16, .05, wrap, [0, 0, 0]); seg(g, [0, half, -depth], [0, -half, -depth], .004, string, 3);
+  if (tip) for (const s of [1, -1]) ico(g, .025, tip, [0, half * s, -depth]);
+}
+export const BOW_MESH = {
+  woodBow(g) { bowOf(g, .5, .14, WOOD, WOODD) },
+  hunterBow(g) { bowOf(g, .52, .16, '#6a4a2a', '#3a6a3a', '#f0ead8', LEAF) },
+  soldierBow(g) { bowOf(g, .56, .16, '#3a4a6a', '#8a6a3a', '#e0e0e0', STEEL) },
+  knightBow(g) { bowOf(g, .6, .18, '#c8ccd8', '#2a3a6a', '#fff8e0', GOLD) },
+  crystalBow(g) { bowOf(g, .6, .2, '#7ad8ff', '#2a3a5a', '#bff4ff', '#e0fbff') },
+};
+/* an arrow along +y (nock at the origin) */
+export function ARROW_MESH(g) { seg(g, [0, 0, 0], [0, .7, 0], .009, '#c8a070', 4); add(g, G('arTip', () => new THREE.ConeGeometry(.022, .08, 4)), '#a8acb8', [0, .73, 0]); for (const a of [0, 2.1, 4.2]) box(g, .004, .1, .035, '#e8e0d0', [Math.sin(a) * .015, .06, Math.cos(a) * .015], [0, a, 0]) }

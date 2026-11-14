@@ -92,8 +92,10 @@
   #pad{display:none}body.pad #pad{display:block}#bAuto{position:fixed;right:12px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 250px);z-index:6;border:3px solid var(--ink);border-radius:14px;background:var(--paper);font:800 12px inherit;font-family:inherit;padding:6px 10px;box-shadow:0 3px 0 #0003;color:var(--ink)}#bAuto.on{background:#5ad07a;animation:qa 1.2s ease-in-out infinite}
   #stick{position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 20px);width:130px;height:130px;border-radius:50%;background:#ffffff40;border:3px solid #ffffffaa;z-index:6;touch-action:none}
   #stickK{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:#fffd;border:3px solid var(--ink);box-shadow:0 3px 0 #0003;pointer-events:none}
-  #bA,#bB{position:fixed;z-index:6;border-radius:50%;border:3px solid var(--ink);font:900 26px system-ui;color:#fff;box-shadow:0 4px 0 #0004;touch-action:none;-webkit-user-select:none}
-  #bA{right:22px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px);width:84px;height:84px;background:#3fae6a}#bB{right:118px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 30px);width:64px;height:64px;background:#e8604a}
+  /* v2.1 four equal buttons in a diamond (X top · Y left · A right · B bottom) · --p = hold ring */
+  #bA,#bB,#bX,#bY{position:fixed;z-index:6;border-radius:50%;border:3px solid var(--ink);font:900 24px system-ui;color:#fff;box-shadow:0 4px 0 #0004;touch-action:none;-webkit-user-select:none;width:64px;height:64px;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;--p:0%;background-image:conic-gradient(#ffffffb0 var(--p),transparent 0)}
+  #bA{right:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 76px);background-color:#3fae6a}#bB{right:80px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 12px);background-color:#e8604a}
+  #bX{right:80px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 140px);background-color:#4a8ad8}#bY{right:146px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 76px);background-color:#e0b030}
   #bA:active,#bB:active{box-shadow:0 1px 0 #0004}body.guard #bB{background:#4a8ad8}
   #wnav{display:none;position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);gap:10px;z-index:72}body.wheel #wnav{display:flex}body.wheel #stick{display:none}
   #wnav button{width:64px;height:64px;border-radius:18px;border:3px solid var(--ink);background:var(--paper);font:900 24px system-ui;color:var(--ink);box-shadow:0 3px 0 #0003}
@@ -136,11 +138,12 @@
   #loadScr b{font-size:26px;text-shadow:0 3px 0 #000}#loadScr .lb{width:min(70vw,280px);height:14px;border:3px solid #fff;border-radius:9px;overflow:hidden}#loadScr .lb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23f,#ff8a3a);transition:width .06s}#loadScr small{opacity:.85;font-size:14px;max-width:300px}
   #debs{display:flex;gap:4px;margin:-2px 0 3px}#debs:empty{display:none}#debs button{border:2px solid var(--ink);border-radius:10px;background:#fff6e0;font:700 14px inherit;font-family:inherit;padding:1px 5px;pointer-events:auto;animation:debP 1s ease-in-out infinite}#debs small{font-size:10px;margin-left:2px}@keyframes debP{50%{transform:scale(1.08)}}
   /* v1.9.1 HUD clean-up: XYAB diamond · frameless hearts/energy · no pet chips · quest folds into an icon */
-  body.pad #bA{right:18px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 74px);width:74px;height:74px}
-  body.pad #bB{right:88px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 14px);width:64px;height:64px}
-  #bX,#bY{position:fixed;z-index:6;border-radius:50%;border:3px solid var(--ink);font:900 22px system-ui;color:#fff;box-shadow:0 4px 0 #0004;touch-action:none;-webkit-user-select:none;width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
-  #bX:active,#bY:active{box-shadow:0 1px 0 #0004}
-  #bX{right:96px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 142px);background:#4a8ad8}#bY{right:164px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 78px);background:#e0b030}
+  #bX:active,#bY:active{box-shadow:0 1px 0 #0004}body.aim #bY{background-color:#c88a10;transform:scale(1.08)}
+  #bTools{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 212px);z-index:5;width:46px;height:46px;border-radius:12px;border:3px solid var(--ink);background:var(--paper);font-size:22px;box-shadow:0 3px 0 #0004}
+  #xhair{display:none;position:fixed;left:50%;top:50%;width:0;height:0;z-index:5;pointer-events:none}body.aim #xhair{display:block}
+  #xhair i{position:absolute;left:-15px;top:-15px;width:30px;height:30px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 3px #000a,inset 0 0 3px #000a;transform:scale(calc(1.5 - .5 * var(--d,0)));transition:border-color .1s}
+  #xhair i::after{content:'';position:absolute;left:12px;top:12px;width:4px;height:4px;border-radius:50%;background:#fff}#xhair.on i{border-color:#ff5a4a}#xhair.on i::after{background:#ff5a4a}
+  #xN{position:absolute;left:24px;top:14px;white-space:nowrap;color:#fff;font:800 14px system-ui;text-shadow:0 1px 2px #000}
   body.wheel #bX,body.wheel #bY{display:none}
   body.zhud .vit{background:none;border:none;padding:0;color:#fff;text-shadow:0 1px 2px #000c,0 0 4px #0008}body.zhud .vit .bar{border-color:#fff;box-shadow:0 1px 3px #0008}
   body.zhud #team,body.zhud #bWheel{display:none!important}
@@ -184,7 +187,7 @@
 </div>
 <div class="vit"><div id="hearts"></div><div id="debs"></div>
   <div class="row"><span>⚡ พลังงาน</span><span id="hMpT"></span></div><div class="bar en"><i id="hMp" style="background:#9ad03a"></i><i id="hMpB" class="enb"></i></div></div>
-<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button><button id="bHome" aria-label="กระเป๋า">🏠</button>
+<div id="quest"></div><button id="qIcon" aria-label="เควส">📜</button><button id="bHome" aria-label="กระเป๋า">🏠</button><button id="bTools" aria-label="เครื่องมือ">🧰</button><div id="xhair"><i></i><small id="xN"></small></div>
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="hoe" aria-label="จอบ">🪏<small>จอบ</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>

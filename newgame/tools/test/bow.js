@@ -1,0 +1,57 @@
+/* v2.1 buttons + bow test: X = jump (hold 3 s = sit, tap = stand) · A hold 3 s = AUTO · Y = aim (camera over the shoulder, crosshair) → let go = arrow flies and hits a slime · arrows run out · old saves get the starter bow.
+   NODE_PATH=$(npm root -g) node newgame/tools/test/bow.js outDir   (~3 min) · fails on page errors or broken checks */
+const { chromium } = require('playwright');
+const { spawn } = require('child_process');
+const path = require('path'), fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8797, OUT = process.argv[2] || '/tmp/newgame_bow';
+fs.mkdirSync(OUT, { recursive: true });
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
+  await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const errs = [], log = (...a) => console.log(...a);
+  try {
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+    pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, itemV: 2, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, time: 600, coin: 500,
+        bag: [{ id: 1, t: 'travelerSword', r: 'R' }, { id: 2, t: 'woodShield', r: 'B' }], eq: { sword: 1, shield: 2 }, nextItem: 3, spiritV: 1 })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 });
+    const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
+    const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    const until = async (f, ms = 4000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await N(f)) return true; await wait(100) } return false };
+    const press = (id, type) => E(([id, type]) => document.getElementById(id).dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: 300, clientY: 700 })), [id, type]);
+    if (!(await until(() => window.__ng.S.bowGiven, 15000))) errs.push('old save did not get the starter bow');
+    await closeAll(); await wait(800); await closeAll();
+    const st = await N(() => { const N = window.__ng; return { bow: N.S.eq.bow, arrows: N.S.arrows } }); log('starter', JSON.stringify(st)); if (!st.bow || st.arrows !== 20) errs.push('starter bow/arrows wrong');
+    await E(() => { const N = window.__ng; N.S.time = 600; N.setTemp(0); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(600); await shot('b0-idle');
+    /* X: tap = jump · hold 3 s = sit · tap = stand */
+    await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump');
+    if (!(await until(() => window.__ng.SIT, 5000))) errs.push('holding X 3 s did not sit'); await press('bX', 'pointerup'); await wait(800); await shot('b1-sit');
+    await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.SIT, 2000))) errs.push('tap X did not stand up'); await wait(400);
+    if (await N(() => window.__ng.PL.pose.jump > 0)) errs.push('standing up should not jump');
+    /* A: hold 3 s = AUTO */
+    await press('bA', 'pointerdown'); if (!(await until(() => window.__ng.S.auto, 5000))) errs.push('holding A 3 s did not turn AUTO on'); await press('bA', 'pointerup');
+    await E(() => document.getElementById('bAuto').click()); await wait(300); await closeAll();   /* A also used the camp pot nearby */
+    /* Y: aim at a slime 9 m ahead, let go = shoot */
+    await E(() => { const N = window.__ng, q = N.me; N.monSpawn('slime', q.x, q.z + 9); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0 }); await wait(1200);
+    const hp0 = await N(() => { const N = window.__ng, m = N.mons.filter(m => m.kind === 'slime').sort((a, b) => Math.hypot(a.A.root.position.x - N.me.x, a.A.root.position.z - N.me.z) - Math.hypot(b.A.root.position.x - N.me.x, b.A.root.position.z - N.me.z))[0]; window.__sl = m; return m.hp });
+    log('pre-aim', await N(() => JSON.stringify({ ov: [...document.querySelectorAll('.ov')].map(o => o.textContent.slice(0, 80)).join(','), swim: window.__ng.PL.swim, bow: window.__ng.S.eq.bow, ar: window.__ng.S.arrows })));
+    await press('bY', 'pointerdown'); if (!(await until(() => !!window.__ng.AIM, 1500))) errs.push('Y did not aim');
+    await wait(1500); const aim = await N(() => ({ body: document.body.classList.contains('aim'), xh: getComputedStyle(document.getElementById('xhair')).display, on: document.getElementById('xhair').classList.contains('on'), pose: window.__ng.PL.pose.aim }));
+    log('arms', await N(() => { const N = window.__ng, R = N.PL.rig, q = N.me, r = o => { const v = o.getWorldPosition(o.position.clone()); return [v.x - q.x, v.y - q.y, v.z - q.z].map(x => +x.toFixed(2)) }; const g = R.elL.children.find(o => o.userData.bow); return JSON.stringify({ bow: g ? r(g) : null, handR: r(N.PL.body.getObjectByName('handR')), shL: r(R.armL), elL: r(R.elL), shR: r(R.armR), elR: r(R.elR), rx: [R.armL.rotation.x, R.armL.rotation.z, R.elL.rotation.x].map(x => +x.toFixed(2)), body: [N.PL.body.rotation.x, N.PL.body.rotation.y].map(x => +x.toFixed(2)) }) }));
+    log('aim', JSON.stringify(aim), await N(() => { const c = window.__ng.camera.position, q = window.__ng.me; return JSON.stringify([c.x - q.x, c.y - q.y, c.z - q.z, window.__ng.CAM.yaw, window.__ng.PL.yaw]) })); if (!aim.body || aim.xh === 'none') errs.push('no crosshair while aiming'); if (!aim.on) errs.push('crosshair did not find the slime'); await shot('b2-aim');
+    await press('bY', 'pointerup'); await wait(200); const fl = await N(() => window.__ng.ARROWS.length); if (!fl) errs.push('no arrow in the air'); await shot('b3-shot');
+    if (!(await until(() => window.__sl.hp < 0 || window.__sl.hp < window.__hp0 || !window.__ng.mons.includes(window.__sl), 3000).then(() => true))) { }
+    const hit = await N(() => ({ hp: window.__sl.hp, alive: window.__ng.mons.includes(window.__sl), arrows: window.__ng.S.arrows })); log('after', JSON.stringify(hit), 'hp0', hp0);
+    if (hit.alive && hit.hp >= hp0) errs.push('the arrow did not hit the slime'); if (hit.arrows !== 19) errs.push('arrow count did not go down');
+    /* holding Y does not shoot · a short top view check · no arrows = a hint, no aim */
+    await press('bY', 'pointerdown'); await wait(2500); if (await N(() => window.__ng.S.arrows) !== 19) errs.push('holding Y shot an arrow'); await press('bY', 'pointercancel'); await wait(300);
+    if (await N(() => !!window.__ng.AIM)) errs.push('aim did not end');
+    await E(() => { window.__ng.S.arrows = 0 }); await press('bY', 'pointerdown'); await wait(300); if (await N(() => !!window.__ng.AIM)) errs.push('aimed with no arrows'); await press('bY', 'pointerup');
+    await E(() => document.getElementById('bTools').click()); await wait(600); if (!(await N(() => window.__ng.wheelOn))) errs.push('🧰 did not open the wheel'); await E(() => window.__ng.closeWheel());
+  } catch (e) { errs.push('X ' + e.stack) }
+  await b.close(); srv.kill();
+  if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
+})();
