@@ -93,6 +93,8 @@
   #stick{position:fixed;left:20px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 20px);width:130px;height:130px;border-radius:50%;background:#ffffff40;border:3px solid #ffffffaa;z-index:6;touch-action:none}
   #stickK{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:#fffd;border:3px solid var(--ink);box-shadow:0 3px 0 #0003;pointer-events:none}
   /* v2.1 four equal buttons in a diamond (X top · Y left · A right · B bottom) · --p = hold ring */
+  /* v2.1.1 no iOS magnifier / callout / text selection when holding buttons */
+  body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
   #bA,#bB,#bX,#bY{position:fixed;z-index:6;border-radius:50%;border:3px solid var(--ink);font:900 24px system-ui;color:#fff;box-shadow:0 4px 0 #0004;touch-action:none;-webkit-user-select:none;width:64px;height:64px;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;--p:0%;background-image:conic-gradient(#ffffffb0 var(--p),transparent 0)}
   #bA{right:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 76px);background-color:#3fae6a}#bB{right:80px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 12px);background-color:#e8604a}
   #bX{right:80px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 140px);background-color:#4a8ad8}#bY{right:146px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 76px);background-color:#e0b030}

@@ -206,7 +206,7 @@ function gearView() {
   if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); g.userData.q0 = g.quaternion.clone(); hand.add(g) }   /* tip up and forward */
   if (AIM && bow) { const el = PL.rig.elL, g = new THREE.Group(); g.name = 'gear'; g.position.set(0, -.34, 0); const m = new THREE.Group(); itemMesh(m, bow.t); m.scale.setScalar(1.15); g.add(m); g.userData.bow = 1; el && el.add(g) }   /* v2.1 the bow in the left hand while aiming */
   if (arm && shield && shieldOn() && !AIM && (held === 'sword' || guard)) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
-  { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; part(g, '#6a4a2a', '#a87a48', [0, by, bz], [.15, .19, .08], [0, 0, 0], { A: .04 }); part(g, '#4a3420', '#7a5a38', [0, by + .19, bz], [.13, .05, .07], [0, 0, 0], { A: 0 });
+  { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; /* v2.1.1 no backpack: the back carries the gear */
     if (wpn && held !== 'sword') { const sw = new THREE.Group(), sp = D.ITEMS[wpn.t].kind === 'spear'; itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); if (sp) { sw.position.set(.18, F ? .55 : .45, F ? -.3 : -.37); sw.rotation.set(0, 0, .45) } else { sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55) } g.add(sw) }   /* spears ride head-up */
     if (bow && !AIM) { const bw = new THREE.Group(); itemMesh(bw, bow.t); bw.position.set(.12, F ? 1.35 : 1.1, F ? -.25 : -.32); bw.rotation.set(0, Math.PI / 2, .5); g.add(bw) }   /* bow across the back */
     if (shield && !(shieldOn() && !AIM && (held === 'sword' || guard))) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
@@ -265,7 +265,8 @@ function walkTick(dt, now) {
   envTick(dt, now, mv);
   if (AIM) { aimTick(now); PL.yawT = camTP() ? CAM.yaw : PL.yawT }
   if (CROUCH && (PL.swim || RIDE || GLIDE || now < jumpT || CUT)) CROUCH = false;
-  PL.pose = { aim: AIM ? Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !!LOCK, ready: inHand() === 'sword' && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: (guard && !LOCK || CROUCH) && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
+  if ((DRAWN || guardTog) && (PL.swim || RIDE || GLIDE)) { DRAWN = false; guardTog = false; updGuard() }
+  PL.pose = { aim: AIM ? Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !PL.swim && !RIDE, ready: inHand() === 'sword' && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: CROUCH && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
   gearView(); animate(PL, mv && !RIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); PL.body.position.y = PL.bob;
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
@@ -316,11 +317,15 @@ function workTick(now) {
   else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
     if (d > 1.6) { if (!walkT || dist(walkT.x, walkT.z, q.x, q.z) > 1.2) walkTo(q.x, q.z, null, 1.3); work.t = now + 120; return } walkT = null; toolHit({ kind: 'mon', m }) }
 }
-function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .3; drawT = performance.now() + (tool === 'sword' ? D.SHEATHE.sword : D.SHEATHE.tool) * 1000 }
-/* v2.1.1 gear lives on the back (Zelda-like) · it comes out only when used: attack / lock-on / guard → sword (+ shield) · working → the tool · Y → the bow */
+function faceSwing(x, z) { PL.yawT = Math.atan2(x - me().x, z - me().z); swingT = .3; if (tool === 'sword') DRAWN = true; else drawT = performance.now() + D.SHEATHE.tool * 1000 }
+/* v2.1.1 A draws the weapon (the next A attacks) · tap B puts everything away */
+let DRAWN = false;
+function drawWeapon() { if (!weaponOf()) { hint('⚔️ ยังไม่มีอาวุธ', 1200); return false } DRAWN = true; if (tool !== 'sword') setTool('sword'); sfx('knock'); gearView(); return true }
+function stowAll() { const was = DRAWN || guardTog; DRAWN = false; guardTog = false; updGuard(); if (tool === 'sword') setTool(''); if (was) sfx('knock'); gearView() }
+/* v2.1.1 gear lives on the back (Zelda-like) · it comes out only when used: A → sword (+ shield) · B → shield · working → the tool · Y → the bow · tap B = put away */
 let drawT = 0;
 function inHand() { if (AIM || !PL || PL.swim || RIDE || GLIDE) return ''; const now = performance.now();
-  if (tool === 'sword') return weaponOf() && (LOCK || guard || swingT > 0 || now < drawT) ? 'sword' : '';
+  if (DRAWN) return weaponOf() ? 'sword' : '';
   return ['axe', 'hammer', 'sickle'].includes(tool) && (work || swingT > 0 || now < drawT) ? tool : '' }
 
 /* ---------- transient state ---------- */
@@ -841,7 +846,7 @@ function frame(now) {
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     const pd = dist(me().x, me().z, m.x, m.z), sp = M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5, AN = M.T.animal && !(M.T.charge && M.aggro);
     if (AN) {                                                       // v1.2 wild animals: graze · bolt when you come close (hold B = sneak) · run when hit
-      const fr = M.T.flee * (guard || CROUCH ? D.SNEAK.flee : 1);
+      const fr = M.T.flee * (CROUCH ? D.SNEAK.flee : 1);
       if (pd < fr || M.aggro) { if (!(now < M.fleeT)) { M.markT = now; sfx('grass') } M.fleeT = now + 3000 + Math.random() * 2000; if (!M.T.charge) M.aggro = false }
       if (now < M.fleeT) { M.alert = 1; const ax = (m.x - me().x) / (pd || 1), az = (m.z - me().z) / (pd || 1); let tx = m.x + ax * 5, tz = m.z + az * 5;
         if (!ok(m.x + ax * .7, m.z + az * .7)) { const s2 = (M.side = M.side || (Math.random() < .5 ? 1 : -1)); tx = m.x - az * 5 * s2; tz = m.z + ax * 5 * s2 }
@@ -1565,13 +1570,13 @@ function actA() {
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
   const t = nearTarget();
-  if (t && t.m) { setTool('sword'); toolHit({ kind: 'mon', m: t.m }); return }
+  if (t && t.m) { if (!DRAWN) { drawWeapon(); return } setTool('sword'); toolHit({ kind: 'mon', m: t.m }); return }
   if (t && t.o) { const T = D.CLEAR[t.o.t]; setTool(T.tool); toolHit({ kind: 'clear', id: t.o.id }); return }
   if (t && t.k) { useThing(t.k); return }
   if (tool === 'hoe') { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (till(cx, cz)) return }
   const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3;
   if (S.has.rod && waterAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return }       // facing water = cast
-  if (!(swingT > 0)) { swingT = .3; sfx('tap') }   /* v2.0.2: nothing in front → A = swing at the air (jump moved to Y) */
+  if (!DRAWN && weaponOf()) { drawWeapon(); return } if (!(swingT > 0)) { swingT = .3; sfx('tap') }   /* v2.0.2: nothing in front → A = swing at the air (jump moved to Y) */
 }
 let CROUCH = false;
 /* ── v2.1 🏹 bow & arrows ── */
@@ -1601,7 +1606,9 @@ function aimTick(now) {
   /* the bow in the left hand: upright, its arc toward the target · an arrow on the string */
   const el = PL.rig.elL, g = el && el.children.find(o => o.userData.bow); if (!g) return; PL.root.updateMatrixWorld(true);
   const d = _aD; _aY.copy(_UP).addScaledVector(d, -_UP.dot(d)).normalize(); _aX.crossVectors(_aY, d); _aQ.setFromRotationMatrix(_aM.makeBasis(_aX, _aY, d)); el.getWorldQuaternion(g.quaternion).invert().multiply(_aQ);
-  g.updateMatrixWorld(true); const bp = g.getWorldPosition(_aP), dr = Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)); NOCK.visible = true; NOCK.position.copy(bp).addScaledVector(d, -.55 - .15 * dr); NOCK.quaternion.setFromUnitVectors(_UP, d);
+  g.updateMatrixWorld(true); const hr = PL.body.getObjectByName('handR'); NOCK.visible = true; hr.getWorldPosition(NOCK.position); NOCK.quaternion.setFromUnitVectors(_UP, d);
+  { const bm = g.children[0], tips = bm && bm.userData.tips; if (tips) { const h = bm.worldToLocal(_aT.copy(NOCK.position)); bm.getObjectByName('string').visible = false;   /* v2.1.1 the string pulls back to the right hand */
+    ['strA', 'strB'].forEach((k, i) => { const m = bm.getObjectByName(k), t = _aL.set(...tips[i]), v = _aX.copy(h).sub(t), L = v.length(); m.visible = true; m.position.copy(t); m.scale.set(1, L, 1); m.quaternion.setFromUnitVectors(_UP, v.normalize()) }) } }
 }
 function aimCam(tx, ty, tz) {   /* over the right shoulder, looking down the aim line */
   const y = CAM.ys ?? CAM.yaw, p = AIM ? AIM.p : (CAM.aimP || 0), cp = Math.cos(p); if (AIM) CAM.aimP = p; const dx = Math.sin(y) * cp, dy = -Math.sin(p), dz = Math.cos(y) * cp, rx = -Math.cos(y), rz = Math.sin(y);
@@ -1681,12 +1688,15 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
     actA(); if (!S.auto && S.has.sword) stop = holdWatch(A, D.HOLD_AUTO, () => { stop = null; if (!S.auto) toggleAuto() }) });
   const up = () => { if (stop) { stop(); stop = null } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } }); A.addEventListener('contextmenu', e => e.preventDefault()) }
-/* B: tap = back (close the top window · stop what you're doing) · hold = guard (−70 % damage, uses stamina) */
-let guard = false;
+/* v2.1.1 B = shield: tap (empty-handed) = raise the shield · tap again (or with a weapon out) = put everything away · hold = block while held · a window open → tap closes it */
+let guard = false, guardTog = false, guardHold = false;
+function updGuard() { guard = guardHold || guardTog; document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0;
-  B.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guard = true; drawT = performance.now() + D.SHEATHE.sword * 1000; document.body.classList.add('guard') } }, 250) });
-  const up = () => { const short = performance.now() - t0 < 240; t0 = 0; guard = false; document.body.classList.remove('guard'); if (!short || wheelOn) return;
-    const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } walkT = null; work = null; stopAuto(); if (tool) setTool('') };
+  B.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guardHold = true; updGuard() } }, 250) });
+  const up = () => { const short = performance.now() - t0 < 240; t0 = 0; guardHold = false; updGuard(); if (!short || wheelOn) return;
+    const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } walkT = null; work = null; stopAuto();
+    if (DRAWN || guardTog) { stowAll(); return } if (tool && tool !== 'sword') { setTool(''); return }
+    if (S.eq.shield && kindOf().shield) { guardTog = true; updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ อาวุธสองมือ/หอก ใช้โล่ไม่ได้' : '🛡️ ยังไม่ได้สวมโล่', 1300) };
   B.addEventListener('pointerup', up); B.addEventListener('pointercancel', up); B.addEventListener('contextmenu', e => e.preventDefault()) }
 /* AUTO (idle style): fights what is near, gathers what the quest needs, drinks potions · any input of yours stops it */
 $('bAuto').onclick = () => toggleAuto();                     // the green AUTO badge: tap to stop
@@ -2290,7 +2300,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guard = v }, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { waterAt, nearTarget, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

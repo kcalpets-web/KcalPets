@@ -59,7 +59,10 @@ const seg = (g, a, b, r, c, n = 5) => { const A = new THREE.Vector3(...a), B = n
 function bowOf(g, half, depth, limb, wrap, string = '#f0ead8', tip) {
   const pts = [[0, .07, 0], [0, half * .45, -depth * .25], [0, half * .8, -depth * .7], [0, half, -depth]];
   for (const s of [1, -1]) for (let i = 0; i < 3; i++) seg(g, [0, pts[i][1] * s, pts[i][2]], [0, pts[i + 1][1] * s, pts[i + 1][2]], .022 - i * .004, limb);
-  box(g, .045, .16, .05, wrap, [0, 0, 0]); seg(g, [0, half, -depth], [0, -half, -depth], .004, string, 3);
+  box(g, .045, .16, .05, wrap, [0, 0, 0]); seg(g, [0, half, -depth], [0, -half, -depth], .004, string, 3).name = 'string';
+  /* v2.1.1 the drawn string: two unit pieces the game stretches from each tip to the right hand (hidden until aiming) */
+  for (const k of ['strA', 'strB']) { const m = add(g, G('strU', () => new THREE.CylinderGeometry(.004, .004, 1, 3).translate(0, .5, 0)), string); m.name = k; m.visible = false }
+  g.userData.tips = [[0, half, -depth], [0, -half, -depth]];
   if (tip) for (const s of [1, -1]) ico(g, .025, tip, [0, half * s, -depth]);
 }
 export const BOW_MESH = {
