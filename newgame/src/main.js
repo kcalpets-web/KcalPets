@@ -12,6 +12,7 @@ import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloate
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
 import * as VF from './vfx.js';
+import { vinyl, vinylFrom, VLOOK, VBACK, VSCALE } from './vinyl.js';
 import { toonify, toonOn, facetify, facetOn } from './toon.js';
 import { makeGrade } from './grade.js';
 import { unlock, mood, sfx, toggle as toggleSound, soundOn } from './audio.js';
@@ -196,20 +197,22 @@ let PL = null, walkT = null, swingT = 0, work = null, sprintT = 0, AIM = null, A
 function spendRun(dt) { if (S.tired) return false; const n = D.RUN_EN * dt, b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
 function buildPlayer() {
   const at = PL ? PL.root.position.clone() : null; if (PL) scene.remove(PL.root);
-  PL = rigOf(makeActor(g => playerLook(g, S.avatar || {}), .82)); const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar; PL.gearK = ''; setTimeout(() => gearView());
+  if (S.avatar && S.avatar.v !== 2) { S.avatar = vinylFrom(S.avatar); save() }   /* v2.3 everyone becomes the vinyl chibi (old looks are converted) */
+  PL = rigOf(makeActor(g => vinyl(g, S.avatar || {}), .82)); PL.vin = 1; const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar; PL.gearK = ''; setTimeout(() => gearView());
 }
 /* v1.8 gear you can see: the tool / sword in the right hand · the shield on the left arm · a backpack (+ the sword on the back when not in hand) */
 function gearView() {
   if (!PL) return; const shield = S.eq && S.eq.shield ? S.bag.find(x => x.id === S.eq.shield) : null, wpn = weaponOf(), bow = bowOf(), held = inHand(), k = (AIM ? 'aim' : '') + (bow ? bow.id : '') + '|' + held + (guard ? 'g' : '') + '|' + (shield ? shield.id : '') + '|' + (wpn ? wpn.id : '') + '|' + (S.has.sword ? 1 : 0);
   if (k === PL.gearK) return; PL.gearK = k; PL.body.traverse(o => { if (o.name === 'gear') o.parent && setTimeout(() => o.parent && o.parent.remove(o)) });
   const hand = PL.body.getObjectByName('handR'), arm = PL.body.getObjectByName('armL2');
-  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); g.userData.q0 = g.quaternion.clone(); hand.add(g) }   /* tip up and forward */
-  if (AIM && !AIM.rod && bow) { const el = PL.rig.elL, g = new THREE.Group(); g.name = 'gear'; g.position.set(0, -.34, 0); const m = new THREE.Group(); itemMesh(m, bow.t); m.scale.setScalar(1.15); g.add(m); g.userData.bow = 1; el && el.add(g) }   /* v2.1 the bow in the left hand while aiming */
-  if (arm && shield && shieldOn() && !AIM && (held === 'sword' || guard)) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9); arm.add(g) }
+  if (hand && held) { const g = new THREE.Group(); g.name = 'gear'; if (held === 'sword' && wpn) { itemMesh(g, wpn.t); g.scale.setScalar(1.25) } else if (held !== 'sword') TOOLMESH[held](g, S.tools[held] || 0); if (PL.vin) g.scale.multiplyScalar(VBACK.held / VSCALE * 1.45); g.rotation.x = held === 'sword' && wpn ? { one: 2.2, two: 2.45, spear: 3.55 }[D.ITEMS[wpn.t].kind] : -1.15; if (held === 'sword' && wpn && D.ITEMS[wpn.t].kind !== 'spear') g.rotation.y = -Math.PI / 2;   /* weapons: tip up / spear forward in the combat stance · v2.0.2 the cutting edge faces the enemy */ g.position.set(0, -.02, .02); g.userData.q0 = g.quaternion.clone(); hand.add(g) }   /* tip up and forward */
+  if (AIM && !AIM.rod && bow) { const el = PL.rig.elL, g = new THREE.Group(); g.name = 'gear'; g.position.set(0, -(el && el.userData.fore || .34), 0); const m = new THREE.Group(); itemMesh(m, bow.t); m.scale.setScalar(1.15 * (PL.vin ? VBACK.held : 1)); g.add(m); g.userData.bow = 1; el && el.add(g) }   /* v2.1 the bow in the left hand while aiming */
+  if (arm && shield && shieldOn() && !AIM && (held === 'sword' || guard)) { const g = new THREE.Group(); g.name = 'gear'; itemMesh(g, shield.t); g.rotation.set(0, -Math.PI / 2, 0); g.position.set(-.05, 0, 0); g.scale.setScalar(.9 * (PL.vin ? VBACK.held : 1)); arm.add(g) }
   { const g = new THREE.Group(); g.name = 'gear'; const F = Q.facet, bz = F ? -.2 : -.27, by = F ? 1.3 : 1.05; /* v2.1.1 no backpack: the back carries the gear */
-    if (wpn && held !== 'sword') { const sw = new THREE.Group(), sp = D.ITEMS[wpn.t].kind === 'spear'; itemMesh(sw, wpn.t); sw.scale.setScalar(1.2); if (sp) { sw.position.set(.18, F ? .55 : .45, F ? -.3 : -.37); sw.rotation.set(0, 0, .45) } else { sw.position.set(-.1, F ? 1.55 : 1.3, F ? -.27 : -.34); sw.rotation.set(0, 0, Math.PI - .55) } g.add(sw) }   /* spears ride head-up */
-    if (bow && !AIM) { const bw = new THREE.Group(); itemMesh(bw, bow.t); bw.position.set(.12, F ? 1.35 : 1.1, F ? -.25 : -.32); bw.rotation.set(0, Math.PI / 2, .5); g.add(bw) }   /* bow across the back */
-    if (shield && !(shieldOn() && !AIM && (held === 'sword' || guard))) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.position.set(0, F ? 1.2 : 1, F ? -.3 : -.37); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
+    const VB = PL.vin ? VBACK : null, bs = VB ? VB.back : 1;   /* v2.3 the vinyl chibi has its own back spots */
+    if (wpn && held !== 'sword') { const sw = new THREE.Group(), sp = D.ITEMS[wpn.t].kind === 'spear'; itemMesh(sw, wpn.t); sw.scale.setScalar(1.2 * bs); if (sp) { sw.position.set(...(VB ? VB.spear : [.18, F ? .55 : .45, F ? -.3 : -.37])); sw.rotation.set(0, 0, .45) } else { sw.position.set(...(VB ? VB.sword : [-.1, F ? 1.55 : 1.3, F ? -.27 : -.34])); sw.rotation.set(0, 0, Math.PI - .55) } g.add(sw) }   /* spears ride head-up */
+    if (bow && !AIM) { const bw = new THREE.Group(); itemMesh(bw, bow.t); bw.scale.setScalar(bs); bw.position.set(...(VB ? VB.bow : [.12, F ? 1.35 : 1.1, F ? -.25 : -.32])); bw.rotation.set(0, Math.PI / 2, .5); g.add(bw) }   /* bow across the back */
+    if (shield && !(shieldOn() && !AIM && (held === 'sword' || guard))) { const sb = new THREE.Group(); itemMesh(sb, shield.t); sb.scale.setScalar(bs); sb.position.set(...(VB ? VB.shield : [0, F ? 1.2 : 1, F ? -.3 : -.37])); sb.rotation.y = Math.PI; g.add(sb) } PL.body.add(g) }
 }
 /* v2.0.2 two-handed weapons & spears: the left hand holds the shaft too (a tiny IK on the left shoulder + elbow, warm-started every frame) */
 const GRIP_AT = { two: -.16, spear: .42 }, _gT = new THREE.Vector3(), _gH = new THREE.Vector3();
@@ -228,11 +231,11 @@ function gripTick() {
   PL.root.updateMatrixWorld(true);   /* the right arm may move a little too (kept small) so both hands meet in front of the chest */
   const a = R.armL, e = R.elL, J = [[a, 'x'], [a, 'z'], [e, 'x'], [R.armR, 'z'], [R.armR, 'x']], base = J.map(([o, ax]) => o.rotation[ax]), ik = PL.ik || (PL.ik = [0, 0, 0, 0, 0]);
   const put = () => J.forEach(([o, ax], i) => { o.rotation[ax] = base[i] + ik[i] }), err = () => { if (e.rotation.x > .05 || e.rotation.x < -2.7) return 1e9; a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); aim(); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
-    return e.localToWorld(_gH.set(0, -.34, 0)).distanceToSquared(_gT) + .02 * (ik[3] * ik[3] + ik[4] * ik[4]) };
+    return e.localToWorld(_gH.set(0, -(e.userData.fore || .34), 0)).distanceToSquared(_gT) + .02 * (ik[3] * ik[3] + ik[4] * ik[4]) };
   put(); let best = err();
   for (let st = .3; st > .01; st *= .5) for (let i = 0; i < 5; i++) for (const sg of [1, -1]) { ik[i] += sg * st; put(); const v = err(); if (v < best) { best = v; break } ik[i] -= sg * st; put() }
   a.updateMatrixWorld(true); R.armR.updateMatrixWorld(true); aim(); g.localToWorld(_gT.set(0, GRIP_AT[K], 0));
-  PL.gripErr = e.localToWorld(_gH.set(0, -.34, 0)).distanceTo(_gT);
+  PL.gripErr = e.localToWorld(_gH.set(0, -(e.userData.fore || .34), 0)).distanceTo(_gT);
 }
 /* v2.0 helpers: a model for any item · auto-equip the first weapon / shield · wear and break */
 function itemMesh(g, t) { const T = D.ITEMS[t]; (T.slot === 'shield' ? SHIELD_MESH[t] : T.slot === 'bow' ? BOW_MESH[t] : WEAPON_MESH[t])?.(g) }
@@ -1117,7 +1120,7 @@ function invPreview(cv, tab, sel) {
   const k = tab === 'pets' && sel && sel.pet ? 'pet:' + sel.pet.id + formOf(sel.pet) : 'me:' + JSON.stringify(S.eq) + JSON.stringify(S.avatar || {});
   if (k !== PV.key) { PV.key = k; if (PV.doll) PV.sc.remove(PV.doll); const g = new THREE.Group();
     if (tab === 'pets' && sel && sel.pet) { const p = sel.pet, f = formOf(p); (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76); g.scale.setScalar(D.FORMS[f].scale * 1.6); PV.h = 1.1 }
-    else { playerLook(g, S.avatar || {}); g.scale.setScalar(.82); PV.h = 1.62;
+    else { vinyl(g, S.avatar || {}); g.scale.setScalar(.82); PV.h = 1.3;
       const sw = S.eq.sword && S.bag.find(x => x.id === S.eq.sword), shd = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), hand = g.getObjectByName('handR'), arm = g.getObjectByName('armL2');
       if (hand && sw) { const t = new THREE.Group(); itemMesh(t, sw.t); t.rotation.x = -1.15; t.scale.setScalar(1.25); hand.add(t) }
       if (arm && shd && shieldOn()) { const t = new THREE.Group(); itemMesh(t, shd.t); t.rotation.y = -Math.PI / 2; t.position.set(-.05, 0, 0); t.scale.setScalar(.9); arm.add(t) } }
@@ -2026,21 +2029,22 @@ setTimeout(updCheck, 3000); setTimeout(whatsNew, 2500); document.addEventListene
 /* ---------- character creator (v0.7): hair · hair colour · skin · top colour · trousers or long skirt · live clay preview ---------- */
 function openCreator(first) {
   return new Promise(done => {
-    const a = Object.assign({ hair: 'short', hairCol: LOOK.hairCol[0], skin: LOOK.skin[0], top: LOOK.top[0], bottom: 'pants' }, S.avatar || {});
+    const a = Object.assign({ v: 2, skin: VLOOK.skin[1][0], eyes: 'round', eyeCol: VLOOK.eyeCol[0], hair: 'messy', hairCol: VLOOK.hairCol[2], wear: 'traveler', top: VLOOK.top[0] }, vinylFrom(S.avatar || {}));   /* v2.3 the vinyl chibi creator */
     const el = document.createElement('div'); el.id = 'maker'; document.body.appendChild(el); CUT = true;
     el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><canvas id="mkCv"></canvas><button class="btn sm" id="mkR">🎲 สุ่ม</button><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
     const cv3 = el.querySelector('#mkCv'), r3 = new THREE.WebGLRenderer({ canvas: cv3, antialias: true, alpha: true }); r3.setPixelRatio(Math.min(devicePixelRatio, 2)); r3.setSize(220, 250, false); r3.outputColorSpace = THREE.SRGBColorSpace; r3.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', 1.1)); const kl = new THREE.DirectionalLight('#fff1dc', 2); kl.position.set(-2, 4, 5); sc.add(kl); const rl = new THREE.DirectionalLight('#ffd7a8', .8); rl.position.set(2, 3, -4); sc.add(rl);
-    const c3 = new THREE.PerspectiveCamera(30, 220 / 250, .1, 30); c3.position.set(0, 1.2, 5.2); c3.lookAt(0, 1, 0); let doll = null, spin = .3, alive = true;
-    const rebuild = () => { if (doll) sc.remove(doll); doll = new THREE.Group(); playerLook(doll, a); sc.add(doll) };
+    const c3 = new THREE.PerspectiveCamera(30, 220 / 250, .1, 30); c3.position.set(0, .9, 3.3); c3.lookAt(0, .74, 0); let doll = null, spin = .3, alive = true;
+    const rebuild = () => { if (doll) sc.remove(doll); doll = new THREE.Group(); vinyl(doll, a); sc.add(doll) };
     const loop = () => { if (!alive) return; requestAnimationFrame(loop); spin += .012; doll.rotation.y = Math.sin(spin) * .7; r3.render(sc, c3) };
     const row = (t, items, cur, key) => `<div class="mkr"><b>${t}</b><div>${items.map((it, i) => `<button data-k="${key}" data-i="${i}" class="${cur(it) ? 'on' : ''}" ${it.c ? `style="background:${it.c}"` : ''}>${it.t || ''}</button>`).join('')}</div></div>`;
+    const OPTS = { skin: VLOOK.skin.map(x => x[0]), eyes: VLOOK.eyes.map(x => x[0]), eyeCol: VLOOK.eyeCol, hair: VLOOK.hair.map(x => x[0]), hairCol: VLOOK.hairCol, wear: VLOOK.wear.map(x => x[0]), top: VLOOK.top };
     const draw = () => { el.querySelector('.mk').innerHTML =
-      row('ทรงผม', LOOK.hair.map(([k, t]) => ({ k, t })), it => it.k === a.hair, 'hair') + row('สีผม', LOOK.hairCol.map(c => ({ c, k: c })), it => it.k === a.hairCol, 'hairCol') +
-      row('สีผิว', LOOK.skin.map(c => ({ c: c[1], k: c })), it => it.k[0] === a.skin[0], 'skin') + row('เสื้อ', LOOK.top.map(c => ({ c, k: c })), it => it.k === a.top, 'top') +
-      row('ท่อนล่าง', LOOK.bottom.map(([k, t]) => ({ k, t })), it => it.k === a.bottom, 'bottom');
-      el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k, i = +b.dataset.i, src = { hair: LOOK.hair.map(x => x[0]), hairCol: LOOK.hairCol, skin: LOOK.skin, top: LOOK.top, bottom: LOOK.bottom.map(x => x[0]) }[k]; a[k] = src[i]; sfx('tap'); rebuild(); draw() }) };
-    el.querySelector('#mkR').onclick = () => { const pick = arr => arr[Math.floor(Math.random() * arr.length)]; a.hair = pick(LOOK.hair)[0]; a.hairCol = pick(LOOK.hairCol); a.skin = pick(LOOK.skin); a.top = pick(LOOK.top); a.bottom = pick(LOOK.bottom)[0]; sfx('tap'); rebuild(); draw() };
+      row('ทรงผม', VLOOK.hair.map(([k, t]) => ({ k, t })), it => it.k === a.hair, 'hair') + row('สีผม', VLOOK.hairCol.map(c => ({ c, k: c })), it => it.k === a.hairCol, 'hairCol') +
+      row('สีผิว', VLOOK.skin.map(([c]) => ({ c, k: c })), it => it.k === a.skin, 'skin') + row('ตา', VLOOK.eyes.map(([k, t]) => ({ k, t })), it => it.k === a.eyes, 'eyes') + row('สีตา', VLOOK.eyeCol.map(c => ({ c, k: c })), it => it.k === a.eyeCol, 'eyeCol') +
+      row('ชุด', VLOOK.wear.map(([k, t]) => ({ k, t })), it => it.k === a.wear, 'wear') + (a.wear === 'traveler' ? row('สีเสื้อ', VLOOK.top.map(c => ({ c, k: c })), it => it.k === a.top, 'top') : '');
+      el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; a[k] = OPTS[k][+b.dataset.i]; sfx('tap'); rebuild(); draw() }) };
+    el.querySelector('#mkR').onclick = () => { const pick = arr => arr[Math.floor(Math.random() * arr.length)]; for (const k in OPTS) a[k] = pick(OPTS[k]); sfx('tap'); rebuild(); draw() };
     rebuild(); draw(); loop();
     el.querySelector('#mkOk').onclick = () => { alive = false; r3.dispose(); el.remove(); CUT = false; last = performance.now(); S.avatar = a; buildPlayer(); save(); done() };
     window.__mk = { ok: () => el.querySelector('#mkOk').click(), set: (k, v) => { a[k] = v; rebuild(); draw() } };
