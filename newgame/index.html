@@ -117,6 +117,13 @@
   body.pad #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 170px)}body.pad:not(.zhud) #bAuto{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 254px)}
   body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 100px)}body.cut #pad,body.cut #bAuto{display:none!important}
   #miniW{position:relative;width:104px;height:104px;border:3px solid var(--ink);border-radius:16px;overflow:hidden;box-shadow:0 3px 0 #0003;background:#12162a}#mini{width:100%;height:100%;display:block}#miniZ{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9px;color:#fff;background:#2a2030b0;padding:1px 0}
+  /* v2.2 warp pins + card + the white-out */
+  .wmap{position:relative}.wpins{position:absolute;left:0;top:0;width:0;height:0}
+  .wpin{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:#3ab0ffcc;font-size:15px;padding:0;box-shadow:0 0 0 0 #9ae8ffaa;animation:wpin 1.4s ease-out infinite}
+  @keyframes wpin{0%{box-shadow:0 0 0 0 #9ae8ffcc}70%{box-shadow:0 0 0 12px #9ae8ff00}100%{box-shadow:0 0 0 0 #9ae8ff00}}
+  .wbroken{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-style:normal;opacity:.75;pointer-events:none}
+  .wcard img{width:100%;border-radius:10px;border:2px solid var(--ink);margin-bottom:6px;display:block}
+  #warpFx{display:none;position:fixed;inset:0;z-index:85;pointer-events:none;background:radial-gradient(circle at 50% 55%,#ffffff 0%,#e8faff 40%,#bff0ff 100%);opacity:0;transition:opacity .9s ease-in}#warpFx.on{opacity:1}
   .wmap{overflow-x:auto;border:3px solid var(--ink);border-radius:12px;background:#12162a}.wmap canvas{height:230px;display:block}
   body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 214px)}#fps{top:calc(max(10px,env(safe-area-inset-top)) + 300px)}
   #bAuto{display:none!important}#bAuto.on{display:block!important}   /* v1.1.1: AUTO lives in the wheel; this is just the 'on' badge (tap = stop) */
@@ -204,7 +211,7 @@
 <div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button><button id="bX">X</button><button id="bY">Y</button><div id="modeSw"><button id="mFight" class="on" aria-label="โหมดดาบ">⚔️</button><button id="mFarm" aria-label="โหมดฟาร์ม">🪏</button></div></div>
 <button id="bAuto">🤖 AUTO</button>
 <div id="boss"></div>
-<div id="stormTint"></div><div id="loadScr"><b></b><div class="lb"><i></i></div><small></small></div>
+<div id="warpFx"></div><div id="stormTint"></div><div id="loadScr"><b></b><div class="lb"><i></i></div><small></small></div>
 <button id="bCatch"></button>
 <div id="catchUI"><b id="catchN"></b><small>กดค้างให้ ▼ อยู่ในช่องสีเขียว · ปล่อย = ▼ ถอยกลับ</small><div class="ct"><i id="catchZ"></i><i id="catchM"></i></div><div class="cp"><i id="catchP"></i></div></div>
 <div id="bBar"><b id="bbN"></b><small id="bbS"></small><div><button id="bbX">✖</button><button id="bbR">↻ หมุน</button><button id="bbOk">🔨 วาง</button></div></div>

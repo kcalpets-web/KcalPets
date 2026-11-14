@@ -795,6 +795,7 @@ function useThing(k) {
     case 'rnpc': return openRuin(k.id);
     case 'stormBack': return confirmBox('⛵ กลับสู่ดินแดน?', backFromStorm, 'กลับ');
     case 'ruin': return openRuin(k.id, k.i);
+    case 'shrine': return openShrine(k.id);
     case 'scroll': return pickScroll(k.id);
     case 'sberh': return openSberh();
     case 'sword': return pickSword();
@@ -1096,7 +1097,7 @@ function invItems(tab) {
     L.push({ key: 'p' + p.id, icon: PET_ICO[p.kind] || '🐾', n: p.lv, nIcon: 'Lv', col: D.RAR_COL[p.rar], eq: S.team.includes(p.id), pet: p, name: esc(p.name), sub: '', desc: petCard(p) + (C && C.ability ? `<div class="mut">✨ ${C.ability === 'swim' ? '🐋 ขี่ข้ามทะเล' : '🦅 ร่อนลงจากที่สูง'}</div>` : ''),
       act: `<button class="btn" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button>` }) }
   if (tab === 'mats') {
-    if (S.arrows > 0) L.push({ key: 'arw', icon: '🏹', n: S.arrows, name: 'ลูกธนู', sub: 'ใช้กับธนู (ปุ่ม Y)', desc: 'ซื้อที่ร้านช่างในเมือง · เก็บได้จากมอนสเตอร์' });
+    if (S.arrows > 0) L.push({ key: 'arw', icon: '🏹', n: S.arrows, name: 'ลูกธนู', sub: 'ใช้กับธนู (ปุ่ม Y)', desc: 'คราฟเองได้ (🏠 → 🛠️ คราฟ) · ซื้อที่ร้านช่าง · เก็บจากมอนสเตอร์', act: '<button class="btn go" data-go="craft">🛠️ คราฟเพิ่ม</button>' });
     for (const k of Object.keys(S.mats).filter(k => S.mats[k] > 0)) L.push({ key: 'm' + k, icon: D.MATS[k][0], n: S.mats[k], name: D.MATS[k][1], sub: 'วัตถุดิบ / ชิ้นส่วน', desc: 'ใช้สร้าง ซ่อม และอัปเกรด', act: `<button class="btn ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button>` });
     for (const k of Object.keys(D.INGR).filter(k => S.ingr[k] > 0)) L.push({ key: 'g' + k, icon: D.INGR[k].icon, n: S.ingr[k], name: D.INGR[k].name, sub: 'วัตถุดิบทำอาหาร', desc: 'ใส่หม้อที่แคมป์หรือกองไฟเพื่อทำอาหาร 🍲', act: '' });
     for (const k of Object.keys(S.fish).filter(k => S.fish[k] > 0)) L.push({ key: 'f' + k, icon: '🐟', n: S.fish[k], col: D.RAR_COL[D.FISH[k].r], name: D.FISH[k].name, sub: 'ปลา', desc: 'กินได้ หรือใส่หม้อทำอาหาร', act: `<button class="btn go" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button><button class="btn ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button>` });
@@ -1133,7 +1134,7 @@ function openBag(tab) {
     const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
     let h = `<div class="invtop"><div class="invh">${$('hearts').innerHTML}</div><div class="invc">🪙 ${fmt(S.coin)} · 💎 ${fmt(S.gem)}</div></div>
       <div class="invtabs">${T.map(([k, ic, nm]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${ic}<small>${nm}</small></button>`).join('')}</div>`;
-    if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ...(Object.keys(S.bp).length ? [['build', '🔨 ก่อสร้าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
+    if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['craft', '🛠️ คราฟ'], ...(Object.keys(S.bp).length ? [['build', '🔨 ก่อสร้าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
     else { const L = invItems(bagTab); let sel = L.find(x => x.key === bagSel[bagTab]) || L.find(x => x.eq) || L[0]; if (sel) bagSel[bagTab] = sel.key; const st = pStats();
       h += `<div class="invmain"><div class="invgrid">${L.map(x => `<button class="tile${x.eq ? ' eq' : ''}${sel && x.key === sel.key ? ' sel' : ''}" data-k="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.n != null ? `<i>${x.nIcon === 'Lv' ? 'Lv' + x.n : x.n}</i>` : ''}${x.up ? '<u>▲</u>' : ''}${x.dur != null ? `<em style="width:${x.dur * 84}%;background:${x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></em>` : ''}</button>`).join('') || `<p class="mut" style="grid-column:1/-1">ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', pets: 'เข้าใกล้สัตว์ป่าแล้วกด 🫳 จับ', mats: 'ตัดต้นไม้ ทุบหิน ล่าสัตว์', food: 'ทำอาหารที่หม้อหรือกองไฟ' }[bagTab] || ''}</p>`}</div>
         <div class="invside"><canvas class="invcv"></canvas><div class="mut invst">${bagTab === 'pets' ? `ทีม ${S.team.length}/${D.TEAM_MAX}` : `⚔️ ${st.atk} · 🛡️ ${st.def}`}</div></div></div>
@@ -1143,7 +1144,7 @@ function openBag(tab) {
     const cv = b.querySelector('.invcv'); if (cv) invPreview(cv, bagTab, bagSel._cur);
     b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; sfx('tap'); redraw() });
     b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw() });
-    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, me: openProfile })[k]() });
+    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, craft: openCraft, me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
     if (bagTab === 'ach') bindAch(b, redraw);
@@ -1853,7 +1854,7 @@ function mapTick(now) {
   if (tool === 'rod' && !F && !(AIM && AIM.rod) && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
-  ruinTick(now); townLife(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
+  ruinTick(now); shrineTick(now); townLife(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw(); drawMini();
 }
 function drawMini() {
   const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
@@ -1886,12 +1887,19 @@ function openMap() {
     for (const r of RV) if (S.ruins[r.id]) { const [x, y] = P(r.x, r.z); g.fillText(S.ruins[r.id].fin ? '🏡' : '🏚️', x, y) }
     for (const c of WC) if (S.wcamps[c.id]) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
     if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
+    for (const sh of SH) if (S.shrines[sh.id]) { const [x, y] = P(sh.x, sh.z); g.fillText(S.shrines[sh.id].fix ? '⛩️' : '🏚️', x, y) }
     const [px, py] = P(me().x, me().z); g.fillStyle = '#ffd23f'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke();
     const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px - wrap.clientWidth / 2; wrap.scrollTop = py - wrap.clientHeight / 2;
-    b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { const k = x.dataset.c; close(); travel(zoneOf(CAMPS[k].x, CAMPS[k].z), null, [CAMPS[k].x + 1.2, CAMPS[k].z + .6]) });
-    b.querySelectorAll('[data-rv]').forEach(x => x.onclick = () => { const r = RV.find(y => y.id === x.dataset.rv); close(); travel('wild', null, [r.x + 2, r.z + 6]) });
-    b.querySelectorAll('[data-bw]').forEach(x => x.onclick = () => { const bb = bOf(x.dataset.bw); close(); travel(zoneOf(bb.x, bb.z), null, [bb.x + 1.6, bb.z + 1.6]) });
-    b.querySelectorAll('[data-w]').forEach(x => x.onclick = () => { const c = WC.find(y => y.id === x.dataset.w); close(); travel('wild', null, [c.x + 2.5, c.z + 2.5]) });
+    const go = id => { const w = WARPS().find(w => w.id === id); if (w) { close(); warpTo(w) } else hint('🏚️ ต้องซ่อมสถานที่นี้ก่อนจึงวาปได้', 1800) };
+    b.querySelectorAll('[data-c]').forEach(x => x.onclick = () => go('c:' + x.dataset.c));
+    b.querySelectorAll('[data-rv]').forEach(x => x.onclick = () => go('r:' + x.dataset.rv));
+    b.querySelectorAll('[data-bw]').forEach(x => x.onclick = () => go('b:' + x.dataset.bw));
+    b.querySelectorAll('[data-w]').forEach(x => x.onclick = () => go('w:' + x.dataset.w));
+    /* v2.2 ✨ warp points: blinking pins on the map · tap = a card (where it is + a crayon picture) · ✨ warp */
+    const sc = c.clientHeight / CH || 230 / CH, pins = document.createElement('div'); pins.className = 'wpins'; wrap.appendChild(pins);
+    for (const sh of SH.filter(s => S.shrines[s.id] && !S.shrines[s.id].fix)) { const [x, y] = P(sh.x, sh.z), e = document.createElement('i'); e.className = 'wbroken'; e.textContent = '🏚️'; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; pins.appendChild(e) }
+    for (const w of WARPS()) { const [x, y] = P(w.x, w.z), e = document.createElement('button'); e.className = 'wpin'; e.textContent = w.icon; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.onclick = () => warpCard(b, w, close); pins.appendChild(e) }
+    const card = document.createElement('div'); card.id = 'wpCard'; wrap.after(card);
   });
 }
 $('mini').onclick = () => openMap();
@@ -2304,6 +2312,94 @@ function ruinDone(k) {
     toast(`🏡 <b>${r.def.name}</b> กลับมามีชีวิตแล้ว!<br>ชาวบ้านกลับมา · ✨ +1 · 🪙 ${fmt(r.def.reward.coin)} · 💎 ${r.def.reward.gem} · 🌱 ${lifePct()}%`, 4200) }
   ruinView(r, false); ruinView(r, true); questCheck(); achCheck(); save(); hud();
 }
+/* ================= v2.2 ⛩️ broken shrines → ✨ warp points · 🛠️ crafting ================= */
+const SH = (() => { let sd = 52021; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647, out = [];
+  const ok = (x, z) => { if (!walkLand(x, z) || waterAt(x, z)) return false; const h = groundH(x, z); for (let a = 0; a < 6; a++) { const px = x + Math.cos(a) * 4, pz = z + Math.sin(a) * 4; if (!walkLand(px, pz) || waterAt(px, pz) || Math.abs(groundH(px, pz) - h) > 1.2) return false } return true };
+  for (let i = 0; i < D.SHRINE.n; i++) { let best = null;
+    for (let t = 0; t < 6000 && !best; t++) { const x = WORLD.x0 + 50 + rnd() * (WORLD.x1 - WORLD.x0 - 100), z = WORLD.z0 + 50 + rnd() * (WORLD.z1 - WORLD.z0 - 100);
+      if (coreDist(x, z) < 40 || Math.abs(x - CLOUD.x) < 160 || out.some(o => dist(o.x, o.z, x, z) < 170) || RV.some(r => dist(r.x, r.z, x, z) < 70) || WC.some(c => dist(c.x, c.z, x, z) < 40) || !ok(x, z)) continue; best = { x, z } }
+    if (best) out.push({ id: 's' + i, name: D.SHRINE.names[i % D.SHRINE.names.length], x: best.x, z: best.z }) }
+  return out })();
+const shrineSt = () => S.shrines || (S.shrines = {});
+function shrineView(s, on) {
+  if (!on) { if (s.g) { scene.remove(s.g); removePick(W, s.pick); s.g = null } return } if (s.g) return;
+  const g = new THREE.Group(), y = groundH(s.x, s.z), fix = (shrineSt()[s.id] || {}).fix; g.position.set(s.x, y, s.z); scene.add(g); s.g = g;
+  if (fix) { const t = new THREE.Group(); VILLAGE.shrine(t); g.add(t);
+    const cr = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), new THREE.MeshStandardMaterial({ color: '#9ae8ff', emissive: '#5ad0ff', emissiveIntensity: 1.3, roughness: .2, flatShading: true })); cr.position.y = 1.4; cr.name = 'crystal'; g.add(cr);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(.9, 1.1, .25, 8), new THREE.MeshStandardMaterial({ color: '#a8a2b8', roughness: .9, flatShading: true })); base.position.y = .12; g.add(base) }
+  else { const t = new THREE.Group(); VILLAGE.rubble(t); g.add(t); const p = new THREE.Group(); VILLAGE.shrine(p); p.rotation.z = .5; p.position.set(.6, -.5, 0); p.scale.setScalar(.8); g.add(p);
+    const cr = new THREE.Mesh(new THREE.OctahedronGeometry(.3, 0), new THREE.MeshStandardMaterial({ color: '#6a6a7a', roughness: .8, flatShading: true })); cr.position.set(-.4, .25, .3); cr.rotation.set(.6, .3, .9); g.add(cr) }
+  s.pick = addPick(W, s.x, s.z, 1.3, 2, { kind: 'shrine', id: s.id }); s.pick.position.y += Math.max(0, y);
+}
+let shT = 0;
+function shrineTick(now) {
+  if (now > shT) { shT = now + 500; const q = me();
+    for (const s of SH) { const d = dist(s.x, s.z, q.x, q.z); if (d < 90) shrineView(s, true); else if (d > 120) shrineView(s, false);
+      if (d < D.SHRINE.see && !shrineSt()[s.id]) { shrineSt()[s.id] = { seen: 1 }; sfx('tap'); toast(`🏚️ พบ <b>${s.name}</b> ที่พังทลาย<br>ซ่อมแล้วจะได้จุดวาป ✨`, 2600); save() } } }
+  for (const s of SH) if (s.g) { const c = s.g.getObjectByName('crystal'); if (c) { c.rotation.y = now / 800; c.position.y = 1.4 + Math.sin(now / 500) * .12 } }
+}
+function openShrine(id) {
+  const s = SH.find(x => x.id === id); if (!s) return; const st = shrineSt()[id] = shrineSt()[id] || { seen: 1 };
+  if (st.fix) return confirmBox(`⛩️ <b>${s.name}</b><br><small>จุดวาป ✨ · เปิดแผนที่แล้วแตะจุดกะพริบเพื่อวาปมาที่นี่</small>`, () => openMap());
+  const c = D.SHRINE.cost;
+  sheet(`🏚️ ${s.name}`, (b, redraw, close) => {
+    b.innerHTML = `<p class="mut">ศาลเก่าที่พังทลาย… หินเรืองแสงตรงกลางดับไปแล้ว</p><div class="card"><b>🔨 ซ่อมศาล</b><p>${Object.entries(c).map(([k, n]) => `${D.MATS[k][0]} ${D.MATS[k][1]} ${S.mats[k] || 0}/${n}`).join(' · ')}</p><p class="mut">ซ่อมเสร็จ = ⛩️ จุดวาป ✨ เดินทางกลับมาที่นี่ได้ทุกเมื่อ</p><button class="btn go wide" id="shFix" ${hasCost(c) ? '' : 'disabled'}>🔨 ซ่อม</button></div>`;
+    b.querySelector('#shFix').onclick = () => { if (!hasCost(c)) return; payCost(c); close(); fixShrine(s) } });
+}
+function fixShrine(s) {
+  const st = shrineSt()[s.id]; st.fix = Date.now(); bump('shrines'); sfx('level'); const y = groundH(s.x, s.z);
+  VF.beam(new THREE.Vector3(s.x, y, s.z), new THREE.Vector3(s.x, y + 14, s.z), '#9ae8ff', 1.4, 2.4); VF.burst(s.x, y + 1.4, s.z, '#bff4ff', 30, 4); VF.ring(s.x, y, s.z, '#ffffff', 4, .7);
+  shrineView(s, false); shrineView(s, true); save(); hud(); setTimeout(() => placePic(s), 600);
+  toast(`⛩️ <b>${s.name}</b> กลับมาเรืองแสงแล้ว!<br>✨ ได้จุดวาปใหม่ · เปิด 🗺️ แผนที่แล้วแตะจุดกะพริบ`, 3600);
+}
+/* a crayon picture of the place for its warp card (rendered off-screen once) */
+function placePic(w) {
+  try { const Wd = 360, Hd = 220, rt = new THREE.WebGLRenderTarget(Wd, Hd, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; const y = groundH(w.x, w.z);
+    const c = new THREE.PerspectiveCamera(42, Wd / Hd, .1, 300); c.position.set(w.x + 7, y + 4.2, w.z + 9); c.lookAt(w.x, y + 1.2, w.z);
+    R.setRenderTarget(rt); R.render(scene, c); R.setRenderTarget(null); const px = new Uint8Array(Wd * Hd * 4); R.readRenderTargetPixels(rt, 0, 0, Wd, Hd, px); rt.dispose();
+    const cv2 = document.createElement('canvas'); cv2.width = Wd; cv2.height = Hd; const g = cv2.getContext('2d'), im = g.createImageData(Wd, Hd);
+    for (let yy = 0; yy < Hd; yy++) im.data.set(px.subarray((Hd - 1 - yy) * Wd * 4, (Hd - yy) * Wd * 4), yy * Wd * 4); g.putImageData(im, 0, 0);
+    localStorage.setItem('ng_wp_' + w.id, crayonPaint(cv2).toDataURL('image/jpeg', .7)) } catch (e) { }
+}
+/* every place you can warp to (only the ones you made / repaired / discovered as camps) */
+function WARPS() {
+  const L = [];
+  for (const k in CAMPS) if (campOn(k)) L.push({ id: 'c:' + k, icon: k === 'home' ? '🏠' : '🍲', name: CAMPS[k].name, x: CAMPS[k].x + 1.2, z: CAMPS[k].z + .6 });
+  for (const s of SH) if ((shrineSt()[s.id] || {}).fix) L.push({ id: 's:' + s.id, pic: s.id, icon: '⛩️', name: s.name, x: s.x + 2, z: s.z + 2.2 });
+  for (const r of RV) if (ruinDone_n(r) >= 1) L.push({ id: 'r:' + r.id, icon: (S.ruins[r.id] || {}).fin ? '🏡' : '🏘️', name: r.def.name, x: r.x + 2, z: r.z + 6 });
+  for (const b of S.builds) if (b.done && WARPB[b.k]) L.push({ id: 'b:' + b.id, icon: BP[b.k].icon, name: BP[b.k].name + 'ของฉัน', x: b.x + 1.6, z: b.z + 1.6 });
+  for (const c of WC) if ((S.wcamps[c.id] || {}).c) L.push({ id: 'w:' + c.id, icon: '🏕️', name: campName(c), x: c.x + 2.5, z: c.z + 2.5 });
+  return L;
+}
+function whereText(w) {   /* "ทางเหนือของแผนที่ · ห่างจากคุณ 420 ม." */
+  const fx = (w.x - WORLD.x0) / (WORLD.x1 - WORLD.x0), fz = (w.z - WORLD.z0) / (WORLD.z1 - WORLD.z0);
+  const ns = fz < .36 ? 'เหนือ' : fz > .64 ? 'ใต้' : '', ew = fx < .36 ? 'ตะวันตก' : fx > .64 ? 'ตะวันออก' : '';
+  return `${ns || ew ? 'ทาง' + ns + (ns && ew ? '-' : '') + ew + 'ของแผนที่' : 'ใจกลางแผนที่'} · ${ZONES[zoneOf(w.x, w.z)] || ''} · ห่างจากคุณ ${fmt(Math.round(dist(w.x, w.z, me().x, me().z)))} ม.`;
+}
+function warpCard(b, w, close) {
+  const card = b.querySelector('#wpCard'); if (!card) return; let pic = ''; try { pic = w.pic ? localStorage.getItem('ng_wp_' + w.pic) || '' : '' } catch (e) { }
+  card.innerHTML = `<div class="card wcard">${pic ? `<img src="${pic}" alt="">` : ''}<div class="row"><b>${w.icon} ${w.name}</b></div><p class="mut">📍 ${whereText(w)}</p><button class="btn go wide" id="wpGo">✨ วาปไปที่นี่</button></div>`;
+  card.querySelector('#wpGo').onclick = () => { close(); warpTo(w) }; card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); sfx('tap');
+}
+/* ✨ the warp: raise a hand · a pillar of light · white out · loading · arrive in light */
+let WARPING = false;
+function warpTo(w) {
+  if (WARPING || CUT) return; if (BOSS) { hint('⛈️ วาปไม่ได้ระหว่างสู้บอส', 1600); return }
+  WARPING = true; walkT = null; work = null; stopAuto(); aimEnd(false); if (RIDE) leaveRaft(); fishEnd(); cheerT = performance.now() + 1600; sfx('level');
+  const y = me().y; VF.beam(new THREE.Vector3(me().x, y, me().z), new THREE.Vector3(me().x, y + 16, me().z), '#bff4ff', 1.5, 1.8); VF.rise(me().x, y, me().z, '#bff4ff', 24); VF.ring(me().x, y, me().z, '#9ae8ff', 2.4, .9);
+  const fx = $('warpFx'); fx.style.display = 'block'; requestAnimationFrame(() => fx.classList.add('on'));
+  setTimeout(() => loading(`✨ ${w.name}`, '📍 ' + whereText(w), () => {
+    placeMe(w.x, w.z); for (const e of PA.values()) if (S.team.includes(e.p.id) && e.mode !== 'down') { e.mode = 'wander'; e.foe = null; e.A.root.position.set(w.x + 1, groundH(w.x + 1, w.z + .6), w.z + .6) }
+    enterZone(zoneOf(w.x, w.z)); bump('warps'); save();
+    setTimeout(() => { fx.classList.remove('on'); setTimeout(() => fx.style.display = 'none', 700); const q = me(); VF.beam(new THREE.Vector3(q.x, q.y + 16, q.z), new THREE.Vector3(q.x, q.y, q.z), '#bff4ff', 1.2, 1.6); VF.ring(q.x, q.y, q.z, '#ffffff', 3, .8); VF.rise(q.x, q.y, q.z, '#bff4ff', 18); cheerT = performance.now() + 1200; WARPING = false }, 300) }), 1150);
+}
+function openCraft() {
+  sheet('🛠️ คราฟ', (b, redraw) => {
+    b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่</p>' + D.CRAFT.map((r, i) => `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${(S.mats[k] || 0) >= n ? '' : 'dn'}">${D.MATS[k][0]} ${D.MATS[k][1]} ${S.mats[k] || 0}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>`).join('') + (S.arrows != null ? `<p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>` : '');
+    b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; payCost(r.need); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows; sfx('done'); bump('crafts'); toast(`🛠️ ได้ ${r.icon} ${r.name}`, 1400); save(); hud(); redraw() });
+  });
+}
+
 /* ================= v1.7 ☁️ the mysterious cloud: seen from everywhere · sail far east → loading screen → the storm island → ⛈️ the storm lord (3 phases) ================= */
 const townsDone = () => Object.values(S.ruins || {}).filter(r => r.fin).length;
 const inStorm = () => Math.abs(me().x - CLOUD.x) < 120;
@@ -2415,7 +2511,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
