@@ -320,7 +320,7 @@ def head2(two_tone=False):
 
 def base_figure(at=(0, 0, 0), rot=0., two_tone=False, vinyl='#f0e6e2'):
     """the naked vinyl-toy base: a soft bean torso · short chubby arms and legs · mitten hands · big head on a short neck"""
-    VIN = M('vinyl', vinyl, rough=.45)
+    VIN = M('vinyl' + vinyl, vinyl, rough=.45)
     J = {'pelvis': (0, 0, .2), 'waist': (0, 0, .28), 'chest': (0, 0, .36), 'neck': (0, 0, .45), 'neckT': (0, 0, .5),
          'shR': (-.11, 0, .38), 'wrR': (-.18, -.005, .25), 'shL': (.11, 0, .38), 'wrL': (.18, -.005, .25),
          'hipR': (-.062, 0, .16), 'anR': (-.068, 0, .05), 'hipL': (.062, 0, .16), 'anL': (.068, 0, .05)}
