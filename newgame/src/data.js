@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.4.2';
+export const APP_VER = '2.5';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -114,6 +114,7 @@ export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3,
 export const HIT_CD = { s: 300, m: 550, l: 850 };
 export const FRUIT = { tree: ['apple', 1, 2], bush: ['berry', 1, 3] }, FRUIT_EVERY = 3, FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
 export const TAG_SHOW = 8;                                       // v2.4.1 seconds a monster's name + HP bar stays after it is hit
+export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
@@ -373,7 +374,8 @@ export const CATCH = {                     // diff: harder = smaller zone, wilde
 };
 export const CATCH_RANGE = 4.2, PET_MAX = 12;   // v2.4: a longer reach
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
-export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };         // hold the hawk's legs: fall speed · forward speed · how high you must stand
+export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };
+export const GLIDER = { sink: 1.5, sp: 5.4, en: 3.2, drop: 10, fallMax: 14, lift: 3.4, liftR: 1.8, liftTop: 9 };   // v2.5 🪂 fall speed · forward speed · ⚡/s · let-go fall · free-fall max · warm-air lift (over cook fires)         // hold the hawk's legs: fall speed · forward speed · how high you must stand
 
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
 /* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
@@ -381,6 +383,7 @@ export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };         // hold the hawk
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
+  { k: 'glider', icon: '🪂', name: 'เครื่องร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
   { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
