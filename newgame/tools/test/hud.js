@@ -26,7 +26,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const press = id => E(id => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })), id);
     /* v2.1: X = jump (sit / bow / AUTO are checked in bow.js) */
     await press('bX'); let jumped = false; for (let i = 0; i < 20 && !jumped; i++) { await wait(100); jumped = await N(() => window.__ng.PL.pose.jump > 0) } if (!jumped) errs.push('X did not jump'); await E(() => document.getElementById('bX').dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))); await wait(900);
-    await E(() => document.getElementById('bHome').click()); await wait(800); if (!(await N(() => !!document.querySelector('.ov.inv')))) errs.push('home did not open the bag'); await shot('hud-bag'); await closeAll();
+    await E(() => document.getElementById('bHome').click()); await wait(800); if (!(await N(() => document.querySelectorAll('.htile').length >= 8))) errs.push('🏠 did not open the menu'); await shot('hud-home');
+    await E(() => document.querySelector('[data-h="bag"]').click()); await wait(800); if (!(await N(() => !!document.querySelector('.ov.inv')))) errs.push('🏠 → 🎒 did not open the bag'); await shot('hud-bag');
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await E(() => { window.__ng.learnCraft('sberh'); window.__ng.openCraft() }); await wait(800); if (!(await N(() => window.__ng.S.recipesK && window.__ng.S.recipesK.antidote))) errs.push('talking to Sberh did not teach the recipe'); await shot('hud-craft'); await closeAll();
     for (const t of ['sword', 'bow', 'shield', 'pets', 'mats', 'food', 'quest']) { await E(t => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag(t) }, t); await wait(1500); await shot('inv-' + t) } await closeAll();
     await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => window.__ng.setOpt('touch', 'z')); await wait(800); await shot('hud-touch');
   } catch (e) { errs.push('X ' + e.stack) }

@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.3';
+export const APP_VER = '2.3.1';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -370,9 +370,16 @@ export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };         // hold the hawk
 
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
 /* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
+/* v2.3.1: known from the start = no `from` · the rest are taught by NPCs (talk to them: `from` = the NPC's pick kind, or 'ruin:<town k>') */
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
+  { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
+  { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
+  { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
+  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', need: { grass: 3, hide: 1 }, give: { potions: { warmer: 1 } }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', need: { grass: 3, stone: 2 }, give: { potions: { cooler: 1 } }, from: 'ruin:fishing', who: 'ป้ามาลี หมู่บ้านชาวประมง' },
+  { k: 'arrowsBig', icon: '🏹', name: 'ลูกธนู ×50 (สูตรนายพราน)', need: { wood: 8, feather: 6, stone: 6, hide: 1 }, give: { arrows: 50 }, from: 'ruin:market', who: 'พ่อค้าโต ตลาดนัดเก่า' },
 ];
 /* v2.2 broken shrines across the map → repair = a warp point ✨ */
 export const SHRINE = { n: 8, cost: { stone: 14, wood: 10 }, see: 32, names: ['ศาลริมผา', 'ศาลใต้ต้นไทร', 'ศาลสายลม', 'ศาลแสงจันทร์', 'ศาลหินเก่า', 'ศาลทุ่งดอกไม้', 'ศาลริมธาร', 'ศาลเนินหมอก'] };

@@ -784,7 +784,7 @@ function useThing(k) {
     case 'pet': return openPet(S.pets.find(p => p.id === k.id));
     case 'boat': return S.story.boatFixed ? openBoat() : null;
     case 'wreck': return S.story.boatFixed ? null : openWreck();
-    case 'howsif': return openHowsif();
+    case 'howsif': learnCraft('howsif'); return openHowsif();
     case 'house': return !S.story.built ? openSite() : !S.story.slept ? confirmBox('เข้าบ้านต้นไม้แล้วนอนพักถึงเช้า?', sleepNight, '😴 นอน') : openHouse();
     case 'exit': return GATE.exit ? goPath(EXIT.x + 3, EXIT.z) : talk([['💭', 'ยังไปไม่ได้… ช่วยลุงที่ซากเรือก่อนดีกว่า']]);
     case 'gateW': return goPath(TOWN.gateW.x - 3, 0);
@@ -795,12 +795,12 @@ function useThing(k) {
     case 'plot': return plotAction(k.key);
     case 'chest': return openChest(k.id);
     case 'build': return openBuilt(k.id);
-    case 'rnpc': return openRuin(k.id);
+    case 'rnpc': { const r = RV.find(x => x.id === k.id); if (r) learnCraft('ruin:' + r.def.k); return openRuin(k.id) }
     case 'stormBack': return confirmBox('⛵ กลับสู่ดินแดน?', backFromStorm, 'กลับ');
     case 'ruin': return openRuin(k.id, k.i);
     case 'shrine': return openShrine(k.id);
     case 'scroll': return pickScroll(k.id);
-    case 'sberh': return openSberh();
+    case 'sberh': learnCraft('sberh'); return openSberh();
     case 'sword': return pickSword();
     case 'shop': return openShopBuilding(k.i);
     case 'mon': if (S.has.sword) { setTool('sword'); hint('⚔️ ลากนิ้วผ่านมอนสเตอร์เพื่อฟัน') } else hint('ยังไม่มีอาวุธ… หาอะไรมาสู้ก่อน'); return;
@@ -974,7 +974,17 @@ try { qHide(localStorage.getItem('ng_qhide') === '1') } catch (e) { }
 $('qIcon').onclick = () => { qHide(false); sfx('tap') };
 $('quest').addEventListener('click', e => { if (e.target.closest('[data-qx]')) { e.stopImmediatePropagation(); qHide(true); sfx('tap') } }, { capture: true });
 /* v2.1 buttons are game actions: A attack (hold 3 s = AUTO) · B guard · X jump (hold 3 s = crouch) · Y bow · 🏠 = the bag & menu · 🧰 = the quick wheel (tools) */
-$('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); if (document.querySelector('.ov')) { closeSheets(); return } openBag() });
+$('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); if (document.querySelector('.ov')) { closeSheets(); return } openHome() });
+/* v2.3.1 🏠 = a menu of big tiles (bag · craft · build · map · journal · shop · character · settings) */
+function openHome() {
+  const T = [['bag', '🎒', 'กระเป๋า', ''], ['craft', '🛠️', 'คราฟ', ''], ['build', '🔨', 'ก่อสร้าง', Object.keys(S.bp).length ? '' : 'ยังไม่มีแบบแปลน'], ['map', '🗺️', 'แผนที่', ''], ['book', '📓', 'สมุดบันทึก', ''],
+    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['me', '👤', 'ตัวละคร', ''], ['set', '⚙️', 'ตั้งค่า', '']];
+  sheet('🏠 เมนู', (b, redraw, close) => {
+    b.innerHTML = `<div class="hgrid">${T.map(([k, i, n, lock]) => `<button class="htile${lock ? ' lock' : ''}" data-h="${k}"><b>${i}</b><span>${n}</span>${lock ? `<small>${lock}</small>` : ''}</button>`).join('')}</div>`;
+    b.querySelectorAll('[data-h]').forEach(x => x.onclick = () => { const k = x.dataset.h, t = T.find(t => t[0] === k); if (t[3]) { hint('🔒 ' + t[3], 1500); return } close(); sfx('tap');
+      ({ bag: () => openBag(), craft: openCraft, build: openBuild, map: openMap, book: () => openJournal(), shop: openTown, me: openProfile, set: openMenu })[k]() });
+  });
+}
 $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight') }); $('mFarm').addEventListener('click', e => { e.preventDefault(); setMode('farm') }); setTimeout(() => setMode(S.mode || 'fight', true));
 
 /* v2.1 X = jump · keep holding 3 s = crouch (sneak) · tap X while crouching = stand up */
@@ -2398,10 +2408,19 @@ function warpTo(w) {
     enterZone(zoneOf(w.x, w.z)); bump('warps'); save();
     setTimeout(() => { fx.classList.remove('on'); setTimeout(() => fx.style.display = 'none', 700); const q = me(); VF.beam(new THREE.Vector3(q.x, q.y + 16, q.z), new THREE.Vector3(q.x, q.y, q.z), '#bff4ff', 1.2, 1.6); VF.ring(q.x, q.y, q.z, '#ffffff', 3, .8); VF.rise(q.x, q.y, q.z, '#bff4ff', 18); cheerT = performance.now() + 1200; WARPING = false }, 300) }), 1150);
 }
+const knowsCraft = r => !r.from || !!(S.recipesK || {})[r.k];
+function learnCraft(from) {   /* talking to an NPC teaches the recipes they know */
+  const L = D.CRAFT.filter(r => r.from === from && !knowsCraft(r)); if (!L.length) return; S.recipesK = S.recipesK || {}; for (const r of L) S.recipesK[r.k] = Date.now(); save(); sfx('level');
+  setTimeout(() => toast(`📜 เรียนสูตรคราฟใหม่!<br>${L.map(r => r.icon + ' ' + r.name).join(' · ')}<br><small>🏠 → 🛠️ คราฟ</small>`, 3200), 900);
+}
 function openCraft() {
   sheet('🛠️ คราฟ', (b, redraw) => {
-    b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่</p>' + D.CRAFT.map((r, i) => `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${(S.mats[k] || 0) >= n ? '' : 'dn'}">${D.MATS[k][0]} ${D.MATS[k][1]} ${S.mats[k] || 0}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>`).join('') + (S.arrows != null ? `<p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>` : '');
-    b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; payCost(r.need); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows; sfx('done'); bump('crafts'); toast(`🛠️ ได้ ${r.icon} ${r.name}`, 1400); save(); hud(); redraw() });
+    const K = D.CRAFT.filter(knowsCraft), U = D.CRAFT.filter(r => !knowsCraft(r));
+    b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่ · สูตรใหม่เรียนได้จากผู้คนทั่วแผนที่</p>' + K.map(r => { const i = D.CRAFT.indexOf(r); return `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${(S.mats[k] || 0) >= n ? '' : 'dn'}">${D.MATS[k][0]} ${D.MATS[k][1]} ${S.mats[k] || 0}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>` }).join('') +
+      (U.length ? `<h3>🔒 สูตรที่ยังไม่รู้ (${U.length})</h3>` + U.map(r => `<div class="card lock"><div class="row"><b>❔ ???</b></div><p class="mut">💬 เรียนได้จาก ${r.who}</p></div>`).join('') : '') +
+      `<p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>`;
+    b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; payCost(r.need); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows;
+      for (const k in r.give.potions || {}) S.potions[k] = (S.potions[k] || 0) + r.give.potions[k]; sfx('done'); bump('crafts'); toast(`🛠️ ได้ ${r.icon} ${r.name}`, 1400); save(); hud(); redraw() });
   });
 }
 
@@ -2516,7 +2535,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
