@@ -1581,16 +1581,15 @@ function openPot(key) {
   sheet(`🍲 หม้อ · ${D.POTS[key] || '🔥 กองไฟของฉัน'}`, (b, redraw, close) => {
     b.innerHTML = `<p class="mut">${isNight() ? '🌙' : '☀️'} ตอนนี้ ${hhmm(S.time)}</p>
       <div class="card"><b>🍳 ทำอาหาร</b><p class="mut">ใส่วัตถุดิบ 2–5 อย่างลงหม้อ · ลองผสมแบบใหม่ๆ เพื่อค้นพบสูตรลับในสมุดบันทึก 📓</p><button class="btn go wide" id="pC">🍳 ทำอาหาร</button></div>
-      <div class="card"><b>😴 นอนพัก</b><p class="mut">HP + ⚡ พลังงานเต็ม · น้องฟื้นตัว · เวลาเดินไปข้างหน้า</p><div class="row2"><button class="btn" id="pN">🌙 ถึงค่ำ (20:00)</button><button class="btn go" id="pM">🌅 ถึงเช้า (06:00)</button></div></div>`;
+      <div class="card"><b>😴 นอนพัก</b><p class="mut">HP + ⚡ เต็ม · น้องฟื้นตัว · หายง่วง · ตื่นมาเช้าวันใหม่</p><button class="btn go wide" id="pM">😴 นอน → 🌅 เช้าวันใหม่</button></div>`;
     b.querySelector('#pC').onclick = () => { if (!jobLeft('cook:' + key)) openCook(key) };
     b.querySelector('#pM').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(D.DAY.dawn) };
-    b.querySelector('#pN').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(20 * 60) };
   });
 }
 function restAll() { S.hp = null; S.en = null; for (const p of S.pets) { p.hp = null; p.mp = null; if (p.down) { p.down = 0; const e = PA.get(p.id); if (e) e.mode = 'wander' } } }
 function sleepTo(min) {
   const f = $('sleep'); f.querySelector('b').textContent = '😴 Zzz…'; f.style.display = 'flex'; f.style.opacity = 0; requestAnimationFrame(() => f.style.opacity = 1);
-  setTimeout(() => { S.time = min; restAll(); needSleep(); addEn(50); setTime(); save(); hud(); f.querySelector('b').textContent = min === D.DAY.dawn ? '🌅 เช้าแล้ว' : '🌙 ตกค่ำแล้ว';
+  setTimeout(() => { if (min === D.DAY.dawn) { S.dayN = (S.dayN || 0) + 1; S.lastT = min } S.time = min; restAll(); needSleep();   /* v3.2 sleeping = the next day */ addEn(50); setTime(); save(); hud(); f.querySelector('b').textContent = min === D.DAY.dawn ? '🌅 เช้าแล้ว' : '🌙 ตกค่ำแล้ว';
     setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 700); toast('😴 พักผ่อนเต็มที่! HP และ ⚡ เต็ม', 2200) }, 1200) }, 1400);
 }
 /* cooking: pick 2–5 ingredients · the most specific recipe that matches wins · new recipes go into the journal */
@@ -2221,6 +2220,11 @@ function openMap() {
     const sc = MAPH[mapZ] / CH, pins = document.createElement('div'); pins.className = 'wpins'; wrap.appendChild(pins);
     for (const sh of SH.filter(s => S.shrines[s.id] && !S.shrines[s.id].fix)) { const [x, y] = P(sh.x, sh.z), e = document.createElement('i'); e.className = 'wbroken'; e.textContent = '🏚️'; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; pins.appendChild(e) }
     for (const w of WARPS()) { const [x, y] = P(w.x, w.z), e = document.createElement('button'); e.className = 'wpin'; e.textContent = w.icon; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.onclick = () => warpCard(b, w, close); pins.appendChild(e) }
+    { const P2 = new Map(); let d0 = 0;   /* v3.2 pinch to zoom (two fingers) */
+      wrap.addEventListener('pointerdown', e => { P2.set(e.pointerId, [e.clientX, e.clientY]); if (P2.size === 2) { const [a2, b2] = [...P2.values()]; d0 = Math.hypot(a2[0] - b2[0], a2[1] - b2[1]) } });
+      wrap.addEventListener('pointermove', e => { if (!P2.has(e.pointerId)) return; P2.set(e.pointerId, [e.clientX, e.clientY]); if (P2.size !== 2 || !d0) return; e.preventDefault(); const [a2, b2] = [...P2.values()], d = Math.hypot(a2[0] - b2[0], a2[1] - b2[1]);
+        if (d / d0 > 1.35 && mapZ < 5) { mapZ++; d0 = 0; redraw() } else if (d / d0 < .74 && mapZ > 1) { mapZ--; d0 = 0; redraw() } });
+      const up2 = e => { P2.delete(e.pointerId); if (P2.size < 2) d0 = 0 }; wrap.addEventListener('pointerup', up2); wrap.addEventListener('pointercancel', up2); wrap.style.touchAction = 'pan-x pan-y' }
     { const me2 = document.createElement('i'); me2.className = 'wme'; me2.style.left = px * sc + 'px'; me2.style.top = py * sc + 'px'; pins.appendChild(me2) }   /* v3.1 you are here (blinking) */
     const card = document.createElement('div'); card.id = 'wpCard'; wrap.after(card);
   }, { cls: 'mapfs' });
