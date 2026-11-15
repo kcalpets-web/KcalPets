@@ -537,5 +537,11 @@ export const STORM_ATK = { slam: { r: 4.5, wind: 1.1, mul: 1 }, bolt: { r: 1.7, 
 export const STORM_REWARD = { coin: 10000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
+/* v3.2 🌦️ weather: every 6 game hours each land rolls its sky (weights) · temp = added to TEMPV outdoors */
+export const WX = { types: { clear: { icon: '☀️', name: 'ฟ้าใส', rain: 0, snow: 0, cloud: 0, temp: 0 }, cloud: { icon: '☁️', name: 'ครึ้ม', rain: 0, snow: 0, cloud: .65, temp: -.05 }, drizzle: { icon: '🌦️', name: 'ฝนปรอย', rain: .35, snow: 0, cloud: .6, temp: -.1 },
+    rain: { icon: '🌧️', name: 'ฝนตก', rain: .8, snow: 0, cloud: .85, temp: -.18 }, storm: { icon: '⛈️', name: 'พายุฝนฟ้าคะนอง', rain: 1, snow: 0, cloud: 1, temp: -.24, bolt: 1 }, snow: { icon: '🌨️', name: 'หิมะตก', rain: 0, snow: .7, cloud: .7, temp: -.22 }, blizzard: { icon: '❄️', name: 'พายุหิมะ', rain: 0, snow: 1.4, cloud: .95, temp: -.4 } },
+  odds: { home: { clear: 5, cloud: 3, drizzle: 2, rain: 2, storm: 1 }, navalee: { clear: 4, cloud: 3, drizzle: 2, rain: 3, storm: 2 }, sylvaren: { clear: 3, cloud: 3, drizzle: 3, rain: 3, storm: 1 }, luminia: { clear: 6, cloud: 3, drizzle: 2, rain: 1, storm: 1 },
+    asrah: { clear: 12, cloud: 2, drizzle: 1 }, frosthelm: { clear: 3, cloud: 3, snow: 4, blizzard: 2 }, valkara: { clear: 4, cloud: 5, storm: 2 }, deadgar: { cloud: 5, drizzle: 4, rain: 2, storm: 1, clear: 1 } },
+  block: 360, boltS: [6, 14], highBolt: 18, boltDmg: 18 };
 export const TEMP = { night: -.4, noon: .3, perM: -.022, highFrom: 22, swim: -.45, fire: .7, forest: -.12, storm: -.35, sun: .15, coldAt: -.6, hotAt: .6, hotRegen: .6 };
 export const JUMP = { h: .75, t: .55, en: 3 };

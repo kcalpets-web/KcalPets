@@ -39,6 +39,7 @@ function nightK(t = S.time) { return t < 300 ? 1 : t < 420 ? 1 - (t - 300) / 120
 const glowK = (t = S.time) => Math.max(0, 1 - Math.abs(t - 1260) / 75) + Math.max(0, 1 - Math.abs(t - 375) / 60) * .7;   // sunset / sunrise glow
 const hhmm = t => String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 const ambience = () => { if (!CUT) mood(S.area === 'town' ? 'town' : isNight() ? 'night' : 'day') };
+const _c2 = new THREE.Color();
 const LDAY = { bg: C('#a6d6ec'), hc: C('#fff2e0'), hg: C('#a8b878'), sc: C('#ffe8c8'), rc: C('#ffd0a0') }   /* v1.8: warmer sun, green bounce from the ground */, LNIGHT = { bg: C('#0e1636'), hc: C('#8aa0ff'), hg: C('#2a2a48'), sc: C('#a8c0ff'), rc: C('#6a7aff') }, GLOW = C('#ff9a5a'), _c = new THREE.Color();
 let wasNight = null;
 function setTime() {                                         // lighting follows the clock (a smooth blend through dawn and dusk)
@@ -47,6 +48,9 @@ function setTime() {                                         // lighting follows
   hemi.color.copy(mix(LDAY.hc, LNIGHT.hc)).lerp(GLOW, g * .3); hemi.groundColor.copy(mix(LDAY.hg, LNIGHT.hg)); hemi.intensity = (eco ? 1.2 : .95) * (1 - k) + .55 * k;
   sun.color.copy(mix(LDAY.sc, LNIGHT.sc)).lerp(GLOW, g * .6); sun.intensity = 2.1 * (1 - k) + .9 * k; fill.intensity = .45 * (1 - k) + .25 * k; rim.color.copy(mix(LDAY.rc, LNIGHT.rc));
   SKY.material.uniforms.top.value.copy(_c.copy(C('#4a98d8')).lerp(C('#0a1030'), k)); SKY.material.uniforms.bot.value.copy(_c.copy(LDAY.bg).lerp(LNIGHT.bg, k)).lerp(GLOW, g * .6); SKY.material.uniforms.stars.value = k; SKY.material.uniforms.glow.value = g; { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI; SKY.material.uniforms.sun.value.set(Math.cos(a), Math.sin(a) * .9 + .05, -.35) }
+  if (WXS) { const cl = WXS.cloud, GREY = _c2.set(k > .5 ? '#20242e' : '#8a929e');   /* v3.2 clouds / rain dim the light and grey the sky · thunder flashes */
+    if (cl > .01) { hemi.intensity *= 1 - .3 * cl; sun.intensity *= 1 - .65 * cl; SKY.material.uniforms.top.value.lerp(GREY, cl * .65); SKY.material.uniforms.bot.value.lerp(GREY, cl * .5); scene.background.lerp(GREY, cl * .5) }
+    if (WXS.flash > 0) { hemi.intensity += WXS.flash * 2.2; SKY.material.uniforms.bot.value.lerp(_c2.set('#e8ecff'), WXS.flash * .5) } }
   if (scene.fog) scene.fog.color.copy(SKY.material.uniforms.bot.value);
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
@@ -958,7 +962,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); wxTick(dt, now); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -979,7 +983,7 @@ function frame(now) {
     py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
     AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz); else if (PL && !PL.root.visible && S.avatar && !CUT && !F) PL.root.visible = true;
     if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 }
-    { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; scene.fog.near += (60 - 52 * mist - scene.fog.near) * dt; scene.fog.far += (420 - 330 * mist - scene.fog.far) * dt } }   /* forest + dawn mist */
+    { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; const wf = 1 - .55 * Math.min(1, WXS.rain + WXS.snow * .8); scene.fog.near += ((60 - 52 * mist) * wf - scene.fog.near) * dt; scene.fog.far += ((420 - 330 * mist) * wf - scene.fog.far) * dt } }   /* forest + dawn mist */
   else { cam.fov = 36; cam.near = .1; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
   if (GOL && !GOL.on) golemCam(now);
   if (F && F.phase) fishCam(now);
@@ -1014,7 +1018,7 @@ function hud() {
   $('hCoin').textContent = fmt(S.coin); $('hGem').textContent = fmt(S.gem);
   heartsHud(st);
   $('hMp').style.width = (pEn() / st.en * 100) + '%'; $('hMp').style.background = S.tired ? '#e8a040' : '#9ad03a'; $('hMpB').style.width = Math.min(100, (S.enB || 0) / st.en * 100) + '%'; $('hMpT').textContent = S.tired ? '💦 เหนื่อย' : `${Math.floor(pEn())}${S.enB >= 1 ? '+' + Math.floor(S.enB) : ''}/${st.en}`;
-  setTime(); $('hClock').textContent = `${isNight() ? '🌙' : '☀️'} ${hhmm(S.time)}`; $('hSun').textContent = isNight() ? '🌅 06:00' : '🌇 22:00'; tempHud();
+  setTime(); $('hClock').textContent = timeIcon(); $('hSun').innerHTML = dayBar(); tempHud();
   $('hBuff').style.display = S.buff && S.buff.until > Date.now() ? '' : 'none'; if (S.buff && S.buff.until > Date.now()) $('hBuff').textContent = `${S.buff.icon} ${buffTxt(S.buff).split(' ')[0]} ${Math.ceil((S.buff.until - Date.now()) / 60e3)}′`;
   $('bHp').querySelector('small').textContent = '×' + Object.values(S.meals || {}).reduce((a, v) => a + (v > 0 ? v : 0), 0); debHud();
   $('bTool').classList.toggle('dim', !S.shops.tools); $('bShop').classList.toggle('dim', !S.story.town); $('bPets').classList.toggle('dim', !S.pets.length);
@@ -1436,7 +1440,7 @@ const cheer = (ms = 1600) => { cheerT = performance.now() + ms };
 const smw01 = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 function tempTick() {
   const q = me(), T = D.TEMP, nk = nightK(), noon = Math.max(0, 1 - Math.abs(S.time - 780) / 210), h = Math.max(0, groundH(q.x, q.z) - T.highFrom);
-  const hk = kingdomAt(q.x, q.z); let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM * (hk.k === 'valkara' ? 1 - (1 - hk.home) * hk.w : 1) + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
+  const hk = kingdomAt(q.x, q.z); let t = nk * T.night + (1 - nk) * noon * T.noon + h * T.perM * (hk.k === 'valkara' ? 1 - (1 - hk.home) * hk.w : 1) + (PL.swim ? T.swim : 0) + (nearFire() ? T.fire : 0) + wxTemp() + (S.area === 'forest' ? T.forest : 0) + (inStorm() && !S.story.cloudGone ? T.storm : 0);
   { const B = kingdomAt(q.x, q.z), g = (1 - B.home) * B.w, K = KINGDOMS[B.k]; if (g > 0 && K) t += g * (B.k === 'asrah' ? (nk > .5 ? -.35 : K.temp) : B.k === 'valkara' ? K.temp * (1 + smw01(200, 30, B.d) * .7) : K.temp) }   /* v2.7 kingdom weather */
   TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
 }
@@ -1560,7 +1564,8 @@ function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); s
 const POT = {}; for (const k in CAMPS) POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);
 FW.fire.visible = false;
 for (const p of Object.values(POT)) for (const [id, o] of [...W.clear]) if (dist(o.x, o.z, p.x, p.z) < 1.4) { despawnClear(W, o); W.clear.delete(id) }   // keep the camp spot clear
-const potLit = key => key.startsWith('bf_') ? true : key === 'home' ? !!S.story.built : key === 'forest' ? !!S.story.campClear : !!(S.camps || {})[key];
+const potLit0 = key => key.startsWith('bf_') ? true : key === 'home' ? !!S.story.built : key === 'forest' ? !!S.story.campClear : !!(S.camps || {})[key];
+const potLit = key => potLit0(key) && !(key !== 'home' && POT[key] && D.WX.types[wxAt(POT[key].x, POT[key].z)].rain > .25);   /* v3.2 rain puts out open fires (the home stove has a roof) */
 function potTick(now) {
   for (const k in POT) { const p = POT[k], lit = potLit(k); p.g.visible = k !== 'home' || !!S.story.built; p.fire.visible = lit; p.light.intensity = lit ? (2 + nightK() * 6) * (.85 + Math.sin(now / 90) * .15) : 0;
     const ck = !!S.jobs['cook:' + k], hop = ck ? Math.abs(Math.sin(now / 150)) : 0; p.pot.position.y = .4 + hop * .16; p.pot.scale.set(1 + (1 - hop) * .08 * +ck, 1 - (1 - hop) * .1 * +ck, 1 + (1 - hop) * .08 * +ck); p.pot.rotation.z = ck ? Math.sin(now / 95) * .12 : 0;
@@ -1601,6 +1606,7 @@ const buffTxt = b => [b.atk ? '⚔️ +' + b.atk : '', b.def ? '🛡️ +' + b.d
 const buffOn = k => S.buff && S.buff.until > Date.now() ? S.buff[k] || 0 : 0;
 const needTxt = r => Object.keys(r.need).map(k => `${({ fish: '🐟 ปลา', fruit: '🍎 ผลไม้', veg: '🥬 ผัก', meat: '🍖 เนื้อ', monster: '👾 ของมอนสเตอร์', herb: '🌿 สมุนไพร' })[k] || (D.INGR[k] ? D.INGR[k].icon + ' ' + D.INGR[k].name : k)} ×${r.need[k]}`).join(' + ') + (r.only ? ' (ล้วน)' : '');
 function openCook(key = 'home') {
+  if (potLit0(key) && !potLit(key)) { hint('🌧️ ฝนตก จุดไฟกลางแจ้งไม่ติด… รอฝนหยุด หรือใช้เตาที่บ้าน', 2200); return }
   const pot = [];
   sheet('🍳 ทำอาหาร', (b, redraw, close) => {
     const left = ingrList().map(x => ({ ...x, n: x.n - pot.filter(p => p.k === x.k).length })).filter(x => x.n > 0);
@@ -2876,6 +2882,42 @@ let boltT = 0, BOSS = null, bossAct = null, stormSeen = false, warnT = 0;
 const DISK = new THREE.CircleGeometry(1, 32), WARN = () => new THREE.MeshBasicMaterial({ color: '#ff3a3a', transparent: true, opacity: .35, depthWrite: false });
 const warns = [];
 function warnAt(x, z, r, life) { const m = new THREE.Mesh(DISK, WARN()); m.rotation.x = -Math.PI / 2; m.position.set(x, groundH(x, z) + .07, z); m.scale.setScalar(r); scene.add(m); warns.push({ m, t: 0, life }); return m }
+/* ---------- v3.2 🌦️ weather: each land rolls its sky every 6 game hours (D.WX) · rain / snow particles around the camera · darker light, closer fog · thunder flashes
+   · rain cools you, puts out open fires (camps · campfires · not the home stove), makes fish bite sooner · storm on high ground = lightning ---------- */
+var WXS = { type: 'clear', rain: 0, snow: 0, cloud: 0, at: 0, boltT: 0, flash: 0, setT: 0, key: '' };
+function wxRegion(x, z) { const B = kingdomAt(x, z); return B.home > .5 || B.w < .5 ? 'home' : B.k }
+function wxAt(x, z) { const k = wxRegion(x, z), O = D.WX.odds[k] || D.WX.odds.home, blk = (S.dayN || 0) * 4 + Math.floor((S.time || 0) / D.WX.block);
+  let h = Math.abs(Math.sin(blk * 12.9898 + k.length * 78.233 + k.charCodeAt(0) * 3.7) * 43758.5453) % 1, tot = 0; for (const t in O) tot += O[t]; h *= tot; for (const t in O) { h -= O[t]; if (h < 0) return t } return 'clear' }
+const wxNow = () => WXS.type, raining = () => WXS.rain > .25;
+const indoors = () => S.area === 'town' || (S.area === 'farm' && dist(me().x, me().z, HOUSE.x, HOUSE.z) < 3.2);
+const wxTemp = () => !WXS || indoors() ? 0 : (D.WX.types[WXS.type] || {}).temp || 0;
+const RAINN = eco ? 380 : 800, SNOWN = eco ? 300 : 600, RAING = new THREE.BufferGeometry(), SNOWG = new THREE.BufferGeometry();
+RAING.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(RAINN * 6), 3)); SNOWG.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(SNOWN * 3), 3));
+const RAIN = new THREE.LineSegments(RAING, new THREE.LineBasicMaterial({ color: '#c8dcf0', transparent: true, opacity: .55, depthWrite: false })), SNOW = new THREE.Points(SNOWG, new THREE.PointsMaterial({ color: '#ffffff', size: .14, transparent: true, opacity: .9, depthWrite: false }));
+RAIN.frustumCulled = SNOW.frustumCulled = false; RAIN.visible = SNOW.visible = false; scene.add(RAIN, SNOW);
+const RP = [], SP2 = []; for (let i = 0; i < RAINN; i++) RP.push([(Math.random() - .5) * 36, Math.random() * 22, (Math.random() - .5) * 36]); for (let i = 0; i < SNOWN; i++) SP2.push([(Math.random() - .5) * 30, Math.random() * 16, (Math.random() - .5) * 30, Math.random() * 6]);
+function wxTick(dt, now) {
+  const q = me(); if (now > WXS.at) { WXS.at = now + 1500; const t = wxAt(q.x, q.z), k = wxRegion(q.x, q.z) + t; if (t !== WXS.type) { const was = WXS.type; WXS.type = t; if (S.story.slept && WXS.key && was !== t) toast(`${D.WX.types[t].icon} ${D.WX.types[t].name}${t === 'storm' ? '<br><small>⚡ ระวังฟ้าผ่าบนที่สูง · ไฟกลางแจ้งดับ</small>' : raining() || D.WX.types[t].rain > .25 ? '<br><small>🔥 ไฟกลางแจ้งจุดไม่ติด · 🐟 ปลากินเบ็ดไวขึ้น</small>' : ''}`, 2600) } WXS.key = k }
+  const T = D.WX.types[WXS.type] || D.WX.types.clear, cov = indoors() ? 0 : 1, e = Math.min(1, dt * .25);
+  WXS.rain += (T.rain * cov - WXS.rain) * e; WXS.snow += (T.snow * cov - WXS.snow) * e; WXS.cloud += (T.cloud - WXS.cloud) * e;
+  const c = cam.position, P = RAING.attributes.position.array, sl = .25;
+  RAIN.visible = WXS.rain > .02 && !CUT; if (RAIN.visible) { const n = Math.floor(RAINN * Math.min(1, WXS.rain)); RAING.setDrawRange(0, n * 2); RAIN.material.opacity = .25 + .35 * Math.min(1, WXS.rain);
+    for (let i = 0; i < n; i++) { const r = RP[i]; r[1] -= dt * 24; if (r[1] < -2) { r[1] += 22; r[0] = (Math.random() - .5) * 36; r[2] = (Math.random() - .5) * 36 } const x = c.x + r[0], y = c.y - 6 + r[1], z = c.z + r[2], j = i * 6; P[j] = x; P[j + 1] = y; P[j + 2] = z; P[j + 3] = x + sl * .3; P[j + 4] = y + .9; P[j + 5] = z + sl * .2 } RAING.attributes.position.needsUpdate = true }
+  SNOW.visible = WXS.snow > .02 && !CUT; if (SNOW.visible) { const n = Math.floor(SNOWN * Math.min(1, WXS.snow)), S2 = SNOWG.attributes.position.array, wind = WXS.snow > 1 ? 4 : .6; SNOWG.setDrawRange(0, n);
+    for (let i = 0; i < n; i++) { const r = SP2[i]; r[1] -= dt * (1.4 + WXS.snow); r[0] += dt * (Math.sin(now / 900 + r[3]) * .5 + wind); if (r[1] < -1) { r[1] += 16; r[0] = (Math.random() - .5) * 30; r[2] = (Math.random() - .5) * 30 } if (r[0] > 15) r[0] -= 30; S2[i * 3] = c.x + r[0]; S2[i * 3 + 1] = c.y - 5 + r[1]; S2[i * 3 + 2] = c.z + r[2] } SNOWG.attributes.position.needsUpdate = true }
+  /* thunder: a white flash, a rumble a moment later · on high ground the bolt looks for you */
+  if (T.bolt && now > WXS.boltT) { WXS.boltT = now + (D.WX.boltS[0] + Math.random() * (D.WX.boltS[1] - D.WX.boltS[0])) * 1000; WXS.flash = 1; setTimeout(() => sfx('thunder'), 300 + Math.random() * 900);
+    if (!indoors() && !RIDE && q.y > D.WX.highBolt && S.story.slept && !GOL && !inStorm()) { const x = q.x, z = q.z; warnAt(x, z, 1.8, 1.2); setTimeout(() => { VF.beam(new THREE.Vector3(x, q.y + 16, z), new THREE.Vector3(x, groundH(x, z), z), '#fff27a', .35, 2.2); sfx('thunder'); shakeT = .4; if (dist(me().x, me().z, x, z) < 1.8) { S.hp = Math.max(1, pHp() - D.WX.boltDmg); lastHurt = performance.now(); floater(`⚡ -${D.WX.boltDmg}`, 'hurt', me().x, 2.2, me().z); hint('⚡ ฟ้าผ่า! พายุบนที่สูงอันตราย ลงไปที่ต่ำหรือหาที่หลบ', 2200); hud() } }, 1200) } }
+  if (WXS.flash > 0) WXS.flash = Math.max(0, WXS.flash - dt * 5);
+  if (now > WXS.setT || WXS.flash > 0) { WXS.setT = now + 250; setTime() }
+}
+const MOONS = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
+function timeIcon() { if (!WXS) return isNight() ? '🌙' : '☀️'; const t = S.time, n = isNight(), T = D.WX.types[WXS.type] || D.WX.types.clear, moon = MOONS[(S.dayN || 0) % 8];
+  if (n) return WXS.type === 'clear' ? moon : moon + T.icon;
+  if (WXS.type === 'clear') return t < 7 * 60 ? '🌅' : t < 10 * 60 ? '🌤️' : t < 16 * 60 ? '☀️' : t < 19 * 60 ? '🌤️' : '🌇';
+  if (WXS.type === 'cloud') return t >= 10 * 60 && t < 16 * 60 ? '🌥️' : '☁️';
+  return WXS.flash > .3 ? '🌩️' : T.icon }
+function dayBar() { const t = S.time, d0 = D.DAY.dawn, d1 = D.DAY.dusk, n = isNight(), k = n ? ((t - d1 + 1440) % 1440) / (1440 - d1 + d0) : (t - d0) / (d1 - d0); return `<i class="dbar${n ? ' n' : ''}"><b style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></b></i>` }
 /* ---------- v3.0 🗿 the seven golems: a rock pile wakes when you come close → the rocks fly together → a ring of stone closes the arena (no leaving) · slams leave it stunned with its 🔮 core open ---------- */
 var GOL = null, GPILE = {}, GLAIR = {}, FREEZE = 0;
 for (const k in D.GOLEMS) MSCALE[D.GOLEMS[k].kind] = 3;
@@ -3081,7 +3123,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },
