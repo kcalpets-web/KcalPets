@@ -21,6 +21,13 @@ export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
   }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); if (Q.facet) { const f2 = g.toNonIndexed(); f2.computeVertexNormals(); GEO.set(key, f2); return f2 } GEO.set(key, g); return g;
 }
+/* v2.9 a rounded box (vinyl-toy walls) with the same top-light vertex colour as the blobs */
+const RBG = new Map();
+export function rboxGeo(w, h, d, r = .12, lo = '#999', hi = '#fff') { const key = [w, h, d, r, lo, hi].join('|'); if (RBG.has(key)) return RBG.get(key);
+  const g = new THREE.BoxGeometry(w, h, d, 6, 6, 6), P = g.attributes.position, v = new THREE.Vector3(), c = new THREE.Vector3(), col = [], L = C(lo), H = C(hi), cc = new THREE.Color(); r = Math.min(r, w / 2, h / 2, d / 2);
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); c.set(Math.max(-w / 2 + r, Math.min(w / 2 - r, v.x)), Math.max(-h / 2 + r, Math.min(h / 2 - r, v.y)), Math.max(-d / 2 + r, Math.min(d / 2 - r, v.z))); v.sub(c); if (v.lengthSq() > 1e-9) v.setLength(r); v.add(c); P.setXYZ(i, v.x, v.y, v.z); cc.copy(L).lerp(H, sm(-.6, .9, v.y / (h / 2) * .8 + .1)); col.push(cc.r, cc.g, cc.b) }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); RBG.set(key, g); return g }
+export function rbox(grp, lo, hi, pos, [w, h, d], rot = [0, 0, 0], r = .12) { const m = new THREE.Mesh(rboxGeo(w, h, d, r, lo, hi), MAT); m.position.set(...pos); m.rotation.set(...rot); m.castShadow = m.receiveShadow = true; grp.add(m); return m }
 export const MAT = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .8, sheen: .5, sheenRoughness: .5, sheenColor: C('#fff3e6') });
 export const MAT_GOLD = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .38, metalness: .1, clearcoat: .8, emissive: '#3a2400', emissiveIntensity: .25 });
 const MAT_EYE = new THREE.MeshPhysicalMaterial({ color: '#241a2e', roughness: .25, clearcoat: 1 });
@@ -369,7 +376,7 @@ export const VILLAGE = {
   well(g) { for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; part(g, STONE[0], STONE[1], [Math.cos(a) * .6, .3, Math.sin(a) * .6], [.2, .3, .16], [0, -a, 0], { A: .08 }) }
     part(g, '#2a5a8a', '#4a90d0', [0, .45, 0], [.48, .03, .48], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) log(g, [s * .65, 1, 0], 1.3, [0, 0, 0], .06); log(g, [0, 1.6, 0], 1.5, [0, 0, Math.PI / 2], .05);
     cone(g, '#8a2a1a', '#d0503a', [0, 1.95, 0], [1, .45, .7], [0, Math.PI / 4, 0], .95); part(g, '#6a4024', '#a8703e', [0, 1.1, 0], [.12, .14, .12], [0, 0, 0], { A: 0 }) },
-  house(g, col = '#d0503a') { part(g, '#d8c8a8', '#fff4e0', [0, .8, 0], [1.2, .8, 1], [0, 0, 0], { A: .03 }); cone(g, '#6a1a10', col, [0, 2.1, 0], [1.75, .85, 1.5], [0, Math.PI / 4, 0], .95);
+  house(g, col = '#d0503a') { rbox(g, '#d8c8a8', '#fff4e0', [0, .8, 0], [2.3, 1.6, 1.9], [0, 0, 0], .16); cone(g, '#6a1a10', col, [0, 2.1, 0], [1.75, .85, 1.5], [0, Math.PI / 4, 0], .95);
     part(g, '#4a2a18', '#7a4a28', [0, .55, 1.0], [.3, .55, .05], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) part(g, '#5a8ac0', '#bfe0ff', [s * .7, 1.05, 1.0], [.22, .2, .03], [0, 0, 0], { A: 0 });
     part(g, '#3a7a3a', '#6ac060', [.9, .2, 1.15], [.3, .2, .15], [0, 0, 0], { A: .15, f: 2 }); part(g, '#e85a8a', '#ffb0c8', [.9, .4, 1.2], [.08, .06, .06]) },
   windmill(g) { cone(g, '#b8a888', '#f0e6d0', [0, 1.4, 0], [.85, 2.8, .85], [0, 0, 0], .55); cone(g, '#6a1a10', '#c84030', [0, 3.1, 0], [.75, .6, .75], [0, 0, 0], .95); part(g, '#4a2a18', '#7a4a28', [0, .45, .62], [.22, .42, .05], [0, 0, 0], { A: 0 });

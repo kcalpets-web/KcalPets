@@ -158,7 +158,7 @@ const COLLAR_Y = { chick: .45 }, CROWN_Y = { chick: 1.5, bunny: 1.66 };
 
 /* ---------- Uncle Howsif: lying face down under the wreck → standing by the jetty once rescued ---------- */
 const gullsUp = gulls(scene, 3, -8, 0, 5);
-const HS = rigOf(makeActor(HUMANS.howsif, .9)); HS.pick = addPick(W, 0, 0, .7, 1.6, { kind: 'howsif' });
+const HS = rigOf(makeActor(HUMANS.howsif, .84)); HS.pick = addPick(W, 0, 0, .7, 1.6, { kind: 'howsif' });
 const BED = new THREE.Group(); SICK.bed(BED); BED.position.set(HOWSIF.x + .4, 0, HOWSIF.z - .3); BED.rotation.y = -1.2; scene.add(BED);
 const sick = () => S.story.sickSeen && !S.story.cured;
 function placeHowsif() {
@@ -170,7 +170,7 @@ function placeHowsif() {
 }
 
 /* ---------- Sberh the herbalist: in the goblins' cage → by his potion shop in the town ---------- */
-const SB = rigOf(makeActor(HUMANS.sberh, .8)); SB.pick = addPick(W, 0, 0, .7, 1.6, { kind: 'sberh' });
+const SB = idleReg(rigOf(makeActor(HUMANS.sberh, .8))); SB.pick = addPick(W, 0, 0, .7, 1.6, { kind: 'sberh' });
 function placeSberh() {
   const sh = TW.shops[0];
   if (!S.story.freed) { SB.root.position.set(FOREST.cage.x, 0, FOREST.cage.z); SB.yaw = SB.yawT = -.6 }
@@ -280,7 +280,7 @@ function walkTick(dt, now) {
     else { const up = t < .4 ? t / .4 : 1 - (t - .4) / .6; for (const j of ['armR', 'armL']) if (R[j]) R[j].rotation.x = -3 * up + (t > .4 ? .6 * (t - .4) / .6 : 0); for (const j of ['elR', 'elL']) if (R[j]) R[j].rotation.x = -.6 * up; PL.body.rotation.x = .1 + (t > .4 ? .35 * (1 - up) : 0) } }
   else if (swingT > 0) { swingT -= dt; const a = PL.rig.armR, e = PL.rig.elR, t = 1 - Math.max(0, swingT) / .3;   // v1.8 swing: wind up · strike · follow through
     if (a) a.rotation.x = t < .3 ? -2.8 * (t / .3) : -2.8 + (t - .3) / .7 * 3.5; if (e) e.rotation.x = t < .3 ? -.9 : -.9 + (t - .3) / .7 * .85; PL.body.rotation.y = PL.yaw + (t < .3 ? .4 * t / .3 : .4 - (t - .3) / .7 * .9) }
-  gripTick(); arrowsTick(dt); ctxTick(now, dt, mv); tillTick(); twinkleTick(now);
+  gripTick(); arrowsTick(dt); ctxTick(now, dt, mv); tillTick(); twinkleTick(now); idleTick(now); critterTick(now, dt);
   if (FALLS.tex) FALLS.tex.offset.y += dt * 1.6;
   { const q = me(), w = q.x - WORLD.x0; if (w < 45 && (PL.swim || RIDE)) { q.x += (45 - w) * .9 * dt; if (now > (PL.curT || 0)) { PL.curT = now + 5000; hint('🌊 กระแสน้ำแรงมาก… ออกไปไกลกว่านี้ไม่ได้', 2000) } } }   /* v2.5.1 the western sea's current */
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
@@ -2230,7 +2230,7 @@ function kqTick(q) { for (const k in KQ) { const K = KINGDOMS[k], d = dist(q.x, 
       if (d < 85 && !A) { let x = K.x + n.dx, z = K.z + n.dz; for (let r = 0; r < 40 && (!walkLand(x, z) || waterAt(x, z)); r += 1.5) { x = K.x + n.dx + Math.cos(r * 2.3) * r; z = K.z + n.dz + Math.sin(r * 2.3) * r }
         const a = rigOf(makeActor(g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash({ id: n.id }) % 2) ? KHAT[k] : null), .82)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(K.x - x, K.z - z) + Math.PI; scene.add(a.root);
         const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
-        KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
+        idleReg(a); KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
       else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); delete KNPC[key] } } } }
 function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
   for (const id of ids) { const st = T[id]; if (st && st.st === 'on' && qProg(id).ok) return '❓'; if (!st) return n.lead && ids.indexOf(id) > 0 && (T[ids[ids.indexOf(id) - 1]] || {}).st !== 'done' ? '…' : '❗'; if (st.st === 'on') return '…' } return '' }
@@ -2253,6 +2253,28 @@ capCloud();
 function towerDoor() { if (S.story.cloudGone) { toast('🗼 แสงจากหอคอยส่องไปทั่วแผ่นดินแล้ว ☀️', 2200); return }
   if (restoredN() < MAIN_Q.need) { hint(`🗼 ประตูหอคอยแสงถูกเมฆทมิฬปิดไว้… ฟื้นฟูอาณาจักรให้ครบก่อน (${restoredN()}/${MAIN_Q.need})`, 2800); return }
   confirmBox('🗼 เข้าสู่ <b>หอคอยแสง</b> เพื่อเผชิญหน้ากับร่างจริงของเมฆทมิฬ?', () => { S.stormFrom = 'tower'; loading('🗼 หอคอยแสง', 'ชั้นบนสุด… ร่างจริงของเมฆทมิฬรออยู่', () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⚔️ ไปเลย') }
+/* ================= v2.9 life: people breathe, look at you and wave hello · butterflies by day · fish jump in the water ================= */
+var IDLE = null;   // var + function: idleReg runs during start-up, before this line
+function idleReg(A) { if (A && A.rig) { A.ph = Math.random() * 6; (IDLE = IDLE || new Set()).add(A) } return A }
+function idleTick(now) { const q = me(); if (!IDLE) return;
+  for (const A of IDLE) { if (!A.root.parent) continue; const p = A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d > 40) continue;
+    A.body.scale.y = 1 + Math.sin(now / 650 + A.ph) * .018; const hd = A.rig.head;
+    if (hd) { const want = d < 5.5 ? Math.max(-.9, Math.min(.9, ((Math.atan2(q.x - p.x, q.z - p.z) - A.root.rotation.y - (A.body.rotation.y || 0) + Math.PI * 3) % (Math.PI * 2)) - Math.PI)) : Math.sin(now / 2600 + A.ph) * .45; hd.rotation.y += (want - hd.rotation.y) * .08 }
+    if (d < 4 && !A.near) { A.near = true; if (now > (A.waveNext || 0)) { A.waveT = now + 1700; A.waveNext = now + 12000 } } else if (d > 7) A.near = false;
+    const ar = A.rig.armR; if (ar) { if (now < (A.waveT || 0)) { ar.rotation.x = -2.7; ar.rotation.z = .35 + Math.sin(now / 110) * .35 } else if (A.waveT) { A.waveT = 0; ar.rotation.x = 0; ar.rotation.z = 0 } } } }
+const FLY = []; { const wm = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: .6, emissive: '#222' }), wg = new THREE.CircleGeometry(.09, 10);
+  for (let i = 0; i < 7; i++) { const g = new THREE.Group(), cl = ['#ffd23f', '#ff8ab8', '#8ac8ff', '#ffffff', '#ffa040'][i % 5]; for (const s2 of [-1, 1]) { const w = new THREE.Mesh(wg, wm.clone()); w.material.color.set(cl); w.position.x = s2 * .07; w.rotation.y = s2 * .2; w.name = 'w'; g.add(w) }
+    g.visible = false; scene.add(g); FLY.push({ g, t: new THREE.Vector3(), ph: Math.random() * 6 }) } }
+let fishT = 0; const FISHJ = []; const FISH_G = new THREE.SphereGeometry(.12, 12, 8), FISH_M = new THREE.MeshStandardMaterial({ color: '#f0a040', roughness: .4 });
+function critterTick(now, dt) { const q = me(), day = !isNight() && !inStorm();
+  for (const f of FLY) { if (!day) { f.g.visible = false; continue } if (!f.g.visible || f.g.position.distanceTo(q) > 18) { f.g.position.set(q.x + (Math.random() - .5) * 16, 0, q.z + (Math.random() - .5) * 16); f.g.position.y = groundH(f.g.position.x, f.g.position.z) + .6; if (waterAt(f.g.position.x, f.g.position.z)) continue; f.g.visible = true; f.t.copy(f.g.position) }
+    if (f.g.position.distanceTo(f.t) < .3) f.t.set(f.g.position.x + (Math.random() - .5) * 3, 0, f.g.position.z + (Math.random() - .5) * 3).setY(groundH(f.t.x, f.t.z) + .4 + Math.random() * .9);
+    const v = f.t.clone().sub(f.g.position); f.g.position.addScaledVector(v.normalize(), dt * 1.1); f.g.position.y += Math.sin(now / 160 + f.ph) * .006; f.g.rotation.y = Math.atan2(v.x, v.z);
+    const fl = Math.sin(now / 55 + f.ph) * 1.1; f.g.children[0].rotation.y = fl; f.g.children[1].rotation.y = -fl }
+  if (now > fishT) { fishT = now + 5000 + Math.random() * 7000; for (let k = 0; k < 10; k++) { const a = Math.random() * 6.28, r = 4 + Math.random() * 10, x = q.x + Math.cos(a) * r, z = q.z + Math.sin(a) * r; if (!waterAt(x, z)) continue;
+      const m = new THREE.Mesh(FISH_G, FISH_M); m.scale.set(.6, .6, 1.5); scene.add(m); FISHJ.push({ m, x, z, t: 0, a: Math.random() * 6.28 }); VF.ring(x, -.08, z, '#ffffff', .8, .4); break } }
+  for (let i = FISHJ.length - 1; i >= 0; i--) { const F2 = FISHJ[i]; F2.t += dt; const k = F2.t / .9; F2.m.position.set(F2.x + Math.cos(F2.a) * k * 1.2, -.1 + Math.sin(k * Math.PI) * .9, F2.z + Math.sin(F2.a) * k * 1.2); F2.m.rotation.set(-Math.cos(k * Math.PI) * 1.1, -F2.a + Math.PI / 2, 0);
+    if (k >= 1) { VF.ring(F2.m.position.x, -.08, F2.m.position.z, '#ffffff', .7, .35); if (dist(q.x, q.z, F2.x, F2.z) < 12) sfx('splash'); scene.remove(F2.m); FISHJ.splice(i, 1) } } }
 /* v2.5.1 waterfalls down the rim cliffs (north + south) · a scrolling stripe texture · a pool at the foot */
 const FALLS = []; { const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128; const g = cv.getContext('2d'); g.fillStyle = '#bfe6ff'; g.fillRect(0, 0, 32, 128);
   for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${.35 + Math.random() * .5})`; g.fillRect(Math.random() * 32, Math.random() * 128, 2 + Math.random() * 3, 10 + Math.random() * 30) }
@@ -2654,7 +2676,7 @@ function ruinView(r, on) {
   if (r.g) return; const st = S.ruins[r.id] || {}, g = new THREE.Group(); r.picks = []; r.vill = []; scene.add(g); r.g = g;
   r.spots.forEach((o, i) => { const m = new THREE.Group(), done = st.done && st.done[i], kind = r.def.projects[i][0]; if (done) (kind === 'house' ? (gg => VILLAGE.house(gg, ['#d0503a', '#3a7ac0', '#7a4ab0'][i % 3])) : VILLAGE[kind])(m); else VILLAGE.rubble(m);
     m.position.set(o.x, groundH(o.x, o.z), o.z); m.rotation.y = Math.atan2(r.x - o.x, r.z - o.z); g.add(m); o.m = m; const pk = addPick(W, o.x, o.z, 1.3, 1.6, { kind: 'ruin', id: r.id, i }); pk.position.y += Math.max(0, groundH(o.x, o.z)); r.picks.push(pk); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: 1.05, o: r }) });
-  const npc = rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .84)); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
+  const npc = idleReg(rigOf(makeActor(gg => HUMANS.villager(gg, r.def.v), .84))); npc.root.position.set(r.x, groundH(r.x, r.z), r.z); npc.yawT = npc.yaw = Math.PI; g.add(npc.root); r.npc = npc;
   const pk = addPick(W, r.x, r.z, .7, 1.8, { kind: 'rnpc', id: r.id }); pk.position.y += Math.max(0, groundH(r.x, r.z)); r.picks.push(pk);
   if (st.fin) { for (let i = 0; i < 3; i++) { const v = rigOf(makeActor(gg => HUMANS.villager(gg, (r.def.v + i + 1) % 3), .82)), a = i * 2.1 + .7; v.root.position.set(r.x + Math.cos(a) * 3, groundH(r.x, r.z), r.z + Math.sin(a) * 3); g.add(v.root); r.vill.push({ A: v, a, t: Math.random() * 6 }) }
     for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, rr = 7 + (i % 3); part(g, '#3a8a3a', '#6ac060', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .15, r.z + Math.sin(a) * rr], [.25, .18, .22], [0, a, 0], { A: .15, f: 2 }); part(g, ['#ff7a9a', '#ffd23f', '#9a7aff'][i % 3], '#ffffff', [r.x + Math.cos(a) * rr, groundH(r.x + Math.cos(a) * rr, r.z + Math.sin(a) * rr) + .38, r.z + Math.sin(a) * rr], [.07, .06, .07]) } }

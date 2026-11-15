@@ -2,7 +2,7 @@
    ground colour  c = grass·(.9 + .12·n/1.95),  n = sin(.45x+.2z) + .7·sin(.6z−.3x) + .25·sin(1.3(x+z))
    sand near the sea  w = 1 − smoothstep(1.6, 3.6, d + .35n)  (d = distance from the shoreline)
    sea colour by depth from the shore · instanced grass tufts / flowers / pebbles / foam / sparkles. */
-import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS } from './clay.js';
+import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS, rbox, rboxGeo } from './clay.js';
 import { CLEAR } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
@@ -77,7 +77,7 @@ export function buildWorld(scene, eco) {
     part(g, '#6a4024', '#a8703e', [-.9, .6, .2], [.06, .6, .06], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [-.9, 1.05, .26], [.32, .18, .03], [0, 0, 0], { A: 0 }) }, HOUSE.x, HOUSE.z + .4, 0, 1, 0, true);
   /* story: ruined houses on the island (scenery) */
   const WALL = new THREE.MeshStandardMaterial({ color: '#d8bf98', roughness: .9 });
-  const ruin = (x, z, ry) => at(g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, .18), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); g.add(m) };
+  const ruin = (x, z, ry) => at(g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .2), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); g.add(m) };
     wall(-.5, -.7, 1.8, 1.3, 0); wall(.8, -.3, 1.1, .8, 1.5, .1); wall(-1.1, .4, .9, .6, 1.6, -.15); cone(g, '#5a2a1a', '#a84a30', [.4, .3, .5], [1, .35, .8], [.5, .6, .9], .98);
     for (let i = 0; i < 5; i++) part(g, '#6a6460', '#b8b0a6', [-.7 + (i % 3) * .6, .1, .9 + Math.floor(i / 3) * .35], [.2, .14, .16], [0, i, 0], { A: .2 }) }, x, z, ry);
   ruin(-.6, 9.6, .4); ruin(5.6, 8.8, -.3); ruin(5.9, -12.2, .2);
@@ -129,6 +129,7 @@ export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCEL
 const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 };
 /* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
+const RBGM = new Map(), rbGeo = (w, h, d) => { const k = w + '|' + h + '|' + d; if (!RBGM.has(k)) { const g = rboxGeo(w, h, d, .08); const g2 = g.clone(); g2.deleteAttribute('color'); RBGM.set(k, g2) } return RBGM.get(k) };   /* v2.9 rounded ruin walls */
 const PICK_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
 export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
@@ -261,10 +262,10 @@ export function buildTown(W, eco) {
   at(g => { part(g, '#8a8478', '#d8d2c6', [0, .25, 0], [1.6, .25, 1.6], [0, 0, 0], { A: .03 }); part(g, '#3a6a9a', '#7ab0d8', [0, .42, 0], [1.3, .05, 1.3], [0, 0, 0], { A: 0 }); part(g, '#8a8478', '#d8d2c6', [.2, .9, 0], [.25, .5, .25], [0, 0, .3], { A: .1 }) }, TX, 0);
   for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, r = 12.5 + (i % 2); if (Math.abs(Math.sin(a)) < .3) continue; at(g => (i % 3 ? PROPS.tree : PROPS.pine)(g, .9), TX + Math.cos(a) * r, Math.sin(a) * r, i) }
   /* shops: a ruined and a repaired model each, toggled by S.shops[k] */
-  const shop = (g, roof, sign) => { part(g, '#c8a070', '#f0d8b0', [0, .9, 0], [1.4, .9, 1.1], [0, 0, 0], { A: .03 }); cone(g, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
+  const shop = (g, roof, sign) => { rbox(g, '#c8a070', '#f0d8b0', [0, .9, 0], [2.7, 1.8, 2.15], [0, 0, 0], .18); cone(g, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
     part(g, '#5a3420', '#8a5a30', [0, .6, 1.1], [.3, .55, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.85, 1.1, 1.1], [.22, .22, .04], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [0, 1.75, 1.15], [.7, .2, .04], [0, 0, 0], { A: 0 }) };
   const WALL = new THREE.MeshStandardMaterial({ color: '#d8bf98', roughness: .9 });
-  const broken = g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, .2), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); m.castShadow = true; g.add(m) };
+  const broken = g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .22), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); m.castShadow = true; g.add(m) };
     wall(0, -1, 2.6, 1.5, 0); wall(-1.3, 0, 1.8, 1.1, Math.PI / 2, .05); wall(1.3, .3, 1.2, .7, Math.PI / 2, -.1); cone(g, '#3a1a10', '#7a3a24', [.3, .35, .6], [1.4, .4, 1.1], [.4, .6, .8], .98);
     for (let i = 0; i < 6; i++) part(g, '#6a6460', '#b8b0a6', [-.9 + (i % 3) * .8, .12, 1.0 + Math.floor(i / 3) * .4], [.24, .16, .2], [0, i, 0], { A: .2 }) };
   const ROOF = ['#3a8a5a', '#d08a30', '#4a7ac0', '#7a7a8a', '#c0503a', '#8a4ac0', '#d84a8a'];
