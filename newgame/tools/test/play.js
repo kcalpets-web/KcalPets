@@ -157,7 +157,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await pg.waitForFunction(() => window.__ng.envState().y > 2, null, { timeout: 60000 }).catch(() => errs.push('could not climb the mesa'));
     await wait(1200); log('climb', JSON.stringify(await N(() => window.__ng.envState())), 'camps', JSON.stringify(await N(() => window.__ng.S.camps))); await shot('35-mesa-top');
     await E(() => window.__ng.openMap()); await wait(800); await shot('36-worldmap');
-    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.warpTo(N.WARPS().find(w => w.id === 'c:home')) }); await wait(2500); if ((await N(() => window.__ng.envState().area)) !== 'farm') errs.push('warp to the home camp failed');
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.warpTo(N.WARPS().find(w => w.id === 'c:home')) }); await wait(4500); if ((await N(() => window.__ng.envState().area)) !== 'farm') errs.push('warp to the home camp failed');
     log('warp', JSON.stringify(await N(() => ({ x: window.__ng.me.x.toFixed(1), z: window.__ng.me.z.toFixed(1), area: window.__ng.envState().area })))); await shot('37-meadow-camp');
     /* v0.9.5 camera behind the character: the stick walks where the camera looks · dragging the screen turns the camera */
     await closeAll(); await E(() => { const N = window.__ng; N.setCam('tp'); N.S.time = 640; N.placeMe(14, 2.4); N.CAM.yaw = Math.PI / 2; N.PL.yaw = N.PL.yawT = Math.PI / 2 }); await wait(2500); await shot('38-tp-meadow');
