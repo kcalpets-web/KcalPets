@@ -570,19 +570,19 @@ function toolHit(key) {
       if (key.kind === 'mon') { if (S.has.sword && (!work || work.m !== key.m)) fight(key.m) } else if (t.g && (!work || work.o !== t)) workOn(t); return } }
   if (key.kind === 'mon') {
     const m = key.m; if (!m || !mons.includes(m)) return;
-    if (!S.has.sword) { hint('ยังไม่มีอาวุธ…'); return } if (tool !== 'sword') setTool('sword');
+    const ht = handTool(); if (!S.has.sword && ht === 'sword') { hint('ยังไม่มีอาวุธ…'); return } if (tool !== ht) setTool(ht);
     if (pHp() <= 0) { hint('😵 หมดแรง ฟันไม่ไหว · ดื่มยา HP หรือรอฟื้น'); return }
     const K = kindOf(); if (now < slashT) return; if (!spendEn(Math.round(D.SWORD_EN * K.en))) return; slashT = now + D.SLASH_CD * K.cd / speed; m.hit = true;
-    if (debOn('daze') && Math.random() < .3) { faceSwing(m.A.root.position.x, m.A.root.position.z); VF.slash(me().x, me().y + 1, me().z, PL.yaw, '#a0a0c0'); floater('💫 พลาด!', 'tool', m.A.root.position.x, 1.6, m.A.root.position.z); return } const sneak = CROUCH && !m.aggro && !m.hit, r = dmgCalc(pStats().atk, m.T.def, sneak ? D.SNEAK.dmg : 1), q = m.A.root.position; faceSwing(q.x, q.z); if (sneak) { floater('🥷 ลอบโจมตี!', 'crit', q.x, 2.2, q.z); bump('sneakHits') } swingIcon('⚔️', q.x + .3, 1.3, q.z); { const a = Math.atan2(q.x - me().x, q.z - me().z); VF.slash(me().x + Math.sin(a) * .5, me().y + 1, me().z + Math.cos(a) * .5, a, r.crit ? '#ffd23f' : '#ffffff', r.crit); VF.burst(q.x, q.y + .7, q.z, r.crit ? '#ffd23f' : '#fff6d0', r.crit ? 16 : 9); if (r.crit) VF.ring(q.x, q.y, q.z, '#ffd23f', 1.8, .35) } stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg');
+    if (debOn('daze') && Math.random() < .3) { faceSwing(m.A.root.position.x, m.A.root.position.z); VF.slash(me().x, me().y + 1, me().z, PL.yaw, '#a0a0c0'); floater('💫 พลาด!', 'tool', m.A.root.position.x, 1.6, m.A.root.position.z); return } const sneak = CROUCH && !m.aggro && !m.hit, r = dmgCalc(handAtk(), m.T.def, sneak ? D.SNEAK.dmg : 1), q = m.A.root.position; faceSwing(q.x, q.z); if (sneak) { floater('🥷 ลอบโจมตี!', 'crit', q.x, 2.2, q.z); bump('sneakHits') } swingIcon('⚔️', q.x + .3, 1.3, q.z); { const a = Math.atan2(q.x - me().x, q.z - me().z); VF.slash(me().x + Math.sin(a) * .5, me().y + 1, me().z + Math.cos(a) * .5, a, r.crit ? '#ffd23f' : '#ffffff', r.crit); VF.burst(q.x, q.y + .7, q.z, r.crit ? '#ffd23f' : '#fff6d0', r.crit ? 16 : 9); if (r.crit) VF.ring(q.x, q.y, q.z, '#ffd23f', 1.8, .35) } stopT = now + D.HIT_STOP * (r.crit ? 2 : 1); hurtMon(m, r.d, r.crit ? 'crit' : 'dmg');
     if (K.arc) { const a0 = Math.atan2(q.x - me().x, q.z - me().z); for (const o of [...mons]) { if (o === m || o.T.animal && !o.T.charge) continue; const p = o.A.root.position, d = dist(me().x, me().z, p.x, p.z); let da = Math.atan2(p.x - me().x, p.z - me().z) - a0; da = Math.atan2(Math.sin(da), Math.cos(da));
-      if (d < K.reach + .4 && Math.abs(da) < K.arc) { o.hit = true; hurtMon(o, dmgCalc(pStats().atk, o.T.def).d, 'dmg') } } VF.ring(me().x, me().y, me().z, '#ffffff', K.reach, .3) }   /* two-handed: sweep everything in front */
-    wearItem('sword'); return;
+      if (d < K.reach + .4 && Math.abs(da) < K.arc) { o.hit = true; hurtMon(o, dmgCalc(handAtk(), o.T.def).d, 'dmg') } } VF.ring(me().x, me().y, me().z, '#ffffff', K.reach, .3) }   /* two-handed: sweep everything in front */
+    if (handTool() === 'sword') wearItem('sword'); return;
   }
   if (key.kind !== 'clear' || tool === 'sword' && !key.w || tool === 'rod') return;
   const o = W.clear.get(key.id); if (!o || !o.g) return;
   if (S.mon) { hint(`🔒 ต้องกำจัด <b>${D.MON[S.mon.kind].name}</b> ก่อน`); return }
   const T = D.CLEAR[o.t], tier = S.tools[T.tool];
-  if (T.tool !== (key.w ? T.tool : tool)) { floater(`ใช้ ${D.TOOLS[T.tool][0]}`, 'tool', o.x, 1.3, o.z); return }
+  if (T.tool !== (key.w || key.ok ? T.tool : tool)) { floater(`ใช้ ${D.TOOLS[T.tool][0]}`, 'tool', o.x, 1.3, o.z); return }
   if (key.w && T.tool === 'axe' && Math.random() < .5) setTimeout(() => wearItem('sword'));   /* v2.1.3 chopping with the weapon wears it a little */
   if ((T.minTier || 0) > tier) { hint(`${D.TOOLS[T.tool][0]} ต้องใช้${D.TOOLS[T.tool][1]}ขั้น <b>${D.TIER[T.minTier]}</b> ขึ้นไป · อัปเกรดที่ช่างอุปกรณ์ในเมือง`); return }
   if (T.fixed) { hint(o.t === 'bigtree' ? '🌳 ต้นไม้ใหญ่นี้เป็นสัญลักษณ์ของที่นี่ ตัดไม่ได้' : '🪨 หินก้อนนี้ใหญ่เกินกว่าจะทุบ', 1600); return }
@@ -626,7 +626,7 @@ function talk(lines, done) {          // a small dialogue sheet: tap to advance
 function rescueHowsif() {
   S.story.howsif = 1; S.has.rod = true; placeHowsif(); storyProps(); save();
   talk([['👴 ???', 'โอย… ขอบใจมากนะ ลุงติดอยู่ใต้ซากเรือมาทั้งคืน'], ['👴 ลุงฮาวซิฟ', 'ลุงชื่อฮาวซิฟ เป็นชาวประมงที่นี่ คืนนั้นมีเมฆดำก้อนใหญ่พัดผ่าน… ทุกคนหายไปหมด'],
-    ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🎣 เบ็ดของลุง · แตะ 🪏 (โหมดฟาร์ม) แล้วกด 🎣 แล้วแตะที่น้ำทะเล รอจนปลากิน แล้วกดค้างเพื่อรอก<br>ช่วยตกปลา ${D.HOWSIF_FISH} ตัวมาให้ลุงหน่อยนะ หิวเหลือเกิน`]], () => { setTool('rod'); questCheck() });
+    ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🎣 เบ็ดของลุง · แตะ <b>Y</b> 2 ครั้ง เลือก 🎣 แล้วกด Y ค้างเล็งไปที่น้ำ ปล่อยเพื่อเหวี่ยง รอจนปลากิน แล้วกด Y ค้างเพื่อรอก<br>ช่วยตกปลา ${D.HOWSIF_FISH} ตัวมาให้ลุงหน่อยนะ หิวเหลือเกิน`]], () => { setTool('rod'); questCheck() });
 }
 function openHowsif() {
   if (sick()) { if (S.story.medicine) cureHowsif(); else talk([['👴 ลุงฮาวซิฟ', S.stat.clr_herb >= D.HERBS ? 'แค่ก… สมุนไพรนี่ต้องให้คนที่รู้วิธีปรุงยา… ได้ยินว่ามีนักปรุงยาอยู่ในเมือง แต่เขาหายไป…' : `แค่ก แค่ก… สมุนไพรเรืองแสงในป่าตะวันออก… ${Math.min(D.HERBS, S.stat.clr_herb || 0)}/${D.HERBS} ต้น`]]); return }
@@ -915,7 +915,7 @@ function useThing(k) {
     case 'sword': return pickSword();
     case 'shop': return openShopBuilding(k.i);
     case 'mon': if (S.has.sword) { setTool('sword'); hint('⚔️ ลากนิ้วผ่านมอนสเตอร์เพื่อฟัน') } else hint('ยังไม่มีอาวุธ… หาอะไรมาสู้ก่อน'); return;
-    case 'clear': { const o = W.clear.get(k.id), T = o && D.CLEAR[o.t]; if (T) hint(`${T.name}: เลือก ${D.TOOLS[T.tool][0]} ${D.TOOLS[T.tool][1]}  (⚔️ ตัดด้วยอาวุธ · ⛏️ หินใช้โหมดฟาร์ม) แล้วลากนิ้วผ่าน`) }
+    case 'clear': { const o = W.clear.get(k.id), T = o && D.CLEAR[o.t]; if (T) hint(`${T.name}: ใช้ ${T.tool === 'hammer' ? '⛏️ อีเต้อ' : T.tool === 'axe' ? '🪓 ขวาน' : '🌾 เคียว / ⚔️ ดาบ'} · กด <b>A</b> ค้างเพื่อเปลี่ยน`) }
   }
 }
 function openForest() {
@@ -1119,7 +1119,7 @@ function openHome() {
       ({ bag: () => openBag(), craft: openCraft, build: openBuild, map: openMap, book: () => openJournal(), shop: openTown, wear: openWear, notes: openNotes, album: openAlbum, me: openProfile, set: openMenu })[k]() });
   });
 }
-$('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight') }); $('mFarm').addEventListener('click', e => { e.preventDefault(); setMode('farm') }); setTimeout(() => setMode(S.mode || 'fight', true));
+$('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight') }); $('mFarm').addEventListener('click', e => { e.preventDefault(); setMode('farm') }); setTimeout(() => setMode('fight', true));   /* v3.6 no farm mode any more: A / Y slots hold the tools */
 
 /* v2.1 X = jump · keep holding 3 s = crouch (sneak) · tap X while crouching = stand up */
 { const X = $('bX'); let stop = null;
@@ -1127,10 +1127,16 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
     if (S.mode === 'farm') { farmX(); return } if (CROUCH) { CROUCH = false; sfx('tap'); return } doJump(); stop = holdWatch(X, D.HOLD_CROUCH, () => { stop = null; if (!CROUCH) toggleCrouch() }) });
   const up = () => { if (stop) { stop(); stop = null } }; X.addEventListener('pointerup', up); X.addEventListener('pointercancel', up); X.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1 Y = 🏹 bow: press = aim (slide the thumb / drag the screen / tilt the phone) · let go = shoot */
-{ const Y = $('bY'); let lx = 0, ly = 0;
-  Y.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; if (S.mode === 'farm') { crayonDraw(); return } gyroAsk(); try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY; aimStart() });
+{ const Y = $('bY'); let lx = 0, ly = 0, t0 = 0, tap = 0;   /* v3.6 Y = the bow slot (🏹 bow · 🎣 rod · 🪏 shovel): hold = aim, let go = shoot / cast / dig · double-tap = pick what goes in it */
+  Y.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; const now = performance.now();
+    if (PICK) { pickClose(); return } if (now - tap < D.DTAP * 1000) { tap = 0; aimEnd(false); openPick('y'); return } t0 = now;
+    const k = S.ytool || 'bow'; try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
+    if (k === 'rod') { if (F) { if (F.phase === 'wait') fishEnd(); else F.hold = true; return } if (!S.has.rod) { hint('🎣 ยังไม่มีเบ็ด', 1500); return } setTool('rod'); aimStart('rod'); return }
+    if (k === 'hoe') { if (!S.has.hoe) { hint('🪏 ยังไม่มีพลั่ว · ไปคุยกับลุงที่ฟาร์มก่อน', 1800); return } setTool('hoe'); aimStart('dig'); return }
+    gyroAsk(); aimStart() });
   Y.addEventListener('pointermove', e => { if (!AIM) return; aimTurn(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY });
-  Y.addEventListener('pointerup', () => { gyroAsk(); aimEnd(true) }); Y.addEventListener('pointercancel', () => aimEnd(false)); Y.addEventListener('contextmenu', e => e.preventDefault()) }
+  Y.addEventListener('pointerup', () => { const now = performance.now(), short = t0 && now - t0 < 220; t0 = 0; if (F && F.hold) { F.hold = false; return } if (short) { tap = now; aimEnd(false); return } gyroAsk(); aimEnd(true) });   /* a quick tap never wastes an arrow */
+  Y.addEventListener('pointercancel', () => aimEnd(false)); Y.addEventListener('contextmenu', e => e.preventDefault()) }
 $('quest').onclick = () => {
   const q = D.QUESTS[S.quest]; if (!q || q.go === 'none') return; closeSheets(); questGo(q) };
 function questGo(q) {
@@ -1763,6 +1769,10 @@ function nearTarget() {
   for (const p of W.picks) { const k = p.userData.pick; if (!k || ['clear', 'mon', 'pet'].includes(k.kind) || !p.parent) continue; consider(p.position.x, p.position.z, k.kind === 'house' || k.kind === 'shop' ? 2.8 : 2.2, { k, p }) }
   return best;
 }
+/* v3.6 the A hand: S.hand = 'w' (the equipped weapon) | 'sickle' | 'axe' | 'hammer' · the Y slot: S.ytool = 'bow' | 'rod' | 'hoe' */
+const handTool = () => S.hand && S.hand !== 'w' && D.HAND[S.hand] ? S.hand : 'sword';
+const handAtk = () => pStats().atk * (handTool() === 'sword' ? 1 : D.HAND[handTool()].atk);
+function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T) return false; if (h === 'hammer') return T.tool === 'hammer'; if (h === 'axe') return T.tool === 'axe'; return T.tool === 'sickle' || t === 'bush' }
 function actA() {
   stopAuto(); const now = performance.now();
   if (BM) { placeBuild(); return }
@@ -1779,17 +1789,16 @@ function actA() {
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (S.mode === 'farm') return farmA(t);
   if (safeHere() && (!t || t.m)) { safeHint(); return }
-  if (t && t.o && weaponOf() && D.CLEAR[t.o.t] && D.CLEAR[t.o.t].tool !== 'hammer') {   /* v2.1.3 sword mode: grass, bushes and trees are cut with the weapon */
-    if (!DRAWN) { drawWeapon(); return } const o = t.o, go = () => { setTool('sword'); DRAWN = true; toolHit({ kind: 'clear', id: o.id, w: 1 }) };
+  if (t && t.o && D.CLEAR[t.o.t]) {   /* v3.6 the A hand decides: sword / sickle = grass · axe = trees · pickaxe = rocks */
+    const o = t.o, h = handTool(); if (!cutsWith(h, o.t)) { const need = D.CLEAR[o.t].tool === 'hammer' ? '⛏️ อีเต้อ' : D.CLEAR[o.t].tool === 'axe' ? '🪓 ขวาน' : '🌾 เคียว หรือ ⚔️ ดาบ'; hint(`${D.CLEAR[o.t].name} ต้องใช้ ${need} · กด <b>A</b> ค้างเพื่อเปลี่ยน`, 2000); return }
+    if (h === 'sword' && !DRAWN) { drawWeapon(); return } const go = () => { setTool(h); if (h === 'sword') DRAWN = true; toolHit(h === 'sword' ? { kind: 'clear', id: o.id, w: 1 } : { kind: 'clear', id: o.id, ok: 1 }) };
     if (dist(me().x, me().z, o.x, o.z) > D.REACH_TOOL) walkTo(o.x, o.z, go, 1.1); else go(); return }
-  if (t && t.o && D.CLEAR[t.o.t] && D.CLEAR[t.o.t].tool === 'hammer' && !t.k) { hint('⛏️ หินต้องใช้อีเต้อ · แตะ 🪏 สลับเป็นโหมดฟาร์ม แล้วกด X', 2200); return }
-  if (t && t.m) { if (!DRAWN) { drawWeapon(); return } setTool('sword'); toolHit({ kind: 'mon', m: t.m }); return }
-  if (t && t.o) { const T = D.CLEAR[t.o.t]; setTool(T.tool); toolHit({ kind: 'clear', id: t.o.id }); return }
+  if (t && t.m) { const h = handTool(); if (h === 'sword') { if (!DRAWN) { drawWeapon(); return } setTool('sword') } else setTool(h); toolHit({ kind: 'mon', m: t.m }); return }
   if (t && t.k) { useThing(t.k); return }
   if (tool === 'hoe') { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (till(cx, cz)) return }
   const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3;
   if (S.has.rod && waterAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return }       // facing water = cast
-  if (!DRAWN && weaponOf()) { drawWeapon(); return } if (!(swingT > 0)) { swingT = .3; sfx('tap') }   /* v2.0.2: nothing in front → A = swing at the air (jump moved to Y) */
+  if (handTool() !== 'sword') setTool(handTool()); else if (!DRAWN && weaponOf()) { drawWeapon(); return } if (!(swingT > 0)) { swingT = .3; sfx('tap') }   /* v2.0.2: nothing in front → A = swing at the air (jump moved to Y) */
 }
 let CROUCH = false;
 /* ── v2.1 🏹 bow & arrows ── */
@@ -1798,7 +1807,7 @@ const ARROWS = [], bowOf = () => S.bag.find(x => x.id === S.eq.bow) || null, _aD
 const NOCK = new THREE.Group(); ARROW_MESH(NOCK); NOCK.visible = false; scene.add(NOCK);
 function aimStart(kind = 'bow') {
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
-  if (kind === 'rod') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .14, tgt: null, rod: 1 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
+  if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .35 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
   if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
@@ -1816,7 +1825,7 @@ function aimRay() {
   return best;
 }
 function aimTick(now) {
-  if (AIM.rod) { if (PL.swim || RIDE || GLIDE) { aimEnd(false); return } aimRay(); const c = AIM.cast = castPoint(); CASTR.visible = !!(c && c.wet); if (c) CASTR.position.set(c.x, Math.max(groundH(c.x, c.z), -.02) + .05, c.z);
+  if (AIM.rod) { if (PL.swim || RIDE || GLIDE) { aimEnd(false); return } aimRay(); const c = AIM.cast = castPoint(); CASTR.visible = !!(c && (AIM.dig ? !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R : c.wet)); if (c) CASTR.position.set(c.x, Math.max(groundH(c.x, c.z), -.02) + .05, c.z);
     $('xhair').classList.toggle('on', !!(c && c.wet)); $('xhair').classList.add('rod'); return }
   if (!bowOf() || PL.swim || RIDE || GLIDE) { aimEnd(false); return }
   AIM.tgt = aimRay(); $('xhair').classList.toggle('on', !!AIM.tgt); $('xhair').style.setProperty('--d', Math.min(1, (now - AIM.t0) / (D.ARROW.draw * 1000)));
@@ -1865,10 +1874,10 @@ function aimCam(tx, ty, tz) {   /* third person → first person at the eyes, lo
   const ex = me().x + Math.sin(y) * .12, ez = me().z + Math.cos(y) * .12, ey = me().y + 1.38;
   _aL.set(tx + Math.sin(y) * 1.5, ty - .2, tz + Math.cos(y) * 1.5).lerp(_aT.set(ex + dx * 20, ey + dy * 20, ez + dz * 20), AIMK); cam.position.lerp(_aP.set(ex, ey, ez), AIMK); cam.lookAt(_aL); cam.near = .05;
   const draw = AIM && !AIM.rod ? Math.min(1, (performance.now() - AIM.t0) / (D.ARROW.draw * 1000)) : 0; cam.fov = 52 - AIMK * (4 + 8 * draw);   // zoom (gentle: portrait screens are already narrow)
-  const fps = AIMK > .6; PL.root.visible = !fps && !!S.avatar; VM.visible = fps && !!AIM && !!AIM.rod; if (VM.visible) vmTick(draw);   /* v3.1 the bow: just the crosshair */
+  const fps = AIMK > .6; PL.root.visible = !fps && !!S.avatar; VM.visible = fps && !!AIM && !!AIM.rod && !AIM.dig; if (VM.visible) vmTick(draw);   /* v3.1 the bow: just the crosshair */
 }
 function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; NOCK.visible = false; VM.visible = false; CASTR.visible = false; $('xhair').classList.remove('rod'); document.body.classList.remove('rodaim');
-  if (a.rod) { document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { const c = a.cast; if (c && c.wet) castAt(c.x, c.z); else hint('🎣 เล็งวงฟ้าให้ตกลงน้ำ แล้วปล่อย', 1500) } gearView(); return } document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) shoot(a); gearView() }
+  if (a.rod) { document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { const c = a.cast; if (a.dig) { if (c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R) { const [cx, cz] = cellOf(c.x, c.z); till(cx, cz) } else hint('🪏 เล็งวงฟ้าไปที่พื้นหญ้าใกล้ๆ แล้วปล่อย', 1500) } else if (c && c.wet) castAt(c.x, c.z); else hint('🎣 เล็งวงฟ้าให้ตกลงน้ำ แล้วปล่อย', 1500) } gearView(); return } document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) shoot(a); gearView() }
 const arwT = () => { const t = S.arrowT; return t && D.ARROWX[t] && ((S.arrowsX || {})[t] || 0) > 0 ? t : '' };
 function aimHud() { const t = arwT(); $('xN').textContent = t ? `${D.ARROWX[t].icon} ${D.ARROWX[t].name} ×${S.arrowsX[t]}` : '🏹 ×' + (S.arrows || 0); arwBtn() }
 function arwBtn() { const el = $('bArw'); if (!el) return; const has = Object.keys(D.ARROWX).some(k => (S.arrowsX || {})[k] > 0), t = arwT(); el.style.display = has && S.eq.bow && S.mode !== 'farm' ? '' : 'none'; el.textContent = t ? D.ARROWX[t].icon : '🏹' }
@@ -1922,12 +1931,12 @@ const TUT = [
   ['swing', '⚔️', 'กด <b>A</b> ชักอาวุธ แล้วกด <b>A</b> อีกครั้งเพื่อฟัน (ฟันพุ่มหญ้าก็ได้)', () => !!weaponOf()],
   ['guard', '🛡️', 'กด <b>B</b> ยกโล่ป้องกัน · กด <b>B</b> อีกครั้งเพื่อเก็บ', () => !!(S.eq.shield && kindOf().shield)],
   ['shoot', '🏹', 'ออกนอกเขตปลอดภัย กด <b>Y</b> ค้างเพื่อเล็ง ปล่อยเพื่อยิง', () => !!(bowOf() && S.arrows > 0)],
-  ['farm', '🪏', 'แตะไอคอน 🪏 (เหนือปุ่ม A) เพื่อสลับเป็นโหมดฟาร์ม', () => !!S.has.hoe], ['dig', '🟩', 'โหมดฟาร์ม: กด 🪏 ขุดดินตรงกรอบสีเขียว (บนเกาะ)', () => !!S.has.hoe],
-  ['pick', '⛏️', 'โหมดฟาร์ม: เข้าใกล้หิน กด ⛏️ เพื่อทุบ', () => !!S.has.hoe], ['draw', '🖍️', 'กด 🖍️ ใต้ปุ่ม 🏠 เลือกกรอบ แล้ววาดภาพ', () => !!S.has.hoe],
-  ['fight', '⚔️', 'แตะ ⚔️ เพื่อกลับโหมดต่อสู้', () => !!S.has.hoe], ['glide', '🍃', 'กระโดดจากที่สูง แล้วกด <b>X</b> กลางอากาศเพื่อกางใบไม้ร่อน', () => !!S.has.glider]];
+  ['hand', '🪓', 'กด <b>A</b> ค้าง แล้วเลื่อนซ้าย-ขวาเพื่อเปลี่ยนอาวุธ/เครื่องมือ (ขวาน ตัดต้นไม้ · อีเต้อ ทุบหิน)', () => true], ['dig', '🟩', 'แตะ <b>Y</b> 2 ครั้ง เลือก 🪏 พลั่ว แล้วกด Y ค้างเล็งพื้นหญ้า ปล่อยเพื่อขุด', () => !!S.has.hoe],
+  ['pick', '⛏️', 'ถือ ⛏️ อีเต้อ (A ค้าง) เข้าใกล้หิน แล้วกด <b>A</b> เพื่อทุบ', () => true], ['draw', '🖍️', 'กด 🖍️ ใต้ปุ่ม 🏠 เลือกกรอบ แล้ววาดภาพ', () => !!S.has.hoe],
+  ['shield', '🛡️', 'แตะ <b>B</b> 2 ครั้งเร็วๆ เพื่อเลือกโล่', () => S.bag.some(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield')], ['glide', '🍃', 'กระโดดจากที่สูง แล้วกด <b>X</b> กลางอากาศเพื่อกางใบไม้ร่อน', () => !!S.has.glider]];
 const tutEl = (() => { const e = document.createElement('div'); e.id = 'tut'; document.body.appendChild(e); return e })();
 var tutT = 0, tutCur = null;   // var: tutEv may run before this line during start-up
-function tutEv(k) { const T = S.tut || (S.tut = {}); if (T[k] || !S.story.intro) return; if (k === 'fight' && !T.draw) return; T[k] = Date.now();   /* back to ⚔️ counts only at the end of the farm steps */
+function tutEv(k) { const T = S.tut || (S.tut = {}); if (T[k] || !S.story.intro) return; T[k] = Date.now();   /* back to ⚔️ counts only at the end of the farm steps */
   if (tutCur && tutCur[0] === k) { sfx('level'); VF.ring(me().x, me().y + .05, me().z, '#ffe27a', 1.3, .4); tutT = 0 } save() }
 function tutTick(now) {
   if (now < tutT) return; tutT = now + 400; const T = S.tut || (S.tut = {}), busy = CUT || !S.story.intro || !S.avatar || document.querySelector('.ov') || FRAME;
@@ -1966,8 +1975,9 @@ function ctxTick(now, dt, mv) {
     else if (t && t.k) { const k = t.k.kind, ic = TALK.has(k) ? 'talk' : CTX_ICO[k] ? k : 'use'; CTX = { k: ic, at: t.p ? t.p.position : null, h: 1.2, go: null } }
     else if (t && t.o) { const o = t.o, T = D.CLEAR[o.t];
       if (fruitOn(o)) CTX = { k: 'fruit', xz: [o.x, o.z], h: o.t === 'tree' ? 2.6 : 1.1, go: () => { if (dist(q.x, q.z, o.x, o.z) > D.REACH_TOOL + .4) walkTo(o.x, o.z, () => pickFruit(o), 1.1); else pickFruit(o) } };
-      else if (!farm || T.tool === 'hammer') { const soft = ['flower', 'mushroom', 'herb'].includes(o.t), useW = T.tool === 'sickle' && weaponOf() && !soft, ic = soft ? 'fruit' : useW ? 'sword' : T.tool;
-        CTX = { k: ic, xz: [o.x, o.z], h: T.size === 'l' ? 2.4 : T.size === 'm' ? 1.7 : 1, go: () => { const hit = () => { if (useW) { DRAWN = true; setTool('sword'); toolHit({ kind: 'clear', id: o.id, w: 1 }) } else { setTool(T.tool); toolHit({ kind: 'clear', id: o.id }) } };
+      else { const soft = ['flower', 'mushroom', 'herb'].includes(o.t), h = handTool(), can = soft || cutsWith(h, o.t), ic = soft ? 'fruit' : !can ? T.tool : h === 'sword' ? 'sword' : h;   /* v3.6 the A hand decides (soft things are picked by hand) */
+        CTX = { k: ic, xz: [o.x, o.z], h: T.size === 'l' ? 2.4 : T.size === 'm' ? 1.7 : 1, go: () => { if (!can) { const need = T.tool === 'hammer' ? '⛏️ อีเต้อ' : T.tool === 'axe' ? '🪓 ขวาน' : '🌾 เคียว หรือ ⚔️ ดาบ'; hint(`${T.name} ต้องใช้ ${need} · กด <b>A</b> ค้างเพื่อเปลี่ยน`, 2000); return }
+          const hit = () => { if (soft) { setTool(T.tool); toolHit({ kind: 'clear', id: o.id }) } else if (h === 'sword') { DRAWN = true; setTool('sword'); toolHit({ kind: 'clear', id: o.id, w: 1 }) } else { setTool(h); toolHit({ kind: 'clear', id: o.id, ok: 1 }) } };
           if (dist(me().x, me().z, o.x, o.z) > D.REACH_TOOL) walkTo(o.x, o.z, hit, 1.1); else hit() } } } }
     else if (t && t.m && !farm) CTX = { k: 'fight', at: t.m.A.root.position, h: 1.8, go: null };
     else if (!farm && walkS > D.RUN_AFTER && !RUNON && !S.tired && !CROUCH) CTX = { k: 'run', go: () => { RUNON = true; sfx('tap') } };
@@ -2118,24 +2128,45 @@ function openWheel() {
 function wheelMark() { $('wheel').querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', +b.dataset.w === wheelI)); const lk = WV[wheelI][3](); $('whN').innerHTML = WV[wheelI][0] + ' ' + WV[wheelI][1] + (lk ? `<br><small class="lk">🔒 ${lk}</small>` : '') }
 function closeWheel() { if (!wheelOn) return; $('aK').style.transform = ''; wheelOn = false; CUT = false; last = performance.now(); $('wheel').style.display = 'none'; document.body.classList.remove('wheel') }
 function wheelPick() { const [, , f, lock] = WV[wheelI], lk = lock(); closeWheel(); if (lk) { sfx('hurt'); hint('🔒 ' + lk, 1800); return } f() }
-$('wL').onclick = () => { wheelI = (wheelI + WV.length - 1) % WV.length; sfx('tap'); wheelMark() };
-$('wR').onclick = () => { wheelI = (wheelI + 1) % WV.length; sfx('tap'); wheelMark() };
+$('wL').onclick = () => { if (PICK) { pickStep(-1); return } wheelI = (wheelI + WV.length - 1) % WV.length; sfx('tap'); wheelMark() };
+$('wR').onclick = () => { if (PICK) { pickStep(1); return } wheelI = (wheelI + 1) % WV.length; sfx('tap'); wheelMark() };
 $('wheel').addEventListener('pointerdown', e => { if (e.target.id === 'wheel') closeWheel() });
 $('bWheel').onclick = openWheel;
+/* ================= v3.6 the pickers: a row of choices that slides left-right (no wheel) · A hold / Y double-tap / B double-tap ================= */
+let PICK = null;
+const pickEl = (() => { const e = document.createElement('div'); e.id = 'pick'; document.body.appendChild(e); return e })();
+function pickList(slot) {
+  if (slot === 'a') { const L = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword').map(x => ({ k: 'w:' + x.id, icon: D.ITEMS[x.t].icon, name: D.ITEMS[x.t].name }));
+    for (const k in D.HAND) L.push({ k, icon: D.HAND[k].icon, name: D.HAND[k].name }); return { L, cur: S.hand && S.hand !== 'w' ? S.hand : 'w:' + S.eq.sword, title: 'A · อาวุธ / เครื่องมือ' } }
+  if (slot === 'y') { const L = []; if (bowOf()) L.push({ k: 'bow', icon: '🏹', name: D.ITEMS[bowOf().t].name }); if (S.has.rod) L.push({ k: 'rod', ...D.YTOOL.rod }); if (S.has.hoe) L.push({ k: 'hoe', ...D.YTOOL.hoe }); return { L, cur: S.ytool || 'bow', title: 'Y · เล็ง' } }
+  const L = [{ k: '', icon: '✋', name: 'ไม่ใช้โล่' }, ...S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield').map(x => ({ k: x.id, icon: D.ITEMS[x.t].icon, name: D.ITEMS[x.t].name }))]; return { L, cur: S.eq.shield || '', title: 'B · ป้องกัน' } }
+function openPick(slot, x0) { const P = pickList(slot); if (!P.L.length) { hint('ยังไม่มีอุปกรณ์ให้เลือก', 1200); return } let i = Math.max(0, P.L.findIndex(o => o.k === P.cur));
+  PICK = { slot, L: P.L, i, i0: i, hold: x0 != null, x0 }; sfx('tap'); pickEl.innerHTML = `<b>${P.title}</b><div class="row">${P.L.map((o, n) => `<button data-p="${n}">${o.icon}</button>`).join('')}</div><small></small>`;
+  pickEl.querySelectorAll('[data-p]').forEach(b => b.onclick = ev => { ev.stopPropagation(); PICK.i = +b.dataset.p; pickChoose() }); pickEl.classList.add('on'); pickMark() }
+function pickMark() { if (!PICK) return; pickEl.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', +b.dataset.p === PICK.i)); pickEl.querySelector('small').textContent = PICK.L[PICK.i].name + (PICK.hold ? ' · เลื่อนซ้าย-ขวา แล้วปล่อย' : '') }
+function pickStep(d) { if (!PICK) return; PICK.i = (PICK.i + d + PICK.L.length) % PICK.L.length; sfx('tap'); pickMark() }
+function pickDrag(x) { if (!PICK) return; const n = Math.max(0, Math.min(PICK.L.length - 1, PICK.i0 + Math.round((x - PICK.x0) / 46))); if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } }
+function pickClose() { PICK = null; pickEl.classList.remove('on') }
+function pickChoose() { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; pickClose(); tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
+  if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; S.eq.sword = o.k.slice(2); setTool('') } else { S.hand = o.k; DRAWN = false; setTool(o.k) } }
+  else if (slot === 'y') { aimEnd(false); S.ytool = o.k; if (tool === 'rod' || tool === 'hoe') setTool('') }
+  else { S.eq.shield = o.k || null; guardTog = false; updGuard() }
+  sfx('coin'); hint(`${o.icon} ${o.name}`, 900); save(); gearView(); hud() }
 /* v2.1 A = attack / use (on press) · keep holding 3 s = 🤖 AUTO attack (a ring fills) · while the 🧰 wheel is open A picks */
 const holdRing = (el, k) => el.style.setProperty('--p', Math.round(Math.max(0, Math.min(1, k)) * 100) + '%');
 function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true; const step = () => { if (!on) return; const k = (performance.now() - t0) / (sec * 1000); if (k >= 1) { on = false; holdRing(el, 0); done(); return } holdRing(el, (k - .12) / .88); requestAnimationFrame(step) }; requestAnimationFrame(step); return () => { on = false; holdRing(el, 0) } }
-{ const A = $('bA'); let stop = null;
+{ const A = $('bA'); let stop = null, later = false;
   A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); RUNON = false; if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
-    actA(); if (S.mode !== 'farm' && !S.auto && S.has.sword) stop = holdWatch(A, D.HOLD_AUTO, () => { stop = null; if (!S.auto) toggleAuto() }) });
-  const up = () => { if (stop) { stop(); stop = null } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
+    if (PICK) { if (!PICK.hold) pickChoose(); return } const tk = nearTarget(); later = !!(tk && tk.k) && !BM; if (!later) actA(); stop = holdWatch(A, D.HOLD_PICK, () => { stop = null; later = false; openPick('a', e.clientX) }) });   /* talking / using things waits for the release (so holding A only opens the picker) */   /* v3.6 hold A = pick a weapon / tool (slide left-right · let go) */
+  A.addEventListener('pointermove', e => { if (PICK && PICK.hold) pickDrag(e.clientX) });
+  const up = () => { if (stop) { stop(); stop = null } if (later) { later = false; actA(); return } if (PICK && PICK.hold) { pickChoose(); return } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } }); A.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1.1 B = shield: tap (empty-handed) = raise the shield · tap again (or with a weapon out) = put everything away · hold = block while held · a window open → tap closes it */
-let guard = false, guardTog = false, guardHold = false;
+let guard = false, guardTog = false, guardHold = false, bTap = 0;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0;
-  B.addEventListener('pointerdown', e => { e.preventDefault(); if (closePara()) return; if (HORSE && !document.querySelector('.ov')) { dismount(); return } if (RUNON) { RUNON = false; sprintT = 0; hint('🚶 หยุดวิ่ง', 700); return } if (S.mode === 'farm' && !document.querySelector('.ov') && !wheelOn && !BM) { unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { } farmB(); t0 = 0; return } t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guardHold = true; updGuard() } }, 250) });
-  const up = () => { if (S.mode === 'farm' && AIM && AIM.rod) { aimEnd(true); return } if (S.mode === 'farm' && F && F.hold) { F.hold = false; return } if (S.mode === 'farm' && !t0) return; const short = performance.now() - t0 < 240; t0 = 0; guardHold = false; updGuard(); if (!short || wheelOn) return;
+  B.addEventListener('pointerdown', e => { e.preventDefault(); if (PICK) { pickClose(); return } if (closePara()) return; if (!document.querySelector('.ov') && performance.now() - bTap < D.DTAP * 1000) { bTap = 0; guardHold = false; guardTog = false; updGuard(); openPick('b'); return } if (HORSE && !document.querySelector('.ov')) { dismount(); return } if (RUNON) { RUNON = false; sprintT = 0; hint('🚶 หยุดวิ่ง', 700); return } if (S.mode === 'farm' && !document.querySelector('.ov') && !wheelOn && !BM) { unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { } farmB(); t0 = 0; return } t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guardHold = true; updGuard() } }, 250) });
+  const up = () => { if (S.mode === 'farm' && AIM && AIM.rod) { aimEnd(true); return } if (S.mode === 'farm' && F && F.hold) { F.hold = false; return } if (S.mode === 'farm' && !t0) return; const short = performance.now() - t0 < 240; if (short) bTap = performance.now(); t0 = 0; guardHold = false; updGuard(); if (!short || wheelOn) return;
     const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } walkT = null; work = null; stopAuto();
     if (DRAWN || guardTog) { stowAll(); return } if (tool && tool !== 'sword') { setTool(''); return }
     if (S.eq.shield && kindOf().shield) { guardTog = true; updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ อาวุธสองมือ/หอก ใช้โล่ไม่ได้' : '🛡️ ยังไม่ได้สวมโล่', 1300) };
@@ -3263,7 +3294,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { get MINIR() { return MINIR }, qActive, npcState, SKYCLOUD, CAPC, get scene() { return scene }, GIANT_H, TIMB, TLOGS, timber, regrow, get shakeT() { return shakeT }, get SUND() { return SUND }, sun, lodInfo: () => { let hi = 0, lo = 0; for (const c of CHUNKS.values()) if (c.lod) c.lod.on ? hi++ : lo++; return { hi, lo } }, get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { get MINIR() { return MINIR }, pick: () => PICK && { slot: PICK.slot, i: PICK.i, L: PICK.L.map(o => o.k) }, qActive, npcState, SKYCLOUD, CAPC, get scene() { return scene }, GIANT_H, TIMB, TLOGS, timber, regrow, get shakeT() { return shakeT }, get SUND() { return SUND }, sun, lodInfo: () => { let hi = 0, lo = 0; for (const c of CHUNKS.values()) if (c.lod) c.lod.on ? hi++ : lo++; return { hi, lo } }, get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

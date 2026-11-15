@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.5.1';
+export const APP_VER = '3.6';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -46,7 +46,7 @@ export const ORE_BY = { home: 'copper', navalee: 'copper', sylvaren: 'copper', l
 export const ORE_CHANCE = .35, ORE_COL = { copper: '#e07a3a', ore: '#8a96a8', silver: '#e8eef6', goldOre: '#ffd23f', coal: '#2a2228', gemstone: '#6ae0ff' };  // [icon, name, sell price]
 
 /* ---- farm tools: tier 0 wood · 1 stone · 2 iron · 3 crystal ---- */
-export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], rod: ['🎣', 'เบ็ด'] };
+export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'อีเต้อ'], rod: ['🎣', 'เบ็ด'] };
 export const CLEAR_EXP = { s: 2, m: 4, l: 8 };          // player exp per cleared thing
 export const TIER = ['ไม้', 'หิน', 'เหล็ก', 'คริสตัล'];
 export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, stone: 30, ore: 3, coin: 15000 }, { wood: 80, stone: 80, ore: 12, coin: 60000 }];
@@ -199,7 +199,11 @@ export const STAM_FADE = 1.2;                                    // v2.4.2 secon
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
-export const HOLD_AUTO = 3, HOLD_CROUCH = 3;   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
+export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .32;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
+/* v3.6 what goes in the A hand besides weapons: a sickle cuts like a sword · the axe fells trees · the pickaxe breaks rocks · all of them hit monsters (atk × weapon attack) */
+export const HAND = { sickle: { icon: '🌾', name: 'เคียว', atk: .6 }, axe: { icon: '🪓', name: 'ขวาน', atk: .8 }, hammer: { icon: '⛏️', name: 'อีเต้อ', atk: .8 } };
+export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
+export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' } };   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
 /* v2.1.1 crouch: walk speed × · monster sight × · animals bolt at × distance · hitting / shooting an unaware monster = damage × */
 export const SNEAK = { sp: .5, sight: .45, flee: .45, dmg: 2 };
 export const RAR_BONUS = { B: [[0, 0], [0, 0]], R: [[2, 4], [0, 4]], E: [[5, 9], [3, 8]], L: [[10, 16], [8, 14]] };   // [atk (def ÷2) min-max, durability min-max]

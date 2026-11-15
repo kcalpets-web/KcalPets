@@ -132,6 +132,13 @@
   .wmap{overflow:auto;max-height:64vh;border:3px solid var(--ink);border-radius:12px;background:#12162a;overscroll-behavior:contain}.wmap canvas{display:block}
   .wmapW{position:relative}.wme{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#ffd23f;border:3px solid #2a2030;box-shadow:0 0 0 0 #ffd23faa;animation:wmeP 1s ease-out infinite;pointer-events:none;z-index:3}@keyframes wmeP{0%{box-shadow:0 0 0 0 #ffd23fcc}100%{box-shadow:0 0 0 16px #ffd23f00}}.ov.mapfs .sh{max-width:none;height:100%;border:0;border-radius:0;padding-top:env(safe-area-inset-top)}.ov.mapfs .wmap{max-height:calc(100dvh - 150px);height:calc(100dvh - 150px)}.wcomp{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;background:#fff8eee6;border:2px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font:900 12px system-ui;line-height:1;color:#c0303a;pointer-events:none}.wcomp i{font-style:normal;font-size:9px;order:-1}
   body.gamepad #pad{visibility:hidden}   /* v3.5 🎮 a controller is connected */
+  #tools,#modeSw{display:none!important}   /* v3.6 only X Y A B: tools live in the A / Y slots */
+  #pick{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 228px);z-index:40;display:none;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+  #pick.on{display:flex}#pick>b{font:800 12px system-ui;color:#fff;background:#2a2030d8;border-radius:10px;padding:2px 10px}
+  #pick .row{display:flex;gap:8px;padding:8px 10px;background:#fff8eee8;border:3px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 #0003;max-width:94vw;overflow-x:auto;pointer-events:auto}
+  #pick .row button{width:48px;height:48px;flex:none;border-radius:14px;border:2px solid #0002;background:#fff;font-size:26px;transition:transform .12s}
+  #pick .row button.on{border:3px solid var(--ink);background:#ffe27a;transform:scale(1.15)}
+  #pick small{font:700 12px system-ui;color:#fff;background:#2a2030d8;border-radius:10px;padding:2px 10px}
   #miniN{position:absolute;z-index:3;left:50%;top:2px;transform:translateX(-50%);font:900 10px system-ui;color:#ff6a5a;text-shadow:0 1px 2px #000;pointer-events:none}
   body.zhud #fps{top:calc(max(10px,env(safe-area-inset-top)) + 214px)}#fps{top:calc(max(10px,env(safe-area-inset-top)) + 300px)}
   #bAuto{display:none!important}#bAuto.on{display:block!important}   /* v1.1.1: AUTO lives in the wheel; this is just the 'on' badge (tap = stop) */
