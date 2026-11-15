@@ -741,7 +741,7 @@ function fishCam(now) { const f = F, q = me(), ey = Math.max(-.2, q.y) + 1.35, d
   cam.position.set(q.x - ux * .25, ey, q.z - uz * .25); cam.lookAt(f.x - ux * Math.min(1.5, L * .2), -.2 + (f.phase === 'reel' ? .15 : 0), f.z - uz * Math.min(1.5, L * .2)); cam.fov = 55; cam.near = .05; cam.updateMatrixWorld();
   if (PL) PL.root.visible = false;
   const tens = f.phase === 'reel' ? .35 + .4 * Math.abs(Math.sin(now / 140)) * (f.hold ? 1 : .4) : f.phase === 'bite' ? .5 : f.phase === 'cast' ? -.6 * (f.t / .55) : 0;
-  FROD.visible = true; FROD.position.set(.1, -.24, -.42).applyMatrix4(cam.matrixWorld); FROD.quaternion.copy(cam.quaternion); FROD.rotateX(-.95 + tens * .25 + Math.sin(now / 900) * .015); FROD.rotateZ(-.18); RODT.rotation.x = tens * .5;
+  FROD.visible = true; FROD.position.set(.13, -.2, -.55).applyMatrix4(cam.matrixWorld); FROD.quaternion.copy(cam.quaternion); FROD.rotateX(-1.12 + tens * .25 + Math.sin(now / 900) * .015); FROD.rotateZ(.32); FROD.scale.setScalar(.6); RODT.rotation.x = tens * .5;
   FROD.updateMatrixWorld(true); RODT.getObjectByName('tip').getWorldPosition(_tip);
   const P = LINE.geometry.attributes.position, bx = floatG.position.x, by = floatG.position.y + .18, bz = floatG.position.z, sag = f.phase === 'reel' || f.phase === 'bite' ? .05 : .5;
   for (let i = 0; i < LINEN; i++) { const t = i / (LINEN - 1); _lp.set(_tip.x + (bx - _tip.x) * t, _tip.y + (by - _tip.y) * t - Math.sin(t * Math.PI) * sag, _tip.z + (bz - _tip.z) * t); P.setXYZ(i, _lp.x, _lp.y, _lp.z) } P.needsUpdate = true; LINE.visible = f.phase !== 'cast' || f.t < .3 }
@@ -2917,8 +2917,8 @@ function wxTick(dt, now) {
   const T = D.WX.types[WXS.type] || D.WX.types.clear, cov = indoors() ? 0 : 1, e = Math.min(1, dt * .25);
   WXS.rain += (T.rain * cov - WXS.rain) * e; WXS.snow += (T.snow * cov - WXS.snow) * e; WXS.cloud += (T.cloud - WXS.cloud) * e;
   const c = cam.position, P = RAING.attributes.position.array, sl = .25;
-  RAIN.visible = WXS.rain > .02 && !CUT; if (RAIN.visible) { const n = Math.floor(RAINN * Math.min(1, WXS.rain)); RAING.setDrawRange(0, n * 2); RAIN.material.opacity = .25 + .35 * Math.min(1, WXS.rain);
-    for (let i = 0; i < n; i++) { const r = RP[i]; r[1] -= dt * 24; if (r[1] < -2) { r[1] += 22; r[0] = (Math.random() - .5) * 36; r[2] = (Math.random() - .5) * 36 } const x = c.x + r[0], y = c.y - 6 + r[1], z = c.z + r[2], j = i * 6; P[j] = x; P[j + 1] = y; P[j + 2] = z; P[j + 3] = x + sl * .3; P[j + 4] = y + .9; P[j + 5] = z + sl * .2 } RAING.attributes.position.needsUpdate = true }
+  RAIN.visible = WXS.rain > .02 && !CUT; if (RAIN.visible) { const n = Math.floor(RAINN * Math.min(1, WXS.rain)); RAING.setDrawRange(0, n * 2); RAIN.material.opacity = .4 + .4 * Math.min(1, WXS.rain);
+    for (let i = 0; i < n; i++) { const r = RP[i]; r[1] -= dt * 24; if (r[1] < -2) { r[1] += 22; r[0] = (Math.random() - .5) * 36; r[2] = (Math.random() - .5) * 36 } const x = c.x + r[0], y = c.y - 6 + r[1], z = c.z + r[2], j = i * 6; P[j] = x; P[j + 1] = y; P[j + 2] = z; P[j + 3] = x + sl * .3; P[j + 4] = y + 1.3; P[j + 5] = z + sl * .2 } RAING.attributes.position.needsUpdate = true }
   SNOW.visible = WXS.snow > .02 && !CUT; if (SNOW.visible) { const n = Math.floor(SNOWN * Math.min(1, WXS.snow)), S2 = SNOWG.attributes.position.array, wind = WXS.snow > 1 ? 4 : .6; SNOWG.setDrawRange(0, n);
     for (let i = 0; i < n; i++) { const r = SP2[i]; r[1] -= dt * (1.4 + WXS.snow); r[0] += dt * (Math.sin(now / 900 + r[3]) * .5 + wind); if (r[1] < -1) { r[1] += 16; r[0] = (Math.random() - .5) * 30; r[2] = (Math.random() - .5) * 30 } if (r[0] > 15) r[0] -= 30; S2[i * 3] = c.x + r[0]; S2[i * 3 + 1] = c.y - 5 + r[1]; S2[i * 3 + 2] = c.z + r[2] } SNOWG.attributes.position.needsUpdate = true }
   /* thunder: a white flash, a rumble a moment later · on high ground the bolt looks for you */
