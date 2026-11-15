@@ -21,7 +21,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await closeAll();
     await wait(2500); await closeAll();
-    const setup = () => E(() => { const N = window.__ng; N.placeMe(20, -6); N.PL.yaw = N.PL.yawT = Math.PI / 2 + .6; N.CAM.yaw = Math.PI / 2 + .6 + Math.PI; N.CAM.pitch = .25; N.CAM.manualT = performance.now() + 1e9; N.S.time = 600 });
+    const setup = () => E(() => { const N = window.__ng; N.placeMe(17, -6); N.PL.yaw = N.PL.yawT = Math.PI / 2 + .6; N.CAM.yaw = Math.PI / 2 + .6 + Math.PI; N.CAM.pitch = .25; N.CAM.manualT = performance.now() + 1e9; N.S.time = 600 });
     const reset = () => E(() => { const N = window.__ng; N.setGuard(false); N.setTired(false); N.setTemp(0); N.S.deb = {} });
     const P = [['idle', () => 0], ['guard', () => { const N = window.__ng; N.__m = N.__m || N.monSpawn('slime', N.me.x + 2.5, N.me.z + 1, { area: 'meadow', aggro: true }); N.setGuard(true) }], ['sneak', () => { const N = window.__ng; if (N.__m) N.hurtMon(N.__m, 999, 'dmg'); N.__m = null; N.setGuard(true) }],
       ['cold', () => { window.__ng.setTemp(-.9); window.__hold = setInterval(() => window.__ng.setTemp(-.9), 50) }], ['hot', () => { clearInterval(window.__hold); window.__hold = setInterval(() => window.__ng.setTemp(.9), 50) }], ['tired', () => { clearInterval(window.__hold); window.__ng.S.en = 0; window.__ng.setTired(true) }],
