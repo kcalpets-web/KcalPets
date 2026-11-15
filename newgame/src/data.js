@@ -50,6 +50,7 @@ export const MON = {
   rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['meat', 1], loot: [], tier: 'animal' },
   chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
   duck:    { animal: 1, legs: 1, flee: 5, run: 3.2, name: '🦆 เป็ดป่า', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: { feather: 2 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
+  horse:   { animal: 1, legs: 1, horse: 1, flee: 0, run: 0, name: '🐴 ม้าป่า', lv: 1, hp: 9999, atk: 0, def: 99, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v3.2 can't be hurt · press A to ride
   deer:    { animal: 1, legs: 1, flee: 9, run: 5.6, name: '🦌 กวาง', lv: 2, hp: 30, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { hide: 1 }, ingr: ['venison', 1, 2], loot: [], tier: 'animal' },
   boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
@@ -79,6 +80,7 @@ export const MON = {
   golemAqua: { base: 'golemGiant', cols: ['#5ac0d0', '#c8ffff', 'wave'], golem: 1, scale: 3, name: '🔷 โกเลมอความารีน', lv: 15, hp: 1400, atk: 26, def: 15, exp: 650, coin: [1800, 3000], mat: {}, loot: ['trident', 'harpoon'], tier: 'boss' },
   golemCrystal: { base: 'golemGiant', cols: ['#a8d8f0', '#ffffff', 'freeze'], golem: 1, scale: 3, name: '🔹 โกเลมคริสตัล', lv: 20, hp: 2000, atk: 36, def: 21, exp: 950, coin: [3200, 4800], mat: {}, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
   golemBone: { base: 'golemGiant', cols: ['#e8e0d0', '#c080ff', 'summon'], golem: 1, scale: 3, name: '🦴 โกเลมกระดูก', lv: 23, hp: 2400, atk: 40, def: 22, exp: 1150, coin: [3800, 5500], mat: {}, loot: ['kingSword', 'dragonBlade'], tier: 'boss' },
+  dummy:        { dummy: 1, name: '🎯 หุ่นฝึก', lv: 1, hp: 9999, atk: 0, def: 0, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'normal' },   // v3.2 the training ground (never falls)
   skeleton:     { base: 'goblin', tint: '#f0ece0', name: '💀 โครงกระดูก', lv: 12, hp: 90, atk: 16, def: 6, exp: 40, coin: [60, 120], mat: {}, loot: ['boneClub'], tier: 'normal' },
   /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
   mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
@@ -421,7 +423,8 @@ export const CROPS = {                                       // min = real minut
 export const PLOT_MAX = 24, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
-export const ANIMAL_SPAWN = { low: ['rabbit', 'chicken', 'rabbit', 'deer'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
+export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
+export const ANIMAL_SPAWN = { low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
 export const WCAMP = { count: 18, spacing: 150 };              // monster camps scattered over the big world
 export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down
   { name: 'แคมป์สไลม์', col: '#3fa860', mons: ['slime', 'slime', 'grassSprite'], chief: 'slimeKing', gem: [30, 60], coin: [300, 500] },

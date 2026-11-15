@@ -126,7 +126,10 @@ export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells)
 export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
-const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 };
+/* v3.2 the top of something you can stand on under (x, z) (world height) or null */
+export function solTop(x, z) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null; let best = null;
+  for (const e of l) { if (!e.top || !e.r || (e.o && !e.o.g)) continue; const dx = x - e.x, dz = z - e.z, d2 = dx * dx + dz * dz; if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = groundH(e.x, e.z) + e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5); if (best == null || t > best) best = t } return best }
+const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 }, SOL_TOP = { rock: .48, boulder: 1.05 };
 /* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
 const RBGM = new Map(), rbGeo = (w, h, d) => { const k = w + '|' + h + '|' + d; if (!RBGM.has(k)) { const g = rboxGeo(w, h, d, .08); const g2 = g.clone(); g2.deleteAttribute('color'); RBGM.set(k, g2) } return RBGM.get(k) };   /* v2.9 rounded ruin walls */
@@ -173,7 +176,7 @@ export function spawnClear(W, o) {
      pebble: () => { PROPS.rock(g, .45); veins(g, o, .45) }, rock: () => { PROPS.rock(g, .85); veins(g, o, .85) }, boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
-  if (SOL_R[o.t] && !o.sol) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t], o });
+  if (SOL_R[o.t] && !o.sol) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t], o, top: SOL_TOP[o.t] });
   o.pick = addPick(W, o.x, o.z, r, T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z);
 }
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -302,8 +305,16 @@ export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9,
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
 export const CLOUD = { x: 2600, z: 0, r: 34 };                                   // v1.7 the storm island (its own map, past the eastern sea)
 const onCloud = (x, z) => Math.abs(x - CLOUD.x) < 60 && Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r;
+/* v3.2 🎓 the training ground: a square of grass far out at sea (own little map) · a pond · a ledge to climb and glide from */
+export const TRAIN = { x: -420, z: 0, hw: 15, pond: [-428, 7, 4, 3], ledge: [-409, 8, 3.4, 3.4, 4] };
+const inTr = (x, z) => Math.abs(x - TRAIN.x) < 70 && Math.abs(z - TRAIN.z) < 70;
+export function trainH(x, z) { const T = TRAIN, dx = Math.abs(x - T.x), dz = Math.abs(z - T.z); if (dx > T.hw + .5 || dz > T.hw + .5) return -2;
+  const [px, pz, pw, pd] = T.pond, wx = Math.max(Math.abs(x - px) - pw, Math.abs(z - pz) - pd); if (wx < .8) return wx < 0 ? -1.1 : .15 - (.8 - wx) * .5;
+  const [lx, lz, lw, ld, lh] = T.ledge, e = Math.max(Math.abs(x - lx) - lw, Math.abs(z - lz) - ld); if (e < .6) return e < 0 ? lh : lh * (1 - e / .6) + .15 * (e / .6);
+  return .15 }
 export function groundH(x, z) {
   if (onCloud(x, z)) return .6;
+  if (inTr(x, z)) return trainH(x, z);
   if (coreDist(x, z) > 0) return wildH(x, z);
   if (x >= 9 && x < 35) { const d = Math.abs(x - RIVER.x); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(RIVER.w - .3, RIVER.w + .7, d)); return 0 }
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
@@ -311,6 +322,7 @@ export function groundH(x, z) {
   return 0;
 }
 export function waterAt(x, z) {
+  if (inTr(x, z)) { const [px, pz, pw, pd] = TRAIN.pond; return Math.abs(x - px) < pw && Math.abs(z - pz) < pd ? 'fresh' : trainH(x, z) < -1.5 ? 'sea' : null }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
@@ -319,6 +331,7 @@ export function waterAt(x, z) {
   return null;
 }
 export function walkWorld(x, z) {
+  if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island
@@ -371,7 +384,7 @@ export function buildWild(W, eco) {
   const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z);
   sign(10.5, 3.8); sign(33, 1.8); sign(59, -2.4); sign(77.5, 1.8);
   /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
-  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28, rx = MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), rz = MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1; at(g => PROPS.rock(g, .8 + R() * .5), rx, rz, R() * 6); addSol({ x: rx, z: rz, r: .45 }) }
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28, rx = MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), rz = MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1; at(g => PROPS.rock(g, .8 + R() * .5), rx, rz, R() * 6); addSol({ x: rx, z: rz, r: .45, top: .5 }) }
   /* wild clearables (regrow): trees · bushes · rocks · grass, never on the road, in water or on the cliff band */
   let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'flower', 'rock', 'pebble', 'flower', 'bigtree', 'boulder', 'hive'];
   for (const [x0, x1, n] of [[9.8, 33, 46], [58.5, 78.5, 40]]) for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
@@ -475,7 +488,7 @@ export function buildChunk(W, cx, cz) {
   inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6; if (p.sc > 1.5) out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }, 1); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
   inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4 * p.sc; cc.set(p.kk === 'sylvaren' ? ['#b8a040', '#a07a30', '#8a8a3a', '#9a6a2a'][Math.floor(R() * 4)] : ['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) }, 1);
   inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'frosthelm' ? (R() < .5 ? '#e8f0f4' : '#c8dce4') : R() < .5 ? '#2f6a3a' : '#3f7a44') }, 1);   /* v2.7 pine tops are back (snowy in the north) */   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
-  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z) })) });
+  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z), top: p.h - groundH(p.x, p.z) + .8 * (ob.scale.x + ob.scale.y + ob.scale.z) / 3 * .8 })) });   /* v3.2 `top` = you can stand on it */
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') });
   /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
