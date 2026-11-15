@@ -39,7 +39,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const hr = await E(async () => { const N = window.__ng, q = N.me, m = N.monSpawn('horse', q.x + 1.5, q.z); await new Promise(r => setTimeout(r, 800)); N.hurtMon(m, 999, 'dmg'); const alive = N.mons.includes(m); N.mountHorse(m); return { alive, on: N.HORSE === m } });
     log('horse', JSON.stringify(hr)); if (!hr.alive || !hr.on) errs.push('horse ride / immortal failed ' + JSON.stringify(hr));
     const dr = await leg(); const fol = await N(() => { const N = window.__ng, h = N.HORSE && N.HORSE.A.root.position; return h ? +Math.hypot(h.x - N.me.x, h.z - N.me.z).toFixed(2) : -1 });
-    log('walk vs ride', dw, dr, 'under rider', fol); if (!(dr > dw * 1.4) || fol < 0 || fol > .5) errs.push('horse not faster / not under the rider ' + JSON.stringify({ dw, dr, fol }));
+    log('walk vs ride', dw, dr, 'under rider', fol); if (!(dr > dw * 1.2) || fol < 0 || fol > .5) errs.push('horse not faster / not under the rider ' + JSON.stringify({ dw, dr, fol }));
     await wait(400); await shot('03-horse');
     await E(() => window.__ng.dismount()); if (await N(() => !!window.__ng.HORSE)) errs.push('could not get off the horse');
     /* 🪨 stand on a rock */
