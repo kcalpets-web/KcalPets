@@ -3153,6 +3153,7 @@ import('./lush.js').then(({ lushPlace, lushKind }) => {
     const f = x > 79 ? .8 : x > 57 ? .45 : x < 9 ? .3 : .35; if (R() > (f > .5 ? .9 : .55)) continue; const k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue;
     list.push({ k, x, y: groundH(x, z) - .03, z, r: R() * 6, s: k === 'blossom' ? .6 + R() * .25 : .6 + R() * .6 }) }
   const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);
+  for (const p of list) if (p.k === 'blossom' || p.k === 'stump') addSol({ x: p.x, z: p.z, r: (p.k === 'blossom' ? .26 : .34) * p.s });   /* v3.3 blossom trees and stumps are solid too */
 });
 /* ================= v1.8 the town lives: villagers stroll around the plaza once the slimes are gone · optional 'picture book' style (ng_style=toon) ================= */
 const TOON = toonOn(), FACET = facetOn(); let toonT = 0; const WALKERS = [];
@@ -3161,8 +3162,9 @@ function townLife(now) {
   if (near && !WALKERS.length) for (let i = 0; i < 10; i++) { const A = rigOf(makeActor(g => HUMANS.villager(g, i), .82 + (i % 3) * .05)), x = TX - 8 + Math.random() * 16, z = -5 + Math.random() * 10; A.root.position.set(x, 0, z); WALKERS.push({ A, t: [x, z], wait: Math.random() * 3, sp: .9 + Math.random() * .5 }) }
   if (!near && WALKERS.length) { for (const w of WALKERS) scene.remove(w.A.root); WALKERS.length = 0 }
   for (const w of WALKERS) { const q = w.A.root.position; let mv = false;
-    if (w.wait > 0) w.wait -= .016; else { const d = stepTo(w.A, w.t[0], w.t[1], w.sp, .016, (x, z) => walkLand(x, z) && Math.abs(x - TX) < 10.5 && Math.abs(z) < 9);
-      if (d < .2) { w.wait = .4 + Math.random() * 2.2; for (let k = 0; k < 8; k++) { const x = TX - 9 + Math.random() * 18, z = -6 + Math.random() * 12; if (walkLand(x, z) && !TW.shops.some(sh => dist(x, z, sh.x, sh.z) < 2.4)) { w.t = [x, z]; break } } } else mv = true }
+    if (w.wait > 0) w.wait -= .016; else { const d = stepTo(w.A, w.t[0], w.t[1], w.sp, .016, (x, z) => walkLand(x, z) && Math.abs(x - TX) < 10.5 && Math.abs(z) < 9 && (!solHit(x, z, .15) || !!solHit(q.x, q.z, .15)));   /* v3.3 villagers walk round the fountain, benches, fences … */
+      w.stk = d > (w.pd ?? 1e9) - .003 ? (w.stk || 0) + 1 : 0; w.pd = d;   /* blocked for a while → pick another spot */
+      if (d < .2 || w.stk > 25) { w.stk = 0; w.pd = 1e9; w.wait = .4 + Math.random() * 2.2; for (let k = 0; k < 8; k++) { const x = TX - 9 + Math.random() * 18, z = -6 + Math.random() * 12; if (walkLand(x, z) && !solHit(x, z, .4) && !TW.shops.some(sh => dist(x, z, sh.x, sh.z) < 2.4)) { w.t = [x, z]; break } } } else mv = true }
     animate(w.A, mv, .016, now, 10); w.A.body.position.y = w.A.bob }
 }
 /* ---------- boot: login → opening cutscene (once) → the island at night ---------- */
