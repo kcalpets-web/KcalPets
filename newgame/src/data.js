@@ -258,6 +258,7 @@ export const FISH = {
 export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'], E: ['tuna'], L: ['goldeel'] };
 export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
 export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
+export const REEL2 = { zone: .28, zoneTier: .045, up: 2.4, grav: 2.0, fill: .24, drain: .17, start: .3, biteWin: .85, wait: [3, 9] };   // v3.1 the reel game (0–1 bar) · bite window s · wait range s (×.6 in rain)
 export const REEL = { up: 1.25, down: 1.0, base: 32, perTier: 10 };       // tension/s while holding · release · fish stamina dmg/s at rod tier 0 · +per tier
 
 /* ---- economy: pets → boat vault ---- */

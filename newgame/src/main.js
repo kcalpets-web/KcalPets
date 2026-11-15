@@ -710,30 +710,61 @@ function openTown() {
   });
 }
 
-/* ---------- fishing (like Pen Suk): 🎣 tap the water → wait → "!" → hold to reel, keep the tension below the top ---------- */
+/* ---------- v3.1 fishing, first-person: cast → you see the rod in your hands, the line and the bobber on the water · little nibbles · it goes under → tap fast!
+   → the reel game: hold to lift the green zone, let go and it sinks · keep the fish inside it to fill the catch bar ---------- */
 const floatG = new THREE.Group(); ACC.float(floatG); floatG.visible = false; scene.add(floatG);
 const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), .1);
+const FROD = new THREE.Group(), RODT = new THREE.Group(); FROD.visible = false; scene.add(FROD);
+{ const M2 = (c, r = .6) => new THREE.MeshStandardMaterial({ color: c, roughness: r }), cy = (r1, r2, h, m, y, p = FROD) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 14), m); o.position.y = y; p.add(o); return o };
+  cy(.022, .026, .32, M2('#c8a070', .9), 0); cy(.014, .02, .7, M2('#6a4024', .5), .5); const rl = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .04, 18), M2('#d0d4dc', .3)); rl.rotation.z = Math.PI / 2; rl.position.set(.045, .12, 0); FROD.add(rl);
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(.055, 18, 14), M2('#f2cfa6', .7)); hand.scale.set(1, 1.3, 1.1); hand.name = 'hand'; hand.position.set(0, -.02, .015); FROD.add(hand);
+  RODT.position.y = .85; FROD.add(RODT); cy(.006, .012, .7, M2('#6a4024', .5), .35, RODT); const tip = new THREE.Object3D(); tip.position.y = .7; tip.name = 'tip'; RODT.add(tip) }
+const LINEN = 20, LINE = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: LINEN }, () => new THREE.Vector3())), new THREE.LineBasicMaterial({ color: '#f4f4f0', transparent: true, opacity: .85 })); LINE.visible = false; LINE.frustumCulled = false; scene.add(LINE);
+const RIPG = new THREE.RingGeometry(.8, 1, 32), ripples = [];
+function ripple(x, z, big) { const m = new THREE.Mesh(RIPG, new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .6, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, -.08, z); m.scale.setScalar(.12); scene.add(m); ripples.push({ m, t: 0, life: big ? 1.4 : 1, s: big ? 1.4 : .7 }) }
+function rippleTick(dt) { for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.t += dt; const k = r.t / r.life; r.m.scale.setScalar(.12 + k * r.s); r.m.material.opacity = .6 * (1 - k); if (k >= 1) { scene.remove(r.m); r.m.material.dispose(); ripples.splice(i, 1) } } }
+const _tip = new THREE.Vector3(), _lp = new THREE.Vector3();
 function castAt(x, z) {
-  const wt = wetAt(x, z); if (F) return; if (!wt) { hint('🎣 แตะที่น้ำ (ทะเล แม่น้ำ หรือทะเลสาบ) เพื่อเหวี่ยงเบ็ด'); return } if (!spendEn(D.TOOL_EN.rod)) return; swingIcon('🎣', x + 1.2, 1.2, z);
+  const wt = wetAt(x, z); if (F) return; if (!wt) { hint('🎣 แตะที่น้ำ (ทะเล แม่น้ำ หรือทะเลสาบ) เพื่อเหวี่ยงเบ็ด'); return } if (!spendEn(D.TOOL_EN.rod)) return;
   const depth = (wt === 'sea' ? Math.max(1, Math.min(12, shore(z) - x)) : 2.5) + (RIDE ? 4 : 0), bonus = { R: depth * 1.2 + S.tools.rod * 3, E: depth * .6 + S.tools.rod * 1.5, L: depth > 6 ? 1 + S.tools.rod * .5 : 0 };
-  const r = rollRarity(['B', 'R', 'E', 'L'], bonus), list = (wt === 'sea' ? D.FISH_BY_R : D.FRESH_BY_R)[r], k = list[Math.floor(Math.random() * list.length)];
-  F = { phase: 'wait', x, z, t: 1.5 + Math.random() * 2.5, k, fish: D.FISH[k], sta: D.FISH[k].sta, ten: .2, hold: false };
-  sfx('splash'); faceSwing(x, z); floatG.position.set(x, -.12, z); floatG.visible = true; floater('🎣', 'tool', x, .8, z);
-}
-function fishEnd(msg) { F = null; floatG.visible = false; $('reel').style.display = 'none'; if (msg) toast(msg, 2200) }
+  const r = rollRarity(['B', 'R', 'E', 'L'], bonus), list = (wt === 'sea' ? D.FISH_BY_R : D.FRESH_BY_R)[r], k = list[Math.floor(Math.random() * list.length)], R2 = D.REEL2, rainy = typeof wxNow === 'function' && /rain|storm/.test(wxNow());
+  F = { phase: 'cast', x, z, t: .55, wait: (R2.wait[0] + Math.random() * (R2.wait[1] - R2.wait[0])) * (rainy ? .6 : 1), nib: .8 + Math.random() * 1.5, k, fish: D.FISH[k], hold: false, zh: R2.zone + R2.zoneTier * (S.tools.rod || 0), zy: 0, zv: 0, fy: .5, ft: .5, fT: 0, prog: R2.start, ten: 0, sta: 1, yaw: Math.atan2(x - me().x, z - me().z) };
+  sfx('splash'); faceSwing(x, z); PL.yaw = PL.yawT = F.yaw; floatG.position.set(x, -.12, z); floatG.visible = false; joy.on = false; walkT = null; work = null; document.body.classList.add('fishing');
+  $('reel').style.display = 'block'; $('fbarW').style.display = 'none'; $('reelTxt').textContent = '🎣 รอให้ทุ่นจม… · แตะ ✖ เพื่อเก็บเบ็ด' }
+function fishEnd(msg) { F = null; floatG.visible = false; FROD.visible = false; LINE.visible = false; $('reel').style.display = 'none'; document.body.classList.remove('fishing'); if (PL && S.avatar) PL.root.visible = true; if (msg) toast(msg, 2200) }
+/* the first-person camera: from your eyes, looking at the bobber · the rod sits in your right hand at the bottom of the screen */
+function fishCam(now) { const f = F, q = me(), ey = Math.max(-.2, q.y) + 1.35, dx = f.x - q.x, dz = f.z - q.z, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L;
+  cam.position.set(q.x - ux * .25, ey, q.z - uz * .25); cam.lookAt(f.x - ux * Math.min(1.5, L * .2), -.2 + (f.phase === 'reel' ? .15 : 0), f.z - uz * Math.min(1.5, L * .2)); cam.fov = 55; cam.near = .05; cam.updateMatrixWorld();
+  if (PL) PL.root.visible = false;
+  const tens = f.phase === 'reel' ? .35 + .4 * Math.abs(Math.sin(now / 140)) * (f.hold ? 1 : .4) : f.phase === 'bite' ? .5 : f.phase === 'cast' ? -.6 * (f.t / .55) : 0;
+  FROD.visible = true; FROD.position.set(.32, -.42, -.55).applyMatrix4(cam.matrixWorld); FROD.quaternion.copy(cam.quaternion); FROD.rotateX(-.95 + tens * .25 + Math.sin(now / 900) * .015); FROD.rotateZ(-.18); RODT.rotation.x = tens * .5;
+  FROD.updateMatrixWorld(true); RODT.getObjectByName('tip').getWorldPosition(_tip);
+  const P = LINE.geometry.attributes.position, bx = floatG.position.x, by = floatG.position.y + .18, bz = floatG.position.z, sag = f.phase === 'reel' || f.phase === 'bite' ? .05 : .5;
+  for (let i = 0; i < LINEN; i++) { const t = i / (LINEN - 1); _lp.set(_tip.x + (bx - _tip.x) * t, _tip.y + (by - _tip.y) * t - Math.sin(t * Math.PI) * sag, _tip.z + (bz - _tip.z) * t); P.setXYZ(i, _lp.x, _lp.y, _lp.z) } P.needsUpdate = true; LINE.visible = f.phase !== 'cast' || f.t < .3 }
 function fishTick(dt, now) {
-  if (!F) return; const f = F;
-  if (f.phase === 'wait') { floatG.position.y = -.12 + Math.sin(now / 400) * .03; if ((f.t -= dt) <= 0) { f.phase = 'bite'; f.t = 1.4; floater('❗', 'crit', f.x, 1, f.z); try { navigator.vibrate && navigator.vibrate(80) } catch (e) { } $('reel').style.display = 'block'; $('reelTxt').textContent = '❗ ปลากินเบ็ด! แตะค้างที่จอเพื่อรอก' } return }
-  if (f.phase === 'bite') { floatG.position.y = -.25 + Math.sin(now / 60) * .05; if (f.hold) { f.phase = 'reel'; $('reelTxt').textContent = 'กดค้าง = รอก · ปล่อย = ผ่อนสาย · อย่าให้สายตึงจนขาด' } else if ((f.t -= dt) <= 0) fishEnd('🐟 ปลาหลุดไปแล้ว ลองใหม่นะ'); return }
-  const pull = f.fish.pull; if (f.hold) { f.ten += D.REEL.up * pull * dt; f.sta -= (D.REEL.base + D.REEL.perTier * S.tools.rod) * dt } else f.ten -= D.REEL.down * dt;
-  if (Math.random() < dt * .9) f.ten += pull * .18; f.ten = Math.max(0, f.ten);
-  floatG.position.y = -.2 + Math.sin(now / 90) * .04;
-  $('reelTen').style.width = Math.min(100, f.ten * 100) + '%'; $('reelTen').style.background = f.ten > .8 ? '#ff4a5a' : f.ten > .55 ? '#ffb020' : '#3fae6a'; $('reelSta').style.width = Math.max(0, f.sta / f.fish.sta * 100) + '%';
-  if (f.ten >= 1) { bump('fishLost'); fishEnd(`💥 สายขาด! ${f.fish.name}หนีไป · อัปเกรดเบ็ดที่ช่างอุปกรณ์ในเมือง`) }
-  else if (f.sta <= 0) { const fi = f.fish; S.fish[f.k] = (S.fish[f.k] || 0) + 1; sfx('splash'); sfx('coin'); bump('fish'); playerExp(D.FISH_PLAYER_EXP[fi.r], f.x, f.z);
+  rippleTick(dt); if (!F) return; const f = F, R2 = D.REEL2, by = -.12;
+  if (f.phase === 'cast') { f.t -= dt; if (f.t <= .3) { floatG.visible = true; const k = Math.max(0, f.t / .3); floatG.position.y = by + k * 2.5 } if (f.t <= 0) { f.phase = 'wait'; f.hold = false; ripple(f.x, f.z, 1); sfx('splash') } return }
+  if (f.phase === 'wait') { f.wait -= dt; f.nib -= dt; let dip = 0;
+    if (f.nib < 0) { dip = Math.sin(-f.nib * 18) * .05; if (f.nib < -.35) { f.nib = .7 + Math.random() * 1.8; ripple(f.x, f.z) } }   /* a nibble: a little tug, not yet! */
+    floatG.position.y = by + Math.sin(now / 420) * .025 - Math.abs(dip); floatG.rotation.z = Math.sin(now / 700) * .08;
+    if (f.hold) { f.hold = false; fishEnd('🎣 ยังไม่มีปลากินเบ็ด… รอให้ทุ่นจมลงก่อนค่อยดึง'); return }
+    if (f.wait <= 0) { f.phase = 'bite'; f.t = R2.biteWin; ripple(f.x, f.z, 1); sfx('splash'); floater('❗', 'crit', f.x, .9, f.z); try { navigator.vibrate && navigator.vibrate(90) } catch (e) { } $('reelTxt').textContent = '❗ ทุ่นจมแล้ว! แตะเลย!' } return }
+  if (f.phase === 'bite') { floatG.position.y = by - .3 + Math.sin(now / 50) * .04;
+    if (f.hold) { f.phase = 'reel'; f.hold = true; $('fbarW').style.display = 'flex'; $('reelTxt').textContent = 'กดค้าง = ยกกรอบขึ้น · ปล่อย = กรอบตก · ให้ปลาอยู่ในกรอบเขียว' }
+    else if ((f.t -= dt) <= 0) fishEnd('🐟 ช้าไปนิด! ปลาหลุดไปแล้ว ลองใหม่นะ'); return }
+  /* the reel game */
+  const pull = f.fish.pull, mad = { B: .6, R: 1, E: 1.4, L: 1.9 }[f.fish.r] || 1;
+  f.zv += (f.hold ? R2.up : -R2.grav) * dt; f.zv = Math.max(-1.4, Math.min(1.4, f.zv)); f.zy += f.zv * dt; if (f.zy < 0) { f.zy = 0; f.zv = -f.zv * .3 } if (f.zy > 1 - f.zh) { f.zy = 1 - f.zh; f.zv = 0 }
+  if ((f.fT -= dt) <= 0) { f.fT = (.5 + Math.random() * 1.2) / mad; f.ft = Math.random() < .2 * mad ? (f.fy > .5 ? .05 : .95) : Math.random() }   /* the fish darts to a new depth now and then */
+  f.fy += (f.ft - f.fy) * Math.min(1, dt * (1.2 + pull * 1.6) * mad); f.fy = Math.max(0, Math.min(1, f.fy + (Math.random() - .5) * dt * .4 * mad));
+  const inZ = f.fy >= f.zy && f.fy <= f.zy + f.zh; f.prog += (inZ ? R2.fill * (1 + (S.tools.rod || 0) * .08) : -R2.drain * (.7 + pull * .4)) * dt; f.prog = Math.min(1, f.prog); f.ten = inZ ? .3 : .8; f.sta = 1 - f.prog;
+  floatG.position.y = by - .35; floatG.position.x += Math.sin(now / 200) * .004; if (Math.random() < dt * 2) ripple(floatG.position.x, floatG.position.z);
+  $('fzone').style.bottom = (f.zy * 100) + '%'; $('fzone').style.height = (f.zh * 100) + '%'; $('fzone').classList.toggle('on', inZ); $('ffish').style.bottom = `calc(${f.fy * 100}% - 12px)`; $('fprog').style.height = (Math.max(0, f.prog) * 100) + '%'; $('fprog').style.background = f.prog > .66 ? '#3fae6a' : f.prog > .33 ? '#ffb020' : '#ff4a5a';
+  if (f.prog <= 0) { bump('fishLost'); fishEnd(`💨 ${f.fish.name}หลุดไปแล้ว! · เบ็ดที่ดีกว่าทำให้กรอบเขียวกว้างขึ้น (ช่างอุปกรณ์ในเมือง)`) }
+  else if (f.prog >= 1) { const fi = f.fish; S.fish[f.k] = (S.fish[f.k] || 0) + 1; sfx('splash'); sfx('coin'); bump('fish'); playerExp(D.FISH_PLAYER_EXP[fi.r], f.x, f.z); VF.burst(f.x, .2, f.z, '#bfe8ff', 18, 3);
     floater(`🐟 ${fi.name}`, 'item', f.x, 1.2, f.z); fishEnd(`🎣 ได้ <b style="color:${D.RAR_COL[fi.r]}">${fi.name} (${D.RAR_NAME[fi.r]})</b>!${S.story.howsif && !S.story.fishGiven ? '<br>เอาไปให้ลุงฮาวซิฟ (แตะที่ลุง)' : ''}`); questCheck(); save() }
 }
-const reelEl = $('reel'); reelEl.addEventListener('pointerdown', e => { e.preventDefault(); if (F) F.hold = true }); const reelUp = () => { if (F) F.hold = false };
+const reelEl = $('reel'); reelEl.addEventListener('pointerdown', e => { e.preventDefault(); if (e.target.closest('#fX')) { fishEnd(); sfx('tap'); return } if (F) F.hold = true }); const reelUp = () => { if (F && F.phase === 'reel') F.hold = false };
 reelEl.addEventListener('pointerup', reelUp); reelEl.addEventListener('pointercancel', reelUp); reelEl.addEventListener('pointerleave', reelUp);
 
 /* ---------- input ---------- */
@@ -946,11 +977,12 @@ function frame(now) {
     let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); { const pT = still ? Math.min(CAM.pitch, .03) : CAM.pitch; CAM.ps = (CAM.ps ?? CAM.pitch) + (pT - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * (still ? .5 : 7)) }   // eased
     const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
     py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
-    AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz); else if (PL && !PL.root.visible && S.avatar && !CUT) PL.root.visible = true;
+    AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz); else if (PL && !PL.root.visible && S.avatar && !CUT && !F) PL.root.visible = true;
     if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 }
     { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; scene.fog.near += (60 - 52 * mist - scene.fog.near) * dt; scene.fog.far += (420 - 330 * mist - scene.fog.far) * dt } }   /* forest + dawn mist */
   else { cam.fov = 36; cam.near = .1; cam.position.set(camP.x + sh, camY + 21 * zoom, camP.z + 22 * zoom); cam.lookAt(camP.x + sh, camY, camP.z - 1.2); if (scene.fog) scene.fog = null }
   if (GOL && !GOL.on) golemCam(now);
+  if (F && F.phase) fishCam(now);
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
   sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
   if (GR) { GR.auto(nightK(), Math.min(1, glowK()), S.area, inStorm() && !S.story.cloudGone); GR.render(dt / speed) } else R.render(scene, cam);

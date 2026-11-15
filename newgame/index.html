@@ -29,7 +29,7 @@
   #login h1{margin:0;font-size:30px;text-shadow:0 3px 0 #fff}#login p{margin:0}#lG{min-height:44px;display:flex;justify-content:center}
   #reel{position:fixed;inset:0;z-index:35;display:none;touch-action:none}
   #reel .rb{position:absolute;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px);transform:translateX(-50%);width:min(320px,86vw);background:var(--paper);border:3px solid var(--ink);border-radius:16px;padding:10px 12px;box-shadow:0 4px 0 #0003;text-align:center;pointer-events:none}
-  #reel .bar{height:14px}
+  #fX{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 14px);width:44px;height:44px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);font:900 18px inherit;font-family:inherit}#fbarW{position:absolute;right:22px;top:50%;transform:translateY(-55%);display:none;gap:6px;pointer-events:none}#fbar{position:relative;width:46px;height:min(52vh,340px);border:3px solid var(--ink);border-radius:14px;background:linear-gradient(#5ab6dc,#1a4a7a);overflow:hidden}#fzone{position:absolute;left:3px;right:3px;border-radius:9px;background:#7ad86a99;border:2px solid #d8ffc8}#fzone.on{background:#9aff7acc}#ffish{position:absolute;left:50%;transform:translateX(-50%);font-size:22px;line-height:24px}#fprogW{position:relative;width:12px;height:min(52vh,340px);border:3px solid var(--ink);border-radius:8px;background:#fff8;overflow:hidden}#fprog{position:absolute;left:0;right:0;bottom:0;border-radius:4px}body.fishing #joy,body.fishing #pad,body.fishing #tools,body.fishing #mini{visibility:hidden}
   #quest{position:fixed;left:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);background:#2a2030e6;color:#fff;border-radius:12px;padding:7px 10px;font-size:12px;max-width:190px;line-height:1.45;cursor:pointer;box-shadow:0 3px 0 #0004}
   #tools{position:fixed;right:10px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);display:flex;flex-direction:column;align-items:flex-end;gap:6px}
   #tools button{width:50px;height:54px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);font-size:21px;line-height:1;box-shadow:0 3px 0 #0003;padding:3px 0 0;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -246,7 +246,7 @@
   <button class="bb" id="bBag"><b>🎒</b>กระเป๋า</button><button class="bb" id="bPets"><b>🐾</b>น้อง</button><button class="bb" id="bTool"><b>🛠️</b>ช่าง</button>
 <button class="bb" id="bHp"><b>🍲</b>กินด่วน <small></small></button><button class="bb" id="bShop"><b>🛒</b>ร้าน</button>
 </div>
-<div id="reel"><div class="rb"><b id="reelTxt"></b><div class="row"><span class="mut">สาย</span><div class="bar grow"><i id="reelTen"></i></div></div><div class="row"><span class="mut">ปลา</span><div class="bar grow"><i id="reelSta" style="background:#4f9cff"></i></div></div></div></div>
+<div id="reel"><button id="fX" aria-label="เก็บเบ็ด">✖</button><div id="fbarW"><div id="fbar"><i id="fzone"></i><b id="ffish">🐟</b></div><div id="fprogW"><i id="fprog"></i></div></div><div class="rb"><b id="reelTxt"></b></div></div>
 <div id="login"><h1>🏝️ KEALEE</h1><p class="mut">เกาะของน้องๆ · ผจญภัยด้วยกัน</p><div id="lG"></div><button class="btn" id="lGuest">เล่นแบบไม่ล็อกอิน</button><p class="mut" style="font-size:11px">ล็อกอิน Google ใช้แค่ชื่อและรูปโปรไฟล์ · เซฟเก็บในเครื่องนี้</p></div>
 <div id="qArrow"><i></i></div><div id="sleep"><b>😴 ราตรีสวัสดิ์…</b></div><div id="toast"></div><div id="joy"><div id="joyK"></div></div>
 <script type="module" src="src/main.js"></script>

@@ -77,8 +77,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 12 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
       await E(() => { const N = window.__ng; N.setTool('rod'); N.look(-4.5, 1); N.castAt(-5.5, 1) });
       log('cast', await N(() => JSON.stringify({ F: !!window.__ng.F, en: window.__ng.S.en, tired: window.__ng.S.tired, tool: window.__ng.tool, me: [window.__ng.me.x, window.__ng.me.z] })));
-      for (let i = 0; i < 420; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, ten: F.ten } : null }); if (!f) break;
-        if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'reel') { await E(t => window.__ng.hold(t < .6), f.ten); if (k === 0 && i % 15 === 0) await shot('07-reel') } await wait(120) } }
+      for (let i = 0; i < 420; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, up: F.fy > F.zy + F.zh * .5 } : null }); if (!f) break;
+        if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'wait' && k === 0 && i === 12) await shot('06b-fpv'); if (f.ph === 'reel') { await E(t => window.__ng.hold(t), f.up); if (k === 0 && i % 15 === 0) await shot('07-reel') } await wait(60) } }
     log('fish', JSON.stringify(await N(() => window.__ng.S.fish)));
     await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN');
     /* quest 2: repair the boat */
