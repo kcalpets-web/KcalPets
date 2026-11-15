@@ -395,8 +395,9 @@ export const KINGDOMS = {
 };
 const KL = Object.entries(KINGDOMS);
 /* nearest kingdom + how sure (0 at a border … 1 well inside) · near the hand-made home strip there is none */
-export function kingdomAt(x, z) { let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(x - K.x, z - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
-  const home = smw(150, 60, coreDist(x, z) + Math.max(0, 40 - x)); return { k: a, w: smw(0, 70, db - da) * .5 + .5, home, d: da } }
+export function kingdomAt(x, z) { const wx = x + 190 * (fbm(x / 170 + 11.3, z / 170 + 2.7, 3) - .5), wz = z + 190 * (fbm(x / 170 - 4.1, z / 170 + 8.9, 3) - .5);   /* v2.9 wavy, natural borders */
+  let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(wx - K.x, wz - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
+  const home = smw(150, 60, coreDist(x, z) + Math.max(0, 40 - x)); return { k: a, w: smw(0, 70, db - da) * .5 + .5, home, d: Math.hypot(x - KINGDOMS[a].x, z - KINGDOMS[a].z) } }   /* d = the true distance to the centre (volcano, crater, plains stay round) */
 const _KC = {}; for (const [k, K] of KL) _KC[k] = C(K.col);
 export function wildH(x, z) {
 

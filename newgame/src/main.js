@@ -2059,13 +2059,27 @@ const hexRGB = {}, rgb = hx => hexRGB[hx] || (hexRGB[hx] = [parseInt(hx.slice(1,
   for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) { const x = MAP.x0 + (px + .5) / MAP.k, z = MAP.z0 + (py + .5) / MAP.k, c = rgb(mapColor(x, z)), i = (py * MW + px) * 4; img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255 }
   g.putImageData(img, 0, 0); g.fillStyle = '#e8d8b0'; for (const sh of TW.shops) g.fillRect((sh.x - MAP.x0) * MAP.k - 6, (sh.z - MAP.z0) * MAP.k - 5, 12, 10);
   g.fillStyle = '#6a3a1a'; g.fillRect((HOUSE.x - MAP.x0) * MAP.k - 5, (HOUSE.z - MAP.z0) * MAP.k - 5, 10, 10) }
+const vnoise2 = (x, z) => fbm(x / 8, z / 8, 1);   // a cheap blotch noise for the lava streaks on the map
 const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) * WMk, worldMap = document.createElement('canvas'); worldMap.width = WMW; worldMap.height = WMH;
 { const g = worldMap.getContext('2d'), img = g.createImageData(WMW, WMH), H = new Float32Array(WMW * WMH);           // heights first, colours from the grid (fast)
   for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) H[py * WMW + px] = wildH(WORLD.x0 + (px + .5) / WMk, WORLD.z0 + (py + .5) / WMk);
+  /* v2.9 a readable map: relief shading (light from the north-west) · colours by height and by kingdom · coastlines · forest speckles · lava in the volcano */
+  const PAL = { home: ['#8ccc6c', '#5c9c4a', '#8a7a62'], navalee: ['#86d080', '#4aa070', '#7a8a72'], sylvaren: ['#b0ac58', '#7a7a3a', '#7a6a4a'], luminia: ['#a2d482', '#6aa85a', '#8a8a72'], frosthelm: ['#eef2f8', '#cfd8e6', '#b8c4d4'], deadgar: ['#867490', '#5e4e68', '#4a3e50'], asrah: ['#f0d896', '#dcb46a', '#b88a50'], valkara: ['#7a5444', '#5a3a34', '#3e2a2a'] };
+  const P3 = {}; for (const k in PAL) P3[k] = PAL[k].map(rgb); const mix = (a, b, t) => a.map((v, n) => v + (b[n] - v) * t), cell = 1 / WMk, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+  const W0 = rgb('#5ab6dc'), W1 = rgb('#2a64a4'), SAND = rgb('#eadcb4'), SNOW = rgb('#fbfcff'), CLIFF = rgb('#6a5848'), LAVA = rgb('#ff6a24'), EDGE = rgb('#244a6e');
   for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) { const i = py * WMW + px, h = H[i], x = WORLD.x0 + (px + .5) / WMk, z = WORLD.z0 + (py + .5) / WMk;
-    const sl = Math.abs((H[i + 1] ?? h) - (H[i - 1] ?? h)) + Math.abs((H[i + WMW] ?? h) - (H[i - WMW] ?? h)), shade = 1 - Math.max(-.25, Math.min(.25, ((H[i + 1] ?? h) - (H[i - 1] ?? h)) * .06));
-    const hx = h < -.45 ? (h < -4 ? '#2a5a8a' : '#4a90c0') : h < .8 && x < coastX(z) + 14 ? '#e8dcb8' : h > 30 ? '#f0f2f6' : sl > 12 ? '#8a7a6a' : fbm(x / 60 + 4, z / 60, 2) > .55 ? '#3f7a34' : h > 14 ? '#6a9a4a' : '#7cc060';
-    let c = rgb(hx); if (h >= -.45) { const B = kingdomAt(x, z), g = (1 - B.home) * B.w * .75, kc = rgb(KINGDOMS[B.k].col); if (g > 0) c = c.map((v, n) => v + (kc[n] - v) * g) } const j = i * 4; img.data[j] = c[0] * shade; img.data[j + 1] = c[1] * shade; img.data[j + 2] = c[2] * shade; img.data[j + 3] = 255 }
+    const hx1 = H[i + 1] ?? h, hx0 = H[i - 1] ?? h, hz1 = H[i + WMW] ?? h, hz0 = H[i - WMW] ?? h, gx = (hx1 - hx0) / (2 * cell), gz = (hz1 - hz0) / (2 * cell), sl = Math.hypot(gx, gz);
+    const nl = 1 / Math.hypot(gx, 1, gz), lit = Math.max(0, (gx * .62 + 1 * .55 + gz * .55) * nl), shade = .6 + .62 * lit;   /* light from the north-west, raised */
+    let c; if (h < -.45) { c = mix(W0, W1, sstep(-.5, -8, h)); const coast = hx1 >= -.45 || hx0 >= -.45 || hz1 >= -.45 || hz0 >= -.45; if (coast) c = mix(c, EDGE, .35); const j = i * 4; img.data[j] = c[0]; img.data[j + 1] = c[1]; img.data[j + 2] = c[2]; img.data[j + 3] = 255; continue }
+    const B = kingdomAt(x, z), g2 = (1 - B.home) * B.w, home = P3.home, K = P3[B.k] || home, L = home.map((c0, n) => mix(c0, K[n], g2));   /* L = [low, mid, high] */
+    const lo = mix(L[0], L[1], sstep(4, 16, h)), col0 = mix(lo, L[2], sstep(16, 30, h));
+    c = mix(col0, CLIFF, sstep(.7, 1.6, sl) * .7); if (h > 32 && B.k !== 'valkara') c = mix(c, SNOW, sstep(32, 42, h));
+    if (h < .8 && x < coastX(z) + 14) c = mix(c, SAND, .8);
+    if (B.k !== 'asrah' && B.k !== 'frosthelm' && fbm(x / 60 + 4, z / 60, 2) > .55 && sl < .8 && ((px * 7 + py * 13) % 5 < 2)) c = c.map(v => v * .78);   /* forest speckles */
+    if (B.k === 'asrah' && g2 > .5) c = c.map(v => v * (.95 + .07 * Math.sin(x / 6 + Math.sin(z / 17) * 3)));   /* dune ripples */
+    if (B.k === 'valkara' && g2 > .4 && (B.d < 22 || vnoise2(x * .15, z * .15) > .82)) c = mix(c, LAVA, B.d < 22 ? .9 : .55);
+    if (hx1 < -.45 || hx0 < -.45 || hz1 < -.45 || hz0 < -.45) c = mix(c, EDGE, .25);   /* coast line */
+    const j = i * 4; img.data[j] = Math.min(255, c[0] * shade); img.data[j + 1] = Math.min(255, c[1] * shade); img.data[j + 2] = Math.min(255, c[2] * shade); img.data[j + 3] = 255 }
   g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * WMk, (MAP.z0 - WORLD.z0) * WMk, (MAP.x1 - MAP.x0) * WMk, (MAP.z1 - MAP.z0) * WMk) }
 const FCELL = 8, FC = (WORLD.x1 - WORLD.x0) / FCELL, FR = (WORLD.z1 - WORLD.z0) / FCELL, fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
 if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
@@ -2073,7 +2087,7 @@ function revealVisited() { const zx = { farm: [-8, 9], meadow: [9, 35], town: [3
 function reveal(x, z, r = coreDist(x, z) > 0 ? 26 : 12) { const c0 = Math.floor((x - r - WORLD.x0) / FCELL), c1 = Math.floor((x + r - WORLD.x0) / FCELL), r0 = Math.floor((z - r - WORLD.z0) / FCELL), r1 = Math.floor((z + r - WORLD.z0) / FCELL); let a = null;
   for (let rr = Math.max(0, r0); rr <= Math.min(FR - 1, r1); rr++) for (let cc = Math.max(0, c0); cc <= Math.min(FC - 1, c1); cc++) { const i = rr * FC + cc; if (S.fog[i] === '1') continue; const cx = WORLD.x0 + cc * FCELL + 4, cz = WORLD.z0 + rr * FCELL + 4; if (Math.hypot(cx - x, cz - z) < r) { a = a || S.fog.split(''); a[i] = '1' } }
   if (a) { S.fog = a.join(''); fogDirty = true } }
-function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(FC, FR); for (let i = 0; i < S.fog.length; i++) { const j = i * 4; img.data[j] = 18; img.data[j + 1] = 22; img.data[j + 2] = 40; img.data[j + 3] = S.fog[i] === '1' ? 0 : 236 } g.putImageData(img, 0, 0); fogDirty = false }
+function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(FC, FR); for (let i = 0; i < S.fog.length; i++) { const j = i * 4; img.data[j] = 40; img.data[j + 1] = 34; img.data[j + 2] = 30; img.data[j + 3] = S.fog[i] === '1' ? 0 : 150 } g.putImageData(img, 0, 0); fogDirty = false }
 if (S.fog.indexOf('1') < 0 && S.story.intro) { S.zones = Object.assign({ farm: 1 }, S.zones); revealVisited() }
 const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
 let mapT = 0;
@@ -2115,9 +2129,13 @@ function openMap() {
     /* v2.5 names of places + people you can visit (only where you have explored) */
     const seen = (x, z) => { const fx = Math.floor((x - WORLD.x0) / FCELL), fz = Math.floor((z - WORLD.z0) / FCELL); return !!S.fog && S.fog[fz * FC + fx] === '1' };
     const label = (x, z, t, big) => { if (!seen(x, z)) return; const [px, py] = P(x, z); g.font = `900 ${fs(big ? 13 : 10.5)} system-ui`; g.lineWidth = 3 / kk; g.strokeStyle = '#1a1424cc'; g.fillStyle = big ? '#fff6d8' : '#ffffff'; g.strokeText(t, px, py); g.fillText(t, px, py); g.font = fs(16) + ' sans-serif' };
-    for (const k in KINGDOMS) { const K = KINGDOMS[k]; if ((S.kseen || {})[k]) label(K.x, K.z, K.name, true) } for (const kk in D.MINIB) if ((S.kseen || {})[kk] && !(S.minib || {})[kk]) { const K = KINGDOMS[kk], [x, y] = P(K.x + D.MINIB[kk][1], K.z + D.MINIB[kk][2]); g.fillText('💀', x, y) }
+    for (const k in KINGDOMS) { const K = KINGDOMS[k], [kx, ky] = P(K.x, K.z - 18), sn = (S.kseen || {})[k];   /* v2.9 the kingdoms' names are always on the map (like a real map) */
+      g.font = `900 ${fs(19)} Georgia, serif`; g.lineWidth = 5 / kk; g.strokeStyle = '#2a1e14d0'; g.fillStyle = sn ? '#fff4d8' : '#e8dcc0b8'; g.strokeText(K.name.replace(/^\S+\s/, ''), kx, ky); g.fillText(K.name.replace(/^\S+\s/, ''), kx, ky);
+      g.font = `700 ${fs(10)} system-ui`; g.lineWidth = 3 / kk; g.strokeText(K.sub, kx, ky + 16 / kk); g.fillStyle = '#f0e6d0'; g.fillText(K.sub, kx, ky + 16 / kk); g.font = fs(16) + ' sans-serif';
+      if (sn) { const [ix, iy] = P(K.x, K.z); g.fillText(k === 'luminia' ? '🗼' : k === 'valkara' ? '🌋' : '🏘️', ix, iy) } }
+    { const [hx, hy] = P(0, -26); g.font = `900 ${fs(15)} Georgia, serif`; g.lineWidth = 4 / kk; g.strokeStyle = '#2a1e14d0'; g.fillStyle = '#fff4d8'; g.strokeText('บ้านเกิด', hx, hy); g.fillText('บ้านเกิด', hx, hy); g.font = fs(16) + ' sans-serif' } for (const kk in D.MINIB) if ((S.kseen || {})[kk] && !(S.minib || {})[kk]) { const K = KINGDOMS[kk], [x, y] = P(K.x + D.MINIB[kk][1], K.z + D.MINIB[kk][2]); g.fillText('💀', x, y) }
     for (const n of NOTES) if ((S.notes || {})[n.id]) { const [x, y] = P(n.x, n.z); g.fillText('📜', x, y) } for (const c of CHESTS) if ((S.chests || {})[c.id]) { const [x, y] = P(c.x, c.z); g.fillText('📦', x, y) }
-    if (mapZ >= 4) { for (const [x, z, k] of [[0, -18, 'farm'], [22, 18, 'meadow'], [46, -18, 'town'], [68, 18, 'hills'], [92, -18, 'forest']]) label(x, z, ZONES[k], true) } else label(46, -22, '🏡 ดินแดนบ้านเกิด', true);   /* zoomed out: one name for the home strip */
+    if (mapZ >= 4) { for (const [x, z, k] of [[0, -18, 'farm'], [22, 18, 'meadow'], [46, -18, 'town'], [68, 18, 'hills'], [92, -18, 'forest']]) label(x, z, ZONES[k], true) }
     const ppl = [[HOUSE.x, HOUSE.z, '🏠', 'บ้าน'], [HOWSIF.x, HOWSIF.z, '👴', 'ลุงฮาวซิฟ'], [TX, 7.5, '🛒', 'ร้านในเมือง']]; if (S.story.freed && SB.root.parent) ppl.push([SB.root.position.x, SB.root.position.z, '🧑‍🔬', 'Sberh']);
     for (const [x, z, ic, n] of ppl) if (seen(x, z)) { const [px, py] = P(x, z); g.fillText(ic, px, py); if (mapZ >= 5) label(x, z + 3.5, n) }   /* small names only when zoomed right in */
     if (mapZ >= 3) for (const r of RV) if (S.ruins[r.id]) label(r.x, r.z + 4 / Math.min(1, kk * 2), r.def.name + ' ' + r.def.npc.split(' ')[0]);
