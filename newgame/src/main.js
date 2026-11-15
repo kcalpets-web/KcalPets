@@ -2067,14 +2067,15 @@ const hexRGB = {}, rgb = hx => hexRGB[hx] || (hexRGB[hx] = [parseInt(hx.slice(1,
   g.fillStyle = '#6a3a1a'; g.fillRect((HOUSE.x - MAP.x0) * MAP.k - 5, (HOUSE.z - MAP.z0) * MAP.k - 5, 10, 10) }
 const vnoise2 = (x, z) => fbm(x / 8, z / 8, 1);   // a cheap blotch noise for the lava streaks on the map
 const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) * WMk, worldMap = document.createElement('canvas'); worldMap.width = WMW; worldMap.height = WMH;
-{ const g = worldMap.getContext('2d'), img = g.createImageData(WMW, WMH), H = new Float32Array(WMW * WMH);           // heights first, colours from the grid (fast)
-  for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) H[py * WMW + px] = wildH(WORLD.x0 + (px + .5) / WMk, WORLD.z0 + (py + .5) / WMk);
+/* v3.0 the map is painted by a generator: the small one at once (for the minimap), a sharper one (×2.4) a few rows at a time while you play */
+function* paintMap(cv, Mk) { const MW = cv.width, MH = cv.height, g = cv.getContext('2d'), img = g.createImageData(MW, MH), H = new Float32Array(MW * MH);           // heights first, colours from the grid (fast)
+  for (let py = 0; py < MH; py++) { if (py % 6 === 5) yield; for (let px = 0; px < MW; px++) H[py * MW + px] = wildH(WORLD.x0 + (px + .5) / Mk, WORLD.z0 + (py + .5) / Mk); }
   /* v2.9 a readable map: relief shading (light from the north-west) · colours by height and by kingdom · coastlines · forest speckles · lava in the volcano */
   const PAL = { home: ['#8ccc6c', '#5c9c4a', '#8a7a62'], navalee: ['#86d080', '#4aa070', '#7a8a72'], sylvaren: ['#b0ac58', '#7a7a3a', '#7a6a4a'], luminia: ['#a2d482', '#6aa85a', '#8a8a72'], frosthelm: ['#eef2f8', '#cfd8e6', '#b8c4d4'], deadgar: ['#867490', '#5e4e68', '#4a3e50'], asrah: ['#f0d896', '#dcb46a', '#b88a50'], valkara: ['#7a5444', '#5a3a34', '#3e2a2a'] };
-  const P3 = {}; for (const k in PAL) P3[k] = PAL[k].map(rgb); const mix = (a, b, t) => a.map((v, n) => v + (b[n] - v) * t), cell = 1 / WMk, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+  const P3 = {}; for (const k in PAL) P3[k] = PAL[k].map(rgb); const mix = (a, b, t) => a.map((v, n) => v + (b[n] - v) * t), cell = 1 / Mk, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
   const W0 = rgb('#5ab6dc'), W1 = rgb('#2a64a4'), SAND = rgb('#eadcb4'), SNOW = rgb('#fbfcff'), CLIFF = rgb('#6a5848'), LAVA = rgb('#ff6a24'), EDGE = rgb('#244a6e');
-  for (let py = 0; py < WMH; py++) for (let px = 0; px < WMW; px++) { const i = py * WMW + px, h = H[i], x = WORLD.x0 + (px + .5) / WMk, z = WORLD.z0 + (py + .5) / WMk;
-    const hx1 = H[i + 1] ?? h, hx0 = H[i - 1] ?? h, hz1 = H[i + WMW] ?? h, hz0 = H[i - WMW] ?? h, gx = (hx1 - hx0) / (2 * cell), gz = (hz1 - hz0) / (2 * cell), sl = Math.hypot(gx, gz);
+  for (let py = 0; py < MH; py++) { if (py % 4 === 3) yield; for (let px = 0; px < MW; px++) { const i = py * MW + px, h = H[i], x = WORLD.x0 + (px + .5) / Mk, z = WORLD.z0 + (py + .5) / Mk;
+    const hx1 = H[i + 1] ?? h, hx0 = H[i - 1] ?? h, hz1 = H[i + MW] ?? h, hz0 = H[i - MW] ?? h, gx = (hx1 - hx0) / (2 * cell), gz = (hz1 - hz0) / (2 * cell), sl = Math.hypot(gx, gz);
     const nl = 1 / Math.hypot(gx, 1, gz), lit = Math.max(0, (gx * .62 + 1 * .55 + gz * .55) * nl), shade = .6 + .62 * lit;   /* light from the north-west, raised */
     let c; if (h < -.45) { c = mix(W0, W1, sstep(-.5, -8, h)); const coast = hx1 >= -.45 || hx0 >= -.45 || hz1 >= -.45 || hz0 >= -.45; if (coast) c = mix(c, EDGE, .35); const j = i * 4; img.data[j] = c[0]; img.data[j + 1] = c[1]; img.data[j + 2] = c[2]; img.data[j + 3] = 255; continue }
     const B = kingdomAt(x, z), g2 = (1 - B.home) * B.w, home = P3.home, K = P3[B.k] || home, L = home.map((c0, n) => mix(c0, K[n], g2));   /* L = [low, mid, high] */
@@ -2085,8 +2086,12 @@ const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) 
     if (B.k === 'asrah' && g2 > .5) c = c.map(v => v * (.95 + .07 * Math.sin(x / 6 + Math.sin(z / 17) * 3)));   /* dune ripples */
     if (B.k === 'valkara' && g2 > .4 && (B.d < 22 || vnoise2(x * .15, z * .15) > .82)) c = mix(c, LAVA, B.d < 22 ? .9 : .55);
     if (hx1 < -.45 || hx0 < -.45 || hz1 < -.45 || hz0 < -.45) c = mix(c, EDGE, .25);   /* coast line */
-    const j = i * 4; img.data[j] = Math.min(255, c[0] * shade); img.data[j + 1] = Math.min(255, c[1] * shade); img.data[j + 2] = Math.min(255, c[2] * shade); img.data[j + 3] = 255 }
-  g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * WMk, (MAP.z0 - WORLD.z0) * WMk, (MAP.x1 - MAP.x0) * WMk, (MAP.z1 - MAP.z0) * WMk) }
+    const j = i * 4; img.data[j] = Math.min(255, c[0] * shade); img.data[j + 1] = Math.min(255, c[1] * shade); img.data[j + 2] = Math.min(255, c[2] * shade); img.data[j + 3] = 255 } }
+  g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * Mk, (MAP.z0 - WORLD.z0) * Mk, (MAP.x1 - MAP.x0) * Mk, (MAP.z1 - MAP.z0) * Mk) }
+for (const _ of paintMap(worldMap, WMk));
+let mapHi = null;
+{ const cv = document.createElement('canvas'); cv.width = Math.round(WMW * 2.4); cv.height = Math.round(WMH * 2.4); const it = paintMap(cv, WMk * 2.4);
+  const step = () => { const t = performance.now(); while (performance.now() - t < 8) if (it.next().done) { mapHi = cv; return } setTimeout(step, 40) }; setTimeout(step, 6000) }
 const FCELL = 8, FC = (WORLD.x1 - WORLD.x0) / FCELL, FR = (WORLD.z1 - WORLD.z0) / FCELL, fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
 if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
 function revealVisited() { const zx = { farm: [-8, 9], meadow: [9, 35], town: [35, 57], hills: [57, 79], forest: [79, 106] }; for (const z in S.zones || {}) if (zx[z]) for (let x = zx[z][0]; x <= zx[z][1]; x += 6) reveal(x, 0, 16) }   // saves from before v1.1: uncover what was already explored
@@ -2108,7 +2113,7 @@ function drawMini() {
   const cv3 = $('mini'), dpr = Math.min(2, devicePixelRatio), W3 = 104, q = me(), core = coreDist(q.x, q.z) < 4, span = core ? 34 : 110; if (cv3.width !== W3 * dpr) { cv3.width = cv3.height = W3 * dpr }
   const g = cv3.getContext('2d'); g.imageSmoothingEnabled = !core; g.fillStyle = '#12162a'; g.fillRect(0, 0, cv3.width, cv3.height);
   const wx = (q.x - span / 2 - WORLD.x0) * WMk, wz = (q.z - span / 2 - WORLD.z0) * WMk, ws = span * WMk;
-  if (core) g.drawImage(mapBase, (q.x - span / 2 - MAP.x0) * MAP.k, (q.z - span / 2 - MAP.z0) * MAP.k, span * MAP.k, span * MAP.k, 0, 0, cv3.width, cv3.height); else g.drawImage(worldMap, wx, wz, ws, ws, 0, 0, cv3.width, cv3.height);
+  if (core) g.drawImage(mapBase, (q.x - span / 2 - MAP.x0) * MAP.k, (q.z - span / 2 - MAP.z0) * MAP.k, span * MAP.k, span * MAP.k, 0, 0, cv3.width, cv3.height); else { const m2 = mapHi ? 2.4 : 1; g.drawImage(mapHi || worldMap, wx * m2, wz * m2, ws * m2, ws * m2, 0, 0, cv3.width, cv3.height) }
   g.imageSmoothingEnabled = true; g.drawImage(fogCv, (q.x - span / 2 - WORLD.x0) / FCELL, (q.z - span / 2 - WORLD.z0) / FCELL, span / FCELL, span / FCELL, 0, 0, cv3.width, cv3.height);
   const s = cv3.width / span, P = (x, z) => [(x - q.x + span / 2) * s, (z - q.z + span / 2) * s];
   g.fillStyle = '#ff4a5a'; for (const m of mons) if (nearMe(m, span)) { const [x, y] = P(m.A.root.position.x, m.A.root.position.z); g.beginPath(); g.arc(x, y, 2.6 * dpr, 0, 7); g.fill() }
@@ -2122,7 +2127,7 @@ function drawMini() {
 }
 let mapZ = 3; const MAPH = [0, 320, 640, 1280, 2560, 5120];   /* v2.5 big map: zoom levels (display height px) · north is up */
 function openMap() {
-  sheet('🗺️ แผนที่', (b, redraw, close) => {
+  sheet('🗺️ แผนที่', (b, redraw, close) => {   /* v3.0 full screen */
     const Z = 4, CW = WMW * Z, CH = WMH * Z, kk = MAPH[mapZ] / CH, fs = n => Math.round(n / kk) + 'px';
     b.innerHTML = `<div class="row"><b>🧭 ด้านบน = ทิศเหนือ</b><span><button class="btn sm" data-z="-1"${mapZ <= 1 ? ' disabled' : ''}>－</button> <button class="btn sm" data-z="1"${mapZ >= 5 ? ' disabled' : ''}>＋</button></span></div><div class="wmapW"><div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}" style="height:${MAPH[mapZ]}px"></canvas></div><b class="wcomp">N<i>▲</i></b></div><p class="mut">ลากเลื่อนแผนที่ · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส · โลกกว้าง ~1.5 กม.</p><h3>🍲 วาร์ปไปแคมป์</h3>` +
       Object.keys(CAMPS).map(k => `<div class="row"><span>${campOn(k) ? '🍲' : '❔'} ${campOn(k) ? CAMPS[k].name : '??? ยังไม่ค้นพบ'}</span>${campOn(k) ? `<button class="btn sm go" data-c="${k}">วาร์ป</button>` : ''}</div>`).join('') +
@@ -2130,7 +2135,7 @@ function openMap() {
       (S.builds.some(b => b.done && WARPB[b.k]) ? '<h3>🔨 ที่พักของฉัน</h3>' + S.builds.filter(b => b.done && WARPB[b.k]).map(b => `<div class="row"><span>${BP[b.k].icon} ${BP[b.k].name}</span><button class="btn sm go" data-bw="${b.id}">วาร์ป</button></div>`).join('') : '') +
       (WC.some(c => S.wcamps[c.id]) ? '<h3>⛺ แคมป์มอนสเตอร์ที่พบ</h3>' + WC.filter(c => S.wcamps[c.id]).map(c => `<div class="row"><span>${S.wcamps[c.id].c ? '🏕️' : '⛺'} ${campName(c)}${S.wcamps[c.id].c ? '' : ' <small class="mut">ยังไม่ได้ยึด</small>'}</span>${S.wcamps[c.id].c ? `<button class="btn sm go" data-w="${c.id}">วาร์ป</button>` : ''}</div>`).join('') : '');
     b.querySelectorAll('[data-z]').forEach(x => x.onclick = () => { mapZ = Math.max(1, Math.min(5, mapZ + +x.dataset.z)); sfx('tap'); redraw() });
-    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true; g.drawImage(fogCv, 0, 0, CW, CH);
+    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mapHi || worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true; g.drawImage(fogCv, 0, 0, CW, CH);
     const P = (x, z) => [(x - WORLD.x0) * WMk * Z, (z - WORLD.z0) * WMk * Z]; g.font = fs(16) + ' sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     /* v2.5 names of places + people you can visit (only where you have explored) */
     const seen = (x, z) => { const fx = Math.floor((x - WORLD.x0) / FCELL), fz = Math.floor((z - WORLD.z0) / FCELL); return !!S.fog && S.fog[fz * FC + fx] === '1' };
@@ -2164,7 +2169,7 @@ function openMap() {
     for (const sh of SH.filter(s => S.shrines[s.id] && !S.shrines[s.id].fix)) { const [x, y] = P(sh.x, sh.z), e = document.createElement('i'); e.className = 'wbroken'; e.textContent = '🏚️'; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; pins.appendChild(e) }
     for (const w of WARPS()) { const [x, y] = P(w.x, w.z), e = document.createElement('button'); e.className = 'wpin'; e.textContent = w.icon; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.onclick = () => warpCard(b, w, close); pins.appendChild(e) }
     const card = document.createElement('div'); card.id = 'wpCard'; wrap.after(card);
-  });
+  }, { cls: 'mapfs' });
 }
 $('mini').onclick = () => openMap();
 /* ---------- the big world: chunks stream in around the player (terrain + decor near · clearables + wild monsters nearer) ---------- */
