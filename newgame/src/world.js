@@ -451,8 +451,13 @@ function landGeo(x0, z0, size, seg, sink) {
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 }
 /* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */
+/* v3.1 the far land is cut away where the detailed chunks are loaded (its 16 m triangles could poke above the real ground in valleys and dunes) */
+export const FARC = { value: new THREE.Vector3(0, 0, 0) };
+const M_FAR = M_LAND.clone(); M_FAR.onBeforeCompile = sh => { sh.uniforms.farC = FARC;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFW = (modelMatrix * vec4(transformed, 1.0)).xz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vFW;\nuniform vec3 farC;').replace('void main() {', 'void main() {\n  if (distance(vFW, farC.xy) < farC.z) discard;') };
 export function buildFarLand(scene) {
-  const size = 1600, m = new THREE.Mesh(landGeo(-170, -800, size, 100, .9), M_LAND); m.position.set(-170 + size / 2, 0, -800 + size / 2); scene.add(m); return m;
+  const size = 1600, m = new THREE.Mesh(landGeo(-170, -800, size, 100, .9), M_FAR); m.position.set(-170 + size / 2, 0, -800 + size / 2); scene.add(m); return m;
 }
 /* one 64 m chunk: 2 m terrain · instanced trees / pines / rocks / grass · a few clearables (returned as entries for W.clear) */
 export function buildChunk(W, cx, cz) {
