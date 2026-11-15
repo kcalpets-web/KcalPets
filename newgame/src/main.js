@@ -2950,7 +2950,7 @@ const RAIN = new THREE.LineSegments(RAING, new THREE.LineBasicMaterial({ color: 
 RAIN.frustumCulled = SNOW.frustumCulled = false; RAIN.visible = SNOW.visible = false; scene.add(RAIN, SNOW);
 const RP = [], SP2 = []; for (let i = 0; i < RAINN; i++) RP.push([(Math.random() - .5) * 36, Math.random() * 22, (Math.random() - .5) * 36]); for (let i = 0; i < SNOWN; i++) SP2.push([(Math.random() - .5) * 30, Math.random() * 16, (Math.random() - .5) * 30, Math.random() * 6]);
 function wxTick(dt, now) {
-  const q = me(); if (now > WXS.at) { WXS.at = now + 1500; const t = wxAt(q.x, q.z), k = wxRegion(q.x, q.z) + t; if (t !== WXS.type) { const was = WXS.type; WXS.type = t; if (S.story.slept && WXS.key && was !== t) toast(`${D.WX.types[t].icon} ${D.WX.types[t].name}${t === 'storm' ? '<br><small>⚡ ระวังฟ้าผ่าบนที่สูง · ไฟกลางแจ้งดับ</small>' : raining() || D.WX.types[t].rain > .25 ? '<br><small>🔥 ไฟกลางแจ้งจุดไม่ติด · 🐟 ปลากินเบ็ดไวขึ้น</small>' : ''}`, 2600) } WXS.key = k }
+  const q = me(); if (now > WXS.at) { WXS.at = now + 1500; const t = wxAt(q.x, q.z), k = wxRegion(q.x, q.z) + t; if (t !== WXS.type) { const was = WXS.type; WXS.type = t; if (S.story.slept && WXS.key && was !== t) toast(`${D.WX.types[t].icon} ${D.WX.types[t].name}${t === 'storm' ? '<br><small>⚡ ระวังฟ้าผ่าบนที่สูง · ไฟกลางแจ้งดับ</small>' : D.WX.types[t].rain > .25 ? '<br><small>🔥 ไฟกลางแจ้งจุดไม่ติด · 🐟 ปลากินเบ็ดไวขึ้น</small>' : ''}`, 2600) } WXS.key = k }
   const T = D.WX.types[WXS.type] || D.WX.types.clear, cov = indoors() ? 0 : 1, e = Math.min(1, dt * .25);
   WXS.rain += (T.rain * cov - WXS.rain) * e; WXS.snow += (T.snow * cov - WXS.snow) * e; WXS.cloud += (T.cloud - WXS.cloud) * e;
   const c = cam.position, P = RAING.attributes.position.array, sl = .25;
