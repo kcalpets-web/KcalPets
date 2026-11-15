@@ -22,12 +22,13 @@
 | ลานฝึก · ม้า | `goTrain` `backTrain` `trainTick` · `mountHorse` `dismount` `horseTick` |
 | 🌲 ต้นไม้ยักษ์ · LOD · แสงอาทิตย์ (ยังไม่ปล่อย) | `D.CLEAR.giant` `D.LOD` `D.SUN` · world.js `buildChunk` (`out.lod` hi/lo/small · giants `kg…`) `giantMesh` `giantLog` `GIANT_H` · main.js `timber` `timberTick` `TIMB` `TLOGS` `setLod` `sunFollow` `SUND` · ทดสอบ `tools/test/timber.js` |
 | ☁️ เมฆดำบนฟ้า · ⚡ ภาระฉาก (v3.3.1) | main.js `stormTick` `SKYCLOUD` `CAPC` `capCloud` `cloudMesh` `actorCull` `POTL` (`potTick`) · data.js `D.SKYCLOUD` `D.ACTOR_FAR` · world.js `ZCELL` `mergeStatic(root, cell)` `flatten` `PICK_MAT` · clay.js `cone` (`CONES`) · วัดด้วย `__ng.info()` (calls/tris) · `__ng.scene` |
+| 🧭 แผนที่หมุน · 👕 ชุด · 🎮 จอย (v3.4–3.5) | `drawMini` `MINIR` · `climate` `wearSum` `swimMul` `pct` `D.CLIMATE` `D.WEAR` · `padTick` `PADB` `padPress` · ทดสอบ `tools/test/pad.js` |
 | ฝึกปุ่ม (การ์ด) | `TUT` `tutTick` `tutEv` |
 | เควสอาณาจักร | `src/quests.js` `KQ` · `main.js` `kqTick` `talkNpc` |
 | hook ทดสอบ | `window.__ng = {…}` ท้าย `main.js` |
 
 ## 3. ทดสอบ + ปล่อยเวอร์ชัน
-- ชุดทดสอบ: `tools/test/*.js` (train weather bow golem play warp modes weapons anim storm towns pets spirit build world hud) · รันทีละชุดเท่านั้น (รันพร้อมกันจะพังมั่ว) · `NODE_PATH=$(npm root -g) node newgame/tools/test/X.js /tmp/out`
+- ชุดทดสอบ: `tools/test/*.js` (train weather bow golem play warp modes weapons anim storm towns pets spirit build world hud timber pad) · play ใช้เวลา >15 นาที ตั้ง timeout ยาว · รันทีละชุดเท่านั้น (รันพร้อมกันจะพังมั่ว) · `NODE_PATH=$(npm root -g) node newgame/tools/test/X.js /tmp/out`
 - swiftshader ช้ามาก (~5 fps) → อย่าวัดความเร็วเป็นเมตร ให้เทียบอัตราส่วน · ชุดที่เคยพังเพราะตัวทดสอบ: bow (แนวยิงโดนบัง/ล็อกเป้า), play (รอวาร์ป ≥4.5 วิ), modes (บางครั้ง)
 - ทุกเวอร์ชัน: `APP_VER` ใน data.js · `python3 newgame/tools/make-version.py "โน้ต"…` (≤7) · แถวใน `docs/SPEC.md` · บรรทัดยาวใน `CLAUDE.md`
 - ปล่อย: commit → `git worktree add /tmp/wtXX <hash>` → รันครบทุกชุด → ตรวจ `grep -c peakaenkeaw` = 0 (index.html ราก + newgame) → `git push origin <hash>:main` → ถ้า release commit ไม่อยู่บน branch ให้ `git merge` กลับ

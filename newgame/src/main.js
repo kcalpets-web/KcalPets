@@ -272,7 +272,7 @@ function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; 
 function walkTick(dt, now) {
   if (golemBusy()) return;
   let mv = false;
-  const run = !RIDE && !CROUCH && !S.tired && (joy.run || RUNON || now < sprintT) && (joy.on || walkT) && (HORSE || spendRun(dt)), spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * (now < swimB ? D.SWIM_BURST.mul : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (run ? D.HORSE.gallop : D.HORSE.sp) : run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1); SPD_LAST = spd;
+  const run = !RIDE && !CROUCH && !S.tired && (joy.run || RUNON || now < sprintT) && (joy.on || walkT) && (HORSE || spendRun(dt)), spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * swimMul() * (now < swimB ? D.SWIM_BURST.mul : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (run ? D.HORSE.gallop : D.HORSE.sp) : run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1); SPD_LAST = spd;
   if (joy.on) { const q = me(), sp = spd * Math.hypot(joy.x, joy.z), cy = camTP() ? (joy.cy ?? CAM.yaw) : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
     if (sp > .3) { if (okMe(nx, nz)) { q.x = nx; q.z = nz } else if (okMe(nx, q.z)) q.x = nx; else if (okMe(q.x, nz)) q.z = nz; else blocked(nx, nz); PL.yawT = Math.atan2(mx, mz); mv = true } }
   if (walkT) { const w = walkT, d = stepTo(PL, w.x, w.z, spd, dt, okMe); mv = d > w.near;
@@ -998,7 +998,7 @@ function frame(now) {
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
   fishTick(dt, now); wxTick(dt, now); trainTick(now); timberTick(dt / speed); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
-  { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); if (now > miniT && !CUT) { miniT = now + 33; drawMini() } chunkTick(now); actorCull(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
+  { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } padTick(dt / speed); mapTick(now); if (now > miniT && !CUT) { miniT = now + 33; drawMini() } chunkTick(now); actorCull(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
   if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S * (debOn('cold') ? .5 : 1) * (TEMPV > D.TEMP.hotAt ? D.TEMP.hotRegen : 1) * (hungry() ? .6 : 1) * ((S.awake || 0) > D.NEEDS.wornAt ? .6 : 1)); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
@@ -1103,9 +1103,9 @@ function wearView() { if (!PL) return; const body = D.WEAR[S.wear.body], top = b
 function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (H) npcHat(g, H.hat) }   /* v2.9 the same fitted hats as the people */
 function openWear() {
   sheet('👕 ชุด', (b, redraw) => { const c = climate(), w = wearSum(), own = Object.keys(S.clothes || {}).filter(k => D.WEAR[k]);
-    const need = c.cold ? `🥶 อากาศตอนนี้หนาวระดับ <b>${c.cold}</b> · ต้องอุ่น ≥ ${c.cold}` : c.hot ? `🥵 อากาศตอนนี้ร้อนระดับ <b>${c.hot}</b> · ต้องเย็น ≥ ${c.hot}` : '🙂 อากาศตอนนี้สบายๆ';
-    b.innerHTML = `<div class="card"><p>${need}</p><p>ชุดที่ใส่: ❄️ อุ่น <b>+${w.warm}</b> · 🔥 เย็น <b>+${w.cool}</b>${buffOn('warm') ? ` · 🍲 +${buffOn('warm')} อุ่น` : ''}${buffOn('cool') ? ` · 🍲 +${buffOn('cool')} เย็น` : ''}</p>${c.short ? `<p class="dn">⚠️ ${D.CLIMATE.warn} · หัวใจจะลดเรื่อยๆ</p>` : ''}</div>` +
-      [['head', '🎩 หัว'], ['body', '👕 ลำตัว'], ['legs', '👖 ขา']].map(([sl, n]) => `<h3>${n}</h3><div class="wrap">${sl === 'head' ? `<button class="btn sm${!S.wear.head ? ' go' : ''}" data-w="" data-s="head">❌ ไม่ใส่</button>` : ''}${own.filter(k => D.WEAR[k].slot === sl).map(k => { const X = D.WEAR[k]; return `<button class="btn sm${S.wear[sl] === k ? ' go' : ''}" data-w="${k}" data-s="${sl}">${X.icon} ${X.name} <small>${X.warm ? '❄️+' + X.warm : ''}${X.cool ? ' 🔥+' + X.cool : ''}</small></button>` }).join('')}</div>`).join('') +
+    const need = c.cold ? `🥶 อากาศตอนนี้หนาวระดับ <b>${c.cold}/2</b> · กันได้ <b>${pct(c.warm)}%</b>` : c.hot ? `🥵 อากาศตอนนี้ร้อนระดับ <b>${c.hot}/2</b> · กันได้ <b>${pct(c.cool)}%</b>` : '🙂 อากาศตอนนี้สบายๆ';
+    b.innerHTML = `<div class="card"><p>${need}</p><p>ชุดที่ใส่: ❄️ กันหนาว <b>${pct(w.warm)}%</b> · 🔥 กันร้อน <b>${pct(w.cool)}%</b> · 🏊 ว่ายเร็ว <b>+${Math.round((swimMul() - 1) * 100)}%</b>${buffOn('warm') ? ` · 🍲 +${buffOn('warm')} ชิ้นกันหนาว` : ''}${buffOn('cool') ? ` · 🍲 +${buffOn('cool')} ชิ้นกันร้อน` : ''}</p><p class="mut">1 ชิ้น กันได้ 50% · 2 ชิ้น กันได้ 100%</p>${c.short >= .01 ? `<p class="dn">⚠️ ${D.CLIMATE.warn} · หัวใจจะลดเรื่อยๆ</p>` : ''}</div>` +
+      [['head', '🎩 หัว'], ['body', '👕 ลำตัว'], ['legs', '👖 ขา']].map(([sl, n]) => `<h3>${n}</h3><div class="wrap">${sl === 'head' ? `<button class="btn sm${!S.wear.head ? ' go' : ''}" data-w="" data-s="head">❌ ไม่ใส่</button>` : ''}${own.filter(k => D.WEAR[k].slot === sl).map(k => { const X = D.WEAR[k]; return `<button class="btn sm${S.wear[sl] === k ? ' go' : ''}" data-w="${k}" data-s="${sl}">${X.icon} ${X.name} <small>${X.warm ? '❄️ กันหนาว' : ''}${X.cool ? '🔥 กันร้อน' : ''}${X.swim ? '🏊 ว่ายเร็ว' : ''}${X.air ? '🫁 หายใจ' : ''}</small></button>` }).join('')}</div>`).join('') +
       '<p class="mut">ชุดใหม่ทำได้ที่ 🛠️ คราฟ · บางแบบต้องเรียนสูตรจากผู้คน</p>';
     b.querySelectorAll('[data-s]').forEach(x => x.onclick = () => { S.wear[x.dataset.s] = x.dataset.w || null; sfx('tap'); save(); wearView(); redraw() }) });
 }
@@ -1457,16 +1457,19 @@ function camOcc(q, now) {
 /* ---------- v1.9.3 temperature: time of day · height · water · fire · forest shade · storm → a dial (blue ◀ green ▶ red) ---------- */
 let TEMPV = 0, cheerT = 0, jumpT = 0;
 /* v2.6 🌡️ the weather can hurt: cold level 1–3 needs that much ❄️ warmth (clothes + fire + hot food) · hot level needs 🔥 cool (light clothes + cold food + water) */
-const wearSum = () => { const o = { warm: 0, cool: 0 }; for (const sl in S.wear || {}) { const W2 = D.WEAR[S.wear[sl]]; if (W2) { o.warm += W2.warm; o.cool += W2.cool } } return o };
+const wearSum = () => { const o = { warm: 0, cool: 0, swim: 0 }; for (const sl in S.wear || {}) { const W2 = D.WEAR[S.wear[sl]]; if (W2) { o.warm += W2.warm || 0; o.cool += W2.cool || 0; o.swim += W2.swim || 0 } } return o };
+const swimMul = () => 1 + D.CLIMATE.swimK * Math.min(D.CLIMATE.swimMax, wearSum().swim);   /* v3.5 🏊 swim pieces */
+const pct = n => Math.round(Math.min(1, n * D.CLIMATE.per) * 100);   /* pieces → % protection */
 function climate() { const L = D.CLIMATE.lv, tv = TEMPV - (nearFire() ? D.TEMP.fire : 0), cold = tv < -L[0] ? L.filter(v => tv < -v).length : 0, hot = tv > L[0] ? L.filter(v => tv > v).length : 0, w = wearSum();   /* a camp fire warms you, it never counts as heat */
   const warm = w.warm + buffOn('warm') + (nearFire() ? D.CLIMATE.fire : 0), cool = w.cool + buffOn('cool') + (PL && PL.swim ? D.CLIMATE.swimCool : 0);
   const B = PL ? kingdomAt(me().x, me().z) : null, noAir = !!(B && B.k === 'deadgar' && B.home < .5 && B.w > .62 && !Object.values(S.wear || {}).some(k => D.WEAR[k] && D.WEAR[k].air) && !buffOn('air'));   /* v2.7 Deadgar has no air */
-  return { cold, hot, warm, cool, noAir, short: (cold ? Math.max(0, cold - warm) : hot ? Math.max(0, hot - cool) : 0) + (noAir ? 2 : 0) } }
+  const lv = cold || hot, prot = Math.min(1, (cold ? warm : cool) * D.CLIMATE.per);   /* v3.5 1 piece = 50% · 2 = 100% · the damage scales with the level and what is not protected */
+  return { cold, hot, warm, cool, noAir, prot, short: lv * (1 - prot) + (noAir ? 2 : 0) } }
 let climT = 0, climHint = 0, climLast = 0;
 function climateTick() { const now = performance.now(), step = climLast ? Math.min(1000, now - climLast) : 0; climLast = now; if (CUT || !S.avatar || inStorm() || DROWN) { climT = 0; return } const c = climate(); PL.climate = c;
-  if (!c.short) { climT = 0; return } climT += step;
-  if (now > climHint) { climHint = now + 20000; hint(c.noAir ? '🫁 หายใจไม่ออก! ดินแดนเดดการ์ไม่มีอากาศ · ใส่ 🍃 หน้ากากใบไม้วิเศษ (คราฟได้)' : c.cold ? `🥶 หนาวสั่น! อากาศหนาวระดับ ${c.cold} แต่ชุดอุ่นแค่ +${c.warm} · ใส่ชุดอุ่น ผิงไฟ หรือกินอาหารร้อน` : `🥵 ร้อนจัด! อากาศร้อนระดับ ${c.hot} แต่ชุดเย็นแค่ +${c.cool} · ใส่ชุดบาง ลงน้ำ หรือกินของเย็น`, 3400) }
-  if (climT < D.CLIMATE.tick * 1000) return; climT = 0; const d = D.CLIMATE.dmg * c.short; S.hp = Math.max(0, pHp() - d); lastHurt = now; floater(`${c.noAir ? '🫁' : c.cold ? '🥶' : '🥵'} -${d}`, 'hurt', me().x, 2.1, me().z); sfx('hurt'); hud();
+  if (c.short < .01) { climT = 0; return } climT += step;
+  if (now > climHint) { climHint = now + 20000; hint(c.noAir ? '🫁 หายใจไม่ออก! ดินแดนเดดการ์ไม่มีอากาศ · ใส่ 🍃 หน้ากากใบไม้วิเศษ (คราฟได้)' : c.cold ? `🥶 หนาวสั่น! อากาศหนาวระดับ ${c.cold}/2 · กันหนาวได้ ${pct(c.warm)}% · ใส่ชุดกันหนาว 2 ชิ้น ผิงไฟ หรือกินอาหารร้อน` : `🥵 ร้อนจัด! อากาศร้อนระดับ ${c.hot}/2 · กันร้อนได้ ${pct(c.cool)}% · ใส่ชุดกันร้อน 2 ชิ้น · ใส่ชุดบาง ลงน้ำ หรือกินของเย็น`, 3400) }
+  if (climT < D.CLIMATE.tick * 1000) return; climT = 0; const d = Math.max(1, Math.round(D.CLIMATE.dmg * c.short)); S.hp = Math.max(0, pHp() - d); lastHurt = now; floater(`${c.noAir ? '🫁' : c.cold ? '🥶' : '🥵'} -${d}`, 'hurt', me().x, 2.1, me().z); sfx('hurt'); hud();
   if (S.hp <= 0) faint(c.noAir ? '🫁 ขาดอากาศจนหมดสติ…' : c.cold ? '🥶 หนาวจนหมดสติ…' : '🥵 ร้อนจนหมดสติ…') }
 let fainting = false;
 function faint(why) { if (fainting) return; fainting = true; closePara(); if (RIDE) try { unboard() } catch (e) { } walkT = null; work = null; toast(why, 2400);
@@ -1641,7 +1644,7 @@ function matchRecipe(pot) {
   return best || D.RECIPES.find(r => r.k === 'mystery');
 }
 const effTxt = e => [e.hp ? `❤️ +${Math.round(e.hp / D.HEART * 4) / 4} ดวง` : '', e.en ? `⚡ +${e.en}` : '', e.buff ? `${buffTxt(e.buff)} (${e.buff.min} นาที)` : ''].filter(Boolean).join(' · ');
-const buffTxt = b => [b.atk ? '⚔️ +' + b.atk : '', b.def ? '🛡️ +' + b.def : '', b.warm ? '❄️ กันหนาว +' + b.warm : '', b.cool ? '🔥 กันร้อน +' + b.cool : '', b.stam ? '⚡ อึดขึ้น ' + Math.round(b.stam * 100) + '%' : '', b.heart ? '💛 หัวใจ +' + b.heart : ''].filter(Boolean).join(' ');
+const buffTxt = b => [b.atk ? '⚔️ +' + b.atk : '', b.def ? '🛡️ +' + b.def : '', b.warm ? '❄️ กันหนาว +' + b.warm + ' ชิ้น' : '', b.cool ? '🔥 กันร้อน +' + b.cool + ' ชิ้น' : '', b.stam ? '⚡ อึดขึ้น ' + Math.round(b.stam * 100) + '%' : '', b.heart ? '💛 หัวใจ +' + b.heart : ''].filter(Boolean).join(' ');
 const buffOn = k => S.buff && S.buff.until > Date.now() ? S.buff[k] || 0 : 0;
 const needTxt = r => Object.keys(r.need).map(k => `${({ fish: '🐟 ปลา', fruit: '🍎 ผลไม้', veg: '🥬 ผัก', meat: '🍖 เนื้อ', monster: '👾 ของมอนสเตอร์', herb: '🌿 สมุนไพร' })[k] || (D.INGR[k] ? D.INGR[k].icon + ' ' + D.INGR[k].name : k)} ×${r.need[k]}`).join(' + ') + (r.only ? ' (ล้วน)' : '');
 function openCook(key = 'home') {
@@ -2219,7 +2222,7 @@ function drawMini() {
   for (const c of WC) if (S.wcamps[c.id] && dist(c.x, c.z, q.x, q.z) < span) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
   if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
   const [px, py] = P(q.x, q.z); g.save(); g.translate(px, py); g.fillStyle = '#fff'; g.strokeStyle = '#2a2030'; g.lineWidth = 2 * dpr; g.beginPath(); g.moveTo(0, -6 * dpr); g.lineTo(4.5 * dpr, 5 * dpr); g.lineTo(-4.5 * dpr, 5 * dpr); g.closePath(); g.fill(); g.stroke(); g.restore();
-  { const n = $('miniN'), rr = 41; n.style.left = (52 + Math.sin(-R) * -rr) + 'px'; n.style.top = (52 - Math.cos(-R) * rr - 7) + 'px' }   /* N rides the rim */
+  { const n = $('miniN'), rx = 41, ry = 31; n.style.left = (52 + Math.sin(R) * rx) + 'px'; n.style.top = (45 - Math.cos(R) * ry - 7) + 'px' }   /* N rides an oval rim that stays above the zone name */
   $('miniZ').textContent = ZONES[S.area] || '';
 }
 let mapZ = 3; const MAPH = [0, 320, 640, 1280, 2560, 5120];   /* v2.5 big map: zoom levels (display height px) · north is up */
@@ -2428,6 +2431,21 @@ const FAR = buildFarLand(scene);
 const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2f6fa8', roughness: .35, metalness: .05 })); OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
 const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp', 'rockGolem', 'goblin', 'grassSprite'], ['rockGolem', 'goblin', 'goblin', 'rockGolem']];
 /* v3.4 people, pets and monsters are 10–40 meshes each: past the fog's start they are a few pixels, so they are not drawn at all (only ones hidden here are shown again) */
+/* v3.5 🎮 game controller (Xbox / PlayStation / Switch Pro over Bluetooth): left stick walks · right stick turns the camera · the 4 face buttons press the on-screen ones
+   by position (bottom = B · right = A · left = Y · top = X, the same diamond as the screen) · RT / RB / L3 = run · Start = menu · Select = map · on-screen buttons hide while one is connected */
+const PADB = { 0: 'bB', 1: 'bA', 2: 'bY', 3: 'bX' }, padPrev = {}; let padOn = false;
+function padPress(id, down) { const el = $(id); if (!el) return; const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(down ? 'pointerdown' : 'pointerup', { bubbles: true, cancelable: true, pointerId: 77, pointerType: 'touch', clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }
+function padTick(dt) {
+  const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(g => g && g.connected) : null;
+  if (!!gp !== padOn) { padOn = !!gp; document.body.classList.toggle('gamepad', padOn); if (padOn) hint('🎮 ต่อจอยแล้ว · ปุ่มบนจอซ่อนไว้', 1600); else joy.on = false }
+  if (!gp) return; const dz = v => Math.abs(v) < .18 ? 0 : (v - Math.sign(v) * .18) / .82, ax = dz(gp.axes[0] || 0), ay = dz(gp.axes[1] || 0), rx = dz(gp.axes[2] || 0), ry = dz(gp.axes[3] || 0), B = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
+  const ov = !!document.querySelector('.ov');
+  if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(7) || B(5) || B(10); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
+  else if (padPrev.walk) { padPrev.walk = 0; joy.on = false; joy.run = false }
+  if (rx || ry) { if (AIM) aimTurn(rx * dt * 520, ry * dt * 520); else if (camTP()) { CAM.yaw -= rx * dt * 2.4; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + ry * dt * 1.4)) } }
+  for (const i in PADB) { const p = B(+i); if (p !== !!padPrev[i]) { padPrev[i] = p; if (ov && i === '0') { if (p) { const o = [...document.querySelectorAll('.ov')].pop(), bk = o && o.querySelector('.back'); if (bk) bk.click() } continue } padPress(PADB[i], p) } }   /* a window open: B = back */
+  for (const [i, f] of [[9, () => $('bMenu').click()], [8, () => $('mini').click()], [14, () => $('wL').click()], [15, () => $('wR').click()]]) { const p = B(i); if (p && !padPrev['s' + i]) f(); padPrev['s' + i] = p }
+}
 let cullT = 0;
 function actorCull(now) {
   if (now < cullT) return; cullT = now + 250; const c = cam.position, F2 = D.ACTOR_FAR ** 2;

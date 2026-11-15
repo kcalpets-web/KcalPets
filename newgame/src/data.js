@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.4';
+export const APP_VER = '3.5';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -483,21 +483,24 @@ export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 1.5,
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
 /* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
 /* v2.3.1: known from the start = no `from` · the rest are taught by NPCs (talk to them: `from` = the NPC's pick kind, or 'ruin:<town k>') */
-/* v2.6 👕 clothes: 3 slots (head · body · legs) · warm ❄️ = cold protection · cool 🔥 = heat protection · a place that is cold level N needs warm ≥ N (fire / hot food help) */
+/* v2.6 👕 clothes: 3 slots (head · body · legs) · v3.5 one ability per piece: warm ❄️ cold protection · cool 🔥 heat protection · swim 🏊 faster swimming · 1 piece = 50% · 2 pieces = 100% (fire / hot food / water count as pieces) */
 export const WEAR = {
-  tunic:    { slot: 'body', icon: '👕', name: 'เสื้อผ้าฝ้าย', warm: 1, cool: 0, col: null },
+  tunic:    { slot: 'body', icon: '👕', name: 'เสื้อผ้าฝ้าย', warm: 0, cool: 0, col: null },
   pants:    { slot: 'legs', icon: '👖', name: 'กางเกงขายาว', warm: 1, cool: 0 },
   strawHat: { slot: 'head', icon: '😷', name: 'ผ้าปิดหน้ากันแดด', warm: 0, cool: 1, hat: 'veil' },   /* v2.9 no hats: the head slot is face-wear (masks · scarves) */
   woolCap:  { slot: 'head', icon: '🧣', name: 'ผ้าพันคอไหมพรม', warm: 1, cool: 0, hat: 'scarf' },
-  furHood:  { slot: 'head', icon: '🦊', name: 'หน้ากากขนสัตว์', warm: 2, cool: 0, hat: 'furmask' },
-  tank:     { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 2, col: '#f4f0e8' },
-  coat:     { slot: 'body', icon: '🧥', name: 'เสื้อกันหนาว', warm: 2, cool: 0, col: '#b8503a' },
-  furCoat:  { slot: 'body', icon: '🧥', name: 'เสื้อขนสัตว์', warm: 3, cool: 0, col: '#d8c0a0' },
+  furHood:  { slot: 'head', icon: '🦊', name: 'หน้ากากขนสัตว์', warm: 1, cool: 0, hat: 'furmask' },
+  tank:     { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 1, col: '#f4f0e8' },
+  coat:     { slot: 'body', icon: '🧥', name: 'เสื้อกันหนาว', warm: 1, cool: 0, col: '#b8503a' },
+  furCoat:  { slot: 'body', icon: '🧥', name: 'เสื้อขนสัตว์', warm: 1, cool: 0, col: '#d8c0a0' },
   shorts:   { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 1 },
-  furPants: { slot: 'legs', icon: '👖', name: 'กางเกงขนสัตว์', warm: 2, cool: 0 },
+  furPants: { slot: 'legs', icon: '👖', name: 'กางเกงขนสัตว์', warm: 1, cool: 0 },
+  goggles:  { slot: 'head', icon: '🥽', name: 'แว่นว่ายน้ำ', warm: 0, cool: 0, swim: 1 },   /* v3.5 🏊 swim pieces: +25% swim speed each (2 pieces max) */
+  swimTop:  { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำ', warm: 0, cool: 0, swim: 1, col: '#3a8ad8' },
+  swimLegs: { slot: 'legs', icon: '🩲', name: 'กางเกงว่ายน้ำ', warm: 0, cool: 0, swim: 1 },
   leafMask: { slot: 'head', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ', warm: 0, cool: 0, air: 1, hat: 'mask' },   // v2.7 breathe in Deadgar
 };
-export const CLIMATE = { lv: [.6, .75, .9], tick: 4, dmg: 4, fire: 3, swimCool: 2, warn: 'ชุดไม่พอกับอากาศ' };   // TEMPV beyond ±lv[i] = level i+1 · every tick s: −dmg HP × (level − protection)
+export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
@@ -516,14 +519,17 @@ export const CRAFT = [
   { k: 'cKingSword', icon: '👑', name: 'ดาบราชันย์', need: { diamond: 2, goldBar: 2, golemCore: 1 }, give: { item: ['kingSword', 'L'] } },
   { k: 'cBoneBroth', icon: '🍲', name: 'ซุปกระดูกโกเลม (อิ่มนาน ❤️ +3)', need: { bone: 1, grass: 4 }, give: { meal: 'boneBroth' } },
   { k: 'leafMask', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ (หายใจในเดดการ์)', need: { mint: 3, flower: 2, grass: 6 }, give: { wear: 'leafMask' } },
-  { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (อุ่น +2)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
-  { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (อุ่น +1)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
-  { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (เย็น +2)', need: { grass: 6 }, give: { wear: 'tank' } },
-  { k: 'shorts', icon: '🩳', name: 'กางเกงขาสั้น (เย็น +1)', need: { grass: 4 }, give: { wear: 'shorts' } },
-  { k: 'strawHat', icon: '😷', name: 'ผ้าปิดหน้ากันแดด (เย็น +1)', need: { grass: 5 }, give: { wear: 'strawHat' } },
-  { k: 'furHood', icon: '🦊', name: 'หน้ากากขนสัตว์ (อุ่น +2)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'furCoat', icon: '🧥', name: 'เสื้อขนสัตว์ (อุ่น +3)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'furPants', icon: '👖', name: 'กางเกงขนสัตว์ (อุ่น +2)', need: { hide: 5, grass: 4 }, give: { wear: 'furPants' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'goggles', icon: '🥽', name: 'แว่นว่ายน้ำ (ว่ายเร็ว +25%)', need: { grass: 4, feather: 2 }, give: { wear: 'goggles' } },   /* v3.5 */
+  { k: 'swimTop', icon: '🩱', name: 'ชุดว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 2, grass: 4 }, give: { wear: 'swimTop' } },
+  { k: 'swimLegs', icon: '🩲', name: 'กางเกงว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 1, grass: 4 }, give: { wear: 'swimLegs' } },
+  { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (กันหนาว)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
+  { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
+  { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (กันร้อน)', need: { grass: 6 }, give: { wear: 'tank' } },
+  { k: 'shorts', icon: '🩳', name: 'กางเกงขาสั้น (กันร้อน)', need: { grass: 4 }, give: { wear: 'shorts' } },
+  { k: 'strawHat', icon: '😷', name: 'ผ้าปิดหน้ากันแดด (กันร้อน)', need: { grass: 5 }, give: { wear: 'strawHat' } },
+  { k: 'furHood', icon: '🦊', name: 'หน้ากากขนสัตว์ (กันหนาว)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furCoat', icon: '🧥', name: 'เสื้อขนสัตว์ (กันหนาว)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furPants', icon: '👖', name: 'กางเกงขนสัตว์ (กันหนาว)', need: { hide: 5, grass: 4 }, give: { wear: 'furPants' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
   { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
