@@ -132,7 +132,7 @@ const HL = {   /* hairline height (head-local y) by angle round the head: front 
   messy: [.035, -.02, -.1, -.17], spiky: [.05, 0, -.08, -.15], side: [.03, -.02, -.1, -.17], bob: [.03, -.08, -.23, -.24], pony: [.04, -.03, -.11, -.16], buns: [.04, -.03, -.11, -.16], long: [.03, -.1, -.3, -.5], twin: [.04, -.03, -.12, -.16] };
 function lineAt(st, az) { const L = HL[st] || HL.messy, a = Math.abs(az); return a < .9 ? L[0] + (L[1] - L[0]) * sst(0, .9, a) : a < 1.6 ? L[1] + (L[2] - L[1]) * sst(.9, 1.6, a) : L[2] + (L[3] - L[2]) * sst(1.6, 3.14, a) }
 function hairPiece(h, style, col) {
-  const M = mat(col, { r: .38 }), g = new THREE.SphereGeometry(1, 96, 72), p = g.attributes.position, dv = V(0, 0, 0);
+  const M = mat(col, { r: .38 }), g = new THREE.SphereGeometry(1, 60, 44), p = g.attributes.position, dv = V(0, 0, 0);
   for (let i = 0; i < p.count; i++) {
     dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, back = sst(.4, -.6, dv.z);
     let line = lineAt(style, az); if (style === 'side') line += .05 * sst(-.6, .4, az) * sst(1.2, .2, Math.abs(az));   /* the fringe sweeps lower to one side */
@@ -161,7 +161,7 @@ function beardPiece(h, kind, col) { const M = mat(shade(col, .92), { r: .4 }), e
   const D = mat(shade(col, .6), { r: .4 });
   if (kind === 'stache' || kind === 'full') for (const s2 of [-1, 1]) { const c = faceAt(s2 * .024, my + .025, .006), m = ball(h, .02, kind === 'full' ? M : D, c.toArray(), [1.5, .5, .45], 16); m.rotation.set(0, s2 * .35, -s2 * .28) }   /* two small soft tufts */
   if (kind === 'goatee') { const top = faceAt(0, my - .018, .004), mid = faceAt(0, my - .034, .007), tip = faceAt(0, my - .052, .003).add(V(0, 0, .006)); add(h, tube([top.toArray(), mid.toArray(), tip.toArray()], [.014, .012, .003], 12, .55, true), D) }
-  if (kind === 'full') { const g = new THREE.SphereGeometry(1, 64, 48), p = g.attributes.position, dv = V(0, 0, 0);
+  if (kind === 'full') { const g = new THREE.SphereGeometry(1, 48, 36), p = g.attributes.position, dv = V(0, 0, 0);
     for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const b = surf(dv, 0), front = sst(-.3, .2, dv.z), edge = my - .03 + .085 * sst(.13, .22, Math.abs(b.x)), low = sst(edge + .01, edge - .016, b.y);   /* starts under the lip, climbs the cheeks as sideburns */
       const c = front * low, q = surf(dv, -.012 + c * (.016 + .026 * sst(my - .05, my - .2, b.y))); if (c > .01) q.y -= .05 * c * sst(my - .1, my - .25, b.y); p.setXYZ(i, q.x, q.y, q.z) }
     g.computeVertexNormals(); add(h, g, M) } }

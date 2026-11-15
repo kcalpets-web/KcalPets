@@ -23,7 +23,7 @@ export function walkable(x, z) {
 function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647 }
 
 export function buildWorld(scene, eco) {
-  Q.seg = eco ? 14 : 22;                                       // scenery detail (restored for actors at the end)
+  Q.seg = eco ? 11 : 16;                                       // scenery detail (restored for actors at the end)
   const W = { clear: new Map(), picks: [], scene }, ST = new THREE.Group();   // ST = static props, merged into a few meshes at the end
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   /* ---- ground ---- */
@@ -152,7 +152,7 @@ export function cookPot(W, key, x, z) {
 export function spawnClear(W, o) {
   if (o.g) return; remnant(W, o, false);
   if (o.inst) { for (const [m, i, M] of o.inst) { m.setMatrixAt(i, M); m.instanceMatrix.needsUpdate = true } o.g = new THREE.Group(); o.g.position.set(o.x, groundH(o.x, o.z), o.z); W.scene.add(o.g); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: .3 * (o.sc || 1), o }); return }   /* v2.9 a streamed (instanced) tree: just show it again */ const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
-  const seg0 = Q.seg; Q.seg = W.eco ? 14 : 22;
+  const seg0 = Q.seg; Q.seg = W.eco ? 11 : 16;
   ({ mushroom: () => { for (const [dx, dz, k] of [[0, 0, 1], [.16, .1, .7], [-.12, .14, .55]]) { part(g, '#e8dcc8', '#fff8ec', [dx, .1 * k, dz], [.05 * k, .1 * k, .05 * k], [0, 0, 0], { A: 0 }); part(g, '#a8301e', '#e8604a', [dx, .2 * k, dz], [.16 * k, .09 * k, .16 * k], [0, 0, 0], { A: .04 }); part(g, '#fff4e0', '#ffffff', [dx + .05 * k, .27 * k, dz + .04 * k], [.03 * k, .015, .03 * k], [0, 0, 0], { A: 0 }) } },
      herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
        part(g, '#3f8a3a', '#7ac860', [0, .3, 0], [.025, .22, .025], [0, 0, 0], { A: 0 }); const f = new THREE.Mesh(new THREE.SphereGeometry(.11, 14, 10), GLOW); f.position.y = .55; g.add(f);
@@ -208,7 +208,7 @@ const pathZ = x => Math.sin((x - FX) * .35) * 2.2 * Math.max(0, Math.min(1, (FX 
 export function buildForest(W, eco) {
   const scene = W.scene, F = {}, ST = new THREE.Group(), R = rng(31);
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
-  Q.seg = eco ? 14 : 22;
+  Q.seg = eco ? 11 : 16;
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
     grassCol(x, z, c).multiplyScalar(1 - .2 * smw(FX - 13, FX - 8, x)); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
@@ -252,7 +252,7 @@ export const SHOP_POS = [[-5, -6.5, 0], [0, -7.5, 0], [5, -6.5, 0], [-6.5, 5.5, 
 export function buildTown(W, eco) {
   const scene = W.scene, T = { shops: [] }, ST = new THREE.Group();
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
-  Q.seg = eco ? 14 : 22;
+  Q.seg = eco ? 11 : 16;
   const geo = new THREE.PlaneGeometry(22, 34, 44, 68); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), r = Math.hypot(x, z), n = Math.sin(x * .7 + z * .3) * .5 + Math.sin(z * .9 - x * .4) * .5;
     if (r < 4.2) c.set('#cfc6b4'); else if ((Math.abs(z) < 1.3 || Math.abs(x) < 1.3) && r < 12) c.set('#c4b49a'); else grassCol(x + TX, z, c); col.push(c.r, c.g, c.b); P.setY(i, 0) }
@@ -342,7 +342,7 @@ export const CAMPS = { home: { name: 'แคมป์ที่พัก (บ้�
 export function buildWild(W, eco) {
   const scene = W.scene, R = rng(91), ST = new THREE.Group(), out = {};
   const at = (fn, x, z, ry = 0, s = 1, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
-  Q.seg = eco ? 14 : 22;
+  Q.seg = eco ? 11 : 16;
   const ground = (x0, x1) => { const w = x1 - x0, geo = new THREE.PlaneGeometry(w, 34, Math.round(w * 3), 102); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
     for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + w / 2, z = P.getZ(i), n = nz(x, z), h = groundH(x, z), edge = Math.max(0, Math.abs(z) - 11.5);
       grassCol(x, z, c); if (h > .35) c.lerp(C('#8aa05a'), .5); if (h > .35 && h < MESA.h - .2) c.lerp(C('#9a7a58'), .75);                // grass · rock cliffs
