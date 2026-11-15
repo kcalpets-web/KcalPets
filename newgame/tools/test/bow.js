@@ -25,7 +25,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (!(await until(() => window.__ng.S.bowGiven, 15000))) errs.push('old save did not get the starter bow');
     await closeAll(); await wait(800); await closeAll();
     await E(() => window.__ng.placeMe(20, -6)); await wait(1200);   /* v2.4.1 the home island is a safe zone (no weapons) */
-    const st = await N(() => { const N = window.__ng; return { bow: N.S.eq.bow, arrows: N.S.arrows } }); log('starter', JSON.stringify(st)); if (!st.bow || st.arrows !== 20) errs.push('starter bow/arrows wrong');
+    const st = await N(() => { const N = window.__ng; return { bow: N.S.eq.bow, arrows: N.S.arrows } }); log('starter', JSON.stringify(st)); if (!st.bow || st.arrows !== 10) errs.push('starter bow/arrows wrong');
     await E(() => { const N = window.__ng; N.S.time = 600; N.setTemp(0); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(600); await shot('b0-idle');
     /* X: tap = jump · hold 3 s = sit · tap = stand */
     await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump');
