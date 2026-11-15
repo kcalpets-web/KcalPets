@@ -39,7 +39,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const st = await E(async id => { const N = window.__ng, o = N.W.clear.get(id); let at = null; for (let k = 0; k < 16 && !at; k++) { const a = k * .39, x = o.x + Math.sin(a) * 1.35, z = o.z + Math.cos(a) * 1.35; if (N.walkWorld(x, z) === 'land' && !N.solHit(x, z, .3)) at = [x, z, a] }
       if (!at) return null; N.placeMe(at[0], at[1]); N.PL.yaw = N.PL.yawT = at[2] + Math.PI; N.CAM.yaw = at[2] + Math.PI; N.S.mats.wood = 0; N.S.hp = 9999; await new Promise(r => setTimeout(r, 1200)); return { solid: !!N.solHit(o.x, o.z), wood: N.S.mats.wood || 0, d: +Math.hypot(N.me.x - o.x, N.me.z - o.z).toFixed(2), h: +(N.GIANT_H * o.sc).toFixed(1) } }, G.id);
     log('stand', JSON.stringify(st)); if (!st || !st.solid) errs.push('the giant trunk is not solid / no place to stand ' + JSON.stringify(st)); await shot('01-giant');
-    /* chop: the A button first (sword mode cuts trees with the weapon), then the axe until one hit is left */
+    /* chop: the A button first (v3.6: with the axe in the A hand), then the axe until one hit is left */
+    await E(() => { window.__ng.S.hand = 'axe' });   /* v3.6 trees need the axe in the A hand */
     for (let i = 0; i < 5; i++) { await E(() => { window.__ng.S.en = 999; window.__ng.actA() }); await wait(1100) }
     const a1 = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, tot: o.tot } }, G.id); log('A button', JSON.stringify(a1)); if (!(a1.tot >= 10)) errs.push('a giant should take many hits ' + JSON.stringify(a1)); if (!(a1.left < a1.tot)) errs.push('the A button did not chop the giant ' + JSON.stringify(a1));
     for (let i = 0; i < 40; i++) { const left = await E(id => { const N = window.__ng, o = N.W.clear.get(id); N.S.en = 999; if (o.left !== 1) { N.setTool('axe'); N.toolHit({ kind: 'clear', id }) } return o.left }, G.id); if (left === 1) break; await wait(950) }
