@@ -9,7 +9,7 @@ function merge(parts) {                     // [geometry, matrix][] → one non-
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); return g;
 }
 const M4 = (x, y, z, rx, ry, rz, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(sx, sy, sz));
-const LEAF = new THREE.SphereGeometry(.5, 8, 4), BALL = new THREE.SphereGeometry(.5, 11, 8);   // v2.9 smooth
+const LEAF = new THREE.SphereGeometry(.5, 8, 4), BALL = new THREE.SphereGeometry(.5, 9, 6);   // v2.9 smooth · v3.4 9×6 (was 11×8: ~145 crowns near the player)
 const fan = (n, len, wid, tilt, lift) => merge(Array.from({ length: n }, (_, i) => { const a = i / n * 6.283; return [LEAF, M4(Math.sin(a) * len * .45, lift, Math.cos(a) * len * .45, tilt, a, 0, wid, .07, len)] }));
 export const G = {
   fern: fan(7, .9, .22, -.75, .28),

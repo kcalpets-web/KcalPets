@@ -21,6 +21,7 @@
 | แผนที่ | `paintMap` (generator) `mapHi` `openMap` `drawMini` |
 | ลานฝึก · ม้า | `goTrain` `backTrain` `trainTick` · `mountHorse` `dismount` `horseTick` |
 | 🌲 ต้นไม้ยักษ์ · LOD · แสงอาทิตย์ (ยังไม่ปล่อย) | `D.CLEAR.giant` `D.LOD` `D.SUN` · world.js `buildChunk` (`out.lod` hi/lo/small · giants `kg…`) `giantMesh` `giantLog` `GIANT_H` · main.js `timber` `timberTick` `TIMB` `TLOGS` `setLod` `sunFollow` `SUND` · ทดสอบ `tools/test/timber.js` |
+| ☁️ เมฆดำบนฟ้า · ⚡ ภาระฉาก (v3.3.1) | main.js `stormTick` `SKYCLOUD` `CAPC` `capCloud` `cloudMesh` `actorCull` `POTL` (`potTick`) · data.js `D.SKYCLOUD` `D.ACTOR_FAR` · world.js `ZCELL` `mergeStatic(root, cell)` `flatten` `PICK_MAT` · clay.js `cone` (`CONES`) · วัดด้วย `__ng.info()` (calls/tris) · `__ng.scene` |
 | ฝึกปุ่ม (การ์ด) | `TUT` `tutTick` `tutEv` |
 | เควสอาณาจักร | `src/quests.js` `KQ` · `main.js` `kqTick` `talkNpc` |
 | hook ทดสอบ | `window.__ng = {…}` ท้าย `main.js` |
@@ -38,6 +39,11 @@
 4. v3.3 🏰 ปราสาทแทนหอคอยแสง (ลูมิเนีย): เข้าแล้วโหลดฉากในปราสาท + บอสผู้พิทักษ์
 5. v3.4 🏘️ เมืองทั้ง 7 อาณาจักรเป็นฉากแยก (เข้าประตู → โหลดเมือง) · เมืองแรกตกแต่งให้เข้ากัน
 6. v3.5 🌍 พื้นผิวโลกต่อกันไม่มีรอยแตก (chunk ใช้ขอบร่วม/skirt) + หาจุดเดินทะลุทั้งหมด
+
+### ภาระฉาก — ทำต่อได้ (v3.3.1 ทำไปแล้ว: เมือง 338→222 · เกาะ 391→283 · ทุ่ง 489→285 draw call)
+- ของเก็บได้บนเกาะ ~180 ชิ้น = 1 เมชต่อชิ้น (`spawnClear`) → ทำ InstancedMesh ต่อชนิด (ใช้ทาง `o.inst` ที่มีอยู่) ลดได้ ~150 call
+- คน/สัตว์ 15–40 เมชต่อตัว (Q.seg 32) → ตัวที่ไกล 25–66 ม. ใช้แบบหยาบ/รวมเมช · ต้นซากุระใน chunk ยังไม่มี LOD (`lush.js` `LG.trunk`/`crown`)
+- ไม่ลดรัศมี chunk (`R2`) เพราะหมอกจบที่ 420 ม. ต้นไม้จะโผล่ให้เห็น
 
 ## 5. เคล็ดลับประหยัด token (สำหรับ Claude)
 - เริ่มเซสชันใหม่เมื่อบริบทยาว (>500k) — เขียนสถานะลงไฟล์นี้ก่อนแล้วเริ่มใหม่ ประหยัดที่สุด

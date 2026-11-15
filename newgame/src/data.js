@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.3';
+export const APP_VER = '3.3.1';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -295,6 +295,8 @@ export const STARTERS = [];
 export const BUILD = { house: { wood: 10, stone: 5 }, boat: { wood: 15, stone: 8 } };
 export const BUILD_TIME = { house: 30, boat: 30, shop: 20 };          // seconds a build / repair takes (a clay hammer knocks meanwhile)
 export const HOWSIF_FISH = 2;
+export const ACTOR_FAR = 66;   // v3.4 people / pets / monsters farther than this from the camera are not drawn (fog starts at 60)
+export const SKYCLOUD = { far: 560, y: 95, sc: 2.6, near: 300, capY: 45 };   // capY: how high the underside of Luminia's cloud stays above the ground   // ☁️ the dark cloud on the sky: distance kept · height above the camera · size · within `near` of the storm island it sinks onto it
 export const TOWN_SLIMES = 5;
 export const HERBS = 3, GOBLINS = 4;
 export const FOREST_MONS = ['slime', 'grassSprite', 'slime'];   // wander along the forest path on each visit

@@ -43,10 +43,13 @@ function capsuleGeo(r, len, lo, hi) { const key = [r, len, lo, hi].join('|'); if
   for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + len / 2 + r) / (len + 2 * r), side = p.getX(i) / r; c.copy(L).lerp(H, sm(.0, 1, t * .6 + .4 - Math.abs(side) * .15)); col.push(c.r, c.g, c.b) }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); CAPS.set(key, g); return g }
 export function limb(grp, lo, hi, y0, y1, r) { const len = Math.max(.001, Math.abs(y0 - y1)); return part(grp, lo, hi, [0, (y0 + y1) / 2, 0], [1, 1, 1], [0, 0, 0], { geo: capsuleGeo(r, len, lo, hi) }) }
+const CONES = new Map();
 export function cone(grp, lo, hi, pos, s, rot, k = .82) {
-  const g = blobGeo(lo, hi, .03, 1, 2, 24).clone(), p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + 1) / 2; p.setX(i, p.getX(i) * (1 - k * t)); p.setZ(i, p.getZ(i) * (1 - k * t)) }
-  g.computeVertexNormals(); return part(grp, lo, hi, pos, s, rot, { geo: g });
+  const seg = Math.min(24, Q.seg), key = [lo, hi, k, seg].join('|');   /* v3.4 scenery cones follow Q.seg (grass blades, post tips) and are shared, not cloned per call */
+  let g = CONES.get(key); if (!g) { g = blobGeo(lo, hi, .03, 1, 2, seg).clone(); const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + 1) / 2; p.setX(i, p.getX(i) * (1 - k * t)); p.setZ(i, p.getZ(i) * (1 - k * t)) }
+    g.computeVertexNormals(); CONES.set(key, g) }
+  return part(grp, lo, hi, pos, s, rot, { geo: g });
 }
 function eyes(grp, y, z, dx, r = .085) {
   for (const s of [-1, 1]) {

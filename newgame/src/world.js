@@ -64,6 +64,7 @@ export function buildWorld(scene, eco) {
   /* story: before the tree house is built there is only a building site (a pile of planks + stones) */
   W.site = at(g => { for (let i = 0; i < 7; i++) part(g, '#6a4024', '#b07a44', [(i % 3 - 1) * .35, .08 + Math.floor(i / 3) * .12, (i % 2) * .25], [.5, .06, .1], [0, i * .4, 0], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#7f7a74', '#d0cbc2', [.9 + (i % 2) * .3, .12, -.3 + i * .2], [.18, .14, .16], [0, i, 0], { A: .2 });
     part(g, '#6a4024', '#a8703e', [-.9, .6, .2], [.06, .6, .06], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [-.9, 1.05, .26], [.32, .18, .03], [0, 0, 0], { A: 0 }) }, HOUSE.x, HOUSE.z + .4, 0, 1, 0, true);
+  flatten(W.house); flatten(W.site);   /* v3.4 the tree house: 1–2 meshes instead of ~27 */
   /* story: ruined houses on the island (scenery) */
   const WALL = new THREE.MeshStandardMaterial({ color: '#d8bf98', roughness: .9 });
   const ruin = (x, z, ry) => { at(g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .2), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); g.add(m) };
@@ -86,7 +87,7 @@ export function buildWorld(scene, eco) {
   at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 6.6, 1.3, -.2); addSol({ x: 6.6, z: 1.3, r: .14 });
   addSol({ x: WRECK.x, z: WRECK.z, r: .55, o: { get g() { return W.wreck.visible } } });                // the wreck (only while it lies there)
   addPick(W, EXIT.x, EXIT.z, 1.3, 2.5, { kind: 'exit' });
-  scene.add(mergeStatic(ST));
+  scene.add(mergeStatic(ST, ZCELL));
   W.eco = eco;
   [[.9, .6], [-.5, 1.0], [1.3, -.4]].forEach(([dx, dz], i) => W.clear.set('d' + (i + 1), { id: 'd' + (i + 1), t: 'debris', x: WRECK.x + dx, z: WRECK.z + dz, ry: i * 1.3, g: null, pick: null, left: 0 }));
   /* ---- clearables (deterministic layout; S.cleared says which are gone) ---- */
@@ -159,22 +160,23 @@ const LAMP_G = new THREE.SphereGeometry(.16, 12, 9), FLOWERS = [['#e85a8a', '#ff
 function planter(g, k = 0) { lathe(g, '#8a8478', '#e4ded2', [[0, 0], [.62, 0], [.7, .1], [.68, .34], [.58, .4], [.5, .32], [0, .32]], [0, 0, 0], 16); const b = new THREE.Group(); PROPS.bush(b, .78); b.position.y = .22; g.add(b);
   for (let i = 0; i < 5; i++) { const a = i * 1.26 + k, r = .2 + (i % 3) * .14, F = FLOWERS[Math.abs(i + k) % 4]; part(g, F[0], F[1], [Math.cos(a) * r, .62 + (i % 2) * .08, Math.sin(a) * r], [.07, .05, .07], [0, 0, 0], { A: 0 }) } }
 const RBGM = new Map(), rbGeo = (w, h, d) => { const k = w + '|' + h + '|' + d; if (!RBGM.has(k)) { const g = rboxGeo(w, h, d, .08); const g2 = g.clone(); g2.deleteAttribute('color'); RBGM.set(k, g2) } return RBGM.get(k) };   /* v2.9 rounded ruin walls */
-const PICK_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
+const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });   /* v3.4 tap targets: raycast only, never drawn (was ~200 empty draw calls) */
 export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
 const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
 /* a cooking pot on a camp fire (tap = cook or sleep) */
 export function cookPot(W, key, x, z) {
-  const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); W.scene.add(g);
+  const g0 = new THREE.Group(); g0.position.set(x, groundH(x, z), z); W.scene.add(g0); const seg0 = Q.seg; Q.seg = W.eco ? 11 : 16; let g = new THREE.Group();   /* v3.4 stones · logs · tripod → one mesh; scenery detail */
   for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .5, .1, Math.sin(a) * .5], [.16, .11, .14], [0, a, 0], { A: .2 }) }
   for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#7a4a28', [0, .1, 0], [.42, .05, .05], [0, i * 1.05, .15], { A: 0 });
-  const fire = new THREE.Group(); cone(fire, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95); cone(fire, '#ff8a2a', '#fff2a0', [.08, .22, .05], [.1, .22, .1], [0, 0, 0], .95); g.add(fire);
+  const fire = new THREE.Group(); cone(fire, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95); cone(fire, '#ff8a2a', '#fff2a0', [.08, .22, .05], [.1, .22, .1], [0, 0, 0], .95);
   for (const s2 of [-1, 1]) { part(g, '#3a2418', '#6a4028', [s2 * .55, .5, 0], [.04, .5, .04], [0, 0, s2 * .12], { A: 0 }) } part(g, '#3a2418', '#6a4028', [0, .98, 0], [.62, .035, .035], [0, 0, 0], { A: 0 });   // tripod bar
+  { const mg = mergeStatic0(g); g = g0; mg.children.slice().forEach(m => g.add(m)) } g.add(fire);
   const pot = new THREE.Group(); pot.position.y = .4; g.add(pot);                                  // the pot (hops while cooking) · stew inside
   part(pot, '#22222a', '#5a5a68', [0, .22, 0], [.32, .26, .32], [0, 0, 0], { A: .03 }); part(pot, '#a86a3a', '#e8a860', [0, .42, 0], [.27, .04, .27], [0, 0, 0], { A: .1 });
   part(pot, '#22222a', '#5a5a68', [0, .5, 0], [.2, .01, .01], [0, 0, 0], { A: 0 }); const lid = new THREE.Group(); part(lid, '#2a2a32', '#6a6a78', [0, 0, 0], [.3, .05, .3], [0, 0, 0], { A: 0 }); part(lid, '#2a2a32', '#6a6a78', [0, .07, 0], [.06, .04, .06], [0, 0, 0], { A: 0 }); lid.position.y = .5; lid.visible = false; pot.add(lid);
   const steam = []; for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false })); g.add(m); steam.push(m) }
-  const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light);
+  const light = new THREE.PointLight('#ff9a4a', 0, 5); light.position.set(0, .6, 0); g.add(light); Q.seg = seg0;
   addPick(W, x, z, .9, 1.4, { kind: 'pot', key }).position.y += groundH(x, z); addSol({ x, z, r: .5 }); return { g, pot, lid, fire, steam, light, x, z };
 }
 /* show / hide one clearable */
@@ -222,12 +224,16 @@ export function remnant(W, o, on) {
   else return; W.scene.add(g); o.rem = g }
 
 /* merge every static mesh into one mesh per material (non-indexed, world space) → a handful of draw calls instead of ~1,000 */
-function mergeStatic(root) {
-  const out = mergeStatic0(root); out.traverse(o => { if (o.isMesh) o.userData.occ = 1 }); return out;   /* v1.9: static scenery can block the camera → it moves in */
+/* v3.4 a static group that is only shown / hidden as a whole → its meshes merged in place (keeps the group, its transform and visibility) */
+function flatten(g) { const p = g.position.clone(), r = g.rotation.clone(), sc = g.scale.clone(); g.position.set(0, 0, 0); g.rotation.set(0, 0, 0); g.scale.setScalar(1); g.updateMatrixWorld(true);
+  const mg = mergeStatic0(g); g.clear(); mg.children.slice().forEach(m => g.add(m)); g.position.copy(p); g.rotation.copy(r); g.scale.copy(sc); return g }
+const ZCELL = 24;   // v3.4 zone scenery merge grid (m)
+function mergeStatic(root, cell = 0) {
+  const out = mergeStatic0(root, cell); out.traverse(o => { if (o.isMesh) o.userData.occ = 1 }); return out;   /* v1.9: static scenery can block the camera → it moves in */
 }
-function mergeStatic0(root) {
-  root.updateMatrixWorld(true); const buckets = new Map();
-  root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), mat = o.material === MAT ? WMAT : o.material, key = mat.uuid + '|' + keys;
+function mergeStatic0(root, cell = 0) {   /* v3.4 cell > 0: also split by a ground grid (m) so a whole zone is not one mesh → parts off screen are culled */
+  root.updateMatrixWorld(true); const buckets = new Map(), E = new THREE.Vector3();
+  root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), mat = o.material === MAT ? WMAT : o.material, key = mat.uuid + '|' + keys + (cell ? '|' + (E.setFromMatrixPosition(o.matrixWorld), Math.floor(E.x / cell) + ',' + Math.floor(E.z / cell)) : '');
     if (!buckets.has(key)) buckets.set(key, { mat, list: [], keys: keys.split(',') }); const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld); buckets.get(key).list.push(g) });
   const out = new THREE.Group();
   for (const { mat, list, keys } of buckets.values()) {
@@ -281,7 +287,7 @@ export function buildForest(W, eco) {
   /* glowing herbs (sickle) */
   [[FX - 9, 3.6], [FX - 4.2, -6.2], [FX - .5, -2.4], [FX + 1.8, 6.8], [FX + 4.6, -7.4], [FX - 7.6, -2.2]].forEach(([x, z], i) => W.clear.set('m' + (i + 1), { id: 'm' + (i + 1), t: 'mushroom', x, z, ry: i, g: null, pick: null, left: 0 }));
   [[FX - 6.5, -4.6], [FX - 1.2, 5.2], [FX + 2.6, -5.6]].forEach(([x, z], i) => W.clear.set('h' + (i + 1), { id: 'h' + (i + 1), t: 'herb', x, z, ry: i, g: null, pick: null, left: 0 }));
-  scene.add(mergeStatic(ST)); Q.seg = 32; return F;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return F;
 }
 
 export const TX = 46;                                          // town centre x · plaza at (TX, 0)
@@ -314,9 +320,10 @@ export function buildTown(W, eco) {
   const broken = g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .22), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); m.castShadow = true; g.add(m) };
     wall(0, -1, 2.6, 1.5, 0); wall(-1.3, 0, 1.8, 1.1, Math.PI / 2, .05); wall(1.3, .3, 1.2, .7, Math.PI / 2, -.1); cone(g, '#3a1a10', '#7a3a24', [.3, .35, .6], [1.4, .4, 1.1], [.4, .6, .8], .98);
     for (let i = 0; i < 6; i++) part(g, '#6a6460', '#b8b0a6', [-.9 + (i % 3) * .8, .12, 1.0 + Math.floor(i / 3) * .4], [.24, .16, .2], [0, i, 0], { A: .2 }) };
+  const merged = (g, fn) => { const t = new THREE.Group(); fn(t); mergeStatic0(t).children.slice().forEach(m => g.add(m)) };   /* v3.4 a shop = 1–3 meshes (was ~14 draw calls each) */
   const ROOF = ['#3a8a5a', '#d08a30', '#4a7ac0', '#7a7a8a', '#c0503a', '#8a4ac0', '#d84a8a'];
   SHOP_POS.forEach(([dx, dz, ry], i) => { const x = TX + dx, z = dz;
-    T.shops.push({ i, x, z, fixed: at(g => shop(g, ROOF[i]), x, z, ry, 1, 0, true), ruin: at(broken, x, z, ry, 1, 0, true), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); addSol({ x, z, hw: 1.25, hd: .95, ry }) });
+    T.shops.push({ i, x, z, fixed: at(g => merged(g, t => shop(t, ROOF[i])), x, z, ry, 1, 0, true), ruin: at(g => merged(g, broken), x, z, ry, 1, 0, true), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); addSol({ x, z, hw: 1.25, hd: .95, ry }) });
   /* the sword on the ground, the west gate (back to the island) and the east gate (forest, locked for now) */
   T.sword = at(g => { const s = new THREE.Group(); part(s, '#8a8fa8', '#eef2ff', [0, .32, 0], [.05, .4, .02], [0, 0, 0], { A: 0 }); part(s, '#7a4422', '#c8843a', [0, -.12, 0], [.05, .12, .05], [0, 0, 0], { A: 0 }); part(s, '#c7891c', '#ffe27a', [0, 0, 0], [.18, .03, .05], [0, 0, 0], { A: 0 }); s.rotation.z = 1.35; s.position.y = .08; g.add(s);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.45, .04, 6, 24), new THREE.MeshBasicMaterial({ color: '#ffd23f' })); ring.rotation.x = -Math.PI / 2; ring.position.y = .03; g.add(ring) }, TOWN.sword.x, TOWN.sword.z, .3, 1, 0, true);
@@ -326,7 +333,7 @@ export function buildTown(W, eco) {
       const lx = G.x + (G.x < TX ? 1.2 : -1.2), lz = s2 * 2.0; at(lamp, lx, lz); addSol({ x: lx, z: lz, r: .14 }) } }
   T.lock = at(g => { for (let i = 0; i < 3; i++) part(g, '#6a4024', '#b07a44', [0, .5 + i * .4, 0], [.08, .08, 1.2], [0, 0, 0], { A: 0 }) }, TOWN.gateE.x, TOWN.gateE.z, 0, 1, 0, true);
   addPick(W, TOWN.gateW.x, TOWN.gateW.z, 1.4, 2.6, { kind: 'gateW' }); addPick(W, TOWN.gateE.x, TOWN.gateE.z, 1.4, 2.6, { kind: 'gateE' });
-  scene.add(mergeStatic(ST)); Q.seg = 32; return T;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return T;
 }
 
 
@@ -419,7 +426,7 @@ export function buildWild(W, eco) {
     if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
     const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
     const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
-  scene.add(mergeStatic(ST)); Q.seg = 32; return out;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return out;
 }
 
 
@@ -476,9 +483,9 @@ export function wildColor(x, z) {
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2)); if (h > 30) return '#f0f2f6'; if (sl > 3.2) return '#8a7a6a';
   return fbm(x / 60 + 4, z / 60) > .55 ? '#3f7a34' : h > 14 ? '#6a9a4a' : '#7cc060';
 }
-const TREE_TRUNK = new THREE.CylinderGeometry(.18, .28, 1.6, 14); TREE_TRUNK.translate(0, .8, 0);
-const TREE_TOP = new THREE.SphereGeometry(1.15, 20, 14); TREE_TOP.translate(0, 2.3, 0); const PINE_TOP = (() => { const P = [[1.1, 1.3, 1.2], [.85, 1.1, 2.0], [.58, .9, 2.7]].map(([r, h, y]) => { const c = new THREE.ConeGeometry(r, h, 16, 3); c.translate(0, y - 2.6 + h * .3, 0); const p = c.attributes.position; for (let i = 0; i < p.count; i++) { const t = (p.getY(i) - (y - 2.6 + h * .3) + h / 2) / h; p.setY(i, p.getY(i) - Math.sin(t * Math.PI) * .08) } return c.toNonIndexed() }); const n = P.reduce((a, g) => a + g.attributes.position.count, 0), pos = new Float32Array(n * 3); let o = 0; for (const g of P) { pos.set(g.attributes.position.array, o); o += g.attributes.position.array.length } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals(); return g })(); PINE_TOP.translate(0, 2.6, 0);   /* v2.9 three soft tiers */
-const ROCK_G = (() => { const g = new THREE.SphereGeometry(.8, 18, 12), p = g.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = 1 + .09 * Math.sin(v.x * 4.1 + 1) * Math.sin(v.z * 3.3 + 2) + .05 * Math.sin(v.y * 6); p.setXYZ(i, v.x * n, v.y * n * .8, v.z * n) } g.computeVertexNormals(); return g })();   // v2.9 a smooth pebble
+const TREE_TRUNK = new THREE.CylinderGeometry(.18, .28, 1.6, 9); TREE_TRUNK.translate(0, .8, 0);
+const TREE_TOP = new THREE.SphereGeometry(1.15, 20, 14); TREE_TOP.translate(0, 2.3, 0); const PINE_TOP = (() => { const P = [[1.1, 1.3, 1.2], [.85, 1.1, 2.0], [.58, .9, 2.7]].map(([r, h, y]) => { const c = new THREE.ConeGeometry(r, h, 11, 2); c.translate(0, y - 2.6 + h * .3, 0); const p = c.attributes.position; for (let i = 0; i < p.count; i++) { const t = (p.getY(i) - (y - 2.6 + h * .3) + h / 2) / h; p.setY(i, p.getY(i) - Math.sin(t * Math.PI) * .08) } return c.toNonIndexed() }); const n = P.reduce((a, g) => a + g.attributes.position.count, 0), pos = new Float32Array(n * 3); let o = 0; for (const g of P) { pos.set(g.attributes.position.array, o); o += g.attributes.position.array.length } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals(); return g })(); PINE_TOP.translate(0, 2.6, 0);   /* v2.9 three soft tiers */
+const ROCK_G = (() => { const g = new THREE.SphereGeometry(.8, 12, 8), p = g.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = 1 + .09 * Math.sin(v.x * 4.1 + 1) * Math.sin(v.z * 3.3 + 2) + .05 * Math.sin(v.y * 6); p.setXYZ(i, v.x * n, v.y * n * .8, v.z * n) } g.computeVertexNormals(); return g })();   // v2.9 a smooth pebble
 const CACT = (() => { const a = new THREE.CylinderGeometry(.22, .26, 2.2, 16); a.translate(0, 1.1, 0); const b = new THREE.CylinderGeometry(.13, .13, .8, 7); b.rotateZ(Math.PI / 2); b.translate(.45, 1.1, 0); const c = new THREE.CylinderGeometry(.12, .12, .7, 7); c.translate(.8, 1.45, 0); const d = new THREE.CylinderGeometry(.11, .11, .6, 7); d.rotateZ(Math.PI / 2); d.translate(-.4, 1.5, 0); const e = new THREE.CylinderGeometry(.1, .1, .55, 7); e.translate(-.68, 1.75, 0);
   const G = [a, b, c, d, e].map(g => g.toNonIndexed()), n = G.reduce((s, g) => s + g.attributes.position.count, 0), pos = new Float32Array(n * 3); let o = 0; for (const g of G) { pos.set(g.attributes.position.array, o); o += g.attributes.position.array.length } const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(pos, 3)); m.computeVertexNormals(); return m })(), M_CACT = new THREE.MeshStandardMaterial({ color: '#4a9a4a', roughness: .6 });
 const M_TRUNK = new THREE.MeshStandardMaterial({ color: '#7a4a28', roughness: .9 }), M_TOP = addWind(new THREE.MeshStandardMaterial({ roughness: .85 })), M_ROCK = new THREE.MeshStandardMaterial({ color: '#a8a296', roughness: .75 });
