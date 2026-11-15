@@ -52,7 +52,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await tapB(); if (await N(() => window.__ng.guard)) errs.push('second tap B did not lower the shield');
     if (await N(() => window.__ng.PL.pose.sneak)) errs.push('B should not crouch');
     /* Y: aim at a slime 9 m ahead, let go = shoot */
-    await E(() => { const N = window.__ng, q = N.me; N.monSpawn('slime', q.x, q.z + 9); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0 }); await wait(1200);
+    await E(() => { const N = window.__ng, q = N.me; if (N.finishClear) for (const o of N.W.clear.values()) if (o.g && Math.abs(o.x - q.x) < 2.5 && o.z > q.z && o.z < q.z + 11) N.finishClear(o); N.monSpawn('slime', q.x, q.z + 9); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0 }); await wait(1200);
     const hp0 = await N(() => { const N = window.__ng, m = N.mons.filter(m => m.kind === 'slime').sort((a, b) => Math.hypot(a.A.root.position.x - N.me.x, a.A.root.position.z - N.me.z) - Math.hypot(b.A.root.position.x - N.me.x, b.A.root.position.z - N.me.z))[0]; window.__sl = m; return m.hp });
     log('pre-aim', await N(() => JSON.stringify({ ov: [...document.querySelectorAll('.ov')].map(o => o.textContent.slice(0, 80)).join(','), swim: window.__ng.PL.swim, bow: window.__ng.S.eq.bow, ar: window.__ng.S.arrows })));
     await press('bY', 'pointerdown'); if (!(await until(() => !!window.__ng.AIM, 1500))) errs.push('Y did not aim');
