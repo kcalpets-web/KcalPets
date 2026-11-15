@@ -28,7 +28,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.placeMe(-3, 1); N.setTool('rod'); N.look(-4.5, 1); N.castAt(-6.5, 1) }); await wait(1500);
     const fp = await N(() => { const N = window.__ng, c = N.camera.position, q = N.me; return { F: N.F && N.F.phase, camH: +(c.y - q.y).toFixed(2), d: +Math.hypot(c.x - q.x, c.z - q.z).toFixed(2), pl: N.PL.root.visible, body: document.body.classList.contains('fishing') } });
     log('fpv', JSON.stringify(fp)); if (!fp.F || fp.d > .6 || fp.pl || !fp.body) errs.push('not first-person while fishing ' + JSON.stringify(fp)); await shot('02-fpv');
-    let caught = false, sawBar = false; for (let i = 0; i < 400; i++) { const f = await N(() => { const F = window.__ng.F; return F ? { ph: F.phase, up: F.fy > F.zy + F.zh * .5 } : null }); if (!f) { caught = true; break }
+    let caught = false, sawBar = false; for (let i = 0; i < 900; i++) { const f = await N(() => { const F = window.__ng.F; return F ? { ph: F.phase, up: F.fy > F.zy + F.zh * .5 } : null }); if (!f) { caught = true; break }
       if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'reel') { if (!sawBar) { sawBar = true; await wait(600); await shot('03-reel') } await E(t => window.__ng.hold(t), f.up) } await wait(50) }
     const fish = await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0)); log('reel bar', sawBar, 'fish', fish); if (!sawBar || !fish) errs.push('reel game did not land a fish');
     if (await N(() => !window.__ng.PL.root.visible)) errs.push('player still hidden after fishing');

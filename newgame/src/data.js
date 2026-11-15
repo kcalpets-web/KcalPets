@@ -231,7 +231,7 @@ export const PET_SPECIAL = {                                                  //
   '🔥': { name: 'ระเบิดไฟ', kind: 'aoe', mul: 1.6, r: 3.2 }, '⚡': { name: 'สายฟ้าสะกด', kind: 'stun', ms: 2500, r: 4 }, '🌱': { name: 'ใบไม้รักษา', kind: 'heal', hearts: 1 },
   '💧': { name: 'สายน้ำชโลม', kind: 'heal', hearts: 1.5 }, '❄️': { name: 'ลมหนาวแช่แข็ง', kind: 'stun', ms: 3500, r: 3.5 }, '🪨': { name: 'โล่หิน', kind: 'guard', ms: 6000 } };
 export const PET_SPECIAL_CD = 25000;       // Basic: any element at −60% · Legendary: any element at full power
-export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;
+export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 1;   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },
   { k: 'meal', icon: '🍗', name: 'อาหารชุดใหญ่', exp: 120, price: 700 },
