@@ -2320,7 +2320,7 @@ function kqTick(q) { for (const k in KQ) { const K = KINGDOMS[k], d = dist(q.x, 
       if (d < 85 && !A) { let x = K.x + n.dx, z = K.z + n.dz; for (let r = 0; r < 40 && (!walkLand(x, z) || waterAt(x, z)); r += 1.5) { x = K.x + n.dx + Math.cos(r * 2.3) * r; z = K.z + n.dz + Math.sin(r * 2.3) * r }
         const a = rigOf(makeActor(g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash({ id: n.id }) % 2) ? KHAT[k] : null), .82)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(K.x - x, K.z - z) + Math.PI; scene.add(a.root);
         const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
-        idleReg(a); KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
+        idleReg(a); KNPC[key] = { A: a, k, n, mk, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; a.wander = { home: [x, z], t: [x, z], wait: 1 + Math.random() * 4, r: 3 }; a.pick = KNPC[key].pick;   /* v3.2 they stroll around their spot */ KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
       else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); delete KNPC[key] } } } }
 function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
   for (const id of ids) { const st = T[id]; if (st && st.st === 'on' && qProg(id).ok) return '❓'; if (!st) return n.lead && ids.indexOf(id) > 0 && (T[ids[ids.indexOf(id) - 1]] || {}).st !== 'done' ? '…' : '❗'; if (st.st === 'on') return '…' } return '' }
@@ -2348,6 +2348,9 @@ var IDLE = null;   // var + function: idleReg runs during start-up, before this 
 function idleReg(A) { if (A && A.rig) { A.ph = Math.random() * 6; (IDLE = IDLE || new Set()).add(A) } return A }
 function idleTick(now) { const q = me(); if (!IDLE) return;
   for (const A of IDLE) { if (!A.root.parent) continue; const p = A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d > 40) continue;
+    if (A.wander) { const W2 = A.wander, dt = Math.min(.05, (now - (A.lt || now)) / 1000); A.lt = now; let mv = false;   /* v3.2 NPCs stroll (they stop when you come close, so you can talk) */
+      if (d > 4.5 && (W2.wait -= dt) <= 0) { const dd = stepTo(A, W2.t[0], W2.t[1], .85, dt, walkLand); if (dd < .15) { W2.wait = 1.5 + Math.random() * 5; const a = Math.random() * 6.28, r = .8 + Math.random() * W2.r; W2.t = [W2.home[0] + Math.cos(a) * r, W2.home[1] + Math.sin(a) * r] } else mv = true }
+      if (d <= 4.5) A.yawT = Math.atan2(q.x - p.x, q.z - p.z); animate(A, mv, dt, now, 9); if (A.pick) { A.pick.position.x = p.x; A.pick.position.z = p.z } }
     A.body.scale.y = 1 + Math.sin(now / 650 + A.ph) * .018; const hd = A.rig.head;
     if (hd) { const want = d < 5.5 ? Math.max(-.9, Math.min(.9, ((Math.atan2(q.x - p.x, q.z - p.z) - A.root.rotation.y - (A.body.rotation.y || 0) + Math.PI * 3) % (Math.PI * 2)) - Math.PI)) : Math.sin(now / 2600 + A.ph) * .45; hd.rotation.y += (want - hd.rotation.y) * .08 }
     if (d < 4 && !A.near) { A.near = true; if (now > (A.waveNext || 0)) { A.waveT = now + 1700; A.waveNext = now + 12000 } } else if (d > 7) A.near = false;
@@ -3155,11 +3158,11 @@ import('./lush.js').then(({ lushPlace, lushKind }) => {
 const TOON = toonOn(), FACET = facetOn(); let toonT = 0; const WALKERS = [];
 function townLife(now) {
   const near = dist(me().x, me().z, TX, 0) < 60 && S.story.townClear;
-  if (near && !WALKERS.length) for (let i = 0; i < 7; i++) { const A = rigOf(makeActor(g => HUMANS.villager(g, i), .82 + (i % 3) * .05)), x = TX - 8 + Math.random() * 16, z = -5 + Math.random() * 10; A.root.position.set(x, 0, z); WALKERS.push({ A, t: [x, z], wait: Math.random() * 3, sp: .9 + Math.random() * .5 }) }
+  if (near && !WALKERS.length) for (let i = 0; i < 10; i++) { const A = rigOf(makeActor(g => HUMANS.villager(g, i), .82 + (i % 3) * .05)), x = TX - 8 + Math.random() * 16, z = -5 + Math.random() * 10; A.root.position.set(x, 0, z); WALKERS.push({ A, t: [x, z], wait: Math.random() * 3, sp: .9 + Math.random() * .5 }) }
   if (!near && WALKERS.length) { for (const w of WALKERS) scene.remove(w.A.root); WALKERS.length = 0 }
   for (const w of WALKERS) { const q = w.A.root.position; let mv = false;
     if (w.wait > 0) w.wait -= .016; else { const d = stepTo(w.A, w.t[0], w.t[1], w.sp, .016, (x, z) => walkLand(x, z) && Math.abs(x - TX) < 10.5 && Math.abs(z) < 9);
-      if (d < .2) { w.wait = 1 + Math.random() * 4; for (let k = 0; k < 8; k++) { const x = TX - 9 + Math.random() * 18, z = -6 + Math.random() * 12; if (walkLand(x, z) && !TW.shops.some(sh => dist(x, z, sh.x, sh.z) < 2.4)) { w.t = [x, z]; break } } } else mv = true }
+      if (d < .2) { w.wait = .4 + Math.random() * 2.2; for (let k = 0; k < 8; k++) { const x = TX - 9 + Math.random() * 18, z = -6 + Math.random() * 12; if (walkLand(x, z) && !TW.shops.some(sh => dist(x, z, sh.x, sh.z) < 2.4)) { w.t = [x, z]; break } } } else mv = true }
     animate(w.A, mv, .016, now, 10); w.A.body.position.y = w.A.bob }
 }
 /* ---------- boot: login → opening cutscene (once) → the island at night ---------- */
