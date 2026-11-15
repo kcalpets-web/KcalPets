@@ -47,9 +47,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       const ws = await N(() => ({ on: window.__ng.wheelOn, sheet: (document.querySelector('.ov h2') || {}).textContent })); log('wheel pick', JSON.stringify(ws)); if (ws.on) errs.push('A did not pick on the wheel'); await closeAll();
       await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const c0 = await N(() => window.__ng.S.clearCount); await E(() => document.getElementById('bAuto').click()); await wait(9000); await shot('03f-auto'); await E(() => document.getElementById('bAuto').click());
       const c1 = await N(() => window.__ng.S.clearCount); log('auto cleared', c1 - c0); if (c1 > c0) errs.push('AUTO should only attack (v1.4.1), but it gathered') }
-    /* 🧰 toolbox: one button opens the tray, picking a tool closes it */
-    await E(() => window.__ng.setOpt('touch', 'z')); await wait(300); await pg.click('#tBox'); await wait(400); await shot('03b-toolbox'); await pg.click('#tTray [data-tool="axe"]'); await wait(300);
-    { const t = await N(() => ({ tool: window.__ng.tool, open: document.getElementById('tools').classList.contains('open'), ico: document.getElementById('tBoxI').textContent })); log('toolbox', JSON.stringify(t)); if (t.tool !== 'axe' || t.open) errs.push('toolbox pick failed') }   /* v1.4.2: tap-to-chop / swipes only in touch mode → the rest of the story runs in touch mode */
+    /* v3.6: the 🧰 tool tray is gone (tools are picked with A held · see hands.js) */
+    await E(() => window.__ng.setOpt('touch', 'z')); await wait(300); await E(() => window.__ng.setTool('axe')); await wait(300);
     /* tap the ground → the character walks there */
     { await E(() => window.__ng.setTool('')); const m0 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })); await pg.mouse.click(250, 470); await wait(3000); const m1 = await N(() => ({ x: window.__ng.me.x, z: window.__ng.me.z }));
       log('walk', JSON.stringify(m0), '→', JSON.stringify(m1)); if (Math.hypot(m1.x - m0.x, m1.z - m0.z) < .5) errs.push('tap to walk did not move the character'); await shot('03c-walk') }
