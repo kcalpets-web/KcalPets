@@ -8,7 +8,7 @@ import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -42,6 +42,12 @@ const ambience = () => { if (!CUT) mood(S.area === 'town' ? 'town' : isNight() ?
 const _c2 = new THREE.Color();
 const LDAY = { bg: C('#a6d6ec'), hc: C('#fff2e0'), hg: C('#a8b878'), sc: C('#ffe8c8'), rc: C('#ffd0a0') }   /* v1.8: warmer sun, green bounce from the ground */, LNIGHT = { bg: C('#0e1636'), hc: C('#8aa0ff'), hg: C('#2a2a48'), sc: C('#a8c0ff'), rc: C('#6a7aff') }, GLOW = C('#ff9a5a'), _c = new THREE.Color();
 let wasNight = null;
+const MOOND = new THREE.Vector3(-7, 16, 9).normalize(), SUND = MOOND.clone(), _sr = new THREE.Vector3(), _su = new THREE.Vector3();
+/* v3.3 the shadow box follows the player (at their height) and is snapped to shadow texels, so shadow edges do not shimmer while walking */
+function sunFollow() { const q = me(); if (eco) { sun.position.set(q.x - 7, 16, q.z + 9); sun.target.position.set(q.x, 0, q.z); return }
+  _sr.set(SUND.z, 0, -SUND.x).normalize(); _su.crossVectors(SUND, _sr); const tx = 24 / 1536, y = Math.max(0, q.y);
+  const u = Math.round((q.x * _sr.x + q.z * _sr.z) / tx) * tx, v = Math.round((q.x * _su.x + y * _su.y + q.z * _su.z) / tx) * tx, w = q.x * SUND.x + y * SUND.y + q.z * SUND.z;
+  sun.target.position.set(_sr.x * u + _su.x * v + SUND.x * w, _su.y * v + SUND.y * w, _sr.z * u + _su.z * v + SUND.z * w); sun.position.copy(sun.target.position).addScaledVector(SUND, D.SUN.dist) }
 function setTime() {                                         // lighting follows the clock (a smooth blend through dawn and dusk)
   const k = nightK(), g = Math.min(1, glowK()), mix = (a, b) => _c.copy(a).lerp(b, k);
   if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color(); scene.background.copy(mix(LDAY.bg, LNIGHT.bg)).lerp(GLOW, g * .45);
@@ -52,6 +58,8 @@ function setTime() {                                         // lighting follows
     if (cl > .01) { hemi.intensity *= 1 - .3 * cl; sun.intensity *= 1 - .65 * cl; SKY.material.uniforms.top.value.lerp(GREY, cl * .65); SKY.material.uniforms.bot.value.lerp(GREY, cl * .5); scene.background.lerp(GREY, cl * .5) }
     if (WXS.flash > 0) { hemi.intensity += WXS.flash * 2.2; SKY.material.uniforms.bot.value.lerp(_c2.set('#e8ecff'), WXS.flash * .5) } }
   if (scene.fog) scene.fog.color.copy(SKY.material.uniforms.bot.value);
+  if (!eco) { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI, e = Math.sin(a) * .9 + .05;   /* v3.3 the light comes from where the sun is in the sky (never lower than ~30°, so shadows stay readable) · at night from the moon's fixed spot */
+    SUND.set(Math.cos(a) * .95, Math.max(D.SUN.minY, e * 1.25), -.35).normalize().lerp(MOOND, k).normalize() }
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
 function timeTick(dt) { if (!S.story.slept) { S.time = D.DAY.first; return } S.time = (S.time + dt) % 1440; needsTick(dt) }
@@ -548,7 +556,7 @@ function pickDrop(d) {
 /* ---------- clearing: one hit each time the finger enters a thing ---------- */
 function finishClear(o) {
   const T = D.CLEAR[o.t]; S.cleared[o.id] = Date.now(); despawnClear(W, o); o.left = 0; remnant(W, o, true); { const v = veinOf(o); if (v) addMats({ [v]: 1 + (Math.random() < .4 ? 1 : 0) }, o.x + .2, o.z); else if (T.oreP && Math.random() < T.oreP * .3) addMats({ ore: 1 }, o.x + .2, o.z) }
-  addMats(T.mat, o.x, o.z); playerExp(D.CLEAR_EXP[T.size], o.x - .3, o.z); { const ig = T.ingr || D.CLEAR_INGR[o.t]; if (ig && (S.story.sickSeen || o.t !== 'herb') && Math.random() < ig[1]) addIngr(ig[0], 1, o.x + .3, o.z) } S.clearCount++; bump('clr_' + (o.t === 'bigtree' ? 'tree' : o.t)); if (o.t === 'bigtree') bump('clr_bigtree');
+  if (T.fall) { timber(o); bump('clr_tree') } else addMats(T.mat, o.x, o.z);   /* v3.3 a giant tree falls first — its wood comes out of the logs */ playerExp(T.exp || D.CLEAR_EXP[T.size], o.x - .3, o.z); { const ig = T.ingr || D.CLEAR_INGR[o.t]; if (ig && (S.story.sickSeen || o.t !== 'herb') && Math.random() < ig[1]) addIngr(ig[0], 1, o.x + .3, o.z) } S.clearCount++; bump('clr_' + (o.t === 'bigtree' ? 'tree' : o.t)); if (o.t === 'bigtree') bump('clr_bigtree');
   if ((o.t === 'bush' || o.t === 'grass') && S.has.hoe && Math.random() < D.WILD_SEED) { const c = ['carrot', 'cabbage', 'strawberry', 'tomato'][Math.floor(Math.random() * 4)]; S.seeds[c] = (S.seeds[c] || 0) + 1; floater(`🌱 ${D.INGR[c].name}`, 'item', o.x, 1.8, o.z) }
   if (o.t === 'debris' && ['d1', 'd2', 'd3'].every(id => S.cleared[id]) && !S.story.howsif) rescueHowsif();
   else if (T.mon && S.has.sword && !S.mon) { const force = !S.monSeen && S.clearCount >= D.FIRST_MON_AT; if (force || Math.random() < D.MON_CHANCE) monSpawn(T.mon, o.x, o.z, { farm: true, aggro: true }) }
@@ -578,11 +586,36 @@ function toolHit(key) {
   if (key.w && T.tool === 'axe' && Math.random() < .5) setTimeout(() => wearItem('sword'));   /* v2.1.3 chopping with the weapon wears it a little */
   if ((T.minTier || 0) > tier) { hint(`${D.TOOLS[T.tool][0]} ต้องใช้${D.TOOLS[T.tool][1]}ขั้น <b>${D.TIER[T.minTier]}</b> ขึ้นไป · อัปเกรดที่ช่างอุปกรณ์ในเมือง`); return }
   if (T.fixed) { hint(o.t === 'bigtree' ? '🌳 ต้นไม้ใหญ่นี้เป็นสัญลักษณ์ของที่นี่ ตัดไม่ได้' : '🪨 หินก้อนนี้ใหญ่เกินกว่าจะทุบ', 1600); return }
-  if (!o.left) o.left = o.tot = D.hitsFor(T.size, tier);
+  if (!o.left) o.left = o.tot = D.hitsFor(T.size, tier, T.hits);
   if (now < clearT) return; clearT = now + (D.HIT_CD[T.size] || 450) / speed;   /* v2.4: small things break fast, big ones slower */
   if (!spendEn(D.TOOL_EN[T.tool])) return;
-  faceSwing(o.x, o.z); o.left--; o.shake = .25; VF.burst(o.x, groundH(o.x, o.z) + (T.size === 'l' ? 1 : .5), o.z, { axe: '#c89050', hammer: '#c0c0c8', sickle: '#8ae070' }[T.tool] || '#ffffff', 7, 2.4); sfx({ axe: 'chop', hammer: 'stone', sickle: 'grass' }[T.tool]); if (T.tool === 'hammer' && o.g && !o.inst && o.left > 0) o.g.scale.setScalar(.45 + .55 * o.left / (o.tot || 1));   /* v2.9 a rock gets smaller with each hit */ if (o.left <= 0) finishClear(o);
+  faceSwing(o.x, o.z); o.left--; o.shake = .25; VF.burst(o.x, groundH(o.x, o.z) + (T.size === 'l' ? 1 : .5), o.z, { axe: '#c89050', hammer: '#c0c0c8', sickle: '#8ae070' }[T.tool] || '#ffffff', 7, 2.4); sfx({ axe: 'chop', hammer: 'stone', sickle: 'grass' }[T.tool]); if (T.fall && o.left > 0) { VF.burst(o.x + (Math.random() - .5) * 3, groundH(o.x, o.z) + 7.5 * (o.sc || 1), o.z + (Math.random() - .5) * 3, o.col || '#6ab84a', 5, 2.2); if (o.left % 3 === 0 || o.left < 3) floater(`🪓 ${o.tot - o.left}/${o.tot}`, 'tool', o.x, 2.2, o.z) }   /* v3.3 leaves rain down from a giant · how far along you are */ if (T.tool === 'hammer' && o.g && !o.inst && o.left > 0) o.g.scale.setScalar(.45 + .55 * o.left / (o.tot || 1));   /* v2.9 a rock gets smaller with each hit */ if (o.left <= 0) finishClear(o);
 }
+
+/* ---------- v3.3 🌲 TIMBER! a felled giant tips over (away from you), thuds, lies a moment, then breaks into logs that give the wood ---------- */
+const TIMB = [], TLOGS = [];
+const segD = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(px - ax - dx * t, pz - az - dz * t) };
+function timber(o) { const T = D.CLEAR[o.t], q = me(), sc = o.sc || 1, a = Math.atan2(o.x - q.x, o.z - q.z) + (Math.random() - .5) * .5, y = groundH(o.x, o.z), L = GIANT_H * sc;
+  const piv = new THREE.Group(), tip = new THREE.Group(), tree = giantMesh(o); piv.position.set(o.x, y - .15, o.z); piv.rotation.y = a; tree.rotation.y = (o.ry || 0) - a; tip.add(tree); piv.add(tip); scene.add(piv);
+  const ex = o.x + Math.sin(a) * L * .8, ez = o.z + Math.cos(a) * L * .8, end = Math.max(1.25, Math.min(1.85, Math.PI / 2 + Math.atan2(y - groundH(ex, ez), L * .8) - .04));   // it comes to rest along the slope
+  TIMB.push({ o, T, piv, tip, a, L, sc, y, end, t: 0, st: 0 }); floater('🌲 TIMBER!', 'crit', o.x, 3.4, o.z); sfx('chop') }
+function timberLand(f) { const { o, T, a, L } = f, sa = Math.sin(a), ca = Math.cos(a), bx = o.x + sa * L, bz = o.z + ca * L, q = me();
+  shakeT = Math.max(shakeT, .6); sfx('boom'); VF.ring(o.x + sa * L * .5, groundH(o.x + sa * L * .5, o.z + ca * L * .5) + .1, o.z + ca * L * .5, '#e8dcc0', 4.5, .6);
+  for (let i = 0; i < 6; i++) { const k = (i + .5) / 6, x = o.x + sa * L * k, z = o.z + ca * L * k; VF.burst(x, groundH(x, z) + .3, z, k > .62 ? (o.col || '#6ab84a') : '#c8b89a', k > .62 ? 16 : 9, k > .62 ? 4.5 : 3) }
+  for (const m of [...mons]) { const p = m.A.root.position; if (m.T.boss || m.T.golem || m.T.horse || m.T.dummy || m === HORSE) continue; if (segD(p.x, p.z, o.x, o.z, bx, bz) < 1.5) hurtMon(m, T.crush, 'dmg') }   // anything under the trunk is squashed
+  if (segD(q.x, q.z, o.x + sa * 1.6, o.z + ca * 1.6, bx, bz) < 1.2 && pHp() > 1) { const d = Math.min(pHp() - 1, Math.max(1, Math.round(pStats().hp * T.hurt))); S.hp = pHp() - d; lastHurt = performance.now(); sfx('hurt'); floater(`🌲 -${d}`, 'hurt', q.x, 2.1, q.z); hud() } }   // a small bump if you stand where it lands — never the last heart
+function timberSplit(f) { const { o, T, a, L, sc } = f, sa = Math.sin(a), ca = Math.cos(a), n = T.logs, tot = T.mat.wood || 0; scene.remove(f.piv);
+  for (let i = 0; i < n; i++) { const k = .14 + .5 * (i + .5) / n, x = o.x + sa * L * k, z = o.z + ca * L * k, r = (.62 - .1 * i) * sc, g = giantLog(L * .44 / n, r), y = groundH(x, z) + r * .9; g.position.set(x, y, z); g.rotation.y = a + (Math.random() - .5) * .5; scene.add(g);
+    TLOGS.push({ g, y, t: -i * .12, vy: 3 + Math.random() * 1.5, life: T.logLife || 8 }); VF.burst(x, y + .3, z, '#e8c890', 10, 3.2);
+    const w = Math.floor(tot / n) + (i < tot % n ? 1 : 0); if (w) addMats({ wood: w }, x, z) }
+  for (let i = 0; i < 3; i++) { const k = .7 + i * .12, x = o.x + sa * L * k, z = o.z + ca * L * k; VF.burst(x, groundH(x, z) + 1, z, o.col || '#6ab84a', 22, 5) }   // the crown bursts into leaves
+  sfx('stone'); questCheck(); save() }
+function timberTick(dt) {
+  for (let i = TIMB.length - 1; i >= 0; i--) { const f = TIMB[i]; f.t += dt;
+    if (f.st === 0) { const k = Math.min(1, f.t / f.T.fall); f.tip.rotation.x = f.end * k * k * (.35 + .65 * k) + Math.sin(f.t * 30) * .012 * (1 - k); f.ang = f.tip.rotation.x; if (k >= 1) { f.st = 1; f.t = 0; timberLand(f) } }   // slow creak, then faster and faster
+    else if (f.st === 1) { f.tip.rotation.x = f.end - Math.max(0, Math.sin(Math.min(1, f.t / .3) * Math.PI)) * .05; if (f.t >= f.T.split) { timberSplit(f); TIMB.splice(i, 1) } } }
+  for (let i = TLOGS.length - 1; i >= 0; i--) { const l = TLOGS[i]; l.t += dt; if (l.t < 0) continue; const h = l.vy * l.t - 9 * l.t * l.t; l.g.position.y = l.y + Math.max(0, h); if (h > 0) l.g.rotation.z += dt * 3;
+    if (l.t > l.life) { const s = 1 - (l.t - l.life) / .5; if (s <= 0) { scene.remove(l.g); TLOGS.splice(i, 1) } else l.g.scale.setScalar(s) } } }
 
 /* ---------- story events ---------- */
 function talk(lines, done) {          // a small dialogue sheet: tap to advance
@@ -964,7 +997,7 @@ function frame(now) {
   W.bubble.visible = !!S.story.boatFixed && S.boat.c >= D.BOAT_CAP(S.boat.lv) * .1; W.bubble.position.y = 1.85 + Math.sin(now / 500) * .08;
   TIME.value = now / 1000; gullsUp(now / 1000); W.foam.position.x = -.1 + Math.sin(now / 1000 * Math.PI * 2 / 6.5) * .16;
   W.spark.position.x = Math.sin(now / 2000) * .15; if (TW.sword.visible) TW.sword.children[0].rotation.y = now / 900;
-  fishTick(dt, now); wxTick(dt, now); trainTick(now); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
+  fishTick(dt, now); wxTick(dt, now); trainTick(now); timberTick(dt / speed); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); farmTick(now); farmAnim(now); timeTick(dt); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } mapTick(now); chunkTick(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
   if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
@@ -990,7 +1023,7 @@ function frame(now) {
   if (GOL && !GOL.on) golemCam(now);
   if (F && F.phase) fishCam(now);
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
-  sun.position.set(me().x - 7, 16, me().z + 9); sun.target.position.set(me().x, 0, me().z);
+  sunFollow();
   if (GR) { GR.auto(nightK(), Math.min(1, glowK()), S.area, inStorm() && !S.story.cloudGone); GR.render(dt / speed) } else R.render(scene, cam);
   if (SNAP) { const f = SNAP; SNAP = null; let u = ''; try { u = R.domElement.toDataURL('image/jpeg', .92) } catch (e) { } f(u) }
   tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall); stamTick();
@@ -2392,8 +2425,12 @@ function chunkTick(now) {
     FARC.value.set(q.x, q.z, L * CHUNK) }   /* v3.1 hide the coarse far land under the loaded chunks */
   for (const [key, ch] of CHUNKS) { if (ch.core) continue; const dx = ch.cx - ccx, dz = ch.cz - ccz, d = Math.hypot(dx, dz);
     if (d > R2 + 1.2) { setNear(ch, false); dropChunk(W, ch); CHUNKS.delete(key); continue }
-    setNear(ch, Math.max(Math.abs(dx), Math.abs(dz)) <= near) }
+    setNear(ch, Math.max(Math.abs(dx), Math.abs(dz)) <= near);
+    setLod(ch, Math.hypot(q.x - Math.max(ch.cx * CHUNK, Math.min((ch.cx + 1) * CHUNK, q.x)), q.z - Math.max(ch.cz * CHUNK, Math.min((ch.cz + 1) * CHUNK, q.z)))) }
 }
+/* v3.3 🍂 tree LOD per chunk: d = metres from the player to the chunk's edge · close = full canopies + ground cover · far = cheap copies, no ground cover (D.LOD) */
+function setLod(ch, d) { const L = ch.lod; if (!L) return; const T = D.LOD[eco ? 'eco' : 'hi'], on = d < T.tree + (L.on ? T.hyst : 0), sm = d < T.small + (L.sm ? T.hyst : 0);
+  if (on !== L.on) { L.on = on; for (const m of L.hi) m.visible = on; for (const m of L.lo) m.visible = !on } if (sm !== L.sm) { L.sm = sm; for (const m of L.small) m.visible = sm } }
 function setNear(ch, on) {
   if (ch.near === on) return; ch.near = on;
   if (on) { for (const o of ch.clears) { if (!W.clear.has(o.id)) W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o); else remnant(W, o, true) }
@@ -3183,7 +3220,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { GIANT_H, TIMB, TLOGS, timber, regrow, get shakeT() { return shakeT }, get SUND() { return SUND }, sun, lodInfo: () => { let hi = 0, lo = 0; for (const c of CHUNKS.values()) if (c.lod) c.lod.on ? hi++ : lo++; return { hi, lo } }, get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

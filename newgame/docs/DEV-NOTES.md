@@ -20,6 +20,7 @@
 | อากาศ/เวลา | `wxAt` `wxTick` `WXS` `timeIcon` `dayBar` `setTime` `timeTick` `needsTick` |
 | แผนที่ | `paintMap` (generator) `mapHi` `openMap` `drawMini` |
 | ลานฝึก · ม้า | `goTrain` `backTrain` `trainTick` · `mountHorse` `dismount` `horseTick` |
+| 🌲 ต้นไม้ยักษ์ · LOD · แสงอาทิตย์ (ยังไม่ปล่อย) | `D.CLEAR.giant` `D.LOD` `D.SUN` · world.js `buildChunk` (`out.lod` hi/lo/small · giants `kg…`) `giantMesh` `giantLog` `GIANT_H` · main.js `timber` `timberTick` `TIMB` `TLOGS` `setLod` `sunFollow` `SUND` · ทดสอบ `tools/test/timber.js` |
 | ฝึกปุ่ม (การ์ด) | `TUT` `tutTick` `tutEv` |
 | เควสอาณาจักร | `src/quests.js` `KQ` · `main.js` `kqTick` `talkNpc` |
 | hook ทดสอบ | `window.__ng = {…}` ท้าย `main.js` |

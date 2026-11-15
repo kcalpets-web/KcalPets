@@ -18,14 +18,23 @@ export const CLEAR = {
   bush:    { tool: 'axe',    size: 's', mat: { wood: 1, grass: 1 }, mon: 'grassSprite', name: 'พุ่มไม้', regrow: 25 * 60e3, regrowD: 1 },
   tree:    { tool: 'axe',    size: 'm', mat: { wood: 3 }, mon: 'branchImp', name: 'ต้นไม้', regrow: 20 * 60e3, regrowD: 2 },   // v2.9 regrowD = game days (a stump stays meanwhile)
   bigtree: { tool: 'axe',    size: 'l', mat: { wood: 6 }, mon: 'branchImp', name: 'ต้นไม้ใหญ่', minTier: 1, fixed: 1 },   // v2.9 big = a landmark (can't be cut)
+  /* 🌲 giant ancient trees (forests · Sylvaren): many hits, then TIMBER! — the trunk tips over, thuds, and splits into logs
+     hits = hits with a tier-0 axe (better axes need fewer) · logs = pieces the trunk breaks into (the wood is shared between them)
+     fall = seconds the trunk takes to hit the ground · split = seconds it lies there before breaking up · crush = damage to monsters under it
+     hurt = share of max HP the player loses if the trunk lands on them (never the last heart) */
+  giant:   { tool: 'axe',    size: 'l', hits: 14, mat: { wood: 18 }, mon: null, name: 'ต้นไม้ยักษ์', regrow: 96 * 60e3, regrowD: 4, logs: 3, fall: 1.2, split: .7, crush: 30, hurt: .08, exp: 20 },
   pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด', regrow: 15 * 60e3, regrowD: 1 },
   rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน', regrow: 20 * 60e3, regrowD: 1.5, oreP: .3 },
   boulder: { tool: 'hammer', size: 'l', mat: { stone: 6, ore: 1 }, mon: 'rockGolem', name: 'หินก้อนใหญ่', minTier: 1, fixed: 1 },
 };
 export const HITS = { s: 1, m: 3, l: 6 };
+/* v3.3 🍂 tree LOD (metres from the player to a chunk's edge): tree = full canopies closer than this · small = grass / ferns / mushrooms closer than this · hyst = extra distance before switching back */
+export const LOD = { hi: { tree: 45, small: 70, hyst: 8 }, eco: { tree: 30, small: 45, hyst: 8 } };
+/* v3.3 ☀️ sun light (non-eco): minY = lowest sun height used for the light (0–1, keeps shadows from stretching forever) · dist = metres from the player to the light */
+export const SUN = { minY: .5, dist: 26 };
 export const DAY_MS = 1440 * 1000;   // v2.9 one game day in real ms (1 game minute = 1 s)
 /* hits with tier t: ceil(base / (1 + 0.5·t)) → medium 3·2·2·1 · large 6·4·3·3 */
-export const hitsFor = (size, tier) => Math.max(1, Math.ceil(HITS[size] / (1 + .5 * tier)));
+export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS[size]) / (1 + .5 * tier)));   /* base = a thing's own hit count (CLEAR.x.hits) */
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
