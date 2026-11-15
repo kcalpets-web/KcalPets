@@ -319,7 +319,7 @@ function envTick(dt, now, mv) {                     // swimming (stamina · sink
   if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!DROWN && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }          // exhausted while swimming → you sink and wash up on a shore nearby
   else { const tgt = h + (now < jumpT ? (k => 4 * D.JUMP.h * k * (1 - k))(1 - (jumpT - now) / (D.JUMP.t * 1000)) : 0);   /* v2.5 off a cliff you fall (not snap down) — press X in the air to open the glider */
     if (q.y - tgt > .5 && !PL.climb) { PL.fallV = Math.min(D.GLIDER.fallMax, (PL.fallV || 0) + 18 * dt); q.y = Math.max(tgt, q.y - PL.fallV * dt) } else { PL.fallV = 0; q.y = tgt } if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
-    if (PL.climb) spendRunN(D.CLIMB_EN * dt);
+    if (PL.climb) spendRunN(D.CLIMB_EN * dt); else if (mv && !PL.swim && !RIDE && !GLIDE) { const up = (ahead - h) / .4; if (up > D.UPHILL.from) spendRunN(D.UPHILL.en * Math.min(1, (up - D.UPHILL.from) / (D.SLOPE - D.UPHILL.from)) * dt) }   /* v3.1 walking uphill tires you (rest to recover) */
     const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
     if (S.tired && gl > D.SLOPE * .6 * .6) { q.x -= gx / gl * 2.2 * dt; q.z -= gz / gl * 2.2 * dt; q.y = groundH(q.x, q.z) } }   // exhausted on a cliff → slide down
   if (PL.swim || PL.climb) { const a = PL.rig.armL, b = PL.rig.armR, base = PL.swim ? -1.6 : -2.6, sw = Math.sin(now / (PL.swim ? 200 : 150)) * (PL.swim ? .8 : .5); if (a && b) { a.rotation.x = base + sw; b.rotation.x = base - sw } }
@@ -1093,7 +1093,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   const up = () => { if (stop) { stop(); stop = null } }; X.addEventListener('pointerup', up); X.addEventListener('pointercancel', up); X.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1 Y = 🏹 bow: press = aim (slide the thumb / drag the screen / tilt the phone) · let go = shoot */
 { const Y = $('bY'); let lx = 0, ly = 0;
-  Y.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov')) return; unlock(); if (S.mode === 'farm') { crayonDraw(); return } gyroAsk(); try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY; aimStart() });
+  Y.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; if (S.mode === 'farm') { crayonDraw(); return } gyroAsk(); try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY; aimStart() });
   Y.addEventListener('pointermove', e => { if (!AIM) return; aimTurn(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY });
   Y.addEventListener('pointerup', () => { gyroAsk(); aimEnd(true) }); Y.addEventListener('pointercancel', () => aimEnd(false)); Y.addEventListener('contextmenu', e => e.preventDefault()) }
 $('quest').onclick = () => {
@@ -2073,7 +2073,7 @@ $('bWheel').onclick = openWheel;
 const holdRing = (el, k) => el.style.setProperty('--p', Math.round(Math.max(0, Math.min(1, k)) * 100) + '%');
 function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true; const step = () => { if (!on) return; const k = (performance.now() - t0) / (sec * 1000); if (k >= 1) { on = false; holdRing(el, 0); done(); return } holdRing(el, (k - .12) / .88); requestAnimationFrame(step) }; requestAnimationFrame(step); return () => { on = false; holdRing(el, 0) } }
 { const A = $('bA'); let stop = null;
-  A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
+  A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); RUNON = false; if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
     actA(); if (S.mode !== 'farm' && !S.auto && S.has.sword) stop = holdWatch(A, D.HOLD_AUTO, () => { stop = null; if (!S.auto) toggleAuto() }) });
   const up = () => { if (stop) { stop(); stop = null } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } }); A.addEventListener('contextmenu', e => e.preventDefault()) }
@@ -2081,7 +2081,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
 let guard = false, guardTog = false, guardHold = false;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0;
-  B.addEventListener('pointerdown', e => { e.preventDefault(); if (closePara()) return; if (S.mode === 'farm' && !document.querySelector('.ov') && !wheelOn && !BM) { unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { } farmB(); t0 = 0; return } t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guardHold = true; updGuard() } }, 250) });
+  B.addEventListener('pointerdown', e => { e.preventDefault(); if (closePara()) return; if (RUNON) { RUNON = false; sprintT = 0; hint('🚶 หยุดวิ่ง', 700); return } if (S.mode === 'farm' && !document.querySelector('.ov') && !wheelOn && !BM) { unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { } farmB(); t0 = 0; return } t0 = performance.now(); if (wheelOn) { closeWheel(); return } setTimeout(() => { if (t0 && performance.now() - t0 >= 240) { guardHold = true; updGuard() } }, 250) });
   const up = () => { if (S.mode === 'farm' && AIM && AIM.rod) { aimEnd(true); return } if (S.mode === 'farm' && F && F.hold) { F.hold = false; return } if (S.mode === 'farm' && !t0) return; const short = performance.now() - t0 < 240; t0 = 0; guardHold = false; updGuard(); if (!short || wheelOn) return;
     const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } walkT = null; work = null; stopAuto();
     if (DRAWN || guardTog) { stowAll(); return } if (tool && tool !== 'sword') { setTool(''); return }

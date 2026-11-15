@@ -205,6 +205,7 @@ export const LV_REFUND = 150;                                                 //
 export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6 };        // per hit / per cast
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
+export const UPHILL = { from: .3, en: 9 };   // v3.1 stamina/s walking up a slope steeper than `from` (full at SLOPE)
 export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
 export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'rabbit', 'chicken', 'rabbit', 'branchImp'], hills: ['rockGolem', 'branchImp', 'deer', 'rabbit', 'boar', 'slime'] };   // wanderers in the wild zones
 /* monster awareness: ❗ yellow = seen you (stays put unless you hit it) · ❗ red = too close, attacks · ❓ = lost you */
