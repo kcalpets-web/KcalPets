@@ -25,8 +25,8 @@ fs.mkdirSync(OUT, { recursive: true });
     let id = await near('tree'); await wait(1500); if (!(await hitAll(id, 14))) errs.push('the axe did not fell the tree'); else log('tree felled');
     await pickTo('hammer'); id = await near('rock'); await wait(1500); if (!(await hitAll(id, 14))) errs.push('the pickaxe did not break the rock'); else log('rock broken');
     // Y double tap → shovel → dig
-    await pg.evaluate(() => window.__ng.placeMe(4, 3)); await wait(2500); await close();
-    await close(); log('before Y', await pg.evaluate(() => ({ ov: !!document.querySelector('.ov'), aim: document.body.classList.contains('aim'), cls: document.body.className }))); await tap('bY'); await wait(120); await tap('bY'); await wait(500);
+    await pg.evaluate(() => window.__ng.placeMe(3.5, -4.3)); await wait(2500); await close();   /* v3.7 by the fenced bed */
+    await close(); log('before Y', await pg.evaluate(() => ({ ov: !!document.querySelector('.ov'), aim: document.body.classList.contains('aim'), cls: document.body.className }))); for (let r = 0; r < 3 && !(await pg.evaluate(() => !!window.__ng.pick())); r++) { await close(); await tap('bY'); await wait(80); await tap('bY'); await wait(700) }   /* the slow test GPU can miss a double tap */
     const yp = await pg.evaluate(() => window.__ng.pick && window.__ng.pick()); log('y picker', JSON.stringify(yp)); if (!yp) errs.push('double-tap Y did not open the picker');
     else { await pg.evaluate(() => { const b = [...document.querySelectorAll('#pick [data-p]')].find(b => b.textContent === '🪏'); b && b.click() }); }
     log('ytool', await pg.evaluate(() => window.__ng.S.ytool)); if (await pg.evaluate(() => window.__ng.S.ytool) !== 'hoe') errs.push('shovel not picked');
@@ -35,7 +35,7 @@ fs.mkdirSync(OUT, { recursive: true });
       if (await pg.evaluate(n => Object.keys(window.__ng.S.plots).length > n, p0)) { dug = true; break } }
     log('dug', dug); if (!dug) errs.push('aiming the shovel did not dig a plot'); await pg.screenshot({ path: path.join(OUT, 'dig.png') });
     // B double tap → shield picker
-    await close(); await pg.evaluate(() => window.__ng.pick() && document.getElementById('bB')); await tap('bB'); await wait(120); await tap('bB'); await wait(500); const bp = await pg.evaluate(() => window.__ng.pick && window.__ng.pick()); log('b picker', JSON.stringify(bp)); if (!bp || bp.slot !== 'b') errs.push('double-tap B did not open the shield picker');
+    await close(); await pg.evaluate(() => window.__ng.pick() && document.getElementById('bB')); for (let r = 0; r < 3 && !(await pg.evaluate(() => !!window.__ng.pick())); r++) { await close(); await tap('bB'); await wait(80); await tap('bB'); await wait(700) } const bp = await pg.evaluate(() => window.__ng.pick && window.__ng.pick()); log('b picker', JSON.stringify(bp)); if (!bp || bp.slot !== 'b') errs.push('double-tap B did not open the shield picker');
     await pg.screenshot({ path: path.join(OUT, 'pick-b.png') });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

@@ -8,7 +8,7 @@ import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -1807,7 +1807,7 @@ const ARROWS = [], bowOf = () => S.bag.find(x => x.id === S.eq.bow) || null, _aD
 const NOCK = new THREE.Group(); ARROW_MESH(NOCK); NOCK.visible = false; scene.add(NOCK);
 function aimStart(kind = 'bow') {
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
-  if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .35 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
+  if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .62 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
   if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
@@ -2192,7 +2192,7 @@ const vnoise2 = (x, z) => fbm(x / 8, z / 8, 1);   // a cheap blotch noise for th
 const WMk = .25, WMW = (WORLD.x1 - WORLD.x0) * WMk, WMH = (WORLD.z1 - WORLD.z0) * WMk, worldMap = document.createElement('canvas'); worldMap.width = WMW; worldMap.height = WMH;
 /* v3.0 the map is painted by a generator: the small one at once (for the minimap), a sharper one (×2.4) a few rows at a time while you play */
 function* paintMap(cv, Mk) { const MW = cv.width, MH = cv.height, g = cv.getContext('2d'), img = g.createImageData(MW, MH), H = new Float32Array(MW * MH);           // heights first, colours from the grid (fast)
-  for (let py = 0; py < MH; py++) { if (py % 6 === 5) yield; for (let px = 0; px < MW; px++) H[py * MW + px] = wildH(WORLD.x0 + (px + .5) / Mk, WORLD.z0 + (py + .5) / Mk); }
+  for (let py = 0; py < MH; py++) { if (py % 6 === 5) yield; for (let px = 0; px < MW; px++) H[py * MW + px] = groundH(WORLD.x0 + (px + .5) / Mk, WORLD.z0 + (py + .5) / Mk); }   /* v3.7 one height for the whole world (zone 1 included) → no box on the map */
   /* v2.9 a readable map: relief shading (light from the north-west) · colours by height and by kingdom · coastlines · forest speckles · lava in the volcano */
   const PAL = { home: ['#8ccc6c', '#5c9c4a', '#8a7a62'], navalee: ['#86d080', '#4aa070', '#7a8a72'], sylvaren: ['#b0ac58', '#7a7a3a', '#7a6a4a'], luminia: ['#a2d482', '#6aa85a', '#8a8a72'], frosthelm: ['#eef2f8', '#cfd8e6', '#b8c4d4'], deadgar: ['#867490', '#5e4e68', '#4a3e50'], asrah: ['#f0d896', '#dcb46a', '#b88a50'], valkara: ['#7a5444', '#5a3a34', '#3e2a2a'] };
   const P3 = {}; for (const k in PAL) P3[k] = PAL[k].map(rgb); const mix = (a, b, t) => a.map((v, n) => v + (b[n] - v) * t), cell = 1 / Mk, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
@@ -2208,24 +2208,32 @@ function* paintMap(cv, Mk) { const MW = cv.width, MH = cv.height, g = cv.getCont
     const B = kingdomAt(x, z), g2 = (1 - B.home) * B.w, home = P3.home, K = P3[B.k] || home, L = home.map((c0, n) => mix(c0, K[n], g2));   /* L = [low, mid, high] */
     const lo = mix(L[0], L[1], sstep(4, 16, h)), col0 = mix(lo, L[2], sstep(16, 30, h));
     c = mix(col0, CLIFF, sstep(.7, 1.6, sl) * .7); c = mix(c, ROCKC, sstep(20, 34, h) * .65); if (h > 36 && B.k !== 'valkara') c = mix(c, SNOW, sstep(36, 50, h) * (B.k === 'frosthelm' ? 1 : .75));   /* v3.1 mountains read as rock, snow only on the peaks */
-    if (h < .8 && x < coastX(z) + 14) c = mix(c, SAND, .8);
+    if (h < .8 && x < coastX(z) + (coreDist(x, z) > 0 ? 14 : 3 + 11 * (1 - sstep(0, CORE_BLEND, coreIn(x, z))))) c = mix(c, SAND, .8);   /* v3.7 zone 1 is grass down to a narrow beach (like the ground itself) */
     if (B.k !== 'asrah' && B.k !== 'frosthelm' && fbm(x / 60 + 4, z / 60, 2) > .55 && sl < .8 && ((px * 7 + py * 13) % 5 < 2)) c = c.map(v => v * .78);   /* forest speckles */
     if (B.k === 'asrah' && g2 > .5) c = c.map(v => v * (.95 + .07 * Math.sin(x / 6 + Math.sin(z / 17) * 3)));   /* dune ripples */
     if (B.k === 'valkara' && g2 > .4 && (B.d < 22 || vnoise2(x * .15, z * .15) > .82)) c = mix(c, LAVA, B.d < 22 ? .9 : .55);
     if (hx1 < -.45 || hx0 < -.45 || hz1 < -.45 || hz0 < -.45) c = mix(c, EDGE, .25);   /* coast line */
     const j = i * 4; img.data[j] = Math.min(255, c[0] * shade); img.data[j + 1] = Math.min(255, c[1] * shade); img.data[j + 2] = Math.min(255, c[2] * shade); img.data[j + 3] = 255 } }
-  g.putImageData(img, 0, 0); g.drawImage(mapBase, (MAP.x0 - WORLD.x0) * Mk, (MAP.z0 - WORLD.z0) * Mk, (MAP.x1 - MAP.x0) * Mk, (MAP.z1 - MAP.z0) * Mk) }
+  g.putImageData(img, 0, 0);   /* v3.7 zone 1 is painted like the rest · only its road, plaza, house and shops are drawn on top */
+  const X = x => (x - WORLD.x0) * Mk, Z = z => (z - WORLD.z0) * Mk; g.lineCap = g.lineJoin = 'round'; g.strokeStyle = '#c8a878'; g.lineWidth = Math.max(1, 1.5 * Mk); g.beginPath();
+  for (let x = 7; x <= 81; x += .5) { const z = roadZ(x); x === 7 ? g.moveTo(X(x), Z(z)) : g.lineTo(X(x), Z(z)) } g.stroke();
+  g.fillStyle = '#cfc6b4'; g.beginPath(); g.arc(X(TX), Z(0), 4.3 * Mk, 0, 7); g.fill(); g.fillStyle = '#e8d8b0'; for (const sh of TW.shops) g.fillRect(X(sh.x) - 1.1 * Mk, Z(sh.z) - .9 * Mk, 2.2 * Mk, 1.8 * Mk);
+  g.fillStyle = '#6a3a1a'; g.fillRect(X(HOUSE.x) - .9 * Mk, Z(HOUSE.z) - .9 * Mk, 1.8 * Mk, 1.8 * Mk) }
 for (const _ of paintMap(worldMap, WMk));
 let mapHi = null;
 { const cv = document.createElement('canvas'); cv.width = Math.round(WMW * 2.4); cv.height = Math.round(WMH * 2.4); const it = paintMap(cv, WMk * 2.4);
   const step = () => { const t = performance.now(); while (performance.now() - t < 12) if (it.next().done) { mapHi = cv; return } setTimeout(step, 24) }; setTimeout(step, 3000) }
-const FCELL = 8, FC = (WORLD.x1 - WORLD.x0) / FCELL, FR = (WORLD.z1 - WORLD.z0) / FCELL, fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
-if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR);
+const FCELL = 8, FC = Math.ceil((WORLD.x1 - WORLD.x0) / FCELL), FR = Math.ceil((WORLD.z1 - WORLD.z0) / FCELL), fogCv = document.createElement('canvas'); fogCv.width = FC; fogCv.height = FR; let fogDirty = true;   // 1 px per fog cell, drawn smoothly
+{ const oc = (WORLD.x1 - WORLD.x0) / FCELL, or = (WORLD.z1 - WORLD.z0) / FCELL;   /* v3.7 the fog grid was 187.5 cells wide (odd rows were lost) → 188 · old saves keep what they explored */
+  if (S.fog && S.fog.length === Math.floor(oc * or) && S.fog.length !== FC * FR) { const a = new Array(FC * FR).fill('0'); for (let r = 0; r < FR; r++) for (let c = 0; c < FC; c++) { const r0 = r - (r % 2), i = r0 * oc + c; if (Number.isInteger(i) && S.fog[i] === '1' && c < oc) a[r * FC + c] = '1' } S.fog = a.join('') }
+  if (!S.fog || S.fog.length !== FC * FR) S.fog = '0'.repeat(FC * FR) }
 function revealVisited() { const zx = { farm: [-8, 9], meadow: [9, 35], town: [35, 57], hills: [57, 79], forest: [79, 106] }; for (const z in S.zones || {}) if (zx[z]) for (let x = zx[z][0]; x <= zx[z][1]; x += 6) reveal(x, 0, 16) }   // saves from before v1.1: uncover what was already explored
 function reveal(x, z, r = coreDist(x, z) > 0 ? 26 : 12) { const c0 = Math.floor((x - r - WORLD.x0) / FCELL), c1 = Math.floor((x + r - WORLD.x0) / FCELL), r0 = Math.floor((z - r - WORLD.z0) / FCELL), r1 = Math.floor((z + r - WORLD.z0) / FCELL); let a = null;
   for (let rr = Math.max(0, r0); rr <= Math.min(FR - 1, r1); rr++) for (let cc = Math.max(0, c0); cc <= Math.min(FC - 1, c1); cc++) { const i = rr * FC + cc; if (S.fog[i] === '1') continue; const cx = WORLD.x0 + cc * FCELL + 4, cz = WORLD.z0 + rr * FCELL + 4; if (Math.hypot(cx - x, cz - z) < r) { a = a || S.fog.split(''); a[i] = '1' } }
   if (a) { S.fog = a.join(''); fogDirty = true } }
-function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(FC, FR); for (let i = 0; i < S.fog.length; i++) { const j = i * 4; img.data[j] = 40; img.data[j + 1] = 34; img.data[j + 2] = 30; img.data[j + 3] = S.fog[i] === '1' ? 0 : 150 } g.putImageData(img, 0, 0); fogDirty = false }
+function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(FC, FR); let A = new Float32Array(FC * FR); for (let i = 0; i < A.length; i++) A[i] = S.fog[i] === '1' ? 0 : 1;
+  for (let pass = 0; pass < 2; pass++) { const B = new Float32Array(A.length); for (let r = 0; r < FR; r++) for (let c = 0; c < FC; c++) { let t = 0, n = 0; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr < 0 || cc < 0 || rr >= FR || cc >= FC) continue; t += A[rr * FC + cc]; n++ } B[r * FC + c] = t / n } A = B }   /* v3.7 soft edges: explored land is no longer a staircase of squares */
+  for (let i = 0; i < A.length; i++) { const j = i * 4, k = S.fog[i] === '1' ? Math.min(A[i], .45) : Math.max(A[i], .55); img.data[j] = 40; img.data[j + 1] = 34; img.data[j + 2] = 30; img.data[j + 3] = Math.round(150 * k) } g.putImageData(img, 0, 0); fogDirty = false }
 if (S.fog.indexOf('1') < 0 && S.story.intro) { S.zones = Object.assign({ farm: 1 }, S.zones); revealVisited() }
 const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
 let mapT = 0;
@@ -2521,9 +2529,7 @@ const PLOTS = new Map(), SOIL_G = new THREE.BoxGeometry(.92, .1, .92), SOIL_M = 
 const SPARK = new THREE.MeshBasicMaterial({ color: '#fff27a' });
 const cellOf = (x, z) => [Math.round(x), Math.round(z)], keyOf = (cx, cz) => cx + ',' + cz;
 function tillable(cx, cz) {
-  if (zoneOf(cx, cz) !== 'farm' || !walkLand(cx, cz) || cx < shore(cz) + 2.6 || cx > 6.6 || S.plots[keyOf(cx, cz)]) return false;
-  if (dist(cx, cz, HOUSE.x, HOUSE.z) < 2.8 || dist(cx, cz, POT.home.x, POT.home.z) < 1.7 || dist(cx, cz, HOWSIF.x, HOWSIF.z) < 1.8 || dist(cx, cz, WRECK.x, WRECK.z) < 2.2 || Math.abs(cz - EXIT.z) < 1.2 && cx > 5) return false;
-  for (const o of W.clear.values()) if (o.g && dist(cx, cz, o.x, o.z) < .95) return false;
+  if (!inFarm(cx, cz) || S.plots[keyOf(cx, cz)]) return false;   /* v3.7 only inside the fenced bed (18 cells) */
   return Object.keys(S.plots).length < D.PLOT_MAX;
 }
 const cropAge = p => p.c ? Math.min(1, (Date.now() - p.t) / (D.CROPS[p.c].min * 60e3 * (p.f || 1))) : 0;
@@ -2549,12 +2555,15 @@ function plotView(key) {
     v = { g, soil, st: -2, plant: null, pick: addPick(W, cx, cz, .5, .6, { kind: 'plot', key }) }; PLOTS.set(key, v) }
   const st = cropStage(p); if (st !== v.st) { if (v.plant) v.g.remove(v.plant); v.plant = p.c ? plantMesh(p.c, st) : null; if (v.plant) { v.plant.position.y = .1; v.g.add(v.plant) } v.st = st; v.soil.material = p.c ? SOIL_W : SOIL_M }
 }
+{ let n = 0; for (const k in S.plots) { const [cx, cz] = k.split(',').map(Number); if (inFarm(cx, cz)) continue; const p = S.plots[k];   /* v3.7 old plots outside the fence: ripe crops + the seed go into the bag */
+    if (p.c) { if (cropStage(p) === 3) { const C2 = D.CROPS[p.c]; S.ingr = S.ingr || {}; S.ingr[p.c] = (S.ingr[p.c] || 0) + C2.n[0] } S.seeds[p.c] = (S.seeds[p.c] || 0) + 1 } delete S.plots[k]; n++ }
+  if (n) { save(); setTimeout(() => toast(`🧺 ย้ายแปลงผักเข้าไปในรั้วแล้ว · ผลผลิตและเมล็ดจากแปลงเก่า ${n} แปลงเก็บเข้ากระเป๋า`, 3200), 5000) } }
 for (const k in S.plots) plotView(k);
 let farmT = 0;
 function farmTick(now) { if (now < farmT) return; farmT = now + 1000; for (const k in S.plots) plotView(k) }
 function farmAnim(now) { for (const v of PLOTS.values()) if (v.st === 3 && v.plant) { const sp = v.plant.getObjectByName('spark'); if (sp) { sp.rotation.y = now / 400; sp.position.y = .85 + Math.sin(now / 300) * .06 } } }
 function till(cx, cz, quiet) {
-  if (!S.has.hoe) return false; if (!tillable(cx, cz)) { if (!quiet) hint(Object.keys(S.plots).length >= D.PLOT_MAX ? `แปลงเต็มแล้ว (${D.PLOT_MAX} แปลง)` : '🪏 ขุดได้เฉพาะพื้นหญ้าบนเกาะ ใกล้บ้านต้นไม้ (ไม่ทับของ ทาง หรือชายหาด)'); return false }
+  if (!S.has.hoe) return false; if (!tillable(cx, cz)) { if (!quiet) hint(Object.keys(S.plots).length >= D.PLOT_MAX ? `แปลงเต็มแล้ว (${D.PLOT_MAX} แปลง)` : '🪏 ขุดได้เฉพาะในแปลงล้อมรั้วข้างบ้านต้นไม้ (18 ช่อง)'); return false }
   if (!spendEn(D.TOOL_EN.hoe)) return false; tutEv('dig'); faceSwing(cx, cz); swingIcon('🪏', cx, 1, cz); sfx('chop');
   S.plots[keyOf(cx, cz)] = { c: null, t: 0 }; plotView(keyOf(cx, cz)); bump('tilled'); playerExp(1); questCheck(); save(); return true;
 }

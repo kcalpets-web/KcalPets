@@ -10,6 +10,8 @@ import { lushPlace, lushKind, G as LG } from './lush.js';
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
 export const HOUSE = { x: 3.2, z: -8.4 }, BOAT = { x: shore(-1.6) - 1.05, z: -1.6 }, EXIT = { x: 7.9, z: 2.3 }, SPAWN = { x: 0, z: -4 };
+export const FARM = { x0: 1, z0: -3, nx: 6, nz: 3, gx: 3.5 };   // v3.7 the fenced vegetable bed: 6 × 3 = 18 cells (integer cell centres x0…x0+nx−1, z0…z0+nz−1) · gate on the north side at x = gx (toward the tree house)
+export const inFarm = (x, z, m = 0) => x > FARM.x0 - .55 - m && x < FARM.x0 + FARM.nx - .45 + m && z > FARM.z0 - .55 - m && z < FARM.z0 + FARM.nz - .45 + m;
 export const WRECK = { x: shore(2.2) + 1.6, z: 2.2 }, HOWSIF = { x: shore(-.4) + 1.2, z: -.4 };
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const nz = (x, z) => Math.sin(.45 * x + .2 * z) + .7 * Math.sin(.6 * z - .3 * x) + .25 * Math.sin(1.3 * (x + z));
@@ -85,6 +87,11 @@ export function buildWorld(scene, eco) {
   addPick(W, BOAT.x, BOAT.z, 1.6, 3, { kind: 'boat' });
   /* ---- adventure sign ---- */
   at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 6.6, 1.3, -.2); addSol({ x: 6.6, z: 1.3, r: .14 });
+  { const x0 = FARM.x0 - .55, x1 = FARM.x0 + FARM.nx - .45, z0 = FARM.z0 - .55, z1 = FARM.z0 + FARM.nz - .45, gw = .65;   /* v3.7 a low fence round the bed (solid) · a gate toward the tree house */
+    const post = (x, z) => at(g => { part(g, '#6a4024', '#b07a44', [0, .32, 0], [.07, .32, .07], [0, 0, 0], { A: .03 }); part(g, '#6a4024', '#b07a44', [0, .66, 0], [.08, .05, .08], [0, 0, 0], { A: 0 }) }, x, z);
+    const rail = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az); for (const y of [.25, .5]) at(g => rbox(g, '#5a3420', '#9a6238', [0, 0, 0], [.06, .06, L], [0, 0, 0], .02), (ax + bx) / 2, (az + bz) / 2, ry, 1, y);
+      for (let t = 0; t <= L + .01; t += Math.min(1, L / Math.max(1, Math.round(L)))) post(ax + (bx - ax) * t / L, az + (bz - az) * t / L); addSol({ x: (ax + bx) / 2, z: (az + bz) / 2, hw: Math.abs(bx - ax) / 2 + .08, hd: Math.abs(bz - az) / 2 + .08, ry: 0 }) };
+    rail(x0, z1, x1, z1); rail(x0, z0, x0, z1); rail(x1, z0, x1, z1); rail(x0, z0, FARM.gx - gw, z0); rail(FARM.gx + gw, z0, x1, z0) }
   addSol({ x: WRECK.x, z: WRECK.z, r: .55, o: { get g() { return W.wreck.visible } } });                // the wreck (only while it lies there)
   addPick(W, EXIT.x, EXIT.z, 1.3, 2.5, { kind: 'exit' });
   scene.add(mergeStatic(ST, ZCELL));
@@ -97,6 +104,7 @@ export function buildWorld(scene, eco) {
     if (!walkable(px, pz) || px > 7.1 || px - shore(pz) < .9) continue;
     if (Math.hypot(px - HOUSE.x, pz - HOUSE.z) < 2.8 || Math.hypot(px - SPAWN.x, pz - SPAWN.z) < 3.0 || (pz > 1.2 && pz < 3.4 && px > 4.6) || Math.hypot(px - WRECK.x, pz - WRECK.z) < 2.4 || Math.hypot(px - HOWSIF.x, pz - HOWSIF.z) < 1.6) continue;
     if ([[-.6, 9.6], [5.6, 8.8], [5.9, -12.2]].some(([rx, rz]) => Math.hypot(px - rx, pz - rz) < 2)) continue;
+    if (inFarm(px, pz, 1.2)) continue;                                         // v3.7 the vegetable bed and a path round it stay clear
     if (roll < .18) continue;                                                  // some open ground
     const beach = px - shore(pz) < 2.4, rocky = earth(px, pz), east = px > 3.6;
     let t;
@@ -125,13 +133,12 @@ const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 }, SOL_TOP = { r
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
 /* v3.3 zone 1 (island · meadow · town · hills) is ONE piece of ground: every hand-made ground mesh takes its height from coreY and its colour from coreCol,
    on the same grid (so the meshes meet vertex for vertex) and with the streamed land's own material · roads, the plaza and the beach are painted with soft edges */
-const _ROAD = C('#c8a878'), _ROADF = C('#b08a5a'), _PLAZA = C('#cfc6b4'), _EA = C('#c49a68'), _SA = C('#efe2c4'), _WET = C('#d8c9a4'), _CL1 = C('#8aa05a'), _CL2 = C('#9a7a58'), _BANK = C('#c8b890'), _c2 = new THREE.Color();
+const _SOIL = C('#8a6440'), _ROAD = C('#c8a878'), _ROADF = C('#b08a5a'), _PLAZA = C('#cfc6b4'), _EA = C('#c49a68'), _SA = C('#efe2c4'), _WET = C('#d8c9a4'), _CL1 = C('#8aa05a'), _CL2 = C('#9a7a58'), _BANK = C('#c8b890'), _c2 = new THREE.Color();
 const segD = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz))); return Math.hypot(px - ax - dx * t, pz - az - dz * t) };
 const shopFront = ([dx, dz, ry], d = 1.5) => [dx + Math.sin(ry) * d, dz + Math.cos(ry) * d];              // the doorstep of a shop (town-local)
-function coreY(x, z) { const n = nz(x, z); if (x < 9) { const d = x - shore(z); return (d < 0 ? Math.max(-1.2, d * .35) : 0) + .02 * n }
-  return groundH(x, z) + .02 * n * (1 - smw(34, 36, x) * (1 - smw(56, 58, x))) }                        // the town square is flat (things stand on it)
+function coreY(x, z) { const n = nz(x, z); return groundH(x, z) + .02 * n * (x < 9 ? 1 : 1 - smw(34, 36, x) * (1 - smw(56, 58, x))) }   // the town square is flat (things stand on it)                        // the town square is flat (things stand on it)
 function coreCol(x, z, c) { grassCol(x, z, c); const n = nz(x, z);
-  if (x < 17) { const d = x - shore(z), ke = smw(10, 14, Math.abs(z)); if (earth(x, z)) c.lerp(_EA, .85);     // the island: a dug patch · the beach (the same sand as the wild coast where the two meet)
+  if (x < 17) { const d = x - shore(z), ke = smw(10, 14, Math.abs(z)); if (earth(x, z)) c.lerp(_EA, .85); if (inFarm(x, z)) c.lerp(_SOIL, .8);   // v3.7 the fenced bed is bare soil     // the island: a dug patch · the beach (the same sand as the wild coast where the two meet)
     c.lerp(_c2.copy(_SA).lerp(_SD, ke), 1 - sm(1.6, 3.6, d + .35 * n * (1 - ke))); if (d < 0) c.lerp(_WET, .5) }
   else { const h = groundH(x, z); if (h > .35) c.lerp(_CL1, .5); if (h > .35 && h < MESA.h - .2) c.lerp(_CL2, .75); if (h < -.05) c.lerp(_BANK, .8) }   // grass · rock cliffs · banks
   if (x > 6 && x < 81) { const hw = .7 + .35 * smw(34, 36, x) * (1 - smw(56, 58, x));                      // the road: island gate → bridge → town → hills → forest
@@ -341,7 +348,8 @@ export function buildTown(W, eco) {
    island (x<9) · 🌾 riverside meadow (9–35) · town (35–57) · ⛰️ cliff hills (57–79) · east forest (79+)
    groundH = height of the ground · waterAt = sea / fresh / null · walkWorld = 'land' | 'water' | false (swim = water) */
 const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
-export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
+export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, riverC = z => RIVER.x + .7 * Math.sin(z * .45 + .6) * smw(2.4, 5, Math.abs(z - RIVER.bz)), riverW = z => RIVER.w * (1 + .14 * Math.sin(z * .9)) * (1 - .4 * smw(6.5, 11.5, Math.abs(z))),   // v3.7 the stream winds a little and narrows to its ends (straight under the bridge)
+  LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
 export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะบ้านเกิด', meadow: 'ทุ่งริมธาร', town: 'เมือง', hills: 'เนินผาสูง', forest: 'ป่าตะวันออก' };
 export const zoneOf = (x, z = 0) => coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
@@ -359,7 +367,11 @@ export function groundH(x, z) {
   if (onCloud(x, z)) return .6;
   if (inTr(x, z)) return trainH(x, z);
   if (coreDist(x, z) > 0) return wildH(x, z);
-  if (x >= 9 && x < 35) { const d = Math.abs(x - RIVER.x); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(RIVER.w - .3, RIVER.w + .7, d)); return 0 }
+  const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
+}
+function coreH(x, z) {
+  if (x < 9) { const d = x - shore(z); return d < 0 ? Math.max(d * .35, -6) : 0 }   /* v3.7 the island's sea floor slopes on down to the open sea's depth (was a flat shelf → a box on the map) */
+  if (x >= 9 && x < 35) { const d = Math.abs(x - riverC(z)), w = riverW(z); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(w - .3, w + .7, d)) * (1 - smw(9.5, 12.5, Math.abs(z))); return 0 }   /* v3.7 the stream ends softly before the rim */
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
     return MESA.h * (1 - smw(MESA.r, MESA.r + MESA.edge, Math.hypot(x - MESA.x, (z - MESA.z) * 1.1))) }
   return 0;
@@ -369,7 +381,7 @@ export function waterAt(x, z) {
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
-  if (x < 35) return Math.abs(x - RIVER.x) < RIVER.w && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 12 ? 'fresh' : null;
+  if (x < 35) return Math.abs(x - riverC(z)) < riverW(z) && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 11.2 ? 'fresh' : null;
   if (x >= 57 && x < 79) return Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r ? 'fresh' : null;
   return null;
 }
@@ -410,7 +422,7 @@ export function buildWild(W, eco) {
   out.meadow = coreGround(17, 35, 17, eco); out.hills = coreGround(57, 74, 17, eco); scene.add(out.meadow, out.hills);   /* v3.3 one ground recipe for the whole first zone (the road is painted into it) */
   /* water: the river (with a bridge on the road) and the hill lake */
   const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#4a9ad0', roughness: .2, transparent: true, opacity: .85, clearcoat: .6 }), 999, 0);
-  const river = new THREE.Mesh(new THREE.PlaneGeometry(RIVER.w * 2 + .6, 26, 8, 60), wmat); river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
+  const river = new THREE.Mesh(new THREE.PlaneGeometry(RIVER.w * 2 + 3.4, 26, 8, 60), wmat);   /* v3.7 wider: the banks (not the plane's edge) shape the water */ river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
   at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
   for (const s2 of [-1, 1]) addSol({ x: RIVER.x, z: RIVER.bz + s2 * 1.05, hw: RIVER.w + .5, hd: .07, ry: 0 });   // the bridge rails
@@ -434,6 +446,7 @@ export function buildWild(W, eco) {
    core = the strip x −17…110, |z| ≤ 14 (island · meadow · town · hills · forest) · around it: noise terrain (hills, mountain ridges, lakes, the western sea)
    streamed in 64 m chunks (2 m detail + decor + a few clearables) · a 16 m "far land" mesh shows the mountains on the horizon */
 export const WORLD = { x0: -120, x1: 1380, z0: -750, z1: 750 }, CHUNK = 64;
+export const coreIn = (x, z) => Math.min(x + 17, 110 - x, 14 - Math.abs(z)), CORE_BLEND = 5;   // v3.7 how far inside zone 1 a point is (m) · the blend band at its rim
 export const coreDist = (x, z) => { const dx = Math.max(-17 - x, 0, x - 110), dz = Math.max(Math.abs(z) - 14, 0); return Math.hypot(dx, dz) };
 const hsh = (i, j) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296 };
 function vnoise(x, z) { const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz), a = hsh(i, j), b = hsh(i + 1, j), c = hsh(i, j + 1), d = hsh(i + 1, j + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v }
