@@ -3,7 +3,7 @@
    sand near the sea  w = 1 − smoothstep(1.6, 3.6, d + .35n)  (d = distance from the shoreline)
    sea colour by depth from the shore · instanced grass tufts / flowers / pebbles / foam / sparkles. */
 import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS, rbox, rboxGeo } from './clay.js';
-import { CLEAR } from './data.js';
+import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
 
@@ -149,6 +149,14 @@ export function cookPot(W, key, x, z) {
   addPick(W, x, z, .9, 1.4, { kind: 'pot', key }).position.y += groundH(x, z); addSol({ x, z, r: .5 }); return { g, pot, lid, fire, steam, light, x, z };
 }
 /* show / hide one clearable */
+/* v3.0 ore veins: a rock may carry the ore of its land (copper at home and the coast, iron in the capital/Deadgar, silver in the snow, gold in the desert, coal in the volcano · rare raw gems anywhere) — you can see the coloured streaks */
+const VEINM = {};
+export function veinOf(o) { if (o.t !== 'rock' && o.t !== 'pebble') return ''; if (o.vein !== undefined) return o.vein; const h = Math.abs(Math.sin(o.x * 12.9898 + o.z * 78.233) * 43758.5453) % 1;
+  if (h > ORE_CHANCE * (o.t === 'pebble' ? .5 : 1)) return o.vein = ''; if (h < .02) return o.vein = 'gemstone'; const B = kingdomAt(o.x, o.z); return o.vein = ORE_BY[B.home > .5 || B.w < .5 ? 'home' : B.k] || 'copper' }
+function veins(g, o, s) { const v = veinOf(o); if (!v) return; const c = ORE_COL[v], M = VEINM[v] || (VEINM[v] = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: v === 'coal' ? 0 : .25, roughness: v === 'coal' ? .9 : .3, metalness: v === 'coal' ? 0 : .4, flatShading: v === 'gemstone' }));
+  const G = v === 'gemstone' ? new THREE.OctahedronGeometry(1, 0) : new THREE.IcosahedronGeometry(1, 1), n = o.t === 'rock' ? 5 : 3;
+  for (let i = 0; i < n; i++) { const a = .4 + i * 2.1 + (o.x % 1), e = .25 + (i % 3) * .28, x0 = .45 * s * Math.cos(e) * Math.cos(a), z0 = .38 * s * Math.cos(e) * Math.sin(a), y = .25 * s + .3 * s * Math.sin(e) * .95, ca = Math.cos(.4), sa = Math.sin(.4);
+    const m = new THREE.Mesh(G, M); m.position.set(x0 * ca + z0 * sa, y, -x0 * sa + z0 * ca); m.scale.set(.06 * s * (1 + (i % 2) * .4), .035 * s, .05 * s); m.rotation.set(e, a, i); g.add(m) } }
 export function spawnClear(W, o) {
   if (o.g) return; remnant(W, o, false);
   if (o.inst) { for (const [m, i, M] of o.inst) { m.setMatrixAt(i, M); m.instanceMatrix.needsUpdate = true } o.g = new THREE.Group(); o.g.position.set(o.x, groundH(o.x, o.z), o.z); W.scene.add(o.g); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: .3 * (o.sc || 1), o }); return }   /* v2.9 a streamed (instanced) tree: just show it again */ const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
@@ -162,7 +170,7 @@ export function spawnClear(W, o) {
        for (let i = 0; i < 4; i++) { const a = i * 1.7, r = .1 + (i % 2) * .08, x = Math.cos(a) * r, z = Math.sin(a) * r, h = .22 + (i % 3) * .06; part(g, '#3f8a3a', '#7ac860', [x, h / 2, z], [.015, h / 2, .015], [0, 0, 0], { A: 0 });
          for (let k = 0; k < 5; k++) part(g, c0, '#ffffff', [x + Math.cos(k * 1.26) * .045, h, z + Math.sin(k * 1.26) * .045], [.04, .015, .03], [0, -k * 1.26, 0], { A: 0 }); part(g, '#e8a020', '#ffe080', [x, h + .01, z], [.025, .02, .025], [0, 0, 0], { A: 0 }) } },
      hive: () => { part(g, '#5a3a20', '#9a6a3a', [0, .22, 0], [.26, .22, .26], [0, 0, 0], { A: .05 }); part(g, '#d89a20', '#ffd060', [0, .55, 0], [.2, .17, .2], [0, 0, 0], { A: .1 }); part(g, '#a86a10', '#e8a030', [0, .62, .16], [.05, .04, .02], [0, 0, 0], { A: 0 }) },
-     pebble: () => PROPS.rock(g, .45), rock: () => PROPS.rock(g, .85), boulder: () => PROPS.boulder(g, 1) })[o.t]();
+     pebble: () => { PROPS.rock(g, .45); veins(g, o, .45) }, rock: () => { PROPS.rock(g, .85); veins(g, o, .85) }, boulder: () => PROPS.boulder(g, 1) })[o.t]();
   const mg = mergeStatic(g); mg.position.set(o.x, groundH(o.x, o.z), o.z); mg.rotation.y = o.ry; W.scene.add(mg); o.g = mg; Q.seg = seg0;
   const r = { s: .55, m: .75, l: 1.1 }[T.size];
   if (SOL_R[o.t] && !o.sol) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t], o });

@@ -149,6 +149,26 @@ Object.assign(MONS, {
     for (const s of [-1, 1]) { part(g, '#5a3420', '#9a6238', [s * .45, .8, 0], [.06, .32, .06], [0, 0, -s * .9]); part(g, '#3d8a3a', '#9ade6c', [s * .72, 1.02, 0], [.14, .12, .14], [0, 0, 0], { A: .15 }) }
     part(g, '#3d8a3a', '#9ade6c', [0, 1.12, -.05], [.32, .2, .3], [0, 0, 0], { A: .15, f: 1.6 }); eyes(g, .72, .3, .14, .075);
   },
+  /* v3.0 🗿 a giant kingdom golem: chunky rock limbs (top-level pieces fly together when it wakes) · a glowing core on the chest (name 'core') · crystals in its element */
+  golemGiant(g, [col = '#8a857c', core = '#ffffff', elem = ''] = []) {
+    const lo = new THREE.Color(col).multiplyScalar(.55).getStyle(), hi = new THREE.Color(col).lerp(new THREE.Color('#ffffff'), .35).getStyle(), P = (gg, pos, sc, rot, A = .16) => part(gg, lo, hi, pos, sc, rot, { A, f: 1.4 });
+    const gem = new THREE.MeshStandardMaterial({ color: core, emissive: core, emissiveIntensity: .55, roughness: .25, metalness: .1, flatShading: true });
+    const cry = (gg, pos, s, rot) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), gem); m.position.set(...pos); m.scale.set(s * .55, s, s * .55); m.rotation.set(...rot); m.castShadow = true; gg.add(m); return m };
+    for (const sx of [-1, 1]) P(g, [sx * .2, .17, 0], [.16, .19, .17], [0, 0, sx * .08]);   // legs
+    P(g, [0, .42, 0], [.3, .14, .23]);                                                          // hips
+    P(g, [0, .74, 0], [.44, .32, .34], [0, 0, 0], .2);                                          // chest
+    P(g, [0, 1.1, .05], [.21, .16, .19]);                                                       // head
+    { const c = new THREE.Mesh(new THREE.SphereGeometry(.085, 20, 14), new THREE.MeshStandardMaterial({ color: core, emissive: core, emissiveIntensity: .9, roughness: .3 })); c.position.set(0, .76, .31); c.name = 'core'; g.add(c) }
+    for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.035, 12, 8), new THREE.MeshBasicMaterial({ color: core })); e.position.set(sx * .075, 1.12, .22); e.scale.set(1.3, .7, .5); e.name = 'eye'; g.add(e) }
+    for (const sx of [-1, 1]) { const arm = new THREE.Group(); arm.name = sx < 0 ? 'armL' : 'armR'; arm.position.set(sx * .5, .92, 0); g.add(arm);
+      P(arm, [0, 0, 0], [.19, .17, .19]); P(arm, [sx * .08, -.28, .02], [.13, .2, .13]); P(arm, [sx * .1, -.56, .05], [.19, .17, .19]) }   // shoulder · arm · fist
+    if (elem === 'vine') { const lf = new THREE.MeshStandardMaterial({ color: '#4aa848', roughness: .7 }); for (const [x, y, z, r] of [[0, 1.34, -.05, .2], [-.16, 1.28, -.1, .15], [.17, 1.3, -.08, .15], [.05, 1.45, -.12, .13]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), lf); b.position.set(x, y, z); b.castShadow = true; g.add(b) }
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(.03, .05, .2, 8), new THREE.MeshStandardMaterial({ color: '#7a5030' })); tr.position.set(0, 1.22, -.06); g.add(tr) }
+    if (elem === 'fire') for (const [x, y, z] of [[-.2, .8, .3], [.22, .66, .3], [.05, .5, .26], [-.1, 1.02, .2]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.14, .025, .03), gem); l.position.set(x, y, z); l.rotation.z = x * 3; g.add(l) }
+    if (elem === 'summon') for (let i = 0; i < 3; i++) { const rb = new THREE.Mesh(new THREE.TorusGeometry(.3 - i * .03, .025, 8, 20, Math.PI), new THREE.MeshStandardMaterial({ color: '#f4eee0', roughness: .6 })); rb.position.set(0, .86 - i * .1, .12); rb.rotation.set(.15, 0, Math.PI); g.add(rb) }
+    const spots = [[-.42, 1.08, -.05, .16, [0, 0, .5]], [.44, 1.1, -.04, .14, [0, 0, -.5]], [-.15, .98, -.25, .13, [-.5, 0, .2]], [.14, 1.0, -.27, .17, [-.5, 0, -.2]], [0, .82, -.3, .12, [-.8, 0, 0]]];
+    for (const [x, y, z, s0, rot] of elem === 'vine' ? spots.slice(0, 2) : spots) cry(g, [x, y, z], s0, rot);
+  },
   rockGolem(g) {
     part(g, '#6f6a64', '#cfc9bf', [0, .5, 0], [.55, .48, .5], [0, 0, 0], { A: .2, f: 1.3 });
     part(g, '#6f6a64', '#cfc9bf', [-.25, 1.02, -.1], [.2, .16, .2], [0, 0, 0], { A: .2 }); part(g, '#6f6a64', '#cfc9bf', [.28, .98, .05], [.16, .13, .16], [0, 0, 0], { A: .2 });

@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '2.9';
+export const APP_VER = '3.0';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -29,7 +29,12 @@ export const hitsFor = (size, tier) => Math.max(1, Math.ceil(HITS[size] / (1 + .
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60] };  // [icon, name, sell price]
+export const MATS = { hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+  /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
+  copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
+  diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800] };
+export const ORE_BY = { home: 'copper', navalee: 'copper', sylvaren: 'copper', luminia: 'ore', frosthelm: 'silver', deadgar: 'ore', asrah: 'goldOre', valkara: 'coal' };   // which vein a rock carries, by kingdom
+export const ORE_CHANCE = .35, ORE_COL = { copper: '#e07a3a', ore: '#8a96a8', silver: '#e8eef6', goldOre: '#ffd23f', coal: '#2a2228', gemstone: '#6ae0ff' };  // [icon, name, sell price]
 
 /* ---- farm tools: tier 0 wood · 1 stone · 2 iron · 3 crystal ---- */
 export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], rod: ['🎣', 'เบ็ด'] };
@@ -66,6 +71,15 @@ export const MON = {
   witherImp:  { base: 'branchImp', tint: '#a0803a', name: '🍂 ภูตไม้เหี่ยว', lv: 5, hp: 75, atk: 10, def: 3, exp: 35, coin: [100, 200], mat: { wood: 3 }, loot: ['woodSpear', 'hunterBow', 'barkArmor'], tier: 'normal' },
   marshSprite:{ base: 'grassSprite', tint: '#4aa0a0', ingr: ['berry', .5], name: '🪷 ภูตบึง', lv: 5, hp: 65, atk: 9, def: 3, exp: 32, coin: [90, 180], mat: { grass: 3 }, loot: ['harpoon', 'trident'], tier: 'normal' },
   shadeKnight:{ base: 'goblinChief', tint: '#5a4a7a', ingr: ['meat', .5], name: '🗡️ อัศวินเงา', lv: 12, hp: 220, atk: 22, def: 12, exp: 120, coin: [300, 500], mat: { ore: 2 }, loot: ['kingSword', 'dragonBlade'], tier: 'normal' },
+  /* v3.0 golems (giant · armoured unless stunned · see GOLEMS) */
+  golemDiamond: { base: 'golemGiant', cols: ['#cfe8ff', '#ffffff', 'reflect'], golem: 1, scale: 3, name: '💎 โกเลมเพชร', lv: 24, hp: 2600, atk: 42, def: 24, exp: 1200, coin: [4000, 6000], mat: {}, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
+  golemLava: { base: 'golemGiant', cols: ['#3a2a28', '#ff6a1a', 'fire'], golem: 1, scale: 3, name: '🌋 โกเลมลาวาถ่านหิน', lv: 22, hp: 2300, atk: 40, def: 22, exp: 1100, coin: [3500, 5000], mat: {}, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
+  golemEmerald: { base: 'golemGiant', cols: ['#6a7a5a', '#4aff8a', 'vine'], golem: 1, scale: 3, name: '💚 โกเลมต้นไม้หินทับทิมเขียว', lv: 16, hp: 1500, atk: 28, def: 16, exp: 700, coin: [2000, 3200], mat: {}, loot: ['crystalBow', 'woodSpear'], tier: 'boss' },
+  golemGold: { base: 'golemGiant', cols: ['#e8b83a', '#fff2a0', 'beam'], golem: 1, scale: 3, name: '🏅 โกเลมทองคำ', lv: 19, hp: 1900, atk: 34, def: 19, exp: 900, coin: [3000, 4500], mat: {}, loot: ['scimitar', 'kingSword'], tier: 'boss' },
+  golemAqua: { base: 'golemGiant', cols: ['#5ac0d0', '#c8ffff', 'wave'], golem: 1, scale: 3, name: '🔷 โกเลมอความารีน', lv: 15, hp: 1400, atk: 26, def: 15, exp: 650, coin: [1800, 3000], mat: {}, loot: ['trident', 'harpoon'], tier: 'boss' },
+  golemCrystal: { base: 'golemGiant', cols: ['#a8d8f0', '#ffffff', 'freeze'], golem: 1, scale: 3, name: '🔹 โกเลมคริสตัล', lv: 20, hp: 2000, atk: 36, def: 21, exp: 950, coin: [3200, 4800], mat: {}, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
+  golemBone: { base: 'golemGiant', cols: ['#e8e0d0', '#c080ff', 'summon'], golem: 1, scale: 3, name: '🦴 โกเลมกระดูก', lv: 23, hp: 2400, atk: 40, def: 22, exp: 1150, coin: [3800, 5500], mat: {}, loot: ['kingSword', 'dragonBlade'], tier: 'boss' },
+  skeleton:     { base: 'goblin', tint: '#f0ece0', name: '💀 โครงกระดูก', lv: 12, hp: 90, atk: 16, def: 6, exp: 40, coin: [60, 120], mat: {}, loot: ['boneClub'], tier: 'normal' },
   /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
   mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
   mbTreant: { base: 'branchImp', tint: '#3a2a1a', mini: 1, scale: 2.4, name: '🌳 รากดำ', lv: 15, hp: 1000, atk: 26, def: 12, exp: 450, coin: [1600, 2600], mat: { wood: 20 }, loot: ['crystalBow', 'dragonBlade'], tier: 'boss' },
@@ -140,6 +154,18 @@ export const DROP_LIFE = 300;
 export const K_MONS = { navalee: ['marshSprite', 'slime', 'marshSprite', 'grassSprite'], sylvaren: ['witherImp', 'branchImp', 'witherImp', 'grassSprite'], luminia: ['shadeKnight', 'goblin', 'rockGolem', 'shadeKnight'], frosthelm: ['iceSlime', 'frostGolem', 'iceSlime', 'iceSlime'], deadgar: ['ghoul', 'ghoul', 'shadeKnight', 'ghoul'], asrah: ['sandSlime', 'sandSlime', 'goblin', 'sandSlime'], valkara: ['lavaSlime', 'magmaGolem', 'lavaSlime', 'lavaSlime'] };
 export const MINIB = { navalee: ['mbCrab', 40, 30], sylvaren: ['mbTreant', -30, 20], asrah: ['mbScorp', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
 export const CYCLE_DAYS = 3;
+/* v3.0 🗿 the seven golems: a pile of rocks that wakes up when you come close · a ring arena (no leaving) · hit the glowing core when it's stunned after a slam */
+export const GOLEMS = {
+  luminia:   { kind: 'golemDiamond', dx: 60, dz: -55, name: '💎 โกเลมเพชร', col: '#cfe8ff', core: '#ffffff', mat: 'diamond', elem: 'reflect' },
+  valkara:   { kind: 'golemLava', dx: -55, dz: 40, name: '🌋 โกเลมลาวาถ่านหิน', col: '#3a2a28', core: '#ff6a1a', mat: 'lavaCoal', elem: 'fire' },
+  sylvaren:  { kind: 'golemEmerald', dx: 45, dz: 50, name: '💚 โกเลมต้นไม้หินทับทิมเขียว', col: '#5a7a4a', core: '#4aff8a', mat: 'emerald', elem: 'vine' },
+  asrah:     { kind: 'golemGold', dx: -50, dz: -45, name: '🏅 โกเลมทองคำ', col: '#e8b83a', core: '#fff2a0', mat: 'goldBar', elem: 'beam' },
+  navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
+  frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
+  deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
+export const GOLEM = { wake: 13, arena: 17, slam: { r: 4.6, wind: 1.3 }, rock: { r: 2.2, wind: 1.4 }, stun: 2.4, armor: .45, coreX: 2.6, drop: [3, 5] };
+/* v3.0 🍖 fullness + 💤 sleepiness (minutes of game time) */
+export const NEEDS = { fullPerMin: 100 / (1.5 * 1440), hungryAt: 20, sleepyAt: 1440, wornAt: 2100, starveDmg: 4, starveTick: 12, slow: .82, foodPer: .35, sleepFood: -10 };
 export const CHESTS = { n: 34, trap: .22, coin: [300, 1200] };   // hidden chests across the world (some are traps)
 export const NOTES = [
   'ปีที่หอคอยแสงยังสว่าง ทุกคืนแสงจะส่องไปถึงทุกอาณาจักร… ไม่มีใครกลัวความมืดเลย',
@@ -356,6 +382,7 @@ export const RECIPES = [
   { k: 'flowertea', desc: 'ชาดอกไม้หอมๆ หายใจโล่ง เดินได้ทั้งวัน', icon: '🌼', name: 'ชาดอกไม้', need: { flower: 2 }, only: 1, eff: { en: 50, buff: { stam: .35, min: 8 } }, hint: 'ดอกไม้ล้วน 2 ดอก' },
   { k: 'honeytoast', desc: 'ผลไม้ราดน้ำผึ้ง หวานหอม มีแรงเต็มที่', icon: '🍯', name: 'ผลไม้น้ำผึ้ง', need: { sweet: 1, fruit: 1 }, eff: { en: 70, buff: { stam: .25, min: 10 } }, hint: 'ของหวานจากผึ้ง + ผลไม้' },
   { k: 'heartstew', desc: 'สตูว์เนื้อดอกไม้ ตำรับนักเดินทาง กินแล้วหัวใจพองโต', icon: '💛', name: 'สตูว์หัวใจ', need: { meat: 1, flower: 1, veg: 1 }, eff: { hp: 80, buff: { heart: 2, min: 10 } }, hint: 'เนื้อ + ดอกไม้ + ผัก' },
+  { k: 'boneBroth', desc: 'ซุปข้นจากกระดูกโกเลม ต้มนานทั้งคืน อิ่มท้องไปอีกนาน', icon: '🍲', name: 'ซุปกระดูกโกเลม', need: { golemBoneOnly: 99 }, eff: { hp: 150, en: 80, buff: { def: 4, heart: 1, min: 10 } }, hint: 'สร้างที่ 🛠️ จากกระดูกโกเลม', craft: 1 },
   { k: 'mystery', desc: '…หน้าตาแปลกๆ แต่ก็กินได้นะ', icon: '❓', name: 'อาหารปริศนา', need: {}, eff: { hp: 8 }, hint: 'ผสมมั่วๆ ก็ได้อันนี้…' },
 ];
 export const COOK_TIME = 15;                                   // seconds the pot needs (a ladle stirs meanwhile)
@@ -456,6 +483,19 @@ export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
   { k: 'glider', icon: '🍃', name: 'ใบไม้ร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
+  /* v3.0 gear from ores + golem materials (unlimited) */
+  { k: 'cSilverSpear', icon: '🔱', name: 'หอกทหาร (เงิน)', need: { silver: 4, ore: 2, wood: 4 }, give: { item: ['soldierSpear', 'R'] } },
+  { k: 'cKnightShield', icon: '🛡️', name: 'โล่อัศวิน', need: { ore: 5, silver: 2, hide: 2 }, give: { item: ['knightShield', 'R'] } },
+  { k: 'cCopperBow', icon: '🏹', name: 'ธนูนายพราน (ทองแดง)', need: { copper: 4, wood: 6, feather: 4 }, give: { item: ['hunterBow', 'R'] } },
+  { k: 'cScimitar', icon: '🗡️', name: 'ดาบโค้งทะเลทราย (ทอง)', need: { goldOre: 4, ore: 3 }, give: { item: ['scimitar', 'E'] } },
+  { k: 'cCrystalBlade', icon: '💎', name: 'ดาบคริสตัล', need: { crystal: 3, silver: 3 }, give: { item: ['crystalBlade', 'E'] } },
+  { k: 'cCrystalBow', icon: '🏹', name: 'ธนูคริสตัล', need: { crystal: 2, emerald: 2, wood: 8 }, give: { item: ['crystalBow', 'E'] } },
+  { k: 'cTrident', icon: '🔱', name: 'หอกสามง่ามทะเล', need: { aquamarine: 3, silver: 2 }, give: { item: ['trident', 'E'] } },
+  { k: 'cDragonBlade', icon: '🐉', name: 'ดาบมังกร', need: { lavaCoal: 3, coal: 6, ore: 6 }, give: { item: ['dragonBlade', 'E'] } },
+  { k: 'cBoneClub', icon: '🦴', name: 'กระบองกระดูก', need: { bone: 2, wood: 4 }, give: { item: ['boneClub', 'E'] } },
+  { k: 'cGolemCrusher', icon: '🔨', name: 'ค้อนอสูรหิน', need: { golemCore: 1, ore: 6, stone: 20 }, give: { item: ['golemCrusher', 'E'] } },
+  { k: 'cKingSword', icon: '👑', name: 'ดาบราชันย์', need: { diamond: 2, goldBar: 2, golemCore: 1 }, give: { item: ['kingSword', 'L'] } },
+  { k: 'cBoneBroth', icon: '🍲', name: 'ซุปกระดูกโกเลม (อิ่มนาน ❤️ +3)', need: { bone: 1, grass: 4 }, give: { meal: 'boneBroth' } },
   { k: 'leafMask', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ (หายใจในเดดการ์)', need: { mint: 3, flower: 2, grass: 6 }, give: { wear: 'leafMask' } },
   { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (อุ่น +2)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
   { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (อุ่น +1)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
