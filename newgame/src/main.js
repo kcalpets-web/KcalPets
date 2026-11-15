@@ -2147,7 +2147,7 @@ function pickMark() { if (!PICK) return; pickEl.querySelectorAll('[data-p]').for
 function pickStep(d) { if (!PICK) return; PICK.i = (PICK.i + d + PICK.L.length) % PICK.L.length; sfx('tap'); pickMark() }
 function pickDrag(x) { if (!PICK) return; const n = Math.max(0, Math.min(PICK.L.length - 1, PICK.i0 + Math.round((x - PICK.x0) / 46))); if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } }
 function pickClose() { PICK = null; pickEl.classList.remove('on') }
-function pickChoose() { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; pickClose(); tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
+function pickChoose() { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; if (PICK.hold && i === PICK.i0) { pickClose(); return } pickClose();   /* let go without sliding = keep what you hold */ tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
   if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; S.eq.sword = o.k.slice(2); setTool('') } else { S.hand = o.k; DRAWN = false; setTool(o.k) } }
   else if (slot === 'y') { aimEnd(false); S.ytool = o.k; if (tool === 'rod' || tool === 'hoe') setTool('') }
   else { S.eq.shield = o.k || null; guardTog = false; updGuard() }

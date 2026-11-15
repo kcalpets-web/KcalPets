@@ -1,4 +1,4 @@
-/* v2.1 buttons + bow test: X = jump (hold 3 s = crouch, tap = stand) · A hold 3 s = AUTO · Y = aim (camera over the shoulder, crosshair) → let go = arrow flies and hits a slime · arrows run out · old saves get the starter bow.
+/* v2.1 buttons + bow test: X = jump (hold 3 s = crouch, tap = stand) · A hold = weapon/tool picker (v3.6) · Y = aim (camera over the shoulder, crosshair) → let go = arrow flies and hits a slime · arrows run out · old saves get the starter bow.
    NODE_PATH=$(npm root -g) node newgame/tools/test/bow.js outDir   (~3 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -34,11 +34,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       const r = await N(() => ({ c: window.__ng.CROUCH, sneak: window.__ng.PL.pose.sneak })); if (!r.c || !r.sneak) errs.push('walking stood up from the crouch (should sneak)'); }
     await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.CROUCH, 2000))) errs.push('tap X did not stand up from the crouch'); await wait(400);
     if (await N(() => window.__ng.PL.pose.jump > 0)) errs.push('standing up should not jump');
-    /* A: hold 3 s = AUTO */
-    await press('bA', 'pointerdown'); if (!(await until(() => window.__ng.S.auto, 5000))) errs.push('holding A 3 s did not turn AUTO on'); await press('bA', 'pointerup');
-    await E(() => document.getElementById('bAuto').click()); await wait(300); await closeAll();   /* A also used the camp pot nearby */
+    /* v3.6 A: hold = the weapon/tool picker (no more AUTO) · let go without sliding = keep what you hold */
+    await closeAll(); const h0 = await N(() => window.__ng.S.hand || 'w'); await press('bA', 'pointerdown'); if (!(await until(() => !!window.__ng.pick(), 5000))) errs.push('holding A did not open the picker'); await press('bA', 'pointerup'); await wait(300);
+    if (await N(() => !!window.__ng.pick())) errs.push('letting go of A did not close the picker'); if ((await N(() => window.__ng.S.hand || 'w')) !== h0) errs.push('letting go without sliding changed the hand'); if (await N(() => window.__ng.S.auto)) errs.push('holding A still turns AUTO on'); await closeAll();
     /* v2.1.1: A draws · tap B puts away · tap B (empty-handed) raises the shield · tap B again lowers it */
-    const tapB = async () => { await press('bB', 'pointerdown'); await press('bB', 'pointerup'); await wait(300) };
+    const tapB = async () => { await press('bB', 'pointerdown'); await press('bB', 'pointerup'); await wait(600) };   /* v3.6: two taps closer than D.DTAP = the shield picker */
     await E(() => window.__ng.stowAll()); await closeAll(); await E(() => window.__ng.setTool(''));
     /* A in front of a slime: the first press only draws, the second attacks (one evaluate each so the slime cannot wander off) */
     await E(() => { const N = window.__ng, q = N.me; N.monSpawn('slime', q.x, q.z + 1.2); window.__s1 = N.mons[N.mons.length - 1] }); await wait(1200);
