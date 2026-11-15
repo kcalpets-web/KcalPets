@@ -8,7 +8,7 @@ import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { veinOf, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -382,7 +382,7 @@ const mons = [], MSCALE = { slimeKing: 1.4, goblin: .9, goblinChief: 1.25, rabbi
 function monSpawn(kind, x, z, o = {}) {
   const T = D.MON[kind], bk = T.base || kind, A = makeActor(g => { (MONS[bk] || ANIMALS[bk] || { stormLord: STORM.lord, shade: STORM.shade }[bk] || MONS.slime)(g, ...(T.cols ? [T.cols] : bk === 'slime' ? [['#3fa860', '#8ff0a8']] : bk === 'slimeKing' ? [['#7a3a9a', '#d0a0ff']] : []));
     if (T.tint) { const tc = new THREE.Color(T.tint); g.traverse(o => { if (o.isMesh && o.material && o.material.color) { o.material = o.material.clone(); o.material.color.lerp(tc, .6); if (T.mini && o.material.emissive) { o.material.emissive.copy(tc).multiplyScalar(.12) } } }) } }, T.scale || MSCALE[kind] || MSCALE[bk] || .85);   /* v2.7 recoloured kingdom monsters + mini-bosses */
-  if (T.legs || (T.base && D.MON[T.base].legs)) rigOf(A);
+  if (T.legs || (T.base && D.MON[T.base] && D.MON[T.base].legs)) rigOf(A);
   A.root.position.set(x, groundH(x, z), z); A.root.scale.setScalar(.01);
   const m = { A, kind, T, hp: o.hp ?? T.hp, farm: !!o.farm, area: o.area || zoneOf(x, z), pick: addPick(W, x, z, kind === 'slimeKing' ? 1.2 : .9, 1.6, { kind: 'mon' }), born: performance.now(), flash: 0, atkT: 0, aggro: !!o.aggro, home: [x, z], t: [x, z], wait: Math.random() * 2 };
   m.pick.userData.pick.m = m; if (!S.journal.mons[kind]) { S.journal.mons[kind] = { seen: 1, kills: 0 }; if (S.story.intro) floater('📓 บันทึกใหม่', 'item', x, 2.2, z) } m.tag = document.createElement('div'); m.tag.className = 'mtag'; document.body.appendChild(m.tag); mons.push(m);
@@ -2862,10 +2862,11 @@ function arenaRing(x, z, col) { const g = new THREE.Group(), R = D.GOLEM.arena;
 function golemWake(k) { const G = D.GOLEMS[k], L = golemLair(k); pileView(k, false);
   const M = monSpawn(G.kind, L.x, L.z, { area: 'wild', aggro: true, silent: 1 }); M.gk = k; M.hit = true; M.A.root.scale.setScalar(1); pileLay(M.A.body, 0);
   removePick(W, M.pick); M.pick = addPick(W, L.x, L.z, 1.8, 4.5, { kind: 'mon' }); M.pick.userData.pick.m = M;
-  GOL = { k, M, x: L.x, z: L.z, t0: now0(), n: 0, ring: arenaRing(L.x, L.z, G.core), act: null, fx: [], mins: [] };
+  GOL = { k, M, x: L.x, z: L.z, t0: now0(), n: 0, ring: arenaRing(L.x, L.z, G.core), act: null, fx: [], mins: [], hid: [] };
+  for (const o of W.clear.values()) if (o.g && dist(o.x, o.z, L.x, L.z) < D.GOLEM.arena + 1 && !D.CLEAR[o.t].fixed) { despawnClear(W, o); if (o.sol) { delSol(o.sol); o.sol = null } GOL.hid.push(o); VF.burst(o.x, groundH(o.x, o.z) + .4, o.z, '#b8a890', 6, 2) }   /* the waking golem flattens the small stuff in its arena (it grows back when the fight ends) */
   walkT = null; work = null; closePara(); sfx('boom'); shakeT = .8; mood('storm'); toast('⛰️ พื้นดินสั่นสะเทือน… กองหินกำลังลุกขึ้น!', 2600); bump('golemSeen') }
 function golemEnd(win) { const G = GOL; if (!G) return; GOL = null; FREEZE = 0; scene.remove(G.ring); for (const f of G.fx) scene.remove(f.m); for (const w of warns) scene.remove(w.m); warns.length = 0;
-  for (const s2 of G.mins) if (mons.includes(s2)) monGone(s2); if (!win && mons.includes(G.M)) monGone(G.M); if (LOCK === G.M) LOCK = null; ambience() }
+  for (const s2 of G.mins) if (mons.includes(s2)) monGone(s2); for (const o of G.hid) if (W.clear.has(o.id) && !S.cleared[o.id] && !o.g) spawnClear(W, o); if (!win && mons.includes(G.M)) monGone(G.M); if (LOCK === G.M) LOCK = null; ambience() }
 function golemHit(dmg, label) { const M = GOL && GOL.M; let d = Math.max(1, Math.round(dmg * (.9 + Math.random() * .2) - pStats().def * .5)); if (guard && M && facing(M) && spendEn(6)) { d = Math.max(1, Math.round(d * (S.eq.shield ? .3 : .6))); floater('🛡️', 'tool', me().x, 2.2, me().z) }
   if (now0() < petGuardT) d = Math.ceil(d * .5); S.hp = Math.max(0, pHp() - d); lastHurt = now0(); shakeT = .35; sfx('hurt'); floater(`${label} -${d}`, 'hurt', me().x, 2.1, me().z); VF.burst(me().x, me().y + 1, me().z, '#ff4a5a', 10, 3); hud();
   if (S.hp <= 0) { golemEnd(false); faint('😵 โกเลมแข็งแกร่งเกินไป… ฝึกฝนแล้วค่อยกลับมาใหม่') } }
