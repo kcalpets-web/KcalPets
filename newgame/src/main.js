@@ -1761,7 +1761,8 @@ function aimStart(kind = 'bow') {
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
   if (kind === 'rod') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .14, tgt: null, rod: 1 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
-  if (!(S.arrows > 0)) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
+  if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
+  if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
   walkT = null; work = null; stopAuto();
   let yaw = camTP() ? CAM.yaw : PL.yaw; if (LOCK) { const q = LOCK.A.root.position; yaw = Math.atan2(q.x - me().x, q.z - me().z); if (camTP()) CAM.yaw = yaw }
   AIM = { t0: performance.now(), p: LOCK ? .08 : .05, tgt: null }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); gearView(); aimHud();
