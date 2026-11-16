@@ -20,7 +20,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     const hs = await E(() => { const p = window.__ng.HS.root.position; return [+p.x.toFixed(1), +p.z.toFixed(1)] }); log('howsif', hs);
     // swim out east → pushed back
     await E(() => window.__ng.placeMe(140, 0)); await wait(1500); await E(() => window.__ng.placeMe(147, 0)); await wait(500); const s0 = await st(); log('in the strait', JSON.stringify(s0));
-    await E(() => { const N = window.__ng; for (let i = 0; i < 12; i++) N.me.x += .5 }); await wait(800); const s1 = await st(); log('after pushing east', JSON.stringify(s1)); if (s1.x >= 150) errs.push('swimming across the strait was not pushed back');
+    await E(() => { const N = window.__ng; for (let i = 0; i < 12; i++) N.me.x += .5 }); await wait(800); const s1 = await st(); log('after pushing east', JSON.stringify(s1)); if (s1.x < 150 || s1.side !== 'main') errs.push('v3.16.2 swimming across should be allowed (and switch the side)');
     // warps on the island only
     await E(() => window.__ng.placeMe(2, -4)); await wait(1500); const w1 = await E(() => window.__ng.WARPS().map(w => w.id)); log('warps on Vaneya', w1);
     // sail to the mainland
@@ -32,7 +32,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     // a harbour shop opens
     await E(() => window.__ng.openShopBuilding(3)); await wait(500); const sm = await E(() => (document.querySelector('.ov h2') || {}).textContent || ''); log('smith', sm); if (!/ช่าง/.test(sm)) errs.push('the harbour smith did not open'); await close();
     // swimming back west is pushed back too
-    await E(() => window.__ng.placeMe(160, 20)); await wait(1200); await E(() => { const N = window.__ng; N.S.side = 'main'; N.placeMe(152, 20) }); await wait(600); await E(() => { const N = window.__ng; for (let i = 0; i < 10; i++) N.me.x -= .5 }); await wait(800); const s3 = await st(); log('push west', JSON.stringify(s3)); if (s3.x < 150) errs.push('swimming back to the island was not pushed back');
+    await E(() => window.__ng.placeMe(160, 20)); await wait(1200); await E(() => { const N = window.__ng; N.S.side = 'main'; N.placeMe(152, 20) }); await wait(600); await E(() => { const N = window.__ng; for (let i = 0; i < 10; i++) N.me.x -= .5 }); await wait(800); const s3 = await st(); log('push west', JSON.stringify(s3)); if (s3.side !== 'isle') errs.push('v3.16.2 swimming back should switch the side to the island');
     // sail home
     await E(() => window.__ng.placeMe(181, 20)); await wait(800); await E(() => window.__ng.openBoat()); await wait(400); await E(() => document.getElementById('bSail').click()); await wait(5000); await close(); const s4 = await st(); log('home', JSON.stringify(s4)); if (s4.side !== 'isle' || s4.x > 20) errs.push('sailing back failed');
   } catch (e) { errs.push('X ' + e.stack) }

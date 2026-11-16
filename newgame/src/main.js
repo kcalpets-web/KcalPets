@@ -138,7 +138,7 @@ for (const k of D.VANEYA.shops) S.shops[k] = S.shops[k] || 1;   /* the harbour s
 function boatSide() { const at = S.boatAt || 'isle', fixed = !!S.story.boatFixed; W.boat.visible = fixed && at === 'isle'; HARB.boat.visible = fixed && at === 'main' }
 function openBoat() { if (!S.story.boatFixed) return; const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
   sheet('⛵ เรือของลุงฮาวซิฟ', (b, redraw, close) => { const c = Math.floor(S.boat.c || 0);
-    b.innerHTML = `<div class="card"><p>👴 <b>ลุงฮาวซิฟ:</b> ${to === 'main' ? '“จะข้ามไปแผ่นดินใหญ่เหรอ? ลุงพาไปส่งที่เมืองท่าเอง ร้านค้าอยู่ที่นั่นทั้งหมด”' : '“กลับเกาะวาเนย่ากันไหม? ทุ่งทานตะวันคิดถึงเราแล้ว”'}</p><p class="mut">🌊 ทะเลระหว่างเกาะกับแผ่นดินใหญ่คลื่นแรง ข้ามได้ด้วยเรือของลุงเท่านั้น (วาปข้ามไม่ได้)</p><button class="btn go wide" id="bSail">⛵ ${to === 'main' ? 'ล่องไปเมืองท่า (แผ่นดินใหญ่)' : 'กลับเกาะวาเนย่า'}</button></div>` + (c >= 1 ? `<div class="card"><b>🪙 เงินในเรือ ${fmt(c)}</b><button class="btn wide" id="bCoin">🪙 เก็บเข้ากระเป๋า</button></div>` : '');
+    b.innerHTML = `<div class="card"><p>👴 <b>ลุงฮาวซิฟ:</b> ${to === 'main' ? '“จะข้ามไปแผ่นดินใหญ่เหรอ? ลุงพาไปส่งที่เมืองท่าเอง ร้านค้าอยู่ที่นั่นทั้งหมด”' : '“กลับเกาะวาเนย่ากันไหม? ทุ่งทานตะวันคิดถึงเราแล้ว”'}</p><p class="mut">🌊 ว่ายข้ามเองก็ได้ถ้า ⚡ พอ · วาปข้ามทะเลไม่ได้</p><button class="btn go wide" id="bSail">⛵ ${to === 'main' ? 'ล่องไปเมืองท่า (แผ่นดินใหญ่)' : 'กลับเกาะวาเนย่า'}</button></div>` + (c >= 1 ? `<div class="card"><b>🪙 เงินในเรือ ${fmt(c)}</b><button class="btn wide" id="bCoin">🪙 เก็บเข้ากระเป๋า</button></div>` : '');
     b.querySelector('#bSail').onclick = () => { close(); sail(to) }; const bc = b.querySelector('#bCoin'); if (bc) bc.onclick = () => { S.coin += c; S.boat.c = 0; sfx('coin'); save(); hud(); redraw() } }) }
 function sail(to) { if (RIDE) leaveRaft && leaveRaft(); if (HORSE) dismount(); aimEnd(false);
   loading('⛵ ล่องเรือ', to === 'main' ? 'ลุงฮาวซิฟพายเรือข้ามทะเล… มุ่งหน้าสู่เมืองท่าแห่งเมิร์จแลน' : 'ลุงฮาวซิฟพายเรือกลับ… ทุ่งทานตะวันของวาเนย่าอยู่ข้างหน้าแล้ว', () => {
@@ -149,8 +149,8 @@ function isleTick(now) { if (!PL || CUT || !S.avatar) return; const q = me(), in
   if (!S.side) S.side = inI ? 'isle' : 'main'; if (!S.boatAt) S.boatAt = S.side;
   if (!isleOk || dist(q.x, q.z, isleOk.x, isleOk.z) > 8) { if (isleOk && inI !== (S.side === 'isle')) S.side = inI ? 'isle' : 'main'; isleOk = { x: q.x, z: q.z }; return }   /* a warp / the storm / a loading screen: just note which side */
   if (inI === (S.side === 'isle')) { isleOk.x = q.x; isleOk.z = q.z; return }
-  q.x = isleOk.x; q.z = isleOk.z; if (RIDE && RIDE.x != null) { RIDE.x = q.x; RIDE.z = q.z } walkT = null; joy.on && (joy.x *= -.2, joy.z *= -.2);   /* 🌊 the strait's current pushes you back */
-  if (now > isleHT) { isleHT = now + 3500; sfx('splash'); hint('🌊 กระแสน้ำแรงพัดกลับ! ข้ามทะเลได้ด้วยเรือของลุงฮาวซิฟเท่านั้น', 2200) } }
+  S.side = inI ? 'isle' : 'main'; isleOk.x = q.x; isleOk.z = q.z;   /* v3.16.2 you may swim (or paddle) across if your ⚡ lasts · the warp list follows the side you are on */
+  if (now > isleHT) { isleHT = now + 4000; hint(inI ? '🌻 ถึงเขตเกาะวาเนย่าแล้ว' : '⛰️ ถึงเขตแผ่นดินใหญ่แล้ว', 1600) } }
 function storyProps() {
   W.house.visible = !!S.story.built; W.site.visible = !S.story.built;
   boatSide(); W.wreck.visible = !S.story.boatFixed; W.bubble.visible = false;
@@ -713,6 +713,7 @@ function openHowsif() {
       let k = D.HOWSIF_FISH; for (const f in S.fish) { const t = Math.min(k, S.fish[f]); S.fish[f] -= t; k -= t } S.story.fishGiven = 1; save(); questCheck() }); return }
   if (!S.story.boatFixed) { talk([['👴 ลุงฮาวซิฟ', `ซ่อมเรือให้ลุงหน่อย ใช้ 🪵 ไม้ ${D.BUILD.boat.wood} 🪨 หิน ${D.BUILD.boat.stone} · แตะที่ซากเรือ`]]); return }
   if (S.story.cured && !S.story.farmGift) return farmGift();
+  if (S.story.boatFixed) return howsifMenu();   /* v3.16.2 a choice: seeds or the ferry */
   if (S.story.farmGift) return talk([['👴 ลุงฮาวซิฟ', 'ผักเป็นยังไงบ้าง? อยากได้เมล็ดเพิ่มไหม']], seedShop);
   if (S.story.boatFixed) return openBoat();   /* v3.13 */
   talk([['👴 ลุงฮาวซิฟ', S.story.town ? 'เมืองเป็นยังไงบ้าง… ระวังตัวด้วยนะ' : 'ทางขวามือผ่านซุ้มประตูไม้คือทางไปเมือง… ไปดูหน่อยเถอะว่าเกิดอะไรขึ้น']]);
@@ -1194,7 +1195,7 @@ const HOWTO = [
   ['fish', '🎣', 'ตกปลา', [{ b: 'Y', a: 'hold', bar: '🎣 ระยะ', swing: 1, t: 'เลือก 🎣 ไว้ที่ Y · กดค้าง หลอดขึ้นลง = ระยะเหวี่ยง' }, { b: 'Y', a: 'up', fx: '💦', t: 'ปล่อยตอนวงฟ้าอยู่บนน้ำ' }, { fx: '❗', t: 'ทุ่นจม = แตะจอทันที!' }, { reel: 1, t: 'กดค้างยกกรอบเขียวให้ปลาอยู่ในกรอบจนหลอดเต็ม' }]],
   ['catch', '🕸️', 'จับสัตว์ · ขี่ม้า', [{ b: 'Y', a: 'hold', bar: '🕸️ ระยะ', swing: 1, t: 'เลือก 🕸️ ไว้ที่ Y · ค้าง = หลอดระยะโยน · ปล่อยตอนพอดี' }, { reel: 1, fx: '🐰', t: 'โดนแล้วสัตว์ดิ้น: กดค้างยกกรอบให้อยู่ในกรอบ · ตีให้อ่อนแรงก่อนจะง่ายขึ้น' }, { b: 'A', a: 'tap', fx: '🐴', t: 'แตะ A ข้างม้า = ขึ้นขี่ · ม้าป่าพยศ = คุมกรอบแบบเดียวกัน · B = ลง' }]],
   ['energy', '⚡', 'พลังงาน ⚡', [{ bar: '⚡', drain: 1, t: 'วิ่ง ปีน ว่าย ร่อน และการกดค้างทุกแบบ ใช้ ⚡' }, { fx: '💦', t: 'หมดก่อนปล่อย = หมดแรง เดินช้า ทำอะไรไม่ได้จนหลอดเต็ม' }, { fx: '🍲', t: 'กินอาหาร / ผิงไฟ / พัก = ⚡ กลับมา' }]],
-  ['boat', '⛵', 'เรือ · เกาะวาเนย่า', [{ fx: '🌻', t: 'เกาะวาเนย่า = บ้านของเรา · ทะเลรอบเกาะคลื่นแรง ว่าย/ร่อน/ขี่แพข้ามไม่ได้' }, { b: 'A', a: 'tap', fx: '⛵', t: 'ซ่อมเรือของลุงแล้ว แตะลุงหรือเรือ = ล่องไปเมืองท่าบนแผ่นดินใหญ่' }, { fx: '⚓', t: 'เมืองท่ามีร้านช่าง ร้านอาหาร ตลาด กิลด์ · ลุงรอที่เรือเสมอ · วาปข้ามทะเลไม่ได้' }]],
+  ['boat', '⛵', 'เรือ · เกาะวาเนย่า', [{ fx: '🌻', t: 'เกาะวาเนย่า = บ้านของเรา · ข้ามทะเลด้วยเรือของลุง หรือว่ายเองถ้า ⚡ พอ' }, { b: 'A', a: 'tap', fx: '⛵', t: 'ซ่อมเรือของลุงแล้ว แตะลุงหรือเรือ = ล่องไปเมืองท่าบนแผ่นดินใหญ่' }, { fx: '⚓', t: 'เมืองท่ามีร้านช่าง ร้านอาหาร ตลาด กิลด์ · ลุงรอที่เรือเสมอ · วาปข้ามทะเลไม่ได้' }]],
   ['map', '🗺️', 'แผนที่ · วาป', [{ fx: '🗺️', t: 'แตะแผนที่เล็กมุมขวาบน = แผนที่ใหญ่ · ＋/－ ซูม' }, { st: 'right', fx: '📍', t: 'โยกจอย = กระโดดไปทีละจุดวาป' }, { b: 'A', a: 'tap', fx: '✨', t: 'แตะ ✨ วาป (จอยเกม: A) · 📜 เลือกเควส = ⭐ กระพริบบนแผนที่' }]] ];
 function openHowto(k) { sheet('🎬 วิธีเล่น', (b, redraw, close) => {
     const cur = HOWTO.find(h => h[0] === k);
@@ -2938,6 +2939,9 @@ function farmGift() {
   talk([['👴 ลุงฮาวซิฟ', 'ร่างกายลุงกลับมาแข็งแรงแล้ว… มา ลุงสอนปลูกผักให้'], ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🪏 จอบ กับเมล็ด 🥕 แครอท ×${D.FARM_GIFT.carrot} 🥬 กะหล่ำ ×${D.FARM_GIFT.cabbage}`],
     ['💡 ปลูกผัก', 'เลือก 🪏 จอบ แล้วแตะ/ลากผ่านพื้นหญ้าใกล้บ้านต้นไม้ = ขุดแปลง<br>แตะแปลงเพื่อปลูก · ผักโตเองตามเวลาจริง (แม้ปิดเกม) · ✨ = เก็บได้แล้ว (แตะ หรือลาก 🌾 เคียวผ่าน)'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
 }
+function howsifMenu() { sfx('tap'); const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
+  sheet('👴 ลุงฮาวซิฟ', (b, redraw, close) => { b.innerHTML = `<p>“มีอะไรให้ลุงช่วยล่ะ?”</p><div class="hgrid">${S.story.farmGift ? '<button class="htile" data-hm="seed"><b>🌱</b><span>ซื้อเมล็ดผัก</span></button>' : ''}<button class="htile" data-hm="sail"><b>⛵</b><span>${to === 'main' ? 'ข้ามฟากไปเมืองท่า' : 'กลับเกาะวาเนย่า'}</span></button></div>`;
+    b.querySelectorAll('[data-hm]').forEach(x => x.onclick = () => { close(); x.dataset.hm === 'seed' ? seedShop() : openBoat() }) }) }
 function seedShop() {
   sheet('🌱 เมล็ดผักของลุงฮาวซิฟ', (b, redraw) => { b.innerHTML = '<p class="mut">ลุงเก็บเมล็ดไว้ตั้งแต่ก่อนเมฆดำมา…</p>' + Object.keys(D.CROPS).map(c => `<div class="card"><div class="row"><b>${D.INGR[c].icon} ${D.INGR[c].name}</b><span class="mut">มี ${S.seeds[c] || 0} · โต ${D.CROPS[c].min} นาที</span></div><div class="row2"><button class="btn sm go" data-b="${c}" ${S.coin < D.CROPS[c].seed ? 'disabled' : ''}>ซื้อ 🪙 ${D.CROPS[c].seed}</button><button class="btn sm" data-b5="${c}" ${S.coin < D.CROPS[c].seed * 5 ? 'disabled' : ''}>×5 🪙 ${D.CROPS[c].seed * 5}</button></div></div>`).join('');
     const buy = (c, n) => { S.coin -= D.CROPS[c].seed * n; S.seeds[c] = (S.seeds[c] || 0) + n; sfx('coin'); save(); hud(); redraw() };
@@ -3670,7 +3674,7 @@ import('./lush.js').then(({ lushPlace, lushKind }) => {
   let sd = 4242; const R = () => (sd = sd * 16807 % 2147483647) / 2147483647, list = [], keep = [[HOUSE.x, HOUSE.z, 4], [WRECK.x, WRECK.z, 3.5], [HOWSIF.x, HOWSIF.z, 2.5], [EXIT.x, EXIT.z, 2.5], ...Object.values(POT).map(p => [p.x, p.z, 2.4]), [FOREST.cage.x, FOREST.cage.z, 3], [FOREST.camp.x, FOREST.camp.z, 6]];
   for (let i = 0; i < 1400; i++) { const x = -14 + R() * 124, z = -14 + R() * 28; if (x > 34 && x < 58) continue; if (!walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0) continue;
     if (Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue; if (x < 7 && x > -1 && Math.abs(z) < 9) continue;   // the farm field stays open for plots
-    const f = x > 79 ? .55 : .35; if (R() > (f > .5 ? .8 : .55)) continue; let k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue; if (R() < .45) k = 'sunflower';   /* v3.13 one island look: Vaneya's sunflowers everywhere */
+    const f = x > 79 ? .55 : .35; if (R() > (f > .5 ? .35 : .22)) continue; let k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue; if (k === 'mush' || k === 'stump' || k === 'bigleaf') continue; if (R() < .5) k = 'sunflower';   /* v3.16.2 calmer: far less ground clutter */   /* v3.13 one island look: Vaneya's sunflowers everywhere */
     list.push({ k, x, y: groundH(x, z) - .03, z, r: R() * 6, s: k === 'blossom' ? .6 + R() * .25 : .6 + R() * .6 }) }
   for (let c = 0; c < 26; c++) { const cx = -12 + R() * 120, cz = -12 + R() * 24; for (let i = 0; i < 14; i++) { const x = cx + (R() - .5) * 5, z = cz + (R() - .5) * 4; if (x > 36 && x < 56 || !walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0 || Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || x < 7 && x > -1 && Math.abs(z) < 9) continue; list.push({ k: 'sunflower', x, y: groundH(x, z) - .03, z, r: R() * .6 - .3, s: .75 + R() * .45 }) } }   /* v3.13 sunflower patches */
   const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);

@@ -42,10 +42,10 @@ export function buildWorld(scene, eco) {
   W.spark = inst(new THREE.PlaneGeometry(.18, .05), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .8 }), 110, (o, cc) => { const z = -16 + R() * 34, x = shore(z) - 1 - R() * 10; o.position.set(x, -.06, z); o.rotation.x = -Math.PI / 2; cc.set(R() < .5 ? '#ffffff' : '#fff6c8'); return 1 }, false);
   /* ---- decor: grass tufts, flowers, beach pebbles (not clearable) ---- */
   const blade = new THREE.ConeGeometry(.03, .24, 4); blade.translate(0, .12, 0);
-  inst(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 500 : 1300, (o, cc) => { const x = -6 + R() * 14, z = -13 + R() * 26; if (x - shore(z) < 2.4 || earth(x, z)) return 0;
+  inst(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 200 : 500, (o, cc) => { const x = -6 + R() * 14, z = -13 + R() * 26; if (x - shore(z) < 2.4 || earth(x, z)) return 0;
     o.position.set(x, 0, z); o.rotation.set((R() - .5) * .7, R() * 3, (R() - .5) * .7); o.scale.setScalar(.7 + R() * .8); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c'); return 1 }, false);
-  inst(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ roughness: .7 }), eco ? 120 : 260, (o, cc) => { const x = -5 + R() * 12, z = -12 + R() * 24; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + R() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(R() * 5)]); return 1 }, false);
-  inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 90, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
+  inst(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ roughness: .7 }), eco ? 50 : 110, (o, cc) => { const x = -5 + R() * 12, z = -12 + R() * 24; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + R() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(R() * 5)]); return 1 }, false);
+  inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 25, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
   /* ---- east edge: a wooden palisade (clearly not choppable) with the adventure gate; hills + far mountains behind it ---- */
   const FX = 7.75, GW = 1.3;                                   // GW = half the gate opening
   for (let z = -14.5; z <= 14; z += .42) { if (Math.abs(z - EXIT.z) < GW + .22) continue; R(); R(); R() }   /* v3.12.1 the palisade is gone (the gate arch stays) · same random draws so the rest of the island stays put */
@@ -101,7 +101,7 @@ export function buildWorld(scene, eco) {
     if (Math.hypot(px - HOUSE.x, pz - HOUSE.z) < 2.8 || Math.hypot(px - SPAWN.x, pz - SPAWN.z) < 3.0 || (pz > 1.2 && pz < 3.4 && px > 4.6) || Math.hypot(px - WRECK.x, pz - WRECK.z) < 2.4 || Math.hypot(px - HOWSIF.x, pz - HOWSIF.z) < 1.6) continue;
     if ([[-.6, 9.6], [5.6, 8.8], [5.9, -12.2]].some(([rx, rz]) => Math.hypot(px - rx, pz - rz) < 2)) continue;
     if (inFarm(px, pz, 1.2)) continue;                                         // v3.7 the vegetable bed and a path round it stay clear
-    if (roll < .18) continue;                                                  // some open ground
+    if (roll < .45) continue;                                                  // v3.16.2 lots of open ground (was .18)
     const beach = px - shore(pz) < 2.4, rocky = earth(px, pz), east = px > 3.6;
     let t;
     if (beach) t = roll2 < .7 ? 'pebble' : 'rock';
@@ -270,11 +270,11 @@ export function buildForest(W, eco) {
   /* dense trees around the edge, a few inside (never on the path or in the camp) */
   for (let i = 0; i < 70; i++) { const side = i % 4, t = R(); let x, z;
     if (side === 0) { x = FX - 14 + t * 28; z = -9.8 - R() * 2 } else if (side === 1) { x = FX - 14 + t * 28; z = 9.8 + R() * 2 } else if (side === 2) { x = FX - 13.8 - R() * 2; z = -10 + t * 20; if (Math.abs(z) < 1.6) continue } else { x = FX + 13.8 + R() * 2; z = -10 + t * 20 }
-    at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x, z, R() * 6); addSol({ x, z, r: .35 }) }
+    if (i % 4) { R(); R(); R(); continue }   /* v3.16.2 a light edge, not a wall */ at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), x, z, R() * 6); addSol({ x, z, r: .35 }) }
   for (let i = 0; i < 26; i++) { const x = FX - 11 + R() * 16, z = -8.5 + R() * 17; if (Math.abs(z - pathZ(x)) < 2.2 || Math.hypot(x - FOREST.camp.x, z) < 5.5) continue;
     { const k = R(); at(g => (k < .4 ? PROPS.pine : R() < .5 ? PROPS.tree : PROPS.bush)(g, .8 + R() * .5), x, z, R() * 6); if (k < .4) addSol({ x, z, r: .3 }) } }
   const blade = new THREE.ConeGeometry(.03, .26, 4); blade.translate(0, .13, 0);
-  const bm = new THREE.InstancedMesh(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 300 : 700), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
+  const bm = new THREE.InstancedMesh(blade, addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), eco ? 120 : 280), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
   for (let i = 0; i < 3000 && k < bm.count; i++) { const x = FX - 13 + R() * 26, z = -9 + R() * 18; if (Math.abs(z - pathZ(x)) < 1.2 || Math.hypot(x - FOREST.camp.x, z) < 4.6) continue;
     o.position.set(x, 0, z); o.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); o.scale.setScalar(.7 + R() * .9); o.updateMatrix(); bm.setMatrixAt(k, o.matrix); bm.setColorAt(k, cc.set(R() < .5 ? '#3f7a32' : '#6aaa4a')); k++ }
   bm.count = k; scene.add(bm);
@@ -421,7 +421,7 @@ export function buildWild(W, eco) {
   at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
   for (const s2 of [-1, 1]) addSol({ x: RIVER.x, z: RIVER.bz + s2 * 1.05, hw: RIVER.w + .5, hd: .07, ry: 0 });   // the bridge rails
   /* edges: forest walls north/south · signposts at the zone borders */
-  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) { const tx = x + R() * 3, tz = sd * (13 + R() * 3); at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), tx, tz, R() * 6); addSol({ x: tx, z: tz, r: .35 }) }   // a few trees on the edges (the land goes on)
+  for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) { const tx = x + R() * 3, tz = sd * (13 + R() * 3); if (R() < 2) { R(); R(); continue }   /* v3.16.2 no tree walls along the strip: it opens onto Vaneya's own land */ at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), tx, tz, R() * 6); addSol({ x: tx, z: tz, r: .35 }) }   // a few trees on the edges (the land goes on)
   const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z) && addSol({ x, z, r: .14 });
   sign(10.5, 3.8); sign(33, 1.8); sign(59, -2.4); sign(77.5, 1.8);
   /* the mesa: a flat top to climb up to (camp there) · boulders on the slopes */
