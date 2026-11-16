@@ -30,7 +30,7 @@ export function skull(g, s = 1, pos = [0, 0, 0]) { const k = new THREE.Group(); 
   part(k, '#cfc2a4', '#f4ecd8', [0, 0, 0], [.32, .28, .3], [0, 0, 0], { A: .02 }); part(k, '#cfc2a4', '#f4ecd8', [0, -.14, .2], [.2, .14, .16], [0, 0, 0], { A: .02 });
   for (const sx of [-1, 1]) { const e = new THREE.Mesh(geo('sock', () => new THREE.SphereGeometry(.07, 10, 8)), mat('sock', () => std('#2a1a14'))); e.position.set(sx * .12, .02, .27); e.scale.z = .5; k.add(e);
     const hc = new THREE.CatmullRomCurve3([new THREE.Vector3(sx * .24, .1, -.02), new THREE.Vector3(sx * .48, .16, -.04), new THREE.Vector3(sx * .62, .38, -.06), new THREE.Vector3(sx * .54, .62, -.04)]);
-    for (let i = 0; i <= 10; i++) { const t = i / 10, p = hc.getPoint(t), r = .1 * (1 - t * .82); part(k, '#7a6248', '#e8dcc0', [p.x, p.y, p.z], [r, r, r], [0, 0, 0], { A: 0 }) } }   /* smooth horns curling up */
+    for (let i = 0; i <= 10; i++) { const t = i / 10, p = hc.getPoint(t), r = .1 * (1 - t * .82); part(k, '#7a6248', '#e8dcc0', [p.x, p.y, p.z], [r, r, r], [0, 0, 0], { A: 0 }) } } }   /* smooth horns curling up */
 export const GCAMP = {
   tent(g) {   /* A-frame: two leaning walls of hide, crossed poles at the ridge, a skull on top, a banner over the door */
     const L = 2.6, H = 2.5, W = 1.9;
