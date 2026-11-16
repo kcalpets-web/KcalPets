@@ -1341,8 +1341,9 @@ const debOn = k => (S.deb || (S.deb = {}))[k] > Date.now();
 let debT = 0, swimT = 0, debK = '';
 function addDeb(k) { const X = D.DEBUFF[k], was = debOn(k); S.deb[k] = Date.now() + X.ms; if (!was) { sfx('hurt'); floater(`${X.icon} ${X.name}!`, 'hurt', me().x, 2.4, me().z); hint(`${X.icon} ติด<b>${X.name}</b> · ${X.desc}${D.SHOP.some(x => x.cure === k && S.potions[x.k] > 0) ? '<br>แตะไอคอนใต้หัวใจเพื่อดื่มยาแก้' : ''}`, 2600) } hud() }
 const nearFire = () => Object.keys(POT).some(k => potLit(k) && dist(me().x, me().z, POT[k].x, POT[k].z) < 4);
+let debL = 0;
 function debTick(now) {
-  if (now < debT) return; const step = now - (debT || now); debT = now + 250; const T = Date.now();
+  if (now < debT) return; const step = debL ? Math.min(1000, now - debL) : 0; debL = now; debT = now + 250; const T = Date.now();   /* v3.7 real time since the last check (was short by 250 ms each time → poison barely ticked) */
   for (const k in S.deb) if (S.deb[k] <= T) { delete S.deb[k]; toast(`${D.DEBUFF[k].icon} หาย${D.DEBUFF[k].name}แล้ว`, 1400); hud() }
   for (const k of ['poison', 'burn']) if (debOn(k)) { const X = D.DEBUFF[k]; S['dT_' + k] = (S['dT_' + k] || 0) + step; if (S['dT_' + k] >= X.tick) { S['dT_' + k] = 0; if (pHp() > 1) { S.hp = Math.max(1, pHp() - X.dmg); floater(`${X.icon} -${X.dmg}`, 'hurt', me().x, 2, me().z) } } }
   if (debOn('burn') && PL.swim) { delete S.deb.burn; toast('💧 ดับไฟแล้ว!', 1400) }
