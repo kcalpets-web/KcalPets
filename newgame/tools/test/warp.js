@@ -30,10 +30,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (!(await N(() => !!(window.__ng.S.shrines.s0 && window.__ng.S.shrines.s0.seen)))) errs.push('walking near did not discover the shrine'); await shot('w1-broken');
     await E(() => window.__ng.openShrine('s0')); await wait(700); await E(() => document.getElementById('shFix').click()); await wait(2500); await closeAll();
     if (!(await N(() => !!window.__ng.S.shrines.s0.fix))) errs.push('repair failed'); await shot('w2-fixed');
-    const ws = await N(() => window.__ng.WARPS().map(w => w.id)); log('warps', JSON.stringify(ws)); if (!ws.includes('s:s0') || !ws.includes('c:home')) errs.push('warp list missing home / the shrine');
+    const ws = await N(() => window.__ng.WARPS().map(w => w.id)); log('warps', JSON.stringify(ws)); if (!ws.includes('s:s0') || ws.includes('c:home')) errs.push('on the mainland: the shrine is a warp, Vaneya\'s home camp is not (v3.13)');
     /* 🗺️ map: pins · tap = card · ✨ warp home */
-    await E(() => { const N = window.__ng; N.placeMe(0, -4) }); await wait(1500); await E(() => window.__ng.openMap()); await wait(1500);
-    const pins = await N(() => document.querySelectorAll('.wpin').length); log('pins', pins); if (pins < 2) errs.push('no blinking warp pins on the map');
+    await E(() => { const N = window.__ng; N.placeMe(181, 20) }); await wait(1500); await E(() => window.__ng.openMap()); await wait(1500);   /* v3.13 from the harbour (same side as the shrine) */
+    const pins = await N(() => document.querySelectorAll('.wpin').length); log('pins', pins); if (pins < 1) errs.push('no blinking warp pins on the map');
     await E(() => [...document.querySelectorAll('.wpin')].find(p => p.textContent === '⛩️').click()); await wait(800); await shot('w3-card');
     if (!(await N(() => !!document.querySelector('#wpCard #wpGo')))) errs.push('no warp card');
     await E(() => document.querySelector('#wpGo').click()); await wait(1400); await shot('w4-whiteout');
