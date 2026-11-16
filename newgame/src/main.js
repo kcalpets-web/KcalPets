@@ -1278,7 +1278,7 @@ function invItems(tab) {
   const L = [], st = pStats();
   if (['sword', 'shield', 'bow'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t].slot === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
     const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), eq = S.eq[tab] === it.id, val = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)), dl = durLeft(it);
-    L.push({ key: 'i' + it.id, icon: T.icon, n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better, dur: dl / x.dur,
+    L.push({ key: 'i' + it.id, icon: picTag(itemPic(it.t), T.icon), n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better, dur: dl / x.dur,
       name: T.name, sub: `<span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span> ${c.stats}${it.ba ? ` <span class="up">✨+${it.ba}</span>` : ''} · 🔧 ${dl}/${x.dur}${T.kind ? `<br>${D.KIND[T.kind].name}` : (tab === 'shield' && !kindOf().shield ? '<br><span class="dn">อาวุธในมือถือโล่ไม่ได้ (โล่อยู่ที่หลัง)</span>' : '')}`,
       desc: (eq ? 'กำลังสวมอยู่' : `${c.verdict} <span class="mut">${c.vs}</span>`) + `<div class="dbar"><i style="width:${dl / x.dur * 100}%;background:${dl / x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></i></div>`,
       act: (eq ? `<button class="btn" data-un="${tab}">ถอด</button>` : `<button class="btn go" data-eq="${it.id}">สวม</button>`) + (eq ? '' : `<button class="btn ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button>`) }) }
@@ -2244,18 +2244,33 @@ $('bWheel').onclick = openWheel;
 let PICK = null;
 const pickEl = (() => { const e = document.createElement('div'); e.id = 'pick'; document.body.appendChild(e); return e })();
 function pickList(slot) {
-  if (slot === 'a') { const L = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword').map(x => ({ k: 'w:' + x.id, icon: D.ITEMS[x.t].icon, name: D.ITEMS[x.t].name }));
-    for (const k in D.HAND) if (k !== 'torch' || (S.mats.torch || 0) > 0 || S.torchT > 0) L.push({ k, icon: D.HAND[k].icon, name: D.HAND[k].name }); return { L, cur: S.hand && S.hand !== 'w' ? S.hand : 'w:' + S.eq.sword, title: 'A · อาวุธ / เครื่องมือ' } }
-  if (slot === 'y') { const L = []; if (bowOf()) L.push({ k: 'bow', icon: '🏹', name: D.ITEMS[bowOf().t].name }); L.push({ k: 'net', ...D.YTOOL.net }); L.push({ k: 'draw', ...D.YTOOL.draw }); if (S.has.rod) L.push({ k: 'rod', ...D.YTOOL.rod }); if (S.has.hoe) L.push({ k: 'hoe', ...D.YTOOL.hoe }); return { L, cur: S.ytool || 'bow', title: 'Y · เล็ง' } }
-  const L = [{ k: '', icon: '✋', name: 'ไม่ใช้โล่' }, ...S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield').map(x => ({ k: x.id, icon: D.ITEMS[x.t].icon, name: D.ITEMS[x.t].name }))]; return { L, cur: S.eq.shield || '', title: 'B · ป้องกัน' } }
+  if (slot === 'a') { const L = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword').map(x => ({ k: 'w:' + x.id, icon: D.ITEMS[x.t].icon, pic: itemPic(x.t), st: '⚔️' + itemStats(x).atk, col: D.RAR_COL[x.r], name: `${D.ITEMS[x.t].name} · ⚔️ ${itemStats(x).atk} · 🔧 ${durLeft(x)}/${itemStats(x).dur}` }));
+    for (const k in D.HAND) if (k !== 'torch' || (S.mats.torch || 0) > 0 || S.torchT > 0) L.push({ k, icon: D.HAND[k].icon, pic: toolPic(k), st: k === 'torch' ? '🔥' + ((S.mats.torch || 0) + (S.torchT > 0 ? 1 : 0)) : '⚔️' + Math.round(pStats().atk * D.HAND[k].atk), name: D.HAND[k].name + (k === 'torch' ? ` · เหลือ ${(S.mats.torch || 0) + (S.torchT > 0 ? 1 : 0)} อัน` : ` · ⚔️ ${Math.round(pStats().atk * D.HAND[k].atk)}`) }); return { L, cur: S.hand && S.hand !== 'w' ? S.hand : 'w:' + S.eq.sword, title: 'A · อาวุธ / เครื่องมือ' } }
+  if (slot === 'y') { const L = []; if (bowOf()) L.push({ k: 'bow', icon: '🏹', pic: itemPic(bowOf().t), st: '⚔️' + itemStats(bowOf()).atk, col: D.RAR_COL[bowOf().r], name: `${D.ITEMS[bowOf().t].name} · ⚔️ ${itemStats(bowOf()).atk} · 🏹 ${S.arrows || 0} ดอก` }); for (const k of ['net', 'draw', 'rod', 'hoe']) if (k === 'net' || k === 'draw' || S.has[k]) L.push({ k, ...D.YTOOL[k], pic: yPic(k), st: D.YTOOL[k].icon }); return { L, cur: S.ytool || 'bow', title: 'Y · เล็ง' } }
+  const L = [{ k: '', icon: '✋', st: '—', name: 'ไม่ใช้โล่' }, ...S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield').map(x => ({ k: x.id, icon: D.ITEMS[x.t].icon, pic: itemPic(x.t), st: '🛡️' + itemStats(x).def, col: D.RAR_COL[x.r], name: `${D.ITEMS[x.t].name} · 🛡️ ${itemStats(x).def} · 🔧 ${durLeft(x)}/${itemStats(x).dur}` }))]; return { L, cur: S.eq.shield || '', title: 'B · ป้องกัน' } }
 function openPick(slot, x0) { const P = pickList(slot); if (!P.L.length) { hint('ยังไม่มีอุปกรณ์ให้เลือก', 1200); return } let i = Math.max(0, P.L.findIndex(o => o.k === P.cur));
-  PICK = { slot, L: P.L, i, i0: i, hold: x0 != null, x0, off: 0 }; sfx('tap'); pickEl.innerHTML = `<b>${P.title}</b><div class="win"><div class="row">${P.L.map((o, n) => `<i data-p="${n}">${o.icon}</i>`).join('')}</div><span class="fr"></span></div><small></small>`;
+  PICK = { slot, L: P.L, i, i0: i, hold: x0 != null, x0, off: 0 }; sfx('tap'); pickEl.innerHTML = `<b>${P.title}</b><div class="win"><div class="row">${P.L.map((o, n) => `<i data-p="${n}"${o.col ? ` style="--rc:${o.col}"` : ''}>${picTag(o.pic, o.icon)}<em>${o.st || ''}</em></i>`).join('')}</div><span class="fr"></span></div><small></small>`;
   const win = pickEl.querySelector('.win'); let px = null, moved = 0, hit = null;   /* v3.7 a fixed frame in the middle: slide the row under it (the held finger or a new touch) · let go = take what is in the frame */
   win.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); hit = e.target.closest && e.target.closest('[data-p]'); px = e.clientX; moved = 0; PICK.x0 = e.clientX; PICK.i0 = PICK.i; try { win.setPointerCapture(e.pointerId) } catch (_) { } };
   win.onpointermove = e => { if (px == null) return; moved = Math.max(moved, Math.abs(e.clientX - px)); pickDrag(e.clientX) };
   win.onpointerup = e => { if (px == null) return; px = null; if (moved < 6 && hit) { PICK.i = +hit.dataset.p; pickPos() } pickChoose(true) };   /* a tap on an item takes it */
   pickEl.classList.add('on'); pickPos(); pickMark() }
-const PSTEP = 62;
+const PSTEP = 72;
+/* v3.12.3 item pictures: one small renderer draws each item once (cached as an image) · used by the pickers and the bag */
+const THUMB = new Map(); let THR = null;
+const YMESH = { rod(g) { part(g, '#6a4024', '#b07a44', [0, .45, 0], [.03, .5, .03], [0, 0, 0], { A: 0 }); part(g, '#9a9aa8', '#eef2ff', [.05, .12, 0], [.06, .06, .03], [0, 0, 0], { A: 0 }); part(g, '#ff5a4a', '#ffffff', [.12, .9, 0], [.04, .04, .04], [0, 0, 0], { A: 0 }) },
+  net(g) { part(g, '#6a4024', '#b07a44', [0, .3, 0], [.03, .35, .03], [0, 0, 0], { A: 0 }); const r = new THREE.Mesh(new THREE.TorusGeometry(.22, .02, 6, 20), new THREE.MeshStandardMaterial({ color: '#8a6a44' })); r.position.y = .86; g.add(r); const m = new THREE.Mesh(new THREE.SphereGeometry(.21, 10, 8, 0, 6.3, 0, 1.6), new THREE.MeshStandardMaterial({ color: '#e8e0c8', wireframe: true })); m.position.y = .86; m.rotation.x = Math.PI / 2; g.add(m) },
+  draw(g) { part(g, '#e8a81a', '#ffe27a', [0, .35, 0], [.06, .32, .06], [0, 0, 0], { A: 0 }); part(g, '#f4d8b0', '#fff2dc', [0, .72, 0], [.055, .07, .055], [0, 0, 0], { A: 0 }); part(g, '#d84a3a', '#ff8a6a', [0, .8, 0], [.025, .04, .025], [0, 0, 0], { A: 0 }) },
+  hoe(g) { part(g, '#6a4024', '#b07a44', [0, .4, 0], [.03, .45, .03], [0, 0, 0], { A: 0 }); part(g, '#8a8a96', '#e8ecf4', [.08, .84, 0], [.14, .05, .04], [0, 0, -.3], { A: 0 }) } };
+function thumb(key, build) { if (THUMB.has(key)) return THUMB.get(key); let url = '';
+  try { if (!THR) { const r = new THREE.WebGLRenderer({ canvas: document.createElement('canvas'), antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setSize(96, 96, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+      const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.6)); const l = new THREE.DirectionalLight('#ffffff', 2.2); l.position.set(-1, 3, 4); sc.add(l); const rim = new THREE.DirectionalLight('#9ac8ff', 1.2); rim.position.set(2, 2, -3); sc.add(rim); THR = { r, sc, cam: new THREE.PerspectiveCamera(26, 1, .01, 60) } }
+    const g = new THREE.Group(), w = new THREE.Group(); build(w); g.add(w); g.rotation.set(.25, .5, -.75); THR.sc.add(g); g.updateMatrixWorld(true);   /* lie it diagonally, like an item icon */
+    const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.35 + sz.z;
+    THR.cam.position.set(c.x, c.y, c.z + d); THR.cam.lookAt(c); THR.r.render(THR.sc, THR.cam); url = THR.r.domElement.toDataURL('image/png'); THR.sc.remove(g) } catch (e) { url = '' }
+  THUMB.set(key, url); return url }
+const itemPic = t => thumb('i:' + t, g => itemMesh(g, t)), toolPic = k => thumb('t:' + k + (S.tools[k] || 0), g => (TOOLMESH[k] || YMESH[k])(g, S.tools[k] || 0)), yPic = k => thumb('y:' + k, g => YMESH[k](g));
+const picTag = (url, ico, cls = '') => url ? `<img class="ipic${cls}" src="${url}" alt="">` : ico;
 function pickPos() { if (!PICK) return; const r = pickEl.querySelector('.row'); if (r) r.style.transform = `translateX(${-(PICK.i * PSTEP) + PICK.off}px)` }
 function pickMark() { if (!PICK) return; pickEl.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', +b.dataset.p === PICK.i)); pickEl.querySelector('small').textContent = PICK.L[PICK.i].name + ' · เลื่อนให้เข้ากรอบ แล้วปล่อยนิ้ว' }
 /* v3.11 the left stick (on screen or a controller) slides the picker: tilt = one step · keep tilting = repeat */
@@ -2268,7 +2283,7 @@ function pickChoose(force) { if (!PICK) return; const { slot, L, i } = PICK, o =
   if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; S.eq.sword = o.k.slice(2); setTool('') } else { S.hand = o.k; DRAWN = false; setTool(o.k); if (o.k === 'torch') torchLight() } }
   else if (slot === 'y') { aimEnd(false); S.ytool = o.k; if (tool === 'rod' || tool === 'hoe') setTool('') }
   else { S.eq.shield = o.k || null; guardTog = false; updGuard() }
-  sfx('coin'); hint(`${o.icon} ${o.name}`, 900); save(); gearView(); hud() }
+  sfx('coin'); hint(`${o.icon} ${o.name.split(' · ')[0]}`, 900); save(); gearView(); hud() }
 /* v2.1 A = attack / use (on press) · keep holding 3 s = 🤖 AUTO attack (a ring fills) · while the 🧰 wheel is open A picks */
 const holdRing = (el, k) => el.style.setProperty('--p', Math.round(Math.max(0, Math.min(1, k)) * 100) + '%');
 function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true; const step = () => { if (!on) return; const k = (performance.now() - t0) / (sec * 1000); if (k >= 1) { on = false; holdRing(el, 0); done(); return } holdRing(el, (k - .12) / .88); requestAnimationFrame(step) }; requestAnimationFrame(step); return () => { on = false; holdRing(el, 0) } }
@@ -2277,7 +2292,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
     if (PICK) { if (!PICK.hold) pickChoose(); return } if (AIM && AIM.draw) { drawNow(); return } const tk = nearTarget(); later = !!(tk && tk.k) && !BM; if (!later) actA(); stop = holdWatch(A, D.HOLD_PICK, () => { stop = null; later = false; openPick('a', e.clientX) }) });   /* talking / using things waits for the release (so holding A only opens the picker) */   /* v3.6 hold A = pick a weapon / tool (slide left-right · let go) */
   A.addEventListener('pointermove', e => { if (PICK && PICK.hold) pickDrag(e.clientX) });
   const up = () => { if (stop) { stop(); stop = null } if (later) { later = false; actA(); return } if (PICK && PICK.hold) { pickChoose(); return } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
-  A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } }); A.addEventListener('contextmenu', e => e.preventDefault()) }
+  A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } if (PICK && PICK.hold) pickChoose() }); A.addEventListener('lostpointercapture', () => { if (PICK && PICK.hold) pickChoose() });   /* v3.12.3 iPhone ends a long press with a cancel: letting go still takes what is in the frame */ A.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1.1 B = shield: tap (empty-handed) = raise the shield · tap again (or with a weapon out) = put everything away · hold = block while held · a window open → tap closes it */
 let guard = false, guardTog = false, guardHold = false, bTap = 0;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
@@ -2770,7 +2785,7 @@ function openCreator(first) {
   return new Promise(done => {
     const a = Object.assign({ v: 2, sex: 'm', skin: VLOOK.skin[1][0], eyes: 'round', eyeCol: VLOOK.eyeCol[0], hair: 'messy', hairCol: VLOOK.hairCol[2], wear: 'traveler', bottom: 'pants', top: VLOOK.top[0] }, vinylFrom(S.avatar || {}));   /* v2.3 the vinyl chibi creator */
     const el = document.createElement('div'); el.id = 'maker'; document.body.appendChild(el); CUT = true;
-    el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><canvas id="mkCv"></canvas><button class="btn sm" id="mkR">🎲 สุ่ม</button><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
+    el.innerHTML = `<h2>${first ? '✨ สร้างตัวละครของคุณ' : '👤 แต่งตัวละคร'}</h2><div class="mkStage"><canvas id="mkCv"></canvas><button class="btn sm" id="mkR">🎲 สุ่ม</button></div><div class="mk"></div><button class="btn go wide" id="mkOk">${first ? 'เริ่มผจญภัย ▶' : 'บันทึก'}</button>`;
     const cv3 = el.querySelector('#mkCv'), r3 = new THREE.WebGLRenderer({ canvas: cv3, antialias: true, alpha: true }); r3.setPixelRatio(Math.min(devicePixelRatio, 2)); r3.setSize(220, 250, false); r3.outputColorSpace = THREE.SRGBColorSpace; r3.toneMapping = THREE.ACESFilmicToneMapping;
     const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', 1.1)); const kl = new THREE.DirectionalLight('#fff1dc', 2); kl.position.set(-2, 4, 5); sc.add(kl); const rl = new THREE.DirectionalLight('#ffd7a8', .8); rl.position.set(2, 3, -4); sc.add(rl);
     const c3 = new THREE.PerspectiveCamera(30, 220 / 250, .1, 30); c3.position.set(0, .9, 3.3); c3.lookAt(0, .74, 0); let doll = null, spin = .3, alive = true;
