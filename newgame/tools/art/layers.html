@@ -1,0 +1,23 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Layered Character</title>
+<style>body{margin:0;background:#f4ead8;font:600 14px system-ui;color:#3a2a20}#w{display:grid;grid-template-columns:repeat(5,300px);gap:6px;padding:8px}.c{background:#fff8ee;border:3px solid #2a2030;border-radius:14px;overflow:hidden}.c b{display:block;padding:6px 10px;background:#2a2030;color:#fff}canvas{display:block}</style></head>
+<body><div id="w"></div>
+<script type="module">
+/* v3.9 preview: the layered (R15-like) character · not used by the game until approved */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl, vinylLayered, vinylLayers, vinylHat } from '../../src/vinyl.js';
+const W = 300, H = 380, A = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#4a2e22', top: '#3a8ad8', wear: 'traveler', eyes: 'round' }, F = { ...A, sex: 'f', hair: 'pony', hairCol: '#b05a30', top: '#d84a9a', bottom: 'skirt' };
+function panel(title, build, cam = [0, .9, 4.6], look = [0, .78, 0]) {
+  const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b>${title}</b>`; document.getElementById('w').appendChild(d);
+  const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; d.appendChild(r.domElement);
+  const sc = new THREE.Scene(); sc.background = new THREE.Color('#fff8ee'); sc.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); sc.add(sun);
+  const c = new THREE.PerspectiveCamera(30, W / H, .1, 50); c.position.set(...cam); c.lookAt(...look); build(sc); r.render(sc, c) }
+const put = (sc, fn, x, rotY = .35) => { const g = new THREE.Group(); fn(g); g.position.x = x; g.rotation.y = rotY; sc.add(g); return g };
+const COLS = { waist: '#e8a040', chest: '#e86a4a', armL: '#4ab0e8', armR: '#4ab0e8', elL: '#3a7ad8', elR: '#3a7ad8', handL: '#2a4ab8', handR: '#2a4ab8', hipL: '#7ac850', hipR: '#7ac850', kneeL: '#4a9a3a', kneeR: '#4a9a3a', footL: '#2a6a2a', footR: '#2a6a2a', head: '#c8b8a8' };
+function tint(root) { root.traverse(o => { if (!o.isMesh || o.userData.layer !== 0) return; let p = o, k = null; while (p && !k) { k = p.userData.role || (/^hand/.test(p.name) ? p.name : null); p = p.parent } if (k && COLS[k] && k !== 'head') o.material = new THREE.MeshStandardMaterial({ color: COLS[k], roughness: .6 }) }) }
+panel('เดิม (v3.8)', sc => put(sc, g => vinyl(g, A), 0));
+panel('ใหม่: ชิ้นตามข้อต่อ (ผิว = ชั้น 0)', sc => put(sc, g => { vinylLayered(g, A); vinylLayers(g, { 0: 1 }); tint(g) }, 0));
+panel('ใหม่: + เสื้อผ้า (ชั้น 1)', sc => { put(sc, g => vinylLayered(g, A), -.5); put(sc, g => vinylLayered(g, F), .5) }, [0, .9, 5.4]);
+panel('หัว: ศีรษะ → ผม → หมวก', sc => { put(sc, g => { vinylLayered(g, A); vinylLayers(g, { 0: 1 }) }, -.62, .2); put(sc, g => { vinylLayered(g, A); vinylLayers(g, { 0: 1, 1: 1 }) }, 0, .2); put(sc, g => { vinylLayered(g, { ...A, hat: 'cap', hatCol: '#d84a3a' }) }, .62, .2) }, [0, 1.25, 4.1], [0, 1.12, 0]);
+panel('หมวก (ชั้น 2)', sc => { const H2 = [['straw'], ['wizard', '#4a3a8a'], ['helmet'], ['beanie', '#3aa86a']]; H2.forEach(([k, c], i) => put(sc, g => vinylLayered(g, { ...(i % 2 ? F : A), hat: k, hatCol: c }), (i - 1.5) * .62, .2)) }, [0, 1.0, 6.4], [0, .85, 0]);
+window.__done = 1;
+</script></body></html>
