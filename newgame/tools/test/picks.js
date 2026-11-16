@@ -23,6 +23,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     await E(() => document.getElementById('bA').dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }))); await wait(300); await pg.mouse.up(); await wait(300);
     const got = await E(() => ({ open: !!window.__ng.pick(), hand: window.__ng.S.hand, eq: window.__ng.S.eq.sword })); log('cancel → chose', want, JSON.stringify(got));
     if (got.open) errs.push('the picker stayed open after the cancel'); if (!(got.hand === want || ('w:' + got.eq) === want)) errs.push('the cancel did not take the framed item');
+    { const dr = await E(() => window.__ng.DRAWN); log('weapon in hand', dr); if (want.startsWith('w:') && !dr) errs.push('the picked weapon is not in the hand') }
     // the bag: gear tiles are pictures
     await E(() => window.__ng.openBag('sword')); await wait(700); const bt = await E(() => document.querySelectorAll('.ov .tile img.ipic').length);
     { const sl = []; for (const k of await E(() => [...document.querySelectorAll('.ov .tile[data-k]')].map(t => t.dataset.k))) { await E(k => document.querySelector(`.ov .tile[data-k="${k}"]`).click(), k); await wait(200); sl.push(await E(() => document.querySelectorAll('.ov [data-sell]').length)) }

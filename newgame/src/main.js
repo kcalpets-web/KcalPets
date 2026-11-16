@@ -355,6 +355,7 @@ let drawT = 0;
 function inHand() { if (AIM || !PL || PL.swim || RIDE || GLIDE) return ''; const now = performance.now();
   if (DRAWN) return weaponOf() ? 'sword' : '';
   if (torchOn()) return 'torch';   /* v3.12.1 a lit torch stays in the hand */
+  if (['axe', 'hammer', 'sickle'].includes(S.hand) && TOOLMESH[S.hand]) return S.hand;   /* v3.12.5 a picked tool stays in the hand */
   return ['axe', 'hammer', 'sickle'].includes(tool) && (work || swingT > 0 || now < drawT) ? tool : '' }
 
 /* ---------- transient state ---------- */
@@ -1631,6 +1632,7 @@ function petSpecial(e, M, now) {
 }
 /* v2.0 old saves: the town sword was not an item → a 🗡️ travelling sword (Rare) so the player keeps their strength */
 if (S.team && S.team.length > D.TEAM_MAX) S.team = S.team.slice(0, D.TEAM_MAX);   /* v3.1 one pet at a time */
+for (const sl of ['sword', 'shield', 'bow']) if (typeof S.eq[sl] === 'string' && S.eq[sl]) { const it = S.bag.find(x => String(x.id) === S.eq[sl]); S.eq[sl] = it ? it.id : null }   /* v3.12.5 repair saves where the picker stored a text id */
 if (S.needSword) { S.needSword = false; { const it = newItem('travelerSword', 'R'); S.bag.push(it); if (!S.eq.sword) S.eq.sword = it.id } save();
   if (S.story.intro) setTimeout(() => toast('⚔️ ระบบอาวุธใหม่! อาวุธมีความทนทาน ใช้แล้วจะแตก · เก็บอาวุธใหม่จากมอนสเตอร์ หีบสมบัติ และช่างในเมือง', 4200), 12000) }
 /* old saves: ✨ for the main quests already done · old levels → coins */
@@ -2305,7 +2307,7 @@ function pickStep(d, clamp) { if (!PICK) return; const n = PICK.i + d; if (clamp
 function pickDrag(x) { if (!PICK) return; pickEl.classList.add('drag'); const f = Math.max(-.45, Math.min(PICK.L.length - .55, PICK.i0 - (x - PICK.x0) / PSTEP)), n = Math.round(f); PICK.off = (n - f) * PSTEP; if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } pickPos() }   /* the row follows the finger */
 function pickClose() { PICK = null; pickEl.classList.remove('on', 'drag') }
 function pickChoose(force) { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; pickClose();   /* v3.12.5 letting go always takes what is in the frame (it was 'keep' when nothing moved, which read as 'it did not change') */   /* let go without sliding = keep what you hold */ tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
-  if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; S.eq.sword = o.k.slice(2); setTool('') } else { S.hand = o.k; DRAWN = false; setTool(o.k); if (o.k === 'torch') torchLight() } }
+  if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; { const it = S.bag.find(x => 'w:' + x.id === o.k); if (it) S.eq.sword = it.id }   /* v3.12.5 the real id (a number) — a text id lost the weapon */ if (weaponOf()) { DRAWN = true; setTool('sword') } else setTool('') } else {   /* v3.12.5 a picked weapon is in your hand straight away */ S.hand = o.k; DRAWN = false; setTool(o.k); if (o.k === 'torch') torchLight() } }
   else if (slot === 'y') { aimEnd(false); S.ytool = o.k; if (tool === 'rod' || tool === 'hoe') setTool('') }
   else { S.eq.shield = o.k || null; guardTog = false; updGuard() }
   sfx('coin'); hint(`${o.icon} ${o.name.split(' · ')[0]}`, 900); save(); gearView(); hud() }
@@ -2315,7 +2317,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
 { const A = $('bA'); let stop = null, later = false;
   A.addEventListener('pointerdown', e => { e.preventDefault(); unlock(); RUNON = false; if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
     if (PICK) { if (!PICK.hold) pickChoose(); return } if (AIM && AIM.draw) { drawNow(); return } const tk = nearTarget(); later = !!(tk && tk.k) && !BM; if (!later) actA(); stop = holdWatch(A, D.HOLD_PICK, () => { stop = null; later = false; openPick('a', e.clientX) }) });   /* talking / using things waits for the release (so holding A only opens the picker) */   /* v3.6 hold A = pick a weapon / tool (slide left-right · let go) */
-  A.addEventListener('pointermove', e => { if (PICK && PICK.hold) pickDrag(e.clientX) });
+  /* v3.12.5 the held A only opens the picker: sliding is the stick's job (no drag on A) */
   const up = () => { if (stop) { stop(); stop = null } if (later) { later = false; actA(); return } if (PICK && PICK.hold) { pickChoose(); return } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };
   A.addEventListener('pointerup', up); A.addEventListener('pointercancel', () => { if (stop) { stop(); stop = null } if (PICK && PICK.hold) pickChoose() }); A.addEventListener('lostpointercapture', () => { if (PICK && PICK.hold) pickChoose() });   /* v3.12.3 iPhone ends a long press with a cancel: letting go still takes what is in the frame */ A.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1.1 B = shield: tap (empty-handed) = raise the shield · tap again (or with a weapon out) = put everything away · hold = block while held · a window open → tap closes it */
