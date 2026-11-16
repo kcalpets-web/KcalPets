@@ -22,7 +22,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll();
     await wait(4000); await closeAll();
     const m0 = await N(() => { const N = window.__ng; return { sp: N.S.spirit, coin: N.S.coin, eq: N.S.eq, hearts: document.querySelectorAll('#hearts .hr').length, hp: N.S.hp } }); log('migrated', JSON.stringify(m0));
-    if (!(m0.sp.free === 1)) errs.push('old save: expected 1 spirit (boat repaired)'); if (!(m0.coin >= 850)) errs.push('old save: no level refund'); if (!(m0.eq.sword === 1 && m0.eq.shield === 2)) errs.push('gear slots not migrated'); if (m0.hearts !== 5) errs.push('expected 5 hearts, got ' + m0.hearts);
+    if (!(m0.sp.free >= 1)) errs.push('old save: expected ✨ (v3.11: every quest gives one)'); if (!(m0.coin >= 850)) errs.push('old save: no level refund'); if (!(m0.eq.sword === 1 && m0.eq.shield === 2)) errs.push('gear slots not migrated'); if (m0.hearts !== 5) errs.push('expected 5 hearts, got ' + m0.hearts);
     await shot('01-hud-hearts');
     await E(() => window.__ng.openSpirit(true)); await wait(600); await shot('02-spirit'); await pg.click('[data-sp="hp"]'); await wait(800);
     const h1 = await N(() => document.querySelectorAll('#hearts .hr').length); log('hearts after ❤️', h1); if (h1 !== 6) errs.push('spirit ❤️ did not add a heart');

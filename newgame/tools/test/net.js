@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
         builds: [{ id: 'r1', k: 'raft', x: -8, z: 0, ry: 0, done: 1 }] })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
-    const yl = await E(() => { window.__ng.S.ytool = 'net'; return document.getElementById('bDraw').style.display }); log('pencil button', yl); if (yl !== 'none') errs.push('the 🖍️ button is still on screen');
+    const yl = await E(() => { window.__ng.S.ytool = 'net'; return document.getElementById('bDraw').style.display }); log('pencil button', yl); if (yl === 'none') errs.push('the small 🔨 is not on screen (v3.11)');
     // net: a weak rabbit right in front (meadow, not the safe island)
     let pets0 = await E(() => window.__ng.S.pets.length), caught = false;
     for (let i = 0; i < 6 && !caught; i++) {

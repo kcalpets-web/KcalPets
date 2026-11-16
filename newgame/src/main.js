@@ -322,6 +322,7 @@ function envTick(dt, now, mv) {                     // swimming (stamina · sink
       if (GLIDE.drop) { GLIDE.v = Math.min(G.drop, (GLIDE.v || 0) + 14 * dt); GLIDE.y -= GLIDE.v * dt } else if (up != null && GLIDE.y < up) { GLIDE.y += G.lift * dt; if (Math.random() < .1) VF.rise(q.x, GLIDE.y - .5, q.z, '#fff6d0', 3) } else if (GLIDE.t > .25) GLIDE.y -= G.sink * dt }
     else if (GLIDE.t > .5) GLIDE.y -= G.sink * dt;
     if (!joy.on && !walkT && !GLIDE.drop) { q.x += Math.sin(PL.yaw) * G.sp * .8 * dt; q.z += Math.cos(PL.yaw) * G.sp * .8 * dt }
+    { const m = D.GLIDER.edge, x = Math.max(WORLD.x0 + m, Math.min(WORLD.x1 - m, q.x)), z = Math.max(WORLD.z0 + m, Math.min(WORLD.z1 - m, q.z)); if (x !== q.x || z !== q.z) { q.x = x; q.z = z; if (now > (GLIDE.edgeT || 0)) { GLIDE.edgeT = now + 3000; hint('🌬️ ลมแรงพัดกลับ… ไปต่อไม่ได้แล้ว', 1600) } } }   /* v3.11 the glider cannot leave the world */
     const gy = Math.max(-.55, groundH(q.x, q.z)); q.y = GLIDE.y; glideView(now); if (GLIDE.y <= gy + .05) landGlide(); return }   // holding the hawk's legs
   if (RIDE) { PL.swim = PL.climb = false; q.y = (RIDE.whale ? .05 : -.1) + Math.sin(now / 600) * .03; return }   // standing on the raft / the whale's back
   if (DROWN) { const k = Math.min(1, (now - DROWN) / 1600); q.y = -.55 - k * 1.4; if (Math.random() < .2) floater('🫧', 'tool', q.x + (Math.random() - .5) * .6, .2 + Math.random() * .4, q.z); return }
@@ -2317,7 +2318,7 @@ function mapTick(now) {
   if (now < mapT || CUT) return; const dtm = mapT ? Math.min(1, (now - mapT + 250) / 1000) : 0; mapT = now + 250; if (!document.hidden) S.playS = (S.playS || 0) + dtm; const q = me(); reveal(q.x, q.z);   /* v2.5 ⏱️ play time */
   if (tool === 'rod' && !F && !(AIM && AIM.rod) && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
   for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
-  if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; openSpirit(true) }   /* ✨ pops up once nothing else is open */
+  if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; if (!S.story.spiritTip) { S.story.spiritTip = 1; save(); openSpirit(true) } else hint(`✨ จิตวิญญาณแห่งลูโทเนีย ×${S.spirit.free} · ใช้อัปเกรดได้ที่ 👤 ตัวละคร`, 2200) }   /* v3.11 the sheet pops up only the first time (✨ now comes with every quest) */
   ruinTick(now); shrineTick(now); townLife(now); kingTick(now); occTick(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw();
 }
 var MINIR = 0, MINIT = 0, miniT = 0;   /* v3.4 the minimap redraws ~30×/s so it turns smoothly */
@@ -3285,11 +3286,10 @@ function golemNear(q) { if (GOL && (!mons.includes(GOL.M) || dist(q.x, q.z, GOL.
     if (rd && !GOL && d < D.GOLEM.wake && !CUT && !fainting && !RIDE && pHp() > 0) { if (!S.has.sword) { if (now0() > (GOL_HINT || 0)) { GOL_HINT = now0() + 8000; hint('🪨 กองหินนี้ดูแปลกๆ… มีอาวุธก่อนค่อยเข้าใกล้', 1800) } } else golemWake(kk) } } }
 var GOL_HINT = 0;
 /* ---------- v3.0 🍖 fullness + 💤 sleepiness ---------- */
-const hungry = () => (S.full ?? 100) < D.NEEDS.hungryAt, sleepy = () => (S.awake || 0) > D.NEEDS.sleepyAt, needSlow = () => (hungry() ? D.NEEDS.slow : 1) * (sleepy() ? D.NEEDS.slow : 1);
+const hungry = () => (S.full ?? 100) < D.NEEDS.hungryAt, sleepy = () => false,   /* v3.11 no more sleepiness (hunger stays) */ needSlow = () => (hungry() ? D.NEEDS.slow : 1) * (sleepy() ? D.NEEDS.slow : 1);
 function needsTick(dm) { if (!(dm > 0) || dm > 30) return; const N = D.NEEDS, f0 = S.full ?? 100, a0 = S.awake || 0; S.full = Math.max(0, f0 - dm * N.fullPerMin); S.awake = a0 + dm;
   if (f0 >= N.hungryAt && S.full < N.hungryAt) toast('🍖 เริ่มหิวแล้ว… ⚡ ฟื้นช้าและเดินช้าลง · ทำอาหารกินที่ 🍳 หม้อ', 3000);
   if (f0 > 0 && S.full <= 0) toast('😫 หิวมาก! ❤️ จะค่อยๆ ลดลง · รีบหาอะไรกิน', 3000);
-  if (a0 <= N.sleepyAt && S.awake > N.sleepyAt) toast('💤 ง่วงแล้ว… เดินช้าลง วิ่งเหนื่อยไวขึ้น · กลับไปนอนที่บ้านหรือเตียง', 3000);
   if (S.full <= 0) { S.starveT = (S.starveT || 0) + dm; if (S.starveT >= N.starveTick) { S.starveT = 0; if (pHp() > 1) { S.hp = Math.max(1, pHp() - N.starveDmg); floater(`🍖 -${N.starveDmg}`, 'hurt', me().x, 2.1, me().z) } } }
   needsHud() }
 let needK = '';
