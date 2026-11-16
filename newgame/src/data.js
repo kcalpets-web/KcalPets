@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.16';
+export const APP_VER = '3.16.1';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -505,7 +505,7 @@ export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };
 export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 2, sp: 5.4, en: 8, edge: 40, drop: 10, fallMax: 14, lift: 3.4, liftR: 1.8, liftTop: 9 };   // v2.5 🪂 fall speed · forward speed · ⚡/s · let-go fall · free-fall max · warm-air lift (over cook fires)         // hold the hawk's legs: fall speed · forward speed · how high you must stand
 
 /* ================= v1.6 bring the fallen towns back to life (each one = a main NPC quest → ✨) ================= */
-/* v2.2 crafting (🏠 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
+/* v2.2 crafting (🎒 → 🛠️ คราฟ) · in: materials · out: { arrows } or { potions: { k: n } } */
 /* v2.3.1: known from the start = no `from` · the rest are taught by NPCs (talk to them: `from` = the NPC's pick kind, or 'ruin:<town k>') */
 /* v2.6 👕 clothes: 3 slots (head · body · legs) · v3.5 one ability per piece: warm ❄️ cold protection · cool 🔥 heat protection · swim 🏊 faster swimming · 1 piece = 50% · 2 pieces = 100% (fire / hot food / water count as pieces) */
 export const WEAR = {

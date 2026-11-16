@@ -1383,7 +1383,7 @@ function invItems(tab) {
     L.push({ key: 'p' + p.id, icon: PET_ICO[p.kind] || '🐾', n: p.lv, nIcon: 'Lv', col: D.RAR_COL[p.rar], eq: S.team.includes(p.id), pet: p, name: esc(p.name), sub: '', desc: petCard(p) + (C && C.ability ? `<div class="mut">✨ ${C.ability === 'swim' ? '🐋 ขี่ข้ามทะเล' : '🦅 ร่อนลงจากที่สูง'}</div>` : ''),
       act: `<button class="btn" data-pf="${p.id}">🍖 ป้อนอาหาร</button><button class="btn ${S.team.includes(p.id) ? 'ghost' : 'go'}" data-pt="${p.id}">${S.team.includes(p.id) ? 'ออกจากทีม' : '➕ เข้าทีม'}</button>` }) }
   if (tab === 'mats') {
-    if (false) L.push({ key: 'arw', icon: '🏹', n: S.arrows, name: 'ลูกธนู', sub: 'ใช้กับธนู (ปุ่ม Y)', desc: 'คราฟเองได้ (🏠 → 🛠️ คราฟ) · ซื้อที่ร้านช่าง · เก็บจากมอนสเตอร์', act: '<button class="btn go" data-go="craft">🛠️ คราฟเพิ่ม</button>' });
+    if (false) L.push({ key: 'arw', icon: '🏹', n: S.arrows, name: 'ลูกธนู', sub: 'ใช้กับธนู (ปุ่ม Y)', desc: 'คราฟเองได้ (🎒 → 🛠️ คราฟ) · ซื้อที่ร้านช่าง · เก็บจากมอนสเตอร์', act: '<button class="btn go" data-go="craft">🛠️ คราฟเพิ่ม</button>' });
     for (const k of Object.keys(S.mats).filter(k => S.mats[k] > 0)) L.push({ key: 'm' + k, icon: D.MATS[k][0], n: S.mats[k], name: D.MATS[k][1], sub: 'วัตถุดิบ / ชิ้นส่วน', desc: 'ใช้สร้าง ซ่อม และอัปเกรด', act: `<button class="btn ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button>` });
     for (const k of Object.keys(D.INGR).filter(k => S.ingr[k] > 0)) L.push({ key: 'g' + k, icon: D.INGR[k].icon, n: S.ingr[k], name: D.INGR[k].name, sub: 'วัตถุดิบทำอาหาร', desc: 'ใส่หม้อที่แคมป์หรือกองไฟเพื่อทำอาหาร 🍲', act: '' });
     for (const k of Object.keys(S.fish).filter(k => S.fish[k] > 0)) L.push({ key: 'f' + k, icon: '🐟', n: S.fish[k], col: D.RAR_COL[D.FISH[k].r], name: D.FISH[k].name, sub: 'ปลา', desc: 'กินได้ หรือใส่หม้อทำอาหาร', act: `<button class="btn go" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button><button class="btn ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button>` });
@@ -1779,7 +1779,7 @@ function showLogin() {
     google.accounts.id.renderButton($('lG'), { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'continue_with', locale: 'th' }) } catch (e) { $('lG').innerHTML = '<p class="mut">ล็อกอิน Google ไม่ได้ตอนนี้ · เล่นแบบไม่ล็อกอินไปก่อนได้</p>' } };
   if (window.google && google.accounts) go(); else { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = go; s.onerror = () => { $('lG').innerHTML = '<p class="mut">โหลดปุ่ม Google ไม่ได้ · เล่นแบบไม่ล็อกอินได้</p>' }; document.head.appendChild(s) }
 }
-function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('ลากนิ้วเลื่อนแผนที่ · สองนิ้วซูม<br>แตะ 🏠 เพื่อเลือกอุปกรณ์ แล้วลากผ่านของ<br>แตะการ์ดเรื่องหลักซ้ายล่างเพื่อเริ่ม', 5200), 400) }
+function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('🕹️ จอยซ้าย = เดิน · ลากนิ้วบนจอ = หมุนกล้อง<br>A = ทำ/โจมตี · แตะการ์ดเควส = ไปทำเลย<br>🎬 วิธีเล่นดูได้ที่ 📜', 5200), 400) }
 
 /* ================= v0.6: camp pots · cooking · sleep · journal · sketching · achievements ================= */
 const POT = {}; for (const k in CAMPS) POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);
@@ -2043,7 +2043,7 @@ function aimStart(kind = 'bow') {
   if (kind === 'draw') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .05, tgt: null, draw: 1 }; document.body.classList.add('aim', 'drawaim'); $('xN').textContent = '🖍️ จัดกรอบภาพ'; gearView(); return }
   if (kind === 'net') { walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; AIM = { t0: performance.now(), p: .08, tgt: null, net: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = '🕸️ ตาข่าย'; gearView(); airAim(); return }   /* v3.8.1 🕸️ aim the net like the bow */
   if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .62 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
-  if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
+  if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🎒 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
   if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
   walkT = null; work = null; stopAuto();
@@ -2672,7 +2672,7 @@ function openWChest(id) { const c = CHESTS.find(c => c.id === id); if (!c) retur
   { const ks = Object.keys(D.ARROWX), k = ks[Math.floor(Math.random() * ks.length)], n = 3 + Math.floor(Math.random() * 4); S.arrowsX = S.arrowsX || {}; S.arrowsX[k] = (S.arrowsX[k] || 0) + n; setTimeout(() => toast(`${D.ARROWX[k].icon} ได้ ${D.ARROWX[k].name} ×${n}!<br><small>แตะปุ่ม ${D.ARROWX[k].icon} เหนือปุ่ม Y เพื่อเลือกลูกธนู</small>`, 2800), 900); aimHud() }   /* v3.1 every chest also has special arrows */
   bump('chests'); save(); hud() }
 function readNote(id) { const n = NOTES.find(n => n.id === id); (S.notes = S.notes || {})[id] = Date.now(); sfx('sketch'); save();
-  sheet('📜 โน้ตปริศนา', b => { b.innerHTML = `<div class="card" style="background:#f8efd8;font-size:16px;line-height:1.6">“${D.NOTES[id]}”</div><p class="mut">พบโน้ตแล้ว ${Object.keys(S.notes).length}/${D.NOTES.length} · อ่านซ้ำได้ที่ 🏠 → 📜 โน้ต</p>` }) }
+  sheet('📜 โน้ตปริศนา', b => { b.innerHTML = `<div class="card" style="background:#f8efd8;font-size:16px;line-height:1.6">“${D.NOTES[id]}”</div><p class="mut">พบโน้ตแล้ว ${Object.keys(S.notes).length}/${D.NOTES.length} · อ่านซ้ำได้ที่ 📜 → โน้ต</p>` }) }
 function openNotes() { const L = Object.keys(S.notes || {}).map(Number).sort((a, b) => a - b); sheet(`📜 โน้ตปริศนา ${L.length}/${D.NOTES.length}`, b => { b.innerHTML = L.length ? L.map(i => `<div class="card" style="background:#f8efd8">“${D.NOTES[i]}”</div>`).join('') : '<p class="mut">ยังไม่พบโน้ต · ตามหากระดาษเรืองแสงทั่วแผนที่</p>' }) }
 /* ☁️ every D.CYCLE_DAYS game days: the dark cloud covers the sky, lightning strikes the camps, and every monster comes back */
 function cycleTick() { if (S.lastT != null && S.time < S.lastT - 600) S.dayN = (S.dayN || 0) + 1; S.lastT = S.time; if (S.cycleAt == null) S.cycleAt = (S.dayN || 0) + D.CYCLE_DAYS;
@@ -2864,7 +2864,7 @@ function setNear(ch, on) {
       /* v3.14 monster land: a fixed ~65% of the mainland's chunks hold a pack (the same ones every visit) · villages, the harbour and light stones stay clear · Vaneya: now and then one */
       const ML = D.MONLAND, isl = inIsle(x, z), hh = ((ch.cx * 73856093) ^ (ch.cz * 19349663)) >>> 0, pack = isl ? Math.random() < ML.isle : (hh % 1000) / 1000 < ML.pct;
       if (pack) { const n = isl ? 1 : ML.n[0] + Math.floor(Math.random() * (ML.n[1] - ML.n[0] + 1)); let cx0 = null, cz0 = null;
-        for (let t = 0; t < 24 && cx0 == null; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50; if (!walkLand(px, pz) || coreDist(px, pz) < 8 || dist(px, pz, me().x, me().z) < 14 || dist(px, pz, HB.x + 8, HB.z) < 30 || Object.values(KINGDOMS).some(K => dist(px, pz, K.x, K.z) < ML.village) || LSTONES.some(L => dist(px, pz, L.x, L.z) < 12)) continue; cx0 = px; cz0 = pz }
+        for (let t = 0; t < 24 && cx0 == null; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50; if (!walkLand(px, pz) || coreDist(px, pz) < 8 || dist(px, pz, me().x, me().z) < 14 || dist(px, pz, HB.x + 8, HB.z) < 30 || Object.values(KINGDOMS).some(K => dist(px, pz, K.x, K.z) < ML.village) || dist(px, pz, KINGDOMS.luminia.x, KINGDOMS.luminia.z) < D.WCAMP.ringR + 30 || LSTONES.some(L => dist(px, pz, L.x, L.z) < 12)) continue; cx0 = px; cz0 = pz }   /* the castle ring has its fortress camps (no extra packs: fps) */
         if (cx0 != null) { const B = kingdomAt(cx0, cz0), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier]; for (let i = 0; i < n; i++) { const a = i * 2.3, px = cx0 + Math.cos(a) * 2.2 * (i > 0), pz = cz0 + Math.sin(a) * 2.2 * (i > 0); if (walkLand(px, pz)) ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })) } } }
       spawnAnimals(ch, x, z) } }
   else { for (const o of ch.clears) { despawnClear(W, o); remnant(W, o, false); W.clear.delete(o.id) } for (const m of ch.mons) if (mons.includes(m) && !m.aggro && m !== HORSE) monGone(m); ch.mons = ch.mons.filter(m => mons.includes(m)) }
@@ -3062,6 +3062,7 @@ function wcampTick(now) {
     if (d < 75 && !c.g) campProps(c); else if (d > 120 && (c.g || c.spawned)) campDrop(c);
     if (d < 30 && !st) { S.wcamps[c.id] = { seen: 1 }; sfx('tap'); toast(`⛺ พบ <b>${campName(c)}</b>!<br>กำจัดมอนสเตอร์ให้หมด แล้วเปิดหีบสมบัติ 📦`, 3200); save() }
     if (d < 45 && !(st && st.c) && !c.spawned) campSpawn(c);
+    if (c.g) c.g.visible = d < 66;   /* v3.16 far camps are not drawn (~40 meshes each: the castle ring is 8 of them) */
     if (c.g) { if (c.fire) c.fire.scale.y = .8 + Math.random() * .4; c.glow.visible = !!(st && st.c && !st.o); c.glow.rotation.y = now / 400; if (c.opening) { c.lid.rotation.x += (-1.9 - c.lid.rotation.x) * .5 } } }
 }
 function openChest(id) {
@@ -3074,7 +3075,7 @@ function openChest(id) {
   { const pool = Object.keys(D.ITEMS).filter(k => D.ITEMS[k].tier === Math.min(4, c.tier + 2)); for (let n = 0; n < 2; n++) dropItem({ t: pool[Math.floor(Math.random() * pool.length)], r: rollRarity(['R', 'E', 'L']) }, c.x + 1 - n, c.z + 1) }   /* v2.0: 2 pieces of gear from the camp's tier */
   addMats({ torch: R(...D.TORCH.camp) }, c.x, c.z);   /* v3.12.1 goblin camps keep torches */
   if (bp) S.bp[bp] = Date.now(); bump('chests'); save(); hud(); achCheck();
-  sheet('📦 หีบสมบัติ', b => { b.innerHTML = `<p>💎 ${gem} · 🪙 ${fmt(coin)}</p>` + (bp ? bpCard(bp, true) + '<p class="mut">ดูแบบแปลนทั้งหมดได้ที่ 📓 สมุดบันทึก → 📐 แบบแปลน · สร้าง: แตะ 🏠 → 🔨 ก่อสร้าง</p>' : '<p class="mut">มีแบบแปลนครบทุกแบบแล้ว!</p>') });
+  sheet('📦 หีบสมบัติ', b => { b.innerHTML = `<p>💎 ${gem} · 🪙 ${fmt(coin)}</p>` + (bp ? bpCard(bp, true) + '<p class="mut">ดูแบบแปลนทั้งหมดได้ที่ 📓 สมุดบันทึก → 📐 แบบแปลน · สร้าง: แตะปุ่ม 🔨 ก่อสร้าง</p>' : '<p class="mut">มีแบบแปลนครบทุกแบบแล้ว!</p>') });
 }
 function bpCard(k, isNew) {
   const B = D.BLUEPRINTS[k], cost = Object.entries(B.cost).map(([m, n]) => `${D.MATS[m][0]} ${D.MATS[m][1]} ×${n} <small class="mut">(มี ${S.mats[m] || 0})</small>`).join(' · ');
@@ -3233,7 +3234,7 @@ function pickScroll(id) {
   const o = SCR.find(x => x.id === id); if (!o || S.scrolls[id]) return; S.scrolls[id] = 1; scrollView(o, false); sfx('level');
   const left = Object.keys(BP).filter(k => !BP[k].start && !BP[k].quest && !S.bp[k]), bp = left.length ? left[Math.floor(Math.random() * left.length)] : null;
   if (bp) S.bp[bp] = Date.now(); else S.gem += 50; bump('scrolls'); save(); hud();
-  sheet('✨ ม้วนแบบแปลนเรืองแสง', b => { b.innerHTML = bp ? bpCard(bp, true) + '<p class="mut">สร้าง: แตะ 🏠 → 🔨 ก่อสร้าง</p>' : '<p>💎 +50 (มีแบบแปลนครบแล้ว)</p>' });
+  sheet('✨ ม้วนแบบแปลนเรืองแสง', b => { b.innerHTML = bp ? bpCard(bp, true) + '<p class="mut">สร้าง: แตะปุ่ม 🔨 ก่อสร้าง</p>' : '<p>💎 +50 (มีแบบแปลนครบแล้ว)</p>' });
 }
 let bT = 0;
 function bTick(dt, now) {
@@ -3249,8 +3250,8 @@ function bTick(dt, now) {
 }
 function howsifBlueprints() {
   talk([['👴 ลุงฮาวซิฟ', 'เมืองของเราพังไปหมดแล้ว… แต่ถ้าช่วยกันสร้างใหม่ ทุกอย่างจะกลับมามีชีวิตอีกครั้ง'], ['👴 ลุงฮาวซิฟ', 'เอานี่ไป 📐 แบบแปลนเก่าของลุง: 🔥 กองไฟ · 📦 หีบเก็บผัก · 🛶 เรือแพ'],
-    ['👴 ลุงฮาวซิฟ', 'แตะ 🏠 แล้วเลือก 🔨 ก่อสร้าง · แบบแปลนอื่นๆ ซ่อนอยู่ในหีบสมบัติของแคมป์มอนสเตอร์ ⛺ และม้วนกระดาษเรืองแสงทั่วโลก ✨']],
-    () => { for (const k of ['campfire', 'chest', 'raft']) S.bp[k] = S.bp[k] || Date.now(); save(); sfx('level'); toast('📐 ได้แบบแปลน 3 แบบ! แตะ 🏠 → 🔨 ก่อสร้าง', 3000); questCheck() });
+    ['👴 ลุงฮาวซิฟ', 'แตะปุ่ม 🔨 (ใต้ 🎒) เพื่อก่อสร้าง · แบบแปลนอื่นๆ ซ่อนอยู่ในหีบสมบัติของแคมป์มอนสเตอร์ ⛺ และม้วนกระดาษเรืองแสงทั่วโลก ✨']],
+    () => { for (const k of ['campfire', 'chest', 'raft']) S.bp[k] = S.bp[k] || Date.now(); save(); sfx('level'); toast('📐 ได้แบบแปลน 3 แบบ! แตะปุ่ม 🔨 ก่อสร้าง', 3000); questCheck() });
 }
 { const old = S.builds.filter(b => b.k === 'forge'); if (old.length || S.bp.forge) { for (const b of old) for (const [k, n] of Object.entries(D.FORGE_TABLE_REFUND)) S.mats[k] = (S.mats[k] || 0) + n; S.builds = S.builds.filter(b => b.k !== 'forge'); delete S.bp.forge; save();   /* v3.11 the home forge table is gone: its materials come back */
     if (old.length) setTimeout(() => toast('⚒️ ตอนนี้ตีอาวุธได้ที่ร้านช่างเหล็กในเมือง · คืนวัสดุโต๊ะช่างเข้ากระเป๋าแล้ว', 3200), 5000) } }
@@ -3401,7 +3402,7 @@ function warpTo(w) {
 const knowsCraft = r => !r.from || !!(S.recipesK || {})[r.k];
 function learnCraft(from) {   /* talking to an NPC teaches the recipes they know */
   const L = D.CRAFT.filter(r => r.from === from && !knowsCraft(r)); if (!L.length) return; S.recipesK = S.recipesK || {}; for (const r of L) S.recipesK[r.k] = Date.now(); save(); sfx('level');
-  setTimeout(() => toast(`📜 เรียนสูตรคราฟใหม่!<br>${L.map(r => r.icon + ' ' + r.name).join(' · ')}<br><small>🏠 → 🛠️ คราฟ</small>`, 3200), 900);
+  setTimeout(() => toast(`📜 เรียนสูตรคราฟใหม่!<br>${L.map(r => r.icon + ' ' + r.name).join(' · ')}<br><small>🎒 → 🛠️ คราฟ</small>`, 3200), 900);
 }
 const craftCat = r => r.give.wear ? 'wear' : r.give.arrows ? 'bow' : r.give.item ? itemCat(r.give.item[0]) : r.give.potions ? 'food' : 'mats';   /* v3.12 which bag section a recipe belongs to */
 function openCraft(cat) {
@@ -3410,7 +3411,7 @@ function openCraft(cat) {
     b.innerHTML = '<p class="mut">ใช้วัตถุดิบในกระเป๋าทำของได้ทุกที่ · สูตรใหม่เรียนได้จากผู้คนทั่วแผนที่</p>' + K.map(r => { const i = D.CRAFT.indexOf(r); return `<div class="card"><div class="row"><b>${r.icon} ${r.name}</b></div><p>${Object.entries(r.need).map(([k, n]) => `<span class="${costHave(k) >= n ? '' : 'dn'}">${costName(k)} ${costHave(k)}/${n}</span>`).join(' · ')}</p><button class="btn go wide" data-cr="${i}" ${hasCost(r.need) ? '' : 'disabled'}>🛠️ ทำ</button></div>` }).join('') +
       (U.length ? `<h3>🔒 สูตรที่ยังไม่รู้ (${U.length})</h3>` + U.map(r => `<div class="card lock"><div class="row"><b>❔ ???</b></div><p class="mut">💬 เรียนได้จาก ${r.who}</p></div>`).join('') : '') +
       `<p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>`;
-    b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; { const c = r.give.wear ? 'wear' : r.give.arrows ? 'bow' : r.give.item ? itemCat(r.give.item[0]) : r.give.potions ? 'food' : null, ok = !c || (c === 'wear' ? bagFits('wear', null, r.give.wear) : c === 'bow' ? bagFits('bow', { arw: S.arrows || 0 }, 'arw', r.give.arrows) : c === 'food' ? Object.keys(r.give.potions).every(k => bagFits('food', S.potions, k, r.give.potions[k])) : bagFits(c)); if (!ok) { bagFullHint(c); return } } payCost(r.need); if (r.give.mats) addMats(r.give.mats, me().x, me().z); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows; if (r.give.wear) { (S.clothes = S.clothes || {})[r.give.wear] = 1; setTimeout(() => toast(`👕 ได้ ${r.icon} ${D.WEAR[r.give.wear].name}! ใส่ได้ที่ 🏠 → 👕 ชุด`, 2600), 1200) } if (r.give.item) { const ni = newItem(r.give.item[0], r.give.item[1]); S.bag.push(ni); autoEquip(ni); S.journal.gear[ni.t + '_' + ni.r] = 1 } if (r.give.meal) S.meals[r.give.meal] = (S.meals[r.give.meal] || 0) + 1; if (r.give.has) { S.has[r.give.has] = 1; if (r.give.has === 'glider') setTimeout(() => toast('🍃 ได้ใบไม้ร่อน! กระโดดจากที่สูง แล้วกด X กลางอากาศ', 3200), 1500) }
+    b.querySelectorAll('[data-cr]').forEach(x => x.onclick = () => { const r = D.CRAFT[+x.dataset.cr]; if (!hasCost(r.need)) return; { const c = r.give.wear ? 'wear' : r.give.arrows ? 'bow' : r.give.item ? itemCat(r.give.item[0]) : r.give.potions ? 'food' : null, ok = !c || (c === 'wear' ? bagFits('wear', null, r.give.wear) : c === 'bow' ? bagFits('bow', { arw: S.arrows || 0 }, 'arw', r.give.arrows) : c === 'food' ? Object.keys(r.give.potions).every(k => bagFits('food', S.potions, k, r.give.potions[k])) : bagFits(c)); if (!ok) { bagFullHint(c); return } } payCost(r.need); if (r.give.mats) addMats(r.give.mats, me().x, me().z); if (r.give.arrows) S.arrows = (S.arrows || 0) + r.give.arrows; if (r.give.wear) { (S.clothes = S.clothes || {})[r.give.wear] = 1; setTimeout(() => toast(`👕 ได้ ${r.icon} ${D.WEAR[r.give.wear].name}! ใส่ได้ที่ 🎒 → 👕 ชุด`, 2600), 1200) } if (r.give.item) { const ni = newItem(r.give.item[0], r.give.item[1]); S.bag.push(ni); autoEquip(ni); S.journal.gear[ni.t + '_' + ni.r] = 1 } if (r.give.meal) S.meals[r.give.meal] = (S.meals[r.give.meal] || 0) + 1; if (r.give.has) { S.has[r.give.has] = 1; if (r.give.has === 'glider') setTimeout(() => toast('🍃 ได้ใบไม้ร่อน! กระโดดจากที่สูง แล้วกด X กลางอากาศ', 3200), 1500) }
       for (const k in r.give.potions || {}) S.potions[k] = (S.potions[k] || 0) + r.give.potions[k]; sfx('done'); bump('crafts'); toast(`🛠️ ได้ ${r.icon} ${r.name}`, 1400); save(); hud(); redraw() });
   });
 }
