@@ -24,7 +24,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* v3.8.1 a weak rabbit in front → aim the 🕸️ net (Y) → throw (the old tug-of-war is gone) */
     for (let k = 0; k < 5 && !(await N(() => window.__ng.S.pets.some(p => p.kind === 'rabbit'))); k++) {
       await E(() => { const N = window.__ng, q = N.me; if (!N.__r || !N.mons.includes(N.__r)) { N.__r = N.monSpawn('rabbit', q.x + 1.2, q.z + 3, { area: 'farm' }) } const r = N.__r; r.hp = 1; r.stunT = performance.now() + 20000; const y = Math.atan2(r.A.root.position.x - q.x, r.A.root.position.z - q.z); N.PL.yaw = N.PL.yawT = y; N.CAM.yaw = y; N.CAM.pitch = .12 }); await wait(1200); await closeAll();
-      await E(() => window.__ng.aimStart('net')); await wait(1500); if (k === 0) await shot('01-net-aim'); await E(() => window.__ng.aimEnd(true)); await wait(2500); await closeAll() }
+      await E(() => window.__ng.aimStart('net')); await wait(1500); if (k === 0) await shot('01-net-aim'); await E(() => window.__ng.aimEnd(true)); await wait(1800); await E(() => { const g = window.__ng.SG; if (g) g.prog = 2 }); await wait(1200); await closeAll() }   /* v3.12.4 win the struggle */
     await wait(800); await shot('03-caught'); const pc = await N(() => window.__ng.S.pets.map(p => p.kind + ':' + p.rar)); log('pets', JSON.stringify(pc)); if (!pc.some(x => /rabbit/.test(x))) errs.push('the rabbit was not caught');
     await E(() => { const i = document.getElementById('pnN'); if (i) { i.value = 'ปุยฝ้าย'; document.getElementById('pnOk').click() } }); await wait(400); await closeAll();
     await E(() => window.__ng.openBag('pets')); await wait(700); await shot('04-bag-pets'); await closeAll();

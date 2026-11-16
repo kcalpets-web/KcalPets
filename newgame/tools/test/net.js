@@ -18,7 +18,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
     for (let i = 0; i < 6 && !caught; i++) {
       await E(() => { const N = window.__ng; N.placeMe(15, -6); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .12; N.S.en = null; for (const m of [...N.mons]) if (Math.hypot(m.A.root.position.x - 15, m.A.root.position.z + 6) < 12) N.hurtMon(m, 99999, 'dmg');
         const m = N.monSpawn('rabbit', 15, -2.5, { area: 'wild' }); m.hp = 1; m.stunT = performance.now() + 20000; window.__r = m }); await wait(1200); await close();
-      await E(() => window.__ng.aimStart('net')); await wait(1500); const tg = await E(() => !!(window.__ng.AIM && window.__ng.AIM.tgt)); await E(() => window.__ng.aimEnd(true)); await wait(2500); await close();
+      await E(() => window.__ng.aimStart('net')); await wait(1500); const tg = await E(() => !!(window.__ng.AIM && window.__ng.AIM.tgt)); await E(() => window.__ng.aimEnd(true)); await wait(1800); await E(() => { const g = window.__ng.SG; if (g) g.prog = 2 }); await wait(1200); await close();   /* v3.12.4 win the struggle */
       caught = await E(n => window.__ng.S.pets.length > n, pets0); log('throw', i, 'target', tg, 'caught', caught) }
     if (!caught) errs.push('the net never caught the weak rabbit');
     // raft: swim next to it, A climbs on
