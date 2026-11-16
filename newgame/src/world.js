@@ -106,7 +106,7 @@ export function buildWorld(scene, eco) {
     let t;
     if (beach) t = roll2 < .7 ? 'pebble' : 'rock';
     else if (rocky) t = roll2 < .45 ? 'pebble' : roll2 < .85 ? 'rock' : 'boulder';
-    else if (east) t = roll2 < .25 ? 'grass' : roll2 < .45 ? 'bush' : roll2 < .88 ? 'tree' : 'bigtree';
+    else if (east) t = roll2 < .35 ? 'grass' : roll2 < .55 ? 'bush' : roll2 < .78 ? 'flower' : roll2 < .94 ? 'tree' : 'bigtree';   // v3.13 far fewer trees round the farm
     else t = roll2 < .5 ? 'grass' : roll2 < .7 ? 'bush' : roll2 < .85 ? 'tree' : roll2 < .95 ? 'pebble' : 'rock';
     W.clear.set('c' + id, { id: 'c' + id, t, x: px, z: pz, ry: QR() * 6.28, g: null, pick: null, left: 0 });
   }
@@ -140,7 +140,7 @@ function coreCol(x, z, c) { grassCol(x, z, c); const n = nz(x, z);
   if (x > 6 && x < 81) { const hw = .7 + .35 * smw(34, 36, x) * (1 - smw(56, 58, x));                      // the road: island gate → bridge → town → hills → forest
     c.lerp(_c2.copy(_ROAD).lerp(_ROADF, smw(70, 74, x)), .85 * (1 - smw(hw, hw + .5, Math.abs(z - roadZ(x)))) * smw(6, 7.6, x)) }
   if (x > 34 && x < 58) { const dx = x - TX, r = Math.hypot(dx, z); let k = (1 - smw(1.05, 1.55, Math.abs(dx))) * (1 - smw(8.2, 9.4, Math.abs(z)));   // the town: a cross of paths · a lane to every shop door · the paved plaza
-    for (const s of SHOP_POS) { const [fx, fz] = shopFront(s), q = Math.hypot(fx, fz); k = Math.max(k, 1 - smw(.55, 1.0, segD(dx, z, fx, fz, fx / q * 3.5, fz / q * 3.5)), 1 - smw(.9, 1.5, Math.hypot(dx - fx, z - fz))) }
+    for (const s of SHOP_POS.slice(0, 1)) { const [fx, fz] = shopFront(s), q = Math.hypot(fx, fz); k = Math.max(k, 1 - smw(.55, 1.0, segD(dx, z, fx, fz, fx / q * 3.5, fz / q * 3.5)), 1 - smw(.9, 1.5, Math.hypot(dx - fx, z - fz))) }
     c.lerp(_ROAD, .85 * k); c.lerp(_PLAZA, 1 - smw(4.0, 4.6, r)); c.multiplyScalar(1 - .1 * (1 - smw(.0, .28, Math.abs(r - 4.3)))) }
   return c }
 function coreGround(x0, x1, hz, eco) { const st = eco ? 1 / 3 : 1 / 4, w = x1 - x0, ox = x0 + w / 2, geo = new THREE.PlaneGeometry(w, hz * 2, Math.round(w / st), Math.round(hz * 2 / st)); geo.rotateX(-Math.PI / 2);
@@ -297,6 +297,10 @@ export const TX = 46;                                          // town centre x 
 export const TOWN = { x0: TX - 11, x1: TX + 11, z0: -11, z1: 11, gateW: { x: TX - 10.5, z: 0 }, gateE: { x: TX + 10.5, z: 0 }, sword: { x: TX - 7.5, z: 1.2 } };
 export const walkTown = (x, z) => x > TOWN.x0 && x < TOWN.x1 && z > TOWN.z0 && z < TOWN.z1;
 export const SHOP_POS = [[-5, -6.5, 0], [0, -7.5, 0], [5, -6.5, 0], [-6.5, 5.5, Math.PI], [0, 7, Math.PI], [6.5, 5.5, Math.PI], [8, -1.5, -Math.PI / 2]];
+/* v3.13 a shop building for the harbour town (same clay recipe as the island's, one merged group) */
+export function harbourShop(g, roof) { const t = new THREE.Group(); rbox(t, '#c8a070', '#f0d8b0', [0, .9, 0], [2.7, 1.8, 2.15], [0, 0, 0], .18); cone(t, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
+  part(t, '#5a3420', '#8a5a30', [0, .6, 1.1], [.3, .55, .05], [0, 0, 0], { A: 0 }); part(t, '#ffe27a', '#fff6c8', [.85, 1.1, 1.1], [.22, .22, .04], [0, 0, 0], { A: 0 }); part(t, '#e8d8b0', '#fff6e0', [0, 1.75, 1.15], [.7, .2, .04], [0, 0, 0], { A: 0 });
+  rbox(t, '#4a3020', '#7a5232', [0, -.9, 0], [2.9, 1.8, 2.35], [0, 0, 0], .1);   /* a stone-and-wood footing for sloped ground */ mergeStatic0(t).children.slice().forEach(m => g.add(m)) }
 export function buildTown(W, eco) {
   const scene = W.scene, T = { shops: [] }, ST = new THREE.Group();
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
@@ -306,16 +310,7 @@ export function buildTown(W, eco) {
   at(g => { lathe(g, '#8a8478', '#e4ded2', [[0, 0], [1.75, 0], [1.82, .12], [1.76, .42], [1.64, .5], [1.5, .46], [1.46, .3], [0, .3]], [0, 0, 0], 28); part(g, '#3a6a9a', '#8ac4ea', [0, .37, 0], [1.47, .04, 1.47], [0, 0, 0], { A: 0 });
     lathe(g, '#8a8478', '#e4ded2', [[0, .3], [.36, .3], [.3, .52], [.2, .64], [.18, 1.05], [.3, 1.16], [.74, 1.26], [.8, 1.38], [.68, 1.42], [.2, 1.36], [.14, 1.7], [.22, 1.78], [.2, 1.9], [0, 1.98]], [0, 0, 0], 20);
     part(g, '#3a6a9a', '#bfe6ff', [0, 1.39, 0], [.66, .03, .66], [0, 0, 0], { A: 0 }); part(g, '#7ab0d8', '#e8f6ff', [0, 2.02, 0], [.13, .13, .13], [0, 0, 0], { A: 0 }) }, TX, 0); addSol({ x: TX, z: 0, r: 1.8 });
-  for (let i = 0; i < 4; i++) { const a = Math.PI / 4 + i * Math.PI / 2, bx = TX + Math.cos(a) * 3.05, bz = Math.sin(a) * 3.05, ry = Math.atan2(-Math.cos(a), -Math.sin(a)); at(bench, bx, bz, ry); addSol({ x: bx, z: bz, hw: .68, hd: .26, ry }) }
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { at(lamp, TX + sx * 4.55, sz * 1.8); addSol({ x: TX + sx * 4.55, z: sz * 1.8, r: .14 });
-    at(g => planter(g, sx + sz * 2), TX + sx * 1.95, sz * 5.6, sx); addSol({ x: TX + sx * 1.95, z: sz * 5.6, r: .7 }) }
-  for (let i = 0; i < 30; i++) { const a = i / 30 * 6.283 + .1, x = Math.cos(a) * 4.32, z = Math.sin(a) * 4.32; if (Math.abs(x) < 1.7 || Math.abs(z) < 1.9) continue;                // kerb stones round the plaza (flat: you walk over them)
-    at(g => part(g, '#8a8478', '#e4ded2', [0, .03, 0], [.3, .07, .2], [0, 0, 0], { A: .08, f: 2 }), TX + x, z, -a + Math.PI / 2) }
-  at(VILLAGE.well, TX - 8.4, -3.5, .4, .9); addSol({ x: TX - 8.4, z: -3.5, r: .78 });
-  at(VILLAGE.stall, TX + 8.8, 3.3, -Math.PI / 2); addSol({ x: TX + 8.8, z: 3.3, hw: .95, hd: .55, ry: -Math.PI / 2 });
-  /* trees: rows behind the shops and one in each corner (normal clay trees, each one solid) */
-  [[-9, -10.4], [-6, -11], [-2.7, -10.6], [2.7, -10.9], [6, -10.5], [9.2, -11], [-9.2, 10.6], [-5.8, 10.3], [-2.6, 10.9], [2.8, 10.4], [6.1, 10.9], [9, 10.4], [-9.3, -7.6], [9.4, -7.4], [-9.4, 8.3], [9.5, 8.2]].forEach(([dx, dz], i) => {
-    const s = 1 + (i * 7 % 5) * .06; at(g => i % 4 === 1 ? PROPS.pine(g, s * 1.15) : PROPS.tree(g, s, i % 3 === 0 ? 1 : 0), TX + dx, dz, i * 1.7); addSol({ x: TX + dx, z: dz, r: .3 * s }) });
+  /* v3.13 the square is open: no benches, lamps, planters, well, stall or tree rows in the way (the fountain stays) */
   /* shops: a ruined and a repaired model each, toggled by S.shops[k] */
   const shop = (g, roof, sign) => { rbox(g, '#c8a070', '#f0d8b0', [0, .9, 0], [2.7, 1.8, 2.15], [0, 0, 0], .18); cone(g, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
     part(g, '#5a3420', '#8a5a30', [0, .6, 1.1], [.3, .55, .05], [0, 0, 0], { A: 0 }); part(g, '#ffe27a', '#fff6c8', [.85, 1.1, 1.1], [.22, .22, .04], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [0, 1.75, 1.15], [.7, .2, .04], [0, 0, 0], { A: 0 }) };
@@ -325,15 +320,14 @@ export function buildTown(W, eco) {
     for (let i = 0; i < 6; i++) part(g, '#6a6460', '#b8b0a6', [-.9 + (i % 3) * .8, .12, 1.0 + Math.floor(i / 3) * .4], [.24, .16, .2], [0, i, 0], { A: .2 }) };
   const merged = (g, fn) => { const t = new THREE.Group(); fn(t); mergeStatic0(t).children.slice().forEach(m => g.add(m)) };   /* v3.4 a shop = 1–3 meshes (was ~14 draw calls each) */
   const ROOF = ['#3a8a5a', '#d08a30', '#4a7ac0', '#7a7a8a', '#c0503a', '#8a4ac0', '#d84a8a'];
-  SHOP_POS.forEach(([dx, dz, ry], i) => { const x = TX + dx, z = dz;
+  SHOP_POS.forEach(([dx, dz, ry], i) => { if (i > 0) return; const x = TX + dx, z = dz;   /* v3.13 only Sberh's potion shop stays on Vaneya (the rest are at the harbour town) */
     T.shops.push({ i, x, z, fixed: at(g => merged(g, t => shop(t, ROOF[i])), x, z, ry, 1, 0, true), ruin: at(g => merged(g, broken), x, z, ry, 1, 0, true), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); addSol({ x, z, hw: 1.25, hd: .95, ry }) });
   /* the sword on the ground, the west gate (back to the island) and the east gate (forest, locked for now) */
   T.sword = at(g => { const s = new THREE.Group(); part(s, '#8a8fa8', '#eef2ff', [0, .32, 0], [.05, .4, .02], [0, 0, 0], { A: 0 }); part(s, '#7a4422', '#c8843a', [0, -.12, 0], [.05, .12, .05], [0, 0, 0], { A: 0 }); part(s, '#c7891c', '#ffe27a', [0, 0, 0], [.18, .03, .05], [0, 0, 0], { A: 0 }); s.rotation.z = 1.35; s.position.y = .08; g.add(s);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.45, .04, 6, 24), new THREE.MeshBasicMaterial({ color: '#ffd23f' })); ring.rotation.x = -Math.PI / 2; ring.position.y = .03; g.add(ring) }, TOWN.sword.x, TOWN.sword.z, .3, 1, 0, true);
   T.swordPick = addPick(W, TOWN.sword.x, TOWN.sword.z, .8, 1, { kind: 'sword' });
   for (const [G, lo, hi] of [[TOWN.gateW, '#8a3a2a', '#d8584a'], [TOWN.gateE, '#2a5a3a', '#4a9a62']]) { at(g => gateway(g, lo, hi, 1.3), G.x, G.z); for (const s2 of [-1, 1]) addSol({ x: G.x, z: G.z + s2 * 1.3, r: .24 });
-    for (const s2 of [-1, 1]) { at(g => fenceRun(g, 5), G.x, s2 * 4.3); addSol({ x: G.x, z: s2 * 4.3, hw: .12, hd: 2.55, ry: 0 });               // a rail fence either side of the gate
-      const lx = G.x + (G.x < TX ? 1.2 : -1.2), lz = s2 * 2.0; at(lamp, lx, lz); addSol({ x: lx, z: lz, r: .14 }) } }
+  }   /* v3.13 no fences or lamps by the gates */
   T.lock = at(g => { for (let i = 0; i < 3; i++) part(g, '#6a4024', '#b07a44', [0, .5 + i * .4, 0], [.08, .08, 1.2], [0, 0, 0], { A: 0 }) }, TOWN.gateE.x, TOWN.gateE.z, 0, 1, 0, true);
   addPick(W, TOWN.gateW.x, TOWN.gateW.z, 1.4, 2.6, { kind: 'gateW' }); addPick(W, TOWN.gateE.x, TOWN.gateE.z, 1.4, 2.6, { kind: 'gateE' });
   scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return T;
@@ -346,7 +340,7 @@ export function buildTown(W, eco) {
 const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, riverC = z => RIVER.x + .7 * Math.sin(z * .45 + .6) * smw(2.4, 5, Math.abs(z - RIVER.bz)), riverW = z => RIVER.w * (1 + .14 * Math.sin(z * .9)) * (1 - .4 * smw(6.5, 11.5, Math.abs(z))),   // v3.7 the stream winds a little and narrows to its ends (straight under the bridge)
   LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
-export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะบ้านเกิด', meadow: 'ทุ่งริมธาร', town: 'เมือง', hills: 'เนินผาสูง', forest: 'ป่าตะวันออก' };
+export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะวาเนย่า · บ้านต้นไม้', meadow: 'เกาะวาเนย่า · ทุ่งทานตะวัน', town: 'เกาะวาเนย่า · หมู่บ้าน', hills: 'เกาะวาเนย่า · เนินผา', forest: 'เกาะวาเนย่า · ป่าตะวันออก' };   // v3.13 the island is Vaneya, the sunflower isles
 export const zoneOf = (x, z = 0) => coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
