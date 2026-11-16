@@ -7,14 +7,15 @@ import * as THREE from '../lib/three.module.min.js';
 export const VLOOK = {
   skin: [['#f9e0d2', 'ขาวอมชมพู'], ['#f2cfa6', 'ผิวเหลือง'], ['#e2b183', 'น้ำผึ้ง'], ['#c28b5c', 'แทน'], ['#8c5a3c', 'เข้ม']],
   eyes: [['round', 'กลมโต'], ['smile', 'เรียวยิ้ม'], ['sleepy', 'ง่วง'], ['sparkle', 'ประกายดาว']],
-  eyeCol: ['#d0802a', '#6a3a20', '#3aa86a', '#3a7ad8', '#8a5ad8', '#d84a4a'],
+  eyeCol: ['#d0802a', '#6a3a20', '#3aa86a', '#3a7ad8', '#8a5ad8', '#d84a4a', '#2a2a34', '#c89a30', '#3ab0c8'],
   sex: [['m', '👦 ผู้ชาย'], ['f', '👧 ผู้หญิง']],
-  hair: [['messy', 'สั้นยุ่ง', 'm'], ['spiky', 'ชี้ตั้ง', 'm'], ['side', 'แสกข้าง', 'm'], ['bob', 'บ็อบ', 'f'], ['pony', 'หางม้า', 'f'], ['buns', 'มัดจุก', 'f'], ['long', 'ยาวสลวย', 'f'], ['twin', 'แกละสองข้าง', 'f']],
+  hair: [['messy', 'สั้นยุ่ง', 'm'], ['spiky', 'ชี้ตั้ง', 'm'], ['side', 'แสกข้าง', 'm'], ['bob', 'บ็อบ', 'f'], ['pony', 'หางม้า', 'f'], ['buns', 'มัดจุก', 'f'], ['long', 'ยาวสลวย', 'f'], ['twin', 'แกละสองข้าง', 'f'], ['bowl', 'หน้าม้าตรง', 'm'], ['curly', 'หยิกสั้น', 'm'], ['afro', 'แอฟโฟร', 'm'], ['mohawk', 'โมฮอว์ก', 'm'], ['slick', 'เสยหลัง', 'm'], ['braids', 'เปียสองข้าง', 'f'], ['topknot', 'จุกบนหัว', 'f'], ['wavy', 'ลอนกลาง', 'f'], ['layered', 'ซอยชั้น', 'f'], ['bun', 'มวยหลัง', 'f']],   // v3.10 +10
   bottom: [['pants', 'กางเกง'], ['skirt', 'กระโปรง']],
   hairCol: ['#2a2228', '#4a2e22', '#7a4428', '#b05a30', '#e8c060', '#d8d8e8', '#f0a0c0', '#5a8ad8'],
-  wear: [['traveler', 'นักเดินทาง'], ['farmer', 'ชาวไร่'], ['mage', 'นักเรียนเวทย์']],
+  wear: [['traveler', 'นักเดินทาง'], ['farmer', 'ชาวไร่ (เอี๊ยม)'], ['mage', 'นักเรียนเวทย์'], ['sailor', 'กะลาสี'], ['kimono', 'กิโมโน'], ['knight', 'อัศวิน'], ['cape', 'ผ้าคลุม'], ['vest', 'เสื้อกั๊ก'], ['robe', 'เสื้อคลุมยาว']],   // v3.10 +6
   top: ['#d83a3a', '#e8603a', '#f08a30', '#f0b830', '#f0d850', '#b8d040', '#6ac04a', '#3aa86a', '#2a9a8a', '#3ab0c8', '#3a8ad8', '#3d6fc4', '#4a4ab8', '#7a4ac8', '#a84ac0', '#d84a9a', '#f07aa8', '#a8604a', '#7a4a2a', '#c8a878', '#f4f0e8', '#a8a8b0', '#5a5a68', '#2a2a34'],   /* v2.9 24 colours */
   /* v2.9 more face choices */
+  expr: [['', 'ปกติ'], ['smile', 'ยิ้มตาปิด'], ['closed', 'หลับตา'], ['wink', 'ขยิบตา'], ['surprised', 'ตกใจ'], ['angry', 'โกรธ']],   // v3.10
   cheek: [['', 'อัตโนมัติ'], ['rosy', 'แก้มแดง'], ['freckle', 'กระ'], ['none', 'ไม่มี']],
   mouth: [['smile', 'ยิ้ม'], ['grin', 'ยิ้มกว้าง'], ['cat', 'ปากแมว'], ['o', 'ปากโอ'], ['flat', 'นิ่งๆ']],
   glasses: [['none', 'ไม่ใส่'], ['round', 'กลม'], ['square', 'เหลี่ยม'], ['sun', 'แว่นกันแดด']],
@@ -103,8 +104,9 @@ function headGeo() {
 }
 /* ── the painted face (canvas, head-local x/y → uv like headGeo) ── */
 const FACES = new Map();
-function faceTex(skin, style, eye, sex = 'm', cheek = '', mouth = 'smile') {   /* v2.9 smaller eyes · cheek + mouth choices */
-  const key = [skin, style, eye, sex, cheek, mouth].join('|'), girl = sex === 'f'; if (FACES.has(key)) return FACES.get(key);
+function faceTex(skin, style, eye, sex = 'm', cheek = '', mouth = 'smile', expr = '') {   /* v2.9 smaller eyes · cheek + mouth choices · v3.10 expressions */
+  mouth = { smile: 'grin', closed: 'smile', surprised: 'o', angry: 'frown', wink: 'grin' }[expr] || mouth;
+  const key = [skin, style, eye, sex, cheek, mouth, expr].join('|'), girl = sex === 'f'; if (FACES.has(key)) return FACES.get(key);
   const S = 512, cv = document.createElement('canvas'); cv.width = cv.height = S; const d = cv.getContext('2d'); d.fillStyle = skin; d.fillRect(0, 0, S, S);
   const X = x => (x / .6 + .5) * S, Y = y => (1 - (y / .6 + .5)) * S, U = S / .6;
   const ell = (cx, cy, rx, ry, fill, a = 1) => { d.globalAlpha = a; d.fillStyle = fill; d.beginPath(); d.ellipse(X(cx), Y(cy), rx * U, ry * U, 0, 0, Math.PI * 2); d.fill(); d.globalAlpha = 1 };
@@ -114,11 +116,12 @@ function faceTex(skin, style, eye, sex = 'm', cheek = '', mouth = 'smile') {   /
   for (const s of [-1, 1]) {
     if (ck === 'blush' || ck === 'soft' || ck === 'rosy') ell(s * .14, ey - .062, ck === 'rosy' ? .04 : .03, ck === 'rosy' ? .022 : .016, '#f07080', ck === 'soft' ? .2 : ck === 'rosy' ? .5 : .4);
     if (ck === 'freckle') for (const [fx, fy] of [[.12, -.058], [.145, -.066], [.165, -.054], [.135, -.074], [.158, -.08]]) ell(s * fx, ey + fy, .0045, .0045, '#a8623a', .75);
-    const cx = s * .095;
-    if (style === 'smile') { arc(cx, ey - .018, .042, .038, Math.PI * .12, Math.PI * .88, lash, .011); continue }
+    const cx = s * .095, st = expr === 'smile' || (expr === 'wink' && s > 0) ? 'smile' : expr === 'closed' ? 'closed' : style;
+    if (st === 'smile') { arc(cx, ey - .018, .042, .038, Math.PI * .12, Math.PI * .88, lash, .011); continue }
+    if (st === 'closed') { arc(cx, ey + .012, .042, .03, Math.PI * 1.12, Math.PI * 1.88, lash, .011); continue }   /* v3.10 ‿ closed eyes */
     ell(cx, ey, .052 * E, .064 * E, '#ffffff');
     const gr = d.createLinearGradient(0, Y(ey + .05 * E), 0, Y(ey - .06 * E)); gr.addColorStop(0, dark); gr.addColorStop(.45, eye); gr.addColorStop(1, light); ell(cx + s * .003, ey - .003, .044 * E, .055 * E, gr);
-    ell(cx + s * .003, ey - .001, .02 * E, .03 * E, '#140a06');
+    ell(cx + s * .003, ey - .001, (expr === 'surprised' ? .011 : .02) * E, (expr === 'surprised' ? .016 : .03) * E, '#140a06');   /* surprised = small pupils */
     if (style === 'sparkle') { d.fillStyle = '#fff'; d.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 2, r = (k % 2 ? .3 : 1) * .02; const x = X(cx - s * .008 + Math.cos(a) * r), y = Y(ey + .015 + Math.sin(a) * r); k ? d.lineTo(x, y) : d.moveTo(x, y) } d.fill(); ell(cx + s * .015, ey - .02, .006, .006, '#fff') }
     else { ell(cx - s * .01, ey + .017, .013, .012, '#ffffff'); ell(cx + s * .013, ey - .021, .006, .005, '#ffffff', .85) }
     if (style === 'sleepy') { d.fillStyle = skin; d.fillRect(X(cx - .06), Y(ey + .075), .12 * U, .066 * U); arc(cx, ey + .01, .047, .004, Math.PI, Math.PI * 2, lash, .011) }
@@ -126,11 +129,14 @@ function faceTex(skin, style, eye, sex = 'm', cheek = '', mouth = 'smile') {   /
     else { arc(cx, ey + .003, .047, .052, Math.PI * .12, Math.PI * .88, lash, .008); arc(cx + s * .003, ey + .088, .04, .012, Math.PI * .15, Math.PI * .85, shade(skin, .55), .007) }
     arc(cx, ey - .003, .034, .052, -Math.PI * .7, -Math.PI * .3, '#8a5a50', .003) }
   ell(0, ey - .046, .0035, .0025, shade(skin, .78));
+  if (expr === 'angry') for (const s of [-1, 1]) { d.strokeStyle = '#3a2018'; d.lineWidth = .013 * U; d.lineCap = 'round'; d.beginPath(); d.moveTo(X(s * .05), Y(ey + .062)); d.lineTo(X(s * .14), Y(ey + .09)); d.stroke() }   /* v3.10 angry brows */
+  if (expr === 'surprised') for (const s of [-1, 1]) arc(s * .095, ey + .1, .035, .012, Math.PI * .15, Math.PI * .85, '#3a2018', .008);
   const my = ey - .074;   /* mouths */
   if (mouth === 'grin') { d.fillStyle = '#7a2228'; d.beginPath(); d.ellipse(X(0), Y(my + .002), .03 * U, .022 * U, 0, 0, Math.PI); d.fill(); d.fillStyle = '#fff'; d.fillRect(X(-.022), Y(my + .002), .044 * U, .007 * U); ell(0, my - .014, .012, .005, '#e86a6a') }
   else if (mouth === 'o') { ell(0, my - .004, .011, .013, '#7a2228'); ell(0, my - .009, .006, .004, '#e86a6a') }
   else if (mouth === 'cat') { arc(-.012, my + .004, .012, .01, Math.PI * 1.05, Math.PI * 1.95, '#6a2a2a', .006); arc(.012, my + .004, .012, .01, Math.PI * 1.05, Math.PI * 1.95, '#6a2a2a', .006) }
   else if (mouth === 'flat') arc(0, my + .01, .018, .004, Math.PI * 1.1, Math.PI * 1.9, '#6a2a2a', .006);
+  else if (mouth === 'frown') arc(0, my - .012, .02, .012, Math.PI * .15, Math.PI * .85, '#6a2a2a', .007);
   else { d.fillStyle = '#8a2a2a'; d.beginPath(); d.ellipse(X(0), Y(my), .02 * U, .016 * U, 0, 0, Math.PI); d.fill(); ell(0, my - .01, .009, .0045, '#e86a6a') }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; FACES.set(key, t); return t;
 }
@@ -167,28 +173,38 @@ function hair(h, style, col) {
    pushed out where the style has hair (soft rounded edges, no gaps) and tucked inside elsewhere · fine flowing grooves · tails / buns are smooth pieces of the same colour ── */
 const sst = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const HL = {   /* hairline height (head-local y) by angle round the head: front (0) · temple (.9) · ear (1.6) · back (3.14) */
-  messy: [.035, -.02, -.1, -.17], spiky: [.05, 0, -.08, -.15], side: [.03, -.02, -.1, -.17], bob: [.03, -.08, -.23, -.24], pony: [.04, -.03, -.11, -.16], buns: [.04, -.03, -.11, -.16], long: [.03, -.1, -.3, -.5], twin: [.04, -.03, -.12, -.16] };
+  messy: [.035, -.02, -.1, -.17], spiky: [.05, 0, -.08, -.15], side: [.03, -.02, -.1, -.17], bob: [.03, -.08, -.23, -.24], pony: [.04, -.03, -.11, -.16], buns: [.04, -.03, -.11, -.16], long: [.03, -.1, -.3, -.5], twin: [.04, -.03, -.12, -.16],
+  bowl: [.0, -.01, -.06, -.12], curly: [.05, 0, -.09, -.15], afro: [.07, .02, -.08, -.14], mohawk: [.06, .02, -.08, -.14], braids: [.04, -.04, -.14, -.2], topknot: [.07, .02, -.08, -.14], slick: [.1, .03, -.08, -.16], wavy: [.03, -.08, -.22, -.34], layered: [.035, -.06, -.18, -.26], bun: [.07, .01, -.09, -.15] };   // v3.10 ten more styles
 function lineAt(st, az) { const L = HL[st] || HL.messy, a = Math.abs(az); return a < .9 ? L[0] + (L[1] - L[0]) * sst(0, .9, a) : a < 1.6 ? L[1] + (L[2] - L[1]) * sst(.9, 1.6, a) : L[2] + (L[3] - L[2]) * sst(1.6, 3.14, a) }
 function hairPiece(h, style, col) {
   const M = mat(col, { r: .38 }), g = new THREE.SphereGeometry(1, 60, 44), p = g.attributes.position, dv = V(0, 0, 0);
   for (let i = 0; i < p.count; i++) {
     dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, back = sst(.4, -.6, dv.z);
     let line = lineAt(style, az); if (style === 'side') line += .05 * sst(-.6, .4, az) * sst(1.2, .2, Math.abs(az));   /* the fringe sweeps lower to one side */
-    let c = sst(line - .03, line + .015, y); if (style === 'long' || style === 'bob') c = Math.max(c, back * sst(.1, -.2, dv.y) * (style === 'long' ? 1 : .8));
+    let c = sst(line - .03, line + .015, y); const drape = { long: [1, .5], bob: [.8, .14], wavy: [.9, .3], layered: [.85, .22], braids: [.6, .1] }[style]; if (drape) c = Math.max(c, back * sst(.1, -.2, dv.y) * drape[0]);
     const pole = sst(.97, .8, dv.y);   /* fade the az-patterns out at the crown (no seam where they meet) */
     let t = .03 + .014 * Math.max(0, dv.y) + .018 * sst(.5, 1, dv.z) * sst(line + .14, line + .02, y);   /* volume on top · bangs puff forward */
     t += (.006 * Math.sin(az * 17 + y * 9) * sst(-.9, .2, dv.y) + .004 * Math.sin(az * 31 - y * 14)) * pole;   /* flowing grooves */
     if (style === 'messy') t += .024 * Math.max(0, Math.sin(az * 5 + 1.3) * Math.sin(dv.y * 7 + az)) * sst(.2, .8, dv.y) * pole;
     if (style === 'spiky') t += .17 * Math.pow(Math.max(0, Math.sin(az * 6 + .4)) * Math.max(0, Math.sin(dv.y * 9 - .6)), 3.5) * sst(.15, .55, dv.y) * pole + .1 * Math.pow(sst(.8, 1, dv.y), 2);
     if (style === 'side') t += .03 * sst(.3, -.5, az) * sst(.3, .9, dv.y) - .022 * Math.exp(-(((az - .45) / .07) ** 2)) * sst(.3, .7, dv.y) * pole;   /* swept volume + the parting */
+    /* v3.10 ten more */
+    if (style === 'bowl') t += .02 * sst(-.2, .5, dv.y) - .008 * Math.sin(az * 17 + y * 9) * pole;                                           // a smooth helmet, straight fringe
+    if (style === 'curly' || style === 'afro') { const cu = Math.max(0, Math.sin(dv.x * 38) * Math.sin(dv.y * 36) * Math.sin(dv.z * 34)); t += (style === 'afro' ? .075 + .035 * sst(-.6, .3, dv.y) * sst(1, .5, dv.y) : .012) + (style === 'afro' ? .035 : .028) * cu }   // little round curls · the afro is a big puff
+    if (style === 'mohawk') { const strip = Math.exp(-((dv.x / .16) ** 2)); t = .006 + strip * (.04 + .16 * Math.pow(Math.max(0, Math.sin(dv.z * 9 + 1.2)), 2) * sst(.2, .7, dv.y)) }   // shaved sides · a spiky crest
+    if (style === 'slick') t += .012 * sst(.2, 1, dv.y) + .008 * Math.sin(dv.x * 40) * sst(.3, .9, dv.y);                                     // combed straight back
+    if (style === 'wavy' || style === 'layered') t += .014 + (style === 'wavy' ? .012 * Math.sin(dv.y * 22 + az * 3) : .016 * (Math.round(dv.y * 6) - dv.y * 6)) * sst(.6, -.4, dv.y);   // waves · steps
     const o = -.02 + (t + .02) * c; let q = surf(dv, o);
-    if ((style === 'long' || style === 'bob') && c > .01) { const k = back * sst(.05, -.9, dv.y), len = style === 'long' ? .5 : .14; q.y -= len * k; q.z -= .05 * k; q.x *= 1 + .12 * k }   /* the drape down the back */
+    if (drape && c > .01) { const k = back * sst(.05, -.9, dv.y), len = drape[1]; q.y -= len * k; q.z -= .05 * k; q.x *= 1 + .12 * k }   /* the drape down the back */
     p.setXYZ(i, q.x, q.y, q.z) }
   g.computeVertexNormals(); const m = add(h, g, M); m.name = 'hairPiece';
   const tail = (pts, r0, r1) => { const n = pts.length; add(h, tube(pts, pts.map((_, i) => r0 + (r1 - r0) * Math.pow(i / (n - 1), 1.3)), 18, 1, true), M) };
   if (style === 'pony') { const t0 = surf(V(0, .55, -1), .05); ball(h, .04, mat('#d84a4a'), t0.toArray(), null, 16); tail(bez(t0.toArray(), t0.clone().add(V(0, -.04, -.14)).toArray(), t0.clone().add(V(0, -.36, -.17)).toArray(), 12), .07, .025) }
   if (style === 'twin') for (const s2 of [-1, 1]) { const t0 = surf(V(s2 * .72, .32, -.62), .05); ball(h, .035, mat('#f06a8a'), t0.toArray(), null, 16); tail(bez(t0.toArray(), t0.clone().add(V(s2 * .07, -.05, -.05)).toArray(), t0.clone().add(V(s2 * .1, -.32, -.08)).toArray(), 12), .062, .022) }
   if (style === 'buns') for (const s2 of [-1, 1]) { const c0 = surf(V(s2 * .55, .85, -.15), .07); ball(h, .085, M, c0.toArray(), [1, .95, 1], 24); ball(h, .03, mat('#f0d040'), c0.clone().add(V(-s2 * .05, -.06, 0)).toArray(), null, 12) }
+  if (style === 'topknot') { const c0 = surf(V(0, 1, -.1), .05); ball(h, .1, M, c0.clone().add(V(0, .05, 0)).toArray(), [1, .9, 1], 24); ball(h, .025, mat('#d84a4a'), c0.toArray(), [2.2, .8, 2.2], 16) }
+  if (style === 'bun') { const c0 = surf(V(0, .2, -1), .06); ball(h, .11, M, c0.clone().add(V(0, 0, -.04)).toArray(), [1, .95, .9], 24) }
+  if (style === 'braids') for (const s2 of [-1, 1]) { const t0 = surf(V(s2 * .85, -.1, -.4), .04); for (let i = 0; i < 6; i++) ball(h, .05 - i * .004, M, t0.clone().add(V(s2 * .02, -.03 - i * .055, .02 - i * .008)).toArray(), [1, .85, 1], 14); ball(h, .022, mat('#f06a8a'), t0.clone().add(V(s2 * .02, -.36, -.03)).toArray(), null, 12) }   /* v3.10 two braids */
 }
 /* v2.9 beards / moustaches: sculpted pieces of the hair colour stuck on the face (like the hair) · glasses: rings on the face */
 /* a point on the face at head-local (x, y), pushed out by off (march in from the front) */
@@ -212,6 +228,20 @@ function glasses(h, kind) { const F = mat(kind === 'sun' ? '#1a1418' : '#2a2030'
 /* ── the outfit pieces: torso shells (static) + sleeves / trousers / boots on the joints ── */
 const lathe = (pts, seg = 22) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 function torsoWear(g, w, top) {
+  /* v3.10 more outfits (after the reference sheet): the same torso shell, each with its own trims */
+  const shell = (m, y0 = .1, flare = .155) => add(g, lathe([[.06, .45], [.115, .43], [.135, .37], [.135, .28], [.14, .2], [flare, y0]]), m, [0, 0, 0], [1, 1, .95]);
+  const collar = c => add(g, lathe([[.05, .43], [.075, .425], [.09, .45], [.075, .475], [.05, .475]], 16), mat(c));
+  const belt = (c, y = .2) => add(g, lathe([[.137, y - .01], [.141, y], [.141, y + .03], [.137, y + .04]]), mat(c), [0, 0, 0], [1, 1, .95]);
+  if (w === 'sailor') { shell(mat('#f8f6f0', { ds: 1 })); const N = mat('#2a3a7a', { ds: 1 }); add(g, lathe([[.07, .45], [.125, .425], [.14, .4], [.12, .39]], 24), N, [0, 0, 0], [1, 1, .95]);
+    const sc = add(g, new THREE.ConeGeometry(.04, .07, 4), mat('#d83a3a'), [0, .37, .13]); sc.rotation.x = Math.PI; add(g, lathe([[.142, .1], [.165, .05], [.16, .04]]), N, [0, 0, 0], [1, 1, .95]) }
+  if (w === 'kimono') { const P = mat(top || '#f08aa8', { ds: 1 }); shell(P, .06, .17); add(g, lathe([[.142, .19], [.146, .2], [.146, .27], [.142, .28]]), mat('#c83a5a'), [0, 0, 0], [1, 1, .95]); ball(g, .03, mat('#c83a5a'), [0, .24, -.14], [1.6, 1, .6]);
+    for (const s2 of [-1, 1]) add(g, new THREE.BoxGeometry(.012, .2, .01), mat('#f8f0f0'), [s2 * .03, .37, .128 - .01]).rotation.z = s2 * .35 }
+  if (w === 'knight') { const S2 = mat('#b8c0d0', { m: .65, r: .3, ds: 1 }), Bl = mat(top || '#3a6ad8', { ds: 1 }); shell(Bl); add(g, lathe([[.06, .45], [.122, .43], [.142, .37], [.142, .28], [.13, .24]]), S2, [0, 0, 0], [1, 1, .95]); belt('#6a3e22');
+    for (const s2 of [-1, 1]) ball(g, .075, S2, [s2 * .13, .41, 0], [1.2, .7, 1.1], 16) }
+  if (w === 'cape') { shell(mat(top || '#e0c060', { ds: 1 })); belt('#6a3e22'); const C = mat('#c83a3a', { ds: 1 }); const cp = add(g, new THREE.CylinderGeometry(.13, .22, .38, 20, 1, true, Math.PI * .6, Math.PI * .8), C, [0, .26, -.02]); collar('#e0b84a') }
+  if (w === 'vest') { shell(mat('#f8f4ec', { ds: 1 })); const B = mat('#7a4a2a', { ds: 1 }); for (const s2 of [-1, 1]) add(g, new THREE.CylinderGeometry(.143, .158, .3, 14, 1, true, s2 > 0 ? .25 : Math.PI * 2 - .25 - Math.PI * .9, Math.PI * .9), B, [0, .26, 0]).scale.z = .95; belt('#3a2418', .15) }
+  if (w === 'robe') { const P = mat(top || '#6a4ab8', { ds: 1 }), G = mat('#e0b84a', { m: .6, r: .3, ds: 1 }); add(g, lathe([[.06, .45], [.118, .43], [.136, .37], [.14, .28], [.17, .16], [.205, .05], [.2, .04]]), P, [0, 0, 0], [1, 1, .95]);
+    add(g, lathe([[.2, .045], [.208, .05], [.205, .065]]), G, [0, 0, 0], [1, 1, .95]); add(g, new THREE.BoxGeometry(.03, .3, .012), G, [0, .26, .14]); ball(g, .02, mat('#7ad8ff', { e: '#3a90c0' }), [0, .4, .125]) }
   if (w === 'traveler') { const T = mat(top, { ds: 1 }); add(g, lathe([[.06, .45], [.115, .43], [.135, .37], [.135, .28], [.14, .2], [.155, .1]]), T, [0, 0, 0], [1, 1, .95]);
     add(g, lathe([[.137, .19], [.141, .2], [.141, .23], [.137, .24]]), mat('#6a3e22'), [0, 0, 0], [1, 1, .95]); add(g, lathe([[.05, .43], [.075, .425], [.09, .45], [.075, .475], [.05, .475]], 16), mat('#d8483a'));
     add(g, new THREE.BoxGeometry(.04, .03, .012), mat('#e0b84a', { m: .6, r: .3 }), [0, .215, .133]) }
@@ -228,7 +258,7 @@ function torsoWear(g, w, top) {
 export function vinyl(root, a0 = {}) {
   if (VOPT.layered) return vinylLayered(root, a0);
   const a = vinylFrom(a0), skin = a.skin || '#f2cfa6', VIN = mat(skin, { r: .5 }), g = new THREE.Group(); g.scale.setScalar(VSCALE); root.add(g); root.userData.vinyl = 1;
-  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a' }[w]), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a' }[w], pant = skirt ? VIN : mat(pantC), sock = skirt ? mat('#f4f0e8') : pant, sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top);
+  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a', sailor: '#2a2a34', kimono: '#c83a5a', knight: '#7a7e8a', cape: '#5a3a24', vest: '#3a2418', robe: '#3a2a4a' }[w] || '#7a4a2a'), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a' }[w] || '#3a3f58', pant = skirt ? VIN : mat(pantC), sock = skirt ? mat('#f4f0e8') : pant, sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top);
   /* torso bean + neck */
   add(g, lathe([[.001, .1], [.085, .11], [.118, .15], [.124, .22], [.12, .3], [.118, .36], [.11, .41], [.075, .44], [.05, .46], [.048, .53], [.001, .53]], 24), VIN, [0, 0, 0], [1, 1, .9]);
   torsoWear(g, w, top);
@@ -251,7 +281,7 @@ export function vinyl(root, a0 = {}) {
     el.userData.fore = .09; role(sh, s < 0 ? 'armR' : 'armL'); role(el, s < 0 ? 'elR' : 'elL') }
   /* the head: face + ears + hair */
   const head = new THREE.Group(); head.position.y = .74; head.name = 'head'; g.add(head); role(head, 'head');
-  const hm = add(head, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile'), roughness: .5 })]); hm.userData.noFacet = 1;
+  const hm = add(head, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair) || a.hairV === 1) for (const s of [-1, 1]) ball(head, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);   /* ears (hidden under long hair) */
   if (a.beard && a.beard !== 'none') beardPiece(head, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(head, a.glasses);
   if (a.hairV === 1) hair(head, a.hair || 'messy', a.hairCol || '#7a4428'); else { hairPiece(head, a.hair || 'messy', a.hairCol || '#7a4428'); head.scale.setScalar(.94) }   /* v2.9 one-piece hair · the head a touch smaller so the hair sits on it */
@@ -262,7 +292,7 @@ const tubeO = (...a) => { const g = tube(...a), ix = g.index.array; for (let k =
 export function vinylLayered(root, a0 = {}) {
   const a = vinylFrom(a0), skin = a.skin || '#f2cfa6', VIN = mat(skin, { r: .5 }), g = new THREE.Group(); g.scale.setScalar(VSCALE); root.add(g); root.userData.vinyl = 1; root.userData.layered = 1;
   const full = !!a0.full, sk = (o, covered) => covered && !full ? null : o;   /* in the game the body under clothes is not built (no extra draw calls) · full = every layer (the art preview) */
-  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a' }[w]), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a' }[w], pant = mat(pantC), sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top), K = .9;   // K = the body under the clothes is slimmer
+  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a', sailor: '#2a2a34', kimono: '#c83a5a', knight: '#7a7e8a', cape: '#5a3a24', vest: '#3a2418', robe: '#3a2a4a' }[w] || '#7a4a2a'), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a' }[w] || '#3a3f58', pant = mat(pantC), sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top), K = .9;   // K = the body under the clothes is slimmer
   /* torso: waist (pivot at the hips) + chest (pivot at the belly) */
   const waist = new THREE.Group(); waist.position.y = .16; g.add(waist); role(waist, 'waist'); const wi = new THREE.Group(); wi.position.y = -.16; waist.add(wi);
   LY(add(wi, lathe([[.001, .1], [.085, .11], [.118, .15], [.124, .22], [.122, .28], [.001, .28]], 24), VIN, [0, 0, 0], [K, 1, .9 * K]), 0);
@@ -289,7 +319,7 @@ export function vinylLayered(root, a0 = {}) {
   /* the head: skull (smaller) → hair (a size up) → hat (another size up) */
   const head = new THREE.Group(); head.position.y = .74 - .28; head.name = 'head'; chest.add(head); role(head, 'head'); head.scale.setScalar(.94);
   const skull = new THREE.Group(); skull.scale.setScalar(.9); head.add(skull);
-  const hm = add(skull, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile'), roughness: .5 })]); hm.userData.noFacet = 1;
+  const hm = add(skull, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair)) for (const s of [-1, 1]) ball(skull, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
   { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); hairPiece(hg, a.hair || 'messy', a.hairCol || '#7a4428'); LY(hg, 1) }

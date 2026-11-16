@@ -1,10 +1,10 @@
 <!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Layered Character</title>
 <style>body{margin:0;background:#f4ead8;font:600 14px system-ui;color:#3a2a20}#w{display:grid;grid-template-columns:repeat(5,300px);gap:6px;padding:8px}.c{background:#fff8ee;border:3px solid #2a2030;border-radius:14px;overflow:hidden}.c b{display:block;padding:6px 10px;background:#2a2030;color:#fff}canvas{display:block}</style></head>
-<body><div id="w"></div><div id="h" style="display:grid;grid-template-columns:repeat(6,200px);gap:6px;padding:8px"></div>
+<body><div id="w"></div><div id="ex" style="display:grid;grid-template-columns:repeat(6,200px);gap:6px;padding:8px"></div><div id="ou" style="display:grid;grid-template-columns:repeat(9,170px);gap:6px;padding:8px"></div><div id="hs" style="display:grid;grid-template-columns:repeat(6,200px);gap:6px;padding:8px"></div><div id="h" style="display:grid;grid-template-columns:repeat(6,200px);gap:6px;padding:8px"></div>
 <script type="module">
 /* v3.9 preview: the layered (R15-like) character · not used by the game until approved */
 import * as THREE from '../../lib/three.module.min.js';
-import { vinyl, vinylLayered, vinylLayers, vinylHat, VHATS } from '../../src/vinyl.js';
+import { vinyl, vinylLayered, vinylLayers, vinylHat, VHATS, VLOOK } from '../../src/vinyl.js';
 const W = 300, H = 380, A = { full: 1, v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#4a2e22', top: '#3a8ad8', wear: 'traveler', eyes: 'round' }, F = { ...A, sex: 'f', hair: 'pony', hairCol: '#b05a30', top: '#d84a9a', bottom: 'skirt' };
 function panel(title, build, cam = [0, .9, 4.6], look = [0, .78, 0]) {
   const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b>${title}</b>`; document.getElementById('w').appendChild(d);
@@ -25,5 +25,16 @@ VHATS.slice(1).forEach(([k, n], i) => { const d = document.createElement('div');
   const sc = new THREE.Scene(); sc.background = new THREE.Color('#fff8ee'); sc.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); sc.add(sun);
   const g = new THREE.Group(); vinylLayered(g, { ...A, sex: i % 2 ? 'f' : 'm', hair: HAIRS[i % 8], hairCol: HC[i % 8], hat: k }); g.rotation.y = .45; sc.add(g);
   const c = new THREE.PerspectiveCamera(30, 1, .1, 20); c.position.set(0, 1.25, 2.3); c.lookAt(0, 1.17, 0); r.render(sc, c); cv.getContext('2d').drawImage(r.domElement, 0, 0) });
+VLOOK.hair.forEach(([k, n, sx], i) => { const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b style="font-size:12px">${n}</b>`; document.getElementById('hs').appendChild(d);
+  const r = HR || (HR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })); r.setSize(200, 200); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; const cv = document.createElement('canvas'); cv.width = cv.height = 200; d.appendChild(cv);
+  const sc = new THREE.Scene(); sc.background = new THREE.Color('#fff8ee'); sc.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); sc.add(sun);
+  const g = new THREE.Group(); vinylLayered(g, { ...A, full: 0, sex: sx, hair: k, hairCol: ['#7a4428', '#4a2e22', '#b05a30', '#2a2228'][i % 4] }); g.rotation.y = i % 2 ? -.6 : .6; sc.add(g);
+  const c = new THREE.PerspectiveCamera(30, 1, .1, 20); c.position.set(0, 1.2, 2.5); c.lookAt(0, 1.1, 0); r.render(sc, c); cv.getContext('2d').drawImage(r.domElement, 0, 0) });
+const cell = (host, title, w, h, build, cam, look) => { const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b style="font-size:12px">${title}</b>`; document.getElementById(host).appendChild(d);
+  const r = HR || (HR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })); r.setSize(w, h); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; const cv = document.createElement('canvas'); cv.width = w; cv.height = h; d.appendChild(cv);
+  const sc = new THREE.Scene(); sc.background = new THREE.Color('#fff8ee'); sc.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); sc.add(sun);
+  const g = new THREE.Group(); build(g); sc.add(g); const c = new THREE.PerspectiveCamera(30, w / h, .1, 20); c.position.set(...cam); c.lookAt(...look); r.render(sc, c); cv.getContext('2d').drawImage(r.domElement, 0, 0) };
+VLOOK.expr.forEach(([k, n], i) => cell('ex', 'หน้า: ' + n, 200, 200, g => { vinylLayered(g, { ...A, full: 0, hair: i % 2 ? 'bob' : 'messy', sex: i % 2 ? 'f' : 'm', expr: k, eyeCol: VLOOK.eyeCol[i] }) }, [0, 1.15, 1.9], [0, 1.1, 0]));
+VLOOK.wear.forEach(([k, n], i) => cell('ou', n, 170, 230, g => { vinylLayered(g, { ...A, full: 0, wear: k, top: ['#3a8ad8', '#3a8ad8', '#6a4ab8', '#3a8ad8', '#f08aa8', '#3a6ad8', '#e0c060', '#f8f4ec', '#6a4ab8'][i], hair: VLOOK.hair[i * 2 % 18][0], sex: i % 2 ? 'f' : 'm' }); g.rotation.y = .35 }, [0, .85, 3.6], [0, .72, 0]));
 window.__done = 1;
 </script></body></html>
