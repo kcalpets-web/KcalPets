@@ -2730,8 +2730,8 @@ function occRoll() { const q = me(); let n = 0; for (const b of S.builds) if (b.
   if (n) setTimeout(() => toast(`👹 มอนสเตอร์ยึดกองไฟของคุณ ${n} แห่ง! (ดูบนแผนที่ 🚩)`, 3200), 4200) }
 function occBanner(b) { const g = new THREE.Group(); const pole = new THREE.Mesh(new THREE.CylinderGeometry(.04, .05, 2.2, 6), new THREE.MeshStandardMaterial({ color: '#4a3020' })); pole.position.y = 1.1;
   const fl = new THREE.Mesh(new THREE.BoxGeometry(.04, .5, .75), new THREE.MeshStandardMaterial({ color: '#c0302a' })); fl.position.set(0, 1.9, .38); fl.name = 'flag'; g.add(pole, fl); g.position.set(b.x + .9, groundH(b.x + .9, b.z + .9), b.z + .9); scene.add(g); return g }
-let occT = 0;
-function occTick(now) { if (now < occT) return; occT = now + 500; const q = me();
+let occTk = 0;
+function occTick(now) { if (now < occTk) return; occTk = now + 500; const q = me();
   for (const b of S.builds) { if (!b.occ) { const o = OCC.get(b.id); if (o) { scene.remove(o.g); OCC.delete(b.id) } continue } let o = OCC.get(b.id); const d = dist(b.x, b.z, q.x, q.z);
     if (!o && d < 90) { o = { g: occBanner(b), mons: [] }; OCC.set(b.id, o) } if (!o) continue; const f = o.g.getObjectByName('flag'); if (f) f.rotation.y = Math.sin(now / 300) * .25;
     if (d < 45 && !o.mons.length) { const B = kingdomAt(b.x, b.z), tier = Math.min(2, Math.floor(Math.hypot(b.x - 46, b.z) / 220)), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier], n = D.OCC.n[0] + Math.floor(Math.random() * (D.OCC.n[1] - D.OCC.n[0] + 1));
