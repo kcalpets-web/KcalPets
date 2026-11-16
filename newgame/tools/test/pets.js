@@ -21,12 +21,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await closeAll();
     await wait(3000); await closeAll();
-    /* a calm rabbit right next to you → 🫳 → tug-of-war (an in-page bot holds when ▼ is left of the zone) */
-    await E(() => { const N = window.__ng, q = N.me; N.__r = N.monSpawn('rabbit', q.x + 1.6, q.z + .4, { area: 'farm' }); N.__r.fleeT = 0; N.__r.T = Object.assign({}, N.__r.T, { flee: 0 }) }); await wait(1500);
-    const bc = await N(() => (window.__ng.CTX && window.__ng.CTX.k) + ' ' + document.getElementById('bA').textContent); log('catch prompt', bc); if (!/catch/.test(bc)) errs.push('v2.4: no 🫳 prompt on A next to the rabbit');
-    await shot('01-catch-button'); await E(() => window.__ng.actA()); await wait(300);
-    await E(() => { window.__bot = setInterval(() => { const c = window.__ng.CATCHING; if (c) c.hold = c.pos + c.v * .25 < c.zone }, 40) }); await wait(1800); await shot('02-tug');
-    for (let k = 0; k < 40 && await N(() => !!window.__ng.CATCHING); k++) await wait(500);
+    /* v3.8.1 a weak rabbit in front → aim the 🕸️ net (Y) → throw (the old tug-of-war is gone) */
+    for (let k = 0; k < 5 && !(await N(() => window.__ng.S.pets.some(p => p.kind === 'rabbit'))); k++) {
+      await E(() => { const N = window.__ng, q = N.me; if (!N.__r || !N.mons.includes(N.__r)) { N.__r = N.monSpawn('rabbit', q.x + 1.2, q.z + 3, { area: 'farm' }) } const r = N.__r; r.hp = 1; r.stunT = performance.now() + 20000; const y = Math.atan2(r.A.root.position.x - q.x, r.A.root.position.z - q.z); N.PL.yaw = N.PL.yawT = y; N.CAM.yaw = y; N.CAM.pitch = .12 }); await wait(1200); await closeAll();
+      await E(() => window.__ng.aimStart('net')); await wait(1500); if (k === 0) await shot('01-net-aim'); await E(() => window.__ng.aimEnd(true)); await wait(2500); await closeAll() }
     await wait(800); await shot('03-caught'); const pc = await N(() => window.__ng.S.pets.map(p => p.kind + ':' + p.rar)); log('pets', JSON.stringify(pc)); if (!pc.some(x => /rabbit/.test(x))) errs.push('the rabbit was not caught');
     await E(() => { const i = document.getElementById('pnN'); if (i) { i.value = 'ปุยฝ้าย'; document.getElementById('pnOk').click() } }); await wait(400); await closeAll();
     await E(() => window.__ng.openBag('pets')); await wait(700); await shot('04-bag-pets'); await closeAll();

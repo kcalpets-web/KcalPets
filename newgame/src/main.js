@@ -1856,7 +1856,7 @@ const ARROWS = [], bowOf = () => S.bag.find(x => x.id === S.eq.bow) || null, _aD
 const NOCK = new THREE.Group(); ARROW_MESH(NOCK); NOCK.visible = false; scene.add(NOCK);
 function aimStart(kind = 'bow') {
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
-  if (kind === 'net') { if (safeHere()) { safeHint(); return } walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; AIM = { t0: performance.now(), p: .08, tgt: null, net: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = '🕸️ ตาข่าย'; gearView(); return }   /* v3.8.1 🕸️ aim the net like the bow */
+  if (kind === 'net') { walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; AIM = { t0: performance.now(), p: .08, tgt: null, net: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = '🕸️ ตาข่าย'; gearView(); return }   /* v3.8.1 🕸️ aim the net like the bow */
   if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .62 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🏠 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
