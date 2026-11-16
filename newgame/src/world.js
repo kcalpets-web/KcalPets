@@ -106,7 +106,7 @@ export function buildWorld(scene, eco) {
     let t;
     if (beach) t = roll2 < .7 ? 'pebble' : 'rock';
     else if (rocky) t = roll2 < .45 ? 'pebble' : roll2 < .85 ? 'rock' : 'boulder';
-    else if (east) t = roll2 < .35 ? 'grass' : roll2 < .55 ? 'bush' : roll2 < .78 ? 'flower' : roll2 < .94 ? 'tree' : 'bigtree';   // v3.13 far fewer trees round the farm
+    else if (east) t = roll2 < .3 ? 'grass' : roll2 < .5 ? 'bush' : roll2 < .62 ? 'flower' : roll2 < .9 ? 'tree' : 'bigtree';   // v3.13 far fewer trees round the farm
     else t = roll2 < .5 ? 'grass' : roll2 < .7 ? 'bush' : roll2 < .85 ? 'tree' : roll2 < .95 ? 'pebble' : 'rock';
     W.clear.set('c' + id, { id: 'c' + id, t, x: px, z: pz, ry: QR() * 6.28, g: null, pick: null, left: 0 });
   }

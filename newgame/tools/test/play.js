@@ -64,7 +64,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
         await pg.waitForFunction(id => !window.__ng.W.clear.get(id).g, t.id, { timeout: 40000 }).catch(async () => { errs.push('tap-to-chop did not finish the tree'); log('chop debug', JSON.stringify(await E(id => { const N = window.__ng, o = N.W.clear.get(id); return { o: { x: o.x, z: o.z, t: o.t, left: o.left }, me: [N.me.x, N.me.z], tool: N.tool, en: N.S.en, tired: N.S.tired, mon: N.S.mon, ov: document.querySelectorAll('.ov').length, cut: N.cut } }, t.id))); await shot('03x-chopfail') }); log('tap-chop', t.id, await N(() => window.__ng.S.stat.clr_tree || 0)) } }
     await E(() => { window.__ng.speed = 3 });
     /* quest 0: wood 10 + stone 5 → build → sleep */
-    await closeAll(); await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10);
+    await closeAll(); await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10, 140);
     await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 5);
     log('mats', JSON.stringify(await N(() => window.__ng.S.mats)), 'quest', await N(() => window.__ng.S.quest));
     await E(() => window.__ng.quest()); await wait(600); await shot('04-site');
