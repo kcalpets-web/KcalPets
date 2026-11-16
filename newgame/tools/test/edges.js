@@ -28,8 +28,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8827, OUT = process.arg
     await E(() => document.querySelector('#team [data-pet="p1"]').click()); await wait(1500); const hp1 = await E(() => window.__m.hp); const cd = await E(() => document.querySelector('#team [data-pet="p1"]').classList.contains('cd')); log('cat skill', hp0, '→', hp1, 'cooldown', cd); if (!cd) errs.push('the pet skill did not start a cooldown');
     await pg.screenshot({ path: OUT + '/pet-icons.png' });
     // hawk: lift + glide
-    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const y0 = await E(() => window.__ng.me.y); await E(() => document.querySelector('#team [data-pet="p2"]').click()); await wait(600);
-    const gl = await E(() => ({ glide: !!window.__ng.GLIDE2, y: window.__ng.GLIDE2 ? window.__ng.GLIDE2.y : null })); log('hawk', y0, JSON.stringify(gl)); if (!gl.glide || !(gl.y > y0 + 8)) errs.push('the hawk did not lift you into a glide'); await pg.screenshot({ path: OUT + '/hawk.png' });
+    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const y0 = await E(() => window.__ng.me.y); await E(() => document.querySelector('#team [data-pet="p2"]').click()); await wait(700); await pg.screenshot({ path: OUT + '/hawk.png' });
+    let top = y0; for (let i = 0; i < 12; i++) { top = Math.max(top, await E(() => window.__ng.me.y)); await wait(150) } const g1 = await E(() => !!window.__ng.GLIDE2); log('hawk lift', y0.toFixed(1), '→', top.toFixed(1), 'auto-glide', g1); if (!(top > y0 + 8)) errs.push('the hawk did not lift you'); if (g1) errs.push('v3.16.5 the glider must not open by itself');
+    await E(() => window.__ng.startPara()); await wait(400); const g2 = await E(() => !!window.__ng.GLIDE2); log('X in the air → glide', g2); if (!g2) errs.push('could not open the glider after the lift');
     await E(() => window.__ng.closePara && window.__ng.closePara()); await wait(800);
     // restored kingdom → reveal + warp
     await E(() => { const N = window.__ng; N.S.side = 'main'; N.placeMe(181, 20) }); await wait(2000); await E(() => { const N = window.__ng; (N.S.restored = N.S.restored || {}).navalee = Date.now(); N.revealKingdom('navalee') }); await wait(400);

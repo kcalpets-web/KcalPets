@@ -377,6 +377,9 @@ function envTick(dt, now, mv) {                     // swimming (stamina · sink
     const gy = Math.max(-.55, groundH(q.x, q.z)); q.y = GLIDE.y; glideView(now); if (GLIDE.y <= gy + .05) landGlide(); return }   // holding the hawk's legs
   if (RIDE) { PL.swim = PL.climb = false; q.y = (RIDE.whale ? .05 : -.1) + Math.sin(now / 600) * .03; return }   // standing on the raft / the whale's back
   if (DROWN) { const k = Math.min(1, (now - DROWN) / 1600); q.y = -.55 - k * 1.4; if (Math.random() < .2) floater('🫧', 'tool', q.x + (Math.random() - .5) * .6, .2 + Math.random() * .4, q.z); return }
+  if (LIFT) { const k = Math.min(1, (performance.now() - LIFT.t0) / LIFT.dur), e = 1 - (1 - k) * (1 - k), f = Math.sin(performance.now() / 70); q.y = Math.max(h, LIFT.y0 + (LIFT.top - LIFT.y0) * e); jumpT = 0; PL.fallV = 0; PL.swim = PL.climb = false;   /* v3.16.5 🦅 carried up by the hawk */
+    HK.root.position.set(q.x, q.y + 1.65 + f * .06, q.z); HK.root.rotation.y = PL.yaw; if (HK.rig.armL) { HK.rig.armL.rotation.z = -.6 + f * .9; HK.rig.armR.rotation.z = .6 - f * .9 } if (PL.rig.armL) PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3;
+    if (Math.random() < .25) VF.rise(q.x, q.y + 1.2, q.z, '#ffffff', 2); if (k >= 1) { LIFT = null; scene.remove(HK.root); if (PL.rig.armL) PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = 0; VF.burst(q.x, q.y + 2, q.z, '#ffffff', 14, 3); sfx('tap') } return }
   if (AIRAIM && w !== 'water') { AIRAIM.y -= D.HOLD.airSink * dt; q.y = Math.max(h, AIRAIM.y); jumpT = 0; PL.fallV = 0; PL.swim = PL.climb = false; if (q.y <= h + .05) AIRAIM = null; return }   /* v3.12.6 aiming in the air: hover, sink slowly */
   PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
   if (PL.swim) { q.y = -.55 + Math.sin(now / 300) * .04; if (!DROWN && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }          // exhausted while swimming → you sink and wash up on a shore nearby
@@ -1152,7 +1155,8 @@ const PSK = {}; const petAb = p => (D.CATCH[p.kind] || {}).ability, petCd = p =>
 function petSkillIco(p) { const a = petAb(p); if (a === 'glide') return '🪽'; if (a === 'swim') return '🌊'; const el = petEl(p), X = el && D.PET_SPECIAL[el]; return X ? el : '✨' }
 function petSkill(p) { if (!p || CUT) return; const now = Date.now(); if ((PSK[p.id] || 0) > now) { hint(`⏳ ${esc(p.name)} พักอยู่ ${Math.ceil((PSK[p.id] - now) / 1000)} วิ`, 900); return } if (p.down > now) { hint(`💤 ${esc(p.name)} พักฟื้นอยู่`, 1100); return }
   const a = petAb(p), q = me(); let ok = false;
-  if (a === 'glide') { if (!S.has.glider) { hint('🍃 ต้องมีใบไม้ร่อนก่อน', 1400); return } if (PL.swim || RIDE || HORSE) { hint('🦅 ใช้ตอนยืนบนบก', 1200); return } if (GLIDE) closePara && closePara(); ok = startPara(); if (ok) { GLIDE.y += D.PETSKILL.lift; VF.rise(q.x, q.y, q.z, '#ffffff', 18); sfx('dive'); toast(`🦅 ${esc(p.name)} พาบินขึ้นฟ้า! กางใบไม้ร่อนแล้ว`, 1800) } }
+  if (a === 'glide') { if (PL.swim || RIDE || HORSE || GLIDE || LIFT) { hint('🦅 ใช้ตอนยืนบนบก', 1200); return } LIFT = { t0: performance.now(), y0: q.y, top: q.y + D.PETSKILL.lift, dur: 1400 }; jumpT = 0; walkT = null; work = null; scene.add(HK.root); VF.ring(q.x, q.y, q.z, '#ffffff', 2.2, .5); VF.rise(q.x, q.y, q.z, '#ffffff', 22); sfx('dive'); ok = true;   /* v3.16.5 the hawk lifts you · the glider is yours to open (X in the air) */
+    toast(`🦅 ${esc(p.name)} พาบินขึ้นฟ้า!${S.has.glider ? '<br><small>กด X กลางอากาศเพื่อกางใบไม้ร่อน</small>' : ''}`, 2200) }
   else if (a === 'swim') { if (!PL.swim && !(RIDE && RIDE.whale)) { let wet = false; for (let i = 0; i < 8 && !wet; i++) wet = !!waterAt(q.x + Math.cos(i * .8) * 3, q.z + Math.sin(i * .8) * 3); if (!wet) { hint('🐋 ต้องอยู่ในน้ำหรือริมน้ำ', 1300); return } } rideWhale(); ok = true }
   else { const X = D.PET_SPECIAL[petEl(p) || Object.keys(D.PET_SPECIAL)[0]] || {}; let M = LOCK && mons.includes(LOCK) ? LOCK : null, bd = D.PETSKILL.range; if (!M) for (const m of mons) { if (m.T.animal && !m.T.charge) continue; const d = dist(q.x, q.z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; M = m } }
     if (!M && X.kind !== 'heal' && X.kind !== 'guard') { hint('🐾 ไม่มีมอนสเตอร์ใกล้ๆ', 1100); return } const fake = { p, A: { root: { position: new THREE.Vector3(q.x, q.y, q.z) } } }; ok = petSpecial(fake, M || { A: { root: { position: new THREE.Vector3(q.x, q.y, q.z) } } }, performance.now()) !== false; if (ok && M) { M.hit = true; petExp(p, 6) } }
@@ -2009,7 +2013,7 @@ function torchTick(dt) { if (S.hand !== 'torch' || !(S.torchT > 0)) return; if (
 const TORCHL = new THREE.PointLight('#ffb060', 0, D.TORCH.range, 1.4); scene.add(TORCHL);
 function torchLightTick() { const on = torchOn(); TORCHL.intensity = on ? D.TORCH.light + nightK() * D.TORCH.night + Math.sin(performance.now() / 70) * .3 : 0; if (on) { const q = me(); TORCHL.position.set(q.x + Math.sin(PL.yaw) * .4, q.y + 1.7, q.z + Math.cos(PL.yaw) * .4) } }
 const handTool = () => S.hand && S.hand !== 'w' && D.HAND[S.hand] ? S.hand : 'sword';
-let ATKMUL = 1, AIRAIM = null, CHGA = null;   /* v3.12.6 a charged slash multiplies the hit */
+let ATKMUL = 1, AIRAIM = null, CHGA = null, LIFT = null;   /* v3.12.6 a charged slash multiplies the hit */
 const handAtk = () => pStats().atk * (handTool() === 'sword' ? 1 : D.HAND[handTool()].atk) * ATKMUL;
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; if (h === 'hammer') return T.tool === 'hammer'; if (h === 'axe') return T.tool === 'axe'; return T.tool === 'sickle' || t === 'bush' }
 function actA() {
