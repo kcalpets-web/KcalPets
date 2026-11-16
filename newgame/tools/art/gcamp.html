@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE goblin camp</title><style>body{margin:0}</style></head><body>
+<script type="module">
+/* v3.13 goblin camp preview: the whole camp (tier 1, sunset) + the castle-ring tier (tier 2) + pieces · shot by shoot-gcamp.js */
+import { THREE, MONS } from '../../src/clay.js'; import { goblinCamp, GCAMP } from '../../src/gcamp.js';
+const W = 1400, H = 900, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.autoClear = false;
+const view = location.hash.slice(1) || 'camp';
+const S = new THREE.Scene(); S.background = new THREE.Color(view === 'ring' ? '#4a4060' : '#f2b896'); S.fog = new THREE.Fog(S.background, 30, 70);
+S.add(new THREE.HemisphereLight('#ffe6d0', '#7a5a40', .8)); const sun = new THREE.DirectionalLight('#ffc89a', 2.2); sun.position.set(-8, 9, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14 }); S.add(sun);
+const fire = new THREE.PointLight('#ff9a4a', 25, 9, 1.6); fire.position.set(0, 1.4, .6); S.add(fire);
+const fl = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshStandardMaterial({ color: '#6aa050' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const dirt = new THREE.Mesh(new THREE.CircleGeometry(6.2, 40), new THREE.MeshStandardMaterial({ color: '#b88a5a' })); dirt.rotation.x = -Math.PI / 2; dirt.position.y = .01; dirt.receiveShadow = true; S.add(dirt);
+const g = new THREE.Group(); S.add(g); goblinCamp(g, view === 'ring' ? 2 : 1);
+const mon = (k, x, z, ry, s = 1) => { const m = new THREE.Group(); (MONS[k] || MONS.goblin)(m); m.position.set(x, 0, z); m.rotation.y = ry; m.scale.setScalar(s); S.add(m) };
+mon('goblin', -1.2, 2.2, .3); mon('goblin', 1.6, 2.6, -.4); if (view === 'ring') { mon('goblinChief', 0, 2.9, 0, 1.2); mon('goblin', -2.6, 3, .6) }
+for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28 + .2, R = 10 + (i % 3) * 2.5, t = new THREE.Group(); const tr = new THREE.Mesh(new THREE.CylinderGeometry(.25, .35, 3, 7), new THREE.MeshStandardMaterial({ color: '#5a3a22' })); tr.position.y = 1.5; t.add(tr); const cr = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4.5, 9), new THREE.MeshStandardMaterial({ color: '#2f6a3a', flatShading: true })); cr.position.y = 4.6; t.add(cr); t.position.set(Math.cos(a) * R, 0, Math.sin(a) * R - 3); if (Math.sin(a) < .5) S.add(t) }
+S.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } });
+const cam = new THREE.PerspectiveCamera(36, W / H, .1, 200); cam.position.set(0, 5.2, 12.5); cam.lookAt(0, 1.2, -.8); r.render(S, cam); window.__done = 1;
+</script></body></html>
