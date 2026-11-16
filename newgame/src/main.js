@@ -857,7 +857,7 @@ cv.addEventListener('pointermove', e => {
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
     if (stroke.go < 70) return; stroke = null; trail.length = 0 }
-  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; if (AIM) AIM.p = Math.max(-.8, Math.min(.9, AIM.p + (e.clientY - down.ly) * D.CAM_DRAG * .7)); else CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
+  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; if (AIM) AIM.p = Math.max(-.8, Math.min(.9, AIM.p + (e.clientY - down.ly) * D.CAM_DRAG * .7)); else CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
     else joyMove(down.x, down.y, e.clientX, e.clientY) }              // (top view) drag anywhere = a floating stick
 });
 /* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
@@ -1039,7 +1039,7 @@ function frame(now) {
     const still = !joy.on && !walkT && !work && !LOCK && !F && now - (CAM.manualT || 0) > 4000 && now - actT > 6000; if (still) CAM.yaw += dt * .035;   /* v1.9 scenic camera: stand still → it lifts its gaze to the horizon and drifts */
     let dy = CAM.yaw - (CAM.ys ?? CAM.yaw); dy = Math.atan2(Math.sin(dy), Math.cos(dy)); CAM.ys = (CAM.ys ?? CAM.yaw) + dy * Math.min(1, dt * 7); { const pT = still ? Math.min(CAM.pitch, .03) : CAM.pitch; CAM.ps = (CAM.ps ?? CAM.pitch) + (pT - (CAM.ps ?? CAM.pitch)) * Math.min(1, dt * (still ? .5 : 7)) }   // eased
     const dd = 7.5 * zoom, cp = Math.cos(CAM.ps), tx = q.x, ty = Math.max(-.2, q.y) + 1.3, tz = q.z; let px = tx - Math.sin(CAM.ys) * dd * cp, pz = tz - Math.cos(CAM.ys) * dd * cp, py = ty + Math.sin(CAM.ps) * dd;
-    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2, tz + Math.cos(CAM.ys) * 1.5); cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
+    py = Math.max(py, groundH(px, pz) + .6); cam.position.set(px + sh, py, pz); cam.lookAt(tx + Math.sin(CAM.ys) * 1.5, ty - .2 + Math.max(0, .08 - CAM.ps) * 14, tz + Math.cos(CAM.ys) * 1.5);   /* v3.12.2 drag up past level = the camera dips and looks up at the sky */ cam.fov = 52; cam.near = Math.min(3, dd * .42); /* v1.9: trees right behind the camera are cut away instead of blocking the view */ camP.x = camT.x = q.x; camP.z = camT.z = q.z + 1;
     AIMK += ((AIM ? 1 : 0) - AIMK) * Math.min(1, dt * 9); if (AIMK > .002) aimCam(tx, ty, tz); else if (PL && !PL.root.visible && S.avatar && !CUT && !F) PL.root.visible = true;
     if (!scene.fog) { scene.fog = new THREE.Fog(SKY.material.uniforms.bot.value.clone(), 60, 420); cam.far = 700 }
     { const mist = S.area === 'forest' ? 1 : Math.max(0, 1 - Math.abs(S.time - 400) / 70) * .7; const wf = 1 - .55 * Math.min(1, WXS.rain + WXS.snow * .8); scene.fog.near += ((60 - 52 * mist) * wf - scene.fog.near) * dt; scene.fog.far += ((420 - 330 * mist) * wf - scene.fog.far) * dt } }   /* forest + dawn mist */
@@ -1084,11 +1084,8 @@ function hud() {
   $('hMats').textContent = `🪵 ${S.mats.wood || 0} · 🪨 ${S.mats.stone || 0}`;
   $('team').innerHTML = S.team.map(id => { const p = S.pets.find(x => x.id === id); if (!p) return ''; const ps = petStats(p), dn = p.down > Date.now();
     return `<div class="tc${dn ? ' dn' : ''}" data-pet="${p.id}"><span>${PET_ICO[p.kind]}<small>Lv${p.lv}</small></span><div class="bar s"><i style="width:${cdPct(p.id, 'skT', D.PET_SKILL.cd)}%;background:#ffb03a"></i></div><div class="bar s"><i style="width:${cdPct(p.id, 'spT', D.PET_SPECIAL_CD)}%;background:#7ad0ff"></i></div></div>` }).join('');
-  const q = D.QUESTS[S.quest];
-  if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '';
-    const jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;
-    $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>${MAIN_Q.icon} ${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}</b><br><small>📖 บทนำ ${S.quest + 1}/${D.QUESTS.length}</small><br>${q.icon} ${q.text}${prog}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>แตะเพื่อไปทำเลย</u>` }
-  else { const kq = kqTrack(); $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>${MAIN_Q.icon} ${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}</b><br>${kq || (restoredN() >= MAIN_Q.need ? '🗼 ไปที่หอคอยแสง กลางเมืองหลวงลูมิเนีย' : '🗺️ ออกเดินทางไปยังอาณาจักรต่างๆ ช่วยผู้คนฟื้นฟูบ้านเมือง')}` }
+  { const T = trackList(), t = T.find(x => x.id === S.track) || T[0], jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;   /* v3.12.2 the card shows the quest you follow (☁️ by default) · tap = pick another */
+    $('quest').style.display = 'block'; $('quest').innerHTML = `<span class="qx" data-qx="1">✕</span><b>${t.icon} ${t.text}</b>${t.sub ? `<br><small>${t.sub}</small>` : ''}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>${T.length > 1 ? `แตะเพื่อเลือกเควส (${T.length})` : 'แตะเพื่อดูเป้าหมาย'}</u>` }
 }
 $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) openPet(S.pets.find(p => p.id === t.dataset.pet)) };
 function questCheck() {
@@ -1109,8 +1106,9 @@ let guide = null; const qArrow = $('qArrow');
 function point(x, z, y = 1.6, m = null) { guide = { x, z, y, m, area: S.area, until: performance.now() + 12000 } }
 function arrowTick(now) {
   if (guide && (now > guide.until || guide.area !== S.area || (guide.m && !mons.includes(guide.m)))) guide = null;
-  if (!guide || CUT) { qArrow.style.display = 'none'; return }
-  const g = guide, p = g.m ? g.m.A.root.position : null, q = project(p ? p.x : g.x, g.y + (g.m && g.m.kind === 'slimeKing' ? 1 : 0), p ? p.z : g.z);
+  let g = guide; if (!g && S.avatar) { const t = trackNow(); if (t.x != null && dist(me().x, me().z, t.x, t.z) < 45 && dist(me().x, me().z, t.x, t.z) > 2.5) g = { x: t.x, z: t.z, y: groundH(t.x, t.z) + 2.2 } }   /* v3.12.2 near the followed quest's target: the arrow shows it */
+  if (!g || CUT) { qArrow.style.display = 'none'; return }
+  const p = g.m ? g.m.A.root.position : null, q = project(p ? p.x : g.x, g.y + (g.m && g.m.kind === 'slimeKing' ? 1 : 0), p ? p.z : g.z);
   if (q.z > 1) { qArrow.style.display = 'none'; return } qArrow.style.display = 'block'; qArrow.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
 }
 /* v1.9.1: ✕ folds the quest card into a 📜 icon (remembered) · the icon opens it again */
@@ -1126,7 +1124,7 @@ function openQMenu() {
       ({ quest: () => qHide(!document.body.classList.contains('qhide')), ach: () => openJournal('ach'), album: openAlbum, book: () => openJournal(), notes: openNotes, set: openMenu })[k]() }) }) }
 $('quest').addEventListener('click', e => { if (e.target.closest('[data-qx]')) { e.stopImmediatePropagation(); qHide(true); sfx('tap') } }, { capture: true });
 /* v2.1 buttons are game actions: A attack (hold 3 s = AUTO) · B guard · X jump (hold 3 s = crouch) · Y bow · 🏠 = the bag & menu · 🧰 = the quick wheel (tools) */
-$('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); if (document.querySelector('.ov')) { closeSheets(); return } openHome() });
+$('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); if (document.querySelector('.ov')) { closeSheets(); return } openBag() });   /* v3.12.2 🎒 straight to the bag (no 🏠 menu: map = tap the small map · the shop = walk to it · clothes + character = bag tabs) */
 /* v2.3.1 🏠 = a menu of big tiles (bag · craft · build · map · journal · shop · character · settings) */
 /* v2.6 👕 wardrobe: 3 slots · tap a piece to wear it · shows what the weather here needs */
 function wearView() { if (!PL) return; const body = D.WEAR[S.wear.body], top = body && body.col; const a = Object.assign({}, S.avatar || {}, top ? { top } : {}); const key = JSON.stringify(a) + (S.wear.head || '');
@@ -1141,15 +1139,7 @@ function openWear() {
     b.querySelectorAll('[data-s]').forEach(x => x.onclick = () => { S.wear[x.dataset.s] = x.dataset.w || null; sfx('tap'); save(); wearView(); redraw() }) });
 }
 const playTxt = () => { const m = Math.floor((S.playS || 0) / 60), h = Math.floor(m / 60); return h ? `${h} ชม. ${m % 60} นาที` : `${m} นาที` };
-function openHome() {
-  const T = [['bag', '🎒', 'กระเป๋า', ''], ['map', '🗺️', 'แผนที่', ''],
-    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['wear', '👕', 'ชุด', ''], ['me', '👤', 'ตัวละคร', '']];   /* v3.11 journal · notes · album · settings → 📜 · build → the small 🔨 */
-  sheet('🏠 เมนู', (b, redraw, close) => {
-    b.innerHTML = `<p class="mut" style="text-align:center">⏱️ เล่นไปแล้ว ${playTxt()}</p><div class="hgrid">${T.map(([k, i, n, lock]) => `<button class="htile${lock ? ' lock' : ''}" data-h="${k}"><b>${i}</b><span>${n}</span>${lock ? `<small>${lock}</small>` : ''}</button>`).join('')}</div>`;
-    b.querySelectorAll('[data-h]').forEach(x => x.onclick = () => { const k = x.dataset.h, t = T.find(t => t[0] === k); if (t[3]) { hint('🔒 ' + t[3], 1500); return } close(); sfx('tap');
-      ({ bag: () => openBag(), craft: openCraft, build: openBuild, map: openMap, book: () => openJournal(), shop: openTown, wear: openWear, notes: openNotes, album: openAlbum, me: openProfile, set: openMenu })[k]() });
-  });
-}
+function openHome() { openBag() }   /* v3.12.2 the 🏠 menu is gone */
 $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight') }); $('mFarm').addEventListener('click', e => { e.preventDefault(); setMode('farm') }); setTimeout(() => setMode('fight', true));   /* v3.6 no farm mode any more: A / Y slots hold the tools */
 
 /* v2.1 X = jump · keep holding 3 s = crouch (sneak) · tap X while crouching = stand up */
@@ -1170,8 +1160,22 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   Y.addEventListener('pointermove', e => { if (!AIM) return; aimTurn(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY });
   Y.addEventListener('pointerup', () => { const now = performance.now(), short = t0 && now - t0 < 220; t0 = 0; if (F && F.hold) { F.hold = false; return } if (short) { tap = now; aimEnd(false); return } gyroAsk(); aimEnd(true) });   /* a quick tap never wastes an arrow */
   Y.addEventListener('pointercancel', () => aimEnd(false)); Y.addEventListener('contextmenu', e => e.preventDefault()) }
-$('quest').onclick = () => {
-  const q = D.QUESTS[S.quest]; if (!q || q.go === 'none') return; closeSheets(); questGo(q) };
+$('quest').onclick = () => { if (CUT) return; closeSheets(); openTrack() };
+/* v3.12.2 ⭐ follow one quest at a time: ☁️ the main quest · 📖 the story chapter · 📜 each people-quest you hold (one per person) · only the followed one blinks on the maps */
+const STORY_AT = { home: () => HOWSIF, howsif2: () => HOWSIF, howsif: () => HOWSIF, herb: () => FOREST.c || FOREST.camp, camp: () => FOREST.camp, cage: () => FOREST.cage, farm: () => ({ x: 2, z: -3 }), pot: () => POT.home, potionShop: () => TW.shops[0], gather: () => HOUSE, house: () => HOUSE,
+  wreck: () => WRECK, boat: () => WRECK, exit: () => EXIT, sword: () => TOWN.sword, slime: () => ({ x: TX, z: 0 }), shops: () => ({ x: TX, z: 0 }), town: () => ({ x: TX, z: 0 }), forest: () => TOWN.gateE };
+function kqGiver(id) { for (const k in KQ) for (const n of KQ[k].npcs) if ((n.q || []).includes(id) || n.lead && (KQ[k].restore || []).includes(id)) { const K = KINGDOMS[k]; return { k, n, x: K.x + n.dx, z: K.z + n.dz } } return null }
+function trackList() { const L = [{ id: 'main', icon: MAIN_Q.icon, text: `${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}`, sub: restoredN() >= MAIN_Q.need ? '🗼 หอคอยแสง กลางเมืองหลวงลูมิเนีย' : '🗼 เป้าหมาย: หอคอยแสงใต้เมฆทมิฬ (ลูมิเนีย)', x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z + 5.6 }];
+  const q = D.QUESTS[S.quest]; if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '', p = (STORY_AT[q.go] || (() => null))();
+    L.push({ id: 'story', icon: q.icon, text: q.text + prog, sub: `📖 บทนำ ${S.quest + 1}/${D.QUESTS.length}`, x: p && p.x, z: p && p.z, story: q }) }
+  for (const id of Object.keys(KQS())) { if (KQS()[id].st !== 'on' || !KQUEST[id]) continue; const g = kqGiver(id), pr = qProg(id); L.push({ id: 'kq:' + id, icon: '📜', text: `${KQUEST[id].text} (${pr.cur})`, sub: g ? `${g.n.icon} ${g.n.name} · ${KINGDOMS[g.k].name}${pr.ok ? ' · ✅ กลับไปส่งได้แล้ว' : ''}` : '', x: g && g.x, z: g && g.z }) }
+  return L }
+let trkC = null, trkT = 0;
+const trackNow = () => { const now = performance.now(); if (trkC && now < trkT && trkC.k === S.track) return trkC.t; const L = trackList(), t = L.find(x => x.id === S.track) || L[0]; trkC = { k: S.track, t }; trkT = now + 600; return t };   /* cached: the maps ask every frame */
+function openTrack() { sheet('📜 เลือกเควสที่จะทำ', (b, redraw, close) => { const L = trackList(), cur = trackNow();
+    b.innerHTML = '<p class="mut">เลือกได้ทีละเควส · ⭐ เป้าหมายจะกระพริบบนแผนที่และแผนที่เล็ก</p>' + L.map(t => `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div>${t.sub ? `<p class="mut">${t.sub}</p>` : ''}</button>`).join('') + (cur.story && cur.story.go !== 'none' ? '<button class="btn go wide" id="trGo">🧭 พาไปทำเลย</button>' : '');
+    b.querySelectorAll('[data-tr]').forEach(x => x.onclick = () => { S.track = x.dataset.tr; trkC = null; sfx('coin'); save(); hud(); redraw(); hint('⭐ เป้าหมายขึ้นบนแผนที่แล้ว', 1200) });
+    const g = b.querySelector('#trGo'); if (g) g.onclick = () => { close(); questGo(cur.story) } }) }
 function questGo(q) {
   const want = GO_AREA[q.go] ?? 'farm', again = () => questGo(q);
   if (want && want !== S.area) {                                   // run there along the road (the forest is reached through the town)
@@ -1202,16 +1206,15 @@ function questGo(q) {
 }
 
 /* ---------- sheets ---------- */
-function openProfile() {
-  sheet('👤 โปรไฟล์', (b, redraw, close) => {
+function openProfile() { sheet('👤 โปรไฟล์', profileBody) }
+function profileBody(b, redraw, close) {   /* v3.12.2 also the bag's 👤 tab */ {
     const st = pStats(), pr = S.profile || { name: 'ผู้เล่น', guest: true };
-    b.innerHTML = `<div class="card pr">${pr.pic ? `<img src="${esc(pr.pic)}" alt="" referrerpolicy="no-referrer">` : '<div class="av big">🙂</div>'}<div><b>${esc(pr.name)}</b><div class="mut">${pr.guest ? 'เล่นแบบไม่ล็อกอิน' : 'ล็อกอินด้วย Google'}</div></div></div>
+    b.innerHTML = `<div class="card pr">${pr.pic ? `<img src="${esc(pr.pic)}" alt="" referrerpolicy="no-referrer">` : '<div class="av big">🙂</div>'}<div><b>${esc(pr.name)}</b><div class="mut">${pr.guest ? 'เล่นแบบไม่ล็อกอิน' : 'ล็อกอินด้วย Google'}</div><div class="mut">⏱️ เล่นไปแล้ว ${playTxt()}</div></div></div>
       ${spiritCard()}<div class="mut" style="margin:-4px 0 10px">⚔️ ${st.atk} · 🛡️ ${st.def} (จากดาบและโล่)</div>
       <div class="card"><b>บัญชี</b>${pr.guest ? '<p class="mut">ล็อกอินด้วย Google เพื่อใช้ชื่อและรูปของคุณ (เซฟยังเก็บในเครื่องนี้)</p><button class="btn go wide" id="pG">เข้าด้วย Google</button>' : '<button class="btn ghost wide" id="pO">ออกจากระบบ (กลับเป็นผู้เล่นทั่วไป)</button>'}</div>`;
     bindSpirit(b, redraw); const g = b.querySelector('#pG'); if (g) g.onclick = () => { close(); showLogin() };
     const o = b.querySelector('#pO'); if (o) o.onclick = () => { S.profile = { name: 'ผู้เล่น', guest: true }; try { google.accounts.id.disableAutoSelect() } catch (e) { } save(); hud(); redraw() };
-  });
-}
+  } }
 function petCard(p) { const ps = petStats(p), f = formOf(p), dn = p.down > Date.now();
   return `<div class="row"><b>${PET_ICO[p.kind]} ${esc(p.name)}</b><span><span class="tag" style="background:${D.RAR_COL[p.rar]}">${D.RAR_NAME[p.rar]}</span> ${p.rar === 'B' || p.rar === 'L' ? 'ทุกธาตุ' : p.el}</span></div>
     <div class="mut">Lv ${p.lv} · ${D.FORMS[f].name}${f < 2 ? ` (ร่างถัดไป Lv ${D.FORMS[f + 1].lv})` : ''}${dn ? ' · 💤 พักอยู่' : ''} · ⚔️ ${ps.atk} · 🛡️ ${ps.def}</div>
@@ -1270,7 +1273,7 @@ function openHouse() {
 }
 let bagTab = 'sword', bagSel = {};
 /* v1.9.2 inventory, console-style: icon tabs · a grid of tiles (count / power badge, rarity frame, equipped = blue) · details of the selected tile · a 3D preview wearing the gear */
-const INV_TABS = () => [['sword', '⚔️', 'อาวุธ'], ['shield', '🛡️', 'โล่'], ['bow', '🏹', 'ธนู'], ['mats', '🪵', 'วัตถุดิบ'], ['food', '🍲', 'อาหาร'], ['wear', '👕', 'ชุด'], ['pets', '🐾', 'น้อง']];   /* v3.12 the six bag sections (+ pets until v3.14) · quests / achievements / settings live under 📜 */
+const INV_TABS = () => [['sword', '⚔️', 'อาวุธ'], ['shield', '🛡️', 'โล่'], ['bow', '🏹', 'ธนู'], ['mats', '🪵', 'วัตถุดิบ'], ['food', '🍲', 'อาหาร'], ['wear', '👕', 'ชุด'], ['pets', '🐾', 'น้อง'], ['me', '👤', 'ตัวละคร']];   /* v3.12 the six bag sections (+ pets until v3.14) · quests / achievements / settings live under 📜 */
 function invItems(tab) {
   const L = [], st = pStats();
   if (['sword', 'shield', 'bow'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t].slot === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
@@ -1325,7 +1328,8 @@ function openBag(tab) {
     let h = `<div class="invtop"><div class="invh">${$('hearts').innerHTML}</div><div class="invc">🪙 ${fmt(S.coin)} · 💎 ${fmt(S.gem)}</div></div>
       <div class="invtabs">${T.map(([k, ic, nm]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${ic}<small>${nm}</small></button>`).join('')}</div>` +
       (D.BAG.cats[bagTab] ? `<div class="invslots"><b>🎒 ช่อง ${bagUsed(bagTab)}/${bagCap(bagTab)}</b>${D.CRAFT.some(r => craftCat(r) === bagTab) ? `<button class="btn sm" data-craft="${bagTab}">🛠️ คราฟ</button>` : ''}${bagCap(bagTab) < D.BAG.max ? `<button class="btn sm${S.spirit.free >= D.BAG.cost ? ' go' : ''}" data-bu="${bagTab}">✨ ${D.BAG.cost} → +${D.BAG.step} ช่อง</button>` : '<small>เต็มเพดานแล้ว</small>'}</div>` : '');   /* v3.12 slots used / owned · buy more with ✨ */
-    if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['craft', '🛠️ คราฟ'], ...(Object.keys(S.bp).length ? [['build', '🔨 ก่อสร้าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
+    if (bagTab === 'me') h += '<div class="invtext" id="bagMe"></div>';
+    else if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['craft', '🛠️ คราฟ'], ...(Object.keys(S.bp).length ? [['build', '🔨 ก่อสร้าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
     else { const L = invItems(bagTab); let sel = L.find(x => x.key === bagSel[bagTab]) || L.find(x => x.eq) || L[0]; if (sel) bagSel[bagTab] = sel.key; const st = pStats();
       h += `<div class="invmain"><div class="invgrid">${L.map(x => `<button class="tile${x.eq ? ' eq' : ''}${sel && x.key === sel.key ? ' sel' : ''}" data-k="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.n != null ? `<i>${x.nIcon === 'Lv' ? 'Lv' + x.n : x.n}</i>` : ''}${x.up ? '<u>▲</u>' : ''}${x.dur != null ? `<em style="width:${x.dur * 84}%;background:${x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></em>` : ''}</button>`).join('') || `<p class="mut" style="grid-column:1/-1">ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', pets: 'เข้าใกล้สัตว์ป่าแล้วกด 🫳 จับ', mats: 'ตัดต้นไม้ ทุบหิน ล่าสัตว์', food: 'ทำอาหารที่หม้อหรือกองไฟ' }[bagTab] || ''}</p>`}</div>
         <div class="invside"><canvas class="invcv"></canvas><div class="mut invst">${bagTab === 'pets' ? `ทีม ${S.team.length}/${D.TEAM_MAX}` : `⚔️ ${st.atk} · 🛡️ ${st.def}`}</div></div></div>
@@ -1337,6 +1341,7 @@ function openBag(tab) {
     b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw() });
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, craft: openCraft, me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
+    if (bagTab === 'me') profileBody(b.querySelector('#bagMe'), redraw, () => closeSheets());
     if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
     if (bagTab === 'ach') bindAch(b, redraw);
     b.querySelectorAll('[data-pf]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.pf)));
@@ -2366,6 +2371,8 @@ function drawMini() {
   if (core) g.drawImage(mapBase, (q.x - span / 2 - MAP.x0) * MAP.k, (q.z - span / 2 - MAP.z0) * MAP.k, span * MAP.k, span * MAP.k, D0, D0, D1, D1); else { const m2 = mapHi ? 2.4 : 1; g.drawImage(mapHi || worldMap, wx * m2, wz * m2, ws * m2, ws * m2, D0, D0, D1, D1) }
   g.imageSmoothingEnabled = true; g.drawImage(fogCv, (q.x - span / 2 - WORLD.x0) / FCELL, (q.z - span / 2 - WORLD.z0) / FCELL, span / FCELL, span / FCELL, D0, D0, D1, D1); g.restore(); span = sp0;
   const s = cv3.width / span, cr = Math.cos(R), sr = Math.sin(R), P = (x, z) => { const a = (x - q.x) * s, b = (z - q.z) * s; return [c0 + a * cr - b * sr, c0 + a * sr + b * cr] };
+  { const t = trackNow(); if (t.x != null && Math.floor(performance.now() / 380) % 2) { let [x, y] = P(t.x, t.z); const dx = x - c0, dy = y - c0, d = Math.hypot(dx, dy), rr = c0 * .86; if (d > rr) { x = c0 + dx / d * rr; y = c0 + dy / d * rr }   /* v3.12.2 the followed quest blinks (on the rim when it is far) */
+    g.font = `${13 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('⭐', x, y) } }
   g.fillStyle = '#ff4a5a'; for (const m of mons) if (nearMe(m, span)) { const [x, y] = P(m.A.root.position.x, m.A.root.position.z); g.beginPath(); g.arc(x, y, 2.6 * dpr, 0, 7); g.fill() }
   g.font = `${11 * dpr}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
   for (const b of S.builds) if (BICON[b.k] && b.done && dist(b.x, b.z, q.x, q.z) < span) { const [x, y] = P(b.x, b.z); g.fillText(b.occ ? '🚩' : BICON[b.k], x, y) }
@@ -2376,12 +2383,13 @@ function drawMini() {
   { const n = $('miniN'), rr = 39; n.style.left = (52 + Math.sin(R) * rr) + 'px'; n.style.top = (52 - Math.cos(R) * rr - 7) + 'px' }   /* N rides the round rim */
   $('miniZ').textContent = ZONES[S.area] || '';
 }
-let mapZ = 3, MAPNAV = null, mapSel = null, mnS = 0, mnT = 0; const MAPH = [0, 320, 640, 1280, 2560, 5120];   /* v2.5 big map: zoom levels (display height px) · north is up */
+let mapZ = 0, MAPNAV = null, mapSel = null, mnS = 0, mnT = 0; const MAPH = [0, 320, 640, 1280, 2560, 5120];   /* v2.5 big map: zoom levels (display height px) · north is up */
 function openMap() {
   sheet('🗺️ แผนที่', (b, redraw, close) => {   /* v3.0 full screen */
+    MAPH[0] = Math.max(320, Math.round(innerHeight)); if (mapZ > 0 && MAPH[mapZ] <= MAPH[0] * 1.15) mapZ = 0;   /* v3.12.2 level 0 = the map fills the screen top to bottom (slide sideways) */
     const Z = 4, CW = WMW * Z, CH = WMH * Z, kk = MAPH[mapZ] / CH, fs = n => Math.round(n / kk) + 'px';
-    b.innerHTML = `<div class="wmapW"><div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}" style="height:${MAPH[mapZ]}px"></canvas></div><b class="wcomp">N<i>▲</i></b><div class="wzoom"><button class="btn" data-z="1"${mapZ >= 5 ? ' disabled' : ''} aria-label="ซูมเข้า">＋</button><button class="btn" data-z="-1"${mapZ <= 1 ? ' disabled' : ''} aria-label="ซูมออก">－</button></div><div id="wpCard"></div><p class="wtip">🕹️ โยกจอยเลือกจุดวาป · ลากเลื่อนแผนที่ · ⭐ เป้าหมายเควส</p></div>`;   /* v3.12.1 the map fills the screen: zoom buttons · the stick hops between warp points */
-    b.querySelectorAll('[data-z]').forEach(x => x.onclick = () => { mapZ = Math.max(1, Math.min(5, mapZ + +x.dataset.z)); sfx('tap'); redraw() });
+    b.innerHTML = `<div class="wmapW"><div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}" style="height:${MAPH[mapZ]}px"></canvas></div><b class="wcomp">N<i>▲</i></b><div class="wzoom"><button class="btn" data-z="1"${mapZ >= 5 ? ' disabled' : ''} aria-label="ซูมเข้า">＋</button><button class="btn" data-z="-1"${mapZ <= 0 ? ' disabled' : ''} aria-label="ซูมออก">－</button></div><div id="wpCard"></div><p class="wtip">🕹️ โยกจอยเลือกจุดวาป · ลากเลื่อนแผนที่ · ⭐ เป้าหมายเควส</p></div>`;   /* v3.12.1 the map fills the screen: zoom buttons · the stick hops between warp points */
+    b.querySelectorAll('[data-z]').forEach(x => x.onclick = () => { { let z = mapZ + +x.dataset.z; while (z > 0 && z < 5 && MAPH[z] <= MAPH[0] * 1.15) z += +x.dataset.z; mapZ = Math.max(0, Math.min(5, z)) } sfx('tap'); redraw() });
     const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mapHi || worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true;   /* v3.11 the black cover goes on last (names and icons are part of the paper) */
     const P = (x, z) => [(x - WORLD.x0) * WMk * Z, (z - WORLD.z0) * WMk * Z]; g.font = fs(16) + ' sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     /* v2.5 names of places + people you can visit (only where you have explored) */
@@ -2422,6 +2430,7 @@ function openMap() {
     MAPNAV = { L: WL, i: -1, P, sel, close, el: b };
     { let i0 = WL.findIndex(w => w.id === mapSel); if (i0 < 0 && WL.length) { let bd = 1e9; WL.forEach((w, k) => { const d = dist(w.x, w.z, me().x, me().z); if (d < bd) { bd = d; i0 = k } }) } if (i0 >= 0) sel(i0, 1) }
     wrap.style.touchAction = 'pan-x pan-y';   /* v3.12.1 zoom with the buttons (no pinch) */
+    { const t = trackNow(); if (t.x != null) { const [x, y] = P(t.x, t.z), e = document.createElement('i'); e.className = 'wtgt'; e.textContent = '⭐'; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.title = t.text; pins.appendChild(e) } }   /* v3.12.2 the followed quest's target blinks */
     { const me2 = document.createElement('i'); me2.className = 'wme'; me2.style.left = px * sc + 'px'; me2.style.top = py * sc + 'px'; pins.appendChild(me2) }   /* v3.1 you are here (blinking) */
   }, { cls: 'mapfs', onClose: () => { MAPNAV = null; document.body.classList.remove('mapOn') } }); document.body.classList.add('mapOn');
 }
@@ -2624,7 +2633,7 @@ function padTick(dt) {
   else if (PICK) { pickStick(ax); if (padPrev.walk) { padPrev.walk = 0; joy.on = false } }   /* v3.11 the left stick slides an open picker */
   else if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(7) || B(5) || B(10); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
   else if (padPrev.walk) { padPrev.walk = 0; joy.on = false; joy.run = false }
-  if (rx || ry) { if (AIM) aimTurn(rx * dt * 520, ry * dt * 520); else if (camTP()) { CAM.yaw -= rx * dt * 2.4; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + ry * dt * 1.4)) } }
+  if (rx || ry) { if (AIM) aimTurn(rx * dt * 520, ry * dt * 520); else if (camTP()) { CAM.yaw -= rx * dt * 2.4; CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + ry * dt * 1.4)) } }
   for (const i in PADB) { const p = B(+i); if (p !== !!padPrev[i]) { padPrev[i] = p; if (MAPNAV && i === '1') continue; if (ov && i === '0') { if (p) { const o = [...document.querySelectorAll('.ov')].pop(), bk = o && o.querySelector('.back'); if (bk) bk.click() } continue } padPress(PADB[i], p) } }   /* a window open: B = back */
   for (const [i, f] of [[9, () => $('bMenu').click()], [8, () => $('mini').click()], [14, () => $('wL').click()], [15, () => $('wR').click()]]) { const p = B(i); if (p && !padPrev['s' + i]) f(); padPrev['s' + i] = p }
 }
