@@ -55,9 +55,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     const tw = await E(() => ({ on: window.__ng.torchOn(), left: window.__ng.S.mats.torch, warm: window.__ng.climate().warm, light: window.__ng.TORCHL.intensity })); log('torch', JSON.stringify(tw), 'warm before', w0);
     if (!tw.on || tw.left !== 1 || tw.warm !== w0 + 1 || !(tw.light > 1)) errs.push('the torch did not light / warm / glow');
     await pg.screenshot({ path: OUT + '/torch.png' });
-    await E(() => { window.__ng.S.torchT = .5 }); await wait(2500); const t2 = await E(() => ({ on: window.__ng.torchOn(), left: window.__ng.S.mats.torch }));
+    await E(() => { window.__ng.S.torchT = .5 }); for (let i = 0; i < 40 && await E(() => window.__ng.S.mats.torch !== 0); i++) await wait(300); const t2 = await E(() => ({ on: window.__ng.torchOn(), left: window.__ng.S.mats.torch }));
     log('burnt → next', JSON.stringify(t2)); if (!t2.on || t2.left !== 0) errs.push('the next torch did not light');
-    await E(() => { window.__ng.S.torchT = .5 }); await wait(4000); const t3 = await E(() => ({ on: window.__ng.torchOn(), hand: window.__ng.S.hand, t: window.__ng.S.torchT, time: window.__ng.S.time })); log('all burnt', JSON.stringify(t3)); if (t3.on || t3.hand !== 'w') errs.push('the hand did not go back to the weapon');
+    await E(() => { window.__ng.S.torchT = .5 }); for (let i = 0; i < 40 && await E(() => window.__ng.S.hand === 'torch'); i++) await wait(300); const t3 = await E(() => ({ on: window.__ng.torchOn(), hand: window.__ng.S.hand, t: window.__ng.S.torchT, time: window.__ng.S.time })); log('all burnt', JSON.stringify(t3)); if (t3.on || t3.hand !== 'w') errs.push('the hand did not go back to the weapon');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
