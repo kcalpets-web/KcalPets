@@ -266,7 +266,7 @@ export const PET_SPECIAL = {                                                  //
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
 export const PETSKILL = { cd: 25000, hawkCd: 60000, lift: 16, range: 14 };       // Basic: any element at −60% · Legendary: any element at full power
-export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 1;   // v3.1 one pet adventures with you (tap another to swap)
+export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },
   { k: 'meal', icon: '🍗', name: 'อาหารชุดใหญ่', exp: 120, price: 700 },
