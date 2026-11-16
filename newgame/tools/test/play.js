@@ -34,6 +34,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await clickAll('#tN'); await wait(500); await shot('03-night');
     const swipeAt = async (x, y, dx = 55) => { await pg.mouse.move(x - dx, y); await pg.mouse.down(); await pg.mouse.move(x + dx, y + 6, { steps: 7 }); await pg.mouse.up() };
     const clearSome = async (tool, pred, until, max = 60) => { for (let i = 0; i < max && !(await E(until)); i++) {
+      await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));   /* v3.12.2 a swipe that lands on the quest card opens the quest chooser */
       const id = await E(([tool, pred]) => { const N = window.__ng; if (N.S.en < 10) { N.S.en = null; N.S.stat.enTopUp = (N.S.stat.enTopUp || 0) + 1 } N.setTool(tool); const o = N.nearestClear(eval(pred)); if (!o) return null; if (Math.hypot(N.me.x - o.x, N.me.z - o.z) > 1.6) N.placeMe(o.x - 1.2, o.z); N.look(o.x, o.z); return o.id }, [tool, pred]); if (!id) break; await wait(450);
       const p = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return o && o.g ? N.project(o.x, .3, o.z) : null }, id); if (p) await swipeAt(p.x, p.y); await wait(200) } };
     /* v0.8 pad: A in front of a tree = chop · hold A = wheel (B closes) · AUTO only attacks (v1.4.1) */
