@@ -13,12 +13,13 @@ fs.mkdirSync(OUT, { recursive: true });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(5000);
     const close = () => pg.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     const vis = await pg.evaluate(() => ['tools', 'modeSw'].map(id => getComputedStyle(document.getElementById(id)).display)); log('hidden', vis); if (vis.some(v => v !== 'none')) errs.push('tool tray / mode switch still on screen');
+    const paused = () => pg.evaluate(() => window.__ng.paused && window.__ng.paused());
     const box = async id => { const r = await (await pg.$('#' + id)).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2] };
     const tap = async id => { const [x, y] = await box(id); await pg.mouse.move(x, y); await pg.mouse.down(); await wait(60); await pg.mouse.up() };
     // hold A → picker → slide to the axe
     const pickTo = async k => { await close(); const [x, y] = await box('bA'); await pg.mouse.move(x, y); await pg.mouse.down(); await wait(1600);
       const st = await pg.evaluate(() => window.__ng.pick && window.__ng.pick()); if (!st) { errs.push('hold A did not open the picker'); await pg.mouse.up(); return }
-      const n = st.L.indexOf(k) - st.i; await pg.mouse.move(x + n * 46, y, { steps: 4 }); await wait(500); await pg.screenshot({ path: path.join(OUT, 'pick-' + k + '.png') }); await pg.mouse.up(); await wait(400) };
+      const n = st.L.indexOf(k) - st.i; await pg.mouse.move(x - n * 62, y, { steps: 6 });   /* v3.7 the row follows the finger: drag left to bring later items into the frame */ await wait(500); await pg.screenshot({ path: path.join(OUT, 'pick-' + k + '.png') }); await pg.mouse.up(); await wait(400) };
     await pickTo('axe'); log('hand', await pg.evaluate(() => window.__ng.S.hand)); if (await pg.evaluate(() => window.__ng.S.hand) !== 'axe') errs.push('axe not picked');
     const near = t => pg.evaluate(t => { const N = window.__ng, o = [...N.W.clear.values()].filter(o => o.t === t && o.g && !N.S.cleared[o.id] && Math.hypot(o.x - 1, o.z + 6) > 7 && Math.hypot(o.x - 3, o.z + 8) > 7 && ![...N.W.clear.values()].some(q => q !== o && q.g && Math.hypot(q.x - o.x - 1.1, q.z - o.z) < 1.3)).sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z))[0]; N.placeMe(o.x + 1.1, o.z); N.PL.yaw = N.PL.yawT = -Math.PI / 2; N.S.en = null; return o.id }, t);
     const hitAll = async (id, n) => { for (let i = 0; i < n; i++) { await close(); await tap('bA'); await wait(700); if (await pg.evaluate(id => !!window.__ng.S.cleared[id], id)) return true } return false };
@@ -28,7 +29,7 @@ fs.mkdirSync(OUT, { recursive: true });
     await pg.evaluate(() => window.__ng.placeMe(3.5, -4.3)); await wait(2500); await close();   /* v3.7 by the fenced bed */
     await close(); log('before Y', await pg.evaluate(() => ({ ov: !!document.querySelector('.ov'), aim: document.body.classList.contains('aim'), cls: document.body.className }))); for (let r = 0; r < 3 && !(await pg.evaluate(() => !!window.__ng.pick())); r++) { await close(); await tap('bY'); await wait(80); await tap('bY'); await wait(700) }   /* the slow test GPU can miss a double tap */
     const yp = await pg.evaluate(() => window.__ng.pick && window.__ng.pick()); log('y picker', JSON.stringify(yp)); if (!yp) errs.push('double-tap Y did not open the picker');
-    else { await pg.evaluate(() => { const b = [...document.querySelectorAll('#pick [data-p]')].find(b => b.textContent === '🪏'); b && b.click() }); }
+    else { const r = await pg.evaluate(() => { const b = [...document.querySelectorAll('#pick [data-p]')].find(b => b.textContent === '🪏').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2] }); await pg.mouse.click(r[0], r[1]); await wait(400) }
     log('ytool', await pg.evaluate(() => window.__ng.S.ytool)); if (await pg.evaluate(() => window.__ng.S.ytool) !== 'hoe') errs.push('shovel not picked');
     const p0 = await pg.evaluate(() => Object.keys(window.__ng.S.plots).length); let dug = false;
     for (const yaw of [0, 1.57, 3.14, 4.71]) { await pg.evaluate(y => { window.__ng.CAM.yaw = y }, yaw); await wait(600); const [x, y] = await box('bY'); await pg.mouse.move(x, y); await pg.mouse.down(); await wait(1800); await pg.mouse.up(); await wait(800);
