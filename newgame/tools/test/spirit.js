@@ -33,7 +33,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const calm = await N(() => { const m = window.__ng.__calm; return { hp: m.hp, max: m.T.hp, hit: !!m.hit } }); log('calm slime', JSON.stringify(calm)); if (calm.hp < calm.max) errs.push('pets attacked a monster the player had not hit');
     await E(() => { const N = window.__ng, m = N.__calm; if (N.mons.includes(m)) N.hurtMon(m, 999, 'dmg') }); await wait(500);
     /* v1.4.2 lock-on: an angry monster beside you → you turn to face it */
-    await E(() => { const N = window.__ng, q = N.me; N.PL.yaw = N.PL.yawT = 0; N.__foe = N.monSpawn('goblin', q.x + 3, q.z, { area: 'farm', aggro: true }) }); await wait(2500);
+    await E(() => { const N = window.__ng, q = N.me; N.PL.yaw = N.PL.yawT = 0; N.__foe = N.monSpawn('goblin', q.x - 3, q.z, { area: 'farm', aggro: true })   /* west: the farm fence is east of the spawn (v3.7) */ }); await wait(2500);
     const lk = await N(() => { const N = window.__ng, m = N.__foe.A.root.position, q = N.me; let d = Math.atan2(m.x - q.x, m.z - q.z) - N.PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return { lock: N.LOCK === N.__foe, off: +Math.abs(d).toFixed(2) } });
     log('lock-on', JSON.stringify(lk)); if (!lk.lock || lk.off > .5) errs.push('lock-on did not face the monster'); await shot('06b-lock');
     /* v1.4.4 effects: sword arcs + sparks + boss bar */

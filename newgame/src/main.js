@@ -936,7 +936,7 @@ function stepTo(A, x, z, sp, dt, ok = walkHere) { const q = A.root.position, dx 
 function hitPlayer(m, now) { sfx('hurt'); m.hit = true; const r = dmgCalc(m.T.atk * (isNight() ? D.NIGHT.atk : 1), pStats().def), q = m.A.root.position; if (now < petGuardT) { r.d = Math.max(1, Math.ceil(r.d * .5)); floater('🪨', 'tool', me().x, 2.3, me().z) } if (guard && facing(m) && spendEn(4)) { const sh = shieldOn(); r.d = Math.max(1, Math.round(r.d * (sh ? .2 : .6))); if (sh) wearItem('shield'); floater('🛡️', 'tool', me().x, 2, me().z); sfx('knock') } S.hp = Math.max(0, pHp() - r.d); lastHurt = now; VF.burst(me().x, me().y + 1, me().z, '#ff4a5a', 8, 2.6); { const md = D.MON_DEBUFF[m.kind]; if (md && !(guard && facing(m)) && Math.random() < md[1]) addDeb(md[0]) } shakeT = .3; floater('-' + r.d, 'hurt', q.x, 2.1, q.z); if (S.hp <= 0) hint('😵 ผู้เล่นหมดแรง! ใช้ดาบไม่ได้จนกว่าจะฟื้น · ดื่มยา HP ได้', 2500) }
 const gamePaused = () => !!(PICK || document.querySelector('.ov'));
 function frame(now) {
-  requestAnimationFrame(frame); if (CUT || gamePaused()) { last = now; return }   /* v3.7 a window, the map or a picker open = the game waits (a rest, like Start) */
+  requestAnimationFrame(frame); if (CUT || gamePaused()) { if (!CUT) padTick(0); last = now; return }   /* the controller still works in menus (B = back, D-pad in pickers) */   /* v3.7 a window, the map or a picker open = the game waits (a rest, like Start) */
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
   /* pets: wander · fight (run in, auto attack, auto element skill) · rest after fainting */
   for (const e of PA.values()) {
