@@ -247,6 +247,10 @@ function mergeStatic0(root, cell = 0) {   /* v3.4 cell > 0: also split by a grou
   return out;
 }
 
+/* v3.14 merge a prop group into a few meshes (by material) · textured pieces (decals) stay as their own meshes */
+export function mergeProp(root) { root.updateMatrixWorld(true); const keep = []; root.traverse(o => { if (o.isMesh && o.material && o.material.map) keep.push(o) });
+  const out = new THREE.Group(); for (const o of keep) { const m = new THREE.Mesh(o.geometry, o.material); o.matrixWorld.decompose(m.position, m.quaternion, m.scale); out.add(m); o.parent.remove(o) }
+  root.updateMatrixWorld(true); mergeStatic0(root).children.slice().forEach(m => out.add(m)); return out }
 /* ================= the ruined town (east of the island; the camera jumps here through the gate) ================= */
 /* ---- the forest east of the town (chapter 2): a winding path, glowing herbs, the goblin camp with Sberh's cage ---- */
 export const FX = 92;

@@ -8,7 +8,8 @@ import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
-import { harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { goblinCamp } from './gcamp.js';
+import { mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback } from './cutscene.js';
 import { TIME, gulls } from './life.js';
@@ -110,6 +111,28 @@ const HARB = (() => { const g = new THREE.Group(); scene.add(g); const R2 = [3.5
   [[1, HB.x + 7, HB.z - 6.5, 0], [2, HB.x + 11.5, HB.z - 6.5, 0], [3, HB.x + 16, HB.z - 6.5, 0], [4, HB.x + 9, HB.z + 6.5, Math.PI], [5, HB.x + 13.5, HB.z + 6.5, Math.PI]].forEach(a => put(...a));
   const sg = new THREE.Group(); part(sg, '#4a2e1a', '#7a5232', [0, .8, 0], [.08, .8, .08], [0, 0, 0], { A: 0 }); part(sg, '#c8a070', '#f0d8b0', [0, 1.55, 0], [.8, .32, .05], [0, 0, 0], { A: 0 }); sg.position.set(HB.x + 2.5, groundH(HB.x + 2.5, HB.z - 2), HB.z - 2); g.add(sg);
   const bp = addPick(W, HB.x - 6.5, HB.z + 1.9, 1.6, 1.6, { kind: 'boat' }); return { g, boat, shops, boatPick: bp } })();
+/* ================= v3.14 💠 light stones: one per kingdom · asleep until you beat its shadow guardians (a quest) → a warp point + ✨ ================= */
+const LSTONES = Object.keys(KINGDOMS).map(k => { const K = KINGDOMS[k], o = D.LSTONE.off; let x = K.x + o[0], z = K.z + o[1]; for (let r = 3; r < 90 && (!walkLand(x, z) || waterAt(x, z)); r += 3) { x = K.x + o[0] + Math.cos(r) * r; z = K.z + o[1] + Math.sin(r) * r } return { k, x, z, g: null, pick: null, mons: [] } });
+const lsAwake = k => !!(S.lstone || {})[k];
+function lsView(L) { const g = new THREE.Group(), y = groundH(L.x, L.z); g.position.set(L.x, y, L.z); scene.add(g); L.g = g; const on = lsAwake(L.k);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, .5, 10), new THREE.MeshStandardMaterial({ color: '#8a8478', roughness: .9, flatShading: true })); base.position.y = .25; g.add(base);
+  const cr = new THREE.Mesh(new THREE.OctahedronGeometry(.7, 0), new THREE.MeshStandardMaterial({ color: on ? '#bff4ff' : '#5a6a7a', emissive: on ? '#5ad8ff' : '#101820', emissiveIntensity: on ? 1.2 : .3, roughness: .3, metalness: .1, flatShading: true })); cr.scale.set(.8, 2.1, .8); cr.position.y = 2.1; cr.name = 'crystal'; g.add(cr);
+  for (let i = 0; i < 4; i++) { const sh = new THREE.Mesh(new THREE.OctahedronGeometry(.25, 0), cr.material); const a = i * 1.57 + .4; sh.position.set(Math.cos(a) * .8, .6, Math.sin(a) * .8); sh.scale.set(.7, 1.6, .7); sh.rotation.z = Math.cos(a) * .4; g.add(sh) }
+  if (on) { const beam = new THREE.Mesh(new THREE.CylinderGeometry(.35, .6, 40, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#9ae8ff', transparent: true, opacity: .22, depthWrite: false })); beam.position.y = 22; beam.name = 'beam'; g.add(beam) }
+  L.pick = addPick(W, L.x, L.z, 1.4, 3.6, { kind: 'lstone', k: L.k }); L.pick.position.y += Math.max(0, y) }
+function lsDrop(L) { if (L.g) { scene.remove(L.g); removePick(W, L.pick); L.g = L.pick = null } }
+function lsTick(q, now) { for (const L of LSTONES) { const d = dist(q.x, q.z, L.x, L.z); if (d < 110 && !L.g) lsView(L); else if (d > 150 && L.g) lsDrop(L); if (L.g) { const c = L.g.getObjectByName('crystal'); if (c) { c.rotation.y = now / 1400; c.position.y = 2.1 + Math.sin(now / 700) * .12 } }
+    if (L.mons.length && d > 140) { for (const m of L.mons) if (mons.includes(m)) monGone(m); L.mons = []; if (S.lsq === L.k) { S.lsq = null; hint('💠 ผู้พิทักษ์หายไป… กลับไปที่ศิลาเพื่อเริ่มใหม่', 2000) } } } }
+function openLStone(k) { const L = LSTONES.find(l => l.k === k), K = KINGDOMS[k]; if (!L) return; sfx('tap');
+  if (lsAwake(k)) { sheet('💠 ศิลาแห่งแสง', b => { b.innerHTML = `<div class="card"><b>💠 ศิลาแห่งแสง · ${K.name}</b><p>ศิลาตื่นแล้ว แสงของมันส่องเป็นเสาขึ้นฟ้า</p><p class="mut">✨ วาปมาที่นี่ได้จากแผนที่ (แผ่นดินใหญ่)</p></div>` }); return }
+  if (L.mons.some(m => mons.includes(m))) { hint(`💠 กำจัดผู้พิทักษ์เงาให้หมด (${L.mons.filter(m => mons.includes(m)).length} ตัว)`, 1600); return }
+  sheet('💠 ศิลาแห่งแสงที่หลับใหล', (b, redraw, close) => { const n = D.LSTONE.guard[0] + Math.floor(Math.random() * (D.LSTONE.guard[1] - D.LSTONE.guard[0] + 1));
+    b.innerHTML = `<div class="card"><b>💠 ศิลาแห่งแสง · ${K.name}</b><p>ศิลาแห่งแสงของ${K.name.replace(/^\S+\s/, '')} หลับใหลอยู่ใต้เงาของเมฆทมิฬ… เงาผู้พิทักษ์ตื่นขึ้นเมื่อมีคนแตะศิลา</p><p>📜 <b>เควส: ปลุกพลังศิลา</b> · กำจัดผู้พิทักษ์เงา ${n} ตัวรอบศิลา</p><p class="mut">รางวัล: 💠 จุดวาปของอาณาจักรนี้ · ✨ +${D.LSTONE.spirit}</p><button class="btn go wide" id="lsGo">⚔️ ปลุกพลังศิลา</button></div>`;
+    b.querySelector('#lsGo').onclick = () => { close(); const Lm = D.K_MONS[k] || WILD_MONS[2]; L.mons = []; for (let i = 0; i < n; i++) { const a = i / n * 6.283, px = L.x + Math.cos(a) * 5.5, pz = L.z + Math.sin(a) * 5.5, m = monSpawn(Lm[i % Lm.length], walkLand(px, pz) ? px : L.x + 2, walkLand(px, pz) ? pz : L.z, { area: 'wild', aggro: true, silent: 1 }); m.lstone = k; L.mons.push(m) }
+      S.lsq = k; S.track = 'ls:' + k; trkC = null; shakeT = .4; sfx('boom'); toast(`💠 เงาผู้พิทักษ์ ${n} ตัวตื่นขึ้น! กำจัดให้หมดเพื่อปลุกศิลา`, 2400); save(); hud() } }) }
+function lsKill(m) { const L = LSTONES.find(l => l.k === m.lstone); if (!L || L.mons.some(x => x !== m && mons.includes(x))) return; L.mons = [];
+  (S.lstone = S.lstone || {})[L.k] = Date.now(); if (S.lsq === L.k) S.lsq = null; S.spirit.free += D.LSTONE.spirit; spiritNew = true; bump('lstones'); if (L.g) { lsDrop(L); lsView(L) } sfx('level'); cheer && cheer(2000);
+  toast(`💠 <b>ศิลาแห่งแสง · ${KINGDOMS[L.k].name}</b> ตื่นแล้ว!<br>✨ +${D.LSTONE.spirit} · วาปมาที่นี่ได้จากแผนที่`, 3600); save(); hud() }
 for (const sh of HARB.shops) TW.shops[sh.i] = sh; for (let i = 0; i < D.SHOPS.length; i++) if (!TW.shops[i]) TW.shops[i] = { i, x: HB.x, z: HB.z, fz: 1, fixed: new THREE.Group(), ruin: new THREE.Group(), owner: null, pick: null };   /* index = D.SHOPS index */
 for (const k of D.VANEYA.shops) S.shops[k] = S.shops[k] || 1;   /* the harbour shops are open (no repairs) */
 function boatSide() { const at = S.boatAt || 'isle', fixed = !!S.story.boatFixed; W.boat.visible = fixed && at === 'isle'; HARB.boat.visible = fixed && at === 'main' }
@@ -455,7 +478,7 @@ function monGone(m) { scene.remove(m.A.root); m.tag.remove(); removePick(W, m.pi
 const farmMon = () => mons.find(m => m.farm);
 function hurtMon(m, d, cls, label) { if (m.T.horse) { const q0 = m.A.root.position; floater('🐴 💛', 'tool', q0.x, 1.8, q0.z); return } if (m.T.golem) { const g = golemDmg(m, d); if (!g[0]) return; d = g[0]; if (g[1]) label = g[1] } const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
 function monDie(m) {
-  if (m.occ) setTimeout(() => occKill(m));   /* v3.8 one of the squatters at your camp fire */
+  if (m.occ) setTimeout(() => occKill(m)); if (m.lstone) setTimeout(() => lsKill(m));   /* v3.14 a light-stone guardian */   /* v3.8 one of the squatters at your camp fire */
   { const q = m.A.root.position, big = (MSCALE[m.kind] || .85) > 1; VF.burst(q.x, q.y + .6, q.z, m.T.animal ? '#ffffff' : '#c8a0ff', big ? 30 : 16, big ? 5 : 3.5); VF.ring(q.x, q.y, q.z, '#ffffff', big ? 3.2 : 1.8, .45) }
   const T = m.T, q = m.A.root.position, x = q.x, z = q.z, coin = T.coin[0] + Math.floor(Math.random() * (T.coin[1] - T.coin[0]));
   if (coin) { sfx('coin'); S.coin += coin; floater(`🪙 +${coin}`, 'coin', x, 1.9, z) } else sfx('hit'); addMats(T.mat, x + .4, z); playerExp(T.exp, x - .4, z);
@@ -958,6 +981,7 @@ function useThing(k) {
     case 'tower': return towerDoor();
     case 'note': return readNote(k.id);
     case 'sign': return readSign(k.id);
+    case 'lstone': return openLStone(k.k);
     case 'plot': return plotAction(k.key);
     case 'chest': return openChest(k.id);
     case 'build': return openBuilt(k.id);
@@ -1227,7 +1251,10 @@ $('quest').onclick = () => { if (CUT) return; closeSheets(); openTrack() };
 const STORY_AT = { home: () => HS.root.position, howsif2: () => HS.root.position, howsif: () => HS.root.position, herb: () => FOREST.c || FOREST.camp, camp: () => FOREST.camp, cage: () => FOREST.cage, farm: () => ({ x: 2, z: -3 }), pot: () => POT.home, potionShop: () => TW.shops[0], gather: () => HOUSE, house: () => HOUSE,
   wreck: () => WRECK, boat: () => WRECK, exit: () => EXIT, sword: () => TOWN.sword, slime: () => ({ x: TX, z: 0 }), shops: () => ({ x: TX, z: 0 }), town: () => ({ x: TX, z: 0 }), forest: () => TOWN.gateE };
 function kqGiver(id) { for (const k in KQ) for (const n of KQ[k].npcs) if ((n.q || []).includes(id) || n.lead && (KQ[k].restore || []).includes(id)) { const K = KINGDOMS[k]; return { k, n, x: K.x + n.dx, z: K.z + n.dz } } return null }
-function trackList() { const L = [{ id: 'main', icon: MAIN_Q.icon, text: `${MAIN_Q.text} ${restoredN()}/${MAIN_Q.need}`, sub: restoredN() >= MAIN_Q.need ? '🗼 หอคอยแสง กลางเมืองหลวงลูมิเนีย' : '🗼 เป้าหมาย: หอคอยแสงใต้เมฆทมิฬ (ลูมิเนีย)', x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z + 5.6 }];
+function trackList() { const L = [{ id: 'main', icon: MAIN_Q.icon, text: 'กำจัดเมฆทมิฬ', sub: '🏰 ปราสาทใต้เมฆทมิฬ กลางลูมิเนีย · เข้าได้เลย (ถ้าผ่านแคมป์รอบปราสาทไปได้!)', x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z + 5.6 }];   /* v3.14 the main quest has no count */
+  { const left = Object.keys(KINGDOMS).filter(k => !(S.restored || {})[k] && KQ[k]), q = me(); let tg = null, bd = 1e9; for (const k of left) { const K = KINGDOMS[k], ld = (KQ[k].npcs || []).find(n => n.lead) || { dx: 0, dz: 0 }, d = dist(q.x, q.z, K.x, K.z); if (d < bd) { bd = d; tg = { x: K.x + ld.dx, z: K.z + ld.dz, n: K.name } } }
+    if (tg) L.push({ id: 'restore', icon: '🌈', text: `ฟื้นฟูอาณาจักร ${restoredN()}/${MAIN_Q.need}`, sub: `ใกล้สุด: ${tg.n} · คุยกับผู้นำและชาวบ้าน`, x: tg.x, z: tg.z }) }
+  if (S.lsq) { const Ls = LSTONES.find(l => l.k === S.lsq); if (Ls) L.push({ id: 'ls:' + Ls.k, icon: '💠', text: 'ปลุกพลังศิลาแห่งแสง', sub: `${KINGDOMS[Ls.k].name} · กำจัดผู้พิทักษ์เงา`, x: Ls.x, z: Ls.z }) }
   const q = D.QUESTS[S.quest]; if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '', p = (STORY_AT[q.go] || (() => null))();
     L.push({ id: 'story', icon: q.icon, text: q.text + prog, sub: `📖 บทนำ ${S.quest + 1}/${D.QUESTS.length}`, x: p && p.x, z: p && p.z, story: q }) }
   for (const id of Object.keys(KQS())) { if (KQS()[id].st !== 'on' || !KQUEST[id]) continue; const g = kqGiver(id), pr = qProg(id); L.push({ id: 'kq:' + id, icon: '📜', text: `${KQUEST[id].text} (${pr.cur})`, sub: g ? `${g.n.icon} ${g.n.name} · ${KINGDOMS[g.k].name}${pr.ok ? ' · ✅ กลับไปส่งได้แล้ว' : ''}` : '', x: g && g.x, z: g && g.z }) }
@@ -2158,7 +2185,7 @@ function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f ===
     const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
   twinkle(g, .55 / (o.g.scale.x || 1), (o.t === 'tree' ? 1.9 : .65) / (o.g.scale.x || 1), o.t === 'tree' ? 3 : 2, .24); o.g.add(g) }
 function pickFruit(o) { tutEv('gather'); const F = fruitOf(o), n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
-const CTX_ICO = { sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
+const CTX_ICO = { lstone: '💠', sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
 const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper', 'knpc']);
 const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; document.body.appendChild(e); return e })();
 let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
@@ -2531,6 +2558,8 @@ function openMap() {
     if (mapZ >= 3) for (const r of RV) if (S.ruins[r.id]) label(r.x, r.z + 4 / Math.min(1, kk * 2), r.def.name + ' ' + r.def.npc.split(' ')[0]);
     if (mapZ >= 5) for (const k in CAMPS) if (campOn(k)) label(CAMPS[k].x, CAMPS[k].z + 3, CAMPS[k].name);
     for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
+    for (const Ls of LSTONES) if (seen(Ls.x, Ls.z)) { const [x, y] = P(Ls.x, Ls.z); g.globalAlpha = lsAwake(Ls.k) ? 1 : .55; g.fillText('💠', x, y); g.globalAlpha = 1 }   /* v3.14 */
+    for (const c of WC) if (c.fort && seen(c.x, c.z) && !(S.wcamps[c.id] || {}).c) { const [x, y] = P(c.x, c.z); g.fillText('🏴', x, y) }
     for (const b of S.builds) if (BICON[b.k] && b.done) { const [x, y] = P(b.x, b.z); g.fillText(BICON[b.k], x, y) }
     for (const r of RV) if (S.ruins[r.id]) { const [x, y] = P(r.x, r.z); g.fillText(S.ruins[r.id].fin ? '🏡' : '🏚️', x, y) }
     for (const c of WC) if (S.wcamps[c.id]) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
@@ -2579,6 +2608,7 @@ function kingTick(now) {
   /* hidden chests (caves) + notes appear when you come near */
   for (const c of CHESTS) { const d = dist(q.x, q.z, c.x, c.z); if (d < 55 && !c.g) chestView(c); else if (d > 75 && c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = null } }
   kqTick(q); for (const N of Object.values(KNPC)) { const a = N.A.root.position, dd = dist(q.x, q.z, a.x, a.z); if (dd < 6) N.A.yawT = Math.atan2(q.x - a.x, q.z - a.z) }
+  lsTick(q, performance.now()); for (const f of FENCES) { const d = dist(q.x, q.z, f.x, f.z); if (d < 80 && !f.g) fenceView(f); else if (d > 110 && f.g) { scene.remove(f.g); f.g = null } }
   for (const sg of SIGNS) { const d = dist(q.x, q.z, sg.x, sg.z); if (d < 70 && !sg.g) signView(sg); else if (d > 95 && sg.g) { scene.remove(sg.g); removePick(W, sg.pick); sg.g = null } }   /* v3.12.1 signposts */
   for (const n of NOTES) { const d = dist(q.x, q.z, n.x, n.z); if (d < 50 && !n.g && !(S.notes || {})[n.id]) noteView(n); else if ((d > 70 || (S.notes || {})[n.id]) && n.g) { scene.remove(n.g); removePick(W, n.pick); n.g = null } }
   cycleTick();
@@ -2595,10 +2625,17 @@ function torchPost(x, y, z) { const g = new THREE.Group(); g.position.set(x, y, 
 const SIGNS = (() => { const out = [], ok = (x, z) => walkLand(x, z) && !waterAt(x, z) && !out.some(s => dist(s.x, s.z, x, z) < 40);
   const near = (x, z) => { for (let r = 0; r <= 24; r += 3) for (let a = 0; a < 6.28; a += .7) { const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (ok(px, pz)) return [px, pz] } return null };
   for (const [x, z] of [[EXIT.x + 2.2, EXIT.z - 2.6], [CAMPS.meadow.x + 2.6, CAMPS.meadow.z - 2.2], [CAMPS.forest.x + 3.5, CAMPS.forest.z + 3.5]]) if (walkLand(x, z)) out.push({ id: out.length, x, z });
-  for (const k in KINGDOMS) { const K = KINGDOMS[k]; for (const t of [.22, .5, .78]) { const p = near(100 + (K.x - 100) * t, (K.z) * t); if (p) out.push({ id: out.length, x: p[0], z: p[1] }) } }
+  for (const k in KINGDOMS) { const K = KINGDOMS[k]; for (const t of [.22, .5, .78]) { const p = near(HB.x + 10 + (K.x - HB.x - 10) * t, HB.z + (K.z - HB.z) * t);   /* v3.14 the routes start at the harbour */ if (p) out.push({ id: out.length, x: p[0], z: p[1] }) } }
   for (const s of out) s.to = Object.keys(KINGDOMS).sort((a, b) => dist(s.x, s.z, KINGDOMS[a].x, KINGDOMS[a].z) - dist(s.x, s.z, KINGDOMS[b].x, KINGDOMS[b].z)).slice(0, 3);
   return out })();
 for (const k in CAMPS) { const x = CAMPS[k].x - 1.6, z = CAMPS[k].z - 1.4; if (walkLand(x, z)) scene.add(torchPost(x, groundH(x, z), z)) }   /* v3.12.1 a torch at every checkpoint */
+/* v3.14 wooden fences along the routes from the harbour to each kingdom (decor: not solid) */
+const FENCES = (() => { const out = []; for (const k in KINGDOMS) { const K = KINGDOMS[k], x0 = HB.x + 10, z0 = HB.z, L = dist(x0, z0, K.x, K.z), ux = (K.x - x0) / L, uz = (K.z - z0) / L;
+    for (let d = 20; d < L - 40; d += 34) { const side = (Math.floor(d / 34) % 2 ? 1 : -1) * 3.2, x = x0 + ux * d - uz * side, z = z0 + uz * d + ux * side; if (!walkLand(x, z) || waterAt(x, z) || out.some(f => dist(f.x, f.z, x, z) < 12)) continue; out.push({ x, z, ry: Math.atan2(ux, uz), g: null }) } } return out })();
+const FNG = { post: new THREE.CylinderGeometry(.07, .09, 1.1, 6), rail: new THREE.BoxGeometry(.07, .08, 1.9) }, FNM = new THREE.MeshStandardMaterial({ color: '#8a5a32', roughness: .9 });
+function fenceView(f) { const g = new THREE.Group(); scene.add(g); f.g = g; const ca = Math.sin(f.ry), cb = Math.cos(f.ry);
+  for (let i = 0; i < 4; i++) { const t = (i - 1.5) * 1.9, x = f.x + ca * t, z = f.z + cb * t, p = new THREE.Mesh(FNG.post, FNM); p.position.set(x, groundH(x, z) + .5, z); p.rotation.z = (i % 2 - .5) * .08; g.add(p)
+    if (i < 3) for (const y of [.35, .8]) { const t2 = t + .95, x2 = f.x + ca * t2, z2 = f.z + cb * t2, r = new THREE.Mesh(FNG.rail, FNM); r.position.set(x2, groundH(x2, z2) + y, z2); r.rotation.y = f.ry; g.add(r) } } }
 const dir8 = (dx, dz) => ['ตะวันออก', 'ตะวันออกเฉียงใต้', 'ใต้', 'ตะวันตกเฉียงใต้', 'ตะวันตก', 'ตะวันตกเฉียงเหนือ', 'เหนือ', 'ตะวันออกเฉียงเหนือ'][(Math.round(Math.atan2(dz, dx) / (Math.PI / 4)) + 8) % 8];   /* map top (−z) = north */
 function signView(sg) { const g = new THREE.Group(), y = groundH(sg.x, sg.z); g.position.set(sg.x, y, sg.z); scene.add(g); sg.g = g;
   const post = new THREE.Mesh(TPG.post, TPM.wood); post.position.y = 1.15; post.castShadow = true; g.add(post);
@@ -2703,8 +2740,8 @@ const TOWER = new THREE.Group(); { const wm = new THREE.MeshStandardMaterial({ c
 function capCloud() { const left = Math.max(0, MAIN_Q.need - restoredN()) / MAIN_Q.need; CAPC.visible = left > 0 && !S.story.cloudGone; const sc = 2.2 + left * 6; CAPC.scale.setScalar(sc); CAPC.position.y = wildH(KINGDOMS.luminia.x, KINGDOMS.luminia.z) + D.SKYCLOUD.capY + sc * 9.5; /* the cloud's underside reaches ~9.5×scale below its centre: keep it above the tower at any size */ const o = TOWER.getObjectByName('orb'); o.material.emissiveIntensity = left > 0 ? .15 : 1.4 }
 capCloud();
 function towerDoor() { if (S.story.cloudGone) { toast('🗼 แสงจากหอคอยส่องไปทั่วแผ่นดินแล้ว ☀️', 2200); return }
-  if (restoredN() < MAIN_Q.need) { hint(`🗼 ประตูหอคอยแสงถูกเมฆทมิฬปิดไว้… ฟื้นฟูอาณาจักรให้ครบก่อน (${restoredN()}/${MAIN_Q.need})`, 2800); return }
-  confirmBox('🗼 เข้าสู่ <b>หอคอยแสง</b> เพื่อเผชิญหน้ากับร่างจริงของเมฆทมิฬ?', () => { S.stormFrom = 'tower'; loading('🗼 หอคอยแสง', 'ชั้นบนสุด… ร่างจริงของเมฆทมิฬรออยู่', () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⚔️ ไปเลย') }
+  /* v3.14 the castle is open from the start: get past the fortress camps and the storm lord waits (strong!) */
+  confirmBox(`🏰 เข้าสู่ <b>ปราสาทใต้เมฆทมิฬ</b> เพื่อเผชิญหน้ากับร่างจริงของเมฆทมิฬ?<br><small>⚠️ จอมเมฆาแข็งแกร่งมาก (❤️ ${D.MON.stormLord.hp} · ⚔️ ${D.MON.stormLord.atk} · 🛡️ ${D.MON.stormLord.def})${restoredN() ? ` · อาณาจักรที่ฟื้นฟู ${restoredN()} แห่งทำให้มันอ่อนลง` : ''}</small>`, () => { S.stormFrom = 'tower'; loading('🗼 หอคอยแสง', 'ชั้นบนสุด… ร่างจริงของเมฆทมิฬรออยู่', () => { buildIsland(); placeMe(CLOUD.x - CLOUD.r + 3.5, CLOUD.z); PL.yaw = PL.yawT = Math.PI / 2; CAM.yaw = Math.PI / 2; enterZone('wild'); save() }) }, '⚔️ ไปเลย') }
 /* ================= v2.9 life: people breathe, look at you and wave hello · butterflies by day · fish jump in the water ================= */
 var IDLE = null;   // var + function: idleReg runs during start-up, before this line
 function idleReg(A) { if (A && A.rig) { A.ph = Math.random() * 6; (IDLE = IDLE || new Set()).add(A) } return A }
@@ -2794,8 +2831,12 @@ function setLod(ch, d) { const L = ch.lod; if (!L) return; const T = D.LOD[eco ?
 function setNear(ch, on) {
   if (ch.near === on) return; ch.near = on;
   if (on) { for (const o of ch.clears) { if (!W.clear.has(o.id)) W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o); else remnant(W, o, true) }
-    if (!ch.spawned) { ch.spawned = 1; const x = (ch.cx + .5) * CHUNK, z = (ch.cz + .5) * CHUNK, tier = Math.min(2, Math.floor(Math.hypot(x - 46, z) / 220)); if (Math.random() < .55) for (let t = 0; t < 20; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50;
-      if (walkLand(px, pz) && coreDist(px, pz) > 8 && dist(px, pz, me().x, me().z) > 10) { const B = kingdomAt(px, pz), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier]; ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })); break } }
+    if (!ch.spawned) { ch.spawned = 1; const x = (ch.cx + .5) * CHUNK, z = (ch.cz + .5) * CHUNK, tier = Math.min(2, Math.floor(Math.hypot(x - 46, z) / 220));
+      /* v3.14 monster land: a fixed ~65% of the mainland's chunks hold a pack (the same ones every visit) · villages, the harbour and light stones stay clear · Vaneya: now and then one */
+      const ML = D.MONLAND, isl = inIsle(x, z), hh = ((ch.cx * 73856093) ^ (ch.cz * 19349663)) >>> 0, pack = isl ? Math.random() < ML.isle : (hh % 1000) / 1000 < ML.pct;
+      if (pack) { const n = isl ? 1 : ML.n[0] + Math.floor(Math.random() * (ML.n[1] - ML.n[0] + 1)); let cx0 = null, cz0 = null;
+        for (let t = 0; t < 24 && cx0 == null; t++) { const px = x + (Math.random() - .5) * 50, pz = z + (Math.random() - .5) * 50; if (!walkLand(px, pz) || coreDist(px, pz) < 8 || dist(px, pz, me().x, me().z) < 14 || dist(px, pz, HB.x + 8, HB.z) < 30 || Object.values(KINGDOMS).some(K => dist(px, pz, K.x, K.z) < ML.village) || LSTONES.some(L => dist(px, pz, L.x, L.z) < 12)) continue; cx0 = px; cz0 = pz }
+        if (cx0 != null) { const B = kingdomAt(cx0, cz0), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier]; for (let i = 0; i < n; i++) { const a = i * 2.3, px = cx0 + Math.cos(a) * 2.2 * (i > 0), pz = cz0 + Math.sin(a) * 2.2 * (i > 0); if (walkLand(px, pz)) ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })) } } }
       spawnAnimals(ch, x, z) } }
   else { for (const o of ch.clears) { despawnClear(W, o); remnant(W, o, false); W.clear.delete(o.id) } for (const m of ch.mons) if (mons.includes(m) && !m.aggro && m !== HORSE) monGone(m); ch.mons = ch.mons.filter(m => mons.includes(m)) }
 }
@@ -2937,32 +2978,35 @@ function spawnAnimals(ch, x, z) {
 /* camps: same places in every game (seeded) · on flat land far from home · tougher the farther they are */
 const WC = (() => { let sd = 90731; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647, out = [];
   const flat = (x, z) => { if (!walkLand(x, z) || waterAt(x, z)) return false; const h = groundH(x, z); for (let a = 0; a < 8; a++) { const px = x + Math.cos(a * .785) * 6, pz = z + Math.sin(a * .785) * 6; if (!walkLand(px, pz) || waterAt(px, pz) || Math.abs(groundH(px, pz) - h) > 1.6) return false } return true };
-  for (let t = 0; t < 6000 && out.length < D.WCAMP.count; t++) { const x = WORLD.x0 + 50 + rnd() * (WORLD.x1 - WORLD.x0 - 100), z = WORLD.z0 + 50 + rnd() * (WORLD.z1 - WORLD.z0 - 100);
-    if (coreDist(x, z) < 60 || out.some(c => dist(c.x, c.z, x, z) < D.WCAMP.spacing) || !flat(x, z)) continue;
+  for (let t = 0; t < 6000 && out.length < 18; t++) {   /* the original 18 (same seed, same spacing) */ const x = WORLD.x0 + 50 + rnd() * (WORLD.x1 - WORLD.x0 - 100), z = WORLD.z0 + 50 + rnd() * (WORLD.z1 - WORLD.z0 - 100);
+    if (coreDist(x, z) < 60 || out.some(c => dist(c.x, c.z, x, z) < 150) || !flat(x, z)) continue;
     const d = dist(x, z, 46, 0); out.push({ id: 'w' + out.length, x, z, tier: d < 360 ? 0 : d < 680 ? 1 : 2, n: out.length + 1 }) }
+  const isl = (x, z) => x < D.VANEYA.isle.x1 && z > D.VANEYA.isle.z0 && z < D.VANEYA.isle.z1, L = KINGDOMS.luminia; let k2 = 0;   /* v3.14 the first 18 stay where they were (old saves) · then more over the mainland · then the castle ring */
+  for (let i = 0; i < D.WCAMP.ring; i++) { const a = i / D.WCAMP.ring * 6.283 + .2; for (let r = D.WCAMP.ringR; r < D.WCAMP.ringR + 30; r += 4) { const x = L.x + Math.cos(a) * r, z = L.z + Math.sin(a) * r; if (flat(x, z)) { out.push({ id: 'f' + i, x, z, tier: 3, n: i + 1, fort: 1 }); break } } }
+  for (let t = 0; t < 9000 && out.length < 18 + D.WCAMP.ring + D.WCAMP.count - 18; t++) { const x = WORLD.x0 + 50 + rnd() * (WORLD.x1 - WORLD.x0 - 100), z = WORLD.z0 + 50 + rnd() * (WORLD.z1 - WORLD.z0 - 100);
+    if (isl(x, z) || coreDist(x, z) < 60 || dist(x, z, D.VANEYA.harbour.x, D.VANEYA.harbour.z) < 70 || out.some(c => dist(c.x, c.z, x, z) < D.WCAMP.spacing) || Object.values(KINGDOMS).some(K => dist(x, z, K.x, K.z) < 45) || !flat(x, z)) continue;
+    const d = dist(x, z, 46, 0); out.push({ id: 'x' + k2, x, z, tier: d < 360 ? 0 : d < 680 ? 1 : 2, n: 19 + k2 }); k2++ }
   return out })();
 const campName = c => `${D.CAMP_TIERS[c.tier].name} #${c.n}`;
-function campProps(c) {
-  const T = D.CAMP_TIERS[c.tier], g = new THREE.Group(), y = groundH(c.x, c.z); g.position.set(c.x, y, c.z); scene.add(g);
-  for (let i = 0; i < 3; i++) { const a = i * 2.1 + .5, t = new THREE.Group(); CAMP.tent(t, i ? '#8a6a4a' : T.col); t.position.set(Math.cos(a) * 4.2, groundH(c.x + Math.cos(a) * 4.2, c.z + Math.sin(a) * 4.2) - y, Math.sin(a) * 4.2); t.rotation.y = -a - Math.PI / 2; g.add(t) }
-  for (const s of [-1, 1]) { const b = new THREE.Group(); CAMP.banner(b, T.col); b.position.set(s * 2.2, 0, -1.6); g.add(b) }
-  part(g, '#4a2a18', '#7a4a28', [1.6, .08, 1.2], [.35, .08, .1], [0, .6, 0], { A: 0 }); part(g, '#4a2a18', '#7a4a28', [1.6, .08, 1.2], [.35, .08, .1], [0, -.6, 0], { A: 0 });
-  const fire = new THREE.Mesh(new THREE.ConeGeometry(.22, .55, 7), new THREE.MeshBasicMaterial({ color: '#ffa030' })); fire.position.set(1.6, .38, 1.2); g.add(fire);
-  for (const [tx, tz] of [[-2.6, 2.4], [2.9, -2.2]]) g.add(torchPost(tx, groundH(c.x + tx, c.z + tz) - y, tz));   /* v3.12.1 the camp's torches */
-  const ch = new THREE.Group(); CAMP.chest(ch); ch.position.set(0, 0, 0); g.add(ch); const lid = ch.getObjectByName('lid'); if (S.wcamps[c.id] && S.wcamps[c.id].o) lid.rotation.x = -1.9;
-  const glow = new THREE.Mesh(new THREE.OctahedronGeometry(.12), SPARK); glow.position.y = 1.15; glow.visible = false; g.add(glow);
-  c.g = g; c.lid = lid; c.fire = fire; c.glow = glow; c.pick = addPick(W, c.x, c.z, .7, .9, { kind: 'chest', id: c.id });
-  if (!c.sols) { c.sols = [addSol({ x: c.x, z: c.z, r: .45, o: c }), addSol({ x: c.x + 1.6, z: c.z + 1.2, r: .45, o: c })]; for (let i = 0; i < 3; i++) { const a = i * 2.1 + .5; c.sols.push(addSol({ x: c.x + Math.cos(a) * 4.2, z: c.z + Math.sin(a) * 4.2, r: .9, o: c })) } }
+function campProps(c) {   /* v3.14 the goblin camp from the designer's reference (tent with a horned skull · watch tower · stakes · rack · fire pit) · merged into a few meshes */
+  const T = D.CAMP_TIERS[c.tier], g = new THREE.Group(), y = groundH(c.x, c.z); g.position.set(c.x, y, c.z); g.rotation.y = c.ry ?? (c.ry = Math.atan2(-c.x, -c.z) + (idHash({ id: c.id }) % 7) * .2); scene.add(g);
+  const raw = new THREE.Group(); goblinCamp(raw, T.fort ? 2 : 1); g.add(mergeProp(raw));
+  for (const [tx, tz] of [[-2.6, 2.4], [2.9, -2.2]]) g.add(torchPost(tx, 0, tz));   /* the camp's torches */
+  const ch = new THREE.Group(); CAMP.chest(ch); ch.position.set(0, 0, 2.6); g.add(ch); const lid = ch.getObjectByName('lid'); if (S.wcamps[c.id] && S.wcamps[c.id].o) lid.rotation.x = -1.9;
+  const glow = new THREE.Mesh(new THREE.OctahedronGeometry(.12), SPARK); glow.position.set(0, 1.15, 2.6); glow.visible = false; g.add(glow);
+  const P = (lx, lz) => { const cs = Math.cos(g.rotation.y), sn = Math.sin(g.rotation.y); return [c.x + lx * cs + lz * sn, c.z - lx * sn + lz * cs] }, [chx, chz] = P(0, 2.6);
+  c.g = g; c.lid = lid; c.fire = null; c.glow = glow; c.pick = addPick(W, chx, chz, .7, .9, { kind: 'chest', id: c.id }); c.pick.position.y += Math.max(0, y);
+  if (!c.sols) { c.sols = [[0, -2.6, 1.7], [-3.6, -2.2, 1.1], [0, .6, 1.0], [3, .3, .9], [0, 2.6, .45]].map(([lx, lz, r]) => { const [x, z] = P(lx, lz); return addSol({ x, z, r, o: c }) }) }
 }
 function campDrop(c) { if (c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = c.pick = null } for (const m of c.mons || []) if (mons.includes(m)) monGone(m); c.mons = []; c.spawned = 0 }
 function campSpawn(c) {
   const T = D.CAMP_TIERS[c.tier]; c.mons = []; c.spawned = 1; c.left = T.mons.length; c.chief = 0;
-  T.mons.forEach((k, i) => { const a = i / T.mons.length * 6.28 + .3, px = c.x + Math.cos(a) * 2.8, pz = c.z + Math.sin(a) * 2.8; const m = monSpawn(k, walkLand(px, pz) ? px : c.x, walkLand(px, pz) ? pz : c.z, { area: 'wild', silent: 1 }); m.camp = c; c.mons.push(m) });
+  T.mons.forEach((k, i) => { const a = i / T.mons.length * 6.28 + .3, px = c.x + Math.cos(a) * 4.8, pz = c.z + Math.sin(a) * 4.8; const m = monSpawn(k, walkLand(px, pz) ? px : c.x, walkLand(px, pz) ? pz : c.z, { area: 'wild', silent: 1 }); m.camp = c; c.mons.push(m) });   /* v3.14 */
 }
 function campKill(m) {
   const c = m.camp, T = D.CAMP_TIERS[c.tier], st = S.wcamps[c.id] = S.wcamps[c.id] || { seen: 1 }; if (st.c) return;
   if (m.chief) { st.c = 1; bump('wcamps'); sfx('level'); toast(`🏕️ ยึด <b>${campName(c)}</b> ได้แล้ว!<br>📦 เปิดหีบสมบัติกลางแคมป์ · ⛺ วาร์ปมาได้จากแผนที่`, 3600); return }
-  if (--c.left <= 0 && !c.chief) { c.chief = 1; const q = m.A.root.position, b = monSpawn(T.chief, c.x, c.z + 1.5, { area: 'wild', aggro: true, silent: 1 }); b.camp = c; b.chief = 1; c.mons.push(b); shakeT = .4; sfx('boom'); toast(`👑 <b>${D.MON[T.chief].name}</b> หัวหน้าแคมป์โผล่มาแล้ว!`, 2600) }
+  if (--c.left <= 0 && !c.chief) { c.chief = 1; const q = m.A.root.position, b = monSpawn(T.chief, c.x, c.z + 1.5, { area: 'wild', aggro: true, silent: 1 }); b.camp = c; b.chief = 1; if (T.fort) b.hp = Math.round(b.hp * 2.5); c.mons.push(b); shakeT = .4; sfx('boom'); toast(`👑 <b>${D.MON[T.chief].name}</b> หัวหน้าแคมป์โผล่มาแล้ว!`, 2600) }
 }
 /* ================= v3.8 👹 monsters take over your camp fires: each dark-cloud cycle, a fire away from the home island with you far away may be taken (50%)
    · come near → 3–5 of the land's monsters guard it (a red banner) · beat them all → the fire is yours again + a reward · taken = no cooking / sleeping / warping ================= */
@@ -2989,7 +3033,7 @@ function wcampTick(now) {
     if (d < 75 && !c.g) campProps(c); else if (d > 120 && (c.g || c.spawned)) campDrop(c);
     if (d < 30 && !st) { S.wcamps[c.id] = { seen: 1 }; sfx('tap'); toast(`⛺ พบ <b>${campName(c)}</b>!<br>กำจัดมอนสเตอร์ให้หมด แล้วเปิดหีบสมบัติ 📦`, 3200); save() }
     if (d < 45 && !(st && st.c) && !c.spawned) campSpawn(c);
-    if (c.g) { c.fire.scale.y = .8 + Math.random() * .4; c.glow.visible = !!(st && st.c && !st.o); c.glow.rotation.y = now / 400; if (c.opening) { c.lid.rotation.x += (-1.9 - c.lid.rotation.x) * .5 } } }
+    if (c.g) { if (c.fire) c.fire.scale.y = .8 + Math.random() * .4; c.glow.visible = !!(st && st.c && !st.o); c.glow.rotation.y = now / 400; if (c.opening) { c.lid.rotation.x += (-1.9 - c.lid.rotation.x) * .5 } } }
 }
 function openChest(id) {
   const c = WC.find(x => x.id === id), st = S.wcamps[id]; if (!c) return;
@@ -3281,6 +3325,7 @@ function WARPS() {
   for (const r of RV) if (ruinDone_n(r) >= 1) L.push({ id: 'r:' + r.id, icon: (S.ruins[r.id] || {}).fin ? '🏡' : '🏘️', name: r.def.name, x: r.x + 2, z: r.z + 6 });
   /* v3.12.1 things you build are not warp points */
   for (const c of WC) if ((S.wcamps[c.id] || {}).c) L.push({ id: 'w:' + c.id, icon: '🏕️', name: campName(c), x: c.x + 2.5, z: c.z + 2.5 });
+  for (const Ls of LSTONES) if (lsAwake(Ls.k)) L.push({ id: 'l:' + Ls.k, icon: '💠', name: 'ศิลาแห่งแสง ' + KINGDOMS[Ls.k].name, x: Ls.x + 2.2, z: Ls.z + 2.2 });   /* v3.14 */
   const isl = (S.side || 'isle') === 'isle'; return L.filter(w => inIsle(w.x, w.z) === isl);   /* v3.13 no warping across the sea (Vaneya ⇄ mainland = the boat) */
 }
 /* v3.12.1 map stick: the nearest warp point roughly in the pushed direction (repeats while held) */
@@ -3619,7 +3664,7 @@ boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAn
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
 if (!S.profile) showLogin(); else afterLogin();
 /* test hooks (newgame/tools/test/play.js) */
-window.__ng = { openBoat, sail, get HARB() { return HARB }, openShopBuilding, finishDrawing, openHowto, get AIRAIM() { return AIRAIM }, get CHGA() { return CHGA }, struggle, get SG() { return SG }, chgK, castPoint, get HORSEM() { return HORSE }, catchPet, SIGNS, readSign, torchOn, torchLight, get TORCHL() { return TORCHL }, get MAPNAV() { return MAPNAV }, mapHop, pickChoose, get mapSel() { return mapSel }, addMats, bagUsed, bagCap, bagFits, leaveRaft, aimStart, aimEnd, throwNet, board, openForge, occRoll, occKill, OCC, get WILD_MONS() { return WILD_MONS }, paused: () => gamePaused(), get MINIR() { return MINIR }, pick: () => PICK && { slot: PICK.slot, i: PICK.i, L: PICK.L.map(o => o.k) }, qActive, npcState, SKYCLOUD, CAPC, get scene() { return scene }, GIANT_H, TIMB, TLOGS, timber, regrow, get shakeT() { return shakeT }, get SUND() { return SUND }, sun, lodInfo: () => { let hi = 0, lo = 0; for (const c of CHUNKS.values()) if (c.lod) c.lod.on ? hi++ : lo++; return { hi, lo } }, get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
+window.__ng = { LSTONES, openLStone, lsAwake, FENCES, trackList, openBoat, sail, get HARB() { return HARB }, openShopBuilding, finishDrawing, openHowto, get AIRAIM() { return AIRAIM }, get CHGA() { return CHGA }, struggle, get SG() { return SG }, chgK, castPoint, get HORSEM() { return HORSE }, catchPet, SIGNS, readSign, torchOn, torchLight, get TORCHL() { return TORCHL }, get MAPNAV() { return MAPNAV }, mapHop, pickChoose, get mapSel() { return mapSel }, addMats, bagUsed, bagCap, bagFits, leaveRaft, aimStart, aimEnd, throwNet, board, openForge, occRoll, occKill, OCC, get WILD_MONS() { return WILD_MONS }, paused: () => gamePaused(), get MINIR() { return MINIR }, pick: () => PICK && { slot: PICK.slot, i: PICK.i, L: PICK.L.map(o => o.k) }, qActive, npcState, SKYCLOUD, CAPC, get scene() { return scene }, GIANT_H, TIMB, TLOGS, timber, regrow, get shakeT() { return shakeT }, get SUND() { return SUND }, sun, lodInfo: () => { let hi = 0, lo = 0; for (const c of CHUNKS.values()) if (c.lod) c.lod.on ? hi++ : lo++; return { hi, lo } }, get SPD() { return SPD_LAST }, goTrain, backTrain, get TRG() { return TRG }, get TRMK() { return TRMK }, TRAIN, mountHorse, dismount, get HORSE() { return HORSE }, solTop, revealAll: () => { S.fog = '1'.repeat(S.fog.length); fogDirty = true }, setMapZ: z => { mapZ = z }, FROD, POT, get WXS() { return WXS }, wxAt, wxRegion, timeIcon, potLit, get mapHi() { return mapHi }, RAIN, SNOW, finishClear, get GOL() { return GOL }, golemLair, golemReady, golemWake, golemEnd, GPILE, needsTick, needEat, needSleep, get FREEZE() { return FREEZE }, veinOf, KQ, KQUEST, KNPC, qAccept, qTurnIn, qProg, talkNpc, restoreKingdom, memoryFx, restoredN, towerDoor, CHESTS, NOTES, openWChest, readNote, darkCloud, kingdomAt, KINGDOMS, monSpawn, eatMeal, openCraft, drops, dropIngr, pickDrop, climate, openWear, wearSum, faint, buffOn, get TEMPV() { return TEMPV }, set TEMPV(v) { TEMPV = v }, tutEv, get tutCur() { return tutCur }, TUT, PARA, closePara, get GLIDE2() { return GLIDE }, openFrame, closeFrame, openAlbum, albumAll, get FRAME() { return FRAME }, openMap, doJump, startPara, walkWorld, groundH, wildH, coreDist, solHit, get CTX() { return CTX }, get RUNON() { return RUNON }, pickFruit, fruitOn, openHome, learnCraft, SH, WARPS, warpTo, openShrine, fixShrine, openCraft, get WARPING() { return WARPING }, get fishing() { return F }, setMode, snapPhoto, crayonDraw, get CASTR() { return CASTR }, farmA, farmB, farmX, waterAt, nearTarget, VM, get AIMK() { return AIMK }, get AIM() { return AIM }, get camera() { return cam }, ARROWS, get CROUCH() { return CROUCH }, giveBow, newItem, wearItem, get kindOf() { return kindOf() }, gearView, get swingT() { return swingT }, get TEMPV() { return TEMPV }, setTemp: v => { TEMPV = v }, cheer, setGuard: v => { guardHold = v; updGuard() }, get DRAWN() { return DRAWN }, drawWeapon, stowAll, setTired: v => { S.tired = v }, setSwimPose: v => { PL.swim = v }, setJump: () => { jumpT = performance.now() + D.JUMP.t * 1000 }, setGrade: n => GR && GR.set(n), WALKERS, faceSwing, gearView, goStorm, backFromStorm, get BOSS() { return BOSS }, townsDone, stormWin, RV, openRuin, lifePct, startCatch, get CATCHING() { return CATCHING }, rideWhale, startGlide, canGlide, get GLIDE() { return GLIDE }, hasAbility, buildPet, addDeb, debOn, quickEat, get LOCK() { return LOCK }, monSpawn, openSpirit, spiritUp, get petGuardT() { return petGuardT }, fishEnd, enterBuild, placeBuild, exitBuild, get BM() { return BM }, board, unboard, get RIDE() { return RIDE }, SCR, pickScroll, openBuild, howsifBlueprints, bOf, canBuild, WC, openChest, spawnAnimals, hurtMon, openJournal, info: () => ({ calls: R.info.render.calls, tris: R.info.render.triangles }), S, W, TW, PA, mons, HS, get F() { return F }, get tool() { return tool }, get cut() { return CUT }, set speed(v) { speed = v },
   setTool, toolHit, castAt, hold: v => { if (F) F.hold = v }, look, nearestClear, project, tap, questCheck, storyProps,
   openSite, sleepNight, openHowsif, openWreck, goTown, goFarm, pickSword, openShopBuilding, openShopKind, openTown, openForest, openPets, openBag, openBoat, openTools, openProfile, quest: () => $('quest').click(),
   get cam() { return { x: camT.x, z: camT.z } },

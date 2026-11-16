@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.13';
+export const APP_VER = '3.14';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -64,7 +64,7 @@ export const MON = {
   boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 0, coin: [0, 0], mat: { feather: 2 }, loot: [], tier: 'animal' },   // v1.5 (high ground)
-  stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 40, hp: 1800, atk: 34, def: 12, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
+  stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 6000, atk: 60, def: 30, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
   shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
   goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor', 'soldierBow'], tier: 'mini', legs: 1 },
@@ -457,11 +457,12 @@ export const PLOT_MAX = 18, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
 export const ANIMAL_SPAWN = { low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
-export const WCAMP = { count: 18, spacing: 150 };              // monster camps scattered over the big world
+export const WCAMP = { count: 40, spacing: 95, ring: 8, ringR: 58 };   // v3.14 ~40 camps over the mainland + a ring of fortress camps round the castle (Luminia)              // monster camps scattered over the big world
 export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down
   { name: 'แคมป์สไลม์', col: '#3fa860', mons: ['slime', 'slime', 'grassSprite'], chief: 'slimeKing', gem: [30, 60], coin: [300, 500] },
   { name: 'แคมป์ก็อบลิน', col: '#c03a2a', mons: ['goblin', 'goblin', 'branchImp', 'goblin'], chief: 'goblinChief', gem: [60, 120], coin: [600, 1000] },
   { name: 'ป้อมอสูรหิน', col: '#6a6a7a', mons: ['rockGolem', 'goblin', 'rockGolem', 'goblin'], chief: 'goblinChief', gem: [100, 200], coin: [1000, 1800] },
+  { name: 'ป้อมเมฆทมิฬ', col: '#4a2a5a', mons: ['shadeKnight', 'shadeKnight', 'rockGolem', 'goblin', 'shadeKnight', 'goblin'], chief: 'shadeKnight', gem: [250, 400], coin: [2500, 4000], fort: 1 },   // v3.14 round the castle
 ];
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
@@ -549,6 +550,10 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
    · double-tap then hold A/Y/B = the picker (stick slides · let go = take) · Y held in the air = Zelda slow motion (time ×airSlow, you hover and sink slowly) */
 /* v3.13 🌻 Vaneya, the sunflower isles (the start island) ⇄ the mainland of Mergeland: only by Uncle Howsif's boat
    · isle = the box that counts as "the island side" (sea all round) · harbour = the mainland port town (shops) · dock = where the boat ties up */
+/* v3.14 the mainland is monster land: ~pct of each kingdom's chunks hold a pack (n monsters) · kept clear: kingdom villages (village m round a kingdom's centre), the harbour, light stones
+   · 💠 light stones: one per kingdom · awaken = beat the guardians round it (guard) → a warp point + ✨ */
+export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: .2 };
+export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const CHARGE = { cycle: 1.5, rodMin: 3, rodMax: 16, netMin: .3, zoom: 2.6, weak: .3 };
