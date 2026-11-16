@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.16.3';
+export const APP_VER = '3.16.4';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -156,7 +156,7 @@ export const FORGE = [
   { t: 'scimitar', need: { goldOre: 2, ore: 1 } }, { t: 'crystalBlade', need: { crystal: 2, silver: 1 } }, { t: 'crystalShield', need: { crystal: 2, stone: 2 } }, { t: 'crystalBow', need: { crystal: 1, aquamarine: 1, wood: 2 } },
   { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
-export const BAG = { start: 10, step: 5, max: 60, stack: 999, cost: 1,   // v3.12 🎒 slots per section: start · +step per ✨ cost · ceiling · a stack of one kind holds up to 999 (more = another slot)
+export const BAG = { start: 10, step: 5, max: 60, stack: 999, cost: 1, free: ['mats', 'food', 'wear'],   // v3.16.4 materials · food · clothes (and pets) have no limit   // v3.12 🎒 slots per section: start · +step per ✨ cost · ceiling · a stack of one kind holds up to 999 (more = another slot)
   cats: { sword: ['⚔️', 'อาวุธ'], shield: ['🛡️', 'โล่'], bow: ['🏹', 'ธนู/ลูกธนู'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหาร'], wear: ['👕', 'ชุด'] } };
 export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
@@ -499,7 +499,7 @@ export const CATCH = {                     // diff: harder = smaller zone, wilde
   rabbit:  { el: '🌱', diff: .7 }, chicken: { el: '🔥', diff: .8 }, duck: { el: '💧', diff: .8 }, deer: { el: '❄️', diff: 1.15 }, boar: { el: '🪨', diff: 1.3 },
   whale:   { el: '💧', diff: 1.4, ability: 'swim' }, hawk: { el: '⚡', diff: 1.3, ability: 'glide' },
 };
-export const CATCH_RANGE = 4.2, PET_MAX = 12;   // v2.4: a longer reach
+export const CATCH_RANGE = 4.2, PET_MAX = 9999;   // v3.16.4 no limit on pets   // v2.4: a longer reach
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
 export const GLIDE = { sink: 1.1, sp: 4.6, minH: 2.2 };
 export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 2, sp: 5.4, en: 8, edge: 40, drop: 10, fallMax: 14, lift: 3.4, liftR: 1.8, liftTop: 9 };   // v2.5 🪂 fall speed · forward speed · ⚡/s · let-go fall · free-fall max · warm-air lift (over cook fires)         // hold the hawk's legs: fall speed · forward speed · how high you must stand
