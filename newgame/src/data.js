@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.10';
+export const APP_VER = '3.11';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -156,6 +156,8 @@ export const FORGE = [
   { t: 'scimitar', need: { goldOre: 2, ore: 1 } }, { t: 'crystalBlade', need: { crystal: 2, silver: 1 } }, { t: 'crystalShield', need: { crystal: 2, stone: 2 } }, { t: 'crystalBow', need: { crystal: 1, aquamarine: 1, wood: 2 } },
   { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
+export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
+export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
 export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
 export const FORGE_RAR = [150, 600, 1500], FORGE_LUCK = .12, FORGE_QUEST = { coin: 800 };   // value thresholds for R / E / L · chance of one step up · the blacksmith's reward for your first forging
 export const SLOT_NAME = { sword: 'อาวุธ', shield: 'โล่', bow: 'ธนู' };
@@ -468,7 +470,6 @@ export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) �
   path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, t: 6, w: 2, d: 2 },
   bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
   stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, t: 15, w: 2, d: .6, solid: 1 },
-  forge:     { icon: '⚒️', name: 'โต๊ะช่างตีอาวุธ', desc: 'ใส่วัตถุดิบ 2–5 อย่างแล้วตี · ลองผสมเพื่อค้นพบสูตรอาวุธ โล่ และธนู · ยิ่งใช้ของหายาก อาวุธยิ่งหายาก', cost: { wood: 20, stone: 10, copper: 3 }, t: 40, w: 1.8, d: 1, solid: 1, quest: 1 },   /* v3.8 from the blacksmith's quest */
   kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'หม้อในระยะ 8 ม. ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 }, t: 45, w: 1.9, d: 1, solid: 1 },
   scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, t: 25, w: .8, d: .8, solid: 1 },
   cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอนพัก · วาร์ปมาได้จากแผนที่', cost: { wood: 40, stone: 20, hide: 4 }, t: 120, w: 3, d: 3, solid: 1 },

@@ -730,7 +730,7 @@ function openShopKind(k) {
   if (k === 'smith') return sheet(`${def.icon} ${def.name}`, (b, redraw) => {
     b.innerHTML = `<p class="mut">${def.owner}: อาวุธและชุดเกราะพื้นฐาน · ของหายากหาได้จากมอนสเตอร์</p>${forgeCard()}<div class="card"><div class="row"><b>🏹 ลูกธนู ×${D.ARROW.shopN}</b><span class="mut">มีอยู่ ${S.arrows || 0} ดอก</span></div><div class="row2"><button class="btn go" id="buyArw" ${S.coin < D.ARROW.shopPrice ? 'disabled' : ''}>🪙 ${D.ARROW.shopPrice}</button></div></div>` + D.SMITH.map((x, i) => { const T = D.ITEMS[x.t], st = itemStats(x), c = gearCmp({ id: -1, t: x.t, r: x.r });
       return `<div class="card"><div class="row"><b style="color:${D.RAR_COL[x.r]}">${T.icon} ${T.name}</b><span class="mut">${D.SLOT_NAME[T.slot]} · ${st.atk ? '⚔️ +' + st.atk + ' ' : ''}${st.def ? '🛡️ +' + st.def + ' ' : ''}${st.hp ? '❤️ +' + st.hp : ''}</span></div><div class="cmp">${c.stats}<br>${c.verdict} <span class="mut">${c.vs}</span></div><div class="row2"><button class="btn sm go" data-sm="${i}" ${S.coin < x.price ? 'disabled' : ''}>ซื้อ 🪙 ${fmt(x.price)}</button></div></div>` }).join('');
-    { const fq = b.querySelector('#fgQ'); if (fq) fq.onclick = () => { S.bp.forge = Date.now(); S.story.forgeQ = 1; sfx('level'); save(); toast('📐 ได้แบบแปลน ⚒️ โต๊ะช่างตีอาวุธ<br>สร้างที่ 🏠 → 🔨 ก่อสร้าง', 3000); redraw() } }
+    { const fq = b.querySelector('#fgQ'); if (fq) fq.onclick = () => { S.story.forgeQ = 1; save(); closeSheets(); openForge() } }
     b.querySelector('#buyArw').onclick = () => { if (S.coin < D.ARROW.shopPrice) return; S.coin -= D.ARROW.shopPrice; S.arrows = (S.arrows || 0) + D.ARROW.shopN; sfx('coin'); save(); hud(); redraw() };
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const it = D.SMITH[+x.dataset.sm]; S.coin -= it.price; { const ni = newItem(it.t, it.r); S.bag.push(ni); autoEquip(ni) } S.journal.gear[it.t + '_' + it.r] = 1; toast(`🎒 ได้ ${D.ITEMS[it.t].icon} ${D.ITEMS[it.t].name} · เปิดกระเป๋าเพื่อสวม`); save(); hud(); redraw() });
   });
@@ -844,7 +844,7 @@ cv.addEventListener('pointermove', e => {
 });
 /* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
 const joy = { x: 0, z: 0, on: false }, camV = { x: 0, z: 0, t: 0 };
-function joyMove(ox, oy, x, y) { stopAuto(); const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), k = Math.min(1, d / 55); joy.on = true; joy.run = d > 80; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false;
+function joyMove(ox, oy, x, y) { stopAuto(); const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), k = Math.min(1, d / 55); if (PICK) { joy.on = false; pickStick(dx / 55); return } joy.on = true; joy.run = d > 80; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false;
   const J = $('joy'); J.style.display = 'block'; J.style.left = ox + 'px'; J.style.top = oy + 'px'; $('joyK').style.transform = `translate(${dx / (d || 1) * Math.min(d, 42)}px,${dy / (d || 1) * Math.min(d, 42)}px)` }
 function joyEnd() { joy.on = false; joy.run = false; $('joy').style.display = 'none' }
 const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; joyEnd(); if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
@@ -1075,8 +1075,8 @@ $('team').onclick = e => { const t = e.target.closest('[data-pet]'); if (t) open
 function questCheck() {
   if (S.story.sberhTown && S.shops.potion && !S.story.flashback && !CUT) setTimeout(runFlashback, 1200);
   let q; while ((q = D.QUESTS[S.quest]) && qDone(q)) { const r = q.reward || {}; if (r.coin) S.coin += r.coin; if (r.gem) S.gem += r.gem;
-    toast(`✅ ${q.text}${r.coin || r.gem ? `<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) : ''}${r.gem ? ' 💎 ' + fmt(r.gem) : ''}` : ''}`, 2600); S.quest++; guide = null; cheer();
-    if (D.SPIRIT_QUESTS.includes(q.id)) { S.spirit.free++; spiritNew = true } }
+    toast(`✅ ${q.text}<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) + ' ' : ''}${r.gem ? '💎 ' + fmt(r.gem) + ' ' : ''}✨ +${D.QUEST_SPIRIT}`, 2600); S.quest++; guide = null; cheer();
+    S.spirit.free += D.QUEST_SPIRIT; spiritNew = true }   /* v3.11 every finished quest gives ✨ (was only some) */
 
   hud(); save();
 }
@@ -1097,7 +1097,14 @@ function arrowTick(now) {
 /* v1.9.1: ✕ folds the quest card into a 📜 icon (remembered) · the icon opens it again */
 const qHide = v => { document.body.classList.toggle('qhide', v); try { localStorage.setItem('ng_qhide', v ? '1' : '') } catch (e) { } };
 try { qHide(localStorage.getItem('ng_qhide') === '1') } catch (e) { }
-$('qIcon').onclick = () => { qHide(false); sfx('tap') };
+$('qIcon').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) { closeSheets(); return } openQMenu() };
+/* v3.11 📜 = quests · achievements · album · journal · notes · settings in one place */
+function openQMenu() {
+  const T = [['quest', '📜', document.body.classList.contains('qhide') ? 'แสดงการ์ดเควส' : 'ซ่อนการ์ดเควส'], ['ach', '🏆', 'ความสำเร็จ'], ['album', '🖼️', 'อัลบั้ม'], ['book', '📓', 'สมุดบันทึก'], ['notes', '📜', 'โน้ต'], ['set', '⚙️', 'ตั้งค่า']];
+  sheet('📜 เควสและบันทึก', (b, redraw, close) => {
+    const q = D.QUESTS[S.quest]; b.innerHTML = (q ? `<div class="card"><b>📜 เควสตอนนี้</b><p>${$('quest').textContent.replace('✕', '').trim().slice(0, 140)}</p></div>` : '') + `<div class="hgrid">${T.map(([k, i, n]) => `<button class="htile" data-q="${k}"><b>${i}</b><span>${n}</span></button>`).join('')}</div>`;
+    b.querySelectorAll('[data-q]').forEach(x => x.onclick = () => { const k = x.dataset.q; close(); sfx('tap');
+      ({ quest: () => qHide(!document.body.classList.contains('qhide')), ach: () => openJournal('ach'), album: openAlbum, book: () => openJournal(), notes: openNotes, set: openMenu })[k]() }) }) }
 $('quest').addEventListener('click', e => { if (e.target.closest('[data-qx]')) { e.stopImmediatePropagation(); qHide(true); sfx('tap') } }, { capture: true });
 /* v2.1 buttons are game actions: A attack (hold 3 s = AUTO) · B guard · X jump (hold 3 s = crouch) · Y bow · 🏠 = the bag & menu · 🧰 = the quick wheel (tools) */
 $('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return; sfx('tap'); if (wheelOn) closeWheel(); if (document.querySelector('.ov')) { closeSheets(); return } openHome() });
@@ -1116,8 +1123,8 @@ function openWear() {
 }
 const playTxt = () => { const m = Math.floor((S.playS || 0) / 60), h = Math.floor(m / 60); return h ? `${h} ชม. ${m % 60} นาที` : `${m} นาที` };
 function openHome() {
-  const T = [['bag', '🎒', 'กระเป๋า', ''], ['craft', '🛠️', 'คราฟ', ''], ['build', '🔨', 'ก่อสร้าง', Object.keys(S.bp).length ? '' : 'ยังไม่มีแบบแปลน'], ['map', '🗺️', 'แผนที่', ''], ['book', '📓', 'สมุดบันทึก', ''],
-    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['wear', '👕', 'ชุด', ''], ['notes', '📜', 'โน้ต', ''], ['album', '🖼️', 'อัลบั้ม', ''], ['me', '👤', 'ตัวละคร', ''], ['set', '⚙️', 'ตั้งค่า', '']];
+  const T = [['bag', '🎒', 'กระเป๋า', ''], ['craft', '🛠️', 'คราฟของใช้', ''], ['map', '🗺️', 'แผนที่', ''],
+    ['shop', '🛒', 'ร้านในเมือง', S.story.town ? '' : 'ยังไม่เคยไปเมือง'], ['wear', '👕', 'ชุด', ''], ['me', '👤', 'ตัวละคร', '']];   /* v3.11 journal · notes · album · settings → 📜 · build → the small 🔨 */
   sheet('🏠 เมนู', (b, redraw, close) => {
     b.innerHTML = `<p class="mut" style="text-align:center">⏱️ เล่นไปแล้ว ${playTxt()}</p><div class="hgrid">${T.map(([k, i, n, lock]) => `<button class="htile${lock ? ' lock' : ''}" data-h="${k}"><b>${i}</b><span>${n}</span>${lock ? `<small>${lock}</small>` : ''}</button>`).join('')}</div>`;
     b.querySelectorAll('[data-h]').forEach(x => x.onclick = () => { const k = x.dataset.h, t = T.find(t => t[0] === k); if (t[3]) { hint('🔒 ' + t[3], 1500); return } close(); sfx('tap');
@@ -1708,8 +1715,8 @@ function eatDone(r) { const e = r.eff, st = pStats(); needEat(r);
 }
 /* ================= v3.8 ⚒️ the forge table: the blacksmith's quest gives the blueprint · put in 2–5 materials and strike (like the pot) ================= */
 function forgeCard() { const done = Object.keys((S.journal || {}).forge || {}).length;
-  if (!S.bp.forge) return `<div class="card"><b>⚒️ อยากตีอาวุธเองไหม?</b><p>“ข้าจะให้แบบแปลน <b>โต๊ะช่างตีอาวุธ</b> ไปสร้างที่บ้าน ใช้ 🪵 20 · 🪨 10 · 🟠 ทองแดง 3 แล้วลองผสมวัตถุดิบดู ตีสำเร็จชิ้นแรกเมื่อไหร่ มาเอารางวัลได้เลย”</p><button class="btn go wide" id="fgQ">📐 รับแบบแปลน</button></div>`;
-  return `<div class="card"><b>⚒️ โต๊ะช่างของเจ้า</b><p class="mut">${S.story.forgeDone ? `ค้นพบสูตรแล้ว ${done}/${D.FORGE.length} · ลองผสมแร่หายากดูสิ` : 'สร้างโต๊ะที่ 🏠 → 🔨 ก่อสร้าง แล้วลองตีอาวุธชิ้นแรก'}</p></div>` }
+  /* v3.11 forging happens at the blacksmith's in town (no table at home) */
+  return `<div class="card"><b>⚒️ ตีอาวุธที่ทั่งของข้า</b><p>${S.story.forgeDone ? `ค้นพบสูตรแล้ว ${done}/${D.FORGE.length} · ลองผสมแร่หายากดูสิ` : '“เอาวัตถุดิบมาผสมบนทั่งของข้าได้เลย ตีสำเร็จชิ้นแรกมีรางวัลให้”'}</p><button class="btn go wide" id="fgQ">⚒️ ตีอาวุธ</button></div>` }
 const matsList = () => Object.keys(D.MATS).filter(k => k !== 'scrap' && (S.mats[k] || 0) > 0).map(k => ({ k, icon: D.MATS[k][0], name: D.MATS[k][1], n: S.mats[k] }));
 function matchForge(pot) { const cnt = {}; for (const it of pot) cnt[it.k] = (cnt[it.k] || 0) + 1; let best = null, bs = -1;
   for (const r of D.FORGE) { const ks = Object.keys(r.need); if (!ks.every(k => (cnt[k] || 0) >= r.need[k])) continue; const sc = ks.reduce((a, k) => a + r.need[k], 0) * 10 + ks.length; if (sc > bs) { bs = sc; best = r } } return best }
@@ -1805,10 +1812,11 @@ const stopAuto = () => { if (S.auto) { S.auto = false; $('bAuto').classList.remo
 /* stick (pad mode): drag inside the base · direction like the floating stick */
 { const st = $('stick'), kn = $('stickK'); let pid = null;
   const mv = e => { const r = st.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), k = Math.min(1, d / 46);
+    if (PICK) { joy.on = false; pickStick(dx / 46); kn.style.transform = `translate(${Math.max(-40, Math.min(40, dx))}px,0)`; return }   /* v3.11 a picker open: the stick slides it */
     joy.on = d > 6; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false; stopAuto(); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)` };
-  st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; st.setPointerCapture(pid); joy.cy = CAM.yaw; mv(e) });   // directions stay tied to where the camera faced when you pressed
+  st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; try { st.setPointerCapture(pid) } catch (_) { } joy.cy = CAM.yaw; mv(e) });   // directions stay tied to where the camera faced when you pressed
   st.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e) });
-  const up = e => { if (e.pointerId !== pid) return; pid = null; joy.on = false; joy.cy = undefined; kn.style.transform = '' }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
+  const up = e => { if (e.pointerId !== pid) return; pid = null; joy.on = false; joy.cy = undefined; kn.style.transform = ''; pickStick(0) }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
 /* A: tap = do the thing in front of you (talk · use · chop · break · cut · slash · cast) or a burst of running · hold = menu wheel */
 function nearTarget() {
   const q = me(), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw); let best = null, bs = 1e9;
@@ -2158,7 +2166,7 @@ function openFrame() {
     SNAP = () => { const c = R.domElement, sx = c.width / innerWidth, sy = c.height / innerHeight, cut = document.createElement('canvas'); cut.width = Math.round(r.w * sx); cut.height = Math.round(r.h * sy); cut.getContext('2d').drawImage(c, r.x * sx, r.y * sy, r.w * sx, r.h * sy, 0, 0, cut.width, cut.height); closeFrame(); finishDrawing(crayonPaint(cut)) } };
 }
 function closeFrame() { FRAME = null; const ui = $('frameUI'); if (ui) ui.remove(); document.body.classList.remove('snap', 'framing') }
-$('bDraw').addEventListener('click', e => { e.preventDefault(); unlock(); openFrame() });
+$('bDraw').addEventListener('click', e => { e.preventDefault(); unlock(); if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) { closeSheets(); return } openBuild() });   /* v3.11 the small 🔨 = build things (raft · camp fire · hut …) */
 let wheelOn = false, wheelI = 0;
 const nearWater = (r = 5) => { const q = me(); for (let a = 0; a < 12; a++) for (const d of [1.5, 3, r]) if (waterAt(q.x + Math.cos(a * .52) * d, q.z + Math.sin(a * .52) * d)) return true; return false };
 const subjectNear = () => mons.some(m => nearMe(m, 6)) || dist(me().x, me().z, HS.root.position.x, HS.root.position.z) < 6 || dist(me().x, me().z, SB.root.position.x, SB.root.position.z) < 6 || [...PA.values()].some(e => dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z) < 6);
@@ -2209,7 +2217,10 @@ function openPick(slot, x0) { const P = pickList(slot); if (!P.L.length) { hint(
 const PSTEP = 62;
 function pickPos() { if (!PICK) return; const r = pickEl.querySelector('.row'); if (r) r.style.transform = `translateX(${-(PICK.i * PSTEP) + PICK.off}px)` }
 function pickMark() { if (!PICK) return; pickEl.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', +b.dataset.p === PICK.i)); pickEl.querySelector('small').textContent = PICK.L[PICK.i].name + ' · เลื่อนให้เข้ากรอบ แล้วปล่อยนิ้ว' }
-function pickStep(d) { if (!PICK) return; PICK.i = (PICK.i + d + PICK.L.length) % PICK.L.length; PICK.off = 0; sfx('tap'); pickPos(); pickMark() }
+/* v3.11 the left stick (on screen or a controller) slides the picker: tilt = one step · keep tilting = repeat */
+let pkS = 0, pkT = 0;
+function pickStick(x) { const now = performance.now(), dir = x > .45 ? 1 : x < -.45 ? -1 : 0; if (!PICK || !dir) { pkS = 0; return } if (dir !== pkS) { pkS = dir; pkT = now + 380; pickStep(dir, 1) } else if (now > pkT) { pkT = now + 170; pickStep(dir, 1) } }
+function pickStep(d, clamp) { if (!PICK) return; const n = PICK.i + d; if (clamp && (n < 0 || n >= PICK.L.length)) return; PICK.i = (n + PICK.L.length) % PICK.L.length;   /* the stick stops at the ends */ PICK.off = 0; sfx('tap'); pickPos(); pickMark() }
 function pickDrag(x) { if (!PICK) return; const f = Math.max(-.45, Math.min(PICK.L.length - .55, PICK.i0 - (x - PICK.x0) / PSTEP)), n = Math.round(f); PICK.off = (n - f) * PSTEP; if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } pickPos() }   /* the row follows the finger */
 function pickClose() { PICK = null; pickEl.classList.remove('on') }
 function pickChoose(force) { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; if (!force && PICK.hold && i === PICK.i0 && !PICK.moved) { pickClose(); return } pickClose();   /* let go without sliding = keep what you hold */ tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
@@ -2335,7 +2346,7 @@ function openMap() {
     const Z = 4, CW = WMW * Z, CH = WMH * Z, kk = MAPH[mapZ] / CH, fs = n => Math.round(n / kk) + 'px';
     b.innerHTML = `<div class="row"><b>🧭 ด้านบน = ทิศเหนือ</b><span><button class="btn sm" data-z="-1"${mapZ <= 1 ? ' disabled' : ''}>－</button> <button class="btn sm" data-z="1"${mapZ >= 5 ? ' disabled' : ''}>＋</button></span></div><div class="wmapW"><div class="wmap"><canvas id="wmC" width="${CW}" height="${CH}" style="height:${MAPH[mapZ]}px"></canvas></div><b class="wcomp">N<i>▲</i></b></div><p class="mut">ลากเลื่อนแผนที่ · แตะไอคอนเพื่อวาร์ป · พื้นที่มืด = ยังไม่ได้สำรวจ · ⭐ = เป้าหมายเควส</p>`;   /* v3.1 the warp list is gone: tap the pins on the map */
     b.querySelectorAll('[data-z]').forEach(x => x.onclick = () => { mapZ = Math.max(1, Math.min(5, mapZ + +x.dataset.z)); sfx('tap'); redraw() });
-    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mapHi || worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true; g.drawImage(fogCv, 0, 0, CW, CH);
+    const c = b.querySelector('#wmC'), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(mapHi || worldMap, 0, 0, CW, CH); g.imageSmoothingEnabled = true;   /* v3.11 the black cover goes on last (names and icons are part of the paper) */
     const P = (x, z) => [(x - WORLD.x0) * WMk * Z, (z - WORLD.z0) * WMk * Z]; g.font = fs(16) + ' sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     /* v2.5 names of places + people you can visit (only where you have explored) */
     const seen = (x, z) => { const fx = Math.floor((x - WORLD.x0) / FCELL), fz = Math.floor((z - WORLD.z0) / FCELL); return !!S.fog && S.fog[fz * FC + fx] === '1' };
@@ -2355,8 +2366,9 @@ function openMap() {
     for (const b of S.builds) if (BICON[b.k] && b.done) { const [x, y] = P(b.x, b.z); g.fillText(BICON[b.k], x, y) }
     for (const r of RV) if (S.ruins[r.id]) { const [x, y] = P(r.x, r.z); g.fillText(S.ruins[r.id].fin ? '🏡' : '🏚️', x, y) }
     for (const c of WC) if (S.wcamps[c.id]) { const [x, y] = P(c.x, c.z); g.fillText(S.wcamps[c.id].c ? '🏕️' : '⛺', x, y) }
-    if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }
     for (const sh of SH) if (S.shrines[sh.id]) { const [x, y] = P(sh.x, sh.z); g.fillText(S.shrines[sh.id].fix ? '⛩️' : '🏚️', x, y) }
+    g.drawImage(fogCv, 0, 0, CW, CH); g.font = fs(16) + ' sans-serif';   /* unexplored = black, over everything on the paper */
+    if (guide) { const p = guide.m ? guide.m.A.root.position : guide; const [x, y] = P(p.x, p.z); g.fillText('⭐', x, y) }   /* the quest star and you stay on top */
     const [px, py] = P(me().x, me().z); g.fillStyle = '#ffd23f'; g.strokeStyle = '#2a2030'; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke();
     const wrap = b.querySelector('.wmap'); wrap.scrollLeft = px * kk - wrap.clientWidth / 2; wrap.scrollTop = py * kk - wrap.clientHeight / 2;
     const go = id => { const w = WARPS().find(w => w.id === id); if (w) { close(); warpTo(w) } else hint('🏚️ ต้องซ่อมสถานที่นี้ก่อนจึงวาปได้', 1800) };
@@ -2444,7 +2456,7 @@ function qProg(id) { const Q = KQUEST[id], st = KQS()[id] || {};
 const qActive = () => Object.keys(KQS()).find(id => KQS()[id].st === 'on' && KQUEST[id]);
 const qNext = ids => { const T = KQS(); return ids.find(id => (T[id] || {}).st === 'on') || ids.find(id => !(T[id] || {}).st) };
 function qAccept(id) { const a = qActive(); if (a && a !== id) { hint(`📜 ทำเควส “${KQUEST[a].text}” ให้เสร็จแล้วส่งก่อน`, 2200); return } KQS()[id] = { st: 'on', b: qVal(id), t: Date.now() }; sfx('tap'); toast(`📜 รับเควส: ${KQUEST[id].text}`, 2200); save(); hud() }
-function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {};
+function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {}; S.spirit.free += D.QUEST_SPIRIT; spiritNew = true; setTimeout(() => floater(`✨ +${D.QUEST_SPIRIT}`, 'coin', me().x, 2.4, me().z), 300);   /* v3.11 ✨ for every quest */
   if (R.coin) S.coin += R.coin; if (R.gem) S.gem += R.gem; if (R.wear) (S.clothes = S.clothes || {})[R.wear] = 1; if (R.item) dropItem({ t: R.item.t, r: R.item.r }, me().x + .8, me().z); if (R.recipe) S.meals[R.recipe] = (S.meals[R.recipe] || 0) + 2;
   sfx('level'); cheer(1600); bump('kquests'); toast(`✅ ${npc ? npc.icon + ' ' + npc.name + ': ' : ''}${Q.done}<br>${[R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? (D.RECIPES.find(r => r.k === R.recipe) || {}).icon + ' ×2' : ''].filter(Boolean).join(' · ')}`, 3400);
   const k = kingOfQ(id); if (KQ[k].restore.every(r => (KQS()[r] || {}).st === 'done') && !(S.restored || {})[k]) setTimeout(() => restoreKingdom(k), 1600); save(); hud(); kqMarks() }
@@ -2547,7 +2559,8 @@ function padTick(dt) {
   if (!!gp !== padOn) { padOn = !!gp; document.body.classList.toggle('gamepad', padOn); if (padOn) hint('🎮 ต่อจอยแล้ว · ปุ่มบนจอซ่อนไว้', 1600); else joy.on = false }
   if (!gp) return; const dz = v => Math.abs(v) < .18 ? 0 : (v - Math.sign(v) * .18) / .82, ax = dz(gp.axes[0] || 0), ay = dz(gp.axes[1] || 0), rx = dz(gp.axes[2] || 0), ry = dz(gp.axes[3] || 0), B = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
   const ov = !!document.querySelector('.ov');
-  if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(7) || B(5) || B(10); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
+  if (PICK) { pickStick(ax); if (padPrev.walk) { padPrev.walk = 0; joy.on = false } }   /* v3.11 the left stick slides an open picker */
+  else if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(7) || B(5) || B(10); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
   else if (padPrev.walk) { padPrev.walk = 0; joy.on = false; joy.run = false }
   if (rx || ry) { if (AIM) aimTurn(rx * dt * 520, ry * dt * 520); else if (camTP()) { CAM.yaw -= rx * dt * 2.4; CAM.pitch = Math.max(.08, Math.min(1.15, CAM.pitch + ry * dt * 1.4)) } }
   for (const i in PADB) { const p = B(+i); if (p !== !!padPrev[i]) { padPrev[i] = p; if (ov && i === '0') { if (p) { const o = [...document.querySelectorAll('.ov')].pop(), bk = o && o.querySelector('.back'); if (bk) bk.click() } continue } padPress(PADB[i], p) } }   /* a window open: B = back */
@@ -2951,6 +2964,8 @@ function howsifBlueprints() {
     ['👴 ลุงฮาวซิฟ', 'แตะ 🏠 แล้วเลือก 🔨 ก่อสร้าง · แบบแปลนอื่นๆ ซ่อนอยู่ในหีบสมบัติของแคมป์มอนสเตอร์ ⛺ และม้วนกระดาษเรืองแสงทั่วโลก ✨']],
     () => { for (const k of ['campfire', 'chest', 'raft']) S.bp[k] = S.bp[k] || Date.now(); save(); sfx('level'); toast('📐 ได้แบบแปลน 3 แบบ! แตะ 🏠 → 🔨 ก่อสร้าง', 3000); questCheck() });
 }
+{ const old = S.builds.filter(b => b.k === 'forge'); if (old.length || S.bp.forge) { for (const b of old) for (const [k, n] of Object.entries(D.FORGE_TABLE_REFUND)) S.mats[k] = (S.mats[k] || 0) + n; S.builds = S.builds.filter(b => b.k !== 'forge'); delete S.bp.forge; save();   /* v3.11 the home forge table is gone: its materials come back */
+    if (old.length) setTimeout(() => toast('⚒️ ตอนนี้ตีอาวุธได้ที่ร้านช่างเหล็กในเมือง · คืนวัสดุโต๊ะช่างเข้ากระเป๋าแล้ว', 3200), 5000) } }
 for (const b of S.builds) bView(b);
 if (S.ride && bOf(S.ride)) { RIDE = bOf(S.ride); document.body.classList.add('ride') } else S.ride = null;
 
