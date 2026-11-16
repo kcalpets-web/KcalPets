@@ -40,6 +40,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     const at = [0, await E(() => document.querySelectorAll('.ov.mapfs').length)];
     log('after A: map open', at[1]); if (at[1]) errs.push('controller A did not warp (map still open)');
     await E(() => { window.__pad.connected = false }); await wait(400); await close();
+    // a map closed by closeSheets-style removal must not keep the stick
+    await E(() => window.__ng.openMap()); await wait(500); await close(); { const m0 = await E(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })), sb = await (await pg.$('#stick')).boundingBox(); await pg.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await pg.mouse.down(); await pg.mouse.move(sb.x + sb.width / 2, sb.y + 10, { steps: 4 }); await wait(1500); await pg.mouse.up();
+      const m1 = await E(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })), mv = Math.hypot(m1.x - m0.x, m1.z - m0.z); log('walk after map', mv.toFixed(2)); if (mv < .4) errs.push('the stick is stuck on the map after it closed') }
     // signposts
     const sg = await E(() => ({ n: window.__ng.SIGNS.length, to: window.__ng.SIGNS[0] && window.__ng.SIGNS[0].to })); log('signs', JSON.stringify(sg)); if (sg.n < 10) errs.push('too few signposts');
     await E(() => window.__ng.readSign(0)); await wait(400); const sc = await E(() => document.querySelectorAll('.ov .card').length); log('sign cards', sc); if (sc !== 7) errs.push('the sign does not list the 7 kingdoms'); await pg.screenshot({ path: OUT + '/sign.png' }); await close();

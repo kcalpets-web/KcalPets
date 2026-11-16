@@ -1839,7 +1839,7 @@ const stopAuto = () => { if (S.auto) { S.auto = false; $('bAuto').classList.remo
 /* stick (pad mode): drag inside the base · direction like the floating stick */
 { const st = $('stick'), kn = $('stickK'); let pid = null;
   const mv = e => { const r = st.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), k = Math.min(1, d / 46);
-    if (MAPNAV) { joy.on = false; mapStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }   /* v3.12.1 the map is open: hop between warp points */
+    if (mapNavOn()) { joy.on = false; mapStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }   /* v3.12.1 the map is open: hop between warp points */
     if (PICK) { joy.on = false; pickStick(dx / 46); kn.style.transform = `translate(${Math.max(-40, Math.min(40, dx))}px,0)`; return }   /* v3.11 a picker open: the stick slides it */
     joy.on = d > 6; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false; stopAuto(); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)` };
   st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; try { st.setPointerCapture(pid) } catch (_) { } joy.cy = CAM.yaw; mv(e) });   // directions stay tied to where the camera faced when you pressed
@@ -2419,7 +2419,7 @@ function openMap() {
     for (const w of WL) { const [x, y] = P(w.x, w.z), e = document.createElement('button'); e.className = 'wpin'; e.textContent = w.icon; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.dataset.wp = w.id; e.onclick = () => sel(WL.indexOf(w)); pins.appendChild(e); PE.push(e) }
     /* v3.12.1 the stick hops to the next warp point in that direction · the card shows where it is · ✨ warps */
     const sel = (i, quiet) => { if (!WL[i]) return; MAPNAV.i = i; mapSel = WL[i].id; PE.forEach((e, k) => e.classList.toggle('on', k === i)); const [x, y] = P(WL[i].x, WL[i].z); wrap.scrollTo({ left: x * sc - wrap.clientWidth / 2, top: y * sc - wrap.clientHeight / 2, behavior: quiet ? 'auto' : 'smooth' }); warpCard(b, WL[i], close, quiet) };
-    MAPNAV = { L: WL, i: -1, P, sel, close };
+    MAPNAV = { L: WL, i: -1, P, sel, close, el: b };
     { let i0 = WL.findIndex(w => w.id === mapSel); if (i0 < 0 && WL.length) { let bd = 1e9; WL.forEach((w, k) => { const d = dist(w.x, w.z, me().x, me().z); if (d < bd) { bd = d; i0 = k } }) } if (i0 >= 0) sel(i0, 1) }
     wrap.style.touchAction = 'pan-x pan-y';   /* v3.12.1 zoom with the buttons (no pinch) */
     { const me2 = document.createElement('i'); me2.className = 'wme'; me2.style.left = px * sc + 'px'; me2.style.top = py * sc + 'px'; pins.appendChild(me2) }   /* v3.1 you are here (blinking) */
@@ -2620,7 +2620,7 @@ function padTick(dt) {
   if (!!gp !== padOn) { padOn = !!gp; document.body.classList.toggle('gamepad', padOn); if (padOn) hint('🎮 ต่อจอยแล้ว · ปุ่มบนจอซ่อนไว้', 1600); else joy.on = false }
   if (!gp) return; const dz = v => Math.abs(v) < .18 ? 0 : (v - Math.sign(v) * .18) / .82, ax = dz(gp.axes[0] || 0), ay = dz(gp.axes[1] || 0), rx = dz(gp.axes[2] || 0), ry = dz(gp.axes[3] || 0), B = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
   const ov = !!document.querySelector('.ov');
-  if (MAPNAV) { mapStick(ax, ay); const a = B(1); if (a && !padPrev.mA) { const g = document.getElementById('wpGo'); if (g) g.click() } padPrev.mA = a }   /* v3.12.1 map: stick hops · A warps */
+  if (mapNavOn()) { mapStick(ax, ay); const a = B(1); if (a && !padPrev.mA) { const g = document.getElementById('wpGo'); if (g) g.click() } padPrev.mA = a }   /* v3.12.1 map: stick hops · A warps */
   else if (PICK) { pickStick(ax); if (padPrev.walk) { padPrev.walk = 0; joy.on = false } }   /* v3.11 the left stick slides an open picker */
   else if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(7) || B(5) || B(10); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
   else if (padPrev.walk) { padPrev.walk = 0; joy.on = false; joy.run = false }
@@ -3144,6 +3144,7 @@ function WARPS() {
   return L;
 }
 /* v3.12.1 map stick: the nearest warp point roughly in the pushed direction (repeats while held) */
+function mapNavOn() { if (MAPNAV && !MAPNAV.el.isConnected) { MAPNAV = null; document.body.classList.remove('mapOn') } return !!MAPNAV }   /* the map can be closed by closeSheets (no onClose) */
 function mapStick(x, y) { const now = performance.now(), m = Math.hypot(x, y); if (!MAPNAV || m < .5) { mnS = 0; return } const a = Math.round(Math.atan2(y, x) / (Math.PI / 4)) & 7;
   if (a === mnS - 1 && now < mnT) return; mnS = a + 1; mnT = now + (mnT && now < mnT + 400 ? 260 : 420); mapHop(x / m, y / m) }
 function mapHop(ux, uy) { const N = MAPNAV; if (!N || !N.L.length) return; const c = N.L[N.i] || N.L[0], [cx, cy] = N.P(c.x, c.z); let best = -1, bs = 1e9;
