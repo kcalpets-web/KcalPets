@@ -913,7 +913,7 @@ cv.addEventListener('pointermove', e => {
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
     if (stroke.go < 70) return; stroke = null; trail.length = 0 }
-  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; if (AIM) AIM.p = Math.max(-.8, Math.min(.9, AIM.p + (e.clientY - down.ly) * D.CAM_DRAG * .7)); else CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
+  if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; if (AIM) AIM.p = Math.max(-.8, Math.min(.9, AIM.p + (e.clientY - down.ly) * D.CAM_DRAG * .7)); else CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); if (joy.on && joy.cy !== undefined) joy.cy = CAM.yaw;   /* v3.16.3 turning the camera while walking steers the walk */ down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
     else joyMove(down.x, down.y, e.clientX, e.clientY) }              // (top view) drag anywhere = a floating stick
 });
 /* floating stick: shown where the finger went down · direction = screen direction (up = north) · strength = distance */
@@ -921,7 +921,7 @@ const joy = { x: 0, z: 0, on: false }, camV = { x: 0, z: 0, t: 0 };
 function joyMove(ox, oy, x, y) { stopAuto(); const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), k = Math.min(1, d / 55); if (PICK) { joy.on = false; pickStick(dx / 55); return } joy.on = true; joy.run = d > 80; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false;
   const J = $('joy'); J.style.display = 'block'; J.style.left = ox + 'px'; J.style.top = oy + 'px'; $('joyK').style.transform = `translate(${dx / (d || 1) * Math.min(d, 42)}px,${dy / (d || 1) * Math.min(d, 42)}px)` }
 function joyEnd() { joy.on = false; joy.run = false; $('joy').style.display = 'none' }
-const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; joyEnd(); if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!camTP() || OPT.ctrl !== 'pad') joyEnd();   /* v3.16.3 lifting the camera-drag finger never stops the stick */ if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.55, Math.min(1.7, zoom * (e.deltaY > 0 ? 1.1 : 1 / 1.1))); localStorage.setItem('ng_zoom', zoom) }, { passive: false });
 const fx = $('fx'), fxc = fx.getContext('2d'), trail = [];
@@ -954,12 +954,14 @@ function tap(x, y) {
   const h0 = rayAt(x, y).intersectObjects(W.picks, false)[0], k = tool ? pickForTool(x, y) : h0 && h0.object.userData.pick;
   work = null;
   if (tool === 'hoe' && (!k || k.kind !== 'plot') && rayAt(x, y).ray.intersectPlane(groundPlane, hitV)) { const [cx, cz] = cellOf(hitV.x, hitV.z); if (dist(me().x, me().z, cx, cz) > 1.8) walkTo(cx - .9, cz, () => till(cx, cz), .3); else till(cx, cz); return }
+  if (!k && OPT.ctrl === 'pad') return;   /* v3.16.3 pad: walking is the stick's job (a tap on the ground does nothing) */
   if (!k) { if (S.avatar && rayAt(x, y).ray.intersectPlane(groundPlane, hitV)) { const [wx, wz] = clampWalk(hitV.x, hitV.z); walkTo(wx, wz); ring.position.set(hitV.x, .04, hitV.z); sfx('tap') } return }   // tap the ground = walk there (as far as you can)
   if (OPT.ctrl === 'pad' && (k.kind === 'clear' || k.kind === 'mon')) { hint(k.kind === 'mon' ? '⚔️ เข้าใกล้แล้วกด A เพื่อฟัน' : '🅰️ เดินไปตรงหน้าแล้วกด A', 1400); return }   /* v1.4.2: pad = A does the work (no tap-to-chop) */
   if (S.avatar && k.kind === 'clear') { const o = W.clear.get(k.id); if (o && o.g) workOn(o); return }
   if (S.avatar && k.kind === 'mon' && k.m) { fight(k.m); return }
   if (tool && (k.kind === 'clear' || k.kind === 'mon')) { toolHit(k); return }
   const p = h0 ? h0.object.position : null;
+  if (OPT.ctrl === 'pad' && S.avatar && p && k.kind !== 'pet' && dist(me().x, me().z, p.x, p.z) > 3.2) { hint('🕹️ เดินเข้าไปใกล้ด้วยจอย แล้วแตะหรือกด A', 1300); return }   /* v3.16.3 no walking by tapping */
   if (S.avatar && p && k.kind !== 'pet' && dist(me().x, me().z, p.x, p.z) > 2) { const [wx, wz] = clampWalk(p.x, p.z); walkTo(wx, wz, () => useThing(k), 1.7); return }   // walk over, then use it
   useThing(k);
 }
