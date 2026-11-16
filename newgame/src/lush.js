@@ -20,6 +20,9 @@ export const G = {
   bush: merge([[BALL, M4(0, .4, 0, 0, 0, 0, 1.1, .9, 1.1)], [BALL, M4(.35, .32, .15, 0, 0, 0, .8, .7, .8)], [BALL, M4(-.3, .3, -.15, 0, 0, 0, .75, .65, .75)]]),
   dots: merge(Array.from({ length: 9 }, (_, i) => { const a = i * 2.4, r = .25 + (i % 3) * .14; return [new THREE.IcosahedronGeometry(.06, 0), M4(Math.cos(a) * r, .78 - (i % 3) * .08, Math.sin(a) * r, 0, 0, 0, 1, 1, 1)] })),
   trunk: merge([[new THREE.CylinderGeometry(.16, .26, 1.8, 14), M4(0, .9, 0, 0, 0, 0, 1, 1, 1)], [new THREE.CylinderGeometry(.06, .09, .8, 10), M4(.28, 1.5, 0, 0, 0, -.8, 1, 1, 1)]]),
+  sfstem: merge([[new THREE.CylinderGeometry(.03, .04, 1.25, 6), M4(0, .62, 0, 0, 0, 0, 1, 1, 1)], [LEAF, M4(.16, .5, 0, 0, 0, -.6, .34, .05, .2)], [LEAF, M4(-.15, .78, 0, 0, 0, .6, .3, .05, .18)]]),   /* v3.13 🌻 */
+  sfhead: merge(Array.from({ length: 12 }, (_, i) => { const a = i / 12 * 6.283; return [LEAF, M4(Math.cos(a) * .17, 1.32 + Math.sin(a) * .17, .05, 0, 0, a, .22, .09, .04)] })),
+  sfcore: merge([[new THREE.CylinderGeometry(.12, .12, .06, 14), M4(0, 1.32, .07, Math.PI / 2, 0, 0, 1, 1, 1)]]),
   crown: merge([[BALL, M4(0, 2.4, 0, 0, 0, 0, 2.2, 1.7, 2.2)], [BALL, M4(.75, 2.15, .3, 0, 0, 0, 1.5, 1.2, 1.5)], [BALL, M4(-.65, 2.2, -.35, 0, 0, 0, 1.6, 1.3, 1.6)], [BALL, M4(.1, 2.95, -.2, 0, 0, 0, 1.4, 1.1, 1.4)]]),
 };
 const M = {
@@ -33,6 +36,7 @@ const KINDS = {
   mush:    [['stem', 'plain', ['#f0e6d4']], ['cap', 'plain', ['#d8402a', '#c86a2a', '#a87a5a', '#e8e0d0']]],
   stump:   [['stump', 'wood', ['#ffffff', '#e8d8c8']]],
   fbush:   [['bush', 'leaf', ['#3f8a3a', '#4f9a3e']], ['dots', 'glow', ['#ff7aa8', '#ffd23f', '#a88aff', '#ffffff', '#7ac0ff']]],
+  sunflower: [['sfstem', 'leaf', ['#4f9a3e', '#5aa848']], ['sfhead', 'plain', ['#ffcf2a', '#ffd84a', '#f5b81a']], ['sfcore', 'plain', ['#6a3a1a', '#5a2e14']]],
   blossom: [['trunk', 'wood', ['#ffffff']], ['crown', 'leaf', ['#7a9ae8', '#9a8ae8', '#e8a0c8', '#f0c0d8', '#6ab0e0']]],
 };
 export function lushPlace(group, list, R = Math.random) {
