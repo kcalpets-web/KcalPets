@@ -2300,11 +2300,11 @@ function pickPos() { if (!PICK) return; const r = pickEl.querySelector('.row'); 
 function pickMark() { if (!PICK) return; pickEl.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', +b.dataset.p === PICK.i)); pickEl.querySelector('small').textContent = PICK.L[PICK.i].name + ' · เลื่อนให้เข้ากรอบ แล้วปล่อยนิ้ว' }
 /* v3.11 the left stick (on screen or a controller) slides the picker: tilt = one step · keep tilting = repeat */
 let pkS = 0, pkT = 0;
-function pickStick(x) { const now = performance.now(), dir = x > .45 ? 1 : x < -.45 ? -1 : 0; if (!PICK || !dir) { pkS = 0; return } if (dir !== pkS) { pkS = dir; pkT = now + 380; pickStep(dir, 1) } else if (now > pkT) { pkT = now + 170; pickStep(dir, 1) } }
+function pickStick(x) { const now = performance.now(), dir = x > .45 ? 1 : x < -.45 ? -1 : 0; if (!PICK || !dir) { pkS = 0; return } if (dir !== pkS) { pkS = dir; pkT = now + 520; pickStep(dir, 1) } else if (now > pkT) { pkT = now + 260; pickStep(dir, 1) } }   /* v3.12.5 slower repeat: no runaway jumps */
 function pickStep(d, clamp) { if (!PICK) return; const n = PICK.i + d; if (clamp && (n < 0 || n >= PICK.L.length)) return; PICK.i = (n + PICK.L.length) % PICK.L.length;   /* the stick stops at the ends */ PICK.off = 0; sfx('tap'); pickPos(); pickMark() }
-function pickDrag(x) { if (!PICK) return; const f = Math.max(-.45, Math.min(PICK.L.length - .55, PICK.i0 - (x - PICK.x0) / PSTEP)), n = Math.round(f); PICK.off = (n - f) * PSTEP; if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } pickPos() }   /* the row follows the finger */
-function pickClose() { PICK = null; pickEl.classList.remove('on') }
-function pickChoose(force) { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; if (!force && PICK.hold && i === PICK.i0 && !PICK.moved) { pickClose(); return } pickClose();   /* let go without sliding = keep what you hold */ tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
+function pickDrag(x) { if (!PICK) return; pickEl.classList.add('drag'); const f = Math.max(-.45, Math.min(PICK.L.length - .55, PICK.i0 - (x - PICK.x0) / PSTEP)), n = Math.round(f); PICK.off = (n - f) * PSTEP; if (n !== PICK.i) { PICK.i = n; sfx('tap'); pickMark() } pickPos() }   /* the row follows the finger */
+function pickClose() { PICK = null; pickEl.classList.remove('on', 'drag') }
+function pickChoose(force) { if (!PICK) return; const { slot, L, i } = PICK, o = L[i]; pickClose();   /* v3.12.5 letting go always takes what is in the frame (it was 'keep' when nothing moved, which read as 'it did not change') */   /* let go without sliding = keep what you hold */ tutEv(slot === 'a' ? 'hand' : slot === 'b' ? 'shield' : 'yslot');
   if (slot === 'a') { if (o.k.startsWith('w:')) { S.hand = 'w'; S.eq.sword = o.k.slice(2); setTool('') } else { S.hand = o.k; DRAWN = false; setTool(o.k); if (o.k === 'torch') torchLight() } }
   else if (slot === 'y') { aimEnd(false); S.ytool = o.k; if (tool === 'rod' || tool === 'hoe') setTool('') }
   else { S.eq.shield = o.k || null; guardTog = false; updGuard() }
