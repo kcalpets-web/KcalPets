@@ -41,7 +41,7 @@ export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared obje
 export const MATS = { hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
-  diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800] };
+  diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20] };   // v3.8 scrap = a failed forging
 export const ORE_BY = { home: 'copper', navalee: 'copper', sylvaren: 'copper', luminia: 'ore', frosthelm: 'silver', deadgar: 'ore', asrah: 'goldOre', valkara: 'coal' };   // which vein a rock carries, by kingdom
 export const ORE_CHANCE = .35, ORE_COL = { copper: '#e07a3a', ore: '#8a96a8', silver: '#e8eef6', goldOre: '#ffd23f', coal: '#2a2228', gemstone: '#6ae0ff' };  // [icon, name, sell price]
 
@@ -146,6 +146,18 @@ export const ITEMS = {
   crystalShield: { slot: 'shield', name: 'โล่คริสตัล', icon: '🛡️', def: 14, dur: 30, tier: 4 },
   kingShield:    { slot: 'shield', name: 'โล่ราชันย์', icon: '🛡️', def: 18, dur: 40, tier: 4 },
 };
+/* v3.8 ⚒️ forging (like the cooking pot): 2–5 materials · the most specific recipe that fits wins · nothing fits = 🔩 scrap
+   tags: metal = copper · ore · silver · goldOre · rarity from the value of what went in (MATS price): ≥ FORGE_RAR[i] → R / E / L (+ a small lucky roll) */
+export const FORGE = [
+  { t: 'woodSpear', need: { wood: 3 } }, { t: 'leafBlade', need: { grass: 3, wood: 1 } }, { t: 'hunterBow', need: { wood: 2, feather: 2 } }, { t: 'woodShield', need: { wood: 2, hide: 1 } },
+  { t: 'stoneClub', need: { stone: 3, wood: 1 } }, { t: 'boneClub', need: { bone: 1, wood: 1 } }, { t: 'travelerSword', need: { copper: 2, wood: 1 } }, { t: 'harpoon', need: { copper: 2, wood: 2 } },
+  { t: 'stoneArmor', need: { stone: 3, hide: 1 } }, { t: 'soldierSpear', need: { ore: 2, wood: 2 } }, { t: 'greatsword', need: { ore: 3, coal: 1 } }, { t: 'soldierBow', need: { ore: 1, wood: 2, feather: 2 } },
+  { t: 'stoneHammer', need: { stone: 4, ore: 2 } }, { t: 'knightSword', need: { silver: 2, ore: 1, coal: 1 } }, { t: 'knightShield', need: { silver: 2, hide: 2 } }, { t: 'knightBow', need: { silver: 1, wood: 2, feather: 3 } },
+  { t: 'scimitar', need: { goldOre: 2, ore: 1 } }, { t: 'crystalBlade', need: { crystal: 2, silver: 1 } }, { t: 'crystalShield', need: { crystal: 2, stone: 2 } }, { t: 'crystalBow', need: { crystal: 1, aquamarine: 1, wood: 2 } },
+  { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
+  { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
+export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
+export const FORGE_RAR = [450, 1200, 2600], FORGE_LUCK = .12, FORGE_QUEST = { coin: 800 };   // value thresholds for R / E / L · chance of one step up · the blacksmith's reward for your first forging
 export const SLOT_NAME = { sword: 'อาวุธ', shield: 'โล่', bow: 'ธนู' };
 export const KIND = {                                          // cd = swing time × · reach (m) · arc = sweep half-angle (rad, 0 = one target) · energy ×
   one:   { name: 'มือเดียว · ถือโล่ได้', cd: 1, reach: 2.2, arc: 0, shield: true, en: 1 },
@@ -455,6 +467,7 @@ export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) �
   path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, t: 6, w: 2, d: 2 },
   bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
   stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, t: 15, w: 2, d: .6, solid: 1 },
+  forge:     { icon: '⚒️', name: 'โต๊ะช่างตีอาวุธ', desc: 'ใส่วัตถุดิบ 2–5 อย่างแล้วตี · ลองผสมเพื่อค้นพบสูตรอาวุธ โล่ และธนู · ยิ่งใช้ของหายาก อาวุธยิ่งหายาก', cost: { wood: 20, stone: 10, copper: 3 }, t: 40, w: 1.8, d: 1, solid: 1, quest: 1 },   /* v3.8 from the blacksmith's quest */
   kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'หม้อในระยะ 8 ม. ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 }, t: 45, w: 1.9, d: 1, solid: 1 },
   scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, t: 25, w: .8, d: .8, solid: 1 },
   cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอนพัก · วาร์ปมาได้จากแผนที่', cost: { wood: 40, stone: 20, hide: 4 }, t: 120, w: 3, d: 3, solid: 1 },
