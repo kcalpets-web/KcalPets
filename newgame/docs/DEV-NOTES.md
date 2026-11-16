@@ -27,6 +27,7 @@
 | 🌍 โซนแรกแผ่นเดียว · 🧺 ฟาร์ม (v3.7) | world.js `groundH`→`coreH` + blend `coreIn` `CORE_BLEND` · `riverC` `riverW` · `FARM` `inFarm` (รั้ว ใน `buildWorld`) · main.js `tillable` · แผนที่ `paintMap` (groundH + ถนนวาดทับ) · หมอก `FC`/`FR` 188 `fogDraw` |
 | ⚒️ ตีอาวุธ · 👹 ยึดกองไฟ (v3.8) | `forgeCard` (ร้าน smith) `openForge` `matchForge` `D.FORGE` `D.FORGE_RAR` `BLUEPRINTS.forge` (clay `BUILDS.forge`) · `occRoll` (ใน `darkCloud`) `occTick` `occKill` `OCC` `D.OCC` · ⏸️ `gamePaused` · ทดสอบ forge.js |
 | 🕸️ ตาข่าย · 🖍️ บน Y (v3.8.1) | `throwNet` `NETM` `catchPet` `D.NET` · `YTOOL.net/draw` · `DIGSQ` · CTX 'raft' ใน `ctxTick` · ทดสอบ net.js |
+| 🧍 ตัวละครหลายชั้น · 👒 หมวก (v3.9) | vinyl.js `vinylLayered` `VOPT` `VHATS` `hatPiece` `vinylLayers` `LY` `tubeO` · data `WEAR h_*` (slot hat) · main `wornLook` (hat) · `npcLook` (hat) · ภาพตัวอย่าง tools/art/layers.html · ถัดไป v3.10: ทรงผมเพิ่ม · หน้าหลายอารมณ์ · ชุดเพิ่ม (ตามภาพแนวทางที่ผู้ออกแบบส่ง) |
 | ฝึกปุ่ม (การ์ด) | `TUT` `tutTick` `tutEv` |
 | เควสอาณาจักร | `src/quests.js` `KQ` · `main.js` `kqTick` `talkNpc` |
 | hook ทดสอบ | `window.__ng = {…}` ท้าย `main.js` |

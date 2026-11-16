@@ -333,7 +333,7 @@ export function playerLook(g, a = {}) {
 const _hb = new THREE.Box3(), _hv = new THREE.Vector3(), _hs = new THREE.Vector3();
 /* extras are modelled for a head of radius .42 centred at 0 · HEADX measures the real head (hair included) and fits a holder group to it */
 const HEADX = (g, fn) => { const h = g.getObjectByName('head'); if (!h) return; let F = h.getObjectByName('fit');
-  if (!F) { g.updateWorldMatrix(true, true); _hb.makeEmpty(); h.traverse(o => { if (o.isMesh) _hb.expandByObject(o) }); h.getWorldScale(_hs); const c = _hb.getCenter(_hv.set(0, 0, 0)), r = (_hb.max.x - _hb.min.x) / 2 / _hs.x;
+  if (!F) { g.updateWorldMatrix(true, true); _hb.makeEmpty(); h.traverse(o => { if (o.isMesh && o.userData.layer !== 2) _hb.expandByObject(o) });   /* v3.9 fit to the head + hair, not the hat */ h.getWorldScale(_hs); const c = _hb.getCenter(_hv.set(0, 0, 0)), r = (_hb.max.x - _hb.min.x) / 2 / _hs.x;
     F = new THREE.Group(); F.name = 'fit'; h.add(F); F.position.copy(h.worldToLocal(c.clone())); F.scale.setScalar(r / .42 * .92) } fn(F) }, VM = (c, r = .55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
 const vm = (geo, c, x, y, z, sx = 1, sy = 1, sz = 1, r) => { const m = new THREE.Mesh(geo, VM(c, r)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; m.userData.noFacet = 1; return m };
 const SPH = new THREE.SphereGeometry(1, 20, 14);

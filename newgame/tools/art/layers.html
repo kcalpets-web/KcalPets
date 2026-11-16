@@ -5,7 +5,7 @@
 /* v3.9 preview: the layered (R15-like) character · not used by the game until approved */
 import * as THREE from '../../lib/three.module.min.js';
 import { vinyl, vinylLayered, vinylLayers, vinylHat, VHATS } from '../../src/vinyl.js';
-const W = 300, H = 380, A = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#4a2e22', top: '#3a8ad8', wear: 'traveler', eyes: 'round' }, F = { ...A, sex: 'f', hair: 'pony', hairCol: '#b05a30', top: '#d84a9a', bottom: 'skirt' };
+const W = 300, H = 380, A = { full: 1, v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#4a2e22', top: '#3a8ad8', wear: 'traveler', eyes: 'round' }, F = { ...A, sex: 'f', hair: 'pony', hairCol: '#b05a30', top: '#d84a9a', bottom: 'skirt' };
 function panel(title, build, cam = [0, .9, 4.6], look = [0, .78, 0]) {
   const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b>${title}</b>`; document.getElementById('w').appendChild(d);
   const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; d.appendChild(r.domElement);

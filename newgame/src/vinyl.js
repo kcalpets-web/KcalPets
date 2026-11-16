@@ -24,7 +24,7 @@ export const VSCALE = 1.45;
 /* v3.9 (preview) layered build: every part is a joint group (R15-like: chest · waist · upper arm · fore arm · hand · thigh · shin · foot · head)
    and every joint carries up to 3 layers: userData.layer 0 = the body (a little slimmer) · 1 = clothes · 2 = gear (hats now, armour later)
    head: skull (smaller) → hair (bigger) → hat (biggest) */
-export const VOPT = { layered: false };
+export const VOPT = { layered: true };   // v3.9 the game uses the layered build
 export const VHATS = [['none', 'ไม่ใส่'], ['cap', 'หมวกแก๊ปดาว'], ['baseball', 'หมวกเบสบอล'], ['wizard', 'หมวกพ่อมด'], ['crown', 'มงกุฎ'], ['sailor', 'หมวกกะลาสี'], ['knight', 'หมวกอัศวิน'], ['straw', 'หมวกฟาง'], ['catEars', 'หูแมว'], ['bunnyEars', 'หูกระต่าย'], ['beret', 'หมวกเบเร่ต์'], ['headband', 'ที่คาดผม'], ['ribbon', 'โบว์'], ['goggles', 'แว่นกันลม'], ['hood', 'ฮู้ด'], ['flower', 'ดอกไม้'], ['starClip', 'กิ๊บดาว'], ['beanie', 'หมวกไหมพรม'], ['helmet', 'หมวกเหล็ก']];
 const LY = (o, n) => { if (o) o.traverse(m => { if (m.isMesh) m.userData.layer = n }); return o };
 export function vinylLayers(root, show) { root.traverse(o => { if (o.isMesh && o.userData.layer != null) o.visible = !!show[o.userData.layer] }) }
@@ -226,6 +226,7 @@ function torsoWear(g, w, top) {
 
 /* ── the whole character ── */
 export function vinyl(root, a0 = {}) {
+  if (VOPT.layered) return vinylLayered(root, a0);
   const a = vinylFrom(a0), skin = a.skin || '#f2cfa6', VIN = mat(skin, { r: .5 }), g = new THREE.Group(); g.scale.setScalar(VSCALE); root.add(g); root.userData.vinyl = 1;
   const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a' }[w]), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a' }[w], pant = skirt ? VIN : mat(pantC), sock = skirt ? mat('#f4f0e8') : pant, sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top);
   /* torso bean + neck */
@@ -260,6 +261,7 @@ export function vinyl(root, a0 = {}) {
 const tubeO = (...a) => { const g = tube(...a), ix = g.index.array; for (let k = 0; k < ix.length; k += 3) { const t = ix[k + 1]; ix[k + 1] = ix[k + 2]; ix[k + 2] = t } g.computeVertexNormals(); return g };   /* v3.9 limbs facing outward (the old tube faces in: fine alone, but a body inside clothes showed through) */
 export function vinylLayered(root, a0 = {}) {
   const a = vinylFrom(a0), skin = a.skin || '#f2cfa6', VIN = mat(skin, { r: .5 }), g = new THREE.Group(); g.scale.setScalar(VSCALE); root.add(g); root.userData.vinyl = 1; root.userData.layered = 1;
+  const full = !!a0.full, sk = (o, covered) => covered && !full ? null : o;   /* in the game the body under clothes is not built (no extra draw calls) · full = every layer (the art preview) */
   const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a' }[w]), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a' }[w], pant = mat(pantC), sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top), K = .9;   // K = the body under the clothes is slimmer
   /* torso: waist (pivot at the hips) + chest (pivot at the belly) */
   const waist = new THREE.Group(); waist.position.y = .16; g.add(waist); role(waist, 'waist'); const wi = new THREE.Group(); wi.position.y = -.16; waist.add(wi);
@@ -270,16 +272,16 @@ export function vinylLayered(root, a0 = {}) {
   if (skirt) { const SK = mat(w === 'farmer' ? '#4a6aa8' : shade(top, .78), { ds: 1 }); LY(add(wi, lathe([[.138, .23], [.15, .17], [.18, .1], [.205, .06], [.2, .055]], 24), SK, [0, 0, 0], [1, 1, .95]), 1) }
   /* legs: thigh → shin → foot */
   for (const s of [-1, 1]) {
-    const hip = new THREE.Group(); hip.position.set(s * .062, .16, 0); g.add(hip); LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074 * K, .074 * K, .07 * K], 12, 1), VIN), 0); if (!skirt) LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074, .074, .07], 12, 1), pant), 1);
-    const knee = new THREE.Group(); knee.position.y = -.06; hip.add(knee); LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07 * K, .068 * K, .066 * K], 12, 1), VIN), 0); LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07, .068, .066], 12, 1), skirt ? mat('#f4f0e8') : pant), 1);
+    const hip = new THREE.Group(); hip.position.set(s * .062, .16, 0); g.add(hip); if (skirt || full) LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074 * K, .074 * K, .07 * K], 12, 1), VIN), 0); if (!skirt) LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074, .074, .07], 12, 1), pant), 1);
+    const knee = new THREE.Group(); knee.position.y = -.06; hip.add(knee); if (full) LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07 * K, .068 * K, .066 * K], 12, 1), VIN), 0); LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07, .068, .066], 12, 1), skirt ? mat('#f4f0e8') : pant), 1);
     const foot = new THREE.Group(); foot.position.y = -.065; knee.add(foot); role(foot, s < 0 ? 'footR' : 'footL');
     LY(add(foot, lathe([[.07, -.04], [.077, -.025], [.073, .0], [.079, .01], [.001, .012]], 14), shoe), 1); LY(ball(foot, .072, shoe, [0, -.03, .018], [1, .62, 1.25]), 1);
     role(hip, s < 0 ? 'hipR' : 'hipL'); role(knee, s < 0 ? 'kneeR' : 'kneeL') }
   /* arms: upper arm → fore arm → hand (all on the chest, so they follow its twist) */
   for (const s of [-1, 1]) {
-    const sh = new THREE.Group(); sh.position.set(s * .112, .385 - .28, 0); sh.rotation.z = s * .32; chest.add(sh); LY(ball(sh, .056 * K, VIN, [0, 0, 0]), 0); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056 * K, .054 * K, .052 * K], 12, 1), VIN), 0);
+    const sh = new THREE.Group(); sh.position.set(s * .112, .385 - .28, 0); sh.rotation.z = s * .32; chest.add(sh); if (full) { LY(ball(sh, .056 * K, VIN, [0, 0, 0]), 0); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056 * K, .054 * K, .052 * K], 12, 1), VIN), 0) }
     LY(ball(sh, .056, sleeve, [0, 0, 0]), 1); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056, .054, .052], 12, 1), sleeve), 1);
-    const el = new THREE.Group(); el.position.y = -.065; sh.add(el); LY(add(el, tubeO([[0, .005, 0], [0, -.03, 0], [0, -.055, 0]], [.052 * K, .05 * K, .048 * K], 12, 1), VIN), 0);
+    const el = new THREE.Group(); el.position.y = -.065; sh.add(el); if (w !== 'mage' || full) LY(add(el, tubeO([[0, .005, 0], [0, -.03, 0], [0, -.055, 0]], [.052 * K, .05 * K, .048 * K], 12, 1), VIN), 0);
     if (w === 'mage') { LY(add(el, tubeO([[0, .005, 0], [0, -.03, 0], [0, -.055, 0]], [.052, .05, .048], 12, 1), sleeve), 1); LY(add(el, lathe([[.05, .0], [.06, -.03], [.075, -.06], [.08, -.065]], 14), mat('#4a3a8a', { ds: 1 })), 1) }
     const hand = new THREE.Group(); hand.position.y = -.09; hand.name = s < 0 ? 'handR' : 'handL'; el.add(hand); LY(ball(hand, .052, VIN, [0, .01, 0], [.95, 1.05, .85]), 0); LY(ball(hand, .022, VIN, [-s * .04, .02, .028], [1, 1.3, 1]), 0);
     const a2 = new THREE.Group(); a2.position.set(s * .045, -.04, 0); a2.name = s < 0 ? 'armR2' : 'armL2'; el.add(a2);

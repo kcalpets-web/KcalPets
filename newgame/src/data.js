@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.8.2';
+export const APP_VER = '3.9';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -516,6 +516,25 @@ export const WEAR = {
   goggles:  { slot: 'head', icon: '🥽', name: 'แว่นว่ายน้ำ', warm: 0, cool: 0, swim: 1 },   /* v3.5 🏊 swim pieces: +25% swim speed each (2 pieces max) */
   swimTop:  { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำ', warm: 0, cool: 0, swim: 1, col: '#3a8ad8' },
   swimLegs: { slot: 'legs', icon: '🩲', name: 'กางเกงว่ายน้ำ', warm: 0, cool: 0, swim: 1 },
+  /* v3.9 👒 hats (slot hat, layer 2 on the head · over the hair) · a few keep you warm / cool, the rest are for looks */
+  h_cap: { slot: 'hat', icon: '🧢', name: 'หมวกแก๊ปดาว', warm: 0, cool: 0, hatK: 'cap' },
+  h_baseball: { slot: 'hat', icon: '🧢', name: 'หมวกเบสบอล', warm: 0, cool: 0, hatK: 'baseball' },
+  h_wizard: { slot: 'hat', icon: '🧙', name: 'หมวกพ่อมด', warm: 0, cool: 0, hatK: 'wizard' },
+  h_crown: { slot: 'hat', icon: '👑', name: 'มงกุฎ', warm: 0, cool: 0, hatK: 'crown' },
+  h_sailor: { slot: 'hat', icon: '⚓', name: 'หมวกกะลาสี', warm: 0, cool: 0, hatK: 'sailor' },
+  h_knight: { slot: 'hat', icon: '⛑️', name: 'หมวกอัศวิน', warm: 0, cool: 0, hatK: 'knight' },
+  h_straw: { slot: 'hat', icon: '👒', name: 'หมวกฟาง', warm: 0, cool: 1, hatK: 'straw' },
+  h_catEars: { slot: 'hat', icon: '🐱', name: 'หูแมว', warm: 0, cool: 0, hatK: 'catEars' },
+  h_bunnyEars: { slot: 'hat', icon: '🐰', name: 'หูกระต่าย', warm: 0, cool: 0, hatK: 'bunnyEars' },
+  h_beret: { slot: 'hat', icon: '🎨', name: 'หมวกเบเร่ต์', warm: 0, cool: 1, hatK: 'beret' },
+  h_headband: { slot: 'hat', icon: '💗', name: 'ที่คาดผม', warm: 0, cool: 0, hatK: 'headband' },
+  h_ribbon: { slot: 'hat', icon: '🎀', name: 'โบว์', warm: 0, cool: 0, hatK: 'ribbon' },
+  h_goggles: { slot: 'hat', icon: '🥽', name: 'แว่นกันลม', warm: 0, cool: 0, hatK: 'goggles' },
+  h_hood: { slot: 'hat', icon: '🧥', name: 'ฮู้ด', warm: 1, cool: 0, hatK: 'hood' },
+  h_flower: { slot: 'hat', icon: '🌼', name: 'ดอกไม้ติดผม', warm: 0, cool: 0, hatK: 'flower' },
+  h_starClip: { slot: 'hat', icon: '⭐', name: 'กิ๊บดาว', warm: 0, cool: 0, hatK: 'starClip' },
+  h_beanie: { slot: 'hat', icon: '🧶', name: 'หมวกไหมพรม', warm: 1, cool: 0, hatK: 'beanie' },
+  h_helmet: { slot: 'hat', icon: '🪖', name: 'หมวกเหล็ก', warm: 0, cool: 0, hatK: 'helmet' },
   leafMask: { slot: 'head', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ', warm: 0, cool: 0, air: 1, hat: 'mask' },   // v2.7 breathe in Deadgar
 };
 export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
@@ -540,6 +559,25 @@ export const CRAFT = [
   { k: 'goggles', icon: '🥽', name: 'แว่นว่ายน้ำ (ว่ายเร็ว +25%)', need: { grass: 4, feather: 2 }, give: { wear: 'goggles' } },   /* v3.5 */
   { k: 'swimTop', icon: '🩱', name: 'ชุดว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 2, grass: 4 }, give: { wear: 'swimTop' } },
   { k: 'swimLegs', icon: '🩲', name: 'กางเกงว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 1, grass: 4 }, give: { wear: 'swimLegs' } },
+  /* v3.9 👒 hats */
+  { k: 'h_cap', icon: '🧢', name: 'หมวกแก๊ปดาว', need: { hide: 1, grass: 4 }, give: { wear: 'h_cap' } },
+  { k: 'h_baseball', icon: '🧢', name: 'หมวกเบสบอล', need: { hide: 1, grass: 4 }, give: { wear: 'h_baseball' } },
+  { k: 'h_wizard', icon: '🧙', name: 'หมวกพ่อมด', need: { hide: 2, feather: 3 }, give: { wear: 'h_wizard' } },
+  { k: 'h_crown', icon: '👑', name: 'มงกุฎ', need: { goldOre: 2 }, give: { wear: 'h_crown' } },
+  { k: 'h_sailor', icon: '⚓', name: 'หมวกกะลาสี', need: { grass: 6, hide: 1 }, give: { wear: 'h_sailor' } },
+  { k: 'h_knight', icon: '⛑️', name: 'หมวกอัศวิน', need: { ore: 3 }, give: { wear: 'h_knight' } },
+  { k: 'h_straw', icon: '👒', name: 'หมวกฟาง (กันร้อน)', need: { grass: 8 }, give: { wear: 'h_straw' } },
+  { k: 'h_catEars', icon: '🐱', name: 'หูแมว', need: { hide: 1, feather: 1 }, give: { wear: 'h_catEars' } },
+  { k: 'h_bunnyEars', icon: '🐰', name: 'หูกระต่าย', need: { hide: 1, feather: 2 }, give: { wear: 'h_bunnyEars' } },
+  { k: 'h_beret', icon: '🎨', name: 'หมวกเบเร่ต์ (กันร้อน)', need: { grass: 5, hide: 1 }, give: { wear: 'h_beret' } },
+  { k: 'h_headband', icon: '💗', name: 'ที่คาดผม', need: { grass: 3 }, give: { wear: 'h_headband' } },
+  { k: 'h_ribbon', icon: '🎀', name: 'โบว์', need: { grass: 3, feather: 1 }, give: { wear: 'h_ribbon' } },
+  { k: 'h_goggles', icon: '🥽', name: 'แว่นกันลม', need: { hide: 1, copper: 1 }, give: { wear: 'h_goggles' } },
+  { k: 'h_hood', icon: '🧥', name: 'ฮู้ด (กันหนาว)', need: { hide: 3 }, give: { wear: 'h_hood' } },
+  { k: 'h_flower', icon: '🌼', name: 'ดอกไม้ติดผม', need: { grass: 2 }, give: { wear: 'h_flower' } },
+  { k: 'h_starClip', icon: '⭐', name: 'กิ๊บดาว', need: { copper: 1 }, give: { wear: 'h_starClip' } },
+  { k: 'h_beanie', icon: '🧶', name: 'หมวกไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'h_beanie' } },
+  { k: 'h_helmet', icon: '🪖', name: 'หมวกเหล็ก', need: { ore: 2, stone: 2 }, give: { wear: 'h_helmet' } },
   { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (กันหนาว)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
   { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
   { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (กันร้อน)', need: { grass: 6 }, give: { wear: 'tank' } },
