@@ -24,7 +24,12 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     const got = await E(() => ({ open: !!window.__ng.pick(), hand: window.__ng.S.hand, eq: window.__ng.S.eq.sword })); log('cancel → chose', want, JSON.stringify(got));
     if (got.open) errs.push('the picker stayed open after the cancel'); if (!(got.hand === want || ('w:' + got.eq) === want)) errs.push('the cancel did not take the framed item');
     // the bag: gear tiles are pictures
-    await E(() => window.__ng.openBag('sword')); await wait(700); const bt = await E(() => document.querySelectorAll('.ov .tile img.ipic').length); log('bag pictures', bt); if (bt < 1) errs.push('bag gear tiles are not pictures'); await pg.screenshot({ path: OUT + '/bag.png' }); await close();
+    await E(() => window.__ng.openBag('sword')); await wait(700); const bt = await E(() => document.querySelectorAll('.ov .tile img.ipic').length);
+    { const sl = []; for (const k of await E(() => [...document.querySelectorAll('.ov .tile[data-k]')].map(t => t.dataset.k))) { await E(k => document.querySelector(`.ov .tile[data-k="${k}"]`).click(), k); await wait(200); sl.push(await E(() => document.querySelectorAll('.ov [data-sell]').length)) }
+      log('sell buttons in the bag', sl); if (sl.some(n => n)) errs.push('the bag shows a sell button outside a shop');
+      await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag('sword', true) }); await wait(500); const ks = await E(() => [...document.querySelectorAll('.ov .tile[data-k]')].map(t => t.dataset.k)); let any = 0;
+      for (const k of ks) { await E(k => document.querySelector(`.ov .tile[data-k="${k}"]`).click(), k); await wait(200); any += await E(() => document.querySelectorAll('.ov [data-sell]').length) } log('sell from the smith', any); if (!any) errs.push('the smith sell mode shows no sell button');
+      await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag('sword') }); await wait(400) } log('bag pictures', bt); if (bt < 1) errs.push('bag gear tiles are not pictures'); await pg.screenshot({ path: OUT + '/bag.png' }); await close();
     // the creator stage
     await E(() => { window.__ng.openCreator(false); return 1 }); await wait(1500); const st = await E(() => { const s = document.querySelector('.mkStage'); return s && getComputedStyle(s).position }); log('stage', st); if (st !== 'sticky') errs.push('no sticky stage in the creator');
     await E(() => { document.getElementById('maker').scrollTop = 1200 }); await wait(600); await pg.screenshot({ path: OUT + '/creator.png' });
