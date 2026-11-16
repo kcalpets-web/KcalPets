@@ -193,6 +193,8 @@ export const TOOLMESH = {
   axe(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .3, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [.1, .24, 0], [.12, .08, .03], [0, 0, 0], { A: 0, mat: MAT_GOLD }) },
   hammer(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .3, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [0, .28, 0], [.16, .08, .08], [0, 0, 0], { A: 0, mat: MAT_GOLD }) },
   sickle(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .22, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [.08, .24, 0], [.14, .03, .03], [0, 0, .6], { A: 0, mat: MAT_GOLD }) },
+  torch(g) { part(g, '#6a4024', '#a8703e', [0, .05, 0], [.035, .26, .035], [0, 0, 0], { A: 0 }); part(g, '#7a5a3a', '#c8a070', [0, .3, 0], [.06, .06, .06], [0, 0, 0], { A: 0 });   /* v3.12.1 🔥 a stick, a wrapped head, a flame */
+    const f1 = new THREE.Mesh(new THREE.ConeGeometry(.1, .3, 7), new THREE.MeshBasicMaterial({ color: '#ffb040' })), f2 = new THREE.Mesh(new THREE.ConeGeometry(.06, .2, 6), new THREE.MeshBasicMaterial({ color: '#fff2a0' })); f1.position.y = .48; f2.position.y = .45; f1.name = 'flame'; g.add(f1, f2) },
   sword(g) { part(g, '#8a8fa8', '#eef2ff', [0, .32, 0], [.04, .34, .015], [0, 0, 0], { A: 0, mat: MAT_GOLD }); part(g, '#7a4422', '#c8843a', [0, 0, 0], [.04, .1, .04], [0, 0, 0], { A: 0 }) },
 };
 

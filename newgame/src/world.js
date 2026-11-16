@@ -48,11 +48,7 @@ export function buildWorld(scene, eco) {
   inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 90, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
   /* ---- east edge: a wooden palisade (clearly not choppable) with the adventure gate; hills + far mountains behind it ---- */
   const FX = 7.75, GW = 1.3;                                   // GW = half the gate opening
-  for (let z = -14.5; z <= 14; z += .42) { if (Math.abs(z - EXIT.z) < GW + .22) continue;
-    at(g => { part(g, '#6a4024', '#b07a44', [0, .55, 0], [.12, .55, .12], [0, 0, 0], { A: .03 }); cone(g, '#6a4024', '#b07a44', [0, 1.18, 0], [.12, .12, .12], [0, 0, 0], .9) }, FX + (R() - .5) * .06, z, R() * 3, .95 + R() * .15) }
-  for (const side of [-1, 1]) { const z0 = side < 0 ? -14.5 : EXIT.z + GW + .2, z1 = side < 0 ? EXIT.z - GW - .2 : 14;
-    for (const y of [.35, .8]) at(g => rbox(g, '#5a3420', '#9a6238', [0, 0, 0], [.1, .1, z1 - z0], [0, 0, 0], .04), FX - .12, (z0 + z1) / 2, 0, 1, y);
-    addSol({ x: FX, z: (z0 + z1) / 2, hw: .16, hd: (z1 - z0) / 2 + .1, ry: 0 }) }                        // v3.3 the palisade is solid (the gate is the way through)
+  for (let z = -14.5; z <= 14; z += .42) { if (Math.abs(z - EXIT.z) < GW + .22) continue; R(); R(); R() }   /* v3.12.1 the palisade is gone (the gate arch stays) · same random draws so the rest of the island stays put */
   at(g => { gateway(g, '#8a3a2a', '#d8584a', GW); rbox(g, '#e8d8b0', '#fff6e0', [-.17, 1.7, 0], [.06, .4, 1.15], [0, 0, 0], .03) }, FX, EXIT.z);
   for (const s2 of [-1, 1]) addSol({ x: FX, z: EXIT.z + s2 * GW, r: .24 });
   /* palms along the beach */
