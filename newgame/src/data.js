@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.12.5';
+export const APP_VER = '3.12.6';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -545,6 +545,9 @@ export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimC
    · goblin camps drop some · camps / kingdom roads have torches standing (light only, not pick-up) */
 export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the sky (pitch below 0 = from low, looking up)
 /* v3.12.4 hold-Y power: the bow draws up (stays full) · rod / net / drawing-zoom swing up and down while held — let go at the right moment */
+/* v3.12.6 holds: one press held = power (A charge-slash · Y draw/aim · B guard) and it costs ⚡ every second · run out before letting go = 💦 exhausted
+   · double-tap then hold A/Y/B = the picker (stick slides · let go = take) · Y held in the air = Zelda slow motion (time ×airSlow, you hover and sink slowly) */
+export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const CHARGE = { cycle: 1.5, rodMin: 3, rodMax: 16, netMin: .3, zoom: 2.6, weak: .3 };
 /* v3.12.4 the struggle bar (net catch · wild horse): hold = lift the green frame · keep the animal inside until the bar fills */
 export const STRUG = { zone: .3, up: 2.4, grav: 2.0, fill: .26, drain: .2, start: .35, horseEn: 25, horseZone: .26 };

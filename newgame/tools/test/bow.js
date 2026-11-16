@@ -35,7 +35,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.CROUCH, 2000))) errs.push('tap X did not stand up from the crouch'); await wait(400);
     if (await N(() => window.__ng.PL.pose.jump > 0)) errs.push('standing up should not jump');
     /* v3.6 A: hold = the weapon/tool picker (no more AUTO) · let go without sliding = keep what you hold */
-    await closeAll(); const h0 = await N(() => window.__ng.S.hand || 'w'); await press('bA', 'pointerdown'); if (!(await until(() => !!window.__ng.pick(), 5000))) errs.push('holding A did not open the picker'); await press('bA', 'pointerup'); await wait(300);
+    await closeAll(); const h0 = await N(() => window.__ng.S.hand || 'w'); await press('bA', 'pointerdown'); await press('bA', 'pointerup'); await wait(60); await press('bA', 'pointerdown');   /* v3.12.6 double-tap + hold */ if (!(await until(() => !!window.__ng.pick(), 5000))) errs.push('holding A did not open the picker'); await press('bA', 'pointerup'); await wait(300);
     if (await N(() => !!window.__ng.pick())) errs.push('letting go of A did not close the picker'); if ((await N(() => window.__ng.S.hand || 'w')) !== h0) errs.push('letting go without sliding changed the hand'); if (await N(() => window.__ng.S.auto)) errs.push('holding A still turns AUTO on'); await closeAll();
     /* v2.1.1: A draws · tap B puts away · tap B (empty-handed) raises the shield · tap B again lowers it */
     const tapB = async () => { await press('bB', 'pointerdown'); await press('bB', 'pointerup'); await wait(600) };   /* v3.6: two taps closer than D.DTAP = the shield picker */

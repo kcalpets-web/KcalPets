@@ -13,7 +13,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     await E(() => { const N = window.__ng; N.S.bag.push(N.newItem('soldierSpear', 'R'), N.newItem('woodShield', 'C')); N.S.hand = 'w' }); await wait(300);
     // hold A → the picker opens with pictures + stats
-    const A = await (await pg.$('#bA')).boundingBox(); await pg.mouse.move(A.x + A.width / 2, A.y + A.height / 2); await pg.mouse.down(); await wait(1400);
+    const A = await (await pg.$('#bA')).boundingBox(); await pg.mouse.move(A.x + A.width / 2, A.y + A.height / 2); await pg.mouse.down(); await wait(60); await pg.mouse.up(); await wait(60); await pg.mouse.down(); await wait(1400);   /* v3.12.6 double-tap + hold */
     const pk = await E(() => [...document.querySelectorAll('#pick .row i')].map(i => ({ img: !!i.querySelector('img'), st: (i.querySelector('em') || {}).textContent }))); log('picker', JSON.stringify(pk));
     if (!pk.length || pk.filter(x => x.img).length < 3) errs.push('the picker has no item pictures'); if (!pk.some(x => /⚔️\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');
     await pg.screenshot({ path: OUT + '/picker.png' });
