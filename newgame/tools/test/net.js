@@ -25,7 +25,15 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
     await E(() => window.__ng.placeMe(-6.6, 0)); await wait(2500); await close(); const st = await E(() => ({ swim: window.__ng.PL.swim, ctx: window.__ng.CTX && window.__ng.CTX.k })); log('by the raft', JSON.stringify(st));
     await E(() => window.__ng.actA()); await wait(800); if (!(await E(() => !!window.__ng.RIDE))) errs.push('A next to the raft did not climb on');
     // draw on Y
-    await E(() => { window.__ng.S.ytool = 'draw' }); await E(() => { const r = document.getElementById('bY').getBoundingClientRect(); return [r.x, r.y] });
+    await E(() => { const N = window.__ng; if (N.RIDE) N.leaveRaft(); N.placeMe(15, -6); N.S.ytool = 'draw' }); await wait(1500); await close();
+    const yb = await E(() => { const r = document.getElementById('bY').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] });
+    const d0 = await E(() => window.__ng.S.stat.drawings || 0); await pg.mouse.move(yb[0], yb[1]); await pg.mouse.down(); await wait(900);
+    const fr = await E(() => ({ aim: document.body.classList.contains('drawaim'), btn: getComputedStyle(document.getElementById('bDrawNow')).display, ov: !!document.querySelector('.ov') })); log('framing', JSON.stringify(fr));
+    if (!fr.aim || fr.btn === 'none' || fr.ov) errs.push('holding Y (draw) did not frame the view with a 🖍️ button');
+    await E(() => document.getElementById('bDrawNow').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(2500); await pg.mouse.up(); await wait(500);
+    const d1 = await E(() => window.__ng.S.stat.drawings || 0); log('drawings', d0, '→', d1); if (!(d1 > d0)) errs.push('the 🖍️ button did not draw'); await close();
+    for (let r = 0; r < 3 && !(await E(() => !!window.__ng.pick())); r++) { await close(); await pg.mouse.click(yb[0], yb[1]); await wait(80); await pg.mouse.click(yb[0], yb[1]); await wait(700) }
+    if (!(await E(() => !!window.__ng.pick()))) errs.push('double-tap Y did not open the picker while holding the crayon');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
