@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.28';
+export const APP_VER = '3.29';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -26,6 +26,9 @@ export const CLEAR = {
   pebble:  { tool: 'hammer', size: 's', mat: { stone: 1 }, mon: 'rockGolem', name: 'ก้อนกรวด', regrow: 15 * 60e3, regrowD: 1 },
   rock:    { tool: 'hammer', size: 'm', mat: { stone: 3 }, mon: 'rockGolem', name: 'หิน', regrow: 20 * 60e3, regrowD: 1.5, oreP: .3 },
   boulder: { tool: 'hammer', size: 'l', mat: { stone: 6, ore: 1 }, mon: 'rockGolem', name: 'หินก้อนใหญ่', minTier: 1, fixed: 1 },
+  /* v3.29 Vaneya's overgrowth (cleared for good · a better tool for the big ones) */
+  stump:   { tool: 'axe',    size: 'm', mat: { wood: 4 }, mon: null, name: 'ตอไม้ใหญ่', minTier: 1 },
+  bigrock: { tool: 'hammer', size: 'l', mat: { stone: 7, ore: 1 }, mon: null, name: 'หินก้อนใหญ่', minTier: 1 },
 };
 export const HITS = { s: 1, m: 3, l: 6 };
 /* v3.3 🍂 tree LOD (metres from the player to a chunk's edge): tree = full canopies closer than this · small = grass / ferns / mushrooms closer than this · hyst = extra distance before switching back */
@@ -594,6 +597,8 @@ export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: 0 };   // v3.21
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 /* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
+/* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
+export const OVERGROW = { tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = .5, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch

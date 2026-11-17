@@ -13,7 +13,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8841, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a); await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const s = document.createElement('style'); s.textContent = 'body>*:not(canvas){visibility:hidden!important}'; document.head.appendChild(s) });
     const SP = (process.env.SPOTS || 'meadow:18:-6:1.2,shore:6:9:2.4,hill:26:4:-1.0').split(',').map(s => s.split(':'));
     for (const [n, x, z, yaw] of SP) for (const [cn, pitch] of [['tp', .42], ['hi', .95]]) {
-      await E(([x, z, yaw, pitch]) => { const N = window.__ng; N.placeMe(+x, +z); N.PL.yaw = N.PL.yawT = +yaw; N.CAM.yaw = +yaw; N.CAM.pitch = pitch; N.CAM.manualT = performance.now() + 1e6; N.S.time = 560; for (let d = 0; d < 60 && N.wxAt(+x, +z) !== 'clear'; d++) N.S.dayN = d; N.WXS.at = 0 }, [x, z, yaw, pitch]); await wait(5000);
+      await E(([x, z, yaw, pitch]) => { const N = window.__ng; N.placeMe(+x, +z); N.PL.yaw = N.PL.yawT = +yaw; N.CAM.yaw = +yaw; N.CAM.pitch = pitch; N.CAM.manualT = performance.now() + 1e6; N.S.time = 560; for (let d = 0; d < 60 && N.wxAt(+x, +z) !== 'clear'; d++) N.S.dayN = d; N.WXS.at = 0 }, [x, z, yaw, pitch]); await wait(+(process.env.WAIT || 9000));
       await pg.screenshot({ path: path.join(OUT, `${PRE}-${n}-${cn}.png`) }); console.log('shot', n, cn) }
     console.log(JSON.stringify(await E(() => window.__ng.info())));
   } catch (e) { errs.push('X ' + e.stack) }

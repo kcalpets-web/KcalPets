@@ -7,13 +7,13 @@ import { TIME, addWind } from './life.js';
 const NOISE = `float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h21(i), h21(i + vec2(1., 0.)), f.x), mix(h21(i + vec2(0., 1.)), h21(i + 1.), f.x), f.y); }
 float fb(vec2 p){ return .5 * vn(p) + .25 * vn(p * 2.03 + 7.1) + .125 * vn(p * 4.1 + 3.3) + .0625 * vn(p * 8.2 + 1.7); }`;
-export const PAINT = { cloud: { value: 1 } };   // cloud-shadow strength (0 = none)
+export const PAINT = { cloud: { value: 1 }, isle: { value: new THREE.Vector4(-1e4, 150, -240, 170) } };   // v3.29 Vaneya's rectangle (x0, x1, z0, z1): overgrown farm earth   // cloud-shadow strength (0 = none)
 export function paintGround(mat, key = 'paint') {
   const prev = mat.onBeforeCompile;
-  mat.onBeforeCompile = (sh, r) => { prev && prev.call(mat, sh, r); sh.uniforms.uTime = TIME; sh.uniforms.uCloud = PAINT.cloud;
+  mat.onBeforeCompile = (sh, r) => { prev && prev.call(mat, sh, r); sh.uniforms.uTime = TIME; sh.uniforms.uCloud = PAINT.cloud; sh.uniforms.uIsle = PAINT.isle;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGW;\nvarying float vGN;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGW = (modelMatrix * vec4(transformed, 1.)).xyz;\nvGN = normalize(mat3(modelMatrix) * objectNormal).y;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec3 vGW;\nvarying float vGN;\nuniform float uTime;\nuniform float uCloud;\n${NOISE}`)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec3 vGW;\nvarying float vGN;\nuniform float uTime;\nuniform float uCloud;\nuniform vec4 uIsle;\n${NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 { vec3 c = diffuseColor.rgb; vec2 w = vGW.xz;
   float gm = smoothstep(.015, .08, c.g - max(c.r, c.b)) * smoothstep(.55, .8, vGN);        // grass (green + not a cliff)
@@ -27,6 +27,9 @@ export function paintGround(mat, key = 'paint') {
   float e = n2 + .25 * (n1 - .5), dp = smoothstep(.72, .76, e);                              // worn bare earth
   g = mix(g, g * .7, smoothstep(.66, .72, e) * (1. - dp));                                   // a dark rim round it
   g = mix(g, vec3(.26, .16, .08) * (.75 + .5 * n3), dp * .9);
+  { float ip = smoothstep(-20., 0., min(min(w.x - uIsle.x, uIsle.y - w.x), min(w.y - uIsle.z, uIsle.w - w.y)));   // v3.29 Vaneya: warm overgrown earth with patches of grass
+    float gp = smoothstep(.44, .56, fb(w * .085 + 2.) + .1 * (n3 - .5)); vec3 earth = vec3(.44, .27, .065) * (.82 + .3 * n3 + .1 * n2), grass = mix(vec3(.07, .2, .03), vec3(.16, .32, .05), n2) * (.85 + .3 * n3);
+    vec3 v = mix(earth, grass, gp); v = mix(v, v * .78, smoothstep(.4, .44, fb(w * .085 + 2.)) * (1. - gp) * .5); g = mix(g, v, ip); dp *= 1. - ip; }
   c = mix(c * (.9 + .16 * n3), g, gm);
   c = mix(c, vec3(.015, .07, .08) * (.8 + .4 * n2), smoothstep(-.06, -.75, vGW.y) * .85);       // under water: darker with depth
   float rock = (1. - smoothstep(.55, .8, vGN));                                               // cliffs: layered stone bands

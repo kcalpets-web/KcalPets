@@ -133,7 +133,8 @@ export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCEL
 export function solTop(x, z) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null; let best = null;
   for (const e of l) { if (!e.top || (e.o && !e.o.g)) continue; const dx = x - e.x, dz = z - e.z, d2 = dx * dx + dz * dz;
     if (!e.r) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + .02 && Math.abs(lz) < e.hd + .02) { const t = groundH(e.x, e.z) + topAt(e, lz); if (best == null || t > best) best = t } continue }   /* v3.26 a flat top (steps · a stone base) */ if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = groundH(e.x, e.z) + e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5); if (best == null || t > best) best = t } return best }
-const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 }, SOL_TOP = { rock: .48, boulder: 1.05 };
+const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62, stump: .34, bigrock: .62 }, SOL_TOP = { rock: .48, boulder: 1.05, stump: .4, bigrock: .9 };
+export { SOL_R, SOL_TOP };
 /* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
 /* v3.3 zone 1 (island · meadow · town · hills) is ONE piece of ground: every hand-made ground mesh takes its height from coreY and its colour from coreCol,
@@ -225,7 +226,7 @@ export function despawnClear(W, o) { if (!o.g) return; if (o.inst) for (const [m
 const RM = { wood: new THREE.MeshStandardMaterial({ color: '#8a5a32', roughness: .8 }), ring: new THREE.MeshStandardMaterial({ color: '#e8c890', roughness: .7 }), twig: new THREE.MeshStandardMaterial({ color: '#7a5030', roughness: .8 }), stone: new THREE.MeshStandardMaterial({ color: '#a8a296', roughness: .7 }), stub: new THREE.MeshStandardMaterial({ color: '#8ab860', roughness: .8 }) };
 const RG = { stump: new THREE.CylinderGeometry(.2, .27, .28, 16), top: new THREE.CylinderGeometry(.19, .19, .02, 16), twig: new THREE.CylinderGeometry(.015, .025, .5, 6), chip: new THREE.SphereGeometry(.09, 10, 8), blade: new THREE.ConeGeometry(.025, .12, 5) };
 export function remnant(W, o, on) {
-  if (!on) { if (o.rem) { W.scene.remove(o.rem); o.rem = null } if (o.rsol) { delSol(o.rsol); o.rsol = null } return } if (o.rem) return; const t = o.t, g = new THREE.Group(), y = groundH(o.x, o.z); g.position.set(o.x, y, o.z); g.rotation.y = o.ry || 0;
+  if (!on) { if (o.rem) { W.scene.remove(o.rem); o.rem = null } if (o.rsol) { delSol(o.rsol); o.rsol = null } return } if (o.rem || o.perm) return;   /* v3.29 overgrowth leaves nothing behind */ const t = o.t, g = new THREE.Group(), y = groundH(o.x, o.z); g.position.set(o.x, y, o.z); g.rotation.y = o.ry || 0;
   const add = (geo, m, x, yy, z, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) => { const k = new THREE.Mesh(geo, m); k.position.set(x, yy, z); k.scale.set(sx, sy, sz); k.rotation.set(rx, 0, rz); k.castShadow = true; k.receiveShadow = true; g.add(k) };
   if (t === 'tree') { const sc = (o.sc || 1) * (o.inst ? 1 : .85); add(RG.stump, RM.wood, 0, .14 * sc, 0, sc, sc, sc); add(RG.top, RM.ring, 0, .29 * sc, 0, sc, 1, sc) }
   else if (t === 'giant') { const sc = o.sc || 1, w = 2.9 * sc, h = 2.3 * sc; add(RG.stump, RM.wood, 0, .14 * h - .1, 0, w, h, w); add(RG.top, RM.ring, 0, .28 * h - .095, 0, w, 1, w); for (let i = 0; i < 5; i++) { const a = i * 1.2566 + .3; add(RG.twig, RM.wood, Math.sin(a) * .7 * sc, .12, Math.cos(a) * .7 * sc, 9 * sc, 1.5 * sc, 9 * sc, Math.cos(a) * 1.1, -Math.sin(a) * 1.1) }
@@ -351,6 +352,7 @@ export function buildTown(W, eco) {
    island (x<9) · 🌾 riverside meadow (9–35) · town (35–57) · ⛰️ cliff hills (57–79) · east forest (79+)
    groundH = height of the ground · waterAt = sea / fresh / null · walkWorld = 'land' | 'water' | false (swim = water) */
 const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
+export const POND = { x: 25, z: -6.5, r: 3.4 };   /* v3.29 the stream is gone: a pond in the overgrown field */
 export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, riverC = z => RIVER.x + .7 * Math.sin(z * .45 + .6) * smw(2.4, 5, Math.abs(z - RIVER.bz)), riverW = z => RIVER.w * (1 + .14 * Math.sin(z * .9)) * (1 - .4 * smw(6.5, 11.5, Math.abs(z))),   // v3.7 the stream winds a little and narrows to its ends (straight under the bridge)
   LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
 export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะวาเนย่า · บ้านต้นไม้', meadow: 'เกาะวาเนย่า · ทุ่งทานตะวัน', town: 'เกาะวาเนย่า · หมู่บ้าน', hills: 'เกาะวาเนย่า · เนินผา', forest: 'เกาะวาเนย่า · ป่าตะวันออก' };   // v3.13 the island is Vaneya, the sunflower isles
@@ -374,7 +376,7 @@ export function groundH(x, z) {
 }
 function coreH(x, z) {
   if (x < 9) { const d = x - shore(z); return d < 0 ? Math.max(d * .35, -6) : 0 }   /* v3.7 the island's sea floor slopes on down to the open sea's depth (was a flat shelf → a box on the map) */
-  if (x >= 9 && x < 35) { const d = Math.abs(x - riverC(z)), w = riverW(z); if (Math.abs(z - RIVER.bz) > 1.2) return -.8 * (1 - smw(w - .3, w + .7, d)) * (1 - smw(9.5, 12.5, Math.abs(z))); return 0 }   /* v3.7 the stream ends softly before the rim */
+  if (x >= 9 && x < 35) { const rl = Math.hypot(x - POND.x, z - POND.z); return rl < POND.r + .7 ? -.8 * (1 - smw(POND.r - .5, POND.r + .7, rl)) : 0 }   /* v3.29 a pond (the stream is gone) */   /* v3.7 the stream ends softly before the rim */
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
     return MESA.h * (1 - smw(MESA.r, MESA.r + MESA.edge, Math.hypot(x - MESA.x, (z - MESA.z) * 1.1))) }
   return 0;
@@ -384,7 +386,7 @@ export function waterAt(x, z) {
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
-  if (x < 35) return Math.abs(x - riverC(z)) < riverW(z) && Math.abs(z - RIVER.bz) > 1.2 && Math.abs(z) < 11.2 ? 'fresh' : null;
+  if (x < 35) return Math.hypot(x - POND.x, z - POND.z) < POND.r ? 'fresh' : null;
   if (x >= 57 && x < 79) return Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r ? 'fresh' : null;
   return null;
 }
@@ -425,10 +427,10 @@ export function buildWild(W, eco) {
   out.meadow = coreGround(17, 35, 17, eco); out.hills = coreGround(57, 74, 17, eco); scene.add(out.meadow, out.hills);   /* v3.3 one ground recipe for the whole first zone (the road is painted into it) */
   /* water: the river (with a bridge on the road) and the hill lake */
   const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#2f8a9a', roughness: .15, transparent: true, opacity: .8, clearcoat: .8 }), 999, 0);   /* v3.28 deeper teal: the bed shows through */
-  const river = new THREE.Mesh(new THREE.PlaneGeometry(RIVER.w * 2 + 3.4, 26, 8, 60), wmat);   /* v3.7 wider: the banks (not the plane's edge) shape the water */ river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
+  const river = new THREE.Mesh(new THREE.CircleGeometry(POND.r + .3, 40), wmat); river.position.set(POND.x, -.12, POND.z); river.rotation.x = -Math.PI / 2; scene.add(river); if (0)    /* v3.7 wider: the banks (not the plane's edge) shape the water */ river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
-  at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
-  for (const s2 of [-1, 1]) addSol({ x: RIVER.x, z: RIVER.bz + s2 * 1.05, hw: RIVER.w + .5, hd: .07, ry: 0 });   // the bridge rails
+  if (0) at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
+  /* v3.29 no bridge (no stream) */
   /* edges: forest walls north/south · signposts at the zone borders */
   for (const [x0, x1] of [[9.5, 35], [57, 79]]) for (let x = x0; x < x1; x += 4.5) for (const sd of [-1, 1]) if (R() < .5) { const tx = x + R() * 3, tz = sd * (13 + R() * 3); if (R() < 2) { R(); R(); continue }   /* v3.16.2 no tree walls along the strip: it opens onto Vaneya's own land */ at(g => (R() < .5 ? PROPS.pine : PROPS.tree)(g, 1 + R() * .5), tx, tz, R() * 6); addSol({ x: tx, z: tz, r: .35 }) }   // a few trees on the edges (the land goes on)
   const sign = (x, z, t) => at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [0, 1.15, 0], [.5, .2, .05], [0, 0, 0], { A: 0 }) }, x, z) && addSol({ x, z, r: .14 });
@@ -437,7 +439,7 @@ export function buildWild(W, eco) {
   for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28, rx = MESA.x + Math.cos(a) * (MESA.r + MESA.edge + .4), rz = MESA.z + Math.sin(a) * (MESA.r + MESA.edge + .4) / 1.1; at(g => PROPS.rock(g, .8 + R() * .5), rx, rz, R() * 6); addSol({ x: rx, z: rz, r: .45, top: .5 }) }
   /* wild clearables (regrow): trees · bushes · rocks · grass, never on the road, in water or on the cliff band */
   let k = 0; const types = ['tree', 'tree', 'bush', 'bush', 'grass', 'flower', 'rock', 'pebble', 'flower', 'bigtree', 'boulder', 'hive'];
-  for (const [x0, x1, n] of [[9.8, 33, 46], [58.5, 78.5, 40]]) for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
+  for (const [x0, x1, n] of [[58.5, 78.5, 40]])   /* v3.29 the meadow is Vaneya's overgrowth now */ for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
     if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
     const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
     const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
