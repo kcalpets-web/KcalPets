@@ -2099,6 +2099,7 @@ function actA() { atkT = performance.now(); if (handTool() === 'sword' && weapon
   const t = nearTarget(), c = CTX;
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (S.mode === 'farm') return farmA(t);
+  if (S.hand === 'hoe' && weaponOf() && !(t && (t.m || t.k))) { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (tillable(cx, cz)) { setTool('hoe'); if (till(cx, cz)) wearItem('sword', .5); return } }   /* v3.22 the hoe digs the green square first (even in safe places) */
   if (safeHere() && (!t || t.m)) { safeHint(); return }
   if (t && t.o && D.CLEAR[t.o.t]) {   /* v3.6 the A hand decides: sword / sickle = grass · axe = trees · pickaxe = rocks */
     const o = t.o, h = handTool(); if (!cutsWith(h, o.t)) { const need = D.CLEAR[o.t].tool === 'hammer' ? '⛏️ อีเต้อ' : D.CLEAR[o.t].tool === 'axe' ? '🪓 ขวาน' : '🌾 เคียว หรือ ⚔️ ดาบ'; hint(`${D.CLEAR[o.t].name} ต้องใช้ ${need} · กด <b>A</b> ค้างเพื่อเปลี่ยน`, 2000); return }
@@ -2133,7 +2134,7 @@ function holdTick() { const now = performance.now(), dt = Math.min(.5, (now - (h
 function chgTick() { holdTick(); if (CHGA) { const k = Math.min(1, (performance.now() - CHGA.t0) / 1000 / D.HOLD.charge.full), i = chgEl.querySelector('i'); chgEl.classList.add('on'); i.style.width = Math.round(k * 100) + '%'; i.style.background = k >= D.HOLD.charge.spinAt ? '#ffd23f' : '#ff8a3a'; chgEl.querySelector('b').textContent = k >= D.HOLD.charge.spinAt ? '🌀 ฟันวน! ปล่อยเลย' : `⚔️ ชาร์จ ${Math.round(k * 100)}%`; return }
   const a = AIM, on = !!a && !a.dig && !a.draw && !!a.ch; chgEl.classList.toggle('on', on); if (!on) return; const k = chgK(a), i = chgEl.querySelector('i');
   i.style.width = Math.round(k * 100) + '%'; i.style.background = a.draw ? '#7ac8ff' : k > .85 ? '#ff6a3a' : k > .5 ? '#ffb020' : '#7ad86a';
-  chgEl.querySelector('b').textContent = a.draw ? `🔍 ซูม ×${(1 + k * (D.CHARGE.zoom - 1)).toFixed(1)}` : a.rod ? `🎣 ระยะ ${Math.round(D.CHARGE.rodMin + k * (D.CHARGE.rodMax - D.CHARGE.rodMin))} ม.` : a.net ? `🕸️ ระยะ ${Math.round(D.NET.range * (D.CHARGE.netMin + (1 - D.CHARGE.netMin) * k))} ม.` : `🏹 แรง ${Math.round(k * 100)}%` }
+  chgEl.querySelector('b').textContent = a.draw ? `🔍 ซูม ×${(1 + k * (D.CHARGE.zoom - 1)).toFixed(1)}` : a.rod ? `🎣 ระยะ ${Math.round(D.CHARGE.rodMin + k * (D.CHARGE.rodMax - D.CHARGE.rodMin))} ม.` : a.net ? `🕸️ ระยะ ${Math.round(D.NET.range * (D.CHARGE.netMin + (1 - D.CHARGE.netMin) * k))} ม.` : a.thr ? `🎯 แรงปา ${Math.round(k * 100)}%` : `🏹 แรง ${Math.round(k * 100)}%` }
 /* v3.18 🎯 Y = tap once to aim (no holding) · Y zoom in · X zoom out · A use (hold = charge) · B leave · a legend blinks the first few times */
 const YLG = (() => { const e = document.createElement('div'); e.id = 'ylg'; document.body.appendChild(e); return e })();
 const YACT = { throw: 'ปา · ค้าง = แรงขึ้น (หอกแม่นสุด)', bow: 'ยิง · ค้าง = ชาร์จแรงขึ้น', rod: 'เหวี่ยงเบ็ด · ค้าง = เลือกระยะ', dig: 'ขุดดิน', net: 'โยนตาข่าย · ค้าง = เลือกระยะ', draw: 'วาดภาพ' };
