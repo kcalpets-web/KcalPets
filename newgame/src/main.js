@@ -1432,7 +1432,7 @@ function invPreview(cv, tab, sel) {
     if (tab === 'pets' && sel && sel.pet) { const p = sel.pet, f = formOf(p); (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76); g.scale.setScalar(D.FORMS[f].scale * 1.6); PV.h = 1.1 }
     else { vinyl(g, S.avatar || {}); g.scale.setScalar(.82); PV.h = 1.3;
       const sw = S.eq.sword && S.bag.find(x => x.id === S.eq.sword), shd = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), hand = g.getObjectByName('handR'), arm = g.getObjectByName('armL2');
-      if (hand && sw) { const t = new THREE.Group(), kd = D.ITEMS[sw.t].kind; itemMesh(t, sw.t); t.scale.setScalar(1.25 * VBACK.held / VSCALE * 1.45); t.rotation.x = { one: 2.2, two: 2.45, spear: 3.55 }[kd] ?? 2.2; if (kd !== 'spear') t.rotation.y = -Math.PI / 2; t.position.set(0, -.02, .02); hand.add(t) }   /* v3.17.1 held like in the game (tip up) */
+      if (hand && sw) { const t = new THREE.Group(), kd = D.ITEMS[sw.t].kind; itemMesh(t, sw.t); t.scale.setScalar(1.25 * VBACK.held / VSCALE * 1.45); t.rotation.x = kd === 'spear' ? .3 : .15; if (kd !== 'spear') t.rotation.y = -Math.PI / 2; t.position.set(0, -.02, .02); hand.add(t) }   /* v3.17.1 tip up by the side (the arm hangs here, so not the combat angles) */
       if (arm && shd && shieldOn()) { const t = new THREE.Group(); itemMesh(t, shd.t); t.rotation.y = -Math.PI / 2; t.position.set(-.05, 0, 0); t.scale.setScalar(.9); arm.add(t) } }
     PV.doll = g; PV.sc.add(g); const bb = new THREE.Box3().setFromObject(g); PV.h = Math.max(.6, bb.max.y - bb.min.y) }   /* frame whatever is shown */
   cv.replaceWith(PV.r.domElement); PV.r.domElement.className = 'invcv';
