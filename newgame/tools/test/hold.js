@@ -30,6 +30,14 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8820, OUT = process.arg
     // Y in the air = slow motion
     await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false; window.__ng.giveBow && window.__ng.giveBow(true) }); await wait(300);
     await E(() => window.__ng.setJump()); await wait(160); await E(() => window.__ng.aimStart('bow')); await wait(300); const air = await E(() => !!window.__ng.AIRAIM); await E(() => window.__ng.aimEnd(true)); log('air aim', air); if (!air) errs.push('Y in the air did not start slow motion');
+    // v3.17 slots: put the boar on X (they swap) → X hold = the bubble
+    await E(() => window.__ng.openBag('pets')); await wait(600); await E(() => { const t = [...document.querySelectorAll('.ov .tile[data-k]')].find(x => x.dataset.k === 'ppb'); t && t.click() }); await wait(400); await E(() => { const b = document.querySelector('.ov [data-sks="X:boar"]'); b && b.click() }); await wait(400); await close();
+    const sl = await E(() => [window.__ng.skSlot('X'), window.__ng.skSlot('A')]); log('slots', sl); if (sl[0] !== 'boar' || sl[1] !== 'hawk') errs.push('putting the boar on X did not swap the slots');
+    await E(() => { window.__ng.PSK.boar = 0 }); await dp('bX', 'pointerdown'); await wait(900); await dp('bX', 'pointerup'); await wait(400); const bx = await E(() => window.__ng.BUB.on); log('X hold → bubble', bx); if (!bx) errs.push('X hold did not use the boar after the swap');
+    await E(() => { window.__ng.setSkSlot('X', 'hawk') });
+    // 0 hearts = faint and wake at a camp with hearts
+    await E(() => { const N = window.__ng; N.BUB.on = false; N.BUB.visible = false; N.S.hp = 1; const q = N.me, m = N.monSpawn('goblin', q.x + 1, q.z, { area: 'wild' }); N.hitPlayer(m, performance.now()) }); await wait(5000); await close();
+    const fz = await E(() => ({ hp: window.__ng.S.hp, x: +window.__ng.me.x.toFixed(1), z: +window.__ng.me.z.toFixed(1) })); log('after 0 hearts', JSON.stringify(fz)); if (!(fz.hp > 1)) errs.push('0 hearts did not faint and wake with hearts');
     // Y double tap: no picker
     await dp('bY', 'pointerdown'); await dp('bY', 'pointerup'); await wait(60); await dp('bY', 'pointerdown'); await wait(900); await dp('bY', 'pointerup'); await wait(300); const yp = await E(() => !!window.__ng.pick()); log('Y double tap picker', yp); if (yp) errs.push('a Y double tap still opens a picker');
   } catch (e) { errs.push('X ' + e.stack) }
