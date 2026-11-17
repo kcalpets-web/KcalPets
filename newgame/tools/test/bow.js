@@ -44,7 +44,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const fa = await N(() => { const N = window.__ng, q = N.me, m = window.__s1; let ok = false;
       for (let y = 0; y < 6.3 && !ok; y += .35) { N.PL.yaw = N.PL.yawT = y; m.A.root.position.set(q.x + Math.sin(y) * 1.2, m.A.root.position.y, q.z + Math.cos(y) * 1.2); const t = N.nearTarget(); ok = !!(t && t.m === m) }
       const hp0 = m.hp; N.actA(); const r = { ok, drawn: N.DRAWN, hp1: m.hp }; N.actA(); r.drawn2 = N.DRAWN; return r });
-    log('A twice', JSON.stringify(fa)); if (fa.ok) { if (!fa.drawn) errs.push('first A did not draw the weapon'); if (fa.hp1 < 24) errs.push('first A attacked (should only draw)') } await wait(900);
+    log('A twice', JSON.stringify(fa)); if (fa.ok) { if (!fa.drawn) errs.push('first A did not draw the weapon'); if (!(fa.hp1 < 24)) errs.push('v3.19 the first A should draw AND hit') } await wait(900);
     if (fa.ok && !(await N(() => window.__s1.hp < window.__s1.T.hp || !window.__ng.mons.includes(window.__s1)))) errs.push('second A did not attack'); await shot('b1c-drawn'); await E(() => { window.__s1.A.root.position.x += 60 }); await closeAll();
     /* v3.18.2 B = shield only while held */
     await press('bB', 'pointerdown'); await wait(500); if (!(await N(() => window.__ng.guard))) errs.push('holding B did not raise the shield'); await shot('b1d-shield'); await press('bB', 'pointerup'); await wait(300);

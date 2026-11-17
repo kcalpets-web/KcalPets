@@ -32,10 +32,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng, q = N.me; N.__calm = N.monSpawn('slime', q.x + 3, q.z - 2, { area: 'farm' }) }); await wait(5000);
     const calm = await N(() => { const m = window.__ng.__calm; return { hp: m.hp, max: m.T.hp, hit: !!m.hit } }); log('calm slime', JSON.stringify(calm)); if (calm.hp < calm.max) errs.push('pets attacked a monster the player had not hit');
     await E(() => { const N = window.__ng, m = N.__calm; if (N.mons.includes(m)) N.hurtMon(m, 999, 'dmg') }); await wait(500);
-    /* v1.4.2 lock-on: an angry monster beside you → you turn to face it */
-    await E(() => { const N = window.__ng, q = N.me; N.PL.yaw = N.PL.yawT = 0; N.__foe = N.monSpawn('goblin', q.x - 3, q.z, { area: 'farm', aggro: true })   /* west: the farm fence is east of the spawn (v3.7) */ }); await wait(2500);
+    /* v3.19 lock-on only while holding B (shield) */
+    await E(() => { const N = window.__ng, q = N.me; N.PL.yaw = N.PL.yawT = 0; N.__foe = N.monSpawn('goblin', q.x - 3, q.z, { area: 'farm', aggro: true })   /* west: the farm fence is east of the spawn (v3.7) */; N.setGuard(true) }); await wait(2500);
     const lk = await N(() => { const N = window.__ng, m = N.__foe.A.root.position, q = N.me; let d = Math.atan2(m.x - q.x, m.z - q.z) - N.PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return { lock: N.LOCK === N.__foe, off: +Math.abs(d).toFixed(2) } });
-    log('lock-on', JSON.stringify(lk)); if (!lk.lock || lk.off > .5) errs.push('lock-on did not face the monster'); await shot('06b-lock');
+    log('lock-on', JSON.stringify(lk)); if (!lk.lock || lk.off > .5) errs.push('lock-on did not face the monster'); await shot('06b-lock'); await E(() => window.__ng.setGuard(false));
     /* v1.4.4 effects: sword arcs + sparks + boss bar */
     await E(() => { const N = window.__ng, m = N.__foe.A.root.position; N.placeMe(m.x - 1.6, m.z); N.S.en = null; N.__foe.T = Object.assign({}, N.__foe.T, { hp: 400 }); N.__foe.hp = 400 }); await wait(800);
     for (let i = 0; i < 3; i++) { await E(() => window.__ng.actA()); await wait(i === 2 ? 60 : 450) } await shot('06d-fx-slash');
