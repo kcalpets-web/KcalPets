@@ -416,7 +416,7 @@ function fight(m) { if (!S.has.sword) { hint('ยังไม่มีอาว�
 function workTick(now) {
   if (!work || now < work.t) return; work.t = now + 380 / speed;
   if (work.o) { const o = work.o; if (!o.g) { work = null; return } if (dist(me().x, me().z, o.x, o.z) > 1.7) { if (!walkT) walkTo(o.x, o.z, null, 1.1); return }
-    const en0 = pEn(), left0 = o.left; toolHit({ kind: 'clear', id: o.id }); if (o.g && pEn() === en0 && o.left === left0) work = null }    // stopped (no energy / tool tier / wrong tool)
+    const en0 = pEn(), left0 = o.left; toolHit({ kind: 'clear', id: o.id }); if (o.g && pEn() === en0 && o.left === left0 && performance.now() >= clearT) work = null }   /* v3.24 a hit still on cooldown is not 'stopped' */    // stopped (no energy / tool tier / wrong tool)
   else if (work.m) { const m = work.m; if (!mons.includes(m)) { work = null; return } const q = m.A.root.position, d = dist(me().x, me().z, q.x, q.z);
     if (d > 1.6) { if (!walkT || dist(walkT.x, walkT.z, q.x, q.z) > 1.2) walkTo(q.x, q.z, null, 1.3); work.t = now + 120; return } walkT = null; toolHit({ kind: 'mon', m }) }
 }
