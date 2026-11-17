@@ -34,7 +34,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8837, OUT = process.arg
     if (mon.camps) errs.push('monster camps are still on Vaneya'); if (mon.isleMons) errs.push('wild monsters on Vaneya');
     const h0 = await E(() => { const N = window.__ng, S = N.S; S.full = 5; S.en = 1.2; S.tired = false; document.querySelectorAll('.ov').forEach(o => o.remove()); return { day: S.dayN, x: +N.me.x.toFixed(1), z: +N.me.z.toFixed(1), paused: N.paused() } }); await wait(14000);   /* v3.24 😵 hungry: ⚡ drains · empty = pass out, wake the next morning on the spot */
     const h1 = await E(() => { const N = window.__ng, S = N.S; return { day: S.dayN, full: Math.round(S.full), en: S.en, paused: N.paused(), time: Math.round(S.time), x: +N.me.x.toFixed(1), z: +N.me.z.toFixed(1) } }); log('hunger faint', JSON.stringify(h0), '→', JSON.stringify(h1));
-    if (h1.day !== h0.day + 1 || h1.full < 20 || Math.abs(h1.x - h0.x) > .5) errs.push('running out of ⚡ while hungry should pass out and wake there the next morning');
+    if (h1.day !== h0.day) errs.push('v3.28 hungry should no longer pass out to the next morning');
     log('perf', JSON.stringify(await E(() => window.__ng.info())));
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
