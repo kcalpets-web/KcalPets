@@ -31,9 +31,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const sweep = await E(async () => { const N = window.__ng, q = N.me, y = N.PL.yaw, a = N.monSpawn('slime', q.x + Math.sin(y) * 1.8 + Math.cos(y) * .6, q.z + Math.cos(y) * 1.8 - Math.sin(y) * .6, { area: 'meadow', hp: 500 }), b = N.monSpawn('slime', q.x + Math.sin(y) * 1.8 - Math.cos(y) * .6, q.z + Math.cos(y) * 1.8 + Math.sin(y) * .6, { area: 'meadow', hp: 500 });
       await new Promise(r => setTimeout(r, 900)); const d0 = N.S.bag.find(b => b.id === N.S.eq.sword).d; N.S.en = null; N.actA(); await new Promise(r => setTimeout(r, 400)); const res = { a: a.hp, b: b.hp, d0, d1: N.S.bag.find(b => b.id === N.S.eq.sword).d }; N.hurtMon(a, 9999, 'dmg'); N.hurtMon(b, 9999, 'dmg'); return res });
     log('sweep', JSON.stringify(sweep)); if (!(sweep.a < 500 && sweep.b < 500)) errs.push('two-handed did not sweep both'); if (!(sweep.d1 === sweep.d0 - 1)) errs.push('durability did not go down');
-    /* breaking: leafBlade near the end → one more hit → gone, switches weapon */
-    const brk = await E(() => { const N = window.__ng, lb = N.S.bag.find(b => b.t === 'leafBlade'); N.S.eq.sword = lb.id; lb.d = 1; N.wearItem('sword'); return { gone: !N.S.bag.includes(lb), eq: N.S.bag.find(b => b.id === N.S.eq.sword)?.t } });
-    log('break', JSON.stringify(brk)); if (!brk.gone || !brk.eq) errs.push('weapon did not break / switch'); await wait(600); await shot('break');
+    /* breaking: leafBlade near the end → one more hit → broken (kept, bare hands) */
+    const brk = await E(() => { const N = window.__ng, lb = N.S.bag.find(b => b.t === 'leafBlade'); N.S.eq.sword = lb.id; lb.d = 1; N.wearItem('sword'); return { kept: N.S.bag.includes(lb), br: lb.br, eq: N.S.eq.sword } });   /* v3.22 broken = stays in the bag (💔) · bare hands · nothing auto-equipped */
+    log('break', JSON.stringify(brk)); if (!brk.kept || !brk.br || brk.eq) errs.push('v3.22 a broken weapon should stay in the bag, unequipped'); await wait(600); await shot('break');
     /* shield on the back with a spear */
     await hold('woodSpear', 'spear2'); log('shield usable with spear', await N(() => window.__ng.kindOf.shield));
     for (const t of ['sword', 'shield']) { await E(t => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag(t) }, t); await wait(1500); await shot('inv-' + t) } await closeAll();
