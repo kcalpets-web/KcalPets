@@ -283,18 +283,30 @@ function film(R, o) {
       jump: i => { if (!ctx.name) ctx.name = 'ทดสอบ'; if (!ctx.pet && BEATS.includes('pet')) ctx.pet = { kind: 'cat', name: 'มิว' }; form.style.display = 'none'; bi = i - 1; busy = false; next() } };
   });
 }
-/* v3.23 🎬 the game's title: after the first crossing — the little boat sails into the sunrise · KEALEE · And The New Light Of Luthonia */
-function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#141a4a', '#ff9a5a', '#c87a9a'), hemi: '#ffd8c0', hi: .55, sun: '#ffb880', si: 1.3, sp: [0, 6, -30], fov: 50 });
-  const sea = plane(S, '#2a5a8a', 400, 400, 0, 0, 0, new THREE.MeshStandardMaterial({ color: '#23406e', roughness: .55, metalness: .1 }));
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffd890' })); sun.position.set(0, 1.5, -120); S.add(sun);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 90), new THREE.MeshBasicMaterial({ color: '#ffb870', transparent: true, opacity: .2 })); glow.rotation.x = -Math.PI / 2; glow.position.set(0, .02, -70); S.add(glow);   // the sun's path on the water
-  const crew = [], boat = at(g => { BUILDS.raft(g); part(g, '#5a3420', '#8a5a30', [0, 1.1, 0], [.06, 1.1, .06], [0, 0, 0], { A: 0 }); const sl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.3), new THREE.MeshStandardMaterial({ color: '#f4ecd8', side: THREE.DoubleSide, roughness: .8 })); sl.position.set(.5, 1.3, 0); sl.rotation.y = Math.PI / 2; g.add(sl) }, 0, 0, Math.PI / 2, 1);
-  for (let i = 0; i < 5; i++) at(g => part(g, '#3a5a2a', '#6a9a4a', [0, 0, 0], [4 + i, 1.2 + i * .3, 3], [0, 0, 0], { A: .2 }), -40 + i * 22, -90 - i * 6, 0, 1, -.4);   /* far islands */
-  { const h = new THREE.Group(); HUMANS.howsif(h); h.scale.setScalar(.8); h.position.set(-.3, .2, .2); h.rotation.y = Math.PI; boat.add(h) }   /* uncle rows · Kealee is still out there */
-  try { gulls(S, 6, 0, -14, 9) } catch (_) { }
-  return { S, cam, min: 9, lead: .5, bloom: .4, big: 1, title: 'KEALEE', titleAt: 2600, sub: 'And The New Light Of Luthonia', subAt: 4200, update(t) {
-    const k = Math.min(1, t / 8); cam.position.set(Math.sin(t * .15) * 1.5, 1.6 + k * 4.5, 6 + k * 4); cam.lookAt(0, 1 + k * 2.2, -20);
-    boat.position.z = -t * .9; boat.rotation.z = Math.sin(t * 1.3) * .04; boat.position.y = Math.sin(t * 1.7) * .05; sun.position.y = 1.5 + t * .25; glow.material.opacity = .16 + Math.sin(t * 2) * .04 } } }
+/* v3.24 🎬 the game's title: a wide view of a tropical island (a green peak, a turquoise lagoon, white sand, palms, thatched huts) · a tiny boat sails in · KEALEE · And The New Light Of Luthonia */
+function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#3f8fdc', '#e6f6ff', '#9fd2f4'), hemi: '#fff6e8', hi: 1.05, sun: '#fff1d8', si: 2.1, sp: [-30, 60, 40], fov: 42 }); S.fog = new THREE.Fog('#d8eefa', 90, 260);
+  const M = (c, r = .8, o) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r }, o || {})), disc = (r, c, y, m) => { const d = new THREE.Mesh(new THREE.CircleGeometry(r, 64), m || M(c, .9)); d.rotation.x = -Math.PI / 2; d.position.y = y; S.add(d); return d };
+  plane(S, '#1d6fb0', 600, 600, 0, 0, 0, M('#1f74b8', .35, { metalness: .15 }));   /* deep sea */
+  disc(46, '', .02, M('#3fd0d0', .3, { transparent: true, opacity: .9 })); disc(36, '', .04, M('#7ae8de', .35, { transparent: true, opacity: .85 }));   /* the lagoon, lighter near the sand */
+  disc(27, '#f6ecd0', .09); disc(23, '#5aa84a', .16);   /* white beach · the green island */
+  const peak = (x, z, r, h, seed) => { const g = new THREE.ConeGeometry(r, h, 12, 6), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i), k = 1 - (y + h / 2) / h, n = Math.sin(i * 12.9898 + seed) * 43758.5453 % 1; p.setX(i, p.getX(i) * (1 + n * .22 * k)); p.setZ(i, p.getZ(i) * (1 + n * .18 * k)); p.setY(i, y + Math.abs(n) * .9 * (1 - k)) } g.computeVertexNormals();
+    const m = new THREE.Mesh(g, M('#3e7f3a', .85, { flatShading: true })); m.position.set(x, h / 2 - 1, z); S.add(m); const cap = new THREE.Mesh(new THREE.ConeGeometry(r * .32, h * .3, 9, 2), M('#4a5a3e', .9, { flatShading: true })); cap.position.set(x + .4, h - 1 - h * .14, z); S.add(cap) };
+  peak(-2, -6, 14, 30, 1); peak(9, -2, 9, 18, 4); peak(-12, 0, 8, 13, 7);   /* the craggy mountain */
+  const palm = (x, z, h = 4, lean = .2) => at(g => { const tr = new THREE.Group(); for (let i = 0; i < 6; i++) { const s2 = new THREE.Mesh(new THREE.CylinderGeometry(.16 - i * .012, .19 - i * .012, h / 6, 7), M('#9a7a52', .9)); s2.position.set(Math.sin(i / 6 * lean * 3) * lean * i * .35, h / 12 + i * h / 6, 0); tr.add(s2) } g.add(tr);
+    for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28, lf = new THREE.Mesh(new THREE.ConeGeometry(.35, 2.4, 4), M(i % 2 ? '#3f9a3a' : '#5ab84a', .8, { flatShading: true })); lf.scale.set(1, 1, .25); lf.position.set(lean * 2 + Math.cos(a) * .9, h + .1, Math.sin(a) * .9); lf.rotation.set(Math.sin(a) * 1.25, -a, -Math.cos(a) * 1.25); g.add(lf) } }, x, z, Math.random() * 6, 1, .1);
+  const hut = (x, z, ry, stilts) => at(g => { const b = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 1.2, 10), M('#c8a070', .9)); b.position.y = (stilts ? 1.3 : 0) + .6; g.add(b); const r = new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.5, 10), M('#b8925a', 1, { flatShading: true })); r.position.y = (stilts ? 1.3 : 0) + 1.9; g.add(r);
+    if (stilts) for (const [sx, sz] of [[-.7, -.7], [.7, -.7], [-.7, .7], [.7, .7]]) { const st = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, 1.4, 5), M('#7a5a3a')); st.position.set(sx, .6, sz); g.add(st) } }, x, z, ry, 1);
+  for (let i = 0; i < 26; i++) { const a = i / 26 * 6.28 + .1, r = 19 + (i % 3) * 2.2; palm(Math.cos(a) * r, Math.sin(a) * r + 2, 3.6 + (i % 4) * .6, .15 + (i % 3) * .12) }
+  for (const [x, z, ry] of [[-14, 15, .4], [-9, 18, .1], [-4, 19.5, 0], [12, 15, -.4], [16, 10, -.7]]) hut(x, z, ry);
+  for (let i = 0; i < 7; i++) hut(14 + i * 3.2, 20 + i * 1.4, 0, true);   /* huts over the lagoon */
+  { const pier = new THREE.Mesh(new THREE.BoxGeometry(24, .15, 1), M('#9a7a52')); pier.position.set(24, .9, 21.5); pier.rotation.y = -.42; S.add(pier) }
+  for (const [x, y, z, s2] of [[-2, 30, -6, 1.5], [6, 33, -4, 1.1], [-14, 26, -2, .9], [30, 24, -40, 1.3], [-40, 28, -30, 1.2]]) at(g => { for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(new THREE.SphereGeometry(2.6 - i * .2, 12, 9), M('#ffffff', 1, { emissive: '#d8e4f0', emissiveIntensity: .55 })); c.position.set((i - 2.5) * 2.1, Math.sin(i * 1.7) * .9, Math.cos(i * 2.3) * 1.4); c.scale.y = .65; g.add(c) } }, x, z, 0, s2, y);   /* clouds round the peak */
+  const boat = at(g => { BUILDS.raft(g); part(g, '#5a3420', '#8a5a30', [0, 1.1, 0], [.06, 1.1, .06], [0, 0, 0], { A: 0 }); const sl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.3), M('#fffaf0', .8, { side: THREE.DoubleSide })); sl.position.set(.5, 1.3, 0); sl.rotation.y = Math.PI / 2; g.add(sl) }, 10, 62, Math.PI * .85, .3);   /* tiny, far out */
+  const wake = new THREE.Mesh(new THREE.PlaneGeometry(.18, 2.4), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .3 })); wake.rotation.x = -Math.PI / 2; S.add(wake);
+  try { gulls(S, 5, 0, 30, 12) } catch (_) { }
+  return { S, cam, min: 10, lead: .5, bloom: .3, big: 1, title: 'KEALEE', titleAt: 3000, sub: 'And The New Light Of Luthonia', subAt: 4600, update(t) {
+    const k = Math.min(1, t / 10); cam.position.set(18 - k * 4, 9 - k * 2, 108 - k * 16); cam.lookAt(0, 9 - k * 1.5, 0);
+    const bz = 70 - t * 1.4, bx = 12 - t * .5; boat.position.set(bx, Math.sin(t * 1.6) * .05, bz); boat.rotation.z = Math.sin(t * 1.3) * .05; wake.position.set(bx + .45, .05, bz + 1.5); wake.rotation.z = -.33 } } }
 export const playTitle = (R, name) => film(R, { beats: [titleSea], moods: ['sea'], preset: name });
 export const playIntro = (R, preset = '') => film(R, { beats: [village, forest, cliff, sunset, strike, water, cave, 'name', dark, cloud], moods: ['day', 'forest', 'cliff', 'sea', 'storm', 'under', 'cave', 'silent', 'silent', 'dread'], preset, onBeat: i => { if (i === 5) sfx('dive') } }).then(r => r.name);
 export const playPetRescue = (R, name) => film(R, { beats: [cageBeat, ambushBeat, shadowBeat, 'pet', thanksBeat, petTitle], moods: ['forest', 'cliff', 'storm', 'silent', 'forest', 'forest'], preset: name });

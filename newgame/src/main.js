@@ -2102,7 +2102,7 @@ function actA() { atkT = performance.now(); if (handTool() === 'sword' && weapon
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
   const t = nearTarget(), c = CTX;
-  if (S.hand === 'hoe' && weaponOf() && !(t && t.m)) { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (tillable(cx, cz)) { setTool('hoe'); if (till(cx, cz)) wearItem('sword', .5); return } }   /* v3.22 the hoe digs the green square first (even in safe places) */
+  if (S.hand === 'hoe' && weaponOf() && !(t && t.m)) { const [cx, cz, ok] = hoeCell(1); if (ok) { setTool('hoe'); if (till(cx, cz)) { wearItem('sword', .5); hoeCell(1) } return } }   /* v3.22 the hoe digs the green square first (even in safe places) */
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (S.mode === 'farm') return farmA(t);
   if (safeHere() && (!t || t.m)) { safeHint(); return }
@@ -2377,8 +2377,8 @@ function ctxPos(now = performance.now()) {
 /* 🪏 farm mode: a frame on the ground where the shovel will dig (green = ok · red = can't) */
 const TILLM = new THREE.Mesh(new THREE.PlaneGeometry(.92, .92), new THREE.MeshBasicMaterial({ color: '#7aff8a', transparent: true, opacity: .45, depthWrite: false })); TILLM.rotation.x = -Math.PI / 2; TILLM.visible = false; TILLM.renderOrder = 5; scene.add(TILLM);
 function tillTick() {
-  const on = S.hand === 'hoe' && !!weaponOf() && PL && !PL.swim && !RIDE && !AIM && !(CTX && CTX.k !== 'run'); TILLM.visible = !!on; if (!on) return;
-  const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1), ok = tillable(cx, cz) && !PLOTS.has(keyOf(cx, cz)); TILLM.position.set(cx, groundH(cx, cz) + .05, cz); TILLM.material.color.set(ok ? '#7aff8a' : '#ff6a5a');
+  const on = S.hand === 'hoe' && !!weaponOf() && PL && !PL.swim && !RIDE && !AIM && !CUT; TILLM.visible = !!on; if (!on) return;   /* v3.24 always shown with the hoe */
+  const [cx, cz, ok] = hoeCell(); TILLM.position.set(cx, groundH(cx, cz) + .05, cz); TILLM.material.color.set(ok ? '#7aff8a' : '#ff6a5a');
 }
 let SNAP = null;   // set by snapPhoto · the main loop grabs the canvas right after it renders
 const FARM_BTN = { A: ['🪏', 'พลั่ว'], B: ['🎣', 'เบ็ด'], X: ['⛏️', 'อีเต้อ'], Y: ['🖍️', 'วาดภาพ'] };
@@ -3033,6 +3033,9 @@ function farmLand(cx, cz, why) { const F = D.FARMLAND, no = t => { if (why) why.
   if (S.builds.some(b => dist(b.x, b.z, cx, cz) < 2)) return no('🪏 มีสิ่งก่อสร้างอยู่'); if (solHit(cx, cz, .1)) return no('🪏 มีของขวางอยู่');
   for (const o of W.clear.values()) if (o.g && Math.abs(o.x - cx) < .9 && Math.abs(o.z - cz) < .9) return no('🪏 เคลียร์ของตรงนี้ออกก่อน (หิน/หญ้า/กิ่งไม้)');
   return true }
+let hoeC = null, hoeT = 0;   /* v3.24 the hoe's green square: the first diggable cell ahead (1 then 2 steps) · refreshed a few times a second */
+function hoeCell(force) { const now = performance.now(); if (!force && hoeC && now < hoeT) return hoeC; hoeT = now + 140; const q = me(), sx = Math.sin(PL.yaw), sz = Math.cos(PL.yaw);
+  for (const d of [1.1, 2.1]) { const [cx, cz] = cellOf(q.x + sx * d, q.z + sz * d); if (tillable(cx, cz)) return hoeC = [cx, cz, true] } const [cx, cz] = cellOf(q.x + sx * 1.1, q.z + sz * 1.1); return hoeC = [cx, cz, false] }
 function tillable(cx, cz, why) {
   if (S.plots[keyOf(cx, cz)]) return false; if (Object.keys(S.plots).length >= D.PLOT_MAX) { if (why) why.t = `แปลงเต็มแล้ว (${D.PLOT_MAX} แปลง)`; return false }
   return farmLand(cx, cz, why);
@@ -3779,11 +3782,17 @@ var GOL_HINT = 0;
 /* ---------- v3.0 🍖 fullness + 💤 sleepiness ---------- */
 const hungry = () => (S.full ?? 100) < D.NEEDS.hungryAt, sleepy = () => false,   /* v3.11 no more sleepiness (hunger stays) */ needSlow = () => (hungry() ? D.NEEDS.slow : 1) * (sleepy() ? D.NEEDS.slow : 1);
 function needsTick(dm) { if (!(dm > 0) || dm > 30) return; const N = D.NEEDS, f0 = S.full ?? 100, a0 = S.awake || 0; S.full = Math.max(0, f0 - dm * N.fullPerMin); S.awake = a0 + dm;
-  if (f0 >= N.hungryAt && S.full < N.hungryAt) toast('🍖 เริ่มหิวแล้ว… ⚡ ฟื้นช้าและเดินช้าลง · ทำอาหารกินที่ 🍳 หม้อ', 3000);
+  if (f0 >= N.hungryAt && S.full < N.hungryAt) toast('🍖 หิวแล้ว! เดินช้าลงมาก ⚡ ลดลงเรื่อยๆ · ⚡ หมด = หมดสติ · รีบหาอะไรกิน', 3400);
   if (f0 > 0 && S.full <= 0) toast('😫 หิวมาก! ❤️ จะค่อยๆ ลดลง · รีบหาอะไรกิน', 3000);
+  if (S.full < N.hungryAt && !HFAINT && !CUT && S.story.intro) { S.en = pEn() - N.drain * dm; enT = performance.now(); if (S.en <= 0) { S.en = 0; hungerFaint() } }   /* v3.24 hungry = ⚡ drains (no refill) · empty = you pass out */
   if (S.full <= 0) { S.starveT = (S.starveT || 0) + dm; if (S.starveT >= N.starveTick) { S.starveT = 0; if (pHp() > 1) { S.hp = Math.max(1, pHp() - N.starveDmg); floater(`🍖 -${N.starveDmg}`, 'hurt', me().x, 2.1, me().z) } } }
   needsHud() }
-let needK = '';
+let needK = '', HFAINT = false;
+/* v3.24 😵 out of energy while hungry: you collapse where you stand and wake there the next morning (half HP · a little fed · go eat!) */
+function hungerFaint() { if (HFAINT || CUT) return; HFAINT = true; walkT = null; work = null; joy.on = false; stopAuto(); aimEnd(false); RUNON = false; sfx('hurt');
+  const f = $('sleep'), b = f.querySelector('b'); b.textContent = '😵 หิวจนหมดสติ…'; f.style.display = 'flex'; f.style.opacity = 0; requestAnimationFrame(() => f.style.opacity = 1);
+  setTimeout(() => { S.dayN = (S.dayN || 0) + 1; S.lastT = D.DAY.dawn; S.time = D.DAY.dawn; restAll(); S.hp = Math.max(1, Math.round(pStats().hp * .5)); S.full = D.NEEDS.wakeFull; S.starveT = 0; S.tired = false; setTime(); save(); hud(); needsHud(); b.textContent = '🌅 ตื่นขึ้นมาตอนเช้า… ท้องร้องหิว';
+    setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; b.textContent = '😴 ราตรีสวัสดิ์…'; HFAINT = false }, 700); toast('🍖 หิวจนหมดสติไปทั้งคืน!<br>รีบหาอะไรกิน: ผลไม้ ปลา หรือทำอาหารที่ 🍳 หม้อ', 3400) }, 1500) }, 1700) }
 function needsHud() { const f = Math.round(S.full ?? 100), s = sleepy(), k = (f < 50 ? f : 'x') + '|' + s + (S.awake > D.NEEDS.wornAt ? 'w' : ''); if (k === needK) return; needK = k; const el = $('needs'); if (!el) return;
   el.innerHTML = (f < 50 ? `<button data-nd="f" class="${f < D.NEEDS.hungryAt ? 'lo' : ''}">🍖<small>${f}%</small></button>` : '') + (s ? `<button data-nd="s" class="lo">💤<small>${S.awake > D.NEEDS.wornAt ? 'มาก' : 'ง่วง'}</small></button>` : '') }
 function needEat(r) { const e = r.eff || {}; S.full = Math.min(100, (S.full ?? 100) + 28 + (e.hp || 0) * .15 + (e.en || 0) * .1); S.starveT = 0; needsHud() }
