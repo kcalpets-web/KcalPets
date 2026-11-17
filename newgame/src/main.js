@@ -3193,8 +3193,8 @@ function ogBuild(tx, tz) { const O = D.OVERGROW, T = O.tile, slot = OG.free.pop(
     n[k] = (n[k] || 0) + 1; M.compose(V.set(x, y - .05, z), qq.setFromAxisAngle(up, ry), Sv.setScalar(sc)); if (S.cleared[id]) continue;
     L.push({ id, t: k, x, z, ry, sc, perm: 1, inst: [[OG.M[k], idx, M.clone()]], g: null, pick: null, left: 0 }) }
   for (const o of L) { W.clear.set(o.id, o); ogShow(o) } OG.dirty = true; return { slot, L } }
-function ogShow(o) { o.g = OGD; if (!o.sol && SOL_R[o.t]) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t] * (o.sc || 1), o }) }
-function ogDrop(tl) { if (tl.slot == null) return; for (const o of tl.L) { o.g = null; if (o.sol) { delSol(o.sol); o.sol = null } W.clear.delete(o.id) } OG.free.push(tl.slot); OG.dirty = true }
+function ogShow(o) { o.g = OGD; if (!o.pick) { const T = D.CLEAR[o.t]; o.pick = addPick(W, o.x, o.z, { s: .55, m: .75, l: 1.1 }[T.size], T.size === 's' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z) }   /* v3.30 tap / swipe targets (touch mode) */ if (!o.sol && SOL_R[o.t]) o.sol = addSol({ x: o.x, z: o.z, r: SOL_R[o.t] * (o.sc || 1), o }) }
+function ogDrop(tl) { if (tl.slot == null) return; for (const o of tl.L) { o.g = null; if (o.pick) { removePick(W, o.pick); o.pick = null } if (o.sol) { delSol(o.sol); o.sol = null } W.clear.delete(o.id) } OG.free.push(tl.slot); OG.dirty = true }
 /* pack what is standing into the front of each mesh (count = only those) · a cleared one is zeroed until the next pack */
 function ogPack() { OG.dirty = false; const n = {}; for (const k in OG.M) n[k] = 0; for (const tl of OG.tiles.values()) for (const o of tl.L) { if (!o.g) continue; const m = OG.M[o.t], i = n[o.t]++; o.inst[0][1] = i; m.setMatrixAt(i, o.inst[0][2]) }
   for (const k in OG.M) { OG.M[k].count = n[k]; OG.M[k].instanceMatrix.needsUpdate = true } }

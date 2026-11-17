@@ -174,7 +174,8 @@ function planter(g, k = 0) { lathe(g, '#8a8478', '#e4ded2', [[0, 0], [.62, 0], [
   for (let i = 0; i < 5; i++) { const a = i * 1.26 + k, r = .2 + (i % 3) * .14, F = FLOWERS[Math.abs(i + k) % 4]; part(g, F[0], F[1], [Math.cos(a) * r, .62 + (i % 2) * .08, Math.sin(a) * r], [.07, .05, .07], [0, 0, 0], { A: 0 }) } }
 const RBGM = new Map(), rbGeo = (w, h, d) => { const k = w + '|' + h + '|' + d; if (!RBGM.has(k)) { const g = rboxGeo(w, h, d, .08); const g2 = g.clone(); g2.deleteAttribute('color'); RBGM.set(k, g2) } return RBGM.get(k) };   /* v2.9 rounded ruin walls */
 const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });   /* v3.4 tap targets: raycast only, never drawn (was ~200 empty draw calls) */
-export function addPick(W, x, z, r, h, data) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
+const PICKG = new Map();   /* v3.30 pick shapes shared by size (many overgrowth picks) */
+export function addPick(W, x, z, r, h, data) { const gk = r + '|' + h; let geo = PICKG.get(gk); if (!geo) PICKG.set(gk, geo = new THREE.CylinderGeometry(r, r, h, 10)); const m = new THREE.Mesh(geo, PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
 const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
 /* a cooking pot on a camp fire (tap = cook or sleep) */
