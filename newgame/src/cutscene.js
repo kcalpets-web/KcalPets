@@ -97,19 +97,53 @@ function cave() { const { S, cam, at } = stage({ sky: C('#0e0a18'), hemi: '#6a5a
   for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; at(g => part(g, '#5a3420', '#8a5a30', [0, 0, 0], [.5, .07, .07], [0, a, 0], { A: 0 }), 0, 0, a, 1, .06) }
   const flames = []; for (let i = 0; i < 4; i++) flames.push(at(g => cone(g, '#e0402a', '#ffd23f', [0, 0, 0], [.22 - i * .04, .45 - i * .05, .22 - i * .04], [0, 0, 0], .95), (i - 1.5) * .08, 0, 0, 1, .35 + i * .05));
   const fire = new THREE.PointLight('#ff9a4a', 25, 9); fire.position.set(0, .9, 0); fire.castShadow = true; S.add(fire);
-  const k = at(HUMANS.kealee, -1, -1.3, .55, .95, -.25);   // sitting (a little lower) by the fire
+  at(g => part(g, '#5a3a22', '#8a5a34', [0, 0, 0], [.55, .16, .16], [0, .6, 0], { A: .05 }), -1.05, -1.55, 0, 1, .12);   // a log behind her
+  const k = at(HUMANS.kealee, -1, -1.3, .55, .95);   // v3.17.1 standing by the fire (was pushed .25 into the ground)
   const st = { out: 0 };
   return { S, cam, st, min: 7.5, lead: 2.2, bloom: .3, lines: [['คีลี', 'ขอบคุณนะ…', 2.2], ['', '…ฟู่ววว!', 2.4]], update(t, dt, li) {
     const focus = Math.min(1, t / 6); cam.position.set(.3 - focus * .3, 1.6 - focus * .7, 4.4 - focus * 2.6); cam.lookAt(-.3 * (1 - focus), .7 - focus * .2, -.4 + focus * .4);
     if (li >= 1) st.out = Math.min(1, st.out + dt * .9); const on = 1 - st.out;
     flames.forEach((f, i) => { const s = (.85 + Math.sin(t * 14 + i * 2) * .15) * on; f.scale.set(1, Math.max(.01, s), 1); f.rotation.z = Math.sin(t * 9 + i) * .15 + st.out * .8 }); fire.intensity = 25 * on * (.85 + Math.sin(t * 17) * .15) } } }
-function dark() { const S = new THREE.Scene(); S.background = C('#000000'); const cam = new THREE.PerspectiveCamera(50, W() / H(), .1, 10);
-  return { S, cam, dark: true, lead: .6, lines: [['???', '{name}…'], ['???', 'เกิดอะไรขึ้น?'], ['{name}', 'ฉันก็ไม่รู้เหมือนกัน…'], ['', 'ครืนนนน!!!']], update() { } } }
+/* v3.17.1 a bat swarm: instanced bodies + wings + glowing eyes (4 draw calls) · set(i, x,y,z, yaw, flap, eyeOpen, bodyOn) then done() */
+function batSwarm(S, n) {
+  const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(.36, .14); shape.lineTo(.52, -.04); shape.lineTo(.36, -.02); shape.lineTo(.26, -.1); shape.lineTo(.14, -.03); shape.lineTo(0, -.06);
+  const wR = new THREE.ShapeGeometry(shape); wR.rotateX(-Math.PI / 2); const wL = wR.clone(); wL.scale(-1, 1, 1);
+  const bm = new THREE.MeshStandardMaterial({ color: '#2a1e34', roughness: .8, side: THREE.DoubleSide, emissive: '#1a0c26' });
+  const body = new THREE.InstancedMesh(new THREE.SphereGeometry(.09, 8, 6), bm, n), L = new THREE.InstancedMesh(wL, bm, n), R = new THREE.InstancedMesh(wR, bm, n);
+  const eye = new THREE.InstancedMesh(new THREE.SphereGeometry(.028, 6, 4), new THREE.MeshBasicMaterial({ color: '#ff3a1e', toneMapped: false }), n * 2);
+  [body, L, R, eye].forEach(m => { m.frustumCulled = false; m.castShadow = false; S.add(m) });
+  const d = new THREE.Object3D(), Z = new THREE.Vector3(0, 0, 0);
+  return { set(i, x, y, z, yaw, flap, open, on) { const s = on ? 1 : 0;
+      d.position.set(x, y, z); d.rotation.set(0, yaw, 0); d.scale.set(s, s * .8, s * 1.2); d.updateMatrix(); body.setMatrixAt(i, d.matrix);
+      d.scale.setScalar(s); d.rotation.set(0, yaw, flap); d.updateMatrix(); R.setMatrixAt(i, d.matrix); d.rotation.set(0, yaw, -flap); d.updateMatrix(); L.setMatrixAt(i, d.matrix);
+      const c = Math.cos(yaw), sn = Math.sin(yaw); for (const e of [-1, 1]) { d.position.set(x + c * e * .045 + sn * .08, y + .03, z - sn * e * .045 + c * .08); d.rotation.set(0, yaw, 0); d.scale.set(1, Math.max(.001, open), 1); d.updateMatrix(); eye.setMatrixAt(i * 2 + (e > 0), d.matrix) } },
+    done() { for (const m of [body, L, R, eye]) m.instanceMatrix.needsUpdate = true } };
+}
+/* v3.17.1 the dark cave: hundreds of bat eyes open one by one → they pour out, whirl around Kealee and lift her (the black cloud is born) */
+function dark() { const { S, cam, at } = stage({ sky: C('#030206'), hemi: '#4a3a6a', hi: .12, si: .05, fov: 50 }); S.fog = new THREE.Fog('#030206', 6, 16); plane(S, '#1e181e', 40, 40);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; at(g => part(g, '#2a1a12', '#4a2a1a', [0, 0, 0], [.5, .07, .07], [0, a, 0], { A: 0 }), 0, 0, a, 1, .06) }
+  const ember = new THREE.PointLight('#ff5a2a', 3, 5); ember.position.set(0, .3, 0); S.add(ember);
+  const k = at(HUMANS.kealee, -1, -1.3, .55, .95), dread = new THREE.PointLight('#8a3aff', 0, 8); dread.position.set(-1, 1.6, -1.3); S.add(dread);
+  const N = 180, B = batSwarm(S, N), rnd = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v) }, bats = [];
+  for (let i = 0; i < N; i++) { const a = -1.25 + rnd(i, 1) * 2.5, r = 5 + rnd(i, 2) * 4; bats.push({ x: Math.sin(a) * r - 1, y: .4 + rnd(i, 3) * 5.5, z: -Math.cos(a) * r - 1, o: Math.pow(rnd(i, 4), 1.4) * 6.2, dl: rnd(i, 5) * .7, a: rnd(i, 6) * 6.28, R: .7 + rnd(i, 7) * 1.1, h: rnd(i, 8) * 2.2, px: 0, pz: 0, bl: 2 + rnd(i, 9) * 5 }) }
+  const st = { ts: 0 };
+  return { S, cam, min: 11, lead: 1.2, bloom: .9, lines: [['???', '{name}…'], ['???', 'เกิดอะไรขึ้น?'], ['{name}', 'ฉันก็ไม่รู้เหมือนกัน…'], ['', 'ครืนนนน!!!', 1.6], ['คีลี', 'กรี๊ดดด!! {name}!!', 2]], update(t, dt, li) {
+    if (li >= 3 && !st.ts) { st.ts = t; sfx('boom') } const u0 = st.ts ? t - st.ts : -1;
+    const pull = Math.max(0, u0) / 4; cam.position.set(.6 + pull * .8, 1.2 + pull * 1.2, 4.2 + pull * 1.6); cam.lookAt(-.6, 1.5 + pull * .6, -2.5 + pull * 1.5);
+    ember.intensity = 3 * (.7 + Math.sin(t * 9) * .2 + Math.sin(t * 23) * .1) * (u0 > 0 ? Math.max(0, 1 - u0) : 1); dread.intensity = u0 > 0 ? Math.min(14, u0 * 8) * (.8 + Math.sin(t * 11) * .2) : 0;
+    const kx = -1, kz = -1.3, lift = u0 > 1.8 ? Math.min(2.2, (u0 - 1.8) * 1.1) : 0; k.position.y = lift; k.rotation.z = lift ? Math.sin(t * 6) * .12 : 0;
+    bats.forEach((b, i) => { const u = u0 - b.dl; let x = b.x, y = b.y, z = b.z, yaw = Math.atan2(kx - b.x, kz - b.z), on = 0;
+      let open = Math.min(1, Math.max(0, (t - b.o) / .3)); const bt = (t + i * .37) % b.bl; if (bt < .12) open *= .1;   // blink
+      if (u > 0) { const e = ease(Math.min(1, u / 1.1)), a = b.a + u * (3.5 + b.R), ox = kx + Math.cos(a) * b.R, oz = kz + Math.sin(a) * b.R, oy = .5 + b.h + lift + Math.sin(u * 3 + i) * .2;
+        x = b.x + (ox - b.x) * e; y = b.y + (oy - b.y) * e; z = b.z + (oz - b.z) * e; yaw = Math.atan2(x - b.px, z - b.pz); on = 1; open = 1 }
+      b.px = x; b.pz = z; B.set(i, x, y, z, yaw, on ? Math.sin(t * 26 + i) * .9 : 0, open, on) }); B.done() } } }
 function cloud() { const { S, cam, at } = stage({ sky: skyTex('#2a1e44', '#a07ab8', '#6a4a8a'), hemi: '#c8b8e8', hi: .7, si: 1, sp: [0, 10, 8], fov: 58 }); plane(S, '#3a3036', 60, 60);
   const big = at(g => smoke(g, 40, 1.5, 7), 0, -9, 0, 1, 5.5), mid = at(g => smoke(g, 22, 1.1, 19), 0, -5, .6, 1, 4.6), t1 = at(g => smoke(g, 10, .7, 31), -3.5, -2, 0, 1, 2.4), t2 = at(g => smoke(g, 10, .7, 41), 3.8, -2.5, 0, 1, 2.8);
-  const core = new THREE.PointLight('#6a2a9a', 18, 10); core.position.set(0, 5, -5); S.add(core); const ff = new THREE.DirectionalLight('#ffe0f0', .9); ff.position.set(0, 3, 10); S.add(ff);
+  const core = new THREE.PointLight('#6a2a9a', 18, 10); core.position.set(0, 5, -5); S.add(core); const kc = at(HUMANS.kealee, 0, -2.6, .3, .8, 2.2), BS = batSwarm(S, 70);   /* v3.17.1 Kealee carried off inside it */ const ff = new THREE.DirectionalLight('#ffe0f0', .9); ff.position.set(0, 3, 10); S.add(ff);
   return { S, cam, shake: true, min: 5, lead: 1.4, bloom: .6, lines: [['{name}', 'คีลี!!!', 2.2]], update(t) { cam.position.set(Math.sin(t * 40) * .05 * Math.max(0, 1 - t / 3), 1.8, 9); cam.lookAt(0, 4.6 + t * .3, -3);
-    big.position.y = 5.5 + t * 1.2; mid.position.y = 4.6 + t * 1.6; big.rotation.y = t * .2; mid.rotation.y = -t * .3; t1.position.y = 2.4 + t * 2; t2.position.y = 2.8 + t * 2.2; core.intensity = 18 + Math.sin(t * 7) * 6 } } }
+    big.position.y = 5.5 + t * 1.2; mid.position.y = 4.6 + t * 1.6; big.rotation.y = t * .2; mid.rotation.y = -t * .3; t1.position.y = 2.4 + t * 2; t2.position.y = 2.8 + t * 2.2; core.intensity = 18 + Math.sin(t * 7) * 6;
+    kc.position.y = 2.2 + t * 1.5; kc.rotation.y = .3 + Math.sin(t * 2) * .4; kc.rotation.z = Math.sin(t * 5) * .15;
+    for (let i = 0; i < 70; i++) { const a = i * 2.4 + t * (3 + i % 5 * .4), r = .8 + i % 7 * .22, y = kc.position.y + .2 + (i % 9) * .22 + Math.sin(t * 3 + i) * .15; BS.set(i, Math.cos(a) * r, y, -2.6 + Math.sin(a) * r, -a, Math.sin(t * 26 + i) * .9, 1, 1) } BS.done() } } }
 
 /* ---------------- player ---------------- */
 const GRADE = { uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vig: { value: .55 }, grain: { value: .045 }, warm: { value: .04 }, sepia: { value: 0 } },
