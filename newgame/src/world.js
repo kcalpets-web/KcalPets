@@ -457,6 +457,7 @@ export const KINGDOMS = {
   valkara:   { x: 690, z: 530, name: '🌋 วัลคาร่า', sub: 'ภูเขาไฟที่ร้อนระอุ', col: '#3f3536', temp: .55 },
 };
 const KL = Object.entries(KINGDOMS);
+export const LUMC = { x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z, r: 46, h: 7, edge: 14 };   // v3.25 the fallen capital stands on a raised plateau
 /* nearest kingdom + how sure (0 at a border … 1 well inside) · near the hand-made home strip there is none */
 export function kingdomAt(x, z) { const wx = x + 190 * (fbm(x / 170 + 11.3, z / 170 + 2.7, 3) - .5), wz = z + 190 * (fbm(x / 170 - 4.1, z / 170 + 8.9, 3) - .5);   /* v2.9 wavy, natural borders */
   let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(wx - K.x, wz - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
@@ -473,7 +474,8 @@ export function wildH(x, z) {
     else if (K === 'frosthelm') h += g * 9;                                                                                               // a snowy plateau
     else if (K === 'navalee') h -= g * 5.5 * smw(.3, .6, fbm(x / 70 + 2, z / 70, 3));                                                    // flooded: many lakes
     else if (K === 'asrah') h = h * (1 - g * .7) + g * .7 * (2.5 + Math.sin(x / 9 + Math.sin(z / 23) * 2) * 1.6 + Math.sin(z / 13) * .8);   // dunes
-    else if (K === 'luminia') { const r = B.d; h = h * (1 - g * smw(150, 60, r)) + g * smw(150, 60, r) * (2 + fbm(x / 50, z / 50, 2)) } }   // the capital's plain
+    else if (K === 'luminia') { const r = B.d; h = h * (1 - g * smw(150, 60, r)) + g * smw(150, 60, r) * (2 + fbm(x / 50, z / 50, 2)) } }
+  { const d = Math.hypot(x - LUMC.x, z - LUMC.z); if (d < LUMC.r + LUMC.edge) { const k = smw(LUMC.r + LUMC.edge, LUMC.r, d); h = h * (1 - k) + k * LUMC.h } }   /* v3.25 the city's plateau */   // the capital's plain
   /* v2.5.1 the world's rim: huge cliffs north and south (and east where there is land) · the west is the open sea (a current pushes you back) */
   const rN = smw(75, 6, z - WORLD.z0), rS = smw(75, 6, WORLD.z1 - z), rE = h > -1 ? smw(75, 6, WORLD.x1 - x) : 0, rim = Math.max(rN, rS, rE); if (rim > 0) h += rim * rim * (70 + 18 * fbm(x / 30, z / 30, 2));   // the western sea (20 m beach far out · the island's own shoreline next to the core)                                                            // the western sea (a 20 m beach band)
   return h;
@@ -532,7 +534,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3) continue; const h = wildH(x, z); if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);

@@ -1,0 +1,28 @@
+/* v3.25 🏰 the fallen capital of Luminia: the plateau · the cathedral door = the way to the storm lord · walls are solid · guards wait in the ruins · draw calls stay low
+   NODE_PATH=$(npm root -g) node newgame/tools/test/lumcity.js outDir   (~2 min) */
+const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8839, OUT = process.argv[2] || '/tmp/nglum', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
+(async () => {
+  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
+  try {
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on('pageerror', e => errs.push('PE ' + e.message));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, boatFixed: 1, titleSeen: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, time: 640, quest: 99, side: 'main' })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
+    const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    const info = await E(() => { const N = window.__ng, C = N.LUMCITY, L = N.KINGDOMS.luminia; return { sols: C.sols.length, door: C.door, plateau: +N.wildH(L.x + 10, L.z + 5).toFixed(2), edge: +N.wildH(L.x + 70, L.z).toFixed(2) } }); log('city', JSON.stringify(info));
+    if (info.sols < 60) errs.push('too few solids in the city'); if (Math.abs(info.plateau - 7) > .3) errs.push('the city should stand on a flat plateau (h 7)');
+    // walls are solid: a point on the city wall ring
+    const solid = await E(() => { const N = window.__ng, L = N.KINGDOMS.luminia; let hit = 0, n = 0; for (let a = 0; a < 6.28; a += .3) { n++; if (N.solHit(L.x + Math.cos(a) * 40, L.z + Math.sin(a) * 40, .2)) hit++ } return [hit, n] }); log('wall ring solid', solid); if (solid[0] < solid[1] * .5) errs.push('the city wall is not solid');
+    // the gate is open (west side)
+    const gate = await E(() => { const N = window.__ng, L = N.KINGDOMS.luminia; return !N.solHit(L.x - 40, L.z, .2) }); log('gate open', gate); if (!gate) errs.push('the main gate (west) is blocked');
+    // go in: guards appear · the door pick opens the storm question
+    await E(() => { const N = window.__ng, L = N.KINGDOMS.luminia; N.placeMe(L.x - 30, L.z); N.CAM.yaw = Math.PI / 2 }); await wait(12000); await pg.screenshot({ path: OUT + '/inside.png' });
+    const g = await E(() => window.__ng.LUMG.mons.length); log('guards', g); if (g < 6) errs.push('no guards in the ruins');
+    const perf = await E(() => window.__ng.info()); log('perf', JSON.stringify(perf)); if (perf.calls > 420) errs.push('too many draw calls in the city ' + perf.calls);
+    await E(() => { const N = window.__ng, d = N.LUMCITY.door; for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); N.placeMe(d.x - 1, d.z); N.PL.yaw = N.PL.yawT = Math.PI / 2 }); await wait(2500);
+    await E(() => window.__ng.useThing ? window.__ng.useThing({ kind: 'tower' }) : null); await wait(800); const box = await E(() => (document.querySelector('.ov') || {}).textContent || ''); const near = await E(() => { const N = window.__ng, t = N.nearTarget(); return t && t.k && t.k.kind }); log('A in front of the door', near); if (near !== 'tower') errs.push('standing at the cathedral door, A should target it'); log('door', box.slice(0, 60)); if (!/เมฆทมิฬ/.test(box)) errs.push('the cathedral door does not lead to the storm lord');
+  } catch (e) { errs.push('X ' + e.stack) }
+  await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
+})();
