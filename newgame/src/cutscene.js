@@ -284,17 +284,17 @@ function film(R, o) {
   });
 }
 /* v3.23 🎬 the game's title: after the first crossing — the little boat sails into the sunrise · KEALEE · And The New Light Of Luthonia */
-function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#1e2a66', '#ffd8a0', '#ff9a6a'), hemi: '#ffe0c0', hi: .9, sun: '#ffc890', si: 2.2, sp: [0, 6, -30], fov: 50 });
-  const sea = plane(S, '#2a5a8a', 400, 400, 0, 0, 0, new THREE.MeshStandardMaterial({ color: '#2a5a8a', roughness: .25, metalness: .3 }));
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 16), new THREE.MeshBasicMaterial({ color: '#fff0c0' })); sun.position.set(0, 2.5, -120); S.add(sun);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 90), new THREE.MeshBasicMaterial({ color: '#ffd890', transparent: true, opacity: .35 })); glow.rotation.x = -Math.PI / 2; glow.position.set(0, .02, -70); S.add(glow);   // the sun's path on the water
+function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#141a4a', '#ff9a5a', '#c87a9a'), hemi: '#ffd8c0', hi: .55, sun: '#ffb880', si: 1.3, sp: [0, 6, -30], fov: 50 });
+  const sea = plane(S, '#2a5a8a', 400, 400, 0, 0, 0, new THREE.MeshStandardMaterial({ color: '#23406e', roughness: .55, metalness: .1 }));
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffd890' })); sun.position.set(0, 1.5, -120); S.add(sun);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 90), new THREE.MeshBasicMaterial({ color: '#ffb870', transparent: true, opacity: .2 })); glow.rotation.x = -Math.PI / 2; glow.position.set(0, .02, -70); S.add(glow);   // the sun's path on the water
   const crew = [], boat = at(g => { BUILDS.raft(g); part(g, '#5a3420', '#8a5a30', [0, 1.1, 0], [.06, 1.1, .06], [0, 0, 0], { A: 0 }); const sl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.3), new THREE.MeshStandardMaterial({ color: '#f4ecd8', side: THREE.DoubleSide, roughness: .8 })); sl.position.set(.5, 1.3, 0); sl.rotation.y = Math.PI / 2; g.add(sl) }, 0, 0, Math.PI / 2, 1);
   for (let i = 0; i < 5; i++) at(g => part(g, '#3a5a2a', '#6a9a4a', [0, 0, 0], [4 + i, 1.2 + i * .3, 3], [0, 0, 0], { A: .2 }), -40 + i * 22, -90 - i * 6, 0, 1, -.4);   /* far islands */
   { const h = new THREE.Group(); HUMANS.howsif(h); h.scale.setScalar(.8); h.position.set(-.3, .2, .2); h.rotation.y = Math.PI; boat.add(h) }   /* uncle rows · Kealee is still out there */
   try { gulls(S, 6, 0, -14, 9) } catch (_) { }
-  return { S, cam, min: 9, lead: .5, bloom: .9, big: 1, title: 'KEALEE', titleAt: 2600, sub: 'And The New Light Of Luthonia', subAt: 4200, update(t) {
+  return { S, cam, min: 9, lead: .5, bloom: .4, big: 1, title: 'KEALEE', titleAt: 2600, sub: 'And The New Light Of Luthonia', subAt: 4200, update(t) {
     const k = Math.min(1, t / 8); cam.position.set(Math.sin(t * .15) * 1.5, 1.6 + k * 4.5, 6 + k * 4); cam.lookAt(0, 1 + k * 2.2, -20);
-    boat.position.z = -t * .9; boat.rotation.z = Math.sin(t * 1.3) * .04; boat.position.y = Math.sin(t * 1.7) * .05; sun.position.y = 2.5 + t * .35; glow.material.opacity = .25 + Math.sin(t * 2) * .06 } } }
+    boat.position.z = -t * .9; boat.rotation.z = Math.sin(t * 1.3) * .04; boat.position.y = Math.sin(t * 1.7) * .05; sun.position.y = 1.5 + t * .25; glow.material.opacity = .16 + Math.sin(t * 2) * .04 } } }
 export const playTitle = (R, name) => film(R, { beats: [titleSea], moods: ['sea'], preset: name });
 export const playIntro = (R, preset = '') => film(R, { beats: [village, forest, cliff, sunset, strike, water, cave, 'name', dark, cloud], moods: ['day', 'forest', 'cliff', 'sea', 'storm', 'under', 'cave', 'silent', 'silent', 'dread'], preset, onBeat: i => { if (i === 5) sfx('dive') } }).then(r => r.name);
 export const playPetRescue = (R, name) => film(R, { beats: [cageBeat, ambushBeat, shadowBeat, 'pet', thanksBeat, petTitle], moods: ['forest', 'cliff', 'storm', 'silent', 'forest', 'forest'], preset: name });
