@@ -276,6 +276,8 @@
   .cf{font-size:15px;line-height:1.6;text-align:center;margin:18px 0}
 body:has(#cut) #team,body:has(#cut) #smenu,body:has(#cut) #qIcon{display:none!important}   /* v3.17.1 no skill icons over cutscenes */
 #ylg{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom) + 262px);z-index:7;display:none;background:#1a1626cc;color:#fff;border-radius:14px;padding:7px 10px;font:700 12px/1.25 system-ui;pointer-events:none;max-width:52vw}body.aim #ylg{display:block}#ylg p{margin:2px 0;display:flex;align-items:center;gap:6px}#ylg b{display:inline-flex;width:20px;height:20px;border-radius:50%;align-items:center;justify-content:center;font:900 11px system-ui;flex:none}#ylg .ky{background:#e0b030}#ylg .kx{background:#4a7ad8}#ylg .ka{background:#4aa860}#ylg .kb{background:#e06a50}#ylg .zm{color:#ffd23f;justify-content:flex-end}#ylg.blink p:not(.zm){animation:ylgb 1s ease-in-out infinite}@keyframes ylgb{50%{opacity:.35}}   /* v3.18 aim legend */
+.nfocus{outline:3px solid #ffd23f!important;outline-offset:2px;box-shadow:0 0 0 2px #2a2030,0 0 16px #ffd23fcc!important;position:relative;z-index:1}   /* v3.19 the stick's frame */
+body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.inv) #bA,body.pad:not(.gamepad):has(.ov.inv) #bB{z-index:46}body.pad:not(.gamepad) .ov.inv .shb{padding-bottom:178px}   /* v3.19 in the bag the stick + A + B stay on top */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
