@@ -57,7 +57,7 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   for (const sx of [-1, 1]) { box(sx * 7.5, FY, FZ - 15, .9, 9, 24, M.stone); for (let k = 0; k < 4; k++) add(new THREE.BoxGeometry(.2, 3.4, 1.6), M.void, sx * 7.98, FY + 4.5, FZ - 6 - k * 5.4); solB(sx * 7.5, FZ - 15, .6, 12) }
   box(0, FY, FZ - 28, 15, 15, 1.5, M.stone); cyl(0, FY, FZ - 29, 6, 6, 1, M.pave, 16); solB(0, FZ - 28, 7.6, 1);   // the apse
   for (let i = 0; i < 9; i++) box(-4 + R() * 8, FY, FZ - 5 - R() * 20, 1 + R() * 2, .6 + R(), 1 + R() * 2, R() < .5 ? M.dark : M.stone, R() * 3);   // fallen roof stones in the nave
-  box(0, -6, CZ - 2, 16, FY + 6, 32, M.dark);   // the cathedral stands on a raised base (deep: the back reaches the plateau's edge)
+  box(0, -6, (FZ + CZ - 18) / 2, 16, FY + 6, FZ - CZ + 18, M.dark);   /* the base behind the facade (solid) · the stairs in front stay walkable */   // the cathedral stands on a raised base (deep: the back reaches the plateau's edge)
   for (let i = 0; i < 6; i++) moss(-6 + R() * 12, FY + .02, FZ - 4 - R() * 22, 2 + R() * 3, 2 + R() * 3); tree(-3.5, FZ - 18, 1.2);
   { const kids = G.children.slice(g0), cg = new THREE.Group(); kids.forEach(o => { o.position.z -= CZ + 11.5; cg.add(o) }); cg.position.z = CZ + 11.5; cg.scale.setScalar(K); G.add(cg);
     SK = null }
@@ -94,6 +94,13 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = 8 + R() * 30; moss(Math.cos(a) * r, .02, Math.sin(a) * r, 1.5 + R() * 3, 1.5 + R() * 3) }
   for (let i = 0; i < 30; i++) { const a = R() * 6.28, r = 7 + R() * 30; box(Math.cos(a) * r, 0, Math.sin(a) * r, .6 + R() * 1.4, .4 + R() * .9, .6 + R() * 1.2, R() < .5 ? M.stone : M.dark, R() * 3) }   // rubble
   G.position.set(cx, H, cz); G.rotation.y = ry;
-  const doorZ = CZ + 11.5 + (FZ + 3 - CZ - 11.5) * K, [dx, dz] = W(0, doorZ), guards = [[-10, 10], [12, 8], [-20, -6], [20, -12], [0, 24], [-28, 18], [28, 20], [0, doorZ + 4], [-5, doorZ - 12], [5, doorZ - 24]].map(([x, z]) => W(x, z));
+  /* v3.25.1 solids from the real shapes: every box / cylinder that stands on the ground and is taller than 1 m (not moss, ivy, leaves, cloth, windows) → a rotated box / circle */
+  { G.updateMatrixWorld(true); const skip = new Set([M.moss, M.ivy, M.leaf, M.leaf2, M.cloth, M.void]), P = new THREE.Vector3(), Q = new THREE.Quaternion(), SC = new THREE.Vector3(), E = new THREE.Euler(); sols.length = 0; solC(0, 0, 5.4);
+    G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.material.transparent) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry') return;
+      o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return;   /* fallen / leaning beams: walk over */
+      const h = (t === 'BoxGeometry' ? pr.height : pr.height) * SC.y, bottom = P.y - h / 2 - H; if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* on the ground · or tall walls / towers on the cathedral's base */
+      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .15 && hd < .15) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y }) }
+      else sols.push({ x: P.x, z: P.z, r: Math.max(pr.radiusTop, pr.radiusBottom) * Math.max(SC.x, SC.z) }) }) }
+  const doorZ = CZ + 11.5 + (FZ + 2.2 - CZ - 11.5) * K, [dx, dz] = W(0, doorZ), guards = [[-10, 10], [12, 8], [-20, -6], [20, -12], [0, 24], [-28, 18], [28, 20], [0, doorZ + 4], [-5, doorZ - 12], [5, doorZ - 24]].map(([x, z]) => W(x, z));
   return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, center: W(0, 0) };
 }
