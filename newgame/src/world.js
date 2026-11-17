@@ -6,6 +6,7 @@ import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS, rbox, rboxGeo, VILLAGE } f
 import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
+import { paintGround } from './scenery.js';
 
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
@@ -423,7 +424,7 @@ export function buildWild(W, eco) {
   Q.seg = eco ? 11 : 16;
   out.meadow = coreGround(17, 35, 17, eco); out.hills = coreGround(57, 74, 17, eco); scene.add(out.meadow, out.hills);   /* v3.3 one ground recipe for the whole first zone (the road is painted into it) */
   /* water: the river (with a bridge on the road) and the hill lake */
-  const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#4a9ad0', roughness: .2, transparent: true, opacity: .85, clearcoat: .6 }), 999, 0);
+  const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#2f8a9a', roughness: .15, transparent: true, opacity: .8, clearcoat: .8 }), 999, 0);   /* v3.28 deeper teal: the bed shows through */
   const river = new THREE.Mesh(new THREE.PlaneGeometry(RIVER.w * 2 + 3.4, 26, 8, 60), wmat);   /* v3.7 wider: the banks (not the plane's edge) shape the water */ river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
   at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
@@ -520,7 +521,12 @@ const GIANT_BLOBS = [[0, 9.7, 0, 6.6, 4.6, 6.6], [2.3, 8.7, .8, 4.2, 3.1, 4.2], 
 const GIANT_CROWN = mergeG(GIANT_BLOBS.map(b => [BLOB_HI, M4(...b)])), GIANT_TRUNK_LO = (() => { const g = new THREE.CylinderGeometry(.42, .82, 8.4, 6, 1, true); g.translate(0, 4.2, 0); return g })(), GIANT_CROWN_LO = mergeG([[BLOB_LO, M4(0, 9.7, 0, 7.6, 5.2, 7.6)], [BLOB_LO, M4(.2, 8.6, 0, 8.6, 3, 8.4)]]);
 const GIANT_BARK = '#c4b09c', GIANT_SOL = .62;
 const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), BLADE = new THREE.ConeGeometry(.04, .3, 4); BLADE.translate(0, .15, 0);
-const M_LAND = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 });
+const M_LAND = paintGround(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }));   /* v3.28 🎨 painted ground */
+/* v3.28 where the ground decor may grow: land (not water), not steep · out = a grass tint from the ground colour · null = nothing here */
+export function decorLook(x, z, out, peb) { if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; const y = groundH(x, z); if (y < -.3) return null;
+  const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
+  if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }
 const _col = new THREE.Color();
 function landGeo(x0, z0, size, seg, sink) {
   const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
@@ -531,7 +537,7 @@ function landGeo(x0, z0, size, seg, sink) {
 /* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */
 /* v3.1 the far land is cut away where the detailed chunks are loaded (its 16 m triangles could poke above the real ground in valleys and dunes) */
 export const FARC = { value: new THREE.Vector3(0, 0, 0) };
-const M_FAR = M_LAND.clone(); M_FAR.onBeforeCompile = sh => { sh.uniforms.farC = FARC;
+const M_FAR = M_LAND.clone(); M_FAR.customProgramCacheKey = () => 'farland'; M_FAR.onBeforeCompile = sh => { sh.uniforms.farC = FARC;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFW = (modelMatrix * vec4(transformed, 1.0)).xz;');
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vFW;\nuniform vec3 farC;').replace('void main() {', 'void main() {\n  if (distance(vFW, farC.xy) < farC.z) discard;') };
 export function buildFarLand(scene) {

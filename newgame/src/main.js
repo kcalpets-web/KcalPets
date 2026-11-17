@@ -9,7 +9,8 @@ import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
-import { solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { decor } from './scenery.js';
+import { decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
@@ -29,8 +30,8 @@ R.setPixelRatio(Math.min(devicePixelRatio, eco ? 1.25 : 2)); R.outputColorSpace 
 if (localStorage.getItem('ng_style') === 'pixel') { R.setPixelRatio(.3); cv.style.imageRendering = 'pixelated' }   /* v1.8 preview: chunky pixels (like a pixel-art game) */
 R.shadowMap.enabled = !eco; R.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene(); VF.initVFX(scene);
-const hemi = new THREE.HemisphereLight('#fff6ec', '#c9a27e', eco ? 1.2 : .95); scene.add(hemi);
-const sun = new THREE.DirectionalLight('#fff1dc', 2.1); sun.castShadow = !eco; sun.shadow.mapSize.set(1536, 1536);
+const hemi = new THREE.HemisphereLight('#fff6ec', '#a88a6a', eco ? 1.1 : .82);   /* v3.28 a bit more contrast */ scene.add(hemi);
+const sun = new THREE.DirectionalLight('#ffe9cc', 2.35); sun.castShadow = !eco; sun.shadow.mapSize.set(1536, 1536);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 }); sun.shadow.bias = -.0004; sun.shadow.radius = 4; scene.add(sun); scene.add(sun.target);
 const fill = new THREE.DirectionalLight('#bcd4ff', .45); fill.position.set(9, 5, 8); scene.add(fill);
 const rim = new THREE.DirectionalLight('#ffd7a8', .75); rim.position.set(0, 6, -12); scene.add(rim);
@@ -53,8 +54,8 @@ function sunFollow() { const q = me(); if (eco) { sun.position.set(q.x - 7, 16, 
 function setTime() {                                         // lighting follows the clock (a smooth blend through dawn and dusk)
   const k = nightK(), g = Math.min(1, glowK()), mix = (a, b) => _c.copy(a).lerp(b, k);
   if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color(); scene.background.copy(mix(LDAY.bg, LNIGHT.bg)).lerp(GLOW, g * .45);
-  hemi.color.copy(mix(LDAY.hc, LNIGHT.hc)).lerp(GLOW, g * .3); hemi.groundColor.copy(mix(LDAY.hg, LNIGHT.hg)); hemi.intensity = (eco ? 1.2 : .95) * (1 - k) + .55 * k;
-  sun.color.copy(mix(LDAY.sc, LNIGHT.sc)).lerp(GLOW, g * .6); sun.intensity = 2.1 * (1 - k) + .9 * k; fill.intensity = .45 * (1 - k) + .25 * k; rim.color.copy(mix(LDAY.rc, LNIGHT.rc));
+  hemi.color.copy(mix(LDAY.hc, LNIGHT.hc)).lerp(GLOW, g * .3); hemi.groundColor.copy(mix(LDAY.hg, LNIGHT.hg)); hemi.intensity = (eco ? 1.1 : .82) * (1 - k) + .55 * k;
+  sun.color.copy(mix(LDAY.sc, LNIGHT.sc)).lerp(GLOW, g * .6); sun.intensity = 2.35 * (1 - k) + .9 * k; fill.intensity = .45 * (1 - k) + .25 * k; rim.color.copy(mix(LDAY.rc, LNIGHT.rc));
   SKY.material.uniforms.top.value.copy(_c.copy(C('#4a98d8')).lerp(C('#0a1030'), k)); SKY.material.uniforms.bot.value.copy(_c.copy(LDAY.bg).lerp(LNIGHT.bg, k)).lerp(GLOW, g * .6); SKY.material.uniforms.stars.value = k; SKY.material.uniforms.glow.value = g; { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI; SKY.material.uniforms.sun.value.set(Math.cos(a), Math.sin(a) * .9 + .05, -.35) }
   if (WXS) { const cl = WXS.cloud, GREY = _c2.set(k > .5 ? '#20242e' : '#8a929e');   /* v3.2 clouds / rain dim the light and grey the sky · thunder flashes */
     if (cl > .01) { hemi.intensity *= 1 - .3 * cl; sun.intensity *= 1 - .65 * cl; SKY.material.uniforms.top.value.lerp(GREY, cl * .65); SKY.material.uniforms.bot.value.lerp(GREY, cl * .5); scene.background.lerp(GREY, cl * .5) }
@@ -339,7 +340,10 @@ const me = () => PL.root.position;
 const ring = new THREE.Mesh(new THREE.TorusGeometry(.32, .04, 6, 28), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .9, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.visible = false; scene.add(ring);
 function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9, stuck: 0 }; ring.position.set(x, .04, z); ring.visible = !then; ring.scale.setScalar(1) }
 function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; S.pos = [x, z]; camT.x = camP.x = x; camT.z = camP.z = z + 1; peekT = 0 }
+/* v3.28 🌾 grass clumps · flowers · pebbles on the ground around you (not on dug plots, roads or water) */
+const DECOR = decor(scene, (x, z, c, peb) => { if (S.plots && S.plots[Math.round(x) + ',' + Math.round(z)]) return null; return decorLook(x, z, c, peb) }, eco);
 function walkTick(dt, now) {
+  DECOR(me().x, me().z);
   if (golemBusy()) return;
   let mv = false;
   const run = !RIDE && !CROUCH && !S.tired && (joy.run || RUNON || now < sprintT) && (joy.on || walkT) && (HORSE || spendRun(dt)), spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * swimMul() * (now < swimB ? D.SWIM_BURST.mul : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (run ? D.HORSE.gallop : D.HORSE.sp) : run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1); SPD_LAST = spd;
