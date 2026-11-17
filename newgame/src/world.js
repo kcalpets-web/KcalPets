@@ -121,7 +121,9 @@ export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells)
 /* v3.26 like solHit, but a solid you stand on top of (its top within reach of y) does not block · so standing on a base never lets you through its walls */
 const topAt = (e, lz) => e.ramp ? e.top * Math.min(1, Math.max(0, (e.hd - lz) / (2 * e.hd))) : e.top;   /* v3.26 a ramp rises along its local −z */
 export function solBlock(x, z, y, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
-  for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z; if (e.ramp) continue; if (e.top && y >= groundH(e.x, e.z) + e.top - .42) continue;   /* a ramp never blocks */
+  for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
+    if (e.ramp) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad && y < groundH(e.x, e.z) + topAt(e, lz) - .55) return e; continue }   /* a ramp: walk up from its low end · its high sides block */
+    if (e.top && y >= groundH(e.x, e.z) + e.top - .42) continue;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
 export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
