@@ -38,7 +38,7 @@
 - ชุดทดสอบ: `tools/test/*.js` (train weather bow golem play warp weapons anim storm towns pets spirit build world hud timber pad quests hands) · modes.js เลิกใช้ใน v3.6 (hands.js แทน) · play ใช้เวลา >15 นาที ตั้ง timeout ยาว · รันทีละชุดเท่านั้น (รันพร้อมกันจะพังมั่ว) · `NODE_PATH=$(npm root -g) node newgame/tools/test/X.js /tmp/out`
 - swiftshader ช้ามาก (~5 fps) → อย่าวัดความเร็วเป็นเมตร ให้เทียบอัตราส่วน · ชุดที่เคยพังเพราะตัวทดสอบ: bow (แนวยิงโดนบัง/ล็อกเป้า), play (รอวาร์ป ≥4.5 วิ), modes (บางครั้ง)
 - ทุกเวอร์ชัน: `APP_VER` ใน data.js · `python3 newgame/tools/make-version.py "โน้ต"…` (≤7) · แถวใน `docs/SPEC.md` · บรรทัดยาวใน `CLAUDE.md`
-- ปล่อย: commit → `git worktree add /tmp/wtXX <hash>` → รันครบทุกชุด → ตรวจ `grep -c peakaenkeaw` = 0 (index.html ราก + newgame) → `git push origin <hash>:main` → ถ้า release commit ไม่อยู่บน branch ให้ `git merge` กลับ
+- ปล่อย: commit → `git worktree add /tmp/wtXX <hash>` → รันครบทุกชุด → ตรวจ ว่าไม่มีอีเมลผู้ออกแบบ (grep ชื่อบัญชี) = 0 (index.html ราก + newgame) → `git push origin <hash>:main` → ถ้า release commit ไม่อยู่บน branch ให้ `git merge` กลับ
 
 ## 4. งานค้าง (เรียงตามลำดับที่ตกลง)
 **แผน 16 พ.ย. (ผู้ออกแบบยืนยัน):**
