@@ -474,7 +474,16 @@ export function kingdomAt(x, z) { const wx = x + 190 * (fbm(x / 170 + 11.3, z / 
   let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(wx - K.x, wz - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
   const home = smw(150, 60, coreDist(x, z) + Math.max(0, 40 - x)); return { k: a, w: smw(0, 70, db - da) * .5 + .5, home, d: Math.hypot(x - KINGDOMS[a].x, z - KINGDOMS[a].z) } }   /* d = the true distance to the centre (volcano, crater, plains stay round) */
 const _KC = {}; for (const [k, K] of KL) _KC[k] = C(K.col);
-export function wildH(x, z) {
+/* v3.30 🏰 the six fallen capitals (capitals.js): each on a flattened plain ~85 m from its village, gate facing the village · site picked once from the raw terrain */
+export const CAPS = {}; let capsReady = false;
+function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 'frosthelm', 'deadgar', 'asrah', 'valkara']) { const K = KINGDOMS[k]; let best = null, bs = 1e9;
+    for (let i = 0; i < 24; i++) { const a = i / 24 * 6.283, x = K.x + Math.cos(a) * 85, z = K.z + Math.sin(a) * 85; if (x < WORLD.x0 + 80 || x > WORLD.x1 - 80 || z < WORLD.z0 + 80 || z > WORLD.z1 - 80) continue; let sum = 0, sq = 0, bad = 0, n = 0;
+      for (let r = 0; r <= 40; r += 10) for (let j = 0; j < (r ? 10 : 1); j++) { const h = wildH0(x + Math.cos(j * .628) * r, z + Math.sin(j * .628) * r); if (h < .6) bad++; sum += h; sq += h * h; n++ }
+      const m = sum / n, v = sq / n - m * m + bad * 60; if (v < bs) { bs = v; best = { x, z, h: Math.max(1.2, m), r: 36, edge: 14, ry: Math.atan2(K.x - x, K.z - z) } } }
+    if (best) CAPS[k] = best } }
+export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z);
+  for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h } } return h }
+function wildH0(x, z) {
 
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));
   let h = (n - .47) * 30 + Math.pow(r, 3) * 46 * far + 4 * far;                                                                   // rolling land · mountain ridges farther out
@@ -550,7 +559,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6)) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
