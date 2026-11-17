@@ -21,7 +21,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     // map: full screen
     await E(() => { window.__ng.setMapZ(3); window.__ng.openMap() }); await wait(800);
     const fsz = await E(() => { const w = document.querySelector('.wmap').getBoundingClientRect(); return { h: Math.round(w.height), w: Math.round(w.width), zoom: document.querySelectorAll('.wzoom [data-z]').length, sel: window.__ng.mapSel, card: !!document.querySelector('#wpGo') } }); log('map', JSON.stringify(fsz));
-    if (fsz.h < 760 || fsz.w < 380) errs.push('the map does not fill the screen'); if (fsz.zoom !== 2) errs.push('no zoom buttons'); if (!fsz.sel || !fsz.card) errs.push('no warp point picked on open');
+    if (fsz.h < 760 || fsz.w < 380) errs.push('the map does not fill the screen'); if (fsz.zoom !== 2) errs.push('no zoom buttons'); if (fsz.card) errs.push('v3.23 the map should open with no card (it only shows after a push / tap)');
     await pg.screenshot({ path: OUT + '/map-open.png' });
     await E(() => document.querySelector('.wzoom [data-z="1"]').click()); await wait(500); const cz = await E(() => document.querySelector('#wmC').style.height); log('zoom in', cz); if (cz !== '2560px') errs.push('＋ did not zoom in');
     // the on-screen stick hops: try all 4 directions, at least 2 moves
