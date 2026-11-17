@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.21';
+export const APP_VER = '3.22';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -122,16 +122,34 @@ export const ITEMS = {
   knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
   crystalBlade:  { slot: 'sword', kind: 'one', name: 'ดาบคริสตัล', icon: '💎', atk: 32, dur: 26, tier: 4 },
   kingSword:     { slot: 'sword', kind: 'one', name: 'ดาบราชันย์', icon: '👑', atk: 40, dur: 36, tier: 4 },
-  woodAxe:       { slot: 'sword', kind: 'two', name: 'ขวานตัดไม้', icon: '🪓', atk: 14, dur: 25, tier: 1 },
+  woodAxe:       { slot: 'sword', kind: 'two', name: 'ขวานตัดไม้', icon: '🪓', atk: 14, dur: 25, tier: 1, eff: { wood: 1.3, grass: .8, stone: 0 } },
   greatsword:    { slot: 'sword', kind: 'two', name: 'ดาบใหญ่นักรบ', icon: '⚔️', atk: 26, dur: 28, tier: 2 },
-  stoneHammer:   { slot: 'sword', kind: 'two', name: 'ค้อนหินยักษ์', icon: '🔨', atk: 32, dur: 36, tier: 3 },
-  golemCrusher:  { slot: 'sword', kind: 'two', name: 'ค้อนอสูรหิน', icon: '🔨', atk: 44, dur: 34, tier: 4 },
+  stoneHammer:   { slot: 'sword', kind: 'two', name: 'ค้อนหินยักษ์', icon: '🔨', atk: 32, dur: 36, tier: 3, eff: { wood: 0, grass: .6, stone: 1.3 } },
+  golemCrusher:  { slot: 'sword', kind: 'two', name: 'ค้อนอสูรหิน', icon: '🔨', atk: 44, dur: 34, tier: 4, eff: { wood: 0, grass: .6, stone: 1.5 } },
   dragonBlade:   { slot: 'sword', kind: 'two', name: 'ดาบมังกร', icon: '🐉', atk: 56, dur: 40, tier: 4 },
   pitchfork:     { slot: 'sword', kind: 'spear', name: 'คราดชาวนา', icon: '🔱', atk: 8, dur: 14, tier: 1 },
   woodSpear:     { slot: 'sword', kind: 'spear', name: 'หอกไม้', icon: '🔱', atk: 11, dur: 20, tier: 1 },
   harpoon:       { slot: 'sword', kind: 'spear', name: 'ฉมวกจับปลา', icon: '🔱', atk: 13, dur: 22, tier: 2 },
   soldierSpear:  { slot: 'sword', kind: 'spear', name: 'หอกทหาร', icon: '🔱', atk: 19, dur: 30, tier: 3 },
   trident:       { slot: 'sword', kind: 'spear', name: 'หอกสามง่ามทะเล', icon: '🔱', atk: 27, dur: 34, tier: 4 },
+  /* v3.22 tools are bag items too (durability · break · repair) · tm = the hand model · tool = cheaper to repair */
+  sickle0: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวไม้', icon: '🌾', atk: 3, dur: 60, tier: 1 },
+  sickle1: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวหิน', icon: '🌾', atk: 5, dur: 90, tier: 2 },
+  sickle2: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวเหล็ก', icon: '🌾', atk: 8, dur: 130, tier: 3 },
+  sickle3: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวคริสตัล', icon: '🌾', atk: 12, dur: 180, tier: 4 },
+  axe0: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานไม้', icon: '🪓', atk: 5, dur: 60, tier: 1 },
+  axe1: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานหิน', icon: '🪓', atk: 8, dur: 90, tier: 2 },
+  axe2: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานเหล็ก', icon: '🪓', atk: 12, dur: 130, tier: 3 },
+  axe3: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานคริสตัล', icon: '🪓', atk: 17, dur: 180, tier: 4 },
+  pick0: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อไม้', icon: '⛏️', atk: 5, dur: 60, tier: 1 },
+  pick1: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อหิน', icon: '⛏️', atk: 8, dur: 90, tier: 2 },
+  pick2: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อเหล็ก', icon: '⛏️', atk: 12, dur: 130, tier: 3 },
+  pick3: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อคริสตัล', icon: '⛏️', atk: 17, dur: 180, tier: 4 },
+  mallet0: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนไม้', icon: '🔨', atk: 7, dur: 50, tier: 1 },
+  mallet1: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3 },
+  hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, name: 'จอบ', icon: '🪏', atk: 4, dur: 120, tier: 1 },
+  stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
+  ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
   soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
@@ -149,6 +167,7 @@ export const ITEMS = {
 /* v3.8 ⚒️ forging (like the cooking pot): 2–5 materials · the most specific recipe that fits wins · nothing fits = 🔩 scrap
    tags: metal = copper · ore · silver · goldOre · rarity from the value of what went in (MATS price): ≥ FORGE_RAR[i] → R / E / L (+ a small lucky roll) */
 export const FORGE = [
+  { t: 'stoneKnife', need: { stone: 2, grass: 1 } }, { t: 'sickle1', need: { stone: 1, grass: 2, wood: 1 } }, { t: 'axe1', need: { stone: 2, wood: 2 } }, { t: 'pick1', need: { stone: 3, wood: 2 } }, { t: 'mallet0', need: { wood: 3, stone: 1 } }, { t: 'hoe0', need: { wood: 2, stone: 1 } },   /* v3.22 tools */
   { t: 'woodSpear', need: { wood: 3 } }, { t: 'leafBlade', need: { grass: 3, wood: 1 } }, { t: 'hunterBow', need: { wood: 2, feather: 2 } }, { t: 'woodShield', need: { wood: 2, hide: 1 } },
   { t: 'stoneClub', need: { stone: 3, wood: 1 } }, { t: 'boneClub', need: { bone: 1, wood: 1 } }, { t: 'travelerSword', need: { copper: 2, wood: 1 } }, { t: 'harpoon', need: { copper: 2, wood: 2 } },
   { t: 'stoneArmor', need: { stone: 3, hide: 1 } }, { t: 'soldierSpear', need: { ore: 2, wood: 2 } }, { t: 'greatsword', need: { ore: 3, coal: 1 } }, { t: 'soldierBow', need: { ore: 1, wood: 2, feather: 2 } },
@@ -165,7 +184,13 @@ export const FORGE_RAR = [150, 600, 1500], FORGE_LUCK = .12, FORGE_QUEST = { coi
 export const SLOT_NAME = { sword: 'อาวุธ', shield: 'โล่', bow: 'ธนู' };
 export const KIND = {                                          // cd = swing time × · reach (m) · arc = sweep half-angle (rad, 0 = one target) · energy ×
   one:   { name: 'มือเดียว · ถือโล่ได้', cd: 1, reach: 2.2, arc: 0, shield: true, en: 1 },
-  two:   { name: 'สองมือ · ช้าแต่แรง ฟันกวาด · ถือโล่ไม่ได้', cd: 1.9, reach: 2.6, arc: 1.1, shield: false, en: 1.6 },
+  two:   { name: 'สองมือ · หนัก เดินช้า ฟันช้าแต่แรง ฟันกวาด · ถือโล่ไม่ได้', cd: 2.1, reach: 2.6, arc: 1.1, shield: false, en: 1.6, spd: .82 },
+  knife: { name: 'มีด · เบา ฟันเร็ว · ถือโล่ได้', cd: .6, reach: 1.9, arc: 0, shield: true, en: .7 },
+  axe:   { name: 'ขวาน · ตัดไม้เร็ว · ถือโล่ได้', cd: 1.1, reach: 2.1, arc: 0, shield: true, en: 1 },
+  sickle: { name: 'เคียว · ตัดหญ้าเร็ว ฟันกวาด · ถือโล่ได้', cd: .8, reach: 2, arc: .9, shield: true, en: .8 },
+  pick:  { name: 'อีเต้อ · ทุบหินเร็วสุด · ถือโล่ได้', cd: 1.2, reach: 2.1, arc: 0, shield: true, en: 1.1 },
+  hammer: { name: 'ค้อน · ทุบหินได้ ตีแรง · ถือโล่ได้', cd: 1.3, reach: 2, arc: 0, shield: true, en: 1.2 },
+  hoe:   { name: 'จอบ · ขุดดิน (กรอบเขียว = ขุดได้) · ถือโล่ได้', cd: 1.1, reach: 2.1, arc: 0, shield: true, en: 1 },
   spear: { name: 'หอก · แทงเร็ว ระยะไกล · ถือโล่ไม่ได้', cd: .7, reach: 3.3, arc: 0, shield: false, en: .8 },
   bow:   { name: 'ธนู · แตะ Y เพื่อเล็ง กด A เพื่อยิง', cd: 1, reach: 30, arc: 0, shield: true, en: .5 },
 };
@@ -217,7 +242,16 @@ export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
 export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .32;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
 /* v3.6 what goes in the A hand besides weapons: a sickle cuts like a sword · the axe fells trees · the pickaxe breaks rocks · all of them hit monsters (atk × weapon attack) */
-export const HAND = { sickle: { icon: '🌾', name: 'เคียว', atk: .6 }, axe: { icon: '🪓', name: 'ขวาน', atk: .8 }, torch: { icon: '🔥', name: 'คบเพลิง', atk: .5 }, hammer: { icon: '⛏️', name: 'อีเต้อ', atk: .8 } };
+export const HAND = { sickle: { icon: '🌾', name: 'เคียว', atk: 1 }, axe: { icon: '🪓', name: 'ขวาน', atk: 1 }, torch: { icon: '🔥', name: 'คบเพลิง', atk: .5 }, hammer: { icon: '⛏️', name: 'อีเต้อ', atk: 1 }, hoe: { icon: '🪏', name: 'จอบ', atk: 1 } };   // v3.22 tools are items: their atk is their own
+/* v3.22 how well each kind cuts wood / grass / breaks stone (× speed · 0 = can't) · wear per hit = 1 / eff (the wrong tool wears faster) · an item's own eff wins */
+export const GEAR_EFF = { one: { wood: .5, grass: 1, stone: 0 }, two: { wood: .7, grass: 1, stone: 0 }, spear: { wood: .4, grass: .7, stone: 0 }, knife: { wood: .45, grass: 1.3, stone: 0 }, axe: { wood: 1.6, grass: .8, stone: 0 }, sickle: { wood: .35, grass: 2, stone: 0 }, pick: { wood: 0, grass: 0, stone: 1.6 }, hammer: { wood: 0, grass: 0, stone: 1 }, hoe: { wood: 0, grass: .6, stone: 0 }, fist: { wood: 0, grass: .5, stone: 0 } };
+export const GEAR_JOB = { axe: 'axe', sickle: 'sickle', pick: 'hammer', hammer: 'hammer', hoe: 'hoe' };   // which A-hand a kind is (the rest = 'w', the weapon)
+/* v3.22 🎯 double-tap A = throw what you hold (aim like Y): spread rad · damage × · speed m/s · gravity · wear · pick it up where it lands */
+export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4 };
+/* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
+export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 };
+/* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
+export const MON_GEAR = { goblin: ['stoneKnife', 'axe1', 'mallet0'], goblinChief: ['axe2'], shadeKnight: ['ironKnife', 'mallet1'], ghoul: ['pick1', 'sickle1'], branchImp: ['sickle0', 'axe0'], witherImp: ['sickle1', 'pick0'] }, GEAR_DROP = .2;
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
 export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, draw: { icon: '🖍️', name: 'วาดภาพ' } };
 export const NET = { range: 14, en: 6, cd: 1.2, fly: .45, base: .4, weak: .5, sneak: .12, min: .08, max: .95 };   // v3.8.1 🕸️ throw: reach (m) · energy · cooldown (s) · flight (s) · catch chance = base ÷ diff + weak × (lost HP) + sneak (crouching), clamped   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
@@ -335,7 +369,7 @@ export const SHOPS = [
   { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
   { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: '', cost: null },
 ];
-export const SMITH = [{ t: 'woodBow', r: 'B', price: 500 }, { t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'barkArmor', r: 'B', price: 1000 }];
+export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 250 }, { t: 'axe1', r: 'B', price: 700 }, { t: 'pick1', r: 'B', price: 700 }, { t: 'sickle1', r: 'B', price: 500 }, { t: 'mallet0', r: 'B', price: 450 }, { t: 'hoe0', r: 'B', price: 300 }, { t: 'woodBow', r: 'B', price: 500 }, { t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'barkArmor', r: 'B', price: 1000 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
   { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },
