@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.18.1';
+export const APP_VER = '3.18.2';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -560,6 +560,7 @@ export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: .2 };
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
+export const PARRY = .5, CROUCH_HOLD = .5;   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const AIMZOOM = { min: 1, max: 4, rate: 1.4 };   // v3.18.1 🎯 smooth zoom while aiming: hold Y in / X out · rate = how fast (×e per second)
 export const AIMSTICK = 220;          // v3.18 the stick turns the aim (like dragging this many px per second)
 export const YHELP = 3;               // v3.18 the button legend blinks the first few times you aim
