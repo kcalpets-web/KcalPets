@@ -118,12 +118,18 @@ const SOLC = new Map(), SCELL = 4;
 export function addSol(e) { const R = (e.r || Math.hypot(e.hw, e.hd)) + 1; e.cells = [];
   for (let i = Math.floor((e.x - R) / SCELL); i <= Math.floor((e.x + R) / SCELL); i++) for (let j = Math.floor((e.z - R) / SCELL); j <= Math.floor((e.z + R) / SCELL); j++) { const k = i + ',' + j; let l = SOLC.get(k); if (!l) SOLC.set(k, l = []); l.push(e); e.cells.push(k) } return e }
 export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells) { const l = SOLC.get(k); if (!l) continue; const i = l.indexOf(e); if (i >= 0) l.splice(i, 1) } e.cells = null }
+/* v3.26 like solHit, but a solid you stand on top of (its top within reach of y) does not block · so standing on a base never lets you through its walls */
+const topAt = (e, lz) => e.ramp ? e.top * Math.min(1, Math.max(0, (e.hd - lz) / (2 * e.hd))) : e.top;   /* v3.26 a ramp rises along its local −z */
+export function solBlock(x, z, y, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
+  for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z; if (e.ramp) continue; if (e.top && y >= groundH(e.x, e.z) + e.top - .42) continue;   /* a ramp never blocks */
+    if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
 export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
 /* v3.2 the top of something you can stand on under (x, z) (world height) or null */
 export function solTop(x, z) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null; let best = null;
-  for (const e of l) { if (!e.top || !e.r || (e.o && !e.o.g)) continue; const dx = x - e.x, dz = z - e.z, d2 = dx * dx + dz * dz; if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = groundH(e.x, e.z) + e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5); if (best == null || t > best) best = t } return best }
+  for (const e of l) { if (!e.top || (e.o && !e.o.g)) continue; const dx = x - e.x, dz = z - e.z, d2 = dx * dx + dz * dz;
+    if (!e.r) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + .02 && Math.abs(lz) < e.hd + .02) { const t = groundH(e.x, e.z) + topAt(e, lz); if (best == null || t > best) best = t } continue }   /* v3.26 a flat top (steps · a stone base) */ if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = groundH(e.x, e.z) + e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5); if (best == null || t > best) best = t } return best }
 const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62 }, SOL_TOP = { rock: .48, boulder: 1.05 };
 /* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
