@@ -150,9 +150,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* v0.9 open world: through the island gate on foot · swim the river · freshwater fish · climb the cliff · map + warp */
     await closeAll(); await E(() => { const N = window.__ng; N.S.time = 600; N.setTool(''); N.placeMe(5.5, 2.3); N.goPath(14, 2.5) }); await pg.waitForFunction(() => window.__ng.envState().area === 'meadow', null, { timeout: 60000 }).catch(() => errs.push('could not walk from the island into the meadow'));
     await wait(1500); await shot('32-meadow'); log('zone', JSON.stringify(await N(() => window.__ng.envState())));
-    await E(() => { const N = window.__ng; N.placeMe(19.4, 5); N.walkTo(22, 5) }); await pg.waitForFunction(() => window.__ng.envState().swim, null, { timeout: 30000 }).catch(() => errs.push('did not start swimming in the river'));
+    await E(() => { const N = window.__ng; N.placeMe(20.4, -6.5); N.walkTo(25, -6.5)   /* v3.29 the stream is a pond now */ }); await pg.waitForFunction(() => window.__ng.envState().swim, null, { timeout: 30000 }).catch(() => errs.push('did not start swimming in the pond'));
     await wait(800); await shot('33-swim'); log('swim', JSON.stringify(await N(() => window.__ng.envState())));
-    await E(() => { const N = window.__ng; N.placeMe(19.4, 6); N.S.en = null; N.S.tired = false; N.castAt(22, 6) }); log('fresh fish', await N(() => window.__ng.F && window.__ng.F.k)); await E(() => { window.__ng.hold(false) });
+    await E(() => { const N = window.__ng; N.placeMe(20.6, -6.5); N.S.en = null; N.S.tired = false; N.castAt(24, -6.5) }); log('fresh fish', await N(() => window.__ng.F && window.__ng.F.k)); await E(() => { window.__ng.hold(false) });
     await E(() => { const N = window.__ng; N.placeMe(61.5, 7.6); N.S.en = null; N.S.tired = false; N.walkTo(69, 6.2) }); await wait(1500); await shot('34-climb');
     await pg.waitForFunction(() => window.__ng.envState().y > 2, null, { timeout: 60000 }).catch(() => errs.push('could not climb the mesa'));
     await wait(1200); log('climb', JSON.stringify(await N(() => window.__ng.envState())), 'camps', JSON.stringify(await N(() => window.__ng.S.camps))); await shot('35-mesa-top');
