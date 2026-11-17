@@ -477,8 +477,8 @@ const _KC = {}; for (const [k, K] of KL) _KC[k] = C(K.col);
 /* v3.30 🏰 the six fallen capitals (capitals.js): each on a flattened plain ~85 m from its village, gate facing the village · site picked once from the raw terrain */
 export const CAPS = {}; let capsReady = false;
 function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 'frosthelm', 'deadgar', 'asrah', 'valkara']) { const K = KINGDOMS[k]; let best = null, bs = 1e9;
-    for (let i = 0; i < 24; i++) { const a = i / 24 * 6.283, x = K.x + Math.cos(a) * 85, z = K.z + Math.sin(a) * 85; if (x < WORLD.x0 + 80 || x > WORLD.x1 - 80 || z < WORLD.z0 + 80 || z > WORLD.z1 - 80) continue; let sum = 0, sq = 0, bad = 0, n = 0;
-      for (let r = 0; r <= 40; r += 10) for (let j = 0; j < (r ? 10 : 1); j++) { const h = wildH0(x + Math.cos(j * .628) * r, z + Math.sin(j * .628) * r); if (h < .6) bad++; sum += h; sq += h * h; n++ }
+    for (let i = 0; i < 48; i++) { const a = (i % 24) / 24 * 6.283, dd = i < 24 ? 85 : 65, x = K.x + Math.cos(a) * dd, z = K.z + Math.sin(a) * dd; if (x < WORLD.x0 + 80 || x > WORLD.x1 - 80 || z < WORLD.z0 + 80 || z > WORLD.z1 - 80) continue; let sum = 0, sq = 0, bad = 0, n = 0;
+      for (let r = 0; r <= 40; r += 10) for (let j = 0; j < (r ? 10 : 1); j++) { const px = x + Math.cos(j * .628) * r, pz = z + Math.sin(j * .628) * r, h = wildH0(px, pz), B = kingdomAt(px, pz); if (h < .6) bad++; if (B.k !== k || B.w < .8) bad += 3; sum += h; sq += h * h; n++ }   /* deep inside its own kingdom (never on a border wall) */
       const m = sum / n, v = sq / n - m * m + bad * 60; if (v < bs) { bs = v; best = { x, z, h: Math.max(1.2, m), r: 36, edge: 14, ry: Math.atan2(K.x - x, K.z - z) } } }
     if (best) CAPS[k] = best } }
 export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z);
@@ -535,7 +535,8 @@ const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blad
 const M_LAND = paintGround(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }));   /* v3.28 🎨 painted ground */
 /* v3.28 where the ground decor may grow: land (not water), not steep · out = a grass tint from the ground colour · null = nothing here */
 export function decorLook(x, z, out, peb) { if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
-  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; const y = groundH(x, z); if (y < -.3) return null;
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42) return null;   /* v3.30 not on the capitals' paving */
+  const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
   if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }
 const _col = new THREE.Color();

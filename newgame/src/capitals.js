@@ -14,7 +14,7 @@ const LOOK = {
   asrah:     { stone: '#c9a274', dark: '#5c3c30', pave: '#d6b88a', roof: '#8a2a22', glow: '#ff4a26', moss: '#9a7a4a' },
   sylvaren:  { stone: '#8c907c', dark: '#5a5e4c', pave: '#7c7c6a', roof: '#4c5a3c', glow: '#4cff9a', moss: '#4f7a34' },
   frosthelm: { stone: '#cfe0f0', dark: '#7d9cc2', pave: '#dde8f4', roof: '#9fd4ff', glow: '#4aa8ff', moss: '#eaf4ff' },
-  valkara:   { stone: '#3c3438', dark: '#1f1b1d', pave: '#2f2a2c', roof: '#2b2327', glow: '#ff6a1a', moss: '#4a3a34' },
+  valkara:   { stone: '#5e4e4c', dark: '#2e2628', pave: '#4a3e3c', roof: '#3a2c2c', glow: '#ff6a1a', moss: '#4a3a34' },
   deadgar:   { stone: '#5c5068', dark: '#2f2938', pave: '#4b4358', roof: '#3b2f4a', glow: '#b06aff', moss: '#4a4058' },
 };
 export const CAP_GOLD = '#ffd88a';
@@ -65,7 +65,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     const h = 5 + R() * 3; box(mx, 0, mz, len + .4, h, 1.6, wi % 3 ? M.stone : M.dark, r0); for (const kk of [-1, 1]) box(mx + Math.cos(r0) * kk * len * .3, h, mz - Math.sin(r0) * kk * len * .3, .9, .9, 1.7, M.stone, r0);
     if (wi % 7 === 0) { cyl(x1, 0, z1, 2.4, 2.1, h + 4, M.stone, 10); cone(x1, h + 4, z1, 2.7, 4, M.roof, 8) } }
   for (const sx of [-1, 1]) { cyl(sx * 5, 0, RW, 2.4, 2.1, 10, M.stone, 10); cone(sx * 5, 10, RW, 2.8, 4, M.roof, 10) } box(0, 6.5, RW, 8, 2.2, 2, M.stone); arch(0, 6.5, RW, 2.6, .5, M.dark);
-  for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = 6 + R() * 22; if (Math.abs(Math.sin(a) * r - KZ) < 9 && Math.abs(Math.cos(a) * r) < 12) continue; box(Math.cos(a) * r, 0, Math.sin(a) * r, .6 + R() * 1.3, .4 + R() * .8, .6 + R() * 1.1, R() < .5 ? M.stone : M.dark, R() * 3) }
+  for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = 6 + R() * 22; if (Math.abs(Math.sin(a) * r - KZ) < 9 && Math.abs(Math.cos(a) * r) < 12) continue; box(Math.cos(a) * r, 0, Math.sin(a) * r, .6 + R() * 1.3, .4 + R() * .8, .6 + R() * 1.1, R() < .5 ? M.stone : M.dark, R() * 3).userData.nosol = 1 }   /* rubble: walk over it */
   for (let i = 0; i < 14; i++) { const a = R() * 6.28, r = 6 + R() * 22; moss(Math.cos(a) * r, .03, Math.sin(a) * r, 1.4 + R() * 2.4, 1.4 + R() * 2.4) }
 
   /* ---- each kingdom's own landmark ---- */
@@ -91,7 +91,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     add(new THREE.TorusGeometry(2.2, .3, 8, 20), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .7);
   }
   if (k === 'frosthelm') {   // ❄️ ice spires · chains · a rune circle · a frozen fall
-    for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28 + .3, r = 22 + R() * 4; cone(Math.cos(a) * r, 0, Math.sin(a) * r, 1 + R() * .8, 7 + R() * 7, M.ice, 6) }
+    for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28 + .3, r = 22 + R() * 4; if (Math.abs(a - Math.PI / 2) < .5) continue; cone(Math.cos(a) * r, 0, Math.sin(a) * r, 1 + R() * .8, 7 + R() * 7, M.ice, 6) }
     const link = new THREE.TorusGeometry(.45, .13, 5, 10); for (const [ex, ez] of [[-22, 8], [22, 8], [-20, -24], [20, -24]]) { const n = 14, sx = 0, sy = 1.4 + KH, sz = KZ; for (let j = 0; j < n; j++) { const t = (j + .5) / n, x = sx + (ex - sx) * t, z = sz + (ez - sz) * t, y = sy + (1.5 - sy) * t - Math.sin(t * Math.PI) * 3; add(link, M.dark, x, y, z, 0, Math.atan2(ex - sx, ez - sz), j % 2 ? Math.PI / 2 : 0).userData.nosol = 1 } }
     add(new THREE.RingGeometry(4.2, 5, 32), M.glow, 0, .1, 6, -Math.PI / 2).userData.nosol = 1; for (let i = 0; i < 6; i++) box(Math.cos(i * 1.047) * 3, .08, 6 + Math.sin(i * 1.047) * 3, .3, .04, 2.4, M.glow, i * 1.047).userData.nosol = 1;
     box(-18, 0, -20, 4, 9, 1.4, M.ice, .3);
