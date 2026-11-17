@@ -14,13 +14,13 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8797, wait = ms => new 
     for (let i = 0; i < 40 && !(await pg.evaluate(() => Object.keys(window.__ng.KNPC).length)); i++) await wait(500); console.log('kingdom', kx);
     const r = await pg.evaluate(() => { const N = window.__ng, close = () => document.querySelectorAll('.ov').forEach(o => o.remove()); close();
       const keys = Object.keys(N.KNPC).filter(k => !N.KNPC[k].n.lead && N.KNPC[k].n.q && N.KNPC[k].n.q.length > 1), a = keys[0], c = keys.find(k => N.KNPC[k].k !== N.KNPC[a].k) || keys[1], out = {};
-      const btns = () => document.querySelectorAll('.ov [data-qa]').length;
-      N.talkNpc(a); out.offerA = btns(); out.cardsA = document.querySelectorAll('.ov .card b').length; out.htmlA = document.querySelector('.ov .shb').innerText.slice(0, 300); out.act0 = N.qActive(); if (!btns()) return out; document.querySelector('.ov [data-qa]').click(); close();
+      const btns = () => document.querySelectorAll('.ov [data-dc="yes"]').length;   /* v3.27 the speech box asks: ✅ take it / ❌ not now */
+      N.talkNpc(a); out.offerA = btns(); out.cardsA = document.querySelectorAll('.ov [data-dc="no"]').length; out.htmlA = document.querySelector('.ov .shb').innerText.slice(0, 300); out.act0 = N.qActive(); if (!btns()) return out; document.querySelector('.ov [data-dc="no"]').click(); out.declined = !N.qActive() && !!document.querySelector('.ov .dlgL'); close(); N.talkNpc(a); document.querySelector('.ov [data-dc="yes"]').click(); out.track = N.S.track; close();
       out.active = N.qActive(); N.talkNpc(c); out.offerC = btns(); out.markC = N.npcState(N.KNPC[c].k, N.KNPC[c].n); close();
       const id = out.active; N.S.kq[id].st = 'done'; out.markC2 = N.npcState(N.KNPC[c].k, N.KNPC[c].n); N.talkNpc(c); out.offerC2 = btns(); close(); return out });
     console.log(JSON.stringify(r));
     if (r.offerA !== 1 || r.cardsA !== 1) errs.push('NPC should offer exactly one quest');
-    if (!r.active) errs.push('quest not taken'); if (r.offerC !== 0 || r.markC === '❗') errs.push('a second quest could be taken while one runs');
+    if (!r.active) errs.push('quest not taken'); if (!r.declined) errs.push('❌ not now should leave the quest untaken'); if (r.track !== 'kq:' + r.active) errs.push('a taken quest should be followed'); if (r.offerC !== 0 || r.markC === '❗') errs.push('a second quest could be taken while one runs');
     if (r.offerC2 !== 1 || r.markC2 !== '❗') errs.push('next quest did not open after hand-in');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

@@ -20,7 +20,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8814, OUT = process.arg
     await pg.screenshot({ path: OUT + '/cam-up.png' });
     // quest card: ☁️ main first · chooser lists main + the people-quest
     const card = await E(() => document.getElementById('quest').textContent); log('card', card.slice(0, 80)); if (!/กำจัดเมฆทมิฬ/.test(card)) errs.push('the card does not show the main quest');
-    await E(() => document.querySelector('#quest [data-qsw]').click()); await wait(500); const L = await E(() => [...document.querySelectorAll('.ov [data-tr]')].map(x => x.dataset.tr)); log('chooser', L); if (!L.includes('main') || !L.includes('kq:nv1')) errs.push('the chooser does not list main + people quest');
+    await E(() => document.getElementById('quest').click());   /* v3.27 tap the card = 📖 the quest book */ await wait(500); const L = await E(() => [...document.querySelectorAll('.ov [data-tr]')].map(x => x.dataset.tr)); log('chooser', L); if (!L.includes('main') || !L.includes('kq:nv1')) errs.push('the chooser does not list main + people quest');
     await pg.screenshot({ path: OUT + '/chooser.png' });
     await E(() => document.querySelector('.ov [data-tr="kq:nv1"]').click()); await wait(400); await close(); await wait(300);
     const c2 = await E(() => ({ tr: window.__ng.S.track, card: document.getElementById('quest').textContent })); log('follow', JSON.stringify(c2).slice(0, 120)); if (c2.tr !== 'kq:nv1' || !/ตาปุ่น/.test(c2.card)) errs.push('following the people quest did not switch the card');
