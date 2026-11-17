@@ -42,7 +42,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* chop: the A button first (v3.6: with the axe in the A hand), then the axe until one hit is left */
     await E(() => { window.__ng.S.hand = 'axe' });   /* v3.6 trees need the axe in the A hand */
     for (let i = 0; i < 5; i++) { await E(() => { window.__ng.S.en = 999; window.__ng.actA() }); await wait(1100) }
-    const a1 = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, tot: o.tot } }, G.id); log('A button', JSON.stringify(a1)); if (!(a1.tot >= 10)) errs.push('a giant should take many hits ' + JSON.stringify(a1)); if (!(a1.left < a1.tot)) errs.push('the A button did not chop the giant ' + JSON.stringify(a1));
+    const a1 = await E(id => { const o = window.__ng.W.clear.get(id); return { left: o.left, tot: o.tot } }, G.id); log('A button', JSON.stringify(a1)); if (!(a1.tot >= 8)) errs.push('a giant should take many hits (v3.22 the axe is faster) ' + JSON.stringify(a1)); if (!(a1.left < a1.tot)) errs.push('the A button did not chop the giant ' + JSON.stringify(a1));
     for (let i = 0; i < 40; i++) { const left = await E(id => { const N = window.__ng, o = N.W.clear.get(id); N.S.en = 999; if (o.left !== 1) { N.setTool('axe'); N.toolHit({ kind: 'clear', id }) } return o.left }, G.id); if (left === 1) break; await wait(950) }
     const pre = await E(id => { const N = window.__ng, o = N.W.clear.get(id); return { left: o.left, g: !!o.g, falling: N.TIMB.length } }, G.id); log('before the last hit', JSON.stringify(pre)); if (pre.left !== 1 || !pre.g || pre.falling) errs.push('not ready for the last hit ' + JSON.stringify(pre));
     /* the last hit → TIMBER! (step back to watch it) */

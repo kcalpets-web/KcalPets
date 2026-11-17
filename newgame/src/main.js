@@ -678,7 +678,7 @@ function toolHit(key) {
     if (weaponOf() && S.hand !== 'torch') wearItem('sword', D.ITEMS[weaponOf().t].tool ? 1.5 : 1); return;   /* v3.22 tools wear faster in a fight */
   }
   if (key.kind !== 'clear' || tool === 'sword' && !key.w || tool === 'rod') return;
-  const o = W.clear.get(key.id); if (!o || !o.g) return;
+  const o = W.clear.get(key.id); if (!o || !o.g) return; if (!key.w && !key.ok && ['axe', 'sickle', 'hammer'].includes(tool) && S.hand !== tool && S.hand !== 'torch') S.hand = tool;   /* v3.22 swiping with a tool = holding that tool */
   if (S.mon) { hint(`🔒 ต้องกำจัด <b>${D.MON[S.mon.kind].name}</b> ก่อน`); return }
   const T = D.CLEAR[o.t], wIt = S.hand !== 'torch' ? weaponOf() : null, tier = wIt ? Math.max(0, Math.min(3, (D.ITEMS[wIt.t].tier || 1) - 1)) : 0;
   const eff = effOf(CLEAR_CAT[T.tool]); if (!eff) { floater(`ใช้ ${D.TOOLS[T.tool][0]}`, 'tool', o.x, 1.3, o.z); return }   /* v3.22 the right tool is faster and wears less */
@@ -2098,9 +2098,9 @@ function actA() { atkT = performance.now(); if (handTool() === 'sword' && weapon
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
   const t = nearTarget(), c = CTX;
+  if (S.hand === 'hoe' && weaponOf() && !(t && t.m)) { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (tillable(cx, cz)) { setTool('hoe'); if (till(cx, cz)) wearItem('sword', .5); return } }   /* v3.22 the hoe digs the green square first (even in safe places) */
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (S.mode === 'farm') return farmA(t);
-  if (S.hand === 'hoe' && weaponOf() && !(t && (t.m || t.k))) { const [cx, cz] = cellOf(me().x + Math.sin(PL.yaw) * 1.1, me().z + Math.cos(PL.yaw) * 1.1); if (tillable(cx, cz)) { setTool('hoe'); if (till(cx, cz)) wearItem('sword', .5); return } }   /* v3.22 the hoe digs the green square first (even in safe places) */
   if (safeHere() && (!t || t.m)) { safeHint(); return }
   if (t && t.o && D.CLEAR[t.o.t]) {   /* v3.6 the A hand decides: sword / sickle = grass · axe = trees · pickaxe = rocks */
     const o = t.o, h = handTool(); if (!cutsWith(h, o.t)) { const need = D.CLEAR[o.t].tool === 'hammer' ? '⛏️ อีเต้อ' : D.CLEAR[o.t].tool === 'axe' ? '🪓 ขวาน' : '🌾 เคียว หรือ ⚔️ ดาบ'; hint(`${D.CLEAR[o.t].name} ต้องใช้ ${need} · กด <b>A</b> ค้างเพื่อเปลี่ยน`, 2000); return }
