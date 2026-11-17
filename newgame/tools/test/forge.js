@@ -24,9 +24,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8799, wait = ms => new 
     await close(); await E(() => window.__ng.openForge()); await wait(300); await add('grass'); await add('stone'); await E(() => document.querySelector('#fGo').click()); await wait(500);
     const sc = await E(() => window.__ng.S.mats.scrap || 0); log('scrap', sc); if (sc !== 1) errs.push('a junk mix did not give scrap'); await close();
     // camp fire taken
+    const spot = await E(() => { const N = window.__ng; for (let x = 205; x < 320; x += 3) for (let z = -60; z < 120; z += 3) if (N.walkWorld(x, z) === 'land' && !N.waterAt(x, z) && N.walkWorld(x + 6, z) === 'land') { const b = N.S.builds[0]; b.x = x; b.z = z; return [x, z] } return null });   /* v3.21 Vaneya has no monsters: the far fire is on the mainland */ log('fire at', spot);
     await E(() => { window.__ng.placeMe(2, -4) }); await wait(800); await E(() => window.__ng.occRoll()); let taken = await E(() => window.__ng.S.builds[0].occ);
     for (let i = 0; i < 20 && !taken; i++) { await E(() => window.__ng.occRoll()); taken = await E(() => window.__ng.S.builds[0].occ) } log('taken', taken); if (!taken) errs.push('the far camp fire was never taken');
-    await E(() => window.__ng.placeMe(126, 40)); await wait(4000); await close(); const g = await E(() => { const o = window.__ng.OCC.get('f1'); return o ? o.mons.length : -1 }); log('guards', g); if (!(g >= 3)) errs.push('no monsters guard the taken fire');
+    await E(p => window.__ng.placeMe(p[0] + 6, p[1]), spot); await wait(4000); await close(); const g = await E(() => { const o = window.__ng.OCC.get('f1'); return o ? o.mons.length : -1 }); log('guards', g); if (!(g >= 3)) errs.push('no monsters guard the taken fire');
     await E(() => { const o = window.__ng.OCC.get('f1'); for (const m of [...o.mons]) if (window.__ng.mons.includes(m)) window.__ng.hurtMon(m, 99999, 'dmg') }); await wait(2000);
     const fr = await E(() => ({ occ: window.__ng.S.builds[0].occ, coin: window.__ng.S.coin })); log('freed', JSON.stringify(fr)); if (fr.occ) errs.push('beating the guards did not free the fire');
   } catch (e) { errs.push('X ' + e.stack) }
