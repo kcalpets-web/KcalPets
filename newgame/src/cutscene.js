@@ -1,7 +1,7 @@
 /* Opening cutscene (docs/STORY.md). Plays by itself like a short film (letterbox · subtitles · bloom · film grain · soft shadows);
    tap = hurry the current line · "ข้าม" = jump to the name. The extra polish is only used here, the game keeps its light settings.
    playIntro(renderer) → Promise<name>. Runs its own frame loop; main.js pauses its world loop meanwhile. */
-import { THREE, C, part, cone, PETS, MONS, PROPS, HUMANS, smoke, MAT } from './clay.js';
+import { THREE, C, part, cone, PETS, MONS, PROPS, HUMANS, BUILDS, smoke, MAT } from './clay.js';
 import { TIME, WMAT, gulls } from './life.js';
 import { mood, sfx } from './audio.js';
 import { EffectComposer } from '../lib/pp/postprocessing/EffectComposer.js';
@@ -21,6 +21,8 @@ const css = `#cut{position:fixed;inset:0;z-index:70;touch-action:none;user-selec
 #cut form{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;font:600 17px system-ui;text-align:center;padding:24px;z-index:4}
 #cut input{font:600 20px system-ui;padding:10px 14px;border-radius:12px;border:3px solid #fff8;background:#fff;color:#2a2030;width:min(260px,80vw);text-align:center}
 #cut .ttl{position:absolute;left:0;right:0;top:30%;text-align:center;color:#fff;font:800 40px system-ui;letter-spacing:3px;text-shadow:0 3px 12px #000c,0 0 30px #ffd23f88;opacity:0;transition:opacity 1.2s,transform 1.2s;transform:scale(.9)}#cut .ttl.on{opacity:1;transform:none}
+#cut .tsub{position:absolute;left:0;right:0;top:calc(30% + 62px);text-align:center;color:#ffe8b0;font:italic 600 19px Georgia,'Times New Roman',serif;letter-spacing:1.5px;text-shadow:0 2px 8px #000c,0 0 18px #ffb04a88;opacity:0;transition:opacity 1.6s,transform 1.6s;transform:translateY(8px)}#cut .tsub.on{opacity:1;transform:none}
+#cut .ttl.big{font:800 58px Georgia,'Times New Roman',serif;letter-spacing:10px;color:#fff6e0;text-shadow:0 3px 14px #000c,0 0 34px #ffc24acc,0 0 70px #ff9a3a88}
 #cut .pick{display:flex;gap:14px}#cut .pick button{background:#fff8ee;color:#2a2030;border:3px solid #2a2030;border-radius:16px;padding:12px 18px;font:700 16px system-ui}#cut .pick button b{display:block;font-size:44px}
 #cut form button{font:700 16px system-ui;padding:10px 24px;border-radius:12px;border:3px solid #2a2030;background:#ffd23f}`;
 
@@ -220,10 +222,10 @@ function film(R, o) {
   return new Promise(done => {
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     const el = document.createElement('div'); el.id = 'cut';
-    el.innerHTML = '<div class="lb lt"></div><div class="lb lbb"></div><div class="cap"></div><div class="ttl"></div><div class="sub"><span class="who"></span><span class="txt"></span></div><button class="skip">ข้าม ▶▶</button><div class="fade"></div><div class="flash"></div>' +
+    el.innerHTML = '<div class="lb lt"></div><div class="lb lbb"></div><div class="cap"></div><div class="ttl"></div><div class="tsub"></div><div class="sub"><span class="who"></span><span class="txt"></span></div><button class="skip">ข้าม ▶▶</button><div class="fade"></div><div class="flash"></div>' +
       '<form><div class="q">ชื่อของคุณคืออะไร?</div><div class="pick"><button type="button" data-k="shiba"><b>🐶</b>หมา</button><button type="button" data-k="cat"><b>🐱</b>แมว</button></div><input maxlength="16" placeholder="ใส่ชื่อ" autocomplete="off"><button type="submit" class="ok">ตกลง</button></form>';
     document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
-    const $ = s => el.querySelector(s), sub = $('.sub'), who = $('.who'), txt = $('.txt'), fade = $('.fade'), flash = $('.flash'), cap = $('.cap'), ttl = $('.ttl'), form = $('form'), inp = $('input'), q = $('.q'), pick = $('.pick'), okB = $('.ok');
+    const $ = s => el.querySelector(s), sub = $('.sub'), who = $('.who'), txt = $('.txt'), fade = $('.fade'), flash = $('.flash'), cap = $('.cap'), ttl = $('.ttl'), tsub = $('.tsub'), form = $('form'), inp = $('input'), q = $('.q'), pick = $('.pick'), okB = $('.ok');
     /* film look for the cutscene only: soft shadows · full resolution · bloom · vignette + grain (eco mode keeps it light) */
     const eco = localStorage.getItem('ng_gfx') === 'eco', old = { pr: R.getPixelRatio(), sh: R.shadowMap.enabled, st: R.shadowMap.type, ex: R.toneMappingExposure };
     R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.setPixelRatio(Math.min(devicePixelRatio, eco ? 1.25 : 2)); R.toneMappingExposure = 1;
@@ -241,13 +243,13 @@ function film(R, o) {
       else { q.textContent = `ตั้งชื่อ${ctx.pet.kind === 'cat' ? 'แมว' : 'หมา'}ของคุณ`; pick.style.display = 'none'; inp.style.display = okB.style.display = ''; inp.value = ''; setTimeout(() => inp.focus(), 50) } }
     pick.querySelectorAll('button').forEach(b => b.onclick = () => { ctx.pet = { kind: b.dataset.k, name: '' }; sfx('tap'); ask('petName') });
     function next() {
-      if (busy) return; busy = true; fade.style.opacity = 1; sub.classList.remove('on'); ttl.classList.remove('on');
+      if (busy) return; busy = true; fade.style.opacity = 1; sub.classList.remove('on'); ttl.classList.remove('on'); tsub.classList.remove('on');
       setTimeout(() => { bi++; t = 0; li = -1; line = null; cap.style.opacity = 0;
         if (bi >= BEATS.length) return finish();
         mood(MOOD[bi] || 'silent', .8); if (o.onBeat) o.onBeat(bi);
         if (BEATS[bi] === 'name' || BEATS[bi] === 'pet') return ask(BEATS[bi]);
         B = BEATS[bi](ctx); B.S.traverse(x => { if (x.isMesh && !x.material.transparent) { x.castShadow = true; x.receiveShadow = true } if (x.material === MAT) x.material = WMAT }); rp.scene = B.S; rp.camera = B.cam; bloom.strength = B.bloom ?? .5; grade.uniforms.sepia.value = B.sepia || 0;
-        if (B.cap) { cap.textContent = fill(B.cap); setTimeout(() => cap.style.opacity = 1, 500) } if (B.title) { ttl.textContent = fill(B.title); setTimeout(() => ttl.classList.add('on'), 700) }
+        if (B.cap) { cap.textContent = fill(B.cap); setTimeout(() => cap.style.opacity = 1, 500) } if (B.title) { ttl.textContent = fill(B.title); ttl.classList.toggle('big', !!B.big); setTimeout(() => ttl.classList.add('on'), B.titleAt ?? 700) } if (B.sub) { tsub.textContent = B.sub; setTimeout(() => tsub.classList.add('on'), B.subAt ?? 2200) }
         wait = B.lead ?? 1; fade.style.opacity = B.dark ? 1 : 0; busy = false }, 800);
     }
     /* auto timeline: lead-in → each line types, stays for its hold time → the beat ends after its minimum length */
@@ -281,6 +283,19 @@ function film(R, o) {
       jump: i => { if (!ctx.name) ctx.name = 'ทดสอบ'; if (!ctx.pet && BEATS.includes('pet')) ctx.pet = { kind: 'cat', name: 'มิว' }; form.style.display = 'none'; bi = i - 1; busy = false; next() } };
   });
 }
+/* v3.23 🎬 the game's title: after the first crossing — the little boat sails into the sunrise · KEALEE · And The New Light Of Luthonia */
+function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#1e2a66', '#ffd8a0', '#ff9a6a'), hemi: '#ffe0c0', hi: .9, sun: '#ffc890', si: 2.2, sp: [0, 6, -30], fov: 50 });
+  const sea = plane(S, '#2a5a8a', 400, 400, 0, 0, 0, new THREE.MeshStandardMaterial({ color: '#2a5a8a', roughness: .25, metalness: .3 }));
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 16), new THREE.MeshBasicMaterial({ color: '#fff0c0' })); sun.position.set(0, 2.5, -120); S.add(sun);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3, 90), new THREE.MeshBasicMaterial({ color: '#ffd890', transparent: true, opacity: .35 })); glow.rotation.x = -Math.PI / 2; glow.position.set(0, .02, -70); S.add(glow);   // the sun's path on the water
+  const crew = [], boat = at(g => { BUILDS.raft(g); part(g, '#5a3420', '#8a5a30', [0, 1.1, 0], [.06, 1.1, .06], [0, 0, 0], { A: 0 }); const sl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.3), new THREE.MeshStandardMaterial({ color: '#f4ecd8', side: THREE.DoubleSide, roughness: .8 })); sl.position.set(.5, 1.3, 0); sl.rotation.y = Math.PI / 2; g.add(sl) }, 0, 0, Math.PI / 2, 1);
+  for (let i = 0; i < 5; i++) at(g => part(g, '#3a5a2a', '#6a9a4a', [0, 0, 0], [4 + i, 1.2 + i * .3, 3], [0, 0, 0], { A: .2 }), -40 + i * 22, -90 - i * 6, 0, 1, -.4);   /* far islands */
+  { const h = new THREE.Group(); HUMANS.howsif(h); h.scale.setScalar(.8); h.position.set(-.3, .2, .2); h.rotation.y = Math.PI; boat.add(h) }   /* uncle rows · Kealee is still out there */
+  try { gulls(S, 6, 0, -14, 9) } catch (_) { }
+  return { S, cam, min: 9, lead: .5, bloom: .9, big: 1, title: 'KEALEE', titleAt: 2600, sub: 'And The New Light Of Luthonia', subAt: 4200, update(t) {
+    const k = Math.min(1, t / 8); cam.position.set(Math.sin(t * .15) * 1.5, 1.6 + k * 4.5, 6 + k * 4); cam.lookAt(0, 1 + k * 2.2, -20);
+    boat.position.z = -t * .9; boat.rotation.z = Math.sin(t * 1.3) * .04; boat.position.y = Math.sin(t * 1.7) * .05; sun.position.y = 2.5 + t * .35; glow.material.opacity = .25 + Math.sin(t * 2) * .06 } } }
+export const playTitle = (R, name) => film(R, { beats: [titleSea], moods: ['sea'], preset: name });
 export const playIntro = (R, preset = '') => film(R, { beats: [village, forest, cliff, sunset, strike, water, cave, 'name', dark, cloud], moods: ['day', 'forest', 'cliff', 'sea', 'storm', 'under', 'cave', 'silent', 'silent', 'dread'], preset, onBeat: i => { if (i === 5) sfx('dive') } }).then(r => r.name);
 export const playPetRescue = (R, name) => film(R, { beats: [cageBeat, ambushBeat, shadowBeat, 'pet', thanksBeat, petTitle], moods: ['forest', 'cliff', 'storm', 'silent', 'forest', 'forest'], preset: name });
 export const playFlashback = (R, name) => film(R, { beats: [fbWalk, fbSee, fbJoy, fbTurn, fbDark], moods: ['forest', 'forest', 'forest', 'dread', 'silent'], preset: name });
