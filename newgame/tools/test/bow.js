@@ -29,7 +29,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.S.time = 600; N.setTemp(0); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(600); await shot('b0-idle');
     /* v3.17 X: tap = jump · B hold = crouch (sneak) · X tap = stand up */
     await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump'); await press('bX', 'pointerup'); await wait(900);
-    await press('bB', 'pointerdown'); if (!(await until(() => window.__ng.CROUCH, 5000))) errs.push('holding B did not crouch'); await press('bB', 'pointerup'); await wait(800); await shot('b1-crouch');
+    const stk = t => E(t => { const s = document.getElementById('stick'), r = s.getBoundingClientRect(); s.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 7, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }, t);
+    await stk('pointerdown'); if (!(await until(() => window.__ng.CROUCH, 3000))) errs.push('v3.18.2 holding the stick still did not crouch'); await stk('pointerup'); await wait(800); await shot('b1-crouch');
     { const p0 = await N(() => [window.__ng.me.x, window.__ng.me.z]); await E(() => { const N = window.__ng; N.walkTo(N.me.x, N.me.z + 3) }); await wait(1500); await shot('b1b-sneak');
       const r = await N(() => ({ c: window.__ng.CROUCH, sneak: window.__ng.PL.pose.sneak })); if (!r.c || !r.sneak) errs.push('walking stood up from the crouch (should sneak)'); }
     await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.CROUCH, 2000))) errs.push('tap X did not stand up from the crouch'); await wait(400);
@@ -45,9 +46,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       const hp0 = m.hp; N.actA(); const r = { ok, drawn: N.DRAWN, hp1: m.hp }; N.actA(); r.drawn2 = N.DRAWN; return r });
     log('A twice', JSON.stringify(fa)); if (fa.ok) { if (!fa.drawn) errs.push('first A did not draw the weapon'); if (fa.hp1 < 24) errs.push('first A attacked (should only draw)') } await wait(900);
     if (fa.ok && !(await N(() => window.__s1.hp < window.__s1.T.hp || !window.__ng.mons.includes(window.__s1)))) errs.push('second A did not attack'); await shot('b1c-drawn'); await E(() => { window.__s1.A.root.position.x += 60 }); await closeAll();
-    await tapB(); if (await N(() => window.__ng.DRAWN)) errs.push('tap B did not put the weapon away');
-    await tapB(); if (!(await N(() => window.__ng.guard))) errs.push('tap B did not raise the shield'); await wait(800); await shot('b1d-shield');
-    await tapB(); if (await N(() => window.__ng.guard)) errs.push('second tap B did not lower the shield');
+    /* v3.18.2 B = shield only while held */
+    await press('bB', 'pointerdown'); await wait(500); if (!(await N(() => window.__ng.guard))) errs.push('holding B did not raise the shield'); await shot('b1d-shield'); await press('bB', 'pointerup'); await wait(300);
+    if (await N(() => window.__ng.guard)) errs.push('letting go of B did not lower the shield'); await tapB(); if (await N(() => window.__ng.guard)) errs.push('a B tap should not leave the shield up');
     if (await N(() => window.__ng.PL.pose.sneak)) errs.push('a B tap should not crouch');
     /* Y: aim at a slime 9 m ahead, let go = shoot */
     await E(() => { const N = window.__ng; let best = null; for (let x = 12; x < 32 && !best; x += 1.5) for (let z = -10; z < 0 && !best; z += 1.5) { let ok = N.walkWorld(x, z) === 'land'; for (let k = 0; k <= 11 && ok; k += .5) if (N.solHit(x, z + k, .3) || N.waterAt(x, z + k)) ok = false; if (ok) best = [x, z] } if (best) N.placeMe(best[0], best[1]); for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg') }); await wait(1500);   // nothing else in the way   // an open line of fire (no fences / trees)
