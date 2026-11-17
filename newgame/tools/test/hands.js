@@ -1,4 +1,4 @@
-/* v3.6 only X Y A B: hold A → slide → pick the axe / pickaxe · they fell a tree / break a rock · Y double-tap → pick the shovel → hold Y, aim at grass, let go = a plot · B double-tap → shield picker · no farm-mode toggle on screen.
+/* v3.6 only X Y A B: hold A → slide → pick the axe / pickaxe · they fell a tree / break a rock · Y double-tap → pick the shovel → tap Y, aim at grass, A = a plot (v3.18) · B double-tap → shield picker · no farm-mode toggle on screen.
    NODE_PATH=$(npm root -g) node newgame/tools/test/hands.js outDir   (~2 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'), fs = require('fs');
 const ROOT = path.resolve(__dirname, '../../..'), PORT = 8798, OUT = process.argv[2] || '/tmp/newgame_hands', wait = ms => new Promise(r => setTimeout(r, ms));
@@ -34,7 +34,7 @@ fs.mkdirSync(OUT, { recursive: true });
     else await slideTo('hoe');
     log('ytool', await pg.evaluate(() => window.__ng.S.ytool)); if (await pg.evaluate(() => window.__ng.S.ytool) !== 'hoe') errs.push('shovel not picked');
     const p0 = await pg.evaluate(() => Object.keys(window.__ng.S.plots).length); let dug = false;
-    for (const yaw of [0, 1.57, 3.14, 4.71]) { await pg.evaluate(y => { window.__ng.CAM.yaw = y }, yaw); await wait(600); const [x, y] = await box('bY'); await pg.mouse.move(x, y); await pg.mouse.down(); await wait(1800); await pg.mouse.up(); await wait(800);
+    for (const yaw of [0, 1.57, 3.14, 4.71]) { await pg.evaluate(y => { window.__ng.CAM.yaw = y }, yaw); await wait(600); const [x, y] = await box('bY'); await pg.mouse.move(x, y); await pg.mouse.down(); await pg.mouse.up(); await wait(1200); const [ax, ay] = await box('bA'); await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(200); await pg.mouse.up(); await wait(800);   /* v3.18 tap Y = aim · A = dig */
       if (await pg.evaluate(n => Object.keys(window.__ng.S.plots).length > n, p0)) { dug = true; break } }
     log('dug', dug); if (!dug) errs.push('aiming the shovel did not dig a plot'); await pg.screenshot({ path: path.join(OUT, 'dig.png') });
     // B double tap → shield picker
