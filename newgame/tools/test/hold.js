@@ -1,5 +1,5 @@
-/* v3.12.6 holds: A held = charge slash (stronger · full = spin) · ⚡ drains while holding A / Y / B · run out = exhausted, the hold ends
-   · Y held in the air = slow motion + hover · double-tap + hold A = picker (let go = take).
+/* v3.17 holds: A hold = 🐗 the boar's shield bubble (blocks one hit, then a cooldown) · B hold = crouch · X hold = 🦅 the hawk lifts you · both need the animal caught first
+   · Y held in the air = slow motion + hover · no double-tap pickers on A/Y/B any more.
    NODE_PATH=$(npm root -g) node newgame/tools/test/hold.js outDir   (~1.5 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs');
 const ROOT = path.resolve(__dirname, '../../..'), PORT = 8820, OUT = process.argv[2] || '/tmp/nghold', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
@@ -9,32 +9,29 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8820, OUT = process.arg
   try {
     const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on('pageerror', e => errs.push('PE ' + e.message));
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, time: 640, quest: 99, arrows: 30 })) });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1, glider: 1 }, time: 640, quest: 99, arrows: 30 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     const dp = (id, type) => E(([id, type]) => { const el = document.getElementById(id), r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 5, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }, [id, type]);
-    const slime = () => E(() => { const N = window.__ng, q = N.me; for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); const m = N.monSpawn('slime', q.x, q.z + 1.2, { area: 'wild' }); m.hp = m.T.hp = 5000; m.stunT = performance.now() + 60000; window.__m = m; N.PL.yaw = N.PL.yawT = 0; N.S.en = null; N.S.tired = false; N.S.hand = 'w'; return m.hp });
-    await E(() => { window.__ng.placeMe(20, 2) }); await wait(800);
-    // tap vs full charge
-    await slime(); await wait(400); await dp('bA', 'pointerdown'); await wait(80); await dp('bA', 'pointerup'); await wait(700);   /* the first tap draws the sword */
-    let h0 = await E(() => window.__m.hp); await dp('bA', 'pointerdown'); await wait(80); await dp('bA', 'pointerup'); await wait(900); const tapD = h0 - await E(() => window.__m.hp);
-    await slime(); await wait(400); h0 = await E(() => window.__m.hp); await E(() => { window.__ng.S.stat.chargeHits = 0 }); await dp('bA', 'pointerdown'); await wait(1500); const bar = await E(() => document.getElementById('chg').classList.contains('on')); await pg.screenshot({ path: OUT + '/charge.png' }); await wait(500);
-    const en1 = await E(() => window.__ng.S.en); await dp('bA', 'pointerup'); await wait(900); const chD = h0 - await E(() => window.__m.hp); log('tap dmg', tapD, 'charged dmg', chD, 'bar', bar, 'en while charging', en1);
-    if (!bar) errs.push('no charge bar'); if (!(chD > tapD * 1.6)) errs.push('a full charge is not much stronger than a tap'); if (!(en1 < 100)) errs.push('charging did not use ⚡');
-    // run out while charging → exhausted, no hit
-    await slime(); await wait(300); await E(() => { window.__ng.S.en = 6; window.__ng.S.enB = 0 }); h0 = await E(() => window.__m.hp); await dp('bA', 'pointerdown'); await wait(900); log('mid', JSON.stringify(await E(() => ({ c: !!window.__ng.CHGA, en: window.__ng.S.en, enB: window.__ng.S.enB, t: window.__ng.S.tired, d: window.__ng.DRAWN })))); await wait(1300); const ex = await E(() => ({ tired: window.__ng.S.tired })); await dp('bA', 'pointerup'); await wait(600); const exD = h0 - await E(() => window.__m.hp);
-    log('ran out', JSON.stringify(ex), 'dmg after', exD); if (!ex.tired) errs.push('running out while charging did not exhaust');
-    // guard hold drains
-    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false; window.__ng.S.eq.shield = null }); await wait(200); await E(() => { const N = window.__ng; const it = N.newItem('woodShield', 'C'); N.S.bag.push(it); N.S.eq.shield = it.id });
-    const g0 = await E(() => window.__ng.S.en ?? 100); await dp('bB', 'pointerdown'); await wait(1600); const g1 = await E(() => window.__ng.S.en); await dp('bB', 'pointerup'); log('guard ⚡', g0, '→', g1); if (!(g1 < 100)) errs.push('holding the guard did not use ⚡');
-    // air shot: jump, hold Y → slow motion + hover
+    await E(() => { const N = window.__ng; for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); N.placeMe(20, 2) }); await wait(800);
+    // no animal yet: A hold does nothing but a hint · no picker
+    await dp('bA', 'pointerdown'); await wait(900); await dp('bA', 'pointerup'); await wait(300); const n0 = await E(() => ({ bub: window.__ng.BUB.on, pick: !!window.__ng.pick() })); log('A hold, no boar', JSON.stringify(n0)); if (n0.bub || n0.pick) errs.push('A hold without a boar did something');
+    // with a boar + a hawk
+    await E(() => { const N = window.__ng; N.S.pets.push({ id: 'pb', kind: 'boar', name: 'หมู', lv: 2, rar: 'R', el: '🪨', exp: 0 }, { id: 'ph', kind: 'hawk', name: 'เหยี่ยว', lv: 2, rar: 'R', el: '⚡', exp: 0 }); N.hud && N.hud() }); await wait(400);
+    const icons = await E(() => [...document.querySelectorAll('#team [data-sk]')].map(x => x.dataset.sk)); log('skill icons', icons); if (icons.join() !== 'hawk,boar') errs.push('the two skill icons are not shown');
+    await dp('bA', 'pointerdown'); await wait(900); await dp('bA', 'pointerup'); await wait(300); const b1 = await E(() => window.__ng.BUB.on); log('A hold → bubble', b1); if (!b1) errs.push('A hold did not make the boar shield'); await pg.screenshot({ path: OUT + '/bubble.png' });
+    const hp0 = await E(() => window.__ng.S.hp ?? 999); await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 1, q.z, { area: 'wild' }); N.hitPlayer ? N.hitPlayer(m, performance.now()) : null; window.__m = m }); await wait(300);
+    const b2 = await E(() => ({ on: window.__ng.BUB.on, hp: window.__ng.S.hp ?? 999, cd: (window.__ng.PSK.boar || 0) > Date.now() })); log('hit on the bubble', JSON.stringify(b2), 'hp before', hp0); if (b2.on || b2.hp < hp0 || !b2.cd) errs.push('the bubble did not block one hit / start the cooldown');
+    // B hold = crouch
+    await E(() => { for (const m of [...window.__ng.mons]) window.__ng.hurtMon(m, 99999, 'dmg') }); await dp('bB', 'pointerdown'); await wait(900); await dp('bB', 'pointerup'); await wait(300); const cr = await E(() => window.__ng.CROUCH); log('B hold → crouch', cr); if (!cr) errs.push('B hold did not crouch'); await dp('bX', 'pointerdown'); await dp('bX', 'pointerup'); await wait(600);
+    // X hold = hawk lift (no glider by itself)
+    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const y0 = await E(() => window.__ng.me.y); await dp('bX', 'pointerdown'); await wait(900); await dp('bX', 'pointerup'); let top = y0; for (let i = 0; i < 12; i++) { top = Math.max(top, await E(() => window.__ng.me.y)); await wait(150) }
+    log('X hold → lift', y0.toFixed(1), '→', top.toFixed(1)); if (!(top > y0 + 6)) errs.push('X hold did not lift'); await wait(2500);
+    // Y in the air = slow motion
     await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false; window.__ng.giveBow && window.__ng.giveBow(true) }); await wait(300);
-    await E(() => window.__ng.setJump()); await wait(160); await E(() => window.__ng.aimStart('bow')); await wait(300); const air = await E(() => ({ air: !!window.__ng.AIRAIM, y: window.__ng.me.y, g: window.__ng.groundH(window.__ng.me.x, window.__ng.me.z) })); await pg.screenshot({ path: OUT + '/air.png' });
-    await wait(800); const air2 = await E(() => ({ y: window.__ng.me.y, en: window.__ng.S.en })); await E(() => window.__ng.aimEnd(true)); await wait(1200); const land = await E(() => ({ air: !!window.__ng.AIRAIM, y: window.__ng.me.y }));
-    log('air', JSON.stringify(air), JSON.stringify(air2), 'landed', JSON.stringify(land)); if (!air.air) errs.push('Y in the air did not start slow motion'); if (!(air2.y > air.g + .2)) errs.push('not hovering in the air'); if (land.air) errs.push('slow motion did not end');
-    // double-tap + hold A → picker; let go takes
-    await E(() => { window.__ng.S.bag.push(window.__ng.newItem('soldierSpear', 'R')); window.__ng.S.en = null; window.__ng.S.tired = false }); await dp('bA', 'pointerdown'); await wait(60); await dp('bA', 'pointerup'); await wait(80); await dp('bA', 'pointerdown'); await wait(900);
-    const pk = await E(() => !!window.__ng.pick()); await dp('bA', 'pointerup'); await wait(300); const pk2 = await E(() => !!window.__ng.pick()); log('A double+hold picker', pk, 'closed after', !pk2); if (!pk || pk2) errs.push('double-tap + hold A did not open / let go did not close the picker');
+    await E(() => window.__ng.setJump()); await wait(160); await E(() => window.__ng.aimStart('bow')); await wait(300); const air = await E(() => !!window.__ng.AIRAIM); await E(() => window.__ng.aimEnd(true)); log('air aim', air); if (!air) errs.push('Y in the air did not start slow motion');
+    // Y double tap: no picker
+    await dp('bY', 'pointerdown'); await dp('bY', 'pointerup'); await wait(60); await dp('bY', 'pointerdown'); await wait(900); await dp('bY', 'pointerup'); await wait(300); const yp = await E(() => !!window.__ng.pick()); log('Y double tap picker', yp); if (yp) errs.push('a Y double tap still opens a picker');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

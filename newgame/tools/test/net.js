@@ -32,8 +32,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
     if (!fr.aim || fr.btn === 'none' || fr.ov) errs.push('holding Y (draw) did not frame the view with a 🖍️ button');
     await E(() => document.getElementById('bDrawNow').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await wait(2500); await pg.mouse.up(); await wait(500);
     const d1 = await E(() => window.__ng.S.stat.drawings || 0); log('drawings', d0, '→', d1); if (!(d1 > d0)) errs.push('the 🖍️ button did not draw'); await close();
-    for (let r = 0; r < 3 && !(await E(() => !!window.__ng.pick())); r++) { await close(); await pg.mouse.click(yb[0], yb[1]); await wait(80); await E(() => { const el = document.getElementById('bY'), r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 5, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }); await wait(900) }   /* v3.12.6 double-tap + hold */
-    if (!(await E(() => !!window.__ng.pick()))) errs.push('double-tap Y did not open the picker while holding the crayon');
+    await close(); await E(() => window.__ng.smenuGo('left')); await wait(600);   /* v3.17 the stick menu ← opens the Y picker (even holding the crayon) */
+    if (!(await E(() => !!window.__ng.pick() && window.__ng.pick().slot === 'y'))) errs.push('the stick menu did not open the Y picker while holding the crayon');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

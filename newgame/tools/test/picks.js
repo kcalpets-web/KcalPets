@@ -13,16 +13,16 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     await E(() => { const N = window.__ng; N.S.bag.push(N.newItem('soldierSpear', 'R'), N.newItem('woodShield', 'C')); N.S.hand = 'w' }); await wait(300);
     // hold A → the picker opens with pictures + stats
-    const A = await (await pg.$('#bA')).boundingBox(); await pg.mouse.move(A.x + A.width / 2, A.y + A.height / 2); await pg.mouse.down(); await wait(60); await pg.mouse.up(); await wait(60); await pg.mouse.down(); await wait(1400);   /* v3.12.6 double-tap + hold */
+    await E(() => window.__ng.smenuGo('right')); await wait(800);   /* v3.17 the stick menu → weapons */
     const pk = await E(() => [...document.querySelectorAll('#pick .row i')].map(i => ({ img: !!i.querySelector('img'), st: (i.querySelector('em') || {}).textContent }))); log('picker', JSON.stringify(pk));
     if (!pk.length || pk.filter(x => x.img).length < 3) errs.push('the picker has no item pictures'); if (!pk.some(x => /⚔️\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');
     await pg.screenshot({ path: OUT + '/picker.png' });
     // slide one step with the stick, then the A finger is *cancelled* (iPhone) → still chosen
     const i0 = await E(() => window.__ng.pick().i); await E(() => { const s = document.getElementById('stick'), r = s.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; s.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, clientX: x, clientY: y })); s.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, clientX: x + 40, clientY: y })) }); await wait(300);
     await E(() => document.getElementById('stick').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 }))); const want = await E(() => window.__ng.pick().L[window.__ng.pick().i]);
-    await E(() => document.getElementById('bA').dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }))); await wait(300); await pg.mouse.up(); await wait(300);
-    const got = await E(() => ({ open: !!window.__ng.pick(), hand: window.__ng.S.hand, eq: window.__ng.S.eq.sword })); log('cancel → chose', want, JSON.stringify(got));
-    if (got.open) errs.push('the picker stayed open after the cancel'); if (!(got.hand === want || ('w:' + got.eq) === want)) errs.push('the cancel did not take the framed item');
+    await E(() => { const el = document.getElementById('bA'); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 5, clientX: 330, clientY: 700 })); el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 5 })) }); await wait(400);   /* v3.17 A confirms */
+    const got = await E(() => ({ open: !!window.__ng.pick(), hand: window.__ng.S.hand, eq: window.__ng.S.eq.sword })); log('A → chose', want, JSON.stringify(got));
+    if (got.open) errs.push('the picker stayed open after A'); if (!(got.hand === want || ('w:' + got.eq) === want)) errs.push('A did not take the framed item');
     { const dr = await E(() => window.__ng.DRAWN); log('weapon in hand', dr); if (want.startsWith('w:') && !dr) errs.push('the picked weapon is not in the hand') }
     // the bag: gear tiles are pictures
     await E(() => window.__ng.openBag('sword')); await wait(700); const bt = await E(() => document.querySelectorAll('.ov .tile img.ipic').length);

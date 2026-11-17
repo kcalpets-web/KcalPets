@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.16.5';
+export const APP_VER = '3.17';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -265,7 +265,7 @@ export const PET_SPECIAL = {                                                  //
   '💧': { name: 'สายน้ำชโลม', kind: 'heal', hearts: 1.5 }, '❄️': { name: 'ลมหนาวแช่แข็ง', kind: 'stun', ms: 3500, r: 3.5 }, '🪨': { name: 'โล่หิน', kind: 'guard', ms: 6000 } };
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
-export const PETSKILL = { cd: 25000, hawkCd: 60000, lift: 16, range: 14 };       // Basic: any element at −60% · Legendary: any element at full power
+export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, lift: 16, range: 14, hold: .45 };   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },

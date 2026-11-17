@@ -27,16 +27,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => window.__ng.placeMe(17, -6)); await wait(1200);   /* v2.4.1 the home island is a safe zone (no weapons) */
     const st = await N(() => { const N = window.__ng; return { bow: N.S.eq.bow, arrows: N.S.arrows } }); log('starter', JSON.stringify(st)); if (!st.bow || st.arrows !== 10) errs.push('starter bow/arrows wrong');
     await E(() => { const N = window.__ng; N.S.time = 600; N.setTemp(0); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(600); await shot('b0-idle');
-    /* X: tap = jump · hold 3 s = sit · tap = stand */
-    await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump');
-    if (!(await until(() => window.__ng.CROUCH, 5000))) errs.push('holding X 3 s did not crouch'); await press('bX', 'pointerup'); await wait(800); await shot('b1-crouch');
+    /* v3.17 X: tap = jump · B hold = crouch (sneak) · X tap = stand up */
+    await press('bX', 'pointerdown'); if (!(await until(() => window.__ng.PL.pose.jump > 0, 2000))) errs.push('X did not jump'); await press('bX', 'pointerup'); await wait(900);
+    await press('bB', 'pointerdown'); if (!(await until(() => window.__ng.CROUCH, 5000))) errs.push('holding B did not crouch'); await press('bB', 'pointerup'); await wait(800); await shot('b1-crouch');
     { const p0 = await N(() => [window.__ng.me.x, window.__ng.me.z]); await E(() => { const N = window.__ng; N.walkTo(N.me.x, N.me.z + 3) }); await wait(1500); await shot('b1b-sneak');
       const r = await N(() => ({ c: window.__ng.CROUCH, sneak: window.__ng.PL.pose.sneak })); if (!r.c || !r.sneak) errs.push('walking stood up from the crouch (should sneak)'); }
     await press('bX', 'pointerdown'); await press('bX', 'pointerup'); if (!(await until(() => !window.__ng.CROUCH, 2000))) errs.push('tap X did not stand up from the crouch'); await wait(400);
     if (await N(() => window.__ng.PL.pose.jump > 0)) errs.push('standing up should not jump');
-    /* v3.6 A: hold = the weapon/tool picker (no more AUTO) · let go without sliding = keep what you hold */
-    await closeAll(); const h0 = await N(() => window.__ng.S.hand || 'w'); await press('bA', 'pointerdown'); await press('bA', 'pointerup'); await wait(60); await press('bA', 'pointerdown');   /* v3.12.6 double-tap + hold */ if (!(await until(() => !!window.__ng.pick(), 5000))) errs.push('holding A did not open the picker'); await press('bA', 'pointerup'); await wait(300);
-    if (await N(() => !!window.__ng.pick())) errs.push('letting go of A did not close the picker'); if ((await N(() => window.__ng.S.hand || 'w')) !== h0) errs.push('letting go without sliding changed the hand'); if (await N(() => window.__ng.S.auto)) errs.push('holding A still turns AUTO on'); await closeAll();
+    if (await N(() => window.__ng.S.auto)) errs.push('AUTO is on'); await closeAll();
     /* v2.1.1: A draws · tap B puts away · tap B (empty-handed) raises the shield · tap B again lowers it */
     const tapB = async () => { await press('bB', 'pointerdown'); await press('bB', 'pointerup'); await wait(600) };   /* v3.6: two taps closer than D.DTAP = the shield picker */
     await E(() => window.__ng.stowAll()); await closeAll(); await E(() => window.__ng.setTool(''));
@@ -50,7 +48,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await tapB(); if (await N(() => window.__ng.DRAWN)) errs.push('tap B did not put the weapon away');
     await tapB(); if (!(await N(() => window.__ng.guard))) errs.push('tap B did not raise the shield'); await wait(800); await shot('b1d-shield');
     await tapB(); if (await N(() => window.__ng.guard)) errs.push('second tap B did not lower the shield');
-    if (await N(() => window.__ng.PL.pose.sneak)) errs.push('B should not crouch');
+    if (await N(() => window.__ng.PL.pose.sneak)) errs.push('a B tap should not crouch');
     /* Y: aim at a slime 9 m ahead, let go = shoot */
     await E(() => { const N = window.__ng; let best = null; for (let x = 12; x < 32 && !best; x += 1.5) for (let z = -10; z < 0 && !best; z += 1.5) { let ok = N.walkWorld(x, z) === 'land'; for (let k = 0; k <= 11 && ok; k += .5) if (N.solHit(x, z + k, .3) || N.waterAt(x, z + k)) ok = false; if (ok) best = [x, z] } if (best) N.placeMe(best[0], best[1]); for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg') }); await wait(1500);   // nothing else in the way   // an open line of fire (no fences / trees)
     await E(() => { const N = window.__ng, q = N.me; if (N.finishClear) for (const o of N.W.clear.values()) if (o.g && Math.abs(o.x - q.x) < 2.5 && o.z > q.z && o.z < q.z + 11) N.finishClear(o); N.monSpawn('slime', q.x, q.z + 9); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0 }); await wait(1200);

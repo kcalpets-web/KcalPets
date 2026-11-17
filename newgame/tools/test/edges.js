@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8827, OUT = process.arg
     await pg.addInitScript(([now, day]) => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, spiritTip: 1, horseTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1, glider: 1 }, time: 640, quest: 99, side: 'isle', mats: { wood: 30, stone: 30 },
         builds: [{ id: 'b1', k: 'campfire', x: 20, z: 6, ry: 0, done: 1, fix: now - 3.5 * day }, { id: 'b2', k: 'campfire', x: 24, z: 6, ry: 0, done: 1, fix: now - 5 * day }],
-        pets: [{ id: 'p1', kind: 'cat', name: 'เหมียว', lv: 5, rar: 'R', el: '🔥', exp: 0, hp: 50 }, { id: 'p2', kind: 'hawk', name: 'อินทรี', lv: 3, rar: 'R', el: '🌪️', exp: 0, hp: 40 }], team: ['p1', 'p2'] })) }, [now, day]);
+        pets: [{ id: 'p1', kind: 'boar', name: 'หมู', lv: 5, rar: 'R', el: '🪨', exp: 0, hp: 50 }, { id: 'p2', kind: 'hawk', name: 'อินทรี', lv: 3, rar: 'R', el: '🌪️', exp: 0, hp: 40 }], team: ['p1', 'p2'] })) }, [now, day]);
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     // decay: b2 (5 days, campfire lasts 4) falls · b1 is shabby and can be repaired
@@ -23,12 +23,11 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8827, OUT = process.arg
     // pets: no followers · team icons
     const pt = await E(() => ({ icons: document.querySelectorAll('#team .psk').length, near: [...window.__ng.PA.values()].filter(e => Math.hypot(e.A.root.position.x - window.__ng.me.x, e.A.root.position.z - window.__ng.me.z) < 6).length })); log('pets', JSON.stringify(pt)); if (pt.icons !== 2) errs.push('team skill icons missing');
     await E(() => window.__ng.placeMe(30, 4)); await wait(3000); const far = await E(() => [...window.__ng.PA.values()].filter(e => Math.hypot(e.A.root.position.x - window.__ng.me.x, e.A.root.position.z - window.__ng.me.z) < 8).length); log('pets near after walking off', far); if (far) errs.push('pets still follow');
-    // cat skill on a monster
-    const hp0 = await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 2, q.z + 1, { area: 'wild' }); m.stunT = performance.now() + 30000; window.__m = m; return m.hp }); await wait(600);
-    await E(() => document.querySelector('#team [data-pet="p1"]').click()); await wait(1500); const hp1 = await E(() => window.__m.hp); const cd = await E(() => document.querySelector('#team [data-pet="p1"]').classList.contains('cd')); log('cat skill', hp0, '→', hp1, 'cooldown', cd); if (!cd) errs.push('the pet skill did not start a cooldown');
+    // 🐗 skill icon → the shield bubble + its veil after a hit
+    await E(() => document.querySelector('#team [data-sk="boar"]').click()); await wait(600); const bub = await E(() => window.__ng.BUB.on); log('boar bubble', bub); if (!bub) errs.push('the boar icon did not make the bubble');
     await pg.screenshot({ path: OUT + '/pet-icons.png' });
     // hawk: lift + glide
-    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const y0 = await E(() => window.__ng.me.y); await E(() => document.querySelector('#team [data-pet="p2"]').click()); await wait(700); await pg.screenshot({ path: OUT + '/hawk.png' });
+    await E(() => { window.__ng.S.en = null; window.__ng.S.tired = false }); const y0 = await E(() => window.__ng.me.y); await E(() => document.querySelector('#team [data-sk="hawk"]').click()); await wait(700); await pg.screenshot({ path: OUT + '/hawk.png' });
     let top = y0; for (let i = 0; i < 12; i++) { top = Math.max(top, await E(() => window.__ng.me.y)); await wait(150) } const g1 = await E(() => !!window.__ng.GLIDE2); log('hawk lift', y0.toFixed(1), '→', top.toFixed(1), 'auto-glide', g1); if (!(top > y0 + 8)) errs.push('the hawk did not lift you'); if (g1) errs.push('v3.16.5 the glider must not open by itself');
     await E(() => window.__ng.startPara()); await wait(400); const g2 = await E(() => !!window.__ng.GLIDE2); log('X in the air → glide', g2); if (!g2) errs.push('could not open the glider after the lift');
     await E(() => window.__ng.closePara && window.__ng.closePara()); await wait(800);
