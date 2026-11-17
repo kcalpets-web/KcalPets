@@ -279,6 +279,7 @@ body:has(#cut) #team,body:has(#cut) #smenu,body:has(#cut) #qIcon{display:none!im
 .nfocus{outline:3px solid #ffd23f!important;outline-offset:2px;box-shadow:0 0 0 2px #2a2030,0 0 16px #ffd23fcc!important;position:relative;z-index:1}   /* v3.19 the stick's frame */
 body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.inv) #bA,body.pad:not(.gamepad):has(.ov.inv) #bB{z-index:46}body.pad:not(.gamepad) .ov.inv .shb{padding-bottom:178px}   /* v3.19 in the bag the stick + A + B stay on top */
 .tile .brk{position:absolute;right:3px;top:14px;font-size:15px;line-height:1;filter:drop-shadow(0 1px 1px #000)}   /* v3.22 💔 broken / 🎯 thrown */
+.ov.inv .invtabs{position:sticky;top:0;z-index:3;background:#0a0c18ee;border-radius:12px;padding:2px 0}   /* v3.23 the sections never scroll away */
 </style></head>
 <body>
 <canvas id="cv"></canvas>

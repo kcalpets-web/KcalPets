@@ -1464,6 +1464,7 @@ function invPreview(cv, tab, sel) {
 }
 let bagSellMode = false;   /* v3.12.3 selling gear only from a shop (the smith) — never by a stray tap in the bag */
 function openBag(tab, sell) {
+  NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null;   /* v3.23 start on the sections */
   if (tab) bagTab = tab; bagSellMode = !!sell;
   sheet('🎒 กระเป๋า', (b, redraw) => {
     const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
@@ -2047,20 +2048,21 @@ document.addEventListener('touchstart', e => { if (e.target.closest && e.target.
   const up = e => { if (e.pointerId !== pid) return; pid = null; clearTimeout(sHold); NAV.dir = null; joy.on = false; joy.cy = undefined; kn.style.transform = ''; pickStick(0); mapStick(0, 0); const now = performance.now(); if (SMENU.on) return;   /* v3.18.1 the menu stays: A picks, B goes back */ if (now - sDown < 260 && sMove < 18) sTap = now }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
 /* v3.19 🕹️ windows by stick (one system for the whole game): a glowing frame jumps to the nearest button in the pushed direction ·
    A = press it (a bag slot: tap = use / wear · hold = its card) · B = back · touch still works */
-const NAV = { el: null, key: '', dir: null, rep: 0, on: false, a: null };
+const NAV = { el: null, key: '', dir: null, rep: 0, on: false, a: null, zone: 'tabs' };   /* v3.23 the bag has two levels: zone 'tabs' (pick a section) → A → 'items' · B steps back */
 const topOv = () => { const L = document.querySelectorAll('.ov'); return L.length ? L[L.length - 1] : null };
-const navAll = ov => [...ov.querySelectorAll('button, [data-k], [data-bt]')].filter(e => !e.classList.contains('back') && !e.disabled && e.offsetParent !== null && e.getBoundingClientRect().width > 4);
+const navAll = ov => { const inv = ov.classList.contains('inv'); return [...ov.querySelectorAll('button, [data-k], [data-bt]')].filter(e => !e.classList.contains('back') && !e.disabled && e.offsetParent !== null && e.getBoundingClientRect().width > 4 && (!inv || (NAV.zone === 'tabs') === !!e.dataset.bt)) };
+function navBack() { const ov = topOv(); if (ov && ov.classList.contains('inv') && NAV.zone === 'items') { NAV.zone = 'tabs'; NAV.key = ''; navSet(ov.querySelector('[data-bt].on') || ov.querySelector('[data-bt]')); sfx('tap'); return true } return false }
 const navKeyOf = e => { for (const a of e.attributes) if (a.name.startsWith('data-') || a.name === 'id') return a.name + '=' + a.value; return 'txt=' + e.textContent.trim().slice(0, 24) };
 function navSet(e) { if (NAV.el && NAV.el !== e) NAV.el.classList.remove('nfocus'); NAV.el = e; if (!e) return; NAV.key = navKeyOf(e); e.classList.add('nfocus'); try { e.scrollIntoView({ block: 'nearest', inline: 'nearest' }) } catch (_) { } }
 function navCur() { const ov = topOv(); if (!ov) { NAV.el = null; NAV.on = false; return null } if (NAV.el && NAV.el.isConnected && ov.contains(NAV.el)) { NAV.el.classList.add('nfocus'); return NAV.el }
-  const L = navAll(ov); let e = NAV.key ? L.find(x => navKeyOf(x) === NAV.key) : null; if (!e) e = ov.querySelector('.tile.sel') || ov.querySelector('.btn.go') || L[0] || null; navSet(e); return e }
+  const L = navAll(ov); let e = NAV.key ? L.find(x => navKeyOf(x) === NAV.key) : null; if (!e) e = ov.classList.contains('inv') && NAV.zone === 'tabs' ? ov.querySelector('[data-bt].on') || L[0] : L.find(x => x.classList.contains('sel')) || L.find(x => x.classList.contains('go')) || L[0] || null; navSet(e); return e }
 function navMove(dir) { const ov = topOv(), cur = ov && navCur(); if (!cur) return; const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, [vx, vy] = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
   let best = null, bs = 1e9; for (const e of navAll(ov)) { if (e === cur) continue; const q = e.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy, along = dx * vx + dy * vy; if (along < 6) continue; const sc = along + (Math.abs(dx * vy) + Math.abs(dy * vx)) * 2.5; if (sc < bs) { bs = sc; best = e } }
   if (!best) { sfx('knock'); return } sfx('tap'); navSet(best); if (best.dataset.k && best.closest('.invgrid')) best.click() }   /* a bag slot: moving onto it shows it */
 function navStick(x, y) { NAV.on = true; const d = Math.hypot(x, y), now = performance.now(); if (d < .5) { NAV.dir = null; return } const dir = Math.abs(x) > Math.abs(y) ? (x > 0 ? 'right' : 'left') : (y > 0 ? 'down' : 'up');
   if (dir !== NAV.dir) { NAV.dir = dir; NAV.rep = now + 420; navMove(dir) } else if (now > NAV.rep) { NAV.rep = now + 150; navMove(dir) } }
 function navADown() { const e = navCur(); if (!e) return; NAV.a = { e, t: performance.now() }; if (e.dataset.k && e.closest('.invgrid')) e.dispatchEvent(new PointerEvent('pointerdown')) }   /* a held slot opens its card (the slot's own long press) */
-function navAUp() { const a = NAV.a; NAV.a = null; if (!a || !a.e.isConnected) return; if (a.e.dataset.k && a.e.closest('.invgrid')) { if (performance.now() - a.t >= 450) return; a.e.dispatchEvent(new PointerEvent('pointerup')); const ov = a.e.closest('.ov'), act = ov && ov.querySelector('.invdet .row2 button'); if (act) act.click(); else sfx('knock'); return } a.e.click() }
+function navAUp() { const a = NAV.a; NAV.a = null; if (!a || !a.e.isConnected) return; if (a.e.dataset.bt) { NAV.zone = 'items'; NAV.key = ''; a.e.click(); sfx('tap'); return }   /* v3.23 A on a section = go in */ if (a.e.dataset.k && a.e.closest('.invgrid')) { if (performance.now() - a.t >= 450) return; a.e.dispatchEvent(new PointerEvent('pointerup')); const ov = a.e.closest('.ov'), act = ov && ov.querySelector('.invdet .row2 button'); if (act) act.click(); else sfx('knock'); return } a.e.click() }
 setInterval(() => { if (NAV.on) navCur() }, 150);   /* keep the frame after a window redraws */
 /* A: tap = do the thing in front of you (talk · use · chop · break · cut · slash · cast) or a burst of running · hold = menu wheel */
 function nearTarget() {
@@ -2587,7 +2589,7 @@ function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); 
     if (document.querySelector('.ov') || BM || PL.swim || RIDE || GLIDE) return; unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { }
     if (shieldOn() || weaponOf()) { guardHold = true; walkT = null; work = null; stopAuto(); updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ ยังไม่มีอาวุธ' : '🛡️ ยังไม่ได้สวมโล่ · ไม่มีอาวุธปัด', 1200) });
   const up = () => { if (bstop) { bstop(); bstop = null; return } if (PICK && PICK.hold && PICK.slot === 'b') { pickChoose(); return } if (guardHold) { guardHold = false; updGuard(); t0 = 0; return }   /* let go = the shield goes down */
-    const short = t0 && performance.now() - t0 < 400; t0 = 0; if (!short || wheelOn) return; const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } };
+    const short = t0 && performance.now() - t0 < 400; t0 = 0; if (!short || wheelOn) return; const ov = [...document.querySelectorAll('.ov')].pop(); if (ov) { if (navBack()) return; ov.querySelector('.back').click(); return } if (BM) { exitBuild(); return } };
   B.addEventListener('pointerup', up); B.addEventListener('pointercancel', up); B.addEventListener('lostpointercapture', () => { if (guardHold) { guardHold = false; updGuard() } }); B.addEventListener('contextmenu', e => e.preventDefault()) }
 /* AUTO (idle style): fights what is near, gathers what the quest needs, drinks potions · any input of yours stops it */
 $('bAuto').onclick = () => toggleAuto();                     // the green AUTO badge: tap to stop
@@ -2731,7 +2733,7 @@ function openMap() {
     /* v3.12.1 the stick hops to the next warp point in that direction · the card shows where it is · ✨ warps */
     const sel = (i, quiet) => { if (!WL[i]) return; MAPNAV.i = i; mapSel = WL[i].id; PE.forEach((e, k) => e.classList.toggle('on', k === i)); const [x, y] = P(WL[i].x, WL[i].z); wrap.scrollTo({ left: x * sc - wrap.clientWidth / 2, top: y * sc - wrap.clientHeight / 2, behavior: quiet ? 'auto' : 'smooth' }); warpCard(b, WL[i], close, quiet) };
     MAPNAV = { L: WL, i: -1, P, sel, close, el: b };
-    { let i0 = WL.findIndex(w => w.id === mapSel); if (i0 < 0 && WL.length) { let bd = 1e9; WL.forEach((w, k) => { const d = dist(w.x, w.z, me().x, me().z); if (d < bd) { bd = d; i0 = k } }) } if (i0 >= 0) sel(i0, 1) }
+    { let i0 = WL.findIndex(w => w.id === mapSel); if (i0 < 0 && WL.length) { let bd = 1e9; WL.forEach((w, k) => { const d = dist(w.x, w.z, me().x, me().z); if (d < bd) { bd = d; i0 = k } }) } if (i0 >= 0) { MAPNAV.i = i0; MAPNAV.fresh = 1; const [x, y] = P(me().x, me().z); requestAnimationFrame(() => wrap.scrollTo({ left: x * sc - wrap.clientWidth / 2, top: y * sc - wrap.clientHeight / 2 })) } }   /* v3.23 open on you, no card: a card only after you push the stick or tap a point */
     wrap.style.touchAction = 'pan-x pan-y';   /* v3.12.1 zoom with the buttons (no pinch) */
     { const t = trackNow(); if (t.x != null) { const [x, y] = P(t.x, t.z), e = document.createElement('i'); e.className = 'wtgt'; e.textContent = '⭐'; e.style.left = x * sc + 'px'; e.style.top = y * sc + 'px'; e.title = t.text; pins.appendChild(e) } }   /* v3.12.2 the followed quest's target blinks */
     { const me2 = document.createElement('i'); me2.className = 'wme'; me2.style.left = px * sc + 'px'; me2.style.top = py * sc + 'px'; pins.appendChild(me2) }   /* v3.1 you are here (blinking) */
@@ -2972,7 +2974,7 @@ function padTick(dt) {
   else if (!ov && !CUT && (ax || ay)) { const m = Math.min(1, Math.hypot(ax, ay)); joy.on = true; joy.x = ax / (Math.hypot(ax, ay) || 1) * m; joy.z = ay / (Math.hypot(ax, ay) || 1) * m; joy.run = B(PADM.run) || B(5); walkT = null; work = null; ring.visible = false; padPrev.walk = 1 }
   else if (padPrev.walk) { padPrev.walk = 0; joy.on = false; joy.run = false }
   if (rx || ry) { if (AIM) aimTurn(rx * dt * 520, ry * dt * 520); else if (camTP()) { CAM.yaw -= rx * dt * 2.4; CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + ry * dt * 1.4)) } }
-  const PB = padB(); for (const i in PB) { const p = B(+i); if (p !== !!padPrev[i]) { padPrev[i] = p; if (MAPNAV && +i === PADM.A) continue; if (ov && +i === PADM.B) { if (p) { const o = [...document.querySelectorAll('.ov')].pop(), bk = o && o.querySelector('.back'); if (bk) bk.click() } continue } padPress(PB[i], p) } }   /* a window open: B = back */
+  const PB = padB(); for (const i in PB) { const p = B(+i); if (p !== !!padPrev[i]) { padPrev[i] = p; if (MAPNAV && +i === PADM.A) continue; if (ov && +i === PADM.B) { if (p && !navBack()) { const o = [...document.querySelectorAll('.ov')].pop(), bk = o && o.querySelector('.back'); if (bk) bk.click() } continue } padPress(PB[i], p) } }   /* a window open: B = back */
   for (const [i, f] of [[PADM.menu, () => $('bMenu').click()], [PADM.map, () => $('mini').click()], [14, () => PICK ? pickStep(-1, 1) : openPick('y')], [15, () => PICK ? pickStep(1, 1) : openPick('a')], [13, () => PICK ? null : openPick('b')], [12, () => PICK ? null : openBag()], [10, () => (!ov && !PICK && !SMENU.on) && toggleCrouch()]]   /* v3.18.2 L3 = crouch */) { const p = B(i); if (p && !padPrev['s' + i]) f(); padPrev['s' + i] = p }
 }
 let cullT = 0;
@@ -3558,7 +3560,7 @@ function WARPS() {
 function mapNavOn() { if (MAPNAV && !MAPNAV.el.isConnected) { MAPNAV = null; document.body.classList.remove('mapOn') } return !!MAPNAV }   /* the map can be closed by closeSheets (no onClose) */
 function mapStick(x, y) { const now = performance.now(), m = Math.hypot(x, y); if (!MAPNAV || m < .5) { mnS = 0; return } const a = Math.round(Math.atan2(y, x) / (Math.PI / 4)) & 7;
   if (a === mnS - 1 && now < mnT) return; mnS = a + 1; mnT = now + (mnT && now < mnT + 400 ? 260 : 420); mapHop(x / m, y / m) }
-function mapHop(ux, uy) { const N = MAPNAV; if (!N || !N.L.length) return; const c = N.L[N.i] || N.L[0], [cx, cy] = N.P(c.x, c.z); let best = -1, bs = 1e9;
+function mapHop(ux, uy) { const N = MAPNAV; if (!N || !N.L.length) return; if (N.fresh) { N.fresh = 0; N.sel(Math.max(0, N.i)); return }   /* v3.23 the first push shows the nearest point */ const c = N.L[N.i] || N.L[0], [cx, cy] = N.P(c.x, c.z); let best = -1, bs = 1e9;
   N.L.forEach((w, k) => { if (k === N.i) return; const [x, y] = N.P(w.x, w.z), dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, cos = (dx * ux + dy * uy) / d; if (cos < .45) return; const sc = d * (2.2 - cos * 1.2); if (sc < bs) { bs = sc; best = k } });
   if (best >= 0) N.sel(best) }
 function whereText(w) {   /* "ทางเหนือของแผนที่ · ห่างจากคุณ 420 ม." */

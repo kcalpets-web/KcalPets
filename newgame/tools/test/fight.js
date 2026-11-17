@@ -34,14 +34,15 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8836, OUT = process.arg
     await pg.screenshot({ path: OUT + '/guard-lock.png' }); await dp('bB', 'pointerup'); await wait(300); log('lock before B', l0, 'B held', JSON.stringify(g));
     if (!g.guard || !g.lock) errs.push('holding B did not lock on the foe'); if (g.off > .4) errs.push('holding B did not turn you to face the foe');
     // 🎒 bag by stick
-    await E(() => window.__ng.openBag('sword')); await wait(700); await stk('pointerdown', 0, 0); await stk('pointermove', 0, 40); await wait(100); await stk('pointerup', 0, 40); await wait(400);
+    await E(() => window.__ng.openBag('sword')); await wait(700); const z0 = await E(() => { window.__ng.navCur(); const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('v3.23 the bag starts on a section', z0); if (!z0) errs.push('the bag should start on the sections');
+    await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(500);   /* A = into the section */ await stk('pointerdown', 0, 0); await stk('pointermove', 0, 40); await wait(100); await stk('pointerup', 0, 40); await wait(400);
     const f0 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await stk('pointerdown', 0, 0); await stk('pointermove', -40, 0); await wait(100); await stk('pointerup', -40, 0); await wait(400);
     const f1 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await pg.screenshot({ path: OUT + '/bag-nav.png' }); log('frame', f0, '→', f1);
     if (!f0 || !f1 || f0 === f1) errs.push('the stick did not move the frame in the bag');
     const vis = await E(() => ['stick', 'bA', 'bB'].map(id => { const r = document.getElementById(id).getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!(e && (e.id === id || e.closest('#' + id))) })); log('stick/A/B on top of the bag', vis); if (vis.includes(false)) errs.push('stick / A / B are under the bag');
-    for (let i = 0; i < 4; i++) { await stk('pointerdown', 0, 0); await stk('pointermove', 0, -40); await wait(80); await stk('pointerup', 0, -40); await wait(250) }
-    const ft = await E(() => { const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('frame on a tab', ft); if (!ft) errs.push('pushing up did not reach the tabs');
-    if (ft) { await stk('pointerdown', 0, 0); await stk('pointermove', 40, 0); await wait(80); await stk('pointerup', 40, 0); await wait(250); await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(600);
+    await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(400);   /* v3.23 B = back to the sections */
+    const ft = await E(() => { const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('frame on a tab', ft); if (!ft) errs.push('B did not step back to the sections');
+    if (ft) { await stk('pointerdown', 0, 0); await stk('pointermove', 40, 0); await wait(80); await stk('pointerup', 40, 0); await wait(250); await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(600); await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(400);
       const tab = await E(() => (document.querySelector('.invtabs .on') || {}).dataset.bt); log('A on the next tab →', tab); if (tab === 'sword') errs.push('A on a tab did not switch to it') }
     await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(500); if (await E(() => !!document.querySelector('.ov'))) errs.push('B did not close the bag');
     // 🖍️ no draw button

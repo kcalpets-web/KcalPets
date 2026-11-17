@@ -63,7 +63,7 @@ const role = (m, r) => { m.userData.role = r; m.userData.base = [m.position.x, m
 function chibi(grp, k) {
   part(grp, k.dark, k.fur, [0, .55, 0], [.42, .46, .38]);
   part(grp, k.bellyD, k.belly, [0, .5, .2], [.3, .34, .22]);
-  for (const s of [-1, 1]) { role(part(grp, k.dark, k.fur, [s * .4, .62, .08], [.11, .2, .11], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR'); role(part(grp, k.footD || k.dark, k.foot || k.fur, [s * .2, .12, .1], [.15, .1, .19]), s < 0 ? 'footL' : 'footR') }
+  for (const s of [-1, 1]) { role(part(grp, k.dark, k.fur, [s * .4, .62, .08], [.11, .2, .11], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR'); part(grp, k.dark, k.fur, [s * .19, .17, .12], [.09, .12, .09], [0, 0, 0], { A: 0 }); role(part(grp, k.footD || k.dark, k.foot || k.fur, [s * .21, .07, .2], [.14, .08, .18]), s < 0 ? 'footL' : 'footR') }   /* v3.23 short legs + feet that peek out in front */
 }
 /* ---- playable pets (two legs) ---- */
 export const PETS = {
@@ -360,7 +360,7 @@ const VLK = {   /* the three everyday villagers */
   1: { v: 2, sex: 'f', hair: 'buns', hairCol: '#c8a060', skin: '#f2cfa6', wear: 'traveler', bottom: 'skirt', top: '#6aa0e0', eyes: 'round', eyeCol: '#3a6a9a' },
   2: { v: 2, sex: 'f', hair: 'bob', hairCol: '#1e1520', skin: '#c28b5c', wear: 'farmer', bottom: 'pants', top: '#d06a8a', eyes: 'smile', eyeCol: '#6a3a20' } };
 export const HUMANS = {
-  kealee(g) { vinyl(g, { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#f4f0e8', eyes: 'sparkle', eyeCol: '#3a9a8a' }); HEADX(g, h => h.add(vm(SPH, '#ff4a5a', .38, .18, .12, .07, .05, .045, .3))) },   // red hair clip
+  kealee(g, expr = '') { vinyl(g, { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'traveler', bottom: 'skirt', top: '#f4f0e8', eyes: 'sparkle', eyeCol: '#3a9a8a', expr });   /* v3.23 expr: '' | 'surprised' (cutscenes) */ HEADX(g, h => h.add(vm(SPH, '#ff4a5a', .38, .18, .12, .07, .05, .045, .3))) },   // red hair clip
   villager(g, v = 0, look = null, hat = null) { vinyl(g, look || VLK[v % 3]); if (hat) npcHat(g, hat) },   // v2.9 no hats
   sberh(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#c8803a', skin: '#f2cfa6', wear: 'mage', top: '#7aaa5a', eyes: 'round', eyeCol: '#3a6a2a', glasses: 'round', mouth: 'grin' }); npcHat(g, 'leaf') },   // young herbalist: glasses + a sprig
   howsif(g) { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#4a6a8a', eyes: 'smile', eyeCol: '#3a3040', beard: 'full', cheek: 'rosy' }) },   // white beard
