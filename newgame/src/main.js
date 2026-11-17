@@ -2102,7 +2102,7 @@ function aimStart(kind = 'bow') { aimStart0(kind); if (!AIM) return; AIM.zm = 1;
 /* v3.18.1 smooth zoom: hold Y = in · hold X = out (AIM.zd = +1 / −1 while held) */
 const zmOf = () => AIM && AIM.zm || 1;
 function aimZoom(d) { if (AIM) { AIM.zd = d; AIM.zt = performance.now() } }
-function zoomTick(now) { if (!AIM || !AIM.zd) return; const dt = Math.min(.05, (now - (AIM.zt || now)) / 1000), Z = D.AIMZOOM; AIM.zt = now; const z = Math.max(Z.min, Math.min(Z.max, AIM.zm * Math.exp(AIM.zd * Z.rate * dt))); if (z === AIM.zm) return; AIM.zm = z; zoomLbl() }
+function zoomTick(now) { if (!AIM || !AIM.zd) return; const dt = Math.min(.25, (now - (AIM.zt || now)) / 1000), Z = D.AIMZOOM;   /* real time: same speed on a slow phone */ AIM.zt = now; const z = Math.max(Z.min, Math.min(Z.max, AIM.zm * Math.exp(AIM.zd * Z.rate * dt))); if (z === AIM.zm) return; AIM.zm = z; zoomLbl() }
 function zoomLbl() { const e = YLG.querySelector('.zm'); if (e && AIM) e.textContent = `🔍 ×${AIM.zm.toFixed(1)}` }
 function aimFire() { const a = AIM; if (!a) return; if (a.draw) { drawNow(); return }
   if (a.rod || a.net) { aimEnd(true); return }   /* cast / dig / throw: then you are back to walking */
