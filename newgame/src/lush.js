@@ -39,12 +39,15 @@ const KINDS = {
   sunflower: [['sfstem', 'leaf', ['#4f9a3e', '#5aa848']], ['sfhead', 'plain', ['#ffcf2a', '#ffd84a', '#f5b81a']], ['sfcore', 'plain', ['#6a3a1a', '#5a2e14']]],
   blossom: [['trunk', 'wood', ['#ffffff']], ['crown', 'leaf', ['#7a9ae8', '#9a8ae8', '#e8a0c8', '#f0c0d8', '#6ab0e0']]],
 };
+/* v3.21 farm plots clear the decor on their cell: lushHide(x, z) → true = place it hidden · lushClear(x, z) hides what is already there */
+export const LUSH = { hide: null, at: new Map() }; const ZM = new THREE.Matrix4().makeScale(0, 0, 0), lc = (x, z) => Math.round(x) + ',' + Math.round(z);
+export function lushClear(x, z) { for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const L = LUSH.at.get(lc(x + dx, z + dz)); if (!L) continue; for (const [m, i, px, pz] of L) if (Math.abs(px - x) < .75 && Math.abs(pz - z) < .75) { m.setMatrixAt(i, ZM); m.instanceMatrix.needsUpdate = true } } }
 export function lushPlace(group, list, R = Math.random) {
   const by = {}; for (const p of list) (by[p.k] = by[p.k] || []).push(p);
   const o = new THREE.Object3D(), c = new THREE.Color();
   for (const k in by) { const L = by[k], cols = L.map(() => Math.floor(R() * 99));
     KINDS[k].forEach(([gk, mk, pal]) => { const m = new THREE.InstancedMesh(G[gk], M[mk], L.length);
-      L.forEach((p, i) => { o.position.set(p.x, p.y, p.z); o.rotation.set(0, p.r, 0); o.scale.setScalar(p.s); o.updateMatrix(); m.setMatrixAt(i, o.matrix); c.set(pal[cols[i] % pal.length]); m.setColorAt(i, c) });
+      L.forEach((p, i) => { o.position.set(p.x, p.y, p.z); o.rotation.set(0, p.r, 0); o.scale.setScalar(LUSH.hide && LUSH.hide(p.x, p.z) ? 0 : p.s); o.updateMatrix(); m.setMatrixAt(i, o.matrix); c.set(pal[cols[i] % pal.length]); m.setColorAt(i, c); const key = lc(p.x, p.z); let A = LUSH.at.get(key); if (!A) LUSH.at.set(key, A = []); if (A.length > 24) A.shift(); A.push([m, i, p.x, p.z]) });
       m.castShadow = k === 'blossom' || k === 'stump' || k === 'fbush'; m.receiveShadow = true; group.add(m) }) }
 }
 /* pick a kind for a spot: f = forest-ness 0..1 · h = height · w = wet */

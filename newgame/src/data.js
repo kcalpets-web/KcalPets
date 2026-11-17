@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.20';
+export const APP_VER = '3.21';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -234,7 +234,7 @@ export const HEART = 20, HEARTS_MAX = 20, EN_STEP = .2, EN_MAX_MUL = 3;      // 
 export const SPIRIT_QUESTS = ['s2', 's3d', 's4e', 's5c', 's6e'];              // repair Howsif's boat · Slime King · free Sberh · cure Howsif · first home-grown meal
 export const LV_REFUND = 150;                                                 // old saves: 🪙 per old player level
 /* ⚡ stamina, Zelda-like (v0.8): every action and running use it · refills fast once you stop · empty = exhausted (slow, no actions) until it is full again */
-export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6 };        // per hit / per cast
+export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6, can: 1 };        // per hit / per cast
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
 export const UPHILL = { from: .3, en: 9 };   // v3.1 stamina/s walking up a slope steeper than `from` (full at SLOPE)
@@ -446,15 +446,15 @@ export const ACH = [
 ];
 
 /* ================= v1.0 farming: hoe the ground near the tree house · plant seeds · real-time growth (grows while the game is closed) · harvest ================= */
-export const CROPS = {                                       // min = real minutes to ripen · n = harvest [min, max] · seed = price at Uncle Howsif · back = chance to get a seed back
-  carrot:     { min: 4, n: [1, 2], seed: 30, back: .35, col: '#f08a2a' },
-  cabbage:    { min: 7, n: [1, 2], seed: 50, back: .3, col: '#7ac850' },
-  strawberry: { min: 10, n: [2, 3], seed: 80, back: .3, col: '#e8304a' },
-  tomato:     { min: 12, n: [2, 3], seed: 90, back: .3, col: '#e84a3a' },
-  corn:       { min: 18, n: [1, 3], seed: 120, back: .25, col: '#f0c83a' },
-  pumpkin:    { min: 35, n: [1, 1], seed: 250, back: .2, col: '#e8802a' },
+export const CROPS = {                                       // v3.21 days = watered game days to ripen (Stardew) · min = (old) real minutes · n = harvest [min, max] · seed = price at Uncle Howsif · back = chance to get a seed back
+  carrot:     { days: 2, min: 4, n: [1, 2], seed: 30, back: .35, col: '#f08a2a' },
+  cabbage:    { days: 3, min: 7, n: [1, 2], seed: 50, back: .3, col: '#7ac850' },
+  strawberry: { days: 4, min: 10, n: [2, 3], seed: 80, back: .3, col: '#e8304a' },
+  tomato:     { days: 5, min: 12, n: [2, 3], seed: 90, back: .3, col: '#e84a3a' },
+  corn:       { days: 6, min: 18, n: [1, 3], seed: 120, back: .25, col: '#f0c83a' },
+  pumpkin:    { days: 8, min: 35, n: [1, 1], seed: 250, back: .2, col: '#e8802a' },
 };
-export const PLOT_MAX = 18, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed
+export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
@@ -556,8 +556,10 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
    · 💠 light stones: one per kingdom · awaken = beat the guardians round it (guard) → a warp point + ✨ */
 /* v3.15 things you build wear out (real days until they fall down · below `worn` they look shabby and you can repair them for `fix` × the build cost) */
 export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 10, kitchen: 10, chest: 12, scarecrow: 6, fence: 8, stonewall: 20, path: 30 }, def: 8, worn: .35, fix: .3 };
-export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: .2 };
+export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: 0 };   // v3.21 no monsters on Vaneya (farm island)
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
+/* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
+export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = .5, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch

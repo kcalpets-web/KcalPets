@@ -582,7 +582,7 @@ function enterZone(z) {
   if (z === 'meadow' || z === 'hills') wildSpawn(z);
   if (z === 'farm') setTimeout(sickEvent, 700);
 }
-function wildSpawn(z) {
+function wildSpawn(z) { return;   /* v3.21 the meadow and hills are on Vaneya: no monsters there any more */
   const have = mons.filter(m => m.area === z).length, list = D.ZONE_MONS[z] || []; if (have >= list.length - 1) return;
   for (let i = have; i < list.length; i++) for (let t = 0; t < 30; t++) { const x = (z === 'meadow' ? 11 : 59) + Math.random() * 21, zz = -9 + Math.random() * 18;
     if (walkLand(x, zz) && dist(x, zz, me().x, me().z) > 7 && groundH(x, zz) < 1 && Math.abs(zz - roadZ(x)) > 2) { monSpawn(list[i], x, zz, { area: z }); break } }
@@ -638,7 +638,7 @@ function finishClear(o) {
   if (T.fall) { timber(o); bump('clr_tree') } else addMats(T.mat, o.x, o.z);   /* v3.3 a giant tree falls first — its wood comes out of the logs */ playerExp(T.exp || D.CLEAR_EXP[T.size], o.x - .3, o.z); { const ig = T.ingr || D.CLEAR_INGR[o.t]; if (ig && (S.story.sickSeen || o.t !== 'herb') && Math.random() < ig[1]) addIngr(ig[0], 1, o.x + .3, o.z) } S.clearCount++; bump('clr_' + (o.t === 'bigtree' ? 'tree' : o.t)); if (o.t === 'bigtree') bump('clr_bigtree');
   if ((o.t === 'bush' || o.t === 'grass') && S.has.hoe && Math.random() < D.WILD_SEED) { const c = ['carrot', 'cabbage', 'strawberry', 'tomato'][Math.floor(Math.random() * 4)]; S.seeds[c] = (S.seeds[c] || 0) + 1; floater(`🌱 ${D.INGR[c].name}`, 'item', o.x, 1.8, o.z) }
   if (o.t === 'debris' && ['d1', 'd2', 'd3'].every(id => S.cleared[id]) && !S.story.howsif) rescueHowsif();
-  else if (T.mon && S.has.sword && !S.mon) { const force = !S.monSeen && S.clearCount >= D.FIRST_MON_AT; if (force || Math.random() < D.MON_CHANCE) monSpawn(T.mon, o.x, o.z, { farm: true, aggro: true }) }
+  else if (T.mon && S.has.sword && !S.mon && !inIsle(o.x, o.z)) {   /* v3.21 Vaneya has no monsters */ const force = !S.monSeen && S.clearCount >= D.FIRST_MON_AT; if (force || Math.random() < D.MON_CHANCE) monSpawn(T.mon, o.x, o.z, { farm: true, aggro: true }) }
   questCheck(); save();
 }
 function toolHit(key) {
@@ -2705,7 +2705,7 @@ function kingTick(now) {
   /* mini-boss: waits at its lair until beaten */
   for (const kk in D.MINIB) { const [kind, ox, oz] = D.MINIB[kk], K = KINGDOMS[kk], x = K.x + ox, z = K.z + oz, live = mons.find(m => m.kind === kind), d = dist(q.x, q.z, x, z);
     if (live && d > 160 && !live.aggro) monGone(live);
-    if (!live && !(S.minib || {})[kk] && d < 70 && d > 18) { let px = x, pz = z; for (let r = 0; r < 30 && !walkLand(px, pz); r += 2) { px = x + Math.cos(r) * r; pz = z + Math.sin(r) * r } const M = monSpawn(kind, px, pz, { area: 'wild' }); M.chief = 1; M.home = [px, pz]; toast(`⚠️ รู้สึกถึงพลังมหาศาล… <b>${D.MON[kind].name}</b> อยู่ใกล้ๆ`, 2600) } }
+    if (!live && !(S.minib || {})[kk] && d < 70 && d > 18 && !inIsle(x, z)) { let px = x, pz = z; for (let r = 0; r < 30 && !walkLand(px, pz); r += 2) { px = x + Math.cos(r) * r; pz = z + Math.sin(r) * r } const M = monSpawn(kind, px, pz, { area: 'wild' }); M.chief = 1; M.home = [px, pz]; toast(`⚠️ รู้สึกถึงพลังมหาศาล… <b>${D.MON[kind].name}</b> อยู่ใกล้ๆ`, 2600) } }
   golemNear(q);
   /* hidden chests (caves) + notes appear when you come near */
   for (const c of CHESTS) { const d = dist(q.x, q.z, c.x, c.z); if (d < 55 && !c.g) chestView(c); else if (d > 75 && c.g) { scene.remove(c.g); removePick(W, c.pick); c.g = null } }
@@ -2754,7 +2754,7 @@ function noteView(n) { const g = new THREE.Group(), y = groundH(n.x, n.z); g.pos
   const st = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .9, 6), new THREE.MeshStandardMaterial({ color: '#6a4024' })); st.position.y = .45; g.add(st); const pp = new THREE.Mesh(new THREE.BoxGeometry(.4, .5, .03), new THREE.MeshStandardMaterial({ color: '#f4ead0', emissive: '#ffe8a0', emissiveIntensity: .25 })); pp.position.set(0, .85, .04); g.add(pp);
   n.pick = addPick(W, n.x, n.z, .7, 1.4, { kind: 'note', id: n.id }); n.pick.position.y += Math.max(0, y) }
 function openWChest(id) { const c = CHESTS.find(c => c.id === id); if (!c) return; if ((S.chests || {})[id]) { hint('📦 หีบนี้ว่างเปล่าแล้ว', 1200); return } (S.chests = S.chests || {})[id] = Date.now(); if (c.lid) c.lid.rotation.x = -1.9; sfx('done');
-  bump('kc_' + kingdomAt(c.x, c.z).k); if (c.trap) { shakeT = .4; sfx('boom'); const B = kingdomAt(c.x, c.z), L = D.K_MONS[B.k] || WILD_MONS[1]; for (let i = 0; i < 3; i++) monSpawn(L[i % L.length], c.x + Math.cos(i * 2.1) * 2.5, c.z + Math.sin(i * 2.1) * 2.5, { area: 'wild', aggro: true }); if (Math.random() < .5) addDeb('poison'); toast('💥 กับดัก! มอนสเตอร์โผล่ออกมา!', 2400); save(); return }
+  bump('kc_' + kingdomAt(c.x, c.z).k); if (c.trap && !inIsle(c.x, c.z)) { shakeT = .4; sfx('boom'); const B = kingdomAt(c.x, c.z), L = D.K_MONS[B.k] || WILD_MONS[1]; for (let i = 0; i < 3; i++) monSpawn(L[i % L.length], c.x + Math.cos(i * 2.1) * 2.5, c.z + Math.sin(i * 2.1) * 2.5, { area: 'wild', aggro: true }); if (Math.random() < .5) addDeb('poison'); toast('💥 กับดัก! มอนสเตอร์โผล่ออกมา!', 2400); save(); return }
   const r = Math.random(), coin = D.CHESTS.coin[0] + Math.floor(Math.random() * (D.CHESTS.coin[1] - D.CHESTS.coin[0])); S.coin += coin; floater(`🪙 +${coin}`, 'coin', c.x, 1.6, c.z);
   if (r < .35) { const pool = Object.keys(D.ITEMS).filter(k => D.ITEMS[k].tier >= 2); dropItem({ t: pool[Math.floor(Math.random() * pool.length)], r: Math.random() < .25 ? 'E' : 'R' }, c.x, c.z + 1) }
   else if (r < .55) { const W2 = Object.keys(D.WEAR).filter(k => !(S.clothes || {})[k] && k !== 'tunic' && k !== 'pants'); if (W2.length) { const k = W2[Math.floor(Math.random() * W2.length)]; S.clothes[k] = 1; toast(`👕 ได้ชุด ${D.WEAR[k].icon} ${D.WEAR[k].name}!`, 2400) } }
@@ -2968,15 +2968,28 @@ const FBAR = new THREE.Group(); for (let i = 0; i < 3; i++) part(FBAR, '#5a3420'
 const BARRIER = new THREE.Group(); for (let i = 0; i < 3; i++) part(BARRIER, '#5a3420', '#9a6238', [0, .35 + i * .32, 0], [.09, .09, 1.05], [0, 0, (i - 1) * .12], { A: 0 }); BARRIER.position.set(8.4, 0, EXIT.z); scene.add(BARRIER);
 
 /* ================= v1.0 farming: 🪏 hoe → soil plot · plant a seed · grows in real time (even offline) · ✨ ripe → harvest (tap, A, or swipe the sickle) ================= */
-const PLOTS = new Map(), SOIL_G = new THREE.BoxGeometry(.92, .1, .92), SOIL_M = new THREE.MeshStandardMaterial({ color: '#6a4228', roughness: 1 }), SOIL_W = new THREE.MeshStandardMaterial({ color: '#4a2c1a', roughness: 1 });
+const PLOTS = new Map(), SOIL_G = new THREE.BoxGeometry(.92, .1, .92), SOIL_M = new THREE.MeshStandardMaterial({ color: '#8a5a36', roughness: 1 }), SOIL_W = new THREE.MeshStandardMaterial({ color: '#4a2c1a', roughness: .85 });
 const SPARK = new THREE.MeshBasicMaterial({ color: '#fff27a' });
 const cellOf = (x, z) => [Math.round(x), Math.round(z)], keyOf = (cx, cz) => cx + ',' + cz;
-function tillable(cx, cz) {
-  if (!inFarm(cx, cz) || S.plots[keyOf(cx, cz)]) return false;   /* v3.7 only inside the fenced bed (18 cells) */
-  return Object.keys(S.plots).length < D.PLOT_MAX;
+/* v3.21 🌾 farm land = (almost) the whole of Vaneya: grass / soil, not water or its edge, not steep, away from the harbour town, the house, builds and clutter */
+function farmLand(cx, cz, why) { const F = D.FARMLAND, no = t => { if (why) why.t = t; return false };
+  if (inFarm(cx, cz)) return true; if (!inIsle(cx, cz)) return no('🪏 ขุดแปลงได้เฉพาะบนเกาะวาเนย่า');
+  if (walkWorld(cx, cz) !== 'land' || waterAt(cx, cz)) return no('🪏 ตรงนี้ขุดไม่ได้'); for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (waterAt(cx + dx, cz + dz)) return no('🪏 ใกล้น้ำเกินไป');
+  if (Math.abs(groundH(cx + .5, cz) - groundH(cx - .5, cz)) > F.slope || Math.abs(groundH(cx, cz + .5) - groundH(cx, cz - .5)) > F.slope) return no('🪏 พื้นชันเกินไป');
+  if (dist(cx, cz, HB.x, HB.z) < F.harbourR || zoneOf(cx, cz) === 'town') return no('🪏 ในเมืองขุดไม่ได้');
+  if (dist(cx, cz, HOUSE.x, HOUSE.z) < F.houseR) return no('🪏 ใกล้บ้านเกินไป');
+  if (S.builds.some(b => dist(b.x, b.z, cx, cz) < 2)) return no('🪏 มีสิ่งก่อสร้างอยู่'); if (solHit(cx, cz, .1)) return no('🪏 มีของขวางอยู่');
+  for (const o of W.clear.values()) if (o.g && Math.abs(o.x - cx) < .9 && Math.abs(o.z - cz) < .9) return no('🪏 เคลียร์ของตรงนี้ออกก่อน (หิน/หญ้า/กิ่งไม้)');
+  return true }
+function tillable(cx, cz, why) {
+  if (S.plots[keyOf(cx, cz)]) return false; if (Object.keys(S.plots).length >= D.PLOT_MAX) { if (why) why.t = `แปลงเต็มแล้ว (${D.PLOT_MAX} แปลง)`; return false }
+  return farmLand(cx, cz, why);
 }
-const cropAge = p => p.c ? Math.min(1, (Date.now() - p.t) / (D.CROPS[p.c].min * 60e3 * (p.f || 1))) : 0;
+/* v3.21 growth = watered days (Stardew): water a planted plot once a day (💧 A / tap) · rain waters them all · each new morning a watered crop grows one day */
+const cropDays = p => (D.CROPS[p.c] || {}).days || 3;
+const cropAge = p => p.c ? Math.min(1, (p.g || 0) / cropDays(p)) : 0;
 const cropStage = p => !p.c ? -1 : cropAge(p) >= 1 ? 3 : Math.floor(cropAge(p) * 3);
+const wetToday = p => p.w === (S.dayN || 0);
 function plantMesh(c, st) {
   const g = new THREE.Group(), seg0 = Q.seg; Q.seg = 12; const col = D.CROPS[c].col, leaf = ['#3f8a3a', '#8ad86a'];
   if (st === 0) for (let i = 0; i < 3; i++) part(g, '#4a2a18', '#7a4a28', [(i - 1) * .18, .07, (i % 2) * .12 - .06], [.04, .03, .04], [0, 0, 0], { A: 0 });
@@ -2987,49 +3000,76 @@ function plantMesh(c, st) {
     else if (c === 'pumpkin') part(g, '#b85a1a', col, [0, .2, 0], [.34, .22, .34], [0, 0, 0], { A: .12, f: 2.4 });
     else if (c === 'corn') { part(g, ...leaf, [0, .45, 0], [.05, .45, .05], [0, 0, 0], { A: 0 }); part(g, '#c8a020', col, [.08, .55, 0], [.07, .16, .07], [0, 0, -.3], { A: .05 }) }
     else for (let i = 0; i < 3; i++) part(g, '#a01a1a', col, [Math.cos(i * 2.1) * .15, .2 + (c === 'tomato' ? .1 : 0), Math.sin(i * 2.1) * .15], [.08, .08, .08], [0, 0, 0], { A: .03 });
-    const sp = new THREE.Mesh(new THREE.OctahedronGeometry(.07), SPARK); sp.position.y = .85; sp.name = 'spark'; g.add(sp);
   }
   Q.seg = seg0; return g;
 }
-function plotView(key) {
-  const p = S.plots[key]; let v = PLOTS.get(key); const [cx, cz] = key.split(',').map(Number);
-  if (!p) { if (v) { scene.remove(v.g); removePick(W, v.pick); PLOTS.delete(key) } return }
-  if (!v) { const g = new THREE.Group(), soil = new THREE.Mesh(SOIL_G, SOIL_M); soil.position.y = .05; soil.receiveShadow = true; g.add(soil); g.position.set(cx, groundH(cx, cz), cz); scene.add(g);
-    v = { g, soil, st: -2, plant: null, pick: addPick(W, cx, cz, .5, .6, { kind: 'plot', key }) }; PLOTS.set(key, v) }
-  const st = cropStage(p); if (st !== v.st) { if (v.plant) v.g.remove(v.plant); v.plant = p.c ? plantMesh(p.c, st) : null; if (v.plant) { v.plant.position.y = .1; v.g.add(v.plant) } v.st = st; v.soil.material = p.c ? SOIL_W : SOIL_M }
+/* v3.21 hundreds of plots, few draw calls: soil (dry / wet) + every crop stage + the ripe sparkle are InstancedMeshes, rebuilt when a plot changes */
+const FARMI = { soil: [SOIL_M, SOIL_W].map(m => { const im = new THREE.InstancedMesh(SOIL_G, m, D.PLOT_MAX); im.count = 0; im.receiveShadow = true; im.frustumCulled = false; scene.add(im); return im }), tpl: new Map(), spark: null, dirty: true };
+FARMI.spark = new THREE.InstancedMesh(new THREE.OctahedronGeometry(.07), SPARK, D.PLOT_MAX); FARMI.spark.count = 0; FARMI.spark.frustumCulled = false; scene.add(FARMI.spark);
+function cropTpl(c, st) { const k = c + '|' + st; let t = FARMI.tpl.get(k); if (t) return t; const merged = mergeProp(plantMesh(c, st)), ims = [];
+  merged.traverse(o => { if (!o.isMesh) return; o.updateMatrix(); const geo = o.geometry.clone().applyMatrix4(o.matrix), im = new THREE.InstancedMesh(geo, o.material, D.PLOT_MAX); im.count = 0; im.castShadow = true; im.frustumCulled = false; scene.add(im); ims.push(im) });
+  t = { ims }; FARMI.tpl.set(k, t); return t }
+const _fm = new THREE.Matrix4(), _fq = new THREE.Quaternion(), _fp = new THREE.Vector3(), _fs = new THREE.Vector3(1, 1, 1);
+function farmBuild() { FARMI.dirty = false; const n = [0, 0], per = new Map(); let ns = 0;
+  for (const key in S.plots) { const p = S.plots[key], [cx, cz] = key.split(',').map(Number), y = groundH(cx, cz), w = p.c && wetToday(p) ? 1 : 0;
+    _fm.makeTranslation(cx, y + .05, cz); FARMI.soil[w].setMatrixAt(n[w]++, _fm);
+    if (p.c) { const st = cropStage(p), t = cropTpl(p.c, st); let i = per.get(t) || 0; _fq.setFromAxisAngle(_UP, ((cx * 7 + cz * 13) % 6) * .5); _fm.compose(_fp.set(cx, y + .1, cz), _fq, _fs); for (const im of t.ims) im.setMatrixAt(i, _fm); per.set(t, i + 1);
+      if (st === 3) { _fm.makeTranslation(cx, y + .95, cz); FARMI.spark.setMatrixAt(ns++, _fm) } } }
+  FARMI.soil.forEach((im, i) => { im.count = n[i]; im.instanceMatrix.needsUpdate = true; im.visible = n[i] > 0 });
+  for (const t of FARMI.tpl.values()) { const c = per.get(t) || 0; for (const im of t.ims) { im.count = c; im.instanceMatrix.needsUpdate = true; im.visible = c > 0 } }
+  FARMI.spark.count = ns; FARMI.spark.instanceMatrix.needsUpdate = true; FARMI.spark.visible = ns > 0 }
+function plotView(key) {   /* the tap target only (the look is instanced) */
+  const p = S.plots[key]; let v = PLOTS.get(key); const [cx, cz] = key.split(',').map(Number); FARMI.dirty = true;
+  if (!p) { if (v) { removePick(W, v.pick); PLOTS.delete(key) } return }
+  if (!v) { v = { pick: addPick(W, cx, cz, .5, .6, { kind: 'plot', key }) }; PLOTS.set(key, v) }
 }
-{ let n = 0; for (const k in S.plots) { const [cx, cz] = k.split(',').map(Number); if (inFarm(cx, cz)) continue; const p = S.plots[k];   /* v3.7 old plots outside the fence: ripe crops + the seed go into the bag */
-    if (p.c) { if (cropStage(p) === 3) { const C2 = D.CROPS[p.c]; S.ingr = S.ingr || {}; S.ingr[p.c] = (S.ingr[p.c] || 0) + C2.n[0] } S.seeds[p.c] = (S.seeds[p.c] || 0) + 1 } delete S.plots[k]; n++ }
-  if (n) { save(); setTimeout(() => toast(`🧺 ย้ายแปลงผักเข้าไปในรั้วแล้ว · ผลผลิตและเมล็ดจากแปลงเก่า ${n} แปลงเก็บเข้ากระเป๋า`, 3200), 5000) } }
+{ let n = 0; for (const k in S.plots) { const [cx, cz] = k.split(',').map(Number); const p = S.plots[k]; if (inFarm(cx, cz) || inIsle(cx, cz)) { if (p.c && p.g == null) { const old = Math.min(1, (Date.now() - (p.t || 0)) / (D.CROPS[p.c].min * 60e3 * (p.f || 1))); p.g = Math.round(old * cropDays(p)) } continue }   /* v3.21 the old real-time crops keep their progress in days */
+    if (p.c) { if (Math.round(Math.min(1, (Date.now() - (p.t || 0)) / (D.CROPS[p.c].min * 60e3))) >= 1) { const C2 = D.CROPS[p.c]; S.ingr = S.ingr || {}; S.ingr[p.c] = (S.ingr[p.c] || 0) + C2.n[0] } S.seeds[p.c] = (S.seeds[p.c] || 0) + 1 } delete S.plots[k]; n++ }
+  if (n) { save(); setTimeout(() => toast(`🧺 ย้ายแปลงผักนอกเกาะ ${n} แปลง · ผลผลิตและเมล็ดเก็บเข้ากระเป๋า`, 3200), 5000) } }
 for (const k in S.plots) plotView(k);
-let farmT = 0;
-function farmTick(now) { if (now < farmT) return; farmT = now + 1000; for (const k in S.plots) plotView(k) }
-function farmAnim(now) { for (const v of PLOTS.values()) if (v.st === 3 && v.plant) { const sp = v.plant.getObjectByName('spark'); if (sp) { sp.rotation.y = now / 400; sp.position.y = .85 + Math.sin(now / 300) * .06 } } }
+if (S.has.hoe && !S.has.can) { S.has.can = true; save(); setTimeout(() => toast('💧 ได้รับบัวรดน้ำ! ผักต้องรดน้ำทุกวันถึงจะโต (ฝนตก = รดให้เอง)<br>เกาะวาเนย่าขุดแปลง ปลูกผัก สร้างบ้านได้เกือบทั้งเกาะแล้ว', 4200), 6500) }
+let farmT = 0, LUSHC = null;
+function farmTick(now) { if (now < farmT) return; farmT = now + 1000; const dn = S.dayN || 0;
+  if (S.farmDay == null) S.farmDay = dn;
+  if (dn !== S.farmDay) { let grew = 0; for (const k in S.plots) { const p = S.plots[k]; if (p.c && cropStage(p) < 3 && p.w === S.farmDay) { p.g = (p.g || 0) + 1; grew++ } } S.farmDay = dn; debrisDay(); FARMI.dirty = true; save(); if (grew) setTimeout(() => hint(`🌱 เช้าวันใหม่: ผักที่รดน้ำเมื่อวานโตขึ้น ${grew} แปลง · อย่าลืมรดน้ำวันนี้นะ`, 2600), 1500) }   /* a new morning */
+  if (D.FARMLAND.rainy.includes(wxAt(FARM.x0, FARM.z0))) { let n = 0; for (const k in S.plots) { const p = S.plots[k]; if (p.c && !wetToday(p)) { p.w = dn; n++ } } if (n) { FARMI.dirty = true; save() } }   /* rain waters the island */
+  if (FARMI.dirty) farmBuild() }
+function farmAnim(now) { if (FARMI.spark.visible) FARMI.spark.position.y = Math.sin(now / 300) * .06 }
 function till(cx, cz, quiet) {
-  if (!S.has.hoe) return false; if (!tillable(cx, cz)) { if (!quiet) hint(Object.keys(S.plots).length >= D.PLOT_MAX ? `แปลงเต็มแล้ว (${D.PLOT_MAX} แปลง)` : '🪏 ขุดได้เฉพาะในแปลงล้อมรั้วข้างบ้านต้นไม้ (18 ช่อง)'); return false }
+  if (!S.has.hoe) return false; const why = {}; if (!tillable(cx, cz, why)) { if (!quiet && why.t) hint(why.t, 1500); return false }
   if (!spendEn(D.TOOL_EN.hoe)) return false; tutEv('dig'); faceSwing(cx, cz); swingIcon('🪏', cx, 1, cz); sfx('chop');
-  S.plots[keyOf(cx, cz)] = { c: null, t: 0 }; plotView(keyOf(cx, cz)); bump('tilled'); playerExp(1); questCheck(); save(); return true;
+  S.plots[keyOf(cx, cz)] = { c: null, t: 0 }; plotView(keyOf(cx, cz)); farmBuild(); if (LUSHC) LUSHC(cx, cz);   /* the flowers / ferns on that cell go */ bump('tilled'); playerExp(1); questCheck(); save(); return true;
 }
-function plant(key, c) { const p = S.plots[key]; if (!p || p.c || !(S.seeds[c] > 0)) return false; S.seeds[c]--; p.c = c; p.t = Date.now(); p.f = nearB('scarecrow', ...key.split(',').map(Number), 8) ? .8 : 1; plotView(key); bump('planted'); sfx('tap'); return true }
+function plant(key, c) { const p = S.plots[key]; if (!p || p.c || !(S.seeds[c] > 0)) return false; S.seeds[c]--; p.c = c; p.t = Date.now(); p.g = nearB('scarecrow', ...key.split(',').map(Number), 8) ? 1 : 0; p.w = -1; plotView(key); bump('planted'); sfx('tap'); return true }   /* a scarecrow nearby = a day's head start */
+function waterPlot(key, quiet) { const p = S.plots[key]; if (!p || !p.c || wetToday(p) || cropStage(p) === 3) return false; if (!S.has.can) { if (!quiet) hint('💧 ยังไม่มีบัวรดน้ำ · ขอจากลุงฮาวซิฟ', 1500); return false } if (!spendEn(D.TOOL_EN.can)) return false;
+  p.w = S.dayN || 0; const [cx, cz] = key.split(',').map(Number); faceSwing(cx, cz); swingIcon('💧', cx, 1, cz); VF.burst(cx, groundH(cx, cz) + .3, cz, '#7ac8ff', 10, 1.6); sfx('splash'); bump('watered'); FARMI.dirty = true; farmBuild(); save(); return true }
 function harvest(key) {
   const p = S.plots[key]; if (!p || cropStage(p) !== 3) return false; const C2 = D.CROPS[p.c], n = C2.n[0] + Math.floor(Math.random() * (C2.n[1] - C2.n[0] + 1)), [cx, cz] = key.split(',').map(Number);
   addIngr(p.c, n, cx, cz); if (Math.random() < C2.back) { S.seeds[p.c] = (S.seeds[p.c] || 0) + 1; floater(`🌱 +1`, 'mat', cx - .3, 1.2, cz) } playerExp(3, cx, cz); sfx('coin');
-  p.c = null; p.t = 0; plotView(key); bump('harvested'); questCheck(); achCheck(); save(); return true;
+  p.c = null; p.t = 0; p.g = 0; plotView(key); bump('harvested'); questCheck(); achCheck(); save(); return true;
 }
 function plotAction(key) {
   const p = S.plots[key]; if (!p) return; if (cropStage(p) === 3) { harvest(key); return }
-  if (p.c) { const left = Math.ceil(D.CROPS[p.c].min * (1 - cropAge(p))); hint(`${D.INGR[p.c].icon} ${D.INGR[p.c].name} กำลังโต… อีกประมาณ ${left} นาที`, 1800); return }
+  if (p.c) { if (!wetToday(p) && waterPlot(key)) return; const left = Math.max(1, cropDays(p) - (p.g || 0)); hint(`${D.INGR[p.c].icon} ${D.INGR[p.c].name} อีก ${left} วัน · ${wetToday(p) ? '💧 วันนี้รดน้ำแล้ว' : 'ยังไม่ได้รดน้ำ'}`, 1800); return }
   const have = Object.keys(D.CROPS).filter(c => S.seeds[c] > 0); if (!have.length) { talk([['🌱', 'ไม่มีเมล็ดผัก… ซื้อได้ที่ลุงฮาวซิฟ หรือหาจากพุ่มไม้/หญ้า']]); return }
   sheet('🌱 ปลูกเมล็ด', (b, redraw, close) => { const empty = Object.keys(S.plots).filter(k => !S.plots[k].c);
-    b.innerHTML = `<p class="mut">แปลงว่าง ${empty.length} แปลง · ผักโตเองแม้ปิดเกม</p>` + have.map(c => `<div class="card"><div class="row"><b>${D.INGR[c].icon} ${D.INGR[c].name}</b><span class="mut">เมล็ด ×${S.seeds[c]} · โตใน ${D.CROPS[c].min} นาที</span></div><div class="row2"><button class="btn sm" data-one="${c}">ปลูกแปลงนี้</button><button class="btn sm go" data-all="${c}">ปลูกทุกแปลงว่าง</button></div></div>`).join('');
+    b.innerHTML = `<p class="mut">แปลงว่าง ${empty.length} แปลง · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · รดแล้วตื่นเช้ามาผักโต 1 วัน</p>` + have.map(c => `<div class="card"><div class="row"><b>${D.INGR[c].icon} ${D.INGR[c].name}</b><span class="mut">เมล็ด ×${S.seeds[c]} · โตใน ${D.CROPS[c].days} วัน</span></div><div class="row2"><button class="btn sm" data-one="${c}">ปลูกแปลงนี้</button><button class="btn sm go" data-all="${c}">ปลูกทุกแปลงว่าง</button></div></div>`).join('');
     b.querySelectorAll('[data-one]').forEach(x => x.onclick = () => { plant(key, x.dataset.one); close(); questCheck(); save() });
     b.querySelectorAll('[data-all]').forEach(x => x.onclick = () => { const c = x.dataset.all; for (const k of [key, ...empty.filter(k => k !== key)]) if (!plant(k, c)) break; close(); questCheck(); save() }) });
 }
+/* v3.21 🪨🌿 each morning new clutter appears on empty farm land (Stardew): stones, weeds, bushes, branches, saplings — mostly around your plots */
+function debrisAdd(o) { W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o) }
+function debrisDay(n) { const F = D.FARMLAND.debris; S.debris = (S.debris || []).filter(o => { if (S.cleared[o.id]) { delete S.cleared[o.id]; const c = W.clear.get(o.id); if (c) { despawnClear(W, c); W.clear.delete(o.id) } return false } return true });
+  const keys = Object.keys(S.plots), tot = F.kinds.reduce((a, k) => a + k[1], 0), q = me(); let add = Math.min(n ?? F.perDay, F.max - S.debris.length);
+  for (let t = 0; t < add * 12 && add > 0; t++) { const c = keys.length && Math.random() < .7 ? keys[Math.floor(Math.random() * keys.length)].split(',').map(Number) : [FARM.x0 + 2, FARM.z0], a = Math.random() * 6.28, r = 3 + Math.random() * F.near, x = Math.round(c[0] + Math.cos(a) * r), z = Math.round(c[1] + Math.sin(a) * r);
+    if (S.plots[keyOf(x, z)] || !farmLand(x, z) || dist(x, z, q.x, q.z) < 3) continue; let h = Math.random() * tot, k = F.kinds[0][0]; for (const [kk, w] of F.kinds) { h -= w; if (h < 0) { k = kk; break } }
+    const o = { id: 'db' + Date.now().toString(36) + t, t: k, x: x + (Math.random() - .5) * .4, z: z + (Math.random() - .5) * .4, ry: Math.random() * 6.28, g: null, pick: null, left: 0 }; S.debris.push({ id: o.id, t: k, x: o.x, z: o.z, ry: o.ry }); debrisAdd(o); add-- } }
+for (const d of S.debris || []) if (!S.cleared[d.id]) debrisAdd({ ...d, g: null, pick: null, left: 0 });
 /* Uncle Howsif: the hoe + first seeds · then a small seed stall */
 function farmGift() {
-  S.story.farmGift = 1; S.has.hoe = true; for (const c in D.FARM_GIFT) S.seeds[c] = (S.seeds[c] || 0) + D.FARM_GIFT[c]; storyProps(); save();
+  S.story.farmGift = 1; S.has.hoe = true; S.has.can = true; for (const c in D.FARM_GIFT) S.seeds[c] = (S.seeds[c] || 0) + D.FARM_GIFT[c]; storyProps(); save();
   talk([['👴 ลุงฮาวซิฟ', 'ร่างกายลุงกลับมาแข็งแรงแล้ว… มา ลุงสอนปลูกผักให้'], ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🪏 จอบ กับเมล็ด 🥕 แครอท ×${D.FARM_GIFT.carrot} 🥬 กะหล่ำ ×${D.FARM_GIFT.cabbage}`],
-    ['💡 ปลูกผัก', 'เลือก 🪏 จอบ แล้วแตะ/ลากผ่านพื้นหญ้าใกล้บ้านต้นไม้ = ขุดแปลง<br>แตะแปลงเพื่อปลูก · ผักโตเองตามเวลาจริง (แม้ปิดเกม) · ✨ = เก็บได้แล้ว (แตะ หรือลาก 🌾 เคียวผ่าน)'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
+    ['💡 ปลูกผัก', 'เลือก 🪏 พลั่วไว้ที่ Y · แตะ Y เล็งพื้นหญ้า กด A = ขุดแปลง (ขุดได้เกือบทั้งเกาะวาเนย่า)<br>แตะแปลง/กด A หน้าแปลง = ปลูก · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · เช้าวันใหม่ผักที่รดน้ำจะโต · ✨ = เก็บได้แล้ว'], ['👴 ลุงฮาวซิฟ', 'เอา 💧 บัวรดน้ำไปด้วย! ทุกเช้าจะมีหิน กิ่งไม้ หญ้าขึ้นใหม่ เก็บไปใช้ได้ · เกาะนี้ไม่มีมอนสเตอร์ สบายใจได้'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
 }
 function howsifMenu() { sfx('tap'); const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
   sheet('👴 ลุงฮาวซิฟ', (b, redraw, close) => { b.innerHTML = `<p>“มีอะไรให้ลุงช่วยล่ะ?”</p><div class="hgrid">${S.story.farmGift ? '<button class="htile" data-hm="seed"><b>🌱</b><span>ซื้อเมล็ดผัก</span></button>' : ''}<button class="htile" data-hm="sail"><b>⛵</b><span>${to === 'main' ? 'ข้ามฟากไปเมืองท่า' : 'กลับเกาะวาเนย่า'}</span></button></div>`;
@@ -3111,7 +3151,7 @@ const WC = (() => { let sd = 90731; const rnd = () => (sd = sd * 16807 % 2147483
   for (let t = 0; t < 9000 && out.length < 18 + D.WCAMP.ring + D.WCAMP.count - 18; t++) { const x = WORLD.x0 + 50 + rnd() * (WORLD.x1 - WORLD.x0 - 100), z = WORLD.z0 + 50 + rnd() * (WORLD.z1 - WORLD.z0 - 100);
     if (isl(x, z) || coreDist(x, z) < 60 || dist(x, z, D.VANEYA.harbour.x, D.VANEYA.harbour.z) < 70 || out.some(c => dist(c.x, c.z, x, z) < D.WCAMP.spacing) || Object.values(KINGDOMS).some(K => dist(x, z, K.x, K.z) < 45) || !flat(x, z)) continue;
     const d = dist(x, z, 46, 0); out.push({ id: 'x' + k2, x, z, tier: d < 360 ? 0 : d < 680 ? 1 : 2, n: 19 + k2 }); k2++ }
-  return out })();
+  return out.filter(c => !inIsle(c.x, c.z)) })();   /* v3.21 no monster camps on Vaneya */
 const campName = c => `${D.CAMP_TIERS[c.tier].name} #${c.n}`;
 function campProps(c) {   /* v3.14 the goblin camp from the designer's reference (tent with a horned skull · watch tower · stakes · rack · fire pit) · merged into a few meshes */
   const T = D.CAMP_TIERS[c.tier], g = new THREE.Group(), y = groundH(c.x, c.z); g.position.set(c.x, y, c.z); g.rotation.y = c.ry ?? (c.ry = Math.atan2(-c.x, -c.z) + (idHash({ id: c.id }) % 7) * .2); scene.add(g);
@@ -3136,7 +3176,7 @@ function campKill(m) {
 /* ================= v3.8 👹 monsters take over your camp fires: each dark-cloud cycle, a fire away from the home island with you far away may be taken (50%)
    · come near → 3–5 of the land's monsters guard it (a red banner) · beat them all → the fire is yours again + a reward · taken = no cooking / sleeping / warping ================= */
 const OCC = new Map();
-function occRoll() { const q = me(); let n = 0; for (const b of S.builds) if ((b.k === 'campfire' || b.k === 'cabin') && b.done && !b.occ && zoneOf(b.x, b.z) !== 'farm' && dist(b.x, b.z, q.x, q.z) > D.OCC.far && Math.random() < D.OCC.p) { b.occ = 1; n++ }
+function occRoll() { const q = me(); let n = 0; for (const b of S.builds) if ((b.k === 'campfire' || b.k === 'cabin') && b.done && !b.occ && zoneOf(b.x, b.z) !== 'farm' && !inIsle(b.x, b.z) && dist(b.x, b.z, q.x, q.z) > D.OCC.far && Math.random() < D.OCC.p) { b.occ = 1; n++ }
   if (n) setTimeout(() => toast(`👹 มอนสเตอร์ยึดกองไฟของคุณ ${n} แห่ง! (ดูบนแผนที่ 🚩)`, 3200), 4200) }
 function occBanner(b) { const g = new THREE.Group(); const pole = new THREE.Mesh(new THREE.CylinderGeometry(.04, .05, 2.2, 6), new THREE.MeshStandardMaterial({ color: '#4a3020' })); pole.position.y = 1.1;
   const fl = new THREE.Mesh(new THREE.BoxGeometry(.04, .5, .75), new THREE.MeshStandardMaterial({ color: '#c0302a' })); fl.position.set(0, 1.9, .38); fl.name = 'flag'; g.add(pole, fl); g.position.set(b.x + .9, groundH(b.x + .9, b.z + .9), b.z + .9); scene.add(g); return g }
@@ -3144,7 +3184,7 @@ let occTk = 0;
 function occTick(now) { if (now < occTk) return; occTk = now + 500; const q = me();
   for (const b of S.builds) { if (!b.occ) { const o = OCC.get(b.id); if (o) { scene.remove(o.g); OCC.delete(b.id) } continue } let o = OCC.get(b.id); const d = dist(b.x, b.z, q.x, q.z);
     if (!o && d < 90) { o = { g: occBanner(b), mons: [] }; OCC.set(b.id, o) } if (!o) continue; const f = o.g.getObjectByName('flag'); if (f) f.rotation.y = Math.sin(now / 300) * .25;
-    if (d < 45 && !o.mons.length) { const B = kingdomAt(b.x, b.z), tier = Math.min(2, Math.floor(Math.hypot(b.x - 46, b.z) / 220)), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier], n = D.OCC.n[0] + Math.floor(Math.random() * (D.OCC.n[1] - D.OCC.n[0] + 1));
+    if (d < 45 && !o.mons.length && !inIsle(b.x, b.z)) { const B = kingdomAt(b.x, b.z), tier = Math.min(2, Math.floor(Math.hypot(b.x - 46, b.z) / 220)), L = B.home < .5 && B.w > .6 && D.K_MONS[B.k] ? D.K_MONS[B.k] : WILD_MONS[tier], n = D.OCC.n[0] + Math.floor(Math.random() * (D.OCC.n[1] - D.OCC.n[0] + 1));
       for (let i = 0; i < n; i++) { const a = i / n * 6.28, px = b.x + Math.cos(a) * 2.6, pz = b.z + Math.sin(a) * 2.6; const m = monSpawn(L[Math.floor(Math.random() * L.length)], walkLand(px, pz) ? px : b.x, walkLand(px, pz) ? pz : b.z, { area: 'wild', silent: 1 }); m.occ = b.id; o.mons.push(m) }
       toast('👹 มอนสเตอร์ยึดกองไฟของคุณ! กำจัดให้หมดเพื่อยึดคืน', 2400) }
     else if (d > 120 && o.mons.length) { for (const m of o.mons) if (mons.includes(m)) monGone(m); o.mons = [] } } }
@@ -3762,7 +3802,7 @@ function stormTick(dt, now) {
   if (!inStorm() && !S.story.cloudGone && RIDE && me().x > D.STORM_GO_X && now > warnT) { warnT = now + 6000; goStorm() }
 }
 /* ================= v1.8 lush hand-made areas: ground cover around the island, meadow, hills and forest (decor only, never on roads, plots or near buildings) ================= */
-import('./lush.js').then(({ lushPlace, lushKind }) => {
+import('./lush.js').then(({ lushPlace, lushKind, LUSH, lushClear }) => { LUSH.hide = (x, z) => { const [cx, cz] = cellOf(x, z); return !!S.plots[keyOf(cx, cz)] && Math.abs(x - cx) < .75 && Math.abs(z - cz) < .75 }; LUSHC = lushClear; for (const k in S.plots) { const [cx, cz] = k.split(',').map(Number); lushClear(cx, cz) }
   let sd = 4242; const R = () => (sd = sd * 16807 % 2147483647) / 2147483647, list = [], keep = [[HOUSE.x, HOUSE.z, 4], [WRECK.x, WRECK.z, 3.5], [HOWSIF.x, HOWSIF.z, 2.5], [EXIT.x, EXIT.z, 2.5], ...Object.values(POT).map(p => [p.x, p.z, 2.4]), [FOREST.cage.x, FOREST.cage.z, 3], [FOREST.camp.x, FOREST.camp.z, 6]];
   for (let i = 0; i < 1400; i++) { const x = -14 + R() * 124, z = -14 + R() * 28; if (x > 34 && x < 58) continue; if (!walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0) continue;
     if (Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue; if (x < 7 && x > -1 && Math.abs(z) < 9) continue;   // the farm field stays open for plots
@@ -3796,7 +3836,7 @@ async function startIntro(replay) {
 function afterLogin() { if (!S.story.intro) startIntro(); else if (!S.avatar) openCreator(true).then(() => { placeMe(camT.x, camT.z - 1); welcome() }); else welcome() }
 W.wreckPick = addPick(W, WRECK.x, WRECK.z, 1.2, 1.4, { kind: 'wreck' });
 placeHowsif(); storyProps();
-if (S.mon && S.has.sword) monSpawn(S.mon.kind, S.mon.x, S.mon.z, { farm: true, aggro: true, hp: S.mon.hp, silent: true }); else S.mon = null;
+if (S.mon && S.has.sword && !inIsle(S.mon.x, S.mon.z)) monSpawn(S.mon.kind, S.mon.x, S.mon.z, { farm: true, aggro: true, hp: S.mon.hp, silent: true }); else S.mon = null;
 { const z = zoneOf(me().x, me().z); S.area = z; if (z === 'town') townSpawn(); if (z === 'forest') forestSpawn(); if (z === 'meadow' || z === 'hills') wildSpawn(z) } setTimeout(sickEvent, 1500);
 boatTick(); regrow(); setTool(farmMon() ? 'sword' : ''); questCheck(); requestAnimationFrame(frame);
 if (S.profile && S.profile.pic) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
@@ -3809,7 +3849,7 @@ window.__ng = { get ALOCK() { return ALOCK }, navStick, navMove, navCur, get NAV
   openPot, openCook, eatMeal, matchRecipe, openJournal, sketchPick, drawSketch, sleepTo, get POT() { return POT }, achCheck,
   setCam: v => localStorage.setItem('ng_cam', v), CAM, setOpt: (c, h) => { OPT.ctrl = c; OPT.hud = h; applyOpt() }, actA, openWheel, closeWheel, wheelPick, get wheelOn() { return wheelOn }, autoTick, get guard() { return guard },
   openCreator, walkTo, placeMe, get me() { return me() }, get PL() { return PL },
-  tillable, till, plant, harvest, plotAction, cropStage, growAll: () => { for (const k in S.plots) if (S.plots[k].c) S.plots[k].t = 0; for (const k in S.plots) plotView(k) }, get plots() { return S.plots },
+  tillable, farmLand, till, plant, harvest, plotAction, cropStage, waterPlot, debrisDay, get FARMI() { return FARMI }, growAll: () => { for (const k in S.plots) if (S.plots[k].c) { S.plots[k].t = 0; S.plots[k].g = 99 } for (const k in S.plots) plotView(k) }, get plots() { return S.plots },
   get chunks() { return [...CHUNKS.values()].filter(c => !c.core).length }, wildH, coreDist,
   openMap, reveal, get fog() { return S.fog }, goPath, enterZone, envState: () => ({ swim: PL.swim, climb: PL.climb, y: me().y, area: S.area }),
   updCheck, goForest, travel, openCage, openSberh, SB, get autoPot() { return S.autoPot },
