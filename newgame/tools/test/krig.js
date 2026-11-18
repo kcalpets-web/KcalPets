@@ -12,15 +12,16 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8913, OUT = process.arg
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const seen = new Set(), look = async (lab, n = 6) => { for (let i = 0; i < n; i++) { const k = await E(() => window.__ng.krigNow()); if (k) seen.add(k); await wait(150) } await pg.screenshot({ path: OUT + `/${lab}.png` }) };
-    await wait(800); await look('1-idle');
+    const home = await E(() => [window.__ng.me.x, window.__ng.me.z]); await wait(800); await look('1-idle');
     await E(() => { const N = window.__ng; N.walkTo(N.me.x + 6, N.me.z + 2) }); await wait(500); await look('2-walk');
     await E(() => { const N = window.__ng; N.S.en = 999; N.walkTo(N.me.x - 10, N.me.z - 3); N.sprint && N.sprint() }); await wait(400); await look('3-move');
-    await E(() => window.__ng.cheerNow(2000)); await wait(300); await look('4-cheer', 4);
-    await E(() => { const b2 = document.getElementById('bX'); b2.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b2.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })) }); await wait(150); await look('5-jump', 3);
-    await E(() => { window.__ng.PL.waveT = performance.now() + 1500 }); await wait(200); await look('6-wave', 4);
-    await wait(1500); await E(() => { window.__ng.PL.stillT = performance.now() - 30000 }); await wait(1200); await look('7-sit', 4); const sy = await E(() => window.__ng.PL.body.position.y); log('sitting body y', sy.toFixed(2));
+    await E(h => { window.__ng.walkTo(h[0], h[1]) }, home); await wait(2500); await E(h => window.__ng.placeMe(h[0], h[1]), home); await wait(600); await E(() => window.__ng.cheerNow(2000)); await wait(300); await look('4-cheer', 4);
+    await E(() => { const b2 = document.getElementById('bX'); b2.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b2.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })) }); await wait(150); await look('5-jump', 3); log('after jump', JSON.stringify(await E(() => window.__ng.krigWhy())), await E(() => window.__ng.krigNow()));
+    await wait(1200); await E(() => { window.__ng.PL.waveT = performance.now() + 1500 }); await wait(200); await look('6-wave', 4);
+    await wait(1500); await E(() => { const N = window.__ng; for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); N.PL.stillT = performance.now() - 30000 }); await wait(1200); await look('7-sit', 4); const sy = await E(() => window.__ng.PL.body.position.y); log('sitting body y', sy.toFixed(2));
+    log('why', JSON.stringify(await E(() => window.__ng.krigWhy())));
     log('clips seen', [...seen].join(', ')); if (!seen.has('idle') || !seen.has('walk') || !seen.has('cheer') || !seen.has('wave') || !seen.has('sit')) errs.push('the player should play the shared idle / walk / cheer clips');
-    await E(() => window.__ng.aimStart()); await wait(800); const aim = await E(() => window.__ng.krigNow()); log('aiming →', aim); if (aim) errs.push('aiming should hand back to the old motion');
+    await E(() => window.__ng.aimStart('draw')); await wait(800); const aim = await E(() => window.__ng.krigNow()); log('aiming →', aim); if (aim) errs.push('aiming should hand back to the old motion');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

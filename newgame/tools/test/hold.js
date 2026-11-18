@@ -36,7 +36,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8820, OUT = process.arg
     // v3.26 glider: opening it mid-lift lets the hawk go (no second lift on landing) · B in the air does not fold it
     await E(() => { const N = window.__ng; N.PSK.hawk = 0; N.S.en = null; N.S.tired = false }); await dp('bX', 'pointerdown'); await wait(900); await dp('bX', 'pointerup'); await wait(250); await dp('bX', 'pointerdown'); await dp('bX', 'pointerup'); await wait(400);
     const gl = await E(() => { const N = window.__ng, ok = N.startPara(); return { ok, lift: !!N.LIFT, para: !!(N.GLIDE2 && N.GLIDE2.para) } }); await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(200); const gb = await E(() => !!(window.__ng.GLIDE2 && window.__ng.GLIDE2.para)); log('glider mid-lift', JSON.stringify(gl), 'after B still gliding', gb);
-    if (!gl.para || gl.lift) errs.push('opening the glider should end the hawk lift'); if (!gb) errs.push('B should not fold the glider');
+    if (!gl.para || gl.lift) errs.push('opening the glider should end the hawk lift'); if (gb) errs.push('v3.43 B should fold the glider');
     for (let i = 0; i < 40 && await E(() => !!window.__ng.GLIDE2); i++) await wait(500); const yL = await E(() => window.__ng.me.y); await wait(2500); const yA = await E(() => window.__ng.me.y); log('landed y', yL.toFixed(1), 'later', yA.toFixed(1)); if (yA > yL + 2) errs.push('after landing the glider you flew up again');
     // Y in the air = slow motion
     await E(() => { const N = window.__ng; N.closePara && N.closePara(); N.placeMe(20, 2) }); await wait(2500);
