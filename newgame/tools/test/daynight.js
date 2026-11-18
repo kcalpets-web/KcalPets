@@ -7,6 +7,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   try {
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); pg.on('pageerror', e => errs.push('PE ' + e.message + ' ' + (e.stack || '').split('\n').slice(1, 3).join(' ')));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, mats: { wood: 3, stone: 30 }, time: 640, quest: 99, en: 999 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     const toastTxt = () => E(() => [...document.querySelectorAll('.toast,#toast')].map(t => t.innerText).join(' | '));
@@ -16,7 +18,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     if (!d1.n || d1.houses !== d1.n || d1.vis !== d1.n) errs.push('by day every villager should be out, each with a house');
     await E(() => { const N = window.__ng, n = Object.values(N.KNPC).find(n => n.k === 'sylvaren'), p = n.A.root.position; N.placeMe(p.x + 4, p.z + 4); N.CAM && (N.CAM.yaw = Math.atan2(p.x - (p.x + 4), p.z - (p.z + 4))) }); await wait(1500); await pg.screenshot({ path: OUT + '/1-day-village.png' });
     // 🌙 night: indoors · talking = asleep
-    await E(() => { window.__ng.S.time = 23 * 60 }); await wait(1500);
+    await E(() => { window.__ng.S.story.slept = 1; window.__ng.S.time = 23 * 60 }); await wait(1500);
     const d2 = await E(() => { const N = window.__ng, L = Object.values(N.KNPC).filter(n => n.k === 'sylvaren'); const k = Object.keys(N.KNPC).find(k => k.startsWith('sylvaren:')); N.talkNpc(k); return { vis: L.filter(n => n.A.root.visible).length, dlg: !!document.querySelector('.ov.dlg') } }); await wait(300); const t2 = await toastTxt(); log('night village', JSON.stringify(d2), t2.slice(0, 90));
     await pg.screenshot({ path: OUT + '/2-night-village.png' }); if (d2.vis || d2.dlg || !/หลับ/.test(t2)) errs.push('at night villagers should be indoors and asleep');
     // 🐗 night: animals gone, packs out (the swap)
@@ -29,9 +31,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     const c2 = await E(C => { const N = window.__ng, L = Object.values(N.KNPC).filter(n => n.k === 'sylvaren'); return { n: L.length, cap: L.filter(n => n.cap).length, far: Math.max(...L.map(n => Math.hypot(n.A.root.position.x - C[0], n.A.root.position.z - C[1]))) } }, c1); log('capital', JSON.stringify(c2));
     await wait(1200); await pg.screenshot({ path: OUT + '/3-capital.png' }); if (!c2.n || c2.cap !== c2.n || c2.far > 30) errs.push('after the restore the villagers should live in the capital');
     // 🌙 harbour shop shut at night
-    await E(() => { const N = window.__ng, H = N.D ? N.D.VANEYA.harbour : null; N.S.time = 23 * 60; const sh = N.TW.shops[0]; N.placeMe(sh.x + 2, sh.z + 2); document.querySelectorAll('.ov').forEach(o => o.remove()); N.openShopBuilding(0) }); await wait(500); const s1 = await E(() => ({ ov: !!document.querySelector('.ov'), own: window.__ng.TW.shops.filter(s => s.owner && s.owner.root.visible).length })); const t3 = await toastTxt(); log('shop night', JSON.stringify(s1), t3.slice(0, 90));
+    await E(() => { const N = window.__ng, H = N.D ? N.D.VANEYA.harbour : null; N.S.story.slept = 1; N.S.time = 23 * 60; const sh = N.TW.shops[1]; N.placeMe(sh.x + 2, sh.z + 2 * sh.fz); document.querySelectorAll(".ov").forEach(o => o.remove()); N.openShopBuilding(1) }); await wait(3500); await E(() => window.__ng.openShopBuilding(1)); await wait(300); const s1 = await E(() => ({ ov: !!document.querySelector('.ov'), own: window.__ng.TW.shops.filter(s => s.owner && s.owner.root.visible).length })); const t3 = await toastTxt(); log('shop night', JSON.stringify(s1), t3.slice(0, 90));
     await pg.screenshot({ path: OUT + '/4-shop-night.png' }); if (s1.ov || !/ปิด/.test(t3) || s1.own) errs.push('harbour shops should be shut at night with the owners home');
-    await E(() => { window.__ng.S.time = 10 * 60; window.__ng.openShopBuilding(0) }); await wait(500); if (!(await E(() => !!document.querySelector('.ov')))) errs.push('the shop should open by day');
+    await E(() => { window.__ng.S.time = 10 * 60; window.__ng.openShopBuilding(1) }); await wait(500); if (!(await E(() => !!document.querySelector('.ov')))) errs.push('the shop should open by day');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

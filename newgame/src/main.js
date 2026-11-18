@@ -112,7 +112,7 @@ const HARB = (() => { const g = new THREE.Group(); scene.add(g); const R2 = [3.5
   const pier = new THREE.Group(); for (let i = 0; i < 10; i++) part(pier, '#6a4024', '#b07a44', [-i * .9, .32, 0], [.44, .07, 1.15], [0, 0, (i % 2) * .02], { A: .02 }); for (let i = 0; i < 10; i += 3) for (const s2 of [-1, 1]) part(pier, '#4a2e1a', '#7a5232', [-i * .9, -.2, s2 * 1.05], [.1, .7, .1], [0, 0, 0], { A: 0 });
   pier.position.set(HB.x - .5, Math.max(-.05, groundH(HB.x - .5, HB.z)) * 0, HB.z); g.add(pier);
   const boat = W.boat.clone(); boat.position.set(HB.x - 6.5, -.12, HB.z + 1.9); boat.rotation.y = Math.PI / 2; g.add(boat);
-  const shops = [], put = (i, x, z, ry) => { const s2 = new THREE.Group(); harbourShop(s2, ROOF[(i - 1) % ROOF.length]); s2.position.set(x, groundH(x, z), z); s2.rotation.y = ry; g.add(s2); addSol({ x, z, hw: 1.3, hd: 1, ry }); shops.push({ i, x, z, fz: ry === 0 ? 1 : -1, fixed: s2, ruin: new THREE.Group(), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); shops[shops.length - 1].pick.position.y += groundH(x, z) };
+  const shops = [], put = (i, x, z, ry) => { const s2 = new THREE.Group(); harbourShop(s2, ROOF[(i - 1) % ROOF.length]); s2.position.set(x, groundH(x, z), z); s2.rotation.y = ry; const s3 = mergeProp(s2); g.add(s3);   /* v3.42 one mesh per colour (20 → ~6 draw calls) */ addSol({ x, z, hw: 1.3, hd: 1, ry }); shops.push({ i, x, z, fz: ry === 0 ? 1 : -1, fixed: s3, ruin: new THREE.Group(), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); shops[shops.length - 1].pick.position.y += groundH(x, z) };
   [[1, HB.x + 7, HB.z - 6.5, 0], [2, HB.x + 11.5, HB.z - 6.5, 0], [3, HB.x + 16, HB.z - 6.5, 0], [4, HB.x + 9, HB.z + 6.5, Math.PI], [5, HB.x + 13.5, HB.z + 6.5, Math.PI], [7, HB.x + 18, HB.z + 6.5, Math.PI]].forEach(a => put(...a));   /* v3.40 + 🪡 the tailor */
   const sg = new THREE.Group(); part(sg, '#4a2e1a', '#7a5232', [0, .8, 0], [.08, .8, .08], [0, 0, 0], { A: 0 }); part(sg, '#c8a070', '#f0d8b0', [0, 1.55, 0], [.8, .32, .05], [0, 0, 0], { A: 0 }); sg.position.set(HB.x + 2.5, groundH(HB.x + 2.5, HB.z - 2), HB.z - 2); g.add(sg);
   const bp = addPick(W, HB.x - 6.5, HB.z + 1.9, 1.6, 1.6, { kind: 'boat' });
@@ -2957,13 +2957,13 @@ const KROOF = { navalee: '#3a7ab0', sylvaren: '#6a8a3a', asrah: '#c87a3a', frost
 function kqTick(q) { const nt = isNight();
   for (const k in KQ) { const K = KINGDOMS[k], cp = (S.restored || {})[k] && CAPS[k], ax = cp ? cp.x : K.x, az = cp ? cp.z : K.z, d = dist(q.x, q.z, ax, az);
     KQ[k].npcs.forEach((n, idx) => { const key = k + ':' + n.id, A = KNPC[key];
-      if (A && A.cap !== !!cp) { scene.remove(A.A.root); removePick(W, A.pick); if (A.house) { scene.remove(A.house); delSol(A.hsol) } delete KNPC[key]; return }   /* moved into the capital */
+      if (A && A.cap !== !!cp) { scene.remove(A.A.root); removePick(W, A.pick); if (A.house) { scene.remove(A.house); A.house.traverse(o => o.isMesh && o.geometry.dispose()); delSol(A.hsol) } delete KNPC[key]; return }   /* moved into the capital */
       if (d < 85 && !A) { const H = npcHome(k, n, idx), x = H.x, z = H.z;
         const a = rigOf(makeActor(g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash({ id: n.id }) % 2) ? KHAT[k] : null), .82)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(H.ax - x, H.az - z) + Math.PI; scene.add(a.root);
         const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
-        let house = null, hsol = null; if (!H.cap) { const dx = x - H.ax, dz = z - H.az, L = Math.hypot(dx, dz) || 1, hx = x + dx / L * 3.4, hz = z + dz / L * 3.4, ry = Math.atan2(-dx, -dz); house = new THREE.Group(); harbourShop(house, KROOF[k] || '#3a62b0'); house.position.set(hx, groundH(hx, hz), hz); house.rotation.y = ry; scene.add(house); hsol = addSol({ x: hx, z: hz, hw: 1.3, hd: 1, ry }) }
+        let house = null, hsol = null; if (!H.cap) { const dx = x - H.ax, dz = z - H.az, L = Math.hypot(dx, dz) || 1, hx = x + dx / L * 3.4, hz = z + dz / L * 3.4, ry = Math.atan2(-dx, -dz); house = new THREE.Group(); harbourShop(house, KROOF[k] || '#3a62b0'); house.position.set(hx, groundH(hx, hz), hz); house.rotation.y = ry; house = mergeProp(house); scene.add(house);   /* one merged mesh per material (draw calls) */ hsol = addSol({ x: hx, z: hz, hw: 1.3, hd: 1, ry }) }
         idleReg(a); KNPC[key] = { A: a, k, n, mk, house, hsol, cap: !!H.cap, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; a.wander = { home: [x, z], t: [x, z], wait: 1 + Math.random() * 4, r: 3 }; a.pick = KNPC[key].pick;   /* v3.2 they stroll around their spot */ KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
-      else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); if (A.house) { scene.remove(A.house); delSol(A.hsol) } delete KNPC[key] }
+      else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); if (A.house) { scene.remove(A.house); A.house.traverse(o => o.isMesh && o.geometry.dispose()); delSol(A.hsol) } delete KNPC[key] }
       else if (A && A.A.root.visible === nt) { A.A.root.visible = !nt; if (!nt) kqMarks() } }) }
   for (const sh of TW.shops || []) if (sh && sh.owner) sh.owner.root.visible = !nt }
 function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
@@ -3109,7 +3109,7 @@ function actorCull(now) {
     if (far && o.visible) { o.visible = false; o.userData.farHid = 1 } else if (!far && o.userData.farHid) { o.visible = true; o.userData.farHid = 0 } }
 }
 function chunkTick(now) {
-  if (now < chunkT) return; chunkT = now + 220; cycleSwap(); const q = me(), ccx = Math.floor(q.x / CHUNK), ccz = Math.floor(q.z / CHUNK), R2 = 3, near = 1;
+  if (now < chunkT) return; chunkT = now + 220; cycleSwap(); HARB.g.visible = dist(me().x, me().z, HB.x, HB.z) < 330;   /* v3.42 the harbour town is not drawn from far away */ const q = me(), ccx = Math.floor(q.x / CHUNK), ccz = Math.floor(q.z / CHUNK), R2 = 3, near = 1;
   let built = false;
   for (let dz = -R2; dz <= R2 && !built; dz++) for (let dx = -R2; dx <= R2 && !built; dx++) { const cx = ccx + dx, cz = ccz + dz, key = cx + ',' + cz;
     if (CHUNKS.has(key) || Math.hypot(dx, dz) > R2 + .2 || (cx + 1) * CHUNK < WORLD.x0 || cx * CHUNK > WORLD.x1 || (cz + 1) * CHUNK < WORLD.z0 || cz * CHUNK > WORLD.z1) continue;
