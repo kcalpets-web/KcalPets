@@ -22,6 +22,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8863, OUT = process.arg
     // arrows past the edge: put the frame on the last tile of a row and press ▶
     await E(() => { document.querySelector('[data-pg="-1"]').click() }); await wait(300); await E(() => { const N = window.__ng; N.NAV.zone = 'items'; const t = [...document.querySelectorAll('.invgrid [data-k]')][3]; N.NAV.key = 'data-k=' + t.dataset.k; N.NAV.el = null; N.navCur() }); await tap('#dpad [data-dp=right]');
     const edge = await E(() => (document.querySelector('.invpg b') || {}).textContent); log('edge ▶ →', edge); if (!/2\//.test(edge || '')) errs.push('▶ at the row end should go to the next page');
+    await tap('#bX'); const xp = await E(() => (document.querySelector('.invpg b') || {}).textContent); await tap('#bY'); const yp = await E(() => (document.querySelector('.invpg b') || {}).textContent); log('X →', xp, 'Y →', yp); if (!/3\//.test(xp || '') || !/2\//.test(yp || '')) errs.push('X / Y should turn the bag pages');
     const bu = await E(() => { const c0 = window.__ng.bagCap('sword'); document.querySelector('[data-bu]').click(); return [c0, window.__ng.bagCap('sword'), window.__ng.S.spirit.free] }); log('upgrade', bu); if (bu[1] - bu[0] !== 12) errs.push('an upgrade should add 12 slots');
     await close();
     // ◀ ▶ picker

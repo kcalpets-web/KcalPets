@@ -344,6 +344,11 @@ body:has(#pick.on) #dpad [data-dp=left],body:has(#pick.on) #dpad [data-dp=right]
 .cnav{display:flex;align-items:center;gap:16px;margin-top:4px}.cnav .btn{min-width:58px;min-height:44px;font-size:20px}
 body.pad:not(.gamepad):has(.ov.cbook) #dpad{display:grid}body.pad:not(.gamepad):has(.ov.cbook) #stick{display:none}body.pad:not(.gamepad):has(.ov.cbook) #stick,body.pad:not(.gamepad):has(.ov.cbook) #bA,body.pad:not(.gamepad):has(.ov.cbook) #bB{z-index:46}body.pad:not(.gamepad) .ov.cbook{align-items:flex-start}body.pad:not(.gamepad) .ov.cbook .sh{height:calc(100% - 222px - env(safe-area-inset-bottom));border-radius:0 0 20px 20px;border-top:0;border-bottom:3px solid var(--ink);padding-top:env(safe-area-inset-top);animation:none}   /* the page sits above the D-pad and A / B */
 .ov.cbook .cpic{width:96px;height:96px}.ov.cbook .cpic .cbig{font-size:52px}.ov.cbook .cpage{gap:4px}.ov.cbook .cmat{padding:5px 9px}
+
+/* v3.38 bag pages / craft book: X and Y stay above the window (Y = previous · X = next page) */
+body.pad:not(.gamepad):has(.ov.inv .invpg) #bX,body.pad:not(.gamepad):has(.ov.inv .invpg) #bY,body.pad:not(.gamepad):has(.ov.cbook) #bX,body.pad:not(.gamepad):has(.ov.cbook) #bY{z-index:46}
+.invpg .ky,.invpg .kx,.cnav .ky,.cnav .kx{font-style:normal;font:900 12px system-ui;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:2px solid #2a2030;vertical-align:middle}.ky{background:#e8b020}.kx{background:#4a8ad8}
+body:has(.ov) #bA.ctx{background-color:#3fae6a;animation:none}body:has(.ov) #bA span{display:block}   /* v3.38 in a window A is plain A */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
