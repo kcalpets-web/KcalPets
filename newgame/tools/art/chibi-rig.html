@@ -1,0 +1,31 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · chibi rig</title>
+<style>body{margin:0;background:#f4efe6}canvas{display:block}</style></head><body>
+<script type="module">
+/* v3.49 preview of src/krig.js: A (the mesh you see) + B (the hidden skeleton) · #2 = the 10 clips · #3 = mesh swap on the same skeleton */
+import * as THREE from '../../lib/three.module.min.js';
+import { makeChar, poseAt, CLIP_TH, CLIPS } from '../../src/krig.js';
+const page = location.hash.slice(1) || '1', W = 1800, H = page === '2' ? 1240 : 640;
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true; R.setScissorTest(true); document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff8f0', '#c8b8a8', 1.4)); const key = new THREE.DirectionalLight('#fff2e0', 2.4); key.position.set(-1.5, 3, 3); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); Object.assign(key.shadow.camera, { left: -1, right: 1, top: 1.5, bottom: -.5 }); S.add(key); const rim = new THREE.DirectionalLight('#dce8ff', 1.1); rim.position.set(2, 2, -3); S.add(rim);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(.8, 40), new THREE.ShadowMaterial({ opacity: .18 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
+const cells = [];
+const shot = (x, y, w, h, build, label, cam = [0, .52, 2.25], look = [0, .47, 0]) => cells.push({ x, y, w, h, build, label, cam, look });
+const char = (look, hat, clip, t, yaw = .35) => () => { const c = makeChar(look, hat); poseAt(c, clip, t); c.rotation.y = yaw; return [c] };
+if (page === '1') {   /* the look: front / side / back · B: the skeleton alone · A over B · 3 hats */
+  shot(0, 0, 250, 600, char('sky', null, 'idle', .3, 0), 'ด้านหน้า'); shot(250, 0, 250, 600, char('sky', null, 'idle', .3, Math.PI / 2), 'ด้านข้าง'); shot(500, 0, 250, 600, char('sky', null, 'idle', .3, Math.PI), 'ด้านหลัง');
+  shot(750, 0, 250, 600, () => { const c = makeChar('sky'); poseAt(c, 'wave', .2); c.rotation.y = .4; c.traverse(o => { if (o.isMesh) o.visible = false }); const h = new THREE.SkeletonHelper(c); h.material.linewidth = 3; const dots = new THREE.Group(); c.userData.S.bones.forEach(b => { const d = new THREE.Mesh(new THREE.SphereGeometry(.014, 10, 8), new THREE.MeshBasicMaterial({ color: '#e8503a' })); b.add(d) }); return [c, h] }, 'B · โครงกระดูก (ซ่อน)');
+  shot(1000, 0, 250, 600, () => { const c = makeChar('sky'); poseAt(c, 'wave', .2); c.rotation.y = .4; c.traverse(o => { if (o.isMesh && o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .35; o.material.depthWrite = false } }); c.userData.S.bones.forEach(b => { const d = new THREE.Mesh(new THREE.SphereGeometry(.014, 10, 8), new THREE.MeshBasicMaterial({ color: '#e8503a', depthTest: false })); d.renderOrder = 9; b.add(d) }); const h = new THREE.SkeletonHelper(c); h.material.depthTest = false; h.renderOrder = 8; return [c, h] }, 'A + B (ร่างโปร่ง)');
+  shot(1250, 0, 183, 600, char('sky', 'cap', 'wave', .25, .3), 'หมวกแก๊ป'); shot(1433, 0, 183, 600, char('sky', 'bucket', 'wave', .25, .3), 'หมวกบักเก็ต'); shot(1616, 0, 184, 600, char('sky', 'wide', 'wave', .25, .3), 'หมวกปีกกว้าง') }
+if (page === '2') {   /* the 10 clips (a key frame of each) on the same character */
+  const L = [['idle', .5], ['walk', .25], ['run', .15], ['jump', .55], ['sit', .3], ['wave', .3], ['attack', .32], ['hurt', .15], ['fall', .3], ['cheer', .4]];
+  L.forEach(([c, t], i) => shot((i % 5) * 360, Math.floor(i / 5) * 620, 360, 600, char('sky', i % 3 === 1 ? 'cap' : null, c, t, c === 'run' || c === 'walk' ? .9 : .35), `${CLIP_TH[c]} · ${c}`, c === 'jump' || c === 'cheer' || c === 'fall' ? [0, .62, 2.6] : [0, .52, 2.25], c === 'jump' || c === 'cheer' || c === 'fall' ? [0, .56, 0] : [0, .47, 0])) }
+if (page === '3') {   /* mesh swap: two looks, the same skeleton + clips */
+  const L = [['sky', 'wave', .3], ['ink', 'wave', .3], ['sky', 'walk', .25], ['ink', 'walk', .75], ['sky', 'cheer', .4], ['ink', 'attack', .32]];
+  L.forEach(([k, c, t], i) => shot(i * 300, 0, 300, 600, char(k, k === 'ink' && i === 3 ? 'bucket' : null, c, t, c === 'walk' ? .9 : .35), `${k === 'sky' ? 'ตัว A' : 'ตัว B'} · ${CLIP_TH[c]}`)) }
+const out = [];
+for (const c of cells) { const objs = c.build(); objs.forEach(o => S.add(o)); objs[0].updateMatrixWorld(true); const cam = new THREE.PerspectiveCamera(30, c.w / c.h, .05, 30); cam.position.set(...c.cam); cam.lookAt(...c.look);
+  R.setViewport(c.x, H - c.y - c.h, c.w, c.h); R.setScissor(c.x, H - c.y - c.h, c.w, c.h); R.setClearColor('#f4efe6'); R.clear(); R.render(S, cam); objs.forEach(o => S.remove(o)); out.push(c) }
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.drawImage(R.domElement, 0, 0); g.font = '700 21px system-ui'; g.fillStyle = '#3a2a30'; g.textAlign = 'center'; for (const c of out) g.fillText(c.label, c.x + c.w / 2, c.y + c.h - 14);
+g.textAlign = 'left'; g.font = '800 24px system-ui'; g.fillText({ 1: 'KEALEE · ตัวละคร (A) + โครง (B) · ตัวอย่าง', 2: 'ท่าทาง 10 แบบ · Rig เดียวกัน', 3: 'เปลี่ยน Mesh บน Rig เดิม (ไม่สร้างโครงใหม่)' }[page], 16, 32);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
