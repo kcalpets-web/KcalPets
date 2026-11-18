@@ -134,3 +134,11 @@ export function poseAt(char, name, t) { const mx = char.userData.mixer || (char.
 export { limb, torso, skirt, rigid, sph, mat, worldOf, headMesh, handMesh, rbgK };
 function rbgK(w, h, d, r = .02, s2 = 4) { const g = new THREE.BoxGeometry(w, h, d, s2, s2, s2), p = g.attributes.position, v = new THREE.Vector3(), hw = w / 2 - r, hh = h / 2 - r, hd = d / 2 - r;
   for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const c = new THREE.Vector3(Math.max(-hw, Math.min(hw, v.x)), Math.max(-hh, Math.min(hh, v.y)), Math.max(-hd, Math.min(hd, v.z))); v.sub(c).normalize().multiplyScalar(r).add(c); p.setXYZ(i, v.x, v.y, v.z) } g.computeVertexNormals(); return g }
+/* ---------- the game's own chibi (vinyl.js) on KRIG: its joints take the standard bone names, so CLIPS play on it unchanged ---------- */
+const VMAP = { waist: 'Spine', chest: 'Chest', head: 'Head', armL: 'UpperArm_L', armR: 'UpperArm_R', elL: 'LowerArm_L', elR: 'LowerArm_R', hipL: 'UpperLeg_L', hipR: 'UpperLeg_R', kneeL: 'LowerLeg_L', kneeR: 'LowerLeg_R', footL: 'Foot_L', footR: 'Foot_R' };
+export function krigVinyl(root) { root.traverse(o => { const r = o.userData && o.userData.role; if (r && VMAP[r]) o.name = VMAP[r]; if (o.name === 'handL') o.name = 'Hand_L'; if (o.name === 'handR') o.name = 'Hand_R' });
+  const body = root.children.find(o => o.isGroup && o.scale.x > 1.2); if (body) body.name = 'Hips'; root.userData.krig = { hipsY: body ? body.position.y : 0, k: body ? body.scale.x : 1 }; return root }
+const VCL = {}; export function vinylClip(name, hipsY = 0, k = 1.45) { const key = name + '|' + hipsY + '|' + k; if (VCL[key]) return VCL[key]; const c = CLIPS[name].clone();
+  for (const t of c.tracks) if (t.name === 'Hips.position') { const v = t.values; for (let i = 0; i < v.length; i += 3) { v[i] *= k; v[i + 1] = hipsY + (v[i + 1] - .3) * k; v[i + 2] *= k } }   /* the hips move relative to the model's own rest */
+  return VCL[key] = c }
+export function posevinyl(root, name, t) { const K = root.userData.krig || {}, mx = root.userData.mixer || (root.userData.mixer = new THREE.AnimationMixer(root)); mx.stopAllAction(); const a = mx.clipAction(vinylClip(name, K.hipsY || 0, K.k || 1.45)); a.reset().play(); mx.setTime(t); return root }
