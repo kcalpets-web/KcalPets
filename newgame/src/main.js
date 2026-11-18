@@ -11,7 +11,7 @@ import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
 import { buildCapital, CAP_GOLD } from './capitals.js';
-import { CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
@@ -393,6 +393,7 @@ function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) re
 let lastLand = [0, -4];
 function spendRunN(n) { if (S.tired) return false; n *= (1 - buffOn('stam')) * hungerK(); const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
 function envTick(dt, now, mv) {                     // swimming (stamina · sinking when exhausted) · climbing (slow · stamina · sliding down when exhausted) · ground height
+  { const q0 = me(); if (!GLIDE && !RIDE && !LIFT && !HORSE) { const p = solPush(q0.x, q0.z, q0.y); if (p && walkWorld(p[0], p[1])) { q0.x = p[0]; q0.z = p[1]; walkT = null } } }   /* v3.30.3 never stand inside a wall (landed from the sky / pushed in): step out to its nearest side */
   const q = me(), w = walkWorld(q.x, q.z), h0g = groundH(q.x, q.z), stp = solTop(q.x, q.z), h = stp != null && q.y >= stp - .55 ? Math.max(h0g, stp) : h0g, fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw), ahead = groundH(q.x + fx * .4, q.z + fz * .4);
   if (GLIDE) { PL.swim = PL.climb = false; GLIDE.t += dt; const G = GLIDE.para ? D.GLIDER : D.GLIDE;
     if (GLIDE.para) { if (!GLIDE.drop && !spendRunN(G.en * dt)) { GLIDE.drop = true; hint('💦 แรงหมด… ร่วง!', 1200) } const up = liftAt(q.x, q.z);   /* 🪂 v2.5 the glider: ⚡ drains · warm air over fires lifts you */

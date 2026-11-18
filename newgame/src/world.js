@@ -126,6 +126,11 @@ export function solBlock(x, z, y, pad = .22) { const l = SOLC.get(Math.floor(x /
     if (e.ramp) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad && y < groundH(e.x, e.z) + topAt(e, lz) - .55) return e; continue }   /* a ramp: walk up from its low end · its high sides block */
     if (e.top && y >= groundH(e.x, e.z) + e.top - .42) continue;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
+/* v3.30.3 stuck inside a solid (landed in it from the air, pushed in…)? → the nearest point just outside it (null = free) · tops you stand on and ramps are fine */
+export function solPush(x, z, y) { const e = solBlock(x, z, y, 0); if (!e || e.ramp) return null; const dx = x - e.x, dz = z - e.z;
+  if (e.r) { const d = Math.hypot(dx, dz) || .01, k = (e.r + .3) / d; return [e.x + dx * k, e.z + dz * k] }
+  const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0); let lx = dx * c - dz * s, lz = dx * s + dz * c; const ox = e.hw - Math.abs(lx), oz = e.hd - Math.abs(lz);
+  if (ox < oz) lx = Math.sign(lx || 1) * (e.hw + .3); else lz = Math.sign(lz || 1) * (e.hd + .3); return [e.x + lx * c + lz * s, e.z - lx * s + lz * c] }
 export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }

@@ -43,7 +43,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   for (let i = 0; i < 30; i++) { const a = R() * 6.28, r = 3 + R() * 22; box(Math.cos(a) * r, .04, Math.sin(a) * r, .8 + R() * 1.6, .05, .6 + R() * 1.2, R() < .5 ? M.moss : M.dark, R() * 3).userData.nosol = 1 }
   /* ---- the keep: a raised base · a tall hall · 4 towers (one broken) · a glowing doorway ---- */
   const KZ = -14, KW = 16, KD = 12, KH = 13;
-  box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone); box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
+  box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone).userData.roof = 1.4 + KH + 1.2;   /* v3.30.3 a roof you can stand on (landing from the sky never drops you inside) */ box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
   for (let i = 0; i < 7; i++) box(-KW / 2 + 1.2 + i * (KW - 2.4) / 6, 1.4 + KH + 1.2, KZ + KD / 2 + .2, 1, 1.2, 1, M.dark);   // battlements
   add(new THREE.BoxGeometry(4.4, 7, .5), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .3); arch(0, 1.4 + 7, KZ + KD / 2 + .55, 2.3, .45, M.dark);   // the doorway (glows)
   for (let i = 0; i < 5; i++) box(0, 0, KZ + KD / 2 + 2.6 + i * .7, 6 - i * .3, 1.4 - i * .28, .7, M.dark).userData.walk = 1;   // steps you climb (v3.30.1: were picture-only, you sank into them)
@@ -116,7 +116,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.userData.nosol) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry' && t !== 'ConeGeometry') return;
       o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return; const h = pr.height * SC.y, bottom = P.y - h / 2 - H;
       if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2 - H }); return }   /* steps / the base: flat tops you stand on */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* v3.30.2 the keep's hall stands on its base: still a wall */
-      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y }) }
+      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push(Object.assign({ x: P.x, z: P.z, hw, hd, ry: E.y }, o.userData.roof ? { top: o.userData.roof } : {})) }
       else { const r = (t === 'ConeGeometry' ? pr.radius * .8 : Math.max(pr.radiusTop, pr.radiusBottom)) * Math.max(SC.x, SC.z); if (r > .25) sols.push({ x: P.x, z: P.z, r }) } }) }
   const guards = [[-9, 8], [10, 10], [-16, -2], [16, -4], [0, 18], [-22, 14], [22, 16], [0, KZ + KD / 2 + 7]].map(([x, z]) => W(x, z));
   return { G, sols, glows, anim, guards, center: W(0, 0), door: W(0, KZ + KD / 2 + 3), look: L };
