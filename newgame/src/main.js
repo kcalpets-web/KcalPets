@@ -1319,7 +1319,7 @@ function skwShow(on) { SKW.on = on; SKW.el.classList.toggle('on', on); document.
     return `<i data-skw="${sl}" class="${pos}${has ? '' : ' empty'}${left ? ' cd' : ''}"><b class="k${sl.toLowerCase()}">${sl}</b>${has ? SKILLS[k].icon : '➕'}<small>${has ? (left ? Math.ceil(left / 1000) + ' วิ' : SKILLS[k].name) : 'ว่าง'}</small></i>` }).join('') + '<p>กดปุ่มนั้นเพื่อใช้สกิล · B = ปิด</p>';
   SKW.el.querySelectorAll('[data-skw]').forEach(x => x.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); skwUse(x.dataset.skw) })) }
 function skwUse(sl) { skwShow(false); if (sl === 'B' || sl === 'close') { sfx('tap'); return } slotSkill(sl) }   /* B closes */
-document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest('#skw,#bA,#bB,#bX,#bY') && performance.now() - SKW.t > 250) skwShow(false) }, true);
+document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest('#skw,#bA,#bB,#bX,#bY,#stick') && performance.now() - SKW.t > 250) skwShow(false) }, true);
 $('quest').onclick = e => { if (CUT) return; closeSheets(); sfx('tap'); openTrack() };   /* v3.27 tap the card = 📖 the quest book (no small ⇄) */   /* v3.14 tap = go do it (or the map) · ⇄ = choose another quest */
 /* v3.12.2 ⭐ follow one quest at a time: ☁️ the main quest · 📖 the story chapter · 📜 each people-quest you hold (one per person) · only the followed one blinks on the maps */
 const STORY_AT = { home: () => HS.root.position, howsif2: () => HS.root.position, howsif: () => HS.root.position, herb: () => FOREST.c || FOREST.camp, camp: () => FOREST.camp, cage: () => FOREST.cage, farm: () => ({ x: 2, z: -3 }), pot: () => POT.home, potionShop: () => TW.shops[0], gather: () => HOUSE, house: () => HOUSE,
@@ -2069,7 +2069,7 @@ document.addEventListener('touchstart', e => { if (e.target.closest && e.target.
 { const st = $('stick'), kn = $('stickK'); let pid = null, sTap = 0, sDown = 0, sMove = 0, sHold = 0;
   const mv = e => { const r = st.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), k = Math.min(1, d / 46);
     if (mapNavOn()) { joy.on = false; mapStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }   /* v3.12.1 the map is open: hop between warp points */
-    if (SKW.on) { if (d > 22) skwShow(false); return }
+    if (SKW.on) return;   /* v3.31 the stick never closes the skill wheel (you were walking when you held X) · B or a tap outside closes it */
     if (topOv() && !SMENU.on) { joy.on = false; navStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }   /* v3.19 a window open: the stick moves the frame */
     sMove = Math.max(sMove, d); if (SMENU.on) { joy.on = false; smenuStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }
     if (PICK) { joy.on = false; pickStick(dx / 46); kn.style.transform = `translate(${Math.max(-40, Math.min(40, dx))}px,0)`; return }   /* v3.11 a picker open: the stick slides it */
