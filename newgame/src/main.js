@@ -1513,7 +1513,8 @@ function openBag(tab, sell) {
   sheet('🎒 กระเป๋า', (b, redraw) => {
     const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
     let h = `<div class="invtop"><div class="invh">${$('hearts').innerHTML}</div><div class="invc">🪙 ${fmt(S.coin)} · 💎 ${fmt(S.gem)}</div></div>
-      <div class="invtabs">${T.map(([k, ic, nm]) => `<button class="${bagTab === k ? 'on' : ''}" data-bt="${k}">${ic}<small>${nm}</small></button>`).join('')}</div>` +
+      <div class="invtabs car">${(() => { const ci = T.findIndex(t => t[0] === bagTab), n = T.length, pos = j => { const d = (j - ci + n) % n; return d === 0 ? 1 : d === 1 ? 2 : d === n - 1 ? 0 : -1 };   /* v3.38 a carousel: the section you are on big in the middle, the one before / after at the sides · loops round */
+        return T.map(([k, ic, nm], j) => { const p = pos(j); return `<button class="${p === 1 ? 'on' : p < 0 ? 'hid' : 'nb'}" data-bt="${k}" style="order:${p < 0 ? 9 : p}">${p === 0 ? '<i class="ar">◀</i>' : ''}${ic}<small>${nm}</small>${p === 2 ? '<i class="ar">▶</i>' : ''}</button>` }).join('') })()}</div>` +
       (D.BAG.cats[bagTab] ? `<div class="invslots"><b>🎒 ช่อง ${bagUsed(bagTab)}/${D.BAG.free.includes(bagTab) ? '∞' : bagCap(bagTab)}</b>${D.BAG.free.includes(bagTab) ? '' : bagCap(bagTab) < D.BAG.max ? `<button class="btn sm${S.spirit.free >= D.BAG.cost ? ' go' : ''}" data-bu="${bagTab}">✨ ${D.BAG.cost} → +${D.BAG.step} ช่อง</button>` : '<small>เต็มเพดานแล้ว</small>'}</div>` : '');   /* v3.12 slots used / owned · buy more with ✨ */
     if (bagTab === 'me') h += '<div class="invtext" id="bagMe"></div>';
     else if (bagTab === 'craft') h += '<div class="invtext" id="bagCraft"></div>';

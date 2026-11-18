@@ -349,6 +349,11 @@ body.pad:not(.gamepad):has(.ov.cbook) #dpad{display:grid}body.pad:not(.gamepad):
 body.pad:not(.gamepad):has(.ov.inv .invpg) #bX,body.pad:not(.gamepad):has(.ov.inv .invpg) #bY,body.pad:not(.gamepad):has(.ov.cbook) #bX,body.pad:not(.gamepad):has(.ov.cbook) #bY{z-index:46}
 .invpg .ky,.invpg .kx,.cnav .ky,.cnav .kx{font-style:normal;font:900 12px system-ui;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:2px solid #2a2030;vertical-align:middle}.ky{background:#e8b020}.kx{background:#4a8ad8}
 body:has(.ov) #bA.ctx{background-color:#3fae6a;animation:none}body:has(.ov) #bA span{display:block}   /* v3.38 in a window A is plain A */
+
+/* v3.38 the section bar as a carousel of 3 */
+.invtabs.car{display:flex;justify-content:center;align-items:center;gap:10px;overflow:hidden;padding:4px 0}.invtabs.car button.hid{display:none}
+.invtabs.car button{flex:0 0 auto;width:84px;opacity:.55;transform:scale(.88);display:flex;flex-direction:column;align-items:center;position:relative}.invtabs.car button.on{width:112px;opacity:1;transform:none;font-size:30px}.invtabs.car button.on small{font-size:14px;font-weight:800}
+.invtabs.car .ar{position:absolute;top:50%;margin-top:-10px;font-style:normal;font-size:14px;color:#ffd23f}.invtabs.car button.nb:first-child .ar,.invtabs.car button.nb .ar{left:2px}.invtabs.car button.nb[style*="order:2"] .ar{left:auto;right:2px}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
