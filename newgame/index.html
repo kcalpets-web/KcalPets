@@ -322,6 +322,28 @@ body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #b
   .ov.inv .invdet{padding:6px 8px;font-size:12px;line-height:1.4}.ov.inv .invdet b{font-size:14px}
 }
 @media (max-height:600px){.ov.inv .invcv{height:15vh}.ov.inv .invhint{display:none}.ov.inv .shb{gap:5px}.ov.inv .invgrid{max-height:26vh}}   /* v3.34 the shortest phones: the item card stays above the D-pad */
+
+/* v3.38 the A / Y / B pickers: ◀ ▶ buttons (the D-pad without up / down) instead of the stick */
+body.pad:not(.gamepad):has(#pick.on) #dpad{display:grid}body.pad:not(.gamepad):has(#pick.on) #stick{display:none}body:has(#pick.on) #dpad [data-dp=up],body:has(#pick.on) #dpad [data-dp=down]{visibility:hidden}
+body:has(#pick.on) #dpad [data-dp=left],body:has(#pick.on) #dpad [data-dp=right]{font-size:28px}
+
+/* v3.38 bag pages */
+.invpg{display:flex;align-items:center;justify-content:center;gap:12px;flex-shrink:0}.invpg b{color:#fff;font-size:14px;min-width:70px;text-align:center}.invpg .btn{min-width:54px;min-height:40px;font-size:18px}
+.invgrid .tile.emp{background:#ffffff0d;border:2px dashed #ffffff26;border-radius:12px;aspect-ratio:1}
+
+/* v3.38 📖 the craft book */
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (min-width:420px){.cgrid{grid-template-columns:repeat(5,1fr)}}
+.ctile{position:relative;aspect-ratio:1;border-radius:14px;border:2px solid #5a5060;background:#2a2638;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;font:inherit}
+.ctile .ipic{width:70%;height:auto}.ctile .cbig{font-size:30px;line-height:1}.ctile small{font-size:10px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8e4f0}
+.ctile.lock{opacity:.55}.ctile .cok{position:absolute;top:5px;right:5px;width:11px;height:11px;border-radius:50%;background:#5ad870;box-shadow:0 0 0 2px #1a1626,0 0 8px #5ad870}
+.ov.cbook .sh{background:#f6eedc;background-image:repeating-linear-gradient(0deg,#0000 0 27px,#d8c8a822 27px 28px)}.ov.cbook .shh h2{font-family:serif}
+.cpage{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}.cpage h3{margin:2px 0;font-size:18px}.cpic{width:120px;height:120px;border-radius:20px;background:#fff8ec;border:3px solid #d8c8a8;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 18px #e8d8b8}
+.cpic .ipic{width:92%}.cpic .cbig{font-size:64px}
+.cmats{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left}.cmat{display:grid;grid-template-columns:1fr auto auto;grid-template-rows:auto auto;gap:0 8px;align-items:center;background:#fff;border:2px solid #e0d0b8;border-radius:12px;padding:7px 10px}
+.cmat b{font-size:15px}.cmat>span{font-weight:800;color:#c0402a}.cmat.ok>span{color:#2a8a4a}.cmat small{grid-column:1/3;font-size:12px;color:#7a6a5a}.cmat small i{font-style:normal;color:#a89888}.cmat .btn{grid-column:3;grid-row:1/3;min-height:40px}
+.cnav{display:flex;align-items:center;gap:16px;margin-top:4px}.cnav .btn{min-width:58px;min-height:44px;font-size:20px}
+body.pad:not(.gamepad):has(.ov.cbook) #dpad{display:grid}body.pad:not(.gamepad):has(.ov.cbook) #stick{display:none}body.pad:not(.gamepad):has(.ov.cbook) #stick,body.pad:not(.gamepad):has(.ov.cbook) #bA,body.pad:not(.gamepad):has(.ov.cbook) #bB{z-index:46}body.pad:not(.gamepad) .ov.cbook{align-items:flex-start}body.pad:not(.gamepad) .ov.cbook .sh{height:calc(100% - 222px - env(safe-area-inset-bottom));border-radius:0 0 20px 20px;border-top:0;border-bottom:3px solid var(--ink);padding-top:env(safe-area-inset-top);animation:none}   /* the page sits above the D-pad and A / B */
+.ov.cbook .cpic{width:96px;height:96px}.ov.cbook .cpic .cbig{font-size:52px}.ov.cbook .cpage{gap:4px}.ov.cbook .cmat{padding:5px 9px}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

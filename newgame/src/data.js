@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.37';
+export const APP_VER = '3.38';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -178,7 +178,8 @@ export const FORGE = [
   { t: 'scimitar', need: { goldOre: 2, ore: 1 } }, { t: 'crystalBlade', need: { crystal: 2, silver: 1 } }, { t: 'crystalShield', need: { crystal: 2, stone: 2 } }, { t: 'crystalBow', need: { crystal: 1, aquamarine: 1, wood: 2 } },
   { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
-export const BAG = { start: 10, step: 5, max: 60, stack: 999, cost: 1, free: ['mats', 'food', 'wear'],   // v3.16.4 materials · food · clothes (and pets) have no limit   // v3.12 🎒 slots per section: start · +step per ✨ cost · ceiling · a stack of one kind holds up to 999 (more = another slot)
+export const BAG = { page: 12, start: 12, step: 12, max: 60, stack: 999, cost: 2,   // v3.38 pages of 12 · start 1 page · +1 page per 2 ✨ · 5 pages max
+  free: ['mats', 'food', 'wear'],   // v3.16.4 materials · food · clothes (and pets) have no limit   // v3.12 🎒 slots per section: start · +step per ✨ cost · ceiling · a stack of one kind holds up to 999 (more = another slot)
   cats: { sword: ['⚔️', 'อาวุธ'], shield: ['🛡️', 'โล่'], bow: ['🏹', 'ธนู/ลูกธนู'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหาร'], wear: ['👕', 'ชุด'] } };
 export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
