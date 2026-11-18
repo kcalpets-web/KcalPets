@@ -10,6 +10,7 @@ import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, 
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
+import { ambient } from './ambient.js';
 import { buildCapital, CAP_GOLD } from './capitals.js';
 import { solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
@@ -343,8 +344,10 @@ function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9,
 function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; S.pos = [x, z]; camT.x = camP.x = x; camT.z = camP.z = z + 1; peekT = 0 }
 /* v3.28 🌾 grass clumps · flowers · pebbles on the ground around you (not on dug plots, roads or water) */
 const DECOR = decor(scene, (x, z, c, peb) => { if (S.plots && S.plots[Math.round(x) + ',' + Math.round(z)]) return null; return decorLook(x, z, c, peb) }, eco);
+/* v3.36 🐠 fish · crabs · bubbles · frogs around you */
+const AMB = ambient(scene, { me: () => me(), groundH, waterAt, walkWorld, surf: (x, z) => coreDist(x, z) > 0 ? -.38 : -.12, splash: (x, y, z) => { VF.ring(x, y + .02, z, '#ffffff', .7, .45); VF.rise(x, y, z, '#ffffff', 6) } }, eco);
 function walkTick(dt, now) {
-  DECOR(me().x, me().z); ogTick(now); capTick(now);
+  DECOR(me().x, me().z); ogTick(now); capTick(now); AMB(now, dt);
   if (golemBusy()) return;
   let mv = false;
   const run = !RIDE && !CROUCH && !S.tired && (joy.run || RUNON || now < sprintT) && (joy.on || walkT) && (HORSE || spendRun(dt)), spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * swimMul() * (now < swimB ? D.SWIM_BURST.mul : 1) * (wbOn() ? D.PETSKILL.whaleSwim : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (run ? D.HORSE.gallop : D.HORSE.sp) : run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1); SPD_LAST = spd;
@@ -3015,7 +3018,7 @@ const FALLS = []; { const cv = document.createElement('canvas'); cv.width = 32; 
     const m = new THREE.Mesh(geo, mat); scene.add(m); const pool = new THREE.Mesh(new THREE.CircleGeometry(4.5, 20), new THREE.MeshStandardMaterial({ color: '#5aaee0', roughness: .2, transparent: true, opacity: .85 })); pool.rotation.x = -Math.PI / 2; pool.position.set(x, wildH(x, zb) + .25, zb - sd * 1.5); scene.add(pool); FALLS.push({ x, z: zb }) }
   FALLS.tex = tex }
 const FAR = buildFarLand(scene);
-const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2a7f9a', roughness: .18, metalness: .05, transparent: true, opacity: .6, depthWrite: false }));   /* v3.35 clear seas and lakes: the bed shows through */ OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
+const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2a7f9a', roughness: .18, metalness: .05, transparent: true, opacity: .5, depthWrite: false }));   /* v3.35 clear seas and lakes: the bed shows through */ OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
 const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp', 'rockGolem', 'goblin', 'grassSprite'], ['rockGolem', 'goblin', 'goblin', 'rockGolem']];
 /* v3.4 people, pets and monsters are 10–40 meshes each: past the fog's start they are a few pixels, so they are not drawn at all (only ones hidden here are shown again) */
 /* v3.5 🎮 game controller (Xbox / PlayStation / Switch Pro over Bluetooth): left stick walks · right stick turns the camera · the 4 face buttons press the on-screen ones

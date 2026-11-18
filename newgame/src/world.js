@@ -35,7 +35,7 @@ export function buildWorld(scene, eco) {
   const sg = new THREE.PlaneGeometry(320, 140, 160, 70); sg.rotateX(-Math.PI / 2); sg.translate(40, 0, 0); const SP = sg.attributes.position, sc = [];   // reaches the horizon from the camera behind the character
   for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; if ((coreDist(x, z) > 1 && wildH(x, z) > -.45) || (coreDist(x, z) <= 1 && x > 9)) SP.setY(i, -.6);   /* v2.9 the island's own sea stays at the island (elsewhere the ocean plane / lakes show) */ c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
   sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
-  const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .2, transparent: true, opacity: .58, clearcoat: .7, depthWrite: false })));   /* v3.35 clear water: you see the sand below */ sea.position.y = -.12; scene.add(sea); W.sea = sea;
+  const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .2, transparent: true, opacity: .46, clearcoat: .7, depthWrite: false })));   /* v3.35 clear water: you see the sand below */ sea.position.y = -.12; scene.add(sea); W.sea = sea;
   const R = rng(5);
   const inst = (g, mat, n, place, shadow = true) => { const m = new THREE.InstancedMesh(g, mat, n), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
     for (let i = 0; i < n * 4 && k < n; i++) { if (!place(o, cc)) continue; o.updateMatrix(); m.setMatrixAt(k, o.matrix); m.setColorAt(k, cc); k++ } m.count = k; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m };
@@ -540,7 +540,9 @@ const GIANT_BARK = '#c4b09c', GIANT_SOL = .62;
 const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), BLADE = new THREE.ConeGeometry(.04, .3, 4); BLADE.translate(0, .15, 0);
 const M_LAND = paintGround(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }));   /* v3.28 🎨 painted ground */
 /* v3.28 where the ground decor may grow: land (not water), not steep · out = a grass tint from the ground colour · null = nothing here */
-export function decorLook(x, z, out, peb) { if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
+export function decorLook(x, z, out, peb) { if (peb === 'sand') { if (waterAt(x, z)) { const d = groundH(x, z); return d > -.6 && d < -.12 ? { y: d } : null } const y = groundH(x, z); if (y > .6 || walkWorld(x, z) !== 'land') return null; return [[3.5, 0], [-3.5, 0], [0, 3.5], [0, -3.5], [2, 2], [-2, -2], [2, -2], [-2, 2]].some(([dx, dz]) => waterAt(x + dx, z + dz)) ? { y } : null }   /* v3.36 the beach and the shallows */
+  if (peb === 'sea') { if (waterAt(x, z) !== 'sea') return null; const d = groundH(x, z); return d < -.5 && d > -2.8 ? { y: d } : null }   /* coral grounds */
+  if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
   if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
   if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42) return null;   /* v3.30 not on the capitals' paving */
   const y = groundH(x, z); if (y < -.3) return null;
