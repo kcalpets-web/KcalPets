@@ -49,7 +49,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       const st2 = await N(() => window.__ng.mons.filter(m => m.T.golem).length); if (st2) errs.push('golem still alive after reset') }
     /* crafting with golem materials */
     const cr = await E(async () => { const N = window.__ng, D = await import('/newgame/src/data.js'); Object.assign(N.S.mats, { diamond: 3, goldBar: 3, golemCore: 2, bone: 2, grass: 9 }); const i = D.CRAFT.findIndex(r => r.k === 'cKingSword'), j = D.CRAFT.findIndex(r => r.k === 'cBoneBroth'); N.openCraft(); await new Promise(r => setTimeout(r, 400));
-      const bt = document.querySelector(`[data-cb="${i}"]`); if (!bt) return 'no button'; N.craftMake(i, () => {}); await new Promise(r => setTimeout(r, 300)); N.craftMake(j, () => {}); await new Promise(r => setTimeout(r, 300));   /* v3.38 the craft book */
+      const bt = document.querySelector(`[data-cb="${i}"]`); if (!bt) return 'no button'; N.S.coin += 20000; N.makerOrder(i); await new Promise(r => setTimeout(r, 300)); N.makerOrder(j); await new Promise(r => setTimeout(r, 300));   /* v3.40 made by the smith / the potion shop */
       const bad = D.CRAFT.filter(r => r.give.item && !D.ITEMS[r.give.item[0]]).map(r => r.k); return { sword: N.S.bag.some(it => it.t === 'kingSword'), broth: N.S.meals.boneBroth || 0, bad } });
     log('craft', JSON.stringify(cr)); if (!cr.sword || !cr.broth || cr.bad.length) errs.push('golem crafting failed ' + JSON.stringify(cr)); await shot('05-craft'); await closeAll();
     /* ore veins by land */
