@@ -308,7 +308,7 @@ body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.dlg) #
 .invmain.wide .invgrid{grid-template-columns:repeat(6,1fr);max-height:52vh}
 
 /* v3.33 the stick menu takes the D-pad too · while it (or the skill wheel) is open the face buttons stay bright above the dimmed world */
-body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.pad:not(.gamepad).smenuOn #stick{display:none}
+body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.smenuLR #dpad [data-dp=up],body.smenuLR #dpad [data-dp=down]{visibility:hidden}body.pad:not(.gamepad).smenuOn #stick{display:none}
 body.smenuOn #bA,body.smenuOn #bB,body.skwOn #bA,body.skwOn #bB,body.skwOn #bX,body.skwOn #bY{z-index:46;filter:brightness(1.15) saturate(1.2);box-shadow:0 0 0 4px #fff,0 0 22px #ffffffaa;animation:padGlow 1.2s ease-in-out infinite}
 @keyframes padGlow{0%,100%{box-shadow:0 0 0 4px #fff,0 0 14px #ffffff88}50%{box-shadow:0 0 0 4px #fff,0 0 28px #ffffffdd}}
 body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #bA span,body.skwOn #bA span{display:block}   /* in a menu A is A (not the 'use this' icon) */
@@ -369,7 +369,7 @@ body:has(.ov) .durb,body.cut .durb{display:none!important}
 .ord{border-top:1px solid #0001;padding:6px 0}.ord .row{display:flex;justify-content:space-between;align-items:center;gap:6px}.ord .ipic.sm{width:28px;vertical-align:middle}.ord small{display:block;font-size:12px;margin-top:2px}.ord small .dn{color:#c0402a}
 
 /* v3.40 📖 the adventure journal */
-.ov.adv .sh{background:#f6eedc;height:86vh}.ov.adv .shh h2{font-family:serif}
+.ov.adv .sh{background:#f6eedc;height:86vh}.advcar{position:sticky;top:-10px;z-index:2;background:#f6eedc;margin-bottom:8px}.advcar button{color:var(--ink)}.advcar button.on{background:#ffd23f55;border-radius:12px}.advcar .ar{color:#c88a10}.ov.adv .shh h2{font-family:serif}
 .advtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;position:sticky;top:-10px;background:#f6eedc;padding:4px 0;z-index:2}.advtabs button{border:2px solid #d8c8a8;border-radius:12px;background:#fff8ec;font-size:22px;display:flex;flex-direction:column;align-items:center;padding:4px 2px;min-height:58px}.advtabs button small{font-size:11px;font-weight:800}.advtabs button.on{background:#ffd23f;border-color:#2a2030}
 .advst{display:grid;grid-template-columns:1fr 1fr;gap:6px}.advst div{background:#fff;border:2px solid #e0d0b8;border-radius:12px;padding:8px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:0 6px;align-items:center}.advst b{grid-row:1/3;font-size:24px}.advst span{font-size:11px;color:#7a6a5a}.advst em{font-style:normal;font-weight:900;font-size:17px}
 .advmat{display:flex;flex-direction:column;gap:6px}.am{display:grid;grid-template-columns:1fr auto auto;grid-template-rows:auto auto;gap:0 8px;align-items:center;background:#fff;border:2px solid #e0d0b8;border-radius:12px;padding:6px 10px}.am span{font-size:12px;color:#7a6a5a}.am small{grid-column:1/3;font-size:12px;color:#5a4a3a}.am .btn{grid-column:3;grid-row:1/3;min-height:40px}.am.lock small{color:#b0a090}
