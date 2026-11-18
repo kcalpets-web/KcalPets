@@ -251,6 +251,7 @@ export const HAND = { sickle: { icon: '🌾', name: 'เคียว', atk: 1 },
 export const GEAR_EFF = { one: { wood: .5, grass: 1, stone: 0 }, two: { wood: .7, grass: 1, stone: 0 }, spear: { wood: .4, grass: .7, stone: 0 }, knife: { wood: .45, grass: 1.3, stone: 0 }, axe: { wood: 1.6, grass: .8, stone: 0 }, sickle: { wood: .35, grass: 2, stone: 0 }, pick: { wood: 0, grass: 0, stone: 1.6 }, hammer: { wood: 0, grass: 0, stone: 1 }, hoe: { wood: 0, grass: .6, stone: 0 }, fist: { wood: 0, grass: .5, stone: 0 } };
 export const GEAR_JOB = { axe: 'axe', sickle: 'sickle', pick: 'hammer', hammer: 'hammer', hoe: 'hoe' };   // which A-hand a kind is (the rest = 'w', the weapon)
 /* v3.22 🎯 double-tap A = throw what you hold (aim like Y): spread rad · damage × · speed m/s · gravity · wear · pick it up where it lands */
+export const PICK_MAX = 12;   /* v3.49 the item picker shows your first 12 (loops round) */
 export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4 };
 /* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
 /* v3.39 broken gear rests and comes back by itself (minutes by rarity) · the blacksmith fixes it at once · weapons / shields / bows are made by the blacksmith (coins = his labour, you bring the materials) */
