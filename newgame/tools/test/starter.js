@@ -17,6 +17,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8897, OUT = process.arg
     const s2 = await E(() => { const N = window.__ng, it = N.S.bag.find(x => x.t === 'axe0'); N.equipA(it); for (let i = 0; i < 500; i++) N.wearItem('sword', 5); return { br: !!it.br, still: N.S.eq.sword === it.id, atk: N.handAtk() } }); log('axe after 500 swings', JSON.stringify(s2));
     if (s2.br || !s2.still) errs.push('a starter tool should never break'); if (s2.atk !== 0) errs.push('a starter tool should hit monsters for 1 only');
     const s3 = await E(async () => { const N = window.__ng, sl = ms => new Promise(r => setTimeout(r, ms)), q = N.me, m = N.monSpawn('slime', q.x + 1.2, q.z + 1.2, { area: 'wild' }); await sl(300); const h0 = m.hp; N.hurtMon(m, Math.max(1, Math.round(N.handAtk())), 'dmg'); return { h0, h1: m.hp } }); log('slime hp', JSON.stringify(s3));
+    const s5 = await E(() => { const N = window.__ng; for (const t of ['axe0', 'sickle0', 'pick0', 'hoe0']) { N.equipA(N.S.bag.find(x => x.t === t)); N.aimStart('throw'); if (N.AIM && N.AIM.thr) return t } return null }); log('throwable farm tool', s5); if (s5) errs.push('farm tools should not be throwable (' + s5 + ')');
     await E(() => window.__ng.openBag('sword')); await wait(600); await pg.screenshot({ path: OUT + '/1-bag.png' });
     const s4 = await E(() => ({ inf: (document.querySelector('.ov') || {}).innerText.includes('ไม่พัง') })); if (!s4.inf) errs.push('the bag should say starter tools never break');
   } catch (e) { errs.push('X ' + e.stack) }

@@ -2293,7 +2293,7 @@ function aimFire() { const a = AIM; if (!a) return; if (a.draw) { drawNow(); ret
   if (a.ch) { shoot(a); a.ch = 0 } }   /* the bow stays up: shoot again */
 /* v3.22 🎯 a thrown weapon / tool flies (spear = straight, others spin and spread), hits, then lies where it lands until you walk over it */
 const THROWN = [];
-function throwGear(a) { const it = weaponOf(); if (!it || it.br) return; const T = D.ITEMS[it.t], kd = T.kind, k = chgK(a), spr = D.THROW.spread[kd] ?? D.THROW.spread.def, mul = D.THROW.mul[kd] ?? D.THROW.mul.def;
+function throwGear(a) { const it = weaponOf(); if (!it || it.br || (D.ITEMS[it.t] || {}).tool) return; const T = D.ITEMS[it.t], kd = T.kind, k = chgK(a), spr = D.THROW.spread[kd] ?? D.THROW.spread.def, mul = D.THROW.mul[kd] ?? D.THROW.mul.def;
   if (!spendEn(Math.round(D.SWORD_EN * 1.5))) { hint('⚡ เหนื่อยเกินกว่าจะปา', 1200); return } const dmg = Math.max(1, Math.round(handAtk() * mul * (.6 + .4 * k)));
   aimRay(); const tgt = a.tgt && mons.includes(a.tgt) ? a.tgt : null, o = camTP() ? cam.position.clone().addScaledVector(_aD, .8) : new THREE.Vector3(me().x, me().y + 1.3, me().z);
   const dir = tgt ? (() => { const q = tgt.A.root.position; return new THREE.Vector3(q.x, q.y + .6 * (MSCALE[tgt.kind] || .85), q.z).sub(o).normalize() })() : _aD.clone();
@@ -2316,7 +2316,7 @@ function aimStart0(kind = 'bow') {
   if (kind === 'draw') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .05, tgt: null, draw: 1 }; document.body.classList.add('aim', 'drawaim'); $('xN').textContent = '🖍️ จัดกรอบภาพ'; gearView(); return }
   if (kind === 'net') { walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; AIM = { t0: performance.now(), p: .08, tgt: null, net: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = '🕸️ ตาข่าย'; gearView(); airAim(); return }   /* v3.8.1 🕸️ aim the net like the bow */
   if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .62 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
-  if (kind === 'throw') { const w = weaponOf(); if (!w || w.br) { hint('✋ ไม่มีอะไรให้ปา', 1100); return } walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; if (LOCK && mons.includes(LOCK)) { const q = LOCK.A.root.position; yaw = Math.atan2(q.x - me().x, q.z - me().z); if (camTP()) CAM.yaw = yaw }
+  if (kind === 'throw') { const w = weaponOf(); if (!w || w.br) { hint('✋ ไม่มีอะไรให้ปา', 1100); return } if (D.ITEMS[w.t].tool) { hint(`🧰 ${D.ITEMS[w.t].icon} ${D.ITEMS[w.t].name} เป็นเครื่องมือฟาร์ม ปาไม่ได้`, 1400); return }   /* v3.46 farm tools are not for throwing */ walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; if (LOCK && mons.includes(LOCK)) { const q = LOCK.A.root.position; yaw = Math.atan2(q.x - me().x, q.z - me().z); if (camTP()) CAM.yaw = yaw }
     AIM = { t0: performance.now(), p: .05, tgt: null, thr: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = `🎯 ปา ${D.ITEMS[w.t].icon} ${D.ITEMS[w.t].name}`; gearView(); airAim(); return }   /* v3.22 */
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🎒 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
