@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8"><title>KEALEE · reference sheet</title>
+<style>body{margin:0;background:#f4efe6;font-family:system-ui,sans-serif}svg{display:block}</style>
+<!-- v3.32 the main character's turnaround (front / side), drawn for the part-by-part model in tools/art/kealee.html · 3 heads tall -->
+<svg id="s" width="1200" height="980" viewBox="0 0 1200 980" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a5a34"/><stop offset="1" stop-color="#6e3e22"/></linearGradient>
+    <linearGradient id="skirt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7a78"/><stop offset="1" stop-color="#235e5c"/></linearGradient>
+    <radialGradient id="skin" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#fff0e6"/><stop offset="1" stop-color="#f2cdb8"/></radialGradient>
+    <radialGradient id="iris" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#6ad0c0"/><stop offset="1" stop-color="#1f6a62"/></radialGradient>
+  </defs>
+  <rect width="1200" height="980" fill="#f4efe6"/>
+  <text x="40" y="52" font-size="30" font-weight="700" fill="#3a2a30">KEALEE · แผ่นต้นแบบตัวละครหลัก</text>
+  <text x="40" y="84" font-size="17" fill="#7a6a6a">สูง 3 หัว · ผมยาวน้ำตาล + กิ๊บแดง · ตาเขียวน้ำทะเล · เสื้อทูนิกขาว + เข็มขัด + กระเป๋าสะพาย · กระโปรงเขียวทะเล · ถุงน่องเข้ม · บูทหนัง</text>
+  <!-- guide lines (heights in heads) -->
+  <g stroke="#c8b8a8" stroke-dasharray="6 6" stroke-width="1.2" font-size="13" fill="#a89888">
+    <line x1="40" x2="1160" y1="120" y2="120"/><text x="1080" y="114" stroke="none">ยอดหัว</text>
+    <line x1="40" x2="1160" y1="380" y2="380"/><text x="1080" y="374" stroke="none">คาง (1 หัว)</text>
+    <line x1="40" x2="1160" y1="540" y2="540"/><text x="1080" y="534" stroke="none">เอว</text>
+    <line x1="40" x2="1160" y1="640" y2="640"/><text x="1080" y="634" stroke="none">ชายกระโปรง (2 หัว)</text>
+    <line x1="40" x2="1160" y1="900" y2="900"/><text x="1080" y="894" stroke="none">พื้น (3 หัว)</text>
+  </g>
+
+  <!-- ================= FRONT ================= -->
+  <g id="front" transform="translate(330 0)">
+    <!-- hair behind -->
+    <path d="M-132 230 C-150 330 -150 450 -128 560 C-110 585 -70 590 -60 560 L-40 380 L40 380 L60 560 C70 590 110 585 128 560 C150 450 150 330 132 230 Z" fill="url(#hair)"/>
+    <!-- legs: stockings + boots -->
+    <rect x="-40" y="630" width="30" height="190" rx="14" fill="#4a3442"/><rect x="10" y="630" width="30" height="190" rx="14" fill="#4a3442"/>
+    <path d="M-46 800 h40 v72 q0 14 -14 18 h-32 q-12 -2 -10 -16 z" fill="#7a4a2a"/><path d="M6 800 h40 v72 q2 14 -10 16 h-32 q-14 -4 -14 -18 z" fill="#7a4a2a"/>
+    <rect x="-48" y="796" width="44" height="12" rx="5" fill="#a8703e"/><rect x="4" y="796" width="44" height="12" rx="5" fill="#a8703e"/>
+    <!-- skirt -->
+    <path d="M-50 528 L50 528 L88 640 Q0 656 -88 640 Z" fill="url(#skirt)"/><path d="M-88 640 Q0 656 88 640 L90 652 Q0 668 -90 652 Z" fill="#f4f0e8"/>
+    <path d="M-20 532 L-34 640 M20 532 L34 640" stroke="#1f5452" stroke-width="3" fill="none"/>
+    <!-- arms (behind the tunic) -->
+    <path d="M-62 410 Q-96 470 -98 560" stroke="#f2cdb8" stroke-width="24" stroke-linecap="round" fill="none"/><path d="M62 410 Q96 470 98 560" stroke="#f2cdb8" stroke-width="24" stroke-linecap="round" fill="none"/>
+    <circle cx="-99" cy="572" r="17" fill="#f2cdb8"/><circle cx="99" cy="572" r="17" fill="#f2cdb8"/>
+    <!-- tunic -->
+    <path d="M-30 392 L30 392 L66 408 Q74 470 56 532 L-56 532 Q-74 470 -66 408 Z" fill="#f8f6f0" stroke="#d8d0c4" stroke-width="2"/>
+    <ellipse cx="-72" cy="420" rx="26" ry="22" fill="#f8f6f0" stroke="#d8d0c4" stroke-width="2"/><ellipse cx="72" cy="420" rx="26" ry="22" fill="#f8f6f0" stroke="#d8d0c4" stroke-width="2"/>
+    <path d="M-18 392 L0 422 L18 392" fill="none" stroke="#c8a070" stroke-width="3"/>
+    <rect x="-58" y="512" width="116" height="18" rx="6" fill="#7a4a2a"/><rect x="-10" y="510" width="20" height="22" rx="4" fill="#e8c060"/>
+    <path d="M-54 404 L52 528" stroke="#8a5a32" stroke-width="9" stroke-linecap="round"/><rect x="40" y="520" width="40" height="34" rx="8" fill="#8a5a32"/><rect x="44" y="524" width="32" height="10" rx="4" fill="#a8703e"/>
+    <!-- neck + head -->
+    <rect x="-13" y="366" width="26" height="32" rx="10" fill="#f2cdb8"/>
+    <ellipse cx="0" cy="252" rx="128" ry="132" fill="url(#skin)"/>
+    <ellipse cx="-133" cy="270" rx="14" ry="24" fill="#f2cdb8"/><ellipse cx="133" cy="270" rx="14" ry="24" fill="#f2cdb8"/>
+    <!-- face -->
+    <g id="eye"><ellipse cx="-50" cy="268" rx="27" ry="34" fill="#fff"/><ellipse cx="-50" cy="272" rx="22" ry="29" fill="url(#iris)"/><ellipse cx="-50" cy="276" rx="11" ry="15" fill="#1a2a2a"/><circle cx="-58" cy="260" r="7" fill="#fff"/><circle cx="-42" cy="284" r="3.5" fill="#fff"/><path d="M-80 246 Q-50 228 -22 244" stroke="#3a2420" stroke-width="5" fill="none" stroke-linecap="round"/></g>
+    <use href="#eye" transform="scale(-1 1)"/>
+    <path d="M-72 222 Q-50 214 -30 220 M72 222 Q50 214 30 220" stroke="#7a4428" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-80" cy="312" rx="20" ry="11" fill="#ff9a9a" opacity=".45"/><ellipse cx="80" cy="312" rx="20" ry="11" fill="#ff9a9a" opacity=".45"/>
+    <circle cx="0" cy="300" r="3" fill="#d8a088"/><path d="M-16 326 Q0 340 16 326" stroke="#a8504a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- fringe + side locks -->
+    <path d="M-130 250 C-138 150 -70 112 0 112 C70 112 138 150 130 250 C120 212 100 196 84 198 C76 222 60 214 52 196 C40 214 22 214 14 196 C4 216 -16 214 -22 196 C-34 216 -52 212 -58 196 C-70 214 -96 210 -102 200 C-114 206 -124 226 -130 250 Z" fill="url(#hair)"/>
+    <path d="M-130 240 C-140 300 -132 350 -118 390 L-104 300 Z M130 240 C140 300 132 350 118 390 L104 300 Z" fill="#7a4428"/>
+    <g transform="translate(78 176) rotate(25)"><rect x="-22" y="-7" width="44" height="14" rx="7" fill="#ff4a5a"/><circle cx="-14" cy="0" r="5" fill="#ffd0d4"/></g>
+  </g>
+
+  <!-- ================= SIDE (facing right) ================= -->
+  <g id="side" transform="translate(860 0)">
+    <path d="M-120 210 C-150 320 -138 470 -96 560 C-80 584 -50 580 -46 552 L-30 390 L20 380 L10 230 Z" fill="url(#hair)"/>
+    <rect x="-16" y="630" width="30" height="190" rx="14" fill="#4a3442"/>
+    <path d="M-22 800 h40 v52 q30 4 34 22 q0 14 -14 16 h-58 q-6 -2 -4 -14 z" fill="#7a4a2a"/><rect x="-24" y="796" width="44" height="12" rx="5" fill="#a8703e"/>
+    <path d="M-36 528 L36 528 L62 640 Q0 652 -64 640 Z" fill="url(#skirt)"/><path d="M-64 640 Q0 652 62 640 L64 652 Q0 664 -66 652 Z" fill="#f4f0e8"/>
+    <path d="M-34 392 L34 392 Q46 470 40 532 L-40 532 Q-48 470 -34 392 Z" fill="#f8f6f0" stroke="#d8d0c4" stroke-width="2"/>
+    <rect x="-42" y="512" width="86" height="18" rx="6" fill="#7a4a2a"/><rect x="-62" y="516" width="30" height="36" rx="8" fill="#8a5a32"/>
+    <ellipse cx="0" cy="420" rx="24" ry="22" fill="#f8f6f0" stroke="#d8d0c4" stroke-width="2"/>
+    <path d="M0 418 Q6 480 4 560" stroke="#f2cdb8" stroke-width="24" stroke-linecap="round" fill="none"/><circle cx="4" cy="572" r="17" fill="#f2cdb8"/>
+    <rect x="-8" y="366" width="26" height="32" rx="10" fill="#f2cdb8"/>
+    <ellipse cx="6" cy="252" rx="122" ry="132" fill="url(#skin)"/>
+    <path d="M118 262 q12 8 4 18" stroke="#e8b8a0" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="72" cy="270" rx="14" ry="32" fill="#fff"/><ellipse cx="76" cy="274" rx="10" ry="27" fill="url(#iris)"/><ellipse cx="78" cy="276" rx="5" ry="13" fill="#1a2a2a"/><circle cx="74" cy="262" r="4" fill="#fff"/>
+    <path d="M56 244 Q76 234 94 244" stroke="#3a2420" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="74" cy="312" rx="14" ry="9" fill="#ff9a9a" opacity=".45"/><path d="M96 326 Q106 334 114 326" stroke="#a8504a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-10" cy="272" rx="14" ry="24" fill="#f2cdb8"/>
+    <path d="M-118 250 C-128 150 -60 110 10 112 C78 114 128 150 126 230 C112 206 96 198 84 200 C76 220 62 214 56 198 C30 196 20 210 6 230 C-20 250 -40 300 -40 340 C-70 320 -100 300 -118 250 Z" fill="url(#hair)"/>
+    <g transform="translate(60 160) rotate(20)"><rect x="-22" y="-7" width="44" height="14" rx="7" fill="#ff4a5a"/><circle cx="-14" cy="0" r="5" fill="#ffd0d4"/></g>
+  </g>
+  <text x="330" y="950" font-size="20" text-anchor="middle" fill="#5a4a50">ด้านหน้า</text><text x="860" y="950" font-size="20" text-anchor="middle" fill="#5a4a50">ด้านข้าง</text>
+</svg>
