@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.45';
+export const APP_VER = '3.46';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -136,21 +136,21 @@ export const ITEMS = {
   soldierSpear:  { slot: 'sword', kind: 'spear', name: 'หอกทหาร', icon: '🔱', atk: 19, dur: 30, tier: 3 },
   trident:       { slot: 'sword', kind: 'spear', name: 'หอกสามง่ามทะเล', icon: '🔱', atk: 27, dur: 34, tier: 4 },
   /* v3.22 tools are bag items too (durability · break · repair) · tm = the hand model · tool = cheaper to repair */
-  sickle0: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวไม้', icon: '🌾', atk: 3, dur: 60, tier: 1 },
+  sickle0: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, starter: 1, name: 'เคียวไม้', icon: '🌾', atk: 1, dur: 60, tier: 1 },
   sickle1: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวหิน', icon: '🌾', atk: 5, dur: 90, tier: 2 },
   sickle2: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวเหล็ก', icon: '🌾', atk: 8, dur: 130, tier: 3 },
   sickle3: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวคริสตัล', icon: '🌾', atk: 12, dur: 180, tier: 4 },
-  axe0: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานไม้', icon: '🪓', atk: 5, dur: 60, tier: 1 },
+  axe0: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, starter: 1, name: 'ขวานไม้', icon: '🪓', atk: 1, dur: 60, tier: 1 },
   axe1: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานหิน', icon: '🪓', atk: 8, dur: 90, tier: 2 },
   axe2: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานเหล็ก', icon: '🪓', atk: 12, dur: 130, tier: 3 },
   axe3: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานคริสตัล', icon: '🪓', atk: 17, dur: 180, tier: 4 },
-  pick0: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อไม้', icon: '⛏️', atk: 5, dur: 60, tier: 1 },
+  pick0: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, starter: 1, name: 'อีเต้อไม้', icon: '⛏️', atk: 1, dur: 60, tier: 1 },
   pick1: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อหิน', icon: '⛏️', atk: 8, dur: 90, tier: 2 },
   pick2: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อเหล็ก', icon: '⛏️', atk: 12, dur: 130, tier: 3 },
   pick3: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อคริสตัล', icon: '⛏️', atk: 17, dur: 180, tier: 4 },
   mallet0: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนไม้', icon: '🔨', atk: 7, dur: 50, tier: 1 },
   mallet1: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3 },
-  hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, name: 'จอบ', icon: '🪏', atk: 4, dur: 120, tier: 1 },
+  hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, starter: 1, name: 'จอบ', icon: '🪏', atk: 1, dur: 120, tier: 1 },
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
@@ -739,3 +739,5 @@ export const MERCHANT = { cycle: 10, stay: 3, near: 110, n: { gear: 2, wear: 2, 
   mats: { diamond: [1, 900], golemCore: [1, 1200], crystal: [3, 300], aquamarine: [2, 350], emerald: [2, 350], goldBar: [2, 500], lavaCoal: [2, 400] } };
 /* v3.44 🛣️ roads: hw = half width (m) · safe = night packs keep this far off the road · horse = speed × on the road */
 export const ROAD = { hw: 1.8, safe: 14, horse: 1.3 };
+/* v3.46 🧰 the starter farm tools: everyone has them · they never break · on a monster they do 1 damage */
+export const STARTER_TOOLS = ['sickle0', 'axe0', 'pick0', 'hoe0'];
