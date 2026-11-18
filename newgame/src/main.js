@@ -64,8 +64,8 @@ function setTime() {                                         // lighting follows
     if (cl > .01) { hemi.intensity *= 1 - .3 * cl; sun.intensity *= 1 - .65 * cl; SKY.material.uniforms.top.value.lerp(GREY, cl * .65); SKY.material.uniforms.bot.value.lerp(GREY, cl * .5); scene.background.lerp(GREY, cl * .5) }
     if (WXS.flash > 0) { hemi.intensity += WXS.flash * 2.2; SKY.material.uniforms.bot.value.lerp(_c2.set('#e8ecff'), WXS.flash * .5) } }
   if (scene.fog) scene.fog.color.copy(SKY.material.uniforms.bot.value);
-  if (!eco) { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI, e = Math.sin(a) * .9 + .05;   /* v3.3 the light comes from where the sun is in the sky (never lower than ~30°, so shadows stay readable) · at night from the moon's fixed spot */
-    SUND.set(Math.cos(a) * .95, Math.max(D.SUN.minY, e * 1.25), -.35).normalize().lerp(MOOND, k).normalize() }
+  if (!eco) { const a = (Math.min(1320, Math.max(300, S.time)) - 300) / 1020 * Math.PI, e = Math.sin(a) * .9 + .05;   /* v3.43 east → west, leaning south (as in Thailand) · v3.3 the light comes from where the sun is in the sky (never lower than ~30°, so shadows stay readable) · at night from the moon's fixed spot */
+    SUND.set(Math.cos(a) * .95, Math.max(D.SUN.minY, e * 1.25), .35).normalize().lerp(MOOND, k).normalize() }
   R.toneMappingExposure = .95 + .1 * k; const n = isNight(); if (n !== wasNight) { wasNight = n; document.body.classList.toggle('night', n); ambience(); if (S.story.slept) toast(n ? '🌙 ตกกลางคืนแล้ว… มอนสเตอร์ดุขึ้น แต่ดรอปของดีขึ้น' : '🌅 เช้าแล้ว!', 2400) }
 }
 function timeTick(dt) { if (!S.story.slept) { S.time = D.DAY.first; return } S.time = (S.time + dt) % 1440; needsTick(dt); torchTick(dt) }
