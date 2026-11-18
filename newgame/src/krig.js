@@ -71,7 +71,7 @@ function headMesh(L) { const g = new THREE.Group(), R = .2;
 /* hair (rigid on Head): bob = a round cap + soft bangs + side locks to the chin · short = a neat cap + a short fringe */
 function hairMesh(L) { const g = new THREE.Group(), c = L.hair, R = .2;
   const cap = sph(R * 1.08, c, 1.05, 1, 1.03, 40); cap.position.set(0, .0, -.008); cap.geometry = new THREE.SphereGeometry(R * 1.08, 40, 28, 0, Math.PI * 2, 0, Math.PI * .4); g.add(cap);
-  const back = sph(R * 1.08, c, 1.05, 1, 1); back.geometry = new THREE.SphereGeometry(R * 1.08, 36, 24, Math.PI * .58, Math.PI * .84, Math.PI * .3, Math.PI * .5); back.position.set(0, .0, -.012); g.add(back);   /* the back of the bob (behind the ears) */
+  const back = sph(R * 1.08, c, 1.05, 1, 1); back.geometry = new THREE.SphereGeometry(R * 1.08, 36, 24, Math.PI * 1.06, Math.PI * .88, Math.PI * .3, Math.PI * .5); back.position.set(0, .0, -.012); g.add(back);   /* the back of the bob (behind the ears) */
   const n = L.style === 'short' ? 5 : 6; for (let i = 0; i < n; i++) { const t = i / (n - 1) - .5, lock = sph(.042, c, 1, L.style === 'short' ? .8 : 1.05, .5); lock.position.set(t * .26, .108 - Math.abs(t) * .035, R * .9); lock.rotation.z = t * .5; lock.rotation.x = -.3; g.add(lock) }   /* the fringe */
   for (const s of [-1, 1]) { const sd = sph(.05, c, .6, L.style === 'short' ? 1.2 : 1.9, .9); sd.position.set(s * R * 1.0, L.style === 'short' ? 0 : -.05, .03); sd.rotation.z = s * .12; g.add(sd); if (L.style !== 'short') { const tip = sph(.034, c, .9, 1, .9); tip.position.set(s * R * .96, -.14, .045); g.add(tip) } }
   return g }
