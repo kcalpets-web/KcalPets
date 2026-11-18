@@ -37,7 +37,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8836, OUT = process.arg
     // 🎒 bag by stick
     await E(() => window.__ng.openBag('sword')); await wait(700); const z0 = await E(() => { window.__ng.navCur(); const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('v3.23 the bag starts on a section', z0); if (!z0) errs.push('the bag should start on the sections');
     await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(500);   /* A = into the section */ await dpad('down');
-    const f0 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await dpad('left');
+    const f0 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await dpad('up');
     const f1 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await pg.screenshot({ path: OUT + '/bag-nav.png' }); log('frame', f0, '→', f1);
     if (!f0 || !f1 || f0 === f1) errs.push('the stick did not move the frame in the bag');
     const vis = await E(() => ['dpad', 'bA', 'bB'].map(id => { const r = document.getElementById(id).getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!(e && (e.id === id || e.closest('#' + id))) })); log('stick/A/B on top of the bag', vis); if (vis.includes(false)) errs.push('D-pad / A / B are under the bag');
