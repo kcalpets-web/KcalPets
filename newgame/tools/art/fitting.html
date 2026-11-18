@@ -1,0 +1,28 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE fitting</title>
+<style>body{margin:0;background:#f4ead8;font:600 13px system-ui;color:#3a2a20}h2{margin:10px 12px 4px;font-size:18px}.g{display:grid;grid-template-columns:repeat(8,170px);gap:5px;padding:6px 10px}.c{background:#fff8ee;border:2px solid #2a2030;border-radius:10px;overflow:hidden}.c b{display:block;padding:3px 6px;background:#2a2030;color:#fff;font-size:12px;white-space:nowrap;overflow:hidden}canvas{display:block}</style></head>
+<body><div id="out"></div>
+<script type="module">
+/* v3.43 fitting check: every outfit (body layer) × hair · every hat (layer 2) on long + spiky hair · face pieces (head slot) × hats · the game's own build: vinyl() + npcHat() */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl, VLOOK, VHATS } from '../../src/vinyl.js';
+import { npcHat } from '../../src/clay.js';
+const W = 170, H = 210, out = document.getElementById('out'); let grid;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+const sc = new THREE.Scene(); sc.background = new THREE.Color('#fff8ee'); sc.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); sc.add(sun);
+const sec = t => { const box = document.createElement('section'), h = document.createElement('h2'); h.textContent = t; grid = document.createElement('div'); grid.className = 'g'; box.append(h, grid); out.appendChild(box) };
+function cell(title, look, face, rot = .5, head = false) { const g = new THREE.Group(); vinyl(g, look); if (face) npcHat(g, face); g.rotation.y = rot; sc.add(g);
+  const c = new THREE.PerspectiveCamera(30, W / H, .1, 50); if (head) { c.position.set(0, 1.25, 2.2); c.lookAt(0, 1.1, 0) } else { c.position.set(0, .95, 4.4); c.lookAt(0, .8, 0) }
+  r.render(sc, c); sc.remove(g); const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<b>${title}</b>`; const im = new Image(); im.src = r.domElement.toDataURL(); d.appendChild(im); grid.appendChild(d) }
+const M = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'spiky', hairCol: '#4a2e22', top: '#3a8ad8', eyes: 'round' }, F = { v: 2, sex: 'f', skin: '#f9e0d2', hair: 'long', hairCol: '#9a5a34', top: '#d84a9a', bottom: 'skirt', eyes: 'round' };
+sec('1 · ชุด (ชั้นตัว) × ชาย/หญิง หน้า+หลัง');
+for (const [w, n] of VLOOK.wear) { cell(n + ' ♂', { ...M, wear: w }); cell(n + ' ♀', { ...F, wear: w }, null, Math.PI + .5) }
+sec('2 · หมวก (ชั้น 2) บนผมยาว');
+for (const [h, n] of VHATS) cell(n, { ...F, wear: 'traveler', hat: h }, null, .6, true);
+sec('3 · หมวก บนผมตั้ง/ผมมัด');
+VHATS.forEach(([h, n], i) => cell(n, { ...M, hair: i % 2 ? 'spiky' : 'pony', wear: 'traveler', hat: h }, null, -.6, true));
+sec('4 · ของบนหน้า (ช่องหัว) × หมวก');
+for (const f of ['veil', 'scarf', 'furmask', 'mask']) for (const h of ['none', 'knight', 'helmet', 'hood', 'wizard', 'straw', 'goggles', 'beanie']) cell(f + ' + ' + h, { ...F, wear: 'traveler', hat: h }, f, .5, true);
+sec('5 · ชุด × หมวก ที่น่าจะชนกัน');
+for (const w of ['cape', 'robe', 'knight', 'kimono']) for (const h of ['hood', 'helmet', 'knight', 'wizard']) cell(w + ' + ' + h, { ...F, wear: w, hat: h }, null, Math.PI * .8);
+document.title = 'done';
+</script></body></html>
