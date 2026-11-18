@@ -18,6 +18,8 @@ const LOOK = {
   deadgar:   { stone: '#5c5068', dark: '#2f2938', pave: '#4b4358', roof: '#3b2f4a', glow: '#b06aff', moss: '#4a4058' },
 };
 export const CAP_GOLD = '#ffd88a';
+/* v3.45 🌙 at night: the keep's windows light up · torches burn by the gate and on the towers (main.js: CAP_WIN.emissiveIntensity · CAP_FIRE.visible) */
+export const CAP_WIN = new THREE.MeshStandardMaterial({ color: '#2a2430', emissive: '#ffc060', emissiveIntensity: 0, roughness: .6 }), CAP_FIRE = new THREE.MeshBasicMaterial({ color: '#ff9a30' }), CAP_FIRE2 = new THREE.MeshBasicMaterial({ color: '#fff0a0' });
 
 export function buildCapital(k, cx, cz, H, ry = 0) {
   const L = LOOK[k], std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .93, flatShading: true }, o));
@@ -46,6 +48,8 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone).userData.roof = 1.4 + KH + 1.2;   /* v3.30.3 a roof you can stand on (landing from the sky never drops you inside) */ box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
   for (let i = 0; i < 7; i++) box(-KW / 2 + 1.2 + i * (KW - 2.4) / 6, 1.4 + KH + 1.2, KZ + KD / 2 + .2, 1, 1.2, 1, M.dark);   // battlements
   add(new THREE.BoxGeometry(4.4, 7, .5), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .3); arch(0, 1.4 + 7, KZ + KD / 2 + .55, 2.3, .45, M.dark);   // the doorway (glows)
+  for (const [wx, wy] of [[-5.5, 4.6], [-3, 4.6], [3, 4.6], [5.5, 4.6], [-5.5, 9.6], [-2.6, 9.6], [0, 10.2], [2.6, 9.6], [5.5, 9.6]]) add(new THREE.BoxGeometry(1, 1.7, .12), CAP_WIN, wx, 1.4 + wy, KZ + KD / 2 + .06).userData.nosol = 1;   /* v3.45 the keep's windows */
+  for (const sx of [-1, 1]) for (const wy of [4.6, 9.6]) for (const wz of [-3, 3]) add(new THREE.BoxGeometry(.12, 1.7, 1), CAP_WIN, sx * (KW / 2 + .06), 1.4 + wy, KZ + wz).userData.nosol = 1;
   for (let i = 0; i < 5; i++) box(0, 0, KZ + KD / 2 + 2.6 + i * .7, 6 - i * .3, 1.4 - i * .28, .7, M.dark).userData.walk = 1;   // steps you climb (v3.30.1: were picture-only, you sank into them)
   for (const [tx, tz, broken] of [[-KW / 2, KZ + KD / 2, 0], [KW / 2, KZ + KD / 2, 1], [-KW / 2, KZ - KD / 2, 0], [KW / 2, KZ - KD / 2, 0]]) { const th = broken ? 12 : 22 + R() * 4;
     cyl(tx, 0, tz, 3, 2.6, th, M.stone, 10); if (!broken) { k === 'navalee' ? add(new THREE.SphereGeometry(2.9, 12, 8, 0, 6.283, 0, 1.6), M.roof, tx, th, tz) : k === 'frosthelm' ? cone(tx, th, tz, 2.2, 14, M.ice, 6) : cone(tx, th, tz, 3.1, 8 + (k === 'asrah' || k === 'valkara' || k === 'deadgar' ? 4 : 0), M.roof, 8) }
@@ -64,7 +68,9 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     if (Math.abs(Math.atan2(mz, mx) - Math.PI / 2) < .22) continue; if (wi % 5 === 2) { box(mx, 0, mz, len * .45, .9 + R(), 1.6, M.dark, r0); continue }
     const h = 5 + R() * 3; box(mx, 0, mz, len + .4, h, 1.6, wi % 3 ? M.stone : M.dark, r0); for (const kk of [-1, 1]) box(mx + Math.cos(r0) * kk * len * .3, h, mz - Math.sin(r0) * kk * len * .3, .9, .9, 1.7, M.stone, r0);
     if (wi % 7 === 0) { cyl(x1, 0, z1, 2.4, 2.1, h + 4, M.stone, 10); cone(x1, h + 4, z1, 2.7, 4, M.roof, 8) } }
-  for (const sx of [-1, 1]) { cyl(sx * 5, 0, RW, 2.4, 2.1, 10, M.stone, 10); cone(sx * 5, 10, RW, 2.8, 4, M.roof, 10) } box(0, 6.5, RW, 8, 2.2, 2, M.stone); arch(0, 6.5, RW, 2.6, .5, M.dark);
+  for (const sx of [-1, 1]) { cyl(sx * 5, 0, RW, 2.4, 2.1, 10, M.stone, 10); cone(sx * 5, 10, RW, 2.8, 4, M.roof, 10) }
+  const torch = (x, y, z) => { box(x, y - .9, z, .14, .9, .14, M.wood).userData.nosol = 1; cone(x, y, z, .2, .55, CAP_FIRE, 6).userData.nosol = 1; cone(x, y + .05, z, .11, .34, CAP_FIRE2, 5).userData.nosol = 1 };   /* v3.45 */
+  for (const sx of [-1, 1]) torch(sx * 3.4, 4.2, RW + 1.15); for (let i = 0; i < 6; i++) { const a = i * 1.047 + .5, x = Math.cos(a) * (RW - .2), z = Math.sin(a) * (RW - .2); if (Math.abs(Math.atan2(z, x) - Math.PI / 2) < .4) continue; torch(x, 6.6, z) } box(0, 6.5, RW, 8, 2.2, 2, M.stone); arch(0, 6.5, RW, 2.6, .5, M.dark);
   for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = 6 + R() * 22; if (Math.abs(Math.sin(a) * r - KZ) < 9 && Math.abs(Math.cos(a) * r) < 12) continue; box(Math.cos(a) * r, 0, Math.sin(a) * r, .6 + R() * 1.3, .4 + R() * .8, .6 + R() * 1.1, R() < .5 ? M.stone : M.dark, R() * 3).userData.nosol = 1 }   /* rubble: walk over it */
   for (let i = 0; i < 14; i++) { const a = R() * 6.28, r = 6 + R() * 22; moss(Math.cos(a) * r, .03, Math.sin(a) * r, 1.4 + R() * 2.4, 1.4 + R() * 2.4) }
 

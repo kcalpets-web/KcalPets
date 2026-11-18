@@ -3,6 +3,7 @@
    timber houses with blue roofs · a curtain wall with round towers, blue anchor banners and a gate to the east · a castle on the hill behind (scenery)
    buildHarbour(HB, groundH) → { G, sols, light, flags } · local x = east (inland), z = north/south · the plaza sits at (HB.x + 13, HB.z) */
 import * as THREE from '../lib/three.module.min.js';
+import { M_WIN } from './world.js';
 
 export function buildHarbour(HB, groundH) {
   const std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .9, flatShading: true }, o));
@@ -51,7 +52,7 @@ export function buildHarbour(HB, groundH) {
   /* ---- timber houses with blue / orange roofs (behind the shop rows) ---- */
   const house = (x, z, ry, w, d, h, roof) => { const y = gh(x, z), g = new THREE.Group(); g.position.set(ox + x, y, oz + z); g.rotation.y = ry; G.add(g); const bx = (W, H, D, px, py2, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), m); o.position.set(px, py2, pz); g.add(o) };
     bx(w, h * .45, d, 0, h * .225, 0, M.stone); bx(w + .1, h * .55, d + .1, 0, h * .45 + h * .275, 0, M.plaster); for (const s of [-1, 1]) { bx(.12, h * .55, d + .14, s * w / 2, h * .725, 0, M.beam); bx(w + .14, .12, .12, 0, h * .45, s * d / 2, M.beam) }
-    for (let k = -1; k <= 1; k += 2) bx(.6, .7, .06, k * w / 4, h * .72, d / 2 + .06, M.blue); const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(w, d) * .6, h * .55, 4), roof); rf.position.y = h + h * .27; rf.rotation.y = Math.PI / 4; rf.scale.set(w / Math.hypot(w, d) * 1.45, 1, d / Math.hypot(w, d) * 1.45); g.add(rf);
+    for (let k = -1; k <= 1; k += 2) bx(.6, .7, .06, k * w / 4, h * .72, d / 2 + .06, M_WIN);   /* v3.45 lit at night */ const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(w, d) * .6, h * .55, 4), roof); rf.position.y = h + h * .27; rf.rotation.y = Math.PI / 4; rf.scale.set(w / Math.hypot(w, d) * 1.45, 1, d / Math.hypot(w, d) * 1.45); g.add(rf);
     bx(.4, 1.2, .4, w * .3, h + h * .35, -d * .2, M.stoneD); sols.push({ x: ox + x, z: oz + z, hw: w / 2 + .1, hd: d / 2 + .1, ry }); G.userData.chim = (G.userData.chim || []).concat([[ox + x + Math.cos(ry) * w * .3 - Math.sin(ry) * d * .2 * 0, y + h * 1.65, oz + z]]) };
   for (const [x, z, ry, w, d, h, r] of [[6, -16, 0, 4, 3.4, 3.4, M.roofB], [11, -17, .1, 3.6, 3.2, 4, M.roofO], [17, -16.5, -.1, 4.2, 3.4, 3.6, M.roofB], [23, -15, -.3, 3.6, 3.2, 3.2, M.roofR], [6, 16, Math.PI, 4, 3.4, 3.6, M.roofO], [11.5, 17, Math.PI - .1, 3.8, 3.2, 3.8, M.roofB], [17.5, 16.5, Math.PI + .1, 4, 3.4, 3.4, M.roofB], [23.5, 15, Math.PI + .3, 3.6, 3.2, 3.6, M.roofO], [28, -9, -Math.PI / 2, 3.6, 3.2, 3.4, M.roofB], [28, 9, -Math.PI / 2, 3.6, 3.2, 3.8, M.roofR]]) house(x, z, ry, w, d, h, r);
   /* ---- the curtain wall: an arc to the east · round towers · the gate (the road east) · banners ---- */

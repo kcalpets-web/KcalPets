@@ -320,12 +320,14 @@ export const walkTown = (x, z) => x > TOWN.x0 && x < TOWN.x1 && z > TOWN.z0 && z
 export const SHOP_POS = [[-5, -6.5, 0], [0, -7.5, 0], [5, -6.5, 0], [-6.5, 5.5, Math.PI], [0, 7, Math.PI], [6.5, 5.5, Math.PI], [8, -1.5, -Math.PI / 2]];
 /* v3.13 a shop building for the harbour town (same clay recipe as the island's, one merged group) */
 /* v3.41 a harbour shop in the town's timber style: a stone ground floor · white plaster with dark beams · a steep roof · a door, windows, a striped awning and a sign (door towards +z) */
+/* v3.45 🪟 windows that light up at night (homes · the bar · harbour houses) — main.js turns emissiveIntensity up after dusk */
+export const M_WIN = new THREE.MeshStandardMaterial({ color: '#3a4a6a', emissive: '#ffc060', emissiveIntensity: 0, roughness: .6, flatShading: true });
 const HSM = {}; const hsm = (c, o = {}) => HSM[c] || (HSM[c] = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .9, flatShading: true }, o)));
-export function harbourShop(g, roof) { const b = (w, h, d, x, y, z, c, ry = 0, rx = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hsm(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); g.add(m); return m };
+export function harbourShop(g, roof, lit) { const b = (w, h, d, x, y, z, c, ry = 0, rx = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hsm(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); g.add(m); return m };
   b(2.9, 1.8, 2.35, 0, -.9, 0, '#7a6a58'); b(2.7, 1, 2.15, 0, .5, 0, '#b8b2a4'); b(2.74, 1.3, 2.19, 0, 1.65, 0, '#f0e4cc');
   for (const s of [-1, 1]) { b(.12, 1.3, 2.25, s * 1.35, 1.65, 0, '#6a4428'); b(2.8, .12, .12, 0, 1.02, s * 1.09, '#6a4428'); b(2.8, .12, .12, 0, 2.3, s * 1.09, '#6a4428') }
   const rf = new THREE.Mesh(new THREE.ConeGeometry(2.1, 1.5, 4), hsm(roof)); rf.position.y = 3.05; rf.rotation.y = Math.PI / 4; rf.scale.set(1.15, 1, .92); g.add(rf); b(.4, .9, .4, .7, 3.4, -.4, '#9a948a');
-  b(.7, 1.1, .08, 0, .55, 1.1, '#5a3420'); for (const s of [-1, 1]) b(.5, .55, .06, s * .85, 1.7, 1.11, '#3a62b0');
+  b(.7, 1.1, .08, 0, .55, 1.1, '#5a3420'); for (const s of [-1, 1]) { const w = b(.5, .55, .06, s * .85, 1.7, 1.11, '#3a62b0'); if (lit) w.material = M_WIN }   /* v3.45 a home's windows glow at night */
   for (let k = 0; k < 5; k++) b(.56, .05, .7, -1.12 + k * .56, 1.2, 1.4, k % 2 ? '#f4f0e8' : roof, 0, -.45);   /* the striped awning */
   b(.9, .3, .06, 0, 2.45, 1.14, '#e8d8b0') }
 export function buildTown(W, eco) {

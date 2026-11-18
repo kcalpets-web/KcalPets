@@ -42,6 +42,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     await pg.screenshot({ path: OUT + '/5-bar.png' }); if (br.n < 4 || !br.buff || !/💬/.test(br.rum || '') || !br.own) errs.push('the bar should be open at night: drinks, a buff, a rumour, the owner in');
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.S.time = 12 * 60 }); await wait(3500); await E(() => window.__ng.openShopBuilding(8)); await wait(300); const bd = await E(() => !!document.querySelector('.ov')); const t5 = await toastTxt(); log('bar day', bd, t5.slice(0, 60)); if (bd || !/ยังไม่เปิด/.test(t5)) errs.push('the bar should be shut by day');
     await E(() => { window.__ng.S.time = 21 * 60; window.__ng.placeMe(window.__ng.TW.shops[8].x - 3, window.__ng.TW.shops[8].z + 6); window.__ng.CAM.yaw = 2.6 }); await wait(2500); await pg.screenshot({ path: OUT + '/6-bar-outside.png' });
+    // 🪟🔥 v3.45 towns at night: the harbour's windows · a capital's keep + torches
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.S.time = 22 * 60 + 30; N.placeMe(N.HARB.town.plaza.x + 1, N.HARB.town.plaza.z - 2); N.CAM.yaw = Math.PI }); await wait(3500); await pg.screenshot({ path: OUT + '/7-harbour-night.png' });
+    await E(() => { const N = window.__ng, c = N.CAPS.sylvaren; N.placeMe(c.x + Math.sin(c.ry) * 24, c.z + Math.cos(c.ry) * 24); N.CAM.yaw = c.ry + Math.PI }); for (let i = 0; i < 20 && !(await E(() => !!window.__ng.CAPV.sylvaren)); i++) await wait(500); await wait(2500); await pg.screenshot({ path: OUT + '/8-capital-night.png' });
+    const lit = await E(() => window.__ng.townLit()); log('town lights', JSON.stringify(lit)); if (!(lit.win > 1) || !lit.fire) errs.push('at night the windows should glow and the torches burn');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
