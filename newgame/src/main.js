@@ -843,7 +843,7 @@ function goTown(after) { if (!S.story.boatFixed) { talk([['💭', 'ยังไ�
 function goFarm(after) { travel('farm', after) }
 function goForest(after) { travel('forest', after) }
 function pickSword() {
-  if (S.has.sword) return; S.has.sword = true; S.story.sword = 1; { const it = newItem('travelerSword', 'R'); S.bag.push(it); S.eq.sword = it.id } giveBow(true); storyProps(); setTool('sword'); for (const m of mons) if (m.area === 'town') m.aggro = true; save();
+  if (S.has.sword) return; S.has.sword = true; S.story.sword = 1; { const it = newItem('travelerSword', 'R'); S.bag.push(it); S.eq.sword = it.id; S.hand = 'w' } giveBow(true); storyProps(); setTool('sword'); for (const m of mons) if (m.area === 'town') m.aggro = true; save();
   talk([['⚔️ ดาบ', 'ได้ดาบมาแล้ว! เลือก ⚔️ แล้วลากนิ้วผ่านมอนสเตอร์เพื่อฟัน · ฟันเร็วๆ ได้หลายครั้ง'], ['💭', `สไลม์กำลังมา! กำจัดให้หมด ${D.TOWN_SLIMES} ตัว`]], questCheck);
 }
 function openShopBuilding(i) {
@@ -2238,7 +2238,8 @@ const handAtk = () => { const w = S.hand !== 'torch' && weaponOf(); if (w && D.I
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; return effOf(CLEAR_CAT[T.tool]) > 0 }   /* v3.22 every striking gear cuts: how well = D.GEAR_EFF */
 var atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
 /* v3.47 a farm tool in hand + a monster close by → A takes out your best weapon first (a hoe does 1 damage) */
-function weaponFor(force) { const w = weaponOf(); if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!force && !mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
+function weaponFor(force) { const w = weaponOf(); if (w && !(D.ITEMS[w.t] || {}).tool && S.hand !== 'w' && S.hand !== 'torch' && D.HAND[S.hand] && !RIDE && !HORSE) { S.hand = 'w'; return }   /* the weapon is held but the hand still counts as a tool job (left from chopping): fight with the weapon */
+  if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!force && !mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
   const best = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !D.ITEMS[x.t].tool && !x.br && !x.away).sort((a, b) => itemStats(b).atk - itemStats(a).atk)[0]; if (!best) return;
   equipA(best); setTool('sword'); hint(`⚔️ หยิบ ${D.ITEMS[best.t].icon} ${D.ITEMS[best.t].name} มาสู้`, 1200) }
 function actA() { weaponFor(); atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
