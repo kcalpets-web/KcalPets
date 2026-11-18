@@ -225,14 +225,16 @@ function krigFor(A) { if (A.krig !== undefined) return A.krig; const R = A.rig |
       const v = Float32Array.from(t.values); for (let i = 0; i < v.length; i += 4) { qc.set(v[i], v[i + 1], v[i + 2], v[i + 3]); qc.premultiply(qr); v[i] = qc.x; v[i + 1] = qc.y; v[i + 2] = qc.z; v[i + 3] = qc.w } tr.push(new THREE.QuaternionKeyframeTrack(o.uuid + '.quaternion', t.times, v)) }   /* the clip on top of the joint's rest angle */
     acts[n] = mx.clipAction(new THREE.AnimationClip(n, KCLIPS[n].duration, tr)) }
   return A.krig = { mx, acts, cur: null } }
-function krigTick(A, dt, now, st) { const K = krigFor(A); if (!K) return; if (!st) { if (K.cur) { K.mx.stopAllAction(); K.cur = null } return }
+function krigTick(A, dt, now, st) { const K = krigFor(A); if (!K) return; if (!st) { if (K.cur) { K.mx.stopAllAction(); K.cur = null } A.ksit = 0; return }
   const [name, rate] = st; let a = K.acts[name]; if (!a) return; a.timeScale = rate || 1;
-  if (K.cur !== a) { a.reset().play(); if (K.cur) { a.weight = 1; K.cur.crossFadeTo(a, .16, false) } K.cur = a } K.mx.update(dt) }
+  if (K.cur !== a) { a.reset().play(); if (K.cur) { a.weight = 1; K.cur.crossFadeTo(a, .16, false) } K.cur = a } K.mx.update(dt);
+  A.ksit = (A.ksit || 0) + ((name === 'sit' ? 1 : 0) - (A.ksit || 0)) * Math.min(1, dt * 6); if (A.ksit > .01) A.body.position.y -= D.KRIG_SITY * A.ksit }   /* sitting: the body comes down to the ground */
 function plState(now, mv, spd) {   /* which shared clip the player plays now · null = the old motion (special states) */
   if (!PL || AIM || PL.swim || PL.climb || GLIDE || RIDE || HORSE || LIFT || SG || CHGA || F || CROUCH || guard || (typeof DROWN !== 'undefined' && DROWN) || PL.lying || PL.pose && (PL.pose.ready || PL.pose.aim || PL.pose.sneak)) return null;
-  if (now < cheerT) return ['cheer', 1]; if (now < (PL.hurtT || 0)) return ['hurt', 1];
+  if (now < cheerT) return ['cheer', 1]; if (now < (PL.hurtT || 0)) return ['hurt', 1]; if (now < (PL.waveT || 0)) return ['wave', 1];
   if (now < jumpT) return ['jump', 1]; if ((PL.fallV || 0) > 4) return ['fall', 1];
   if (mv) return spd > D.WALK_SP * 1.2 ? ['run', Math.max(.7, spd / D.RUN_SP)] : ['walk', Math.max(.6, spd / D.WALK_SP)];
+  PL.stillT = mv ? now : (PL.stillT || now); if (now - PL.stillT > D.KRIG_SIT * 1000 && !mons.some(m => !m.T.animal && dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z) < 14)) return ['sit', 1];   /* standing still a while (no monster near) → sits down */
   return ['idle', 1] }
 function animate(A, moving, dt, now, rate = 11) {
   A.mv += ((moving ? 1 : 0) - A.mv) * Math.min(1, dt * 8); const c = A.mv, Rg = A.rig;
@@ -868,7 +870,7 @@ function goTown(after) { if (!S.story.boatFixed) { talk([['💭', 'ยังไ�
 function goFarm(after) { travel('farm', after) }
 function goForest(after) { travel('forest', after) }
 function pickSword() {
-  if (S.has.sword) return; S.has.sword = true; S.story.sword = 1; { const it = newItem('travelerSword', 'R'); S.bag.push(it); S.eq.sword = it.id } giveBow(true); storyProps(); setTool('sword'); for (const m of mons) if (m.area === 'town') m.aggro = true; save();
+  if (S.has.sword) return; S.has.sword = true; S.story.sword = 1; { const it = newItem('travelerSword', 'R'); S.bag.push(it); S.eq.sword = it.id; S.hand = 'w' } giveBow(true); storyProps(); setTool('sword'); for (const m of mons) if (m.area === 'town') m.aggro = true; save();
   talk([['⚔️ ดาบ', 'ได้ดาบมาแล้ว! เลือก ⚔️ แล้วลากนิ้วผ่านมอนสเตอร์เพื่อฟัน · ฟันเร็วๆ ได้หลายครั้ง'], ['💭', `สไลม์กำลังมา! กำจัดให้หมด ${D.TOWN_SLIMES} ตัว`]], questCheck);
 }
 function openShopBuilding(i) {
@@ -2264,7 +2266,8 @@ const handAtk = () => { const w = S.hand !== 'torch' && weaponOf(); if (w && D.I
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; return effOf(CLEAR_CAT[T.tool]) > 0 }   /* v3.22 every striking gear cuts: how well = D.GEAR_EFF */
 var atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
 /* v3.47 a farm tool in hand + a monster close by → A takes out your best weapon first (a hoe does 1 damage) */
-function weaponFor(force) { const w = weaponOf(); if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!force && !mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
+function weaponFor(force) { const w = weaponOf(); if (w && !(D.ITEMS[w.t] || {}).tool && S.hand !== 'w' && S.hand !== 'torch' && D.HAND[S.hand] && !RIDE && !HORSE) { S.hand = 'w'; return }   /* the weapon is held but the hand still counts as a tool job (left from chopping): fight with the weapon */
+  if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!force && !mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
   const best = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !D.ITEMS[x.t].tool && !x.br && !x.away).sort((a, b) => itemStats(b).atk - itemStats(a).atk)[0]; if (!best) return;
   equipA(best); setTool('sword'); hint(`⚔️ หยิบ ${D.ITEMS[best.t].icon} ${D.ITEMS[best.t].name} มาสู้`, 1200) }
 function actA() { weaponFor(); atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
@@ -3167,7 +3170,7 @@ function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); i
 function kqMarks() { for (const key in KNPC) { const N = KNPC[key], s2 = npcState(N.k, N.n); N.mk.visible = !!s2; if (s2 && N.mk.userData.s !== s2) { N.mk.material.map = emojiTex(s2); N.mk.material.needsUpdate = true; N.mk.userData.s = s2 } } }
 const qReward = R => [R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? '🍲 อาหาร' : ''].filter(Boolean).join(' · ');
 /* v3.27 💬 talking to people: a speech box (name + words) · they ask first → ✅ take it / ❌ not now (stick + A, or tap) · then the progress or 🎁 hand it in */
-function talkNpc(key) { const N = KNPC[key]; if (!N) return; if (isNight()) { sfx('knock'); toast(`💤 ${N.n.icon} ${N.n.name} หลับอยู่ในบ้าน<br><small>กลับมาคุยตอนเช้านะ (${Math.floor(D.DAY.dawn / 60)}:00 น.)</small>`, 2200); return }   /* v3.42 */ const { k, n } = N, K = KINGDOMS[k], ids = n.lead ? KQ[k].restore : n.q; let say = null;
+function talkNpc(key) { const N = KNPC[key]; if (!N) return; if (PL) PL.waveT = performance.now() + 1300;   /* v3.49 👋 a wave hello */ if (isNight()) { sfx('knock'); toast(`💤 ${N.n.icon} ${N.n.name} หลับอยู่ในบ้าน<br><small>กลับมาคุยตอนเช้านะ (${Math.floor(D.DAY.dawn / 60)}:00 น.)</small>`, 2200); return }   /* v3.42 */ const { k, n } = N, K = KINGDOMS[k], ids = n.lead ? KQ[k].restore : n.q; let say = null;
   sheet(`${n.icon} ${n.name}`, (b, redraw, close) => { const T = KQS(), id = qNext(ids), busy = qActive(), Q = id && KQUEST[id], st = id && T[id], p = id && qProg(id), done = n.lead && (S.restored || {})[k];
     let line, ch = [['bye', '👋 ลาก่อน']];
     if (say) { line = say; say = null }

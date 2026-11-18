@@ -17,7 +17,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8913, OUT = process.arg
     await E(() => { const N = window.__ng; N.S.en = 999; N.walkTo(N.me.x - 10, N.me.z - 3); N.sprint && N.sprint() }); await wait(400); await look('3-move');
     await E(() => window.__ng.cheerNow(2000)); await wait(300); await look('4-cheer', 4);
     await E(() => { const b2 = document.getElementById('bX'); b2.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b2.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })) }); await wait(150); await look('5-jump', 3);
-    log('clips seen', [...seen].join(', ')); if (!seen.has('idle') || !seen.has('walk') || !seen.has('cheer')) errs.push('the player should play the shared idle / walk / cheer clips');
+    await E(() => { window.__ng.PL.waveT = performance.now() + 1500 }); await wait(200); await look('6-wave', 4);
+    await wait(1500); await E(() => { window.__ng.PL.stillT = performance.now() - 30000 }); await wait(1200); await look('7-sit', 4); const sy = await E(() => window.__ng.PL.body.position.y); log('sitting body y', sy.toFixed(2));
+    log('clips seen', [...seen].join(', ')); if (!seen.has('idle') || !seen.has('walk') || !seen.has('cheer') || !seen.has('wave') || !seen.has('sit')) errs.push('the player should play the shared idle / walk / cheer clips');
     await E(() => window.__ng.aimStart()); await wait(800); const aim = await E(() => window.__ng.krigNow()); log('aiming →', aim); if (aim) errs.push('aiming should hand back to the old motion');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
