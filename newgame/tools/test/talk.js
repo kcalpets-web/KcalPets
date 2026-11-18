@@ -37,7 +37,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8839, OUT = process.arg
     await E(() => window.__ng.openBag('sword')); await wait(700); await E(() => window.__ng.navCur()); await stk(40, 0); const t1 = await E(() => ({ on: document.querySelector('.invtabs .on').dataset.bt, f: (document.querySelector('.nfocus') || {}).dataset?.bt, grid: !!document.querySelector('.invgrid') }));
     log('frame on next section', JSON.stringify(t1)); if (t1.on !== 'shield' || t1.f !== 'shield') errs.push('moving onto a section should show it');
     await pg.screenshot({ path: OUT + '/5-bag-shield.png' });
-    await E(() => document.querySelector('[data-bt="craft"]').click()); await wait(500); const cr = await E(() => ({ n: document.querySelectorAll('#bagCraft [data-cr]').length, oldBtn: document.querySelectorAll('[data-craft]').length })); log('craft section', JSON.stringify(cr));
+    await E(() => document.querySelector('[data-bt="craft"]').click()); await wait(500); const cr = await E(() => ({ n: document.querySelectorAll('#bagCraft [data-cb]').length, oldBtn: document.querySelectorAll('[data-craft]').length })); log('craft section', JSON.stringify(cr));
     await pg.screenshot({ path: OUT + '/6-bag-craft.png' }); if (!cr.n) errs.push('the 🛠️ section lists no recipes'); await E(() => document.querySelector('[data-bt="mats"]').click()); await wait(300); if (await E(() => document.querySelectorAll('[data-craft]').length)) errs.push('the old 🛠️ button is still in a section');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
