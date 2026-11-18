@@ -413,10 +413,12 @@ function walkTick(dt, now) {
 function clampWalk(x, z) { const q = me(); let bx = q.x, bz = q.z; for (let i = 1; i <= 40; i++) { const t = i / 40, px = q.x + (x - q.x) * t, pz = q.z + (z - q.z) * t; if (!walkWorld(px, pz)) break; bx = px; bz = pz } return [bx, bz] }
 /* the player may swim; climbing a steep slope needs stamina (and stops when exhausted) */
 function okMe(x, z) { if (GLIDE) return x > WORLD.x0 && x < WORLD.x1 && z > WORLD.z0 && z < WORLD.z1; if (RIDE) return sailable(x, z) && !(S.builds.length && solidAt(x, z)); const w = walkWorld(x, z); if (!w) return false; if (S.builds.length && !solidAt(me().x, me().z) && (solidAt(x, z) || solidAt((x + me().x) / 2, (z + me().z) / 2))) return false; { const y = me().y; if (!solBlock(me().x, me().z, y) && (solBlock(x, z, y) || solBlock((x + me().x) / 2, (z + me().z) / 2, y))) return false }   /* v3.26 tops you can step onto never block · standing on one is not 'inside' */   /* v3.2 high enough (a jump) → step onto a rock */ const q = me(), h0 = groundH(q.x, q.z), h1 = groundH(x, z), d = Math.hypot(x - q.x, z - q.z) || .01;
+  if (!PL.swim && (h1 - h0) / d > D.CLIFF && h1 - h0 > .35) { blocked(x, z, 'cliff'); return false }   /* v3.48 a sheer cliff is a wall (no more popping up through it) */
   if ((h1 - h0) / d > D.SLOPE && S.tired) { blocked(x, z, 'climb'); return false } return true }
 let bumpT = 0;
 function blocked(x, z, why) { const now = performance.now(); if (now < bumpT) return; bumpT = now + 2500;
   if (why === 'climb') return hint('💦 ปีนต่อไม่ไหวแล้ว… พักให้หลอด ⚡ เต็มก่อน', 1800);
+  if (why === 'cliff') return hint('🧱 หน้าผาชันเกินไป ปีนไม่ได้<br><small>หาทางลาดอ้อมไป · หรือให้ 🦅 พาบินขึ้นไป</small>', 2200);
   if (!GATE.exit && dist(x, z, EXIT.x, EXIT.z) < 3) return hint('ประตูถูกปิดไว้… ช่วยลุงที่ซากเรือก่อนดีกว่า', 2200);
   if (!GATE.east && dist(x, z, FOREST.gateW.x, FOREST.gateW.z) < 3) return hint(S.story.townClear ? 'ทางเข้าป่าถูกปิดไว้… กลับไปดูลุงฮาวซิฟที่เกาะก่อน' : 'ทางเข้าป่าถูกปิดไว้… ยังมีสไลม์อยู่ในเมือง', 2200);
 }
@@ -441,7 +443,11 @@ function envTick(dt, now, mv) {                     // swimming (stamina · sink
   PL.swim = w === 'water'; PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
   if (PL.swim) { const ty = DIVE && h + .45 < -.9 ? Math.max(h + .45, D.PETSKILL.diveY) : -.55 + Math.sin(now / 300) * .04; q.y += (ty - q.y) * Math.min(1, dt * (DIVE ? 2.5 : 6)); if (!DROWN && !wbOn() && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }   /* v3.28 🐋 diving / no tiring inside the water barrier */          // exhausted while swimming → you sink and wash up on a shore nearby
   else { const tgt = h + (now < jumpT ? (k => 4 * D.JUMP.h * k * (1 - k))(1 - (jumpT - now) / (D.JUMP.t * 1000)) : 0);   /* v2.5 off a cliff you fall (not snap down) — press X in the air to open the glider */
-    if (q.y - tgt > .5 && !PL.climb) { PL.fallV = Math.min(D.GLIDER.fallMax, (PL.fallV || 0) + 18 * dt); q.y = Math.max(tgt, q.y - PL.fallV * dt) } else { PL.fallV = 0; q.y = tgt } if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
+    if (q.y - tgt > .5 && !PL.climb) { PL.fallV = Math.min(D.GLIDER.fallMax, (PL.fallV || 0) + 18 * dt); q.y = Math.max(tgt, q.y - PL.fallV * dt) }
+    else if (PL.climb && now >= jumpT) { PL.fallV = 0; const top = tgt + D.CLIMB_OUT; q.y = top > q.y ? Math.min(top, q.y + D.CLIMB_V * dt) : top;   /* v3.48 🧗 climbing: up a little at a time, a hand's width off the rock */
+      { const gx2 = groundH(q.x + .5, q.z) - groundH(q.x - .5, q.z), gz2 = groundH(q.x, q.z + .5) - groundH(q.x, q.z - .5); if (Math.hypot(gx2, gz2) > .3) PL.yawT = Math.atan2(gx2, gz2) }   /* face the slope */
+      if (!S.climbTip) { S.climbTip = 1; hint('🧗 กำลังปีน · ใช้ ⚡ ระหว่างปีน · หน้าผาที่ชันมากปีนไม่ได้', 2200) } }
+    else { PL.fallV = 0; q.y = tgt } if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
     if (PL.climb) spendRunN(D.CLIMB_EN * dt); else if (mv && !PL.swim && !RIDE && !GLIDE && !HORSE) { const up = (ahead - h) / .4; if (up > D.UPHILL.from) spendRunN(D.UPHILL.en * Math.min(1, (up - D.UPHILL.from) / (D.SLOPE - D.UPHILL.from)) * dt) }   /* v3.1 walking uphill tires you (rest to recover) */
     const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
     if (S.tired && gl > D.SLOPE * .6 * .6) { q.x -= gx / gl * 2.2 * dt; q.z -= gz / gl * 2.2 * dt; q.y = groundH(q.x, q.z) } }   // exhausted on a cliff → slide down
@@ -985,6 +991,7 @@ cv.addEventListener('pointermove', e => {
      a drag over empty ground just moves the map — no need to switch to ✋ first */
   if (stroke) { const hit = strokeTo(e.clientX, e.clientY); if (stroke.lock || hit) { stroke.lock = true; return }
     if (stroke.go < 70) return; stroke = null; trail.length = 0 }
+  if (down.moved && S.avatar && AIM) { down.lx = e.clientX; down.ly = e.clientY; return }   /* v3.48 aiming: the stick only (dragging the screen does nothing) */
   if (down.moved && S.avatar) { if (camTP()) { CAM.yaw -= (e.clientX - down.lx) * D.CAM_DRAG; if (AIM) AIM.p = Math.max(-.8, Math.min(.9, AIM.p + (e.clientY - down.ly) * D.CAM_DRAG * .7)); else CAM.pitch = Math.max(D.CAM_UP, Math.min(1.15, CAM.pitch + (e.clientY - down.ly) * D.CAM_DRAG * .7)); CAM.manualT = performance.now(); if (joy.on && joy.cy !== undefined) joy.cy = CAM.yaw;   /* v3.16.3 turning the camera while walking steers the walk */ down.lx = e.clientX; down.ly = e.clientY }   // drag = turn the camera around the character
     else joyMove(down.x, down.y, e.clientX, e.clientY) }              // (top view) drag anywhere = a floating stick
 });
@@ -2236,7 +2243,11 @@ let ATKMUL = 1, AIRAIM = null, CHGA = null, LIFT = null;   /* v3.12.6 a charged 
 const handAtk = () => { const w = S.hand !== 'torch' && weaponOf(); if (w && D.ITEMS[w.t] && D.ITEMS[w.t].starter) return 0; return pStats().atk * (S.hand === 'torch' ? D.HAND.torch.atk : 1) * ATKMUL };   /* v3.46 a starter tool hits a monster for 1 (dmgCalc's minimum) */   /* v3.22 a tool item's atk is in pStats already */
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; return effOf(CLEAR_CAT[T.tool]) > 0 }   /* v3.22 every striking gear cuts: how well = D.GEAR_EFF */
 var atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
-function actA() { atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
+/* v3.47 a farm tool in hand + a monster close by → A takes out your best weapon first (a hoe does 1 damage) */
+function weaponFor() { const w = weaponOf(); if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
+  const best = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !D.ITEMS[x.t].tool && !x.br && !x.away).sort((a, b) => itemStats(b).atk - itemStats(a).atk)[0]; if (!best) return;
+  equipA(best); setTool('sword'); hint(`⚔️ หยิบ ${D.ITEMS[best.t].icon} ${D.ITEMS[best.t].name} มาสู้`, 1200) }
+function actA() { weaponFor(); atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
   stopAuto(); const now = performance.now();
   if (BM) { placeBuild(); return }
   if (CATCHING) return;
@@ -2335,7 +2346,7 @@ function aimStart0(kind = 'bow') {
   AIM = { t0: performance.now(), p: LOCK ? .08 : .05, tgt: null }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); gearView(); aimHud(); airAim();
 }
 function airAim() { const q = me(); if (!PL || PL.swim || RIDE || GLIDE || HORSE) return; const jumping = performance.now() < jumpT; if (jumping || q.y - groundH(q.x, q.z) > .4) { AIRAIM = { y: jumping ? Math.max(q.y, groundH(q.x, q.z) + D.JUMP.h * .9) : q.y }; hint('⏳ สโลว์โมชั่น! ลอยเล็งกลางอากาศ', 1000); sfx('tap') } }   /* v3.12.6 Zelda-style air shot */
-function aimTurn(dx, dy) { if (!AIM) return; { const zm = zmOf(); dx /= zm; dy /= zm }   /* v3.18 finer when zoomed */ if (camTP()) CAM.yaw -= dx * D.CAM_DRAG; else PL.yawT -= dx * D.CAM_DRAG; AIM.p = Math.max(-.8, Math.min(.9, AIM.p + dy * D.CAM_DRAG * .7)) }
+function aimTurn(dx, dy) { if (!AIM) return; if (AIM.lockM && Math.hypot(dx, dy) > D.AIMLOCK.breakPx) AIM.lockM = null; else if (AIM.lockM) return;   /* v3.48 pushing the stick takes the aim back */ { const zm = zmOf(); dx /= zm; dy /= zm }   /* v3.18 finer when zoomed */ if (camTP()) CAM.yaw -= dx * D.CAM_DRAG; else PL.yawT -= dx * D.CAM_DRAG; AIM.p = Math.max(-.8, Math.min(.9, AIM.p + dy * D.CAM_DRAG * .7)) }
 /* the aim ray: from the camera through the crosshair (third person) or straight ahead of the character (top view) · snaps to a monster close to the line */
 function aimRay(ok) {
   const tp = camTP(), y = tp ? CAM.ys ?? CAM.yaw : PL.yaw, p = tp ? AIM.p : 0, cp = Math.cos(p);
@@ -2344,7 +2355,14 @@ function aimRay(ok) {
   for (const M of mons) { if (ok && !ok(M)) continue; const q = M.A.root.position, c = _aT.set(q.x, q.y + .6 * (MSCALE[M.kind] || .85), q.z).sub(o), t = c.dot(_aD); if (t < 1 || t > 40) continue; const d = c.addScaledVector(_aD, -t).length() / (tp ? 1 : 1 + t * .05); if (d < bs) { bs = d; best = M } }
   return best;
 }
-function aimTick(now) { zoomTick(now);
+/* v3.48 🎯 aim lock: A while aiming snaps to the nearest target (animals + monsters · the net: catchable ones) and keeps on it · the stick breaks it */
+function aimLock() { const q = me(), ok = AIM.net ? (M => !!D.CATCH[M.kind] && !M.chief) : lockable; let best = null, bd = D.AIMLOCK.range;
+  for (const M of mons) { if (!ok(M) || M.dead || !M.A.root.visible) continue; const p = M.A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d < bd) { bd = d; best = M } }
+  if (!best) { if (!AIM.lockM) hint('🎯 ไม่มีเป้าหมายใกล้ๆ', 900); return } if (AIM.lockM !== best) { AIM.lockM = best; sfx('knock'); hint(`🎯 ล็อก ${best.T.name || ''}`, 900) } }
+function aimFollow(dt) { const M = AIM && AIM.lockM; if (!M) return; if (!mons.includes(M) || M.dead) { AIM.lockM = null; return }
+  const p = M.A.root.position, o = camTP() ? cam.position : _aO.set(me().x, me().y + 1.3, me().z), dx = p.x - o.x, dz = p.z - o.z, dy = p.y + .6 * (MSCALE[M.kind] || .85) - o.y, yaw = Math.atan2(dx, dz), pit = -Math.atan2(dy, Math.hypot(dx, dz)), k = Math.min(1, dt * D.AIMLOCK.snap);
+  if (camTP()) { CAM.yaw += angDiff(CAM.yaw, yaw) * k; AIM.p += (Math.max(-.8, Math.min(.9, pit)) - AIM.p) * k } else PL.yawT = yaw }
+function aimTick(now) { zoomTick(now); { const dt = Math.min(.05, (now - (AIM.ft || now)) / 1000); AIM.ft = now; aimFollow(dt) }
   if (AIM.rod) { if (PL.swim || RIDE || GLIDE) { aimEnd(false); return } aimRay(); const c = AIM.cast = castPoint(); if (AIM.dig) { CASTR.visible = false; const on = !!(c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R); DIGSQ.visible = on; if (on) { const [cx, cz] = cellOf(c.x, c.z), okc = tillable(cx, cz); DIGSQ.position.set(cx, groundH(cx, cz) + .06, cz); DIGSQ.material.color.set(okc ? '#7aff8a' : '#ff6a5a') } } else { DIGSQ.visible = false; CASTR.visible = !!(c && c.wet); if (c) CASTR.position.set(c.x, Math.max(groundH(c.x, c.z), -.02) + .05, c.z) }
     $('xhair').classList.toggle('on', !!(c && c.wet)); $('xhair').classList.add('rod'); return }
   if (AIM.draw) { $('xhair').classList.remove('on'); return }
@@ -2729,7 +2747,7 @@ const holdRing = (el, k) => el.style.setProperty('--p', Math.round(Math.max(0, M
 function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true; const step = () => { if (!on) return; const k = (performance.now() - t0) / (sec * 1000); if (k >= 1) { on = false; holdRing(el, 0); done(); return } holdRing(el, (k - .12) / .88); requestAnimationFrame(step) }; requestAnimationFrame(step); return () => { on = false; holdRing(el, 0) } }
 { const A = $('bA'); let aNav = false, aHeld = false, stop = null, later = false, aTap = 0, aDown = 0, laterT = 0;
   A.addEventListener('pointerdown', e => { e.preventDefault(); if (SKW.on) { skwUse('A'); return } if (topOv() && !SMENU.on && !SG) { aNav = true; navADown(); return }   /* v3.19 a window: A presses the framed button */ if (SMENU.on) { if (SMENU.dir) smenuGo(SMENU.dir); else hint('กดลูกศรเลือกก่อน แล้วกด A', 1100); return }   /* v3.18.1 */ unlock(); RUNON = false; if (SG) { SG.hold = true; try { A.setPointerCapture(e.pointerId) } catch (_) { } return }   /* v3.12.7 A also works the struggle bar */ if (F && F.phase !== 'wait') { F.hold = true; return } if (wheelOn) return; try { A.setPointerCapture(e.pointerId) } catch (_) { }
-    if (PICK) { if (!PICK.hold) pickChoose(); return } if (AIM && AIM.draw) { drawNow(); return } if (AIM) { AIM.ch = performance.now(); aHeld = true; if (!AIM.rod && !AIM.net) sfx('tap'); return }   /* v3.18 aiming: A held = charge, let go = shoot / cast / throw */ const now = performance.now();
+    if (PICK) { if (!PICK.hold) pickChoose(); return } if (AIM && AIM.draw) { drawNow(); return } if (AIM) { if (!AIM.rod && !AIM.dig) aimLock(); AIM.ch = performance.now(); aHeld = true; if (!AIM.rod && !AIM.net) sfx('tap'); return }   /* v3.48 A = lock the nearest target first */   /* v3.18 aiming: A held = charge, let go = shoot / cast / throw */ const now = performance.now();
     aDown = now; aTap = 0; const tk = nearTarget(); later = !!(tk && tk.k) && !BM; if (!later) actA(); stop = holdWatch(A, D.PETSKILL.hold, () => { stop = null; later = false; clearTimeout(laterT); if (weaponOf() && S.hand !== 'torch' && !RIDE && !HORSE && !PL.swim && !BM) aimStart('throw'); else hint('✋ ไม่มีอะไรให้ปา', 1100) })   /* v3.26 hold A = the throw aim (the boar moved to the Y skill wheel) */ });   /* v3.17 hold A = 🐗 the boar's shield */   /* v3.12.6 one press held = charge the slash */   /* talking / using things waits for the release (so holding A only opens the picker) */   /* v3.6 hold A = pick a weapon / tool (slide left-right · let go) */
   /* v3.12.5 the held A only opens the picker: sliding is the stick's job (no drag on A) */
   const up = () => { if (aNav) { aNav = false; navAUp(); return } if (aHeld) { aHeld = false; aimFire(); return } if (SG) { SG.hold = false; if (stop) { stop(); stop = null } return } { const now = performance.now(); if (aDown && now - aDown < 300) aTap = now; aDown = 0 }   /* v3.12.6 double-tap = a second press soon after a short tap is let go */ if (stop) { stop(); stop = null } if (later) { later = false; clearTimeout(laterT); laterT = setTimeout(actA, D.DTAP * 1000); return }   /* v3.12.6 talk / use waits a beat: a second tap means 'picker', not 'talk' */ if (PICK && PICK.hold) { pickChoose(); return } if (CHGA) { chargeRelease(); return } if (F && F.hold) { F.hold = false; return } if (wheelOn) wheelPick() };

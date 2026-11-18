@@ -741,3 +741,7 @@ export const MERCHANT = { cycle: 10, stay: 3, near: 110, n: { gear: 2, wear: 2, 
 export const ROAD = { hw: 1.8, safe: 14, horse: 1.3 };
 /* v3.46 🧰 the starter farm tools: everyone has them · they never break · on a monster they do 1 damage */
 export const STARTER_TOOLS = ['sickle0', 'axe0', 'pick0', 'hoe0'];
+/* v3.48 🎯 aim lock: range (m) · snap = how fast the aim swings onto it (per s) · breakPx = a stick push bigger than this frees the aim */
+export const AIMLOCK = { range: 34, snap: 9, breakPx: 2.5 };
+/* v3.48 🧗 climbing: CLIFF = steeper than this (rise / run) is a wall · CLIMB_V = how fast you go up (m/s) · CLIMB_OUT = how far off the rock you hang (m) */
+export const CLIFF = 2.4, CLIMB_V = 1.1, CLIMB_OUT = .3;
