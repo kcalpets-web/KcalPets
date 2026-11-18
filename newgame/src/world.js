@@ -318,9 +318,15 @@ export const TOWN = { x0: TX - 11, x1: TX + 11, z0: -11, z1: 11, gateW: { x: TX 
 export const walkTown = (x, z) => x > TOWN.x0 && x < TOWN.x1 && z > TOWN.z0 && z < TOWN.z1;
 export const SHOP_POS = [[-5, -6.5, 0], [0, -7.5, 0], [5, -6.5, 0], [-6.5, 5.5, Math.PI], [0, 7, Math.PI], [6.5, 5.5, Math.PI], [8, -1.5, -Math.PI / 2]];
 /* v3.13 a shop building for the harbour town (same clay recipe as the island's, one merged group) */
-export function harbourShop(g, roof) { const t = new THREE.Group(); rbox(t, '#c8a070', '#f0d8b0', [0, .9, 0], [2.7, 1.8, 2.15], [0, 0, 0], .18); cone(t, '#6a2a1a', roof, [0, 2.3, 0], [1.9, .8, 1.6], [0, Math.PI / 4, 0], .98);
-  part(t, '#5a3420', '#8a5a30', [0, .6, 1.1], [.3, .55, .05], [0, 0, 0], { A: 0 }); part(t, '#ffe27a', '#fff6c8', [.85, 1.1, 1.1], [.22, .22, .04], [0, 0, 0], { A: 0 }); part(t, '#e8d8b0', '#fff6e0', [0, 1.75, 1.15], [.7, .2, .04], [0, 0, 0], { A: 0 });
-  rbox(t, '#4a3020', '#7a5232', [0, -.9, 0], [2.9, 1.8, 2.35], [0, 0, 0], .1);   /* a stone-and-wood footing for sloped ground */ mergeStatic0(t).children.slice().forEach(m => g.add(m)) }
+/* v3.41 a harbour shop in the town's timber style: a stone ground floor · white plaster with dark beams · a steep roof · a door, windows, a striped awning and a sign (door towards +z) */
+const HSM = {}; const hsm = (c, o = {}) => HSM[c] || (HSM[c] = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .9, flatShading: true }, o)));
+export function harbourShop(g, roof) { const b = (w, h, d, x, y, z, c, ry = 0, rx = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hsm(c)); m.position.set(x, y, z); m.rotation.set(rx, ry, 0); g.add(m); return m };
+  b(2.9, 1.8, 2.35, 0, -.9, 0, '#7a6a58'); b(2.7, 1, 2.15, 0, .5, 0, '#b8b2a4'); b(2.74, 1.3, 2.19, 0, 1.65, 0, '#f0e4cc');
+  for (const s of [-1, 1]) { b(.12, 1.3, 2.25, s * 1.35, 1.65, 0, '#6a4428'); b(2.8, .12, .12, 0, 1.02, s * 1.09, '#6a4428'); b(2.8, .12, .12, 0, 2.3, s * 1.09, '#6a4428') }
+  const rf = new THREE.Mesh(new THREE.ConeGeometry(2.1, 1.5, 4), hsm(roof)); rf.position.y = 3.05; rf.rotation.y = Math.PI / 4; rf.scale.set(1.15, 1, .92); g.add(rf); b(.4, .9, .4, .7, 3.4, -.4, '#9a948a');
+  b(.7, 1.1, .08, 0, .55, 1.1, '#5a3420'); for (const s of [-1, 1]) b(.5, .55, .06, s * .85, 1.7, 1.11, '#3a62b0');
+  for (let k = 0; k < 5; k++) b(.56, .05, .7, -1.12 + k * .56, 1.2, 1.4, k % 2 ? '#f4f0e8' : roof, 0, -.45);   /* the striped awning */
+  b(.9, .3, .06, 0, 2.45, 1.14, '#e8d8b0') }
 export function buildTown(W, eco) {
   const scene = W.scene, T = { shops: [] }, ST = new THREE.Group();
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
@@ -487,7 +493,8 @@ function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 
       for (let r = 0; r <= 40; r += 10) for (let j = 0; j < (r ? 10 : 1); j++) { const px = x + Math.cos(j * .628) * r, pz = z + Math.sin(j * .628) * r, h = wildH0(px, pz), B = kingdomAt(px, pz); if (h < .6) bad++; if (B.k !== k || B.w < .8) bad += 3; sum += h; sq += h * h; n++ }   /* deep inside its own kingdom (never on a border wall) */
       const m = sum / n, v = sq / n - m * m + bad * 60; if (v < bs) { bs = v; best = { x, z, h: Math.max(1.2, m), r: 36, edge: 14, ry: Math.atan2(K.x - x, K.z - z) } } }
     if (best) CAPS[k] = best } }
-export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z);
+export const HARBC = { x: 194, z: 20, r: 21, edge: 10, h: .7 };   /* v3.41 the harbour town's ground (flattened) */
+export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); { const d = Math.hypot(x - HARBC.x, z - HARBC.z); if (d < HARBC.r + HARBC.edge && h > -1.5) { const t = smw(HARBC.r + HARBC.edge, HARBC.r, d); h = h * (1 - t) + t * Math.max(h, HARBC.h) } }
   for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h } } return h }
 function wildH0(x, z) {
 
@@ -544,7 +551,7 @@ export function decorLook(x, z, out, peb) { if (peb === 'sand') { if (waterAt(x,
   if (peb === 'sea') { if (waterAt(x, z) !== 'sea') return null; const d = groundH(x, z); return d < -.5 && d > -2.8 ? { y: d } : null }   /* coral grounds */
   if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
   if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
-  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42) return null;   /* v3.30 not on the capitals' paving */
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
   const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
   if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }
@@ -569,7 +576,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6)) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);

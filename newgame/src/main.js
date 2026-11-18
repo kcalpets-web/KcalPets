@@ -12,6 +12,7 @@ import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
 import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD } from './capitals.js';
+import { buildHarbour } from './harbour.js';
 import { solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
@@ -107,14 +108,16 @@ const W = buildWorld(scene, eco), TW = buildTown(W, eco), FW = buildForest(W, ec
 for (const o of W.clear.values()) if (!S.cleared[o.id] && !(o.t === 'debris' && S.story.howsif)) spawnClear(W, o); else if (S.cleared[o.id]) remnant(W, o, true);   /* v2.9 stumps / bare bushes / rubble wait to grow back */
 /* ================= v3.13 🌻 Vaneya ⇄ the mainland harbour: by Uncle Howsif's boat only (no warping across, the sea pushes you back) ================= */
 const ISLE = D.VANEYA.isle, HB = D.VANEYA.harbour, inIsle = (x, z) => x < ISLE.x1 && z > ISLE.z0 && z < ISLE.z1;
-const HARB = (() => { const g = new THREE.Group(); scene.add(g); const R2 = [3.5, -6, 0], ROOF = ['#d08a30', '#4a7ac0', '#7a7a8a', '#c0503a', '#8a4ac0'];
+const HARB = (() => { const g = new THREE.Group(); scene.add(g); const R2 = [3.5, -6, 0], ROOF = ['#3a62b0', '#d0703a', '#3a62b0', '#b0402e', '#3a62b0', '#d0703a'];   /* v3.41 blue / orange / red like the town */
   const pier = new THREE.Group(); for (let i = 0; i < 10; i++) part(pier, '#6a4024', '#b07a44', [-i * .9, .32, 0], [.44, .07, 1.15], [0, 0, (i % 2) * .02], { A: .02 }); for (let i = 0; i < 10; i += 3) for (const s2 of [-1, 1]) part(pier, '#4a2e1a', '#7a5232', [-i * .9, -.2, s2 * 1.05], [.1, .7, .1], [0, 0, 0], { A: 0 });
   pier.position.set(HB.x - .5, Math.max(-.05, groundH(HB.x - .5, HB.z)) * 0, HB.z); g.add(pier);
   const boat = W.boat.clone(); boat.position.set(HB.x - 6.5, -.12, HB.z + 1.9); boat.rotation.y = Math.PI / 2; g.add(boat);
   const shops = [], put = (i, x, z, ry) => { const s2 = new THREE.Group(); harbourShop(s2, ROOF[(i - 1) % ROOF.length]); s2.position.set(x, groundH(x, z), z); s2.rotation.y = ry; g.add(s2); addSol({ x, z, hw: 1.3, hd: 1, ry }); shops.push({ i, x, z, fz: ry === 0 ? 1 : -1, fixed: s2, ruin: new THREE.Group(), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); shops[shops.length - 1].pick.position.y += groundH(x, z) };
   [[1, HB.x + 7, HB.z - 6.5, 0], [2, HB.x + 11.5, HB.z - 6.5, 0], [3, HB.x + 16, HB.z - 6.5, 0], [4, HB.x + 9, HB.z + 6.5, Math.PI], [5, HB.x + 13.5, HB.z + 6.5, Math.PI], [7, HB.x + 18, HB.z + 6.5, Math.PI]].forEach(a => put(...a));   /* v3.40 + 🪡 the tailor */
   const sg = new THREE.Group(); part(sg, '#4a2e1a', '#7a5232', [0, .8, 0], [.08, .8, .08], [0, 0, 0], { A: 0 }); part(sg, '#c8a070', '#f0d8b0', [0, 1.55, 0], [.8, .32, .05], [0, 0, 0], { A: 0 }); sg.position.set(HB.x + 2.5, groundH(HB.x + 2.5, HB.z - 2), HB.z - 2); g.add(sg);
-  const bp = addPick(W, HB.x - 6.5, HB.z + 1.9, 1.6, 1.6, { kind: 'boat' }); return { g, boat, shops, boatPick: bp } })();
+  const bp = addPick(W, HB.x - 6.5, HB.z + 1.9, 1.6, 1.6, { kind: 'boat' });
+  const T = buildHarbour(HB, groundH), tm = mergeProp(T.G); tm.traverse(o => { if (o.isMesh) { o.castShadow = !eco; o.receiveShadow = true; o.userData.occ = 1 } }); g.add(tm); for (const e of T.sols) addSol(e);   /* v3.41 ⚓ the new harbour town */
+  return { g, boat, shops, boatPick: bp, town: T } })();
 /* ================= v3.14 💠 light stones: one per kingdom · asleep until you beat its shadow guardians (a quest) → a warp point + ✨ ================= */
 const LSTONES = Object.keys(KINGDOMS).map(k => { const K = KINGDOMS[k], o = D.LSTONE.off; let x = K.x + o[0], z = K.z + o[1]; for (let r = 3; r < 90 && (!walkLand(x, z) || waterAt(x, z)); r += 3) { x = K.x + o[0] + Math.cos(r) * r; z = K.z + o[1] + Math.sin(r) * r } return { k, x, z, g: null, pick: null, mons: [] } });
 const lsAwake = k => !!(S.lstone || {})[k];
