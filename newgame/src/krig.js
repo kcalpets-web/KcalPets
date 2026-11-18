@@ -13,8 +13,8 @@ export const BONES = [   // name, parent, rest offset from the parent
   ['Shoulder_R', 'Chest', [-.05, .055, 0]], ['UpperArm_R', 'Shoulder_R', [-.045, 0, 0]], ['LowerArm_R', 'UpperArm_R', [0, -.1, 0]], ['Hand_R', 'LowerArm_R', [0, -.09, 0]],
   ['UpperLeg_L', 'Hips', [.052, -.025, 0]], ['LowerLeg_L', 'UpperLeg_L', [0, -.12, 0]], ['Foot_L', 'LowerLeg_L', [0, -.115, 0]],
   ['UpperLeg_R', 'Hips', [-.052, -.025, 0]], ['LowerLeg_R', 'UpperLeg_R', [0, -.12, 0]], ['Foot_R', 'LowerLeg_R', [0, -.115, 0]]];
-export function makeSkeleton() { const by = {}, list = [];
-  for (const [n, p, o] of BONES) { const b = new THREE.Bone(); b.name = n; b.position.set(...o); if (p) by[p].add(b); by[n] = b; list.push(b) }
+export function makeSkeleton(over = {}) { const by = {}, list = [];   /* over: { BoneName: [x, y, z] } — the same bones, other lengths (a taller body) */
+  for (const [n, p, o0] of BONES) { const o = over[n] || o0; const b = new THREE.Bone(); b.name = n; b.position.set(...o); if (p) by[p].add(b); by[n] = b; list.push(b) }
   by.Hips.updateMatrixWorld(true); return { root: by.Hips, bones: list, by, skeleton: new THREE.Skeleton(list) } }
 const IX = Object.fromEntries(BONES.map((b, i) => [b[0], i]));
 const W = new THREE.Vector3();
@@ -129,3 +129,8 @@ export const CLIPS = {
 export const CLIP_TH = { idle: 'ยืนนิ่ง', walk: 'เดิน', run: 'วิ่ง', jump: 'กระโดด', sit: 'นั่ง', wave: 'โบกมือ', attack: 'โจมตี', hurt: 'โดนตี', fall: 'ร่วง', cheer: 'ดีใจ' };
 /* pose a character at a time in a clip (for still pictures) · in a game: new THREE.AnimationMixer(char).clipAction(CLIPS.walk).play() */
 export function poseAt(char, name, t) { const mx = char.userData.mixer || (char.userData.mixer = new THREE.AnimationMixer(char)); mx.stopAllAction(); const a = mx.clipAction(CLIPS[name]); a.reset().play(); mx.setTime(t); return char }
+
+/* shared pieces for other looks (krig-hero.js) */
+export { limb, torso, skirt, rigid, sph, mat, worldOf, headMesh, handMesh, rbgK };
+function rbgK(w, h, d, r = .02, s2 = 4) { const g = new THREE.BoxGeometry(w, h, d, s2, s2, s2), p = g.attributes.position, v = new THREE.Vector3(), hw = w / 2 - r, hh = h / 2 - r, hd = d / 2 - r;
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const c = new THREE.Vector3(Math.max(-hw, Math.min(hw, v.x)), Math.max(-hh, Math.min(hh, v.y)), Math.max(-hd, Math.min(hd, v.z))); v.sub(c).normalize().multiplyScalar(r).add(c); p.setXYZ(i, v.x, v.y, v.z) } g.computeVertexNormals(); return g }
