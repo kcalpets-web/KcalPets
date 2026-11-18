@@ -69,3 +69,57 @@ export function ambient(scene, env, eco) {
     FR.count = n; FR.instanceMatrix.needsUpdate = true; if (FR.instanceColor) FR.instanceColor.needsUpdate = true; FP.count = np; FP.instanceMatrix.needsUpdate = true;
   };
 }
+
+/* v3.37 🦋 life on land around the player: fireflies at night · falling leaves (each kingdom its colour) · smoke from lit fires and chimneys · a rainbow after the rain ·
+   little birds pecking and squirrels dashing (they flee when you come close) · landLife(scene, env) → tick(now, dt)
+   env: { me, groundH, waterAt, walkWorld, night(), raining(), kingdom(x, z), smoke() → [[x, y, z], …], sunDir() } */
+const LEAFC = { sylvaren: ['#e8b030', '#d8802a', '#c8a040', '#b8582a'], deadgar: ['#7a6a8a', '#5a4a5a', '#8a7a7a'], valkara: ['#5a4a40', '#8a5030'], home: ['#7ac04a', '#a8c84a', '#e8c040', '#5aa03a'], def: ['#6ab04a', '#9ac848', '#d8c040', '#4f9a3e'] };
+const BIRDC = ['#8a6040', '#a07850', '#6a5a50', '#c87a50'].map(c => new THREE.Color(c));
+function glowTex() { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.3, 'rgba(255,255,255,.6)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(cv) }
+const BIRD_GEO = () => merge([[new THREE.SphereGeometry(.05, 10, 7), M4(0, .06, 0, 1, .9, 1.4)], [new THREE.SphereGeometry(.033, 9, 7), M4(0, .1, .055)], [new THREE.ConeGeometry(.01, .03, 4), M4(0, .1, .095, 1, 1, 1, Math.PI / 2, 0, 0)], [new THREE.ConeGeometry(.025, .07, 4), M4(0, .07, -.08, 1, .3, 1, -Math.PI / 2 - .4, 0, 0)]]);
+const SQ_GEO = () => merge([[new THREE.SphereGeometry(.06, 10, 8), M4(0, .07, 0, .9, .9, 1.3)], [new THREE.SphereGeometry(.04, 9, 7), M4(0, .12, .07)], [new THREE.SphereGeometry(.013, 6, 5), M4(-.022, .165, .07)], [new THREE.SphereGeometry(.013, 6, 5), M4(.022, .165, .07)], [new THREE.SphereGeometry(.055, 9, 7), M4(0, .16, -.09, .8, 1.5, .7, -.4, 0, 0)]]);
+export function landLife(scene, env, eco) {
+  const rnd = (a, b) => a + Math.random() * (b - a), o = new THREE.Object3D(), c = new THREE.Color();
+  /* ✨ fireflies */ const NFF = eco ? 18 : 36, ffPos = new Float32Array(NFF * 3), ffCol = new Float32Array(NFF * 3), ffg = new THREE.BufferGeometry(); ffg.setAttribute('position', new THREE.BufferAttribute(ffPos, 3)); ffg.setAttribute('color', new THREE.BufferAttribute(ffCol, 3));
+  const FF = new THREE.Points(ffg, new THREE.PointsMaterial({ size: .22, map: glowTex(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); FF.frustumCulled = false; scene.add(FF); const ff = Array.from({ length: NFF }, () => ({ x: 0, y: 0, z: 0, ph: Math.random() * 9, sp: rnd(.6, 1.4), on: false }));
+  /* 🍂 leaves */ const NL = eco ? 14 : 28, LG = new THREE.PlaneGeometry(.09, .06); const LV = new THREE.InstancedMesh(LG, new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: .8 }), NL); LV.count = 0; LV.frustumCulled = false; scene.add(LV); const leaves = Array.from({ length: NL }, () => ({ life: 0, wait: Math.random() * 4 }));
+  /* 💨 smoke */ const NSM = eco ? 24 : 48, SM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.18, 1), new THREE.MeshStandardMaterial({ color: '#d8d4d0', roughness: 1, transparent: true, opacity: .32, depthWrite: false }), NSM); SM.count = 0; SM.frustumCulled = false; scene.add(SM); const puffs = []; let puffT = 0;
+  /* 🌈 rainbow */ const RB = new THREE.Group(); ['#ff4a4a', '#ff9a3a', '#ffe04a', '#5ad85a', '#4aa8ff', '#6a5aff', '#b05aff'].forEach((col, i) => RB.add(new THREE.Mesh(new THREE.TorusGeometry(70 - i * 2.2, 1.1, 6, 64, Math.PI), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, fog: false })))); RB.visible = false; scene.add(RB); let wasRain = false, rbT = 0;
+  /* 🐦 birds · 🐿️ squirrels */ const BI = new THREE.InstancedMesh(BIRD_GEO(), new THREE.MeshStandardMaterial({ roughness: .7 }), 6), SQ = new THREE.InstancedMesh(SQ_GEO(), new THREE.MeshStandardMaterial({ color: '#b8703a', roughness: .8 }), 3); for (const m of [BI, SQ]) { m.count = 0; m.frustumCulled = false; scene.add(m) }
+  const birds = [], squirrels = []; let scanT = 0;
+  const grass = (x, z) => !env.waterAt(x, z) && env.walkWorld(x, z) === 'land' && !['asrah', 'frosthelm', 'valkara'].includes(env.kingdom(x, z));
+  const around = (r0, r1) => { const q = env.me(), a = Math.random() * 6.283, r = rnd(r0, r1); return [q.x + Math.cos(a) * r, q.z + Math.sin(a) * r] };
+  return function tick(now, dt) { const q = env.me(), t = now / 1000, night = env.night(), rain = env.raining();
+    /* fireflies: at night, near the player, slow wandering, blinking */
+    FF.visible = night && !rain; if (FF.visible) for (let i = 0; i < NFF; i++) { const f = ff[i]; if (!f.on || Math.hypot(f.x - q.x, f.z - q.z) > 13) { const [x, z] = around(2, 12); if (env.walkWorld(x, z) !== 'land' && !env.waterAt(x, z)) continue; f.x = x; f.z = z; f.y = Math.max(env.groundH(x, z), -.1) + rnd(.4, 1.6); f.on = true }
+      f.x += Math.sin(t * .7 * f.sp + f.ph) * .3 * dt; f.z += Math.cos(t * .6 * f.sp + f.ph * 2) * .3 * dt; f.y += Math.sin(t * 1.3 + f.ph) * .12 * dt; ffPos.set([f.x, f.y, f.z], i * 3);
+      const b = Math.max(0, Math.sin(t * 2.2 * f.sp + f.ph)) ** 3; ffCol.set([.85 * b, 1 * b, .35 * b], i * 3) }
+    if (FF.visible) { ffg.attributes.position.needsUpdate = true; ffg.attributes.color.needsUpdate = true }
+    /* leaves: drift down with the wind, rest a moment on the ground */
+    let n = 0; for (const L of leaves) { if (L.life <= 0) { L.wait -= dt; if (L.wait > 0) continue; const [x, z] = around(1, 10); const k = env.kingdom(x, z); if (!grass(x, z) && k !== 'deadgar') { L.wait = 1; continue } const P = LEAFC[k] || LEAFC.def; L.x = x; L.z = z; L.y = env.groundH(x, z) + rnd(2.5, 4.5); L.g = env.groundH(x, z); L.c = new THREE.Color(P[Math.floor(Math.random() * P.length)]); L.life = 1; L.rest = 0; L.ph = Math.random() * 9; L.wait = rnd(.2, 2) }
+      if (L.y > L.g + .02) { L.y -= dt * .55; L.x += Math.sin(t * 1.5 + L.ph) * .5 * dt + .15 * dt; L.z += Math.cos(t * 1.1 + L.ph) * .3 * dt } else { L.y = L.g + .02; L.rest += dt; if (L.rest > 2.5) { L.life = 0; continue } }
+      o.position.set(L.x, L.y, L.z); o.rotation.set(L.y > L.g + .03 ? t * 2 + L.ph : -Math.PI / 2, t * 1.3 + L.ph, L.y > L.g + .03 ? Math.sin(t * 3 + L.ph) : 0); o.scale.setScalar(1); o.updateMatrix(); LV.setMatrixAt(n, o.matrix); LV.setColorAt(n, L.c); n++ }
+    LV.count = n; LV.instanceMatrix.needsUpdate = true; if (LV.instanceColor) LV.instanceColor.needsUpdate = true;
+    /* smoke: puffs from lit fires / chimneys within 40 m */
+    if (now > puffT) { puffT = now + 280; for (const [x, y, z] of env.smoke()) { if (Math.hypot(x - q.x, z - q.z) > 40 || puffs.length >= NSM) continue; puffs.push({ x: x + rnd(-.05, .05), y, z: z + rnd(-.05, .05), t: 0, d: rnd(2.6, 3.6), dx: rnd(.05, .2), s: rnd(.6, 1) }) } }
+    n = 0; for (let i = puffs.length - 1; i >= 0; i--) { const P = puffs[i]; P.t += dt; if (P.t > P.d) { puffs.splice(i, 1); continue } const k = P.t / P.d; o.position.set(P.x + P.dx * P.t, P.y + P.t * .55, P.z + Math.sin(P.t + P.x) * .1); o.rotation.set(P.t, P.t * .7, 0); o.scale.setScalar(P.s * (.4 + k * 1.6) * (1 - k * k * .5)); o.updateMatrix(); SM.setMatrixAt(n++, o.matrix) }
+    SM.count = n; SM.instanceMatrix.needsUpdate = true;
+    /* rainbow: for a while after the rain stops (by day), opposite the sun */
+    if (wasRain && !rain && !night) rbT = now + 70000; wasRain = rain; const rbk = now < rbT ? Math.min(1, (rbT - now) / 8000) : 0;
+    RB.visible = rbk > 0; if (RB.visible) { const s = env.sunDir(), dx = -s.x, dz = -s.z, L = Math.hypot(dx, dz) || 1; RB.position.set(q.x + dx / L * 140, -6, q.z + dz / L * 140); RB.lookAt(q.x, -6, q.z); const fadeIn = Math.min(1, (now - (rbT - 70000)) / 6000); for (const m of RB.children) m.material.opacity = .32 * Math.min(rbk, fadeIn) }
+    /* birds + squirrels */
+    if (now > scanT) { scanT = now + 1200; for (let i = birds.length - 1; i >= 0; i--) if (Math.hypot(birds[i].x - q.x, birds[i].z - q.z) > 20 || birds[i].gone) birds.splice(i, 1); for (let i = squirrels.length - 1; i >= 0; i--) if (Math.hypot(squirrels[i].x - q.x, squirrels[i].z - q.z) > 20 || squirrels[i].gone) squirrels.splice(i, 1);
+      if (!night && !rain) { for (let k = 0; k < 4 && birds.length < (eco ? 3 : 6); k++) { const [x, z] = around(4, 12); if (grass(x, z)) birds.push({ x, z, a: Math.random() * 6.283, hop: 0, next: rnd(.5, 2), fly: 0, y: 0, c: BIRDC[Math.floor(Math.random() * BIRDC.length)] }) }
+        for (let k = 0; k < 3 && squirrels.length < (eco ? 1 : 3); k++) { const [x, z] = around(5, 13); if (grass(x, z) && env.kingdom(x, z) !== 'deadgar') squirrels.push({ x, z, a: Math.random() * 6.283, run: 0, next: rnd(1, 3), flee: 0 }) } } }
+    n = 0; for (const B of birds) { const dq = Math.hypot(B.x - q.x, B.z - q.z); if (dq < 3 && !B.fly) { B.fly = .001; B.a = Math.atan2(B.x - q.x, B.z - q.z) }
+      let y = env.groundH(B.x, B.z), tilt = 0; if (B.fly) { B.fly += dt; B.x += Math.sin(B.a) * 4 * dt; B.z += Math.cos(B.a) * 4 * dt; y += B.fly * 2.4; tilt = -.4; if (B.fly > 3) { B.gone = 1; continue } }
+      else { B.hop += dt; if (B.hop > B.next) { B.hop = 0; B.next = rnd(.4, 1.8); if (Math.random() < .5) B.a += rnd(-1.2, 1.2) } const k = B.hop / B.next; if (k > .7) { const nx = B.x + Math.sin(B.a) * .5 * dt, nz = B.z + Math.cos(B.a) * .5 * dt; if (grass(nx, nz)) { B.x = nx; B.z = nz } y += Math.sin((k - .7) / .3 * Math.PI) * .05 } else tilt = Math.max(0, Math.sin(t * 9 + B.x)) * .5 }
+      o.position.set(B.x, y, B.z); o.rotation.set(tilt, B.a, 0); o.scale.setScalar(1.1); o.updateMatrix(); BI.setMatrixAt(n, o.matrix); BI.setColorAt(n, B.c); n++ }
+    BI.count = n; BI.instanceMatrix.needsUpdate = true; if (BI.instanceColor) BI.instanceColor.needsUpdate = true;
+    n = 0; for (const Q of squirrels) { const dq = Math.hypot(Q.x - q.x, Q.z - q.z); if (dq < 3.5 && !Q.flee) { Q.flee = .001; Q.a = Math.atan2(Q.x - q.x, Q.z - q.z) }
+      let sp = 0; if (Q.flee) { Q.flee += dt; sp = 4; if (Q.flee > 2.2) { Q.gone = 1; continue } } else { Q.run += dt; if (Q.run > Q.next) { Q.run = 0; Q.next = rnd(.8, 3); Q.a += rnd(-1.5, 1.5) } sp = Q.run < .5 ? 2.2 : 0 }
+      const nx = Q.x + Math.sin(Q.a) * sp * dt, nz = Q.z + Math.cos(Q.a) * sp * dt; if (grass(nx, nz)) { Q.x = nx; Q.z = nz } else Q.a += Math.PI;
+      o.position.set(Q.x, env.groundH(Q.x, Q.z) + (sp ? Math.abs(Math.sin(t * 18)) * .05 : 0), Q.z); o.rotation.set(0, Q.a, 0); o.scale.setScalar(1.15); o.updateMatrix(); SQ.setMatrixAt(n++, o.matrix) }
+    SQ.count = n; SQ.instanceMatrix.needsUpdate = true;
+  };
+}

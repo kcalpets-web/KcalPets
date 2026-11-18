@@ -10,7 +10,7 @@ import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, 
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
-import { ambient } from './ambient.js';
+import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD } from './capitals.js';
 import { solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
@@ -346,8 +346,11 @@ function placeMe(x, z) { me().set(x, 0, z); walkT = null; ring.visible = false; 
 const DECOR = decor(scene, (x, z, c, peb) => { if (S.plots && S.plots[Math.round(x) + ',' + Math.round(z)]) return null; return decorLook(x, z, c, peb) }, eco);
 /* v3.36 🐠 fish · crabs · bubbles · frogs around you */
 const AMB = ambient(scene, { me: () => me(), groundH, waterAt, walkWorld, surf: (x, z) => coreDist(x, z) > 0 ? -.38 : -.12, splash: (x, y, z) => { VF.ring(x, y + .02, z, '#ffffff', .7, .45); VF.rise(x, y, z, '#ffffff', 6) } }, eco);
+/* v3.37 🦋 fireflies · leaves · smoke · rainbow · birds · squirrels */
+const LAND = landLife(scene, { me: () => me(), groundH, waterAt, walkWorld, night: () => isNight(), raining: () => D.WX.types[WXS.type] && D.WX.types[WXS.type].rain > .25, kingdom: (x, z) => { const B = kingdomAt(x, z); return B.home > .5 ? 'home' : B.k }, sunDir: () => SUND,
+  smoke: () => { const L = []; for (const k in POT) { const P = POT[k]; if (P && potLit(k)) L.push([P.x, groundH(P.x, P.z) + .5, P.z]) } for (const s of (TW.shops || []).slice(0, 3)) L.push([s.x + .6, 3.2, s.z - .4]); return L } }, eco);
 function walkTick(dt, now) {
-  DECOR(me().x, me().z); ogTick(now); capTick(now); AMB(now, dt);
+  DECOR(me().x, me().z); ogTick(now); capTick(now); AMB(now, dt); LAND(now, dt);
   if (golemBusy()) return;
   let mv = false;
   const run = !RIDE && !CROUCH && !S.tired && (joy.run || RUNON || now < sprintT) && (joy.on || walkT) && (HORSE || spendRun(dt)), spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * swimMul() * (now < swimB ? D.SWIM_BURST.mul : 1) * (wbOn() ? D.PETSKILL.whaleSwim : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (run ? D.HORSE.gallop : D.HORSE.sp) : run ? D.RUN_SP : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1); SPD_LAST = spd;
