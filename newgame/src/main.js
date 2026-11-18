@@ -711,6 +711,7 @@ function finishClear(o) {
   questCheck(); save();
 }
 function toolHit(key) {
+  if (key && key.kind === 'mon' && key.m && lockable(key.m)) weaponFor(true);   /* v3.47 any way you hit a monster: a farm tool in hand → your weapon comes out */
   const now = performance.now();
   if (S.avatar && (key.kind === 'mon' || key.kind === 'clear')) {                    // reach: too far = walk over and do it there (no slashing from afar)
     const t = key.kind === 'mon' ? key.m && key.m.A.root.position : W.clear.get(key.id);
@@ -969,7 +970,7 @@ function pickForTool(x, y) {
   return hits[0] ? hits[0].object.userData.pick : null;
 }
 const TOOL_ICO = { hoe: ['🪏', 'จอบ'], sketch: ['✏️', 'วาด'], '': ['🧰', 'อุปกรณ์'], sickle: ['🌾', 'เคียว'], torch: ['🔥', 'คบเพลิง'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'ค้อน'], sword: ['⚔️', 'ดาบ'], rod: ['🎣', 'เบ็ด'] };
-function setTool(k) { setTimeout(() => gearView && gearView()); if (k === 'sword' && !S.has.sword || k === 'rod' && !S.has.rod || k === 'hoe' && !S.has.hoe) k = ''; tool = k; document.querySelectorAll('#tools [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === k));
+function setTool(k) { if (k === 'sword' && typeof weaponFor === 'function' && !setTool.busy) { setTool.busy = 1; try { weaponFor(true) } finally { setTool.busy = 0 } }   /* v3.47 picking up the sword: a farm tool in hand gives way to the weapon */ setTimeout(() => gearView && gearView()); if (k === 'sword' && !S.has.sword || k === 'rod' && !S.has.rod || k === 'hoe' && !S.has.hoe) k = ''; tool = k; document.querySelectorAll('#tools [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === k));
   $('tBoxI').textContent = TOOL_ICO[k][0]; $('tBoxL').textContent = TOOL_ICO[k][1]; $('tBox').classList.toggle('on', !!k); $('tBox').classList.toggle('sw', k === 'sword'); $('tools').classList.remove('open'); if (k !== 'rod' && F && F.phase === 'wait') fishEnd() }
 /* 🧰 one toolbox button (like Pen Suk): tap = open the tray · pick a tool = close */
 $('tBox').onclick = () => { $('tools').classList.toggle('open'); sfx('tap') };
@@ -2244,7 +2245,7 @@ const handAtk = () => { const w = S.hand !== 'torch' && weaponOf(); if (w && D.I
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; return effOf(CLEAR_CAT[T.tool]) > 0 }   /* v3.22 every striking gear cuts: how well = D.GEAR_EFF */
 var atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
 /* v3.47 a farm tool in hand + a monster close by → A takes out your best weapon first (a hoe does 1 damage) */
-function weaponFor() { const w = weaponOf(); if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
+function weaponFor(force) { const w = weaponOf(); if (!w || !(D.ITEMS[w.t] || {}).tool || RIDE || HORSE || S.hand === 'torch') return; const q = me(); if (!force && !mons.some(M => lockable(M) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < D.LOCK_ON)) return;
   const best = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !D.ITEMS[x.t].tool && !x.br && !x.away).sort((a, b) => itemStats(b).atk - itemStats(a).atk)[0]; if (!best) return;
   equipA(best); setTool('sword'); hint(`⚔️ หยิบ ${D.ITEMS[best.t].icon} ${D.ITEMS[best.t].name} มาสู้`, 1200) }
 function actA() { weaponFor(); atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
@@ -2285,7 +2286,7 @@ function chgK(a = AIM) { if (!a) return 0; if (a.dig) return 1; if (!a.ch) retur
 const chgEl = (() => { const e = document.createElement('div'); e.id = 'chg'; e.innerHTML = '<b></b><div><i></i></div>'; document.body.appendChild(e); return e })();
 /* v3.12.6 ⚔️ A held = charge the slash (⚡ per second) · let go = a strong hit (full = a spin round you) */
 function chargeStart() { if (!weaponOf() || S.hand !== 'w' || PL.swim || RIDE || HORSE || S.tired) return; if (!DRAWN) { DRAWN = true; setTool('sword'); gearView() } CHGA = { t0: performance.now() }; sfx('tap') }
-function chargeRelease() { const c = CHGA; CHGA = null; if (!c) return; const H = D.HOLD.charge, k = Math.min(1, (performance.now() - c.t0) / 1000 / H.full); if (k < .15) return;
+function chargeRelease() { const c = CHGA; CHGA = null; if (!c) return; weaponFor(); const H = D.HOLD.charge, k = Math.min(1, (performance.now() - c.t0) / 1000 / H.full); if (k < .15) return;
   const mul = 1 + (H.mul - 1) * k, q = me(), K = kindOf(); ATKMUL = mul; slashT = 0; shakeT = Math.max(shakeT, .15 + .25 * k); bump('chargeHits');
   try { if (k >= H.spinAt) { const r = K.reach + H.spinR; VF.ring(q.x, q.y, q.z, '#ffd23f', r, .45); VF.slash(q.x, q.y + 1, q.z, PL.yaw, '#ffe27a'); sfx('boom'); let n = 0; for (const o of [...mons]) { const p = o.A.root.position; if (dist(q.x, q.z, p.x, p.z) < r && !(o.T.animal && !o.T.charge)) { o.hit = true; hurtMon(o, dmgCalc(handAtk(), o.T.def).d, 'dmg'); n++ } } floater('🌀 ฟันวน!', 'crit', q.x, 2.2, q.z); if (n) wearItem('sword') }
     else { let best = LOCK && mons.includes(LOCK) ? LOCK : null, bd = K.reach + .8; if (!best) for (const o of mons) { const p = o.A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d < bd && !(o.T.animal && !o.T.charge)) { bd = d; best = o } } if (best) { toolHit({ kind: 'mon', m: best }); floater(`💥 ×${mul.toFixed(1)}`, 'crit', q.x, 2.2, q.z) } else VF.slash(q.x, q.y + 1, q.z, PL.yaw, '#ffffff') } } finally { ATKMUL = 1 } }

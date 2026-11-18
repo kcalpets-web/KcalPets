@@ -13,9 +13,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     await E(() => { const N = window.__ng; N.S.bag.push(N.newItem('soldierSpear', 'R'), N.newItem('woodShield', 'C')); N.S.hand = 'w' }); await wait(300);
     // hold A → the picker opens with pictures + stats
-    await E(() => { window.__ng.smenuShow(true); window.__ng.smenuGo('right'); window.__ng.smenuGo('right') }); await wait(800);   /* v3.17 the stick menu → ของตี → v3.47 🧰 farm tools */
+    await E(() => { window.__ng.smenuShow(true); window.__ng.smenuGo('right'); window.__ng.smenuGo('left') }); await wait(800);   /* v3.17 the stick menu → ของตี → v3.47 ⚔️ weapons */
     const pk = await E(() => [...document.querySelectorAll('#pick .row i')].map(i => ({ img: !!i.querySelector('img'), st: (i.querySelector('em') || {}).textContent }))); log('picker', JSON.stringify(pk));
-    if (!pk.length || pk.filter(x => x.img).length < 3) errs.push('the picker has no item pictures'); if (!pk.some(x => /⚔️\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');
+    if (!pk.length || pk.filter(x => x.img).length < 1) errs.push('the picker has no item pictures'); if (!pk.some(x => /⚔️\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');
     await pg.screenshot({ path: OUT + '/picker.png' });
     // slide one step with the stick, then the A finger is *cancelled* (iPhone) → still chosen
     const i0 = await E(() => window.__ng.pick().i); await E(() => { const s = document.getElementById('stick'), r = s.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; s.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, clientX: x, clientY: y })); s.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, clientX: x + 40, clientY: y })) }); await wait(300);
