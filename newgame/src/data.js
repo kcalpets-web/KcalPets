@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.40';
+export const APP_VER = '3.42';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -502,7 +502,7 @@ export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = 
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
-export const ANIMAL_SPAWN = { low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
+export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
 export const WCAMP = { count: 40, spacing: 95, ring: 8, ringR: 58 };   // v3.14 ~40 camps over the mainland + a ring of fortress camps round the castle (Luminia)              // monster camps scattered over the big world
 export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down
   { name: 'แคมป์สไลม์', col: '#3fa860', mons: ['slime', 'slime', 'grassSprite'], chief: 'slimeKing', gem: [30, 60], coin: [300, 500] },
@@ -600,7 +600,7 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
    · 💠 light stones: one per kingdom · awaken = beat the guardians round it (guard) → a warp point + ✨ */
 /* v3.15 things you build wear out (real days until they fall down · below `worn` they look shabby and you can repair them for `fix` × the build cost) */
 export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 10, kitchen: 10, chest: 12, scarecrow: 6, fence: 8, stonewall: 20, path: 30 }, def: 8, worn: .35, fix: .3 };
-export const MONLAND = { pct: .65, n: [1, 3], village: 34, isle: 0 };   // v3.21 no monsters on Vaneya (farm island)
+export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 /* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
