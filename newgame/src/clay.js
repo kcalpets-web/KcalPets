@@ -334,11 +334,12 @@ export function playerLook(g, a = {}) {
 /* v2.9 everyone is a vinyl chibi like the player (src/vinyl.js) · little extras (hats, beards, glasses, clips) sit on the 'head' joint */
 const _hb = new THREE.Box3(), _hv = new THREE.Vector3(), _hs = new THREE.Vector3();
 /* extras are modelled for a head of radius .42 centred at 0 · HEADX measures the real head (hair included) and fits a holder group to it */
-const HEADX = (g, fn) => { const h = g.getObjectByName('head'); if (!h) return; let F = h.getObjectByName('fit');
-  if (!F) { g.updateWorldMatrix(true, true); _hb.makeEmpty(); h.traverse(o => { if (o.isMesh && o.userData.layer !== 2) _hb.expandByObject(o) });   /* v3.9 fit to the head + hair, not the hat */ h.getWorldScale(_hs); const c = _hb.getCenter(_hv.set(0, 0, 0)), r = (_hb.max.x - _hb.min.x) / 2 / _hs.x;
-    F = new THREE.Group(); F.name = 'fit'; h.add(F); F.position.copy(h.worldToLocal(c.clone())); F.scale.setScalar(r / .42 * .92) } fn(F) }, VM = (c, r = .55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+const HEADX = (g, fn, face) => { const h = g.getObjectByName('head'); if (!h) return; const nm = face ? 'fitF' : 'fit'; let F = h.getObjectByName(nm);   /* v3.43 face-wear fits the face (long hair's drape no longer pulls it down + back) */
+  if (!F) { g.updateWorldMatrix(true, true); _hb.makeEmpty(); h.traverse(o => { if (o.isMesh && o.userData.layer !== 2 && !(face && (o.name === 'hairPiece' || o.userData.layer === 1)) && !(o.parent && /^fit/.test(o.parent.name))) _hb.expandByObject(o) });   /* v3.9 fit to the head + hair, not the hat */ h.getWorldScale(_hs); const c = _hb.getCenter(_hv.set(0, 0, 0)), r = (_hb.max.x - _hb.min.x) / 2 / _hs.x;
+    F = new THREE.Group(); F.name = nm; h.add(F); F.position.copy(h.worldToLocal(c.clone())); F.scale.setScalar(r / .42 * .92) } fn(F) }, VM = (c, r = .55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
 const vm = (geo, c, x, y, z, sx = 1, sy = 1, sz = 1, r) => { const m = new THREE.Mesh(geo, VM(c, r)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; m.userData.noFacet = 1; return m };
 const SPH = new THREE.SphereGeometry(1, 20, 14);
+const FACEW = ['veil', 'scarf', 'furmask', 'mask', 'leaf'];
 export function npcHat(g, kind) { HEADX(g, h => { const H = new THREE.Group(); H.name = 'hat';
   if (kind === 'straw') H.add(vm(new THREE.CylinderGeometry(.62, .66, .04, 24), '#e8cf7a', 0, .3, 0), vm(new THREE.SphereGeometry(.36, 18, 10, 0, 6.3, 0, 1.6), '#e0c060', 0, .3, 0), vm(new THREE.CylinderGeometry(.37, .37, .07, 18), '#c0503a', 0, .35, 0));
   else if (kind === 'fur') { H.add(vm(new THREE.SphereGeometry(.47, 18, 12, 0, 6.3, 0, 1.7), '#c89a6a', 0, .04, -.02), vm(new THREE.TorusGeometry(.4, .08, 8, 24), '#f0e4d0', 0, .1, .1)); H.children[1].rotation.x = -.25 }
@@ -346,13 +347,13 @@ export function npcHat(g, kind) { HEADX(g, h => { const H = new THREE.Group(); H
   else if (kind === 'hood') { const hd = vm(new THREE.SphereGeometry(.5, 20, 14, 0, 6.3, 0, 2), '#4a3a5a', 0, .02, -.06); hd.material.side = THREE.DoubleSide; H.add(hd) }
   else if (kind === 'helm') H.add(vm(new THREE.SphereGeometry(.46, 18, 12, 0, 6.3, 0, 1.45), '#5a4a48', 0, .08, 0, 1, 1, 1, .35), vm(new THREE.CylinderGeometry(.04, .04, .18, 8), '#ffb040', 0, .52, 0));
   else if (kind === 'cap') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.35), '#3a8aa8', 0, .08, 0), vm(new THREE.CylinderGeometry(.26, .28, .03, 18), '#3a8aa8', 0, .2, .36));
-  else if (kind === 'veil') { const v = vm(new THREE.SphereGeometry(.45, 20, 12, Math.PI * .1, Math.PI * .8, 2.08, .62), '#f0e0c0', 0, -.02, .03, 1.03, 1, 1.08); v.material.side = THREE.DoubleSide; H.add(v) }   /* v2.9 face-wear: a cloth over nose + mouth */
+  else if (kind === 'veil') { const v = vm(new THREE.SphereGeometry(.45, 20, 12, Math.PI * .1, Math.PI * .8, 2.08, .62), '#7ab8c8', 0, -.02, .03, 1.03, 1, 1.08); v.material.side = THREE.DoubleSide; H.add(v) }   /* v2.9 face-wear: a cloth over nose + mouth */
   else if (kind === 'scarf') { const sc = vm(new THREE.TorusGeometry(.33, .1, 12, 28), '#d84a5a', 0, -.36, .02, 1, 1, .9); sc.rotation.x = Math.PI / 2 - .15; H.add(sc, vm(SPH, '#d84a5a', .18, -.5, .3, .07, .16, .05)) }   /* a knitted scarf pulled up to the chin */
   else if (kind === 'furmask') { const sc = vm(new THREE.TorusGeometry(.34, .12, 12, 28), '#f0e4d0', 0, -.34, .02, 1, 1, .9); sc.rotation.x = Math.PI / 2 - .2; H.add(sc, vm(SPH, '#c89a6a', 0, -.2, .38, .2, .09, .06)) }   /* a fur collar + a soft muzzle cover */
   else if (kind === 'leaf') { const lf = vm(SPH, '#5ab84a', -.34, .26, .12, .18, .06, .1); lf.rotation.z = .7; H.add(lf) }
   else if (kind === 'wool') H.add(vm(new THREE.SphereGeometry(.45, 18, 12, 0, 6.3, 0, 1.45), '#d84a5a', 0, .3, 0), vm(new THREE.SphereGeometry(.11, 10, 8), '#f4f0e8', 0, .76, 0));
   else if (kind === 'mask') { H.add(vm(SPH, '#5ab84a', 0, -.06, .42, .3, .17, .08), vm(new THREE.TorusGeometry(.44, .022, 6, 24), '#3a7a3a', 0, -.02, 0)); H.children[1].rotation.x = Math.PI / 2 }
-  H.traverse(o => o.userData.noFacet = 1); h.add(H) }) }
+  H.traverse(o => o.userData.noFacet = 1); h.add(H) }, FACEW.includes(kind)) }
 export function npcBeard(g, col = '#f4f0f0') { HEADX(g, h => { h.add(vm(SPH, col, 0, -.22, .34, .26, .2, .14, .8), vm(SPH, col, -.12, -.1, .38, .1, .05, .05, .8), vm(SPH, col, .12, -.1, .38, .1, .05, .05, .8)) }) }
 export function npcGlasses(g) { HEADX(g, h => { for (const s2 of [-1, 1]) h.add(vm(new THREE.TorusGeometry(.085, .014, 8, 24), '#2a2030', s2 * .14, .02, .43, 1, 1, 1, .2)); h.add(vm(new THREE.CylinderGeometry(.01, .01, .1, 6), '#2a2030', 0, .03, .44)); h.children[h.children.length - 1].rotation.z = Math.PI / 2 }) }
 const VLK = {   /* the three everyday villagers */

@@ -554,19 +554,19 @@ export const GLIDER = { armX: 2.6, armZ: -1.05, archH: 1, leafW: .95, sink: 2, s
 /* v2.3.1: known from the start = no `from` · the rest are taught by NPCs (talk to them: `from` = the NPC's pick kind, or 'ruin:<town k>') */
 /* v2.6 👕 clothes: 3 slots (head · body · legs) · v3.5 one ability per piece: warm ❄️ cold protection · cool 🔥 heat protection · swim 🏊 faster swimming · 1 piece = 50% · 2 pieces = 100% (fire / hot food / water count as pieces) */
 export const WEAR = {
-  tunic:    { slot: 'body', icon: '👕', name: 'เสื้อผ้าฝ้าย', warm: 0, cool: 0, col: null },
-  pants:    { slot: 'legs', icon: '👖', name: 'กางเกงขายาว', warm: 1, cool: 0 },
+  tunic:    { slot: 'body', icon: '🧭', name: 'ชุดนักผจญภัย', warm: 0, cool: 0, col: null, look: 'traveler' },   /* v3.43 the one outfit you start with (its colour = the one you chose) */
+  pants:    { slot: 'legs', gone: 1, icon: '👖', name: 'กางเกงขายาว', warm: 0, cool: 0 },   /* v3.43 legs are part of the outfit now (old pieces → coins) */
   strawHat: { slot: 'head', icon: '😷', name: 'ผ้าปิดหน้ากันแดด', warm: 0, cool: 1, hat: 'veil' },   /* v2.9 no hats: the head slot is face-wear (masks · scarves) */
   woolCap:  { slot: 'head', icon: '🧣', name: 'ผ้าพันคอไหมพรม', warm: 1, cool: 0, hat: 'scarf' },
   furHood:  { slot: 'head', icon: '🦊', name: 'หน้ากากขนสัตว์', warm: 1, cool: 0, hat: 'furmask' },
-  tank:     { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 1, col: '#f4f0e8' },
-  coat:     { slot: 'body', icon: '🧥', name: 'เสื้อกันหนาว', warm: 1, cool: 0, col: '#b8503a' },
-  furCoat:  { slot: 'body', icon: '🧥', name: 'เสื้อขนสัตว์', warm: 1, cool: 0, col: '#d8c0a0' },
-  shorts:   { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 1 },
-  furPants: { slot: 'legs', icon: '👖', name: 'กางเกงขนสัตว์', warm: 1, cool: 0 },
+  tank:     { slot: 'body', icon: '🦺', name: 'เสื้อกั๊กกันร้อน', warm: 0, cool: 1, col: '#f0e4c8', look: 'vest' },
+  coat:     { slot: 'body', icon: '🧥', name: 'เสื้อโค้ทกันหนาว', warm: 1, cool: 0, col: '#b8503a', look: 'robe' },
+  furCoat:  { slot: 'body', icon: '🧥', name: 'ชุดขนสัตว์', warm: 2, cool: 0, col: '#d8c0a0', look: 'cape' },
+  shorts:   { slot: 'legs', gone: 1, icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 0 },
+  furPants: { slot: 'legs', gone: 1, icon: '👖', name: 'กางเกงขนสัตว์', warm: 0, cool: 0 },
   goggles:  { slot: 'head', icon: '🥽', name: 'แว่นว่ายน้ำ', warm: 0, cool: 0, swim: 1 },   /* v3.5 🏊 swim pieces: +25% swim speed each (2 pieces max) */
-  swimTop:  { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำ', warm: 0, cool: 0, swim: 1, col: '#3a8ad8' },
-  swimLegs: { slot: 'legs', icon: '🩲', name: 'กางเกงว่ายน้ำ', warm: 0, cool: 0, swim: 1 },
+  swimTop:  { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำ', warm: 0, cool: 0, swim: 2, col: '#3a8ad8', look: 'traveler' },
+  swimLegs: { slot: 'legs', gone: 1, icon: '🩲', name: 'กางเกงว่ายน้ำ', warm: 0, cool: 0, swim: 0 },
   /* v3.9 👒 hats (slot hat, layer 2 on the head · over the hair) · a few keep you warm / cool, the rest are for looks */
   h_cap: { slot: 'hat', icon: '🧢', name: 'หมวกแก๊ปดาว', warm: 0, cool: 0, hatK: 'cap' },
   h_baseball: { slot: 'hat', icon: '🧢', name: 'หมวกเบสบอล', warm: 0, cool: 0, hatK: 'baseball' },
@@ -587,6 +587,19 @@ export const WEAR = {
   h_beanie: { slot: 'hat', icon: '🧶', name: 'หมวกไหมพรม', warm: 1, cool: 0, hatK: 'beanie' },
   h_helmet: { slot: 'hat', icon: '🪖', name: 'หมวกเหล็ก', warm: 0, cool: 0, hatK: 'helmet' },
   leafMask: { slot: 'head', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ', warm: 0, cool: 0, air: 1, hat: 'mask' },   // v2.7 breathe in Deadgar
+  /* v3.43 👗 outfits (slot body · look = the vinyl outfit · col = its colour) · src: tailor (made/bought) · kingdom (a chest in that kingdom / its restore) · drop (monsters) · merchant (🎩 the wandering merchant) */
+  o_farmer: { slot: 'body', icon: '👨‍🌾', name: 'ชุดชาวไร่', warm: 0, cool: 1, col: '#e0a040', look: 'farmer', src: 'tailor' },
+  o_sailor: { slot: 'body', icon: '⚓', name: 'ชุดกะลาสี', warm: 0, cool: 1, swim: 1, col: '#3a5ab8', look: 'sailor', src: 'tailor' },
+  o_mage:   { slot: 'body', icon: '🔮', name: 'ชุดนักเรียนเวทย์', warm: 1, cool: 1, col: '#5a3a9a', look: 'mage', src: 'merchant' },
+  o_kimono: { slot: 'body', icon: '👘', name: 'ชุดกิโมโนเดินทาง', warm: 0, cool: 1, col: '#c84a5a', look: 'kimono', src: 'merchant', def: 1 },
+  o_cape:   { slot: 'body', icon: '🦸', name: 'ผ้าคลุมนักผจญภัย', warm: 1, cool: 1, col: '#3a62b0', look: 'cape', src: 'merchant' },
+  a_knight: { slot: 'body', icon: '🛡️', name: 'เกราะอัศวิน', warm: 1, cool: 0, col: '#a8b0c0', look: 'knight', src: 'drop', def: 4 },
+  k_navalee:   { slot: 'body', icon: '🌊', name: 'ชุดนักเดินเรือนาวาลี', warm: 0, cool: 1, swim: 2, col: '#2a8a9a', look: 'sailor', src: 'kingdom', k: 'navalee' },
+  k_sylvaren:  { slot: 'body', icon: '🌿', name: 'ชุดพรานป่าซิลวาเรน', warm: 1, cool: 1, col: '#4a7a3a', look: 'vest', src: 'kingdom', k: 'sylvaren', def: 1 },
+  k_asrah:     { slot: 'body', icon: '🏜️', name: 'ชุดทะเลทรายอัสราห์', warm: 0, cool: 2, col: '#e8c890', look: 'robe', src: 'kingdom', k: 'asrah' },
+  k_frosthelm: { slot: 'body', icon: '❄️', name: 'ชุดขนหมีฟรอสต์เฮล์ม', warm: 2, cool: 0, col: '#f0ece4', look: 'cape', src: 'kingdom', k: 'frosthelm' },
+  k_valkara:   { slot: 'body', icon: '🌋', name: 'ชุดทนไฟวัลคารา', warm: 0, cool: 2, col: '#8a3a2a', look: 'knight', src: 'kingdom', k: 'valkara', def: 2 },
+  k_deadgar:   { slot: 'body', icon: '🦇', name: 'ชุดคลุมเดดการ์', warm: 1, cool: 0, air: 1, col: '#4a3a5a', look: 'robe', src: 'kingdom', k: 'deadgar' },
 };
 export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
 /* v3.12.1 🔥 torch: held in the A hand · lights the dark · counts as 1 warm piece (50%) · burns `burn` game minutes, then the next one lights
@@ -638,8 +651,7 @@ export const CRAFT = [
   { k: 'cBoneBroth', icon: '🍲', name: 'ซุปกระดูกโกเลม (อิ่มนาน ❤️ +3)', need: { bone: 1, grass: 4 }, give: { meal: 'boneBroth' } },
   { k: 'leafMask', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ (หายใจในเดดการ์)', need: { mint: 3, flower: 2, grass: 6 }, give: { wear: 'leafMask' } },
   { k: 'goggles', icon: '🥽', name: 'แว่นว่ายน้ำ (ว่ายเร็ว +25%)', need: { grass: 4, feather: 2 }, give: { wear: 'goggles' } },   /* v3.5 */
-  { k: 'swimTop', icon: '🩱', name: 'ชุดว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 2, grass: 4 }, give: { wear: 'swimTop' } },
-  { k: 'swimLegs', icon: '🩲', name: 'กางเกงว่ายน้ำ (ว่ายเร็ว +25%)', need: { hide: 1, grass: 4 }, give: { wear: 'swimLegs' } },
+  { k: 'swimTop', icon: '🩱', name: 'ชุดว่ายน้ำ (ว่ายเร็ว +50%)', need: { hide: 2, grass: 4 }, give: { wear: 'swimTop' } },
   /* v3.9 👒 hats */
   { k: 'h_cap', icon: '🧢', name: 'หมวกแก๊ปดาว', need: { hide: 1, grass: 4 }, give: { wear: 'h_cap' } },
   { k: 'h_baseball', icon: '🧢', name: 'หมวกเบสบอล', need: { hide: 1, grass: 4 }, give: { wear: 'h_baseball' } },
@@ -659,14 +671,14 @@ export const CRAFT = [
   { k: 'h_starClip', icon: '⭐', name: 'กิ๊บดาว', need: { copper: 1 }, give: { wear: 'h_starClip' } },
   { k: 'h_beanie', icon: '🧶', name: 'หมวกไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'h_beanie' } },
   { k: 'h_helmet', icon: '🪖', name: 'หมวกเหล็ก', need: { ore: 2, stone: 2 }, give: { wear: 'h_helmet' } },
-  { k: 'coat', icon: '🧥', name: 'เสื้อกันหนาว (กันหนาว)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
+  { k: 'coat', icon: '🧥', name: 'เสื้อโค้ทกันหนาว (กันหนาว)', need: { hide: 3, grass: 6 }, give: { wear: 'coat' } },
+  { k: 'o_farmer', icon: '👨‍🌾', name: 'ชุดชาวไร่ (กันร้อน)', need: { grass: 8, hide: 1 }, give: { wear: 'o_farmer' } },   /* v3.43 */
+  { k: 'o_sailor', icon: '⚓', name: 'ชุดกะลาสี (กันร้อน · ว่ายเร็ว)', need: { grass: 6, hide: 2, feather: 2 }, give: { wear: 'o_sailor' } },
   { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
-  { k: 'tank', icon: '🎽', name: 'เสื้อกล้าม (กันร้อน)', need: { grass: 6 }, give: { wear: 'tank' } },
-  { k: 'shorts', icon: '🩳', name: 'กางเกงขาสั้น (กันร้อน)', need: { grass: 4 }, give: { wear: 'shorts' } },
+  { k: 'tank', icon: '🦺', name: 'เสื้อกั๊กกันร้อน (กันร้อน)', need: { grass: 6 }, give: { wear: 'tank' } },
   { k: 'strawHat', icon: '😷', name: 'ผ้าปิดหน้ากันแดด (กันร้อน)', need: { grass: 5 }, give: { wear: 'strawHat' } },
   { k: 'furHood', icon: '🦊', name: 'หน้ากากขนสัตว์ (กันหนาว)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'furCoat', icon: '🧥', name: 'เสื้อขนสัตว์ (กันหนาว)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'furPants', icon: '👖', name: 'กางเกงขนสัตว์ (กันหนาว)', need: { hide: 5, grass: 4 }, give: { wear: 'furPants' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furCoat', icon: '🧥', name: 'ชุดขนสัตว์ (กันหนาว ×2)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
   { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
@@ -717,3 +729,5 @@ export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
   { k: 'sailor', icon: '🍹', name: 'ม็อกเทลกะลาสี', price: 90, eff: { buff: { atk: 4, min: 6 } } },
   { k: 'storm', icon: '🧉', name: 'ชาพายุ (ชาเย็นเข้มข้น)', price: 90, eff: { en: 80, buff: { stam: 1, min: 6 } } },
 ] };
+/* v3.43 ⚔️ armour + helmets some monsters wear (chance per kill) */
+export const WEAR_DROP = { shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };

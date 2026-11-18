@@ -52,8 +52,8 @@ function hatPiece(h, kind, col) { if (!kind || kind === 'none') return; const H 
   else if (kind === 'headband') band(.34, .025, M(col || '#f07aa8'), .07, Math.PI * 1.0);
   else if (kind === 'ribbon') { const C = M(col || '#d83a3a'); for (const s2 of [-1, 1]) { const w = ball(H, .08, C, [.18 + s2 * .08, .3, .05], [1.1, .7, .45], 16); w.rotation.z = s2 * .4 } ball(H, .04, C, [.18, .3, .06]) }
   else if (kind === 'goggles') { const L2 = M('#6a4a2a'), G = M('#9ad0f0', { m: .1, r: .1 }), R2 = M('#c8c8d0', { m: .7, r: .3 }); { const st = add(H, new THREE.TorusGeometry(.335, .022, 8, 40), L2, [0, .17, -.02]); st.rotation.x = Math.PI / 2 - .3 } for (const s2 of [-1, 1]) { const r = add(H, new THREE.CylinderGeometry(.075, .075, .06, 20), R2, [s2 * .1, .2, .27]); r.rotation.x = Math.PI / 2 - .5; const g = add(H, new THREE.CircleGeometry(.06, 20), G, [s2 * .1, .21, .3]); g.rotation.x = -.5 } }
-  else if (kind === 'hood') { const C = M(col || '#2a2a34'), Rd = M('#c83a3a'); add(H, new THREE.SphereGeometry(.37, 32, 20, Math.PI / 2 + .95, Math.PI * 2 - 1.9, 0, Math.PI * .78), C, [0, .02, -.04]);   /* open at the face */
-    for (const s2 of [-1, 1]) { const e = add(H, new THREE.TorusGeometry(.37, .022, 8, 24, Math.PI * .78), Rd, [0, .02, -.04]); e.rotation.set(0, Math.PI / 2 - s2 * .95, Math.PI / 2) } }
+  else if (kind === 'hood') { const C = M(col || '#2a2a34'), Rd = M('#c83a3a'); add(H, new THREE.SphereGeometry(.4, 32, 20, Math.PI / 2 + .95, Math.PI * 2 - 1.9, 0, Math.PI * .8), C, [0, .0, -.05]);   /* open at the face */
+    for (const s2 of [-1, 1]) { const e = add(H, new THREE.TorusGeometry(.4, .022, 8, 24, Math.PI * .8), Rd, [0, .0, -.05]); e.rotation.set(0, Math.PI / 2 - s2 * .95, Math.PI / 2) } }
   else if (kind === 'flower') { const P = M('#f8f4f0'), Y = M('#f8c838'); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ball(H, .04, P, [.24 + Math.cos(a) * .045, .2 + Math.sin(a) * .045, .17], [1, 1, .5]) } ball(H, .03, Y, [.24, .2, .19]) }
   else if (kind === 'starClip') star(M(col || '#3a8ad8', { m: .2 }), [.24, .22, .17], .06, 0);
   else if (kind === 'beanie') { const C = M(col || '#3aa86a'); dome(.315, .05, .44, C); add(H, lathe([[.322, .03], [.33, .07], [.33, .13], [.318, .15]], 28), mat(shade(col || '#3aa86a', .7), { ds: 1 })); ball(H, .07, M('#f4f0e8'), [0, .46, 0]) }
@@ -176,12 +176,12 @@ const HL = {   /* hairline height (head-local y) by angle round the head: front 
   messy: [.035, -.02, -.1, -.17], spiky: [.05, 0, -.08, -.15], side: [.03, -.02, -.1, -.17], bob: [.03, -.08, -.23, -.24], pony: [.04, -.03, -.11, -.16], buns: [.04, -.03, -.11, -.16], long: [.03, -.1, -.3, -.5], twin: [.04, -.03, -.12, -.16],
   bowl: [.0, -.01, -.06, -.12], curly: [.05, 0, -.09, -.15], afro: [.07, .02, -.08, -.14], mohawk: [.06, .02, -.08, -.14], braids: [.04, -.04, -.14, -.2], topknot: [.07, .02, -.08, -.14], slick: [.1, .03, -.08, -.16], wavy: [.03, -.08, -.22, -.34], layered: [.035, -.06, -.18, -.26], bun: [.07, .01, -.09, -.15] };   // v3.10 ten more styles
 function lineAt(st, az) { const L = HL[st] || HL.messy, a = Math.abs(az); return a < .9 ? L[0] + (L[1] - L[0]) * sst(0, .9, a) : a < 1.6 ? L[1] + (L[2] - L[1]) * sst(.9, 1.6, a) : L[2] + (L[3] - L[2]) * sst(1.6, 3.14, a) }
-function hairPiece(h, style, col) {
+function hairPiece(h, style, col, tuck) {   /* v3.43 tuck = under a hood: the drape is tucked in */
   const M = mat(col, { r: .38 }), g = new THREE.SphereGeometry(1, 60, 44), p = g.attributes.position, dv = V(0, 0, 0);
   for (let i = 0; i < p.count; i++) {
     dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, back = sst(.4, -.6, dv.z);
     let line = lineAt(style, az); if (style === 'side') line += .05 * sst(-.6, .4, az) * sst(1.2, .2, Math.abs(az));   /* the fringe sweeps lower to one side */
-    let c = sst(line - .03, line + .015, y); const drape = { long: [1, .5], bob: [.8, .14], wavy: [.9, .3], layered: [.85, .22], braids: [.6, .1] }[style]; if (drape) c = Math.max(c, back * sst(.1, -.2, dv.y) * drape[0]);
+    let c = sst(line - .03, line + .015, y); let drape = { long: [1, .5], bob: [.8, .14], wavy: [.9, .3], layered: [.85, .22], braids: [.6, .1] }[style]; if (drape && tuck) drape = [drape[0] * .5, Math.min(drape[1], .08)]; if (drape) c = Math.max(c, back * sst(.1, -.2, dv.y) * drape[0]);
     const pole = sst(.97, .8, dv.y);   /* fade the az-patterns out at the crown (no seam where they meet) */
     let t = .03 + .014 * Math.max(0, dv.y) + .018 * sst(.5, 1, dv.z) * sst(line + .14, line + .02, y);   /* volume on top · bangs puff forward */
     t += (.006 * Math.sin(az * 17 + y * 9) * sst(-.9, .2, dv.y) + .004 * Math.sin(az * 31 - y * 14)) * pole;   /* flowing grooves */
@@ -284,7 +284,7 @@ export function vinyl(root, a0 = {}) {
   const hm = add(head, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair) || a.hairV === 1) for (const s of [-1, 1]) ball(head, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);   /* ears (hidden under long hair) */
   if (a.beard && a.beard !== 'none') beardPiece(head, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(head, a.glasses);
-  if (a.hairV === 1) hair(head, a.hair || 'messy', a.hairCol || '#7a4428'); else { hairPiece(head, a.hair || 'messy', a.hairCol || '#7a4428'); head.scale.setScalar(.94) }   /* v2.9 one-piece hair · the head a touch smaller so the hair sits on it */
+  if (a.hairV === 1) hair(head, a.hair || 'messy', a.hairCol || '#7a4428'); else { hairPiece(head, a.hair || 'messy', a.hairCol || '#7a4428', a.hat === 'hood'); head.scale.setScalar(.94) }   /* v2.9 one-piece hair · the head a touch smaller so the hair sits on it */
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
 }
@@ -322,7 +322,7 @@ export function vinylLayered(root, a0 = {}) {
   const hm = add(skull, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair)) for (const s of [-1, 1]) ball(skull, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
-  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); hairPiece(hg, a.hair || 'messy', a.hairCol || '#7a4428'); LY(hg, 1) }
+  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); hairPiece(hg, a.hair || 'messy', a.hairCol || '#7a4428', a.hat === 'hood'); LY(hg, 1) }
   hatPiece(head, a.hat, a.hatCol);
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
