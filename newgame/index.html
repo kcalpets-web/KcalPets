@@ -302,6 +302,12 @@ body.dive::before{content:'';position:fixed;inset:0;z-index:2;pointer-events:non
 body.pad:not(.gamepad):has(.ov.inv) #dpad,body.pad:not(.gamepad):has(.ov.dlg) #dpad,body.pad:not(.gamepad):has(.ov.qbook) #dpad{display:grid}
 body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.dlg) #stick,body.pad:not(.gamepad):has(.ov.qbook) #stick{display:none}
 .invmain.wide .invgrid{grid-template-columns:repeat(6,1fr);max-height:52vh}
+
+/* v3.33 the stick menu takes the D-pad too · while it (or the skill wheel) is open the face buttons stay bright above the dimmed world */
+body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.pad:not(.gamepad).smenuOn #stick{display:none}
+body.smenuOn #bA,body.smenuOn #bB,body.skwOn #bA,body.skwOn #bB,body.skwOn #bX,body.skwOn #bY{z-index:46;filter:brightness(1.15) saturate(1.2);box-shadow:0 0 0 4px #fff,0 0 22px #ffffffaa;animation:padGlow 1.2s ease-in-out infinite}
+@keyframes padGlow{0%,100%{box-shadow:0 0 0 4px #fff,0 0 14px #ffffff88}50%{box-shadow:0 0 0 4px #fff,0 0 28px #ffffffdd}}
+body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #bA span,body.skwOn #bA span{display:block}   /* in a menu A is A (not the 'use this' icon) */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
