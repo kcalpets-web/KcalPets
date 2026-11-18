@@ -294,6 +294,14 @@ body:has(#cut) #skw{display:none!important}
 .ov.qbook{align-items:flex-end}.ov.qbook .sh{height:auto;max-height:calc(100% - 230px - env(safe-area-inset-bottom));margin:0 10px calc(env(safe-area-inset-bottom) + 200px);border:3px solid var(--ink);border-radius:18px}body.pad:not(.gamepad) .ov.qbook .shb{padding-bottom:14px}.ov.qbook .card.trk{display:block;width:100%;text-align:left;font:inherit;color:inherit;padding:12px 14px;margin:0 0 8px}.ov.qbook .card.trk .row b{font-size:15px}.ov.qbook .card.trk.on{border-color:#e0a020;background:#fff4d0}.ov.qbook .card.trk .row span{font-size:12px;color:#a07010;white-space:nowrap}.ov.qbook .card.trk p{margin:4px 0 0}
 .ov.qbook .row2{display:flex;gap:8px;flex-wrap:wrap}.ov.qbook .row2 .btn{flex:1}
 body.dive::before{content:'';position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,#3aa8e022,#0a3a6a88);mix-blend-mode:multiply}   /* v3.28 🫧 under water */
+
+/* v3.32 in the bag / quest book / a talk: a D-pad (up / down / left / right) instead of the stick */
+#dpad{display:none;position:fixed;left:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 10px);width:156px;height:156px;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:2px;z-index:47;touch-action:none}
+#dpad button{border-radius:14px;border:3px solid #2a2030;background:#fff8ee;font-size:22px;color:#2a2030;box-shadow:0 3px 0 #0005;touch-action:none;-webkit-user-select:none;user-select:none;padding:0}#dpad button:active,#dpad button.on{background:#ffd23f;transform:translateY(2px);box-shadow:0 1px 0 #0005}
+#dpad [data-dp=up]{grid-area:1/2}#dpad [data-dp=left]{grid-area:2/1}#dpad [data-dp=right]{grid-area:2/3}#dpad [data-dp=down]{grid-area:3/2}
+body.pad:not(.gamepad):has(.ov.inv) #dpad,body.pad:not(.gamepad):has(.ov.dlg) #dpad,body.pad:not(.gamepad):has(.ov.qbook) #dpad{display:grid}
+body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.dlg) #stick,body.pad:not(.gamepad):has(.ov.qbook) #stick{display:none}
+.invmain.wide .invgrid{grid-template-columns:repeat(6,1fr);max-height:52vh}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
@@ -311,7 +319,7 @@ body.dive::before{content:'';position:fixed;inset:0;z-index:2;pointer-events:non
 <canvas id="fx"></canvas><div id="fps">– fps</div>
 <div id="tools"><div id="tTray"><button data-tool="" class="on" aria-label="มือ">✋<small>มือ</small></button><button data-tool="sickle" aria-label="เคียว">🌾<small>เคียว</small></button><button data-tool="axe" aria-label="ขวาน">🪓<small>ขวาน</small></button><button data-tool="hammer" aria-label="ค้อน">⛏️<small>ค้อน</small></button><button data-tool="sword" id="tSword" aria-label="ดาบ">⚔️<small>ดาบ</small></button><button data-tool="rod" aria-label="เบ็ด">🎣<small>เบ็ด</small></button><button data-tool="hoe" aria-label="จอบ">🪏<small>จอบ</small></button><button data-tool="sketch" aria-label="วาดภาพ">✏️<small>วาด</small></button></div><button id="tBox" aria-label="อุปกรณ์"><span id="tBoxI">🧰</span><small id="tBoxL">อุปกรณ์</small></button></div>
 <div id="team"></div>
-<div id="pad"><div id="stick"><div id="stickK"></div></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button><button id="bX">X</button><button id="bY">Y</button><button id="bArw" style="display:none" aria-label="เลือกลูกธนู">🏹</button><div id="modeSw"><button id="mFight" class="on" aria-label="โหมดดาบ">⚔️</button><button id="mFarm" aria-label="โหมดฟาร์ม">🪏</button></div></div>
+<div id="pad"><div id="stick"><div id="stickK"></div></div><div id="dpad"><button data-dp="up">▲</button><button data-dp="left">◀</button><button data-dp="right">▶</button><button data-dp="down">▼</button></div><div id="wnav"><button id="wL">◀</button><button id="wR">▶</button></div><button id="bB">B</button><button id="bA"><span>A</span><i id="aK"></i></button><button id="bX">X</button><button id="bY">Y</button><button id="bArw" style="display:none" aria-label="เลือกลูกธนู">🏹</button><div id="modeSw"><button id="mFight" class="on" aria-label="โหมดดาบ">⚔️</button><button id="mFarm" aria-label="โหมดฟาร์ม">🪏</button></div></div>
 <button id="bAuto">🤖 AUTO</button>
 <div id="boss"></div>
 <div id="warpFx"></div><div id="stormTint"></div><div id="loadScr"><b></b><div class="lb"><i></i></div><small></small></div>
