@@ -35,7 +35,7 @@ export function buildWorld(scene, eco) {
   const sg = new THREE.PlaneGeometry(320, 140, 160, 70); sg.rotateX(-Math.PI / 2); sg.translate(40, 0, 0); const SP = sg.attributes.position, sc = [];   // reaches the horizon from the camera behind the character
   for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; if ((coreDist(x, z) > 1 && wildH(x, z) > -.45) || (coreDist(x, z) <= 1 && x > 9)) SP.setY(i, -.6);   /* v2.9 the island's own sea stays at the island (elsewhere the ocean plane / lakes show) */ c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
   sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
-  const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .25, transparent: true, opacity: .9, clearcoat: .6 }))); sea.position.y = -.12; scene.add(sea); W.sea = sea;
+  const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .2, transparent: true, opacity: .58, clearcoat: .7, depthWrite: false })));   /* v3.35 clear water: you see the sand below */ sea.position.y = -.12; scene.add(sea); W.sea = sea;
   const R = rng(5);
   const inst = (g, mat, n, place, shadow = true) => { const m = new THREE.InstancedMesh(g, mat, n), o = new THREE.Object3D(), cc = new THREE.Color(); let k = 0;
     for (let i = 0; i < n * 4 && k < n; i++) { if (!place(o, cc)) continue; o.updateMatrix(); m.setMatrixAt(k, o.matrix); m.setColorAt(k, cc); k++ } m.count = k; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m };
@@ -209,7 +209,7 @@ function veins(g, o, s) { const v = veinOf(o); if (!v) return; const c = ORE_COL
     const m = new THREE.Mesh(G, M); m.position.set(x0 * ca + z0 * sa, y, -x0 * sa + z0 * ca); m.scale.set(.06 * s * (1 + (i % 2) * .4), .035 * s, .05 * s); m.rotation.set(e, a, i); g.add(m) } }
 export function spawnClear(W, o) {
   if (o.g) return; remnant(W, o, false);
-  if (o.inst) { for (const [m, i, M] of o.inst) { m.setMatrixAt(i, M); m.instanceMatrix.needsUpdate = true } o.g = new THREE.Group(); o.g.position.set(o.x, groundH(o.x, o.z), o.z); W.scene.add(o.g); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: (o.t === 'giant' ? GIANT_SOL : .3) * (o.sc || 1), o }); return }   /* v2.9 a streamed (instanced) tree: just show it again */ const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
+  if (o.inst) { for (const [m, i, M] of o.inst) { m.setMatrixAt(i, M); m.instanceMatrix.needsUpdate = true } o.g = new THREE.Group(); o.g.position.set(o.x, groundH(o.x, o.z), o.z); W.scene.add(o.g); if (!o.sol) o.sol = addSol({ x: o.x, z: o.z, r: (o.t === 'giant' ? GIANT_SOL : o.t === 'rock' || o.t === 'pebble' ? .32 : .3) * (o.sc || 1), o, top: o.t === 'rock' ? .4 * (o.sc || 1) : undefined }); if (!o.pick && o.t !== 'giant') { o.pick = addPick(W, o.x, o.z, o.t === 'pebble' ? .55 : .75, o.t === 'pebble' ? .9 : 2.2, { kind: 'clear', id: o.id }); o.pick.position.y += groundH(o.x, o.z) } return }   /* v3.35 tap targets for instanced trees / rocks too */   /* v2.9 a streamed (instanced) tree: just show it again */ const g = new THREE.Group(), T = CLEAR[o.t];   /* built at the origin, merged, then placed */
   const seg0 = Q.seg; Q.seg = W.eco ? 11 : 16;
   ({ mushroom: () => { for (const [dx, dz, k] of [[0, 0, 1], [.16, .1, .7], [-.12, .14, .55]]) { part(g, '#e8dcc8', '#fff8ec', [dx, .1 * k, dz], [.05 * k, .1 * k, .05 * k], [0, 0, 0], { A: 0 }); part(g, '#a8301e', '#e8604a', [dx, .2 * k, dz], [.16 * k, .09 * k, .16 * k], [0, 0, 0], { A: .04 }); part(g, '#fff4e0', '#ffffff', [dx + .05 * k, .27 * k, dz + .04 * k], [.03 * k, .015, .03 * k], [0, 0, 0], { A: 0 }) } },
      herb: () => { for (let i = 0; i < 5; i++) part(g, '#2f7a3a', '#8ad86a', [Math.cos(i * 1.26) * .14, .12, Math.sin(i * 1.26) * .14], [.16, .04, .07], [0, -i * 1.26, .5], { A: 0 });
@@ -432,7 +432,7 @@ export function buildWild(W, eco) {
   Q.seg = eco ? 11 : 16;
   out.meadow = coreGround(17, 35, 17, eco); out.hills = coreGround(57, 74, 17, eco); scene.add(out.meadow, out.hills);   /* v3.3 one ground recipe for the whole first zone (the road is painted into it) */
   /* water: the river (with a bridge on the road) and the hill lake */
-  const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#2f8a9a', roughness: .15, transparent: true, opacity: .8, clearcoat: .8 }), 999, 0);   /* v3.28 deeper teal: the bed shows through */
+  const wmat = addWaves(new THREE.MeshPhysicalMaterial({ color: '#1f6f7c', roughness: .12, transparent: true, opacity: .42, clearcoat: .8, depthWrite: false }), 999, 0);   /* v3.28 deeper teal: the bed shows through */
   const river = new THREE.Mesh(new THREE.CircleGeometry(POND.r + .3, 40), wmat); river.position.set(POND.x, -.12, POND.z); river.rotation.x = -Math.PI / 2; scene.add(river); if (0)    /* v3.7 wider: the banks (not the plane's edge) shape the water */ river.rotation.x = -Math.PI / 2; river.position.set(RIVER.x, -.12, 0); scene.add(river);
   const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + .3, 40), wmat); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, -.12, LAKE.z); scene.add(lake);
   if (0) at(g => { for (let i = 0; i < 9; i++) part(g, '#6a4024', '#b07a44', [-RIVER.w - .3 + i * .5, .14, 0], [.24, .06, 1.1], [0, 0, 0], { A: .02 }); for (const s2 of [-1, 1]) part(g, '#5a3420', '#9a6238', [0, .45, s2 * 1.05], [RIVER.w + .5, .05, .06], [0, 0, 0], { A: 0 }) }, RIVER.x, RIVER.bz);
@@ -509,7 +509,7 @@ function wildH0(x, z) {
 /* v2.4.2 ONE grass colour for every ground mesh (core + streamed land) · smooth, so no lines or blocks where meshes meet */
 const _LV = C('#ff5a1a'), _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
 export function grassCol(x, z, out) { out.copy(_GL).lerp(_GD, smw(.5, .62, fbm(x / 60 + 4, z / 60, 3))).multiplyScalar(.93 + .1 * vnoise(x * .35, z * .35)); return out }
-function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -4 ? '#2a5a8a' : '#4a90c0'); grassCol(x, z, out);
+function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -3.5 ? '#6a7460' : h < -1.4 ? '#8a8a66' : '#b0a47a');   /* v3.35 the bed under the water: sand → weedy deep (seen through clear water) */ grassCol(x, z, out);
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
   const B = kingdomAt(x, z), g = (1 - B.home) * B.w;   /* v2.7 kingdom ground (after the generic rock/snow, so a volcano is never snowy) · lava in the volcano */
   out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl) * (1 - g * .5)).lerp(_SN, smw(26, 32, h) * (1 - g)); if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
@@ -540,7 +540,8 @@ const GIANT_BARK = '#c4b09c', GIANT_SOL = .62;
 const M_GRASS = addWind(new THREE.MeshStandardMaterial({ roughness: .9 }), 'blade'), BLADE = new THREE.ConeGeometry(.04, .3, 4); BLADE.translate(0, .15, 0);
 const M_LAND = paintGround(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }));   /* v3.28 🎨 painted ground */
 /* v3.28 where the ground decor may grow: land (not water), not steep · out = a grass tint from the ground colour · null = nothing here */
-export function decorLook(x, z, out, peb) { if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
+export function decorLook(x, z, out, peb) { if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
+  if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
   if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42) return null;   /* v3.30 not on the capitals' paving */
   const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
@@ -549,7 +550,7 @@ const _col = new THREE.Color();
 function landGeo(x0, z0, size, seg, sink) {
   const g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + x0 + size / 2, z = P.getZ(i) + z0 + size / 2, dc = coreDist(x, z), h = dc > 0 ? wildH(x, z) : waterAt(x, z) ? -2 : groundH(x, z) - .25;
-    P.setY(i, h - sink); landCol(x, z, _col); col.push(_col.r, _col.g, _col.b) }
+    P.setY(i, h - sink); landCol(x, z, _col); if (sink && h < -.45) _col.set(h < -4 ? '#1e4a6a' : '#2a6a8a'); col.push(_col.r, _col.g, _col.b) }   /* the far land keeps a deep blue sea floor */
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 }
 /* far land: the whole world at 16 m, a bit lower, always loaded (only the horizon shows it) */
@@ -575,13 +576,13 @@ export function buildChunk(W, cx, cz) {
   const pines = trees.filter(p => p.kk !== 'deadgar' && (p.h > 9 || p.kk === 'frosthelm' || R() < .3)), broad = trees.filter(p => !pines.includes(p) && p.kk !== 'deadgar');
   for (const p of trees) { p.ry = R() * 6; p.sc = .9 + R() * .8 }   /* v2.9 one transform per tree (trunk + crown match) */
   const tp = (p, ob, cc) => { ob.position.set(p.x, p.h - .1, p.z); ob.rotation.set(0, p.ry, 0); ob.scale.setScalar(p.sc) }; out.sols = [];
-  hi(inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6; if (p.sc > 1.5) out.sols.push(addSol({ x: p.x, z: p.z, r: .28 * ob.scale.x })) }, 1)); g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
+  hi(inst(TREE_TRUNK, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6 }, 1));   /* v3.35 big trees are clearables too (their solid comes with them) */ g.children[g.children.length - 1] && (g.children[g.children.length - 1].userData.occ = 1);
   far(TRUNK_LO, M_TRUNK, trees, (p, ob, cc) => { tp(p, ob); cc.set(p.kk === 'deadgar' ? '#4a3a44' : '#ffffff'); if (p.kk === 'deadgar') ob.scale.y *= 1.6 }, 1);
   hi(inst(LG.crown, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4 * p.sc; cc.set(p.col = p.kk === 'sylvaren' ? ['#b8a040', '#a07a30', '#8a8a3a', '#9a6a2a'][Math.floor(R() * 4)] : ['#4f9a3e', '#6ab84a', '#3f8a3a', '#5aa848'][Math.floor(R() * 4)]) }, 1));
   far(CROWN_LO, M_TOP, broad, (p, ob, cc) => { tp(p, ob); ob.scale.multiplyScalar(.72); ob.position.y -= .4 * p.sc; cc.set(p.col) }, 1);
   hi(inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.col = p.kk === 'frosthelm' ? (R() < .5 ? '#e8f0f4' : '#c8dce4') : R() < .5 ? '#2f6a3a' : '#3f7a44') }, 1));
   far(PINE_LO, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(p.col) }, 1);   /* v2.7 pine tops are back (snowy in the north) */   // v1.8 fuller canopies inst(PINE_TOP, M_TOP, pines, (p, ob, cc) => { tp(p, ob); cc.set(R() < .5 ? '#2f6a3a' : '#3f7a44') });
-  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); out.sols.push(addSol({ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z), top: p.h - groundH(p.x, p.z) + .8 * (ob.scale.x + ob.scale.y + ob.scale.z) / 3 * .8 })) });   /* v3.2 `top` = you can stand on it */
+  inst(ROCK_G, M_ROCK, rocks, (p, ob, cc) => { ob.position.set(p.x, p.h, p.z); ob.rotation.set(R() * 3, R() * 3, R() * 3); ob.scale.set(.6 + R(), .4 + R() * .6, .6 + R()); cc.set('#ffffff'); p.rs = (ob.scale.x + ob.scale.y + ob.scale.z) / 3; if (p.rs > 1.15) out.sols.push(addSol({   /* v3.35 small / medium rocks are clearables (below) · only the big ones stay put */ x: p.x, z: p.z, r: .4 * Math.min(ob.scale.x, ob.scale.z), top: p.h - groundH(p.x, p.z) + .8 * (ob.scale.x + ob.scale.y + ob.scale.z) / 3 * .8 })) }, 1);   /* v3.2 `top` = you can stand on it */
   const gl = []; for (const p of grass) for (let k = 0; k < 3; k++) gl.push({ x: p.x + (R() - .5) * 2, z: p.z + (R() - .5) * 2 });
   lod.small.push(inst(BLADE, M_GRASS, gl, (p, ob, cc) => { ob.position.set(p.x, wildH(p.x, p.z), p.z); ob.rotation.set((R() - .5) * .6, R() * 3, (R() - .5) * .6); ob.scale.setScalar(.8 + R() * .9); cc.set(R() < .5 ? '#4f9a3e' : '#86cc5c') }));
   /* v1.8 lush ground cover: ferns · big leaves · mushrooms · stumps · flowering bushes · a few blossom trees */
@@ -594,7 +595,8 @@ export function buildChunk(W, cx, cz) {
   const types = [['tree', 'bush', 'flower', 'pebble', 'tree', 'hive', 'flower'], ['rock', 'pine', 'rock', 'boulder', 'pebble', 'flower', 'rock']], KT = { asrah: ['rock', 'pebble', 'boulder', 'bush', 'pebble', 'rock', 'flower'], valkara: ['rock', 'boulder', 'pebble', 'rock', 'boulder', 'pebble', 'rock'], frosthelm: ['rock', 'pine', 'pebble', 'boulder', 'pine', 'rock', 'pebble'], deadgar: ['rock', 'pebble', 'boulder', 'rock', 'pebble', 'boulder', 'flower'] };
   for (let i = 0, n = 0; i < 50 && n < 7; i++) { const p = spots[Math.floor(R() * spots.length)]; if (!p || p.sl > 1.8) continue; const t = (KT[p.kk] || types[p.h > 12 ? 1 : 0])[Math.floor(R() * 7)];
     out.clears.push({ id: `k${cx}_${cz}_${n}`, t: t === 'pine' ? 'tree' : t, x: p.x, z: p.z, ry: R() * 6, g: null, pick: null, left: 0 }); n++ }
-  trees.forEach((p, i) => { if (p.sc <= 1.5 && p.parts) out.clears.push({ id: `kt${cx}_${cz}_${i}`, t: 'tree', x: p.x, z: p.z, ry: p.ry, sc: p.sc, inst: p.parts, g: null, pick: null, left: 0 }) });   /* v2.9 medium trees can be chopped (big ones are landmarks) */
+  rocks.forEach((p, i) => { if (p.parts && p.rs <= 1.15) out.clears.push({ id: `kr${cx}_${cz}_${i}`, t: p.rs < .8 ? 'pebble' : 'rock', x: p.x, z: p.z, ry: 0, sc: p.rs * (p.rs < .8 ? 1.6 : 1), inst: p.parts, g: null, pick: null, left: 0 }) });   /* v3.35 every small / medium rock breaks and grows back */
+  trees.forEach((p, i) => { if (p.parts) out.clears.push({ id: `kt${cx}_${cz}_${i}`, t: p.sc > 1.5 ? 'bigtree' : 'tree', x: p.x, z: p.z, ry: p.ry, sc: p.sc, inst: p.parts, g: null, pick: null, left: 0 }) });   /* v2.9 medium trees can be chopped (big ones are landmarks) */
   /* v3.3 🌲 giant ancient trees: a few per forest chunk (more in Sylvaren) on free, gentle ground — instanced like the others, felled in main.js (`timber`) */
   { const R2 = rng(Math.abs(cx * 15485863 + cz * 32452843) % 2147483000 + 977), used = new Set(out.clears.map(q => q.x + ',' + q.z)), giants = [], d2 = (a, b) => (a.x - b.x) ** 2 + (a.z - b.z) ** 2;
     for (const p of spots) { const sy = p.kk === 'sylvaren'; if (giants.length >= (sy ? 4 : 3)) break; if (p.f < (sy ? .42 : .55) || BARE[p.kk] || p.sl > 1.4 || p.h > 22 || p.h < 1.2 || R2() > (sy ? .07 : .035)) continue;

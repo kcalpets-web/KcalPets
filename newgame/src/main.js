@@ -1158,7 +1158,9 @@ function labels() {
     el.style.display = 'block'; el.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`;
     const html = `${M.alert ? `<span class="mk a${M.alert}${performance.now() - (M.markT || 0) < 400 ? ' pop' : ''}">${M.alert === 3 ? '?' : '!'}</span>` : ''}${full ? `${M.T.name} <small>Lv${M.T.lv}</small><div class="mb"><i style="width:${Math.max(0, M.hp / M.T.hp * 100)}%"></i></div>` : ''}`; if (el.innerHTML !== html) el.innerHTML = html }
 }
-function regrow() { const now = Date.now(); for (const o of W.clear.values()) { const T = D.CLEAR[o.t], t = S.cleared[o.id]; if (!t || o.perm || !T.regrow || now - t < (o.id.startsWith('tr_') ? 12000 : T.regrowD ? T.regrowD * D.DAY_MS : T.regrow)) continue; delete S.cleared[o.id]; spawnClear(W, o) } }
+/* v3.35 Vaneya's overgrowth grows back too (slowly) — never on a dug plot, a building or right where you stand */
+const ogFree = o => !S.plots[keyOf(Math.round(o.x), Math.round(o.z))] && !S.builds.some(b => dist(b.x, b.z, o.x, o.z) < 2.5) && dist(o.x, o.z, me().x, me().z) > 3 && !inFarm(o.x, o.z, 1);
+function regrow() { const now = Date.now(); for (const o of W.clear.values()) { const T = D.CLEAR[o.t], t = S.cleared[o.id]; if (t && o.perm && T.regrowD && now - t > T.regrowD * D.OVERGROW.regrowK * D.DAY_MS && ogFree(o)) { delete S.cleared[o.id]; ogShow(o); OG.dirty = true; continue } if (!t || o.perm || !T.regrow || now - t < (o.id.startsWith('tr_') ? 12000 : T.regrowD ? T.regrowD * D.DAY_MS : T.regrow)) continue; delete S.cleared[o.id]; spawnClear(W, o) } }
 
 /* ---------- HUD + story quests ---------- */
 const PET_ICO = { cat: '🐱', shiba: '🐶', chick: '🐤', bunny: '🐰', penguin: '🐧', rabbit: '🐇', chicken: '🐔', duck: '🦆', deer: '🦌', boar: '🐗', whale: '🐋', hawk: '🦅' };
@@ -3013,7 +3015,7 @@ const FALLS = []; { const cv = document.createElement('canvas'); cv.width = 32; 
     const m = new THREE.Mesh(geo, mat); scene.add(m); const pool = new THREE.Mesh(new THREE.CircleGeometry(4.5, 20), new THREE.MeshStandardMaterial({ color: '#5aaee0', roughness: .2, transparent: true, opacity: .85 })); pool.rotation.x = -Math.PI / 2; pool.position.set(x, wildH(x, zb) + .25, zb - sd * 1.5); scene.add(pool); FALLS.push({ x, z: zb }) }
   FALLS.tex = tex }
 const FAR = buildFarLand(scene);
-const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2f6fa8', roughness: .35, metalness: .05 })); OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
+const OCEAN = new THREE.Mesh(new THREE.PlaneGeometry(7000, 3400, 1, 1), new THREE.MeshStandardMaterial({ color: '#2a7f9a', roughness: .18, metalness: .05, transparent: true, opacity: .6, depthWrite: false }));   /* v3.35 clear seas and lakes: the bed shows through */ OCEAN.rotation.x = -Math.PI / 2; OCEAN.position.set(1900, -.38, 0); scene.add(OCEAN);
 const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp', 'rockGolem', 'goblin', 'grassSprite'], ['rockGolem', 'goblin', 'goblin', 'rockGolem']];
 /* v3.4 people, pets and monsters are 10–40 meshes each: past the fog's start they are a few pixels, so they are not drawn at all (only ones hidden here are shown again) */
 /* v3.5 🎮 game controller (Xbox / PlayStation / Switch Pro over Bluetooth): left stick walks · right stick turns the camera · the 4 face buttons press the on-screen ones
