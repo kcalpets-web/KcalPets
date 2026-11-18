@@ -7,6 +7,7 @@ import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
 import { paintGround } from './scenery.js';
+import { ROADS, NODES } from './roaddata.js';
 
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
@@ -516,10 +517,39 @@ function wildH0(x, z) {
 /* v2.4.2 ONE grass colour for every ground mesh (core + streamed land) · smooth, so no lines or blocks where meshes meet */
 const _LV = C('#ff5a1a'), _GL = C('#7cc060'), _GD = C('#4a8a3c'), _GH = C('#6a9a4a'), _RK = C('#8a7a6a'), _SN = C('#f0f2f6'), _SD = C('#e8dcb8');
 export function grassCol(x, z, out) { out.copy(_GL).lerp(_GD, smw(.5, .62, fbm(x / 60 + 4, z / 60, 3))).multiplyScalar(.93 + .1 * vnoise(x * .35, z * .35)); return out }
+/* ================= v3.44 🛣️ roads (tools/make-roads.mjs → roaddata.js): ring + spokes · paved near towns · lamps every ~26 m (lit at night) ================= */
+const RCELL = 24, RIDX = new Map(), TOWNN = Object.entries(NODES).filter(([k]) => !k.startsWith('lum:')).map(([, p]) => p);
+for (const r of ROADS) for (let i = 1; i < r.pts.length; i++) { const [ax, az] = r.pts[i - 1], [bx, bz] = r.pts[i], mx = (ax + bx) / 2, mz = (az + bz) / 2, paved = TOWNN.some(([x, z]) => Math.hypot(mx - x, mz - z) < 55) ? 1 : 0, seg = [ax, az, bx, bz, paved, r.main ? 1 : 0];
+  for (let ci = Math.floor((Math.min(ax, bx) - 4) / RCELL); ci <= Math.floor((Math.max(ax, bx) + 4) / RCELL); ci++) for (let cj = Math.floor((Math.min(az, bz) - 4) / RCELL); cj <= Math.floor((Math.max(az, bz) + 4) / RCELL); cj++) { const k = ci + ',' + cj; let l = RIDX.get(k); if (!l) RIDX.set(k, l = []); l.push(seg) } }
+const _rq = { d: 99, paved: 0, main: 0 };
+export function roadAt(x, z) { _rq.d = 99; _rq.paved = 0; _rq.main = 0; const l = RIDX.get(Math.floor(x / RCELL) + ',' + Math.floor(z / RCELL)); if (!l) return _rq;
+  for (const [ax, az, bx, bz, pv, mn] of l) { const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < _rq.d) { _rq.d = d; _rq.paved = pv; _rq.main = mn } } return _rq }
+export const roadD = (x, z) => roadAt(x, z).d;
+export { ROADS, NODES };
+const _c3 = new THREE.Color(), _RD = C('#b8905e'), _RD2 = C('#a07a4c'), _RP = C('#c4bcaa'), _RP2 = C('#9a9284'), ROAD_HW = 1.8;
+export const LAMP_COL = { navalee: '#a0f0e0', sylvaren: '#e8ff9a', frosthelm: '#9ad8ff', deadgar: '#c890ff', asrah: '#ffd890', valkara: '#ff8a4a', luminia: '#ffe0a0' };
+let LAMPS = null; export function lamps() { if (LAMPS) return LAMPS; LAMPS = []; if (!capsReady) capSites();
+  for (const r of ROADS) { let since = 13, side = 1; for (let i = 1; i < r.pts.length; i++) { const [ax, az] = r.pts[i - 1], [bx, bz] = r.pts[i], L = Math.hypot(bx - ax, bz - az) || 1, ux = (bx - ax) / L, uz = (bz - az) / L; let t = 26 - since; since += L;
+      for (; t < L; t += 26) { side = -side; since = L - t; const x = ax + ux * t - uz * side * 2.9, z = az + uz * t + ux * side * 2.9;
+        if (wildH(x, z) < -.2 || LAMPS.some(l => Math.abs(l.x - x) < 9 && Math.abs(l.z - z) < 9) || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 2) || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 4) continue;
+        LAMPS.push({ x, z, y: wildH(x, z), k: kingdomAt(x, z).k }) } } } return LAMPS }
+export const M_POOL = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2 }),   /* v3.44 the light on the ground (no real lights: fps) */
+  M_LAMP = new THREE.MeshBasicMaterial({ color: '#ffffff' }), M_POST = new THREE.MeshStandardMaterial({ color: '#3a3238', roughness: .7, metalness: .3 });
+const _hc = document.createElement('canvas'); _hc.width = _hc.height = 64; { const g = _hc.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64) }
+export const M_HALO = new THREE.PointsMaterial({ size: 4.2, map: new THREE.CanvasTexture(_hc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true, opacity: 0, sizeAttenuation: true });
+const LPOST = (() => { const a = new THREE.CylinderGeometry(.07, .1, 2.6, 7); a.translate(0, 1.3, 0); const b = new THREE.CylinderGeometry(.2, .24, .08, 8); b.translate(0, 2.62, 0); const c = new THREE.ConeGeometry(.24, .26, 8); c.translate(0, 3.12, 0); const P = [a, b, c].map(g => g.toNonIndexed()), n = P.reduce((s2, g) => s2 + g.attributes.position.count, 0), pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let o = 0; for (const g of P) { pos.set(g.attributes.position.array, o); nor.set(g.attributes.normal.array, o); o += g.attributes.position.array.length } const G2 = new THREE.BufferGeometry(); G2.setAttribute('position', new THREE.BufferAttribute(pos, 3)); G2.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); return G2 })();
+const LHEAD = new THREE.SphereGeometry(.17, 10, 8); LHEAD.translate(0, 2.84, 0);
+const LPOOL = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(.5, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); M_POOL.map = new THREE.CanvasTexture(c); const p = new THREE.PlaneGeometry(9, 9); p.rotateX(-Math.PI / 2); p.translate(0, .08, 0); return p })();
+function lampsIn(g, x0, z0) { const L = lamps().filter(l => l.x >= x0 && l.x < x0 + CHUNK && l.z >= z0 && l.z < z0 + CHUNK); if (!L.length) return; const o = new THREE.Object3D(), c = new THREE.Color();
+  const posts = new THREE.InstancedMesh(LPOST, M_POST, L.length), heads = new THREE.InstancedMesh(LHEAD, M_LAMP, L.length), hp = new Float32Array(L.length * 3), hc = new Float32Array(L.length * 3);
+  L.forEach((l, i) => { o.position.set(l.x, l.y - .05, l.z); o.updateMatrix(); posts.setMatrixAt(i, o.matrix); heads.setMatrixAt(i, o.matrix); c.set(LAMP_COL[l.k] || '#ffd890'); heads.setColorAt(i, c); hp.set([l.x, l.y + 2.84, l.z], i * 3); hc.set([c.r, c.g, c.b], i * 3) });
+  posts.castShadow = true; posts.userData.lamp = 1; const pool = new THREE.InstancedMesh(LPOOL, M_POOL, L.length); L.forEach((l, i) => { o.position.set(l.x, l.y, l.z); o.updateMatrix(); pool.setMatrixAt(i, o.matrix); c.set(LAMP_COL[l.k] || '#ffd890'); pool.setColorAt(i, c) }); pool.renderOrder = 4; g.add(posts, heads, pool); const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(hp, 3)); pg.setAttribute('color', new THREE.BufferAttribute(hc, 3)); const pts = new THREE.Points(pg, M_HALO); pts.renderOrder = 5; pts.frustumCulled = false; g.add(pts) }
 function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -3.5 ? '#6a7460' : h < -1.4 ? '#8a8a66' : '#b0a47a');   /* v3.35 the bed under the water: sand → weedy deep (seen through clear water) */ grassCol(x, z, out);
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
   const B = kingdomAt(x, z), g = (1 - B.home) * B.w;   /* v2.7 kingdom ground (after the generic rock/snow, so a volcano is never snowy) · lava in the volcano */
-  out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl) * (1 - g * .5)).lerp(_SN, smw(26, 32, h) * (1 - g)); if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x))); return out }
+  out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl) * (1 - g * .5)).lerp(_SN, smw(26, 32, h) * (1 - g)); if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x)));
+  { const r = roadAt(x, z); if (r.d < ROAD_HW + 1.4) { const k = .9 * (1 - smw(ROAD_HW - .2, ROAD_HW + 1.4, r.d)), n = vnoise(x * .9, z * .9); out.lerp(_c3.copy(r.paved ? _RP : _RD).lerp(r.paved ? _RP2 : _RD2, n * .6), k) } }   /* v3.44 🛣️ */
+  return out }
 export function wildColor(x, z) {
   const h = wildH(x, z); if (h < -.45) return h < -4 ? '#2a5a8a' : '#4a90c0'; if (h < .8 && x < coastX(z) + 14) return '#e8dcb8';
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2)); if (h > 30) return '#f0f2f6'; if (sl > 3.2) return '#8a7a6a';
@@ -576,7 +606,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || roadD(x, z) < 3.6 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
@@ -615,6 +645,7 @@ export function buildChunk(W, cx, cz) {
     const gt = hi(inst(GIANT_TRUNK, M_TRUNK, giants, (p, ob, cc) => { gp(p, ob); cc.set(GIANT_BARK) }, 1)); if (gt) gt.userData.occ = 1; hi(inst(GIANT_CROWN, M_TOP, giants, (p, ob, cc) => { gp(p, ob); cc.set(p.gcol) }, 1));
     far(GIANT_TRUNK_LO, M_TRUNK, giants, (p, ob, cc) => { gp(p, ob); cc.set(GIANT_BARK) }, 1); far(GIANT_CROWN_LO, M_TOP, giants, (p, ob, cc) => { gp(p, ob); cc.set(p.gcol) }, 1);
     giants.forEach((p, i) => out.clears.push({ id: `kg${cx}_${cz}_${i}`, t: 'giant', x: p.x, z: p.z, ry: p.gry, sc: p.gsc, col: p.gcol, inst: p.parts, g: null, pick: null, left: 0 })) }
+  lampsIn(g, x0, z0);   /* v3.44 🏮 */
   W.scene.add(g); return out;
 }
 /* v3.3 a loose giant tree (the one that falls) · a log piece of it */

@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.43';
+export const APP_VER = '3.44';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -737,3 +737,5 @@ export const MERCHANT = { cycle: 10, stay: 3, near: 110, n: { gear: 2, wear: 2, 
   gear: ['scimitar', 'knightSword', 'crystalBlade', 'dragonBlade', 'trident', 'kingSword', 'golemCrusher', 'knightBow', 'crystalBow', 'crystalShield', 'kingShield'],
   wear: [['o_mage', 2400, 6], ['o_kimono', 2600, 6], ['o_cape', 2200, 5], ['h_crown', 3000, 8], ['a_knight', 3200, 8]],
   mats: { diamond: [1, 900], golemCore: [1, 1200], crystal: [3, 300], aquamarine: [2, 350], emerald: [2, 350], goldBar: [2, 500], lavaCoal: [2, 400] } };
+/* v3.44 🛣️ roads: hw = half width (m) · safe = night packs keep this far off the road · horse = speed × on the road */
+export const ROAD = { hw: 1.8, safe: 14, horse: 1.3 };
