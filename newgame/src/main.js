@@ -112,8 +112,8 @@ const HARB = (() => { const g = new THREE.Group(); scene.add(g); const R2 = [3.5
   const pier = new THREE.Group(); for (let i = 0; i < 10; i++) part(pier, '#6a4024', '#b07a44', [-i * .9, .32, 0], [.44, .07, 1.15], [0, 0, (i % 2) * .02], { A: .02 }); for (let i = 0; i < 10; i += 3) for (const s2 of [-1, 1]) part(pier, '#4a2e1a', '#7a5232', [-i * .9, -.2, s2 * 1.05], [.1, .7, .1], [0, 0, 0], { A: 0 });
   pier.position.set(HB.x - .5, Math.max(-.05, groundH(HB.x - .5, HB.z)) * 0, HB.z); g.add(pier);
   const boat = W.boat.clone(); boat.position.set(HB.x - 6.5, -.12, HB.z + 1.9); boat.rotation.y = Math.PI / 2; g.add(boat);
-  const shops = [], put = (i, x, z, ry) => { const s2 = new THREE.Group(); harbourShop(s2, ROOF[(i - 1) % ROOF.length]); s2.position.set(x, groundH(x, z), z); s2.rotation.y = ry; const s3 = mergeProp(s2); g.add(s3);   /* v3.42 one mesh per colour (20 → ~6 draw calls) */ addSol({ x, z, hw: 1.3, hd: 1, ry }); shops.push({ i, x, z, fz: ry === 0 ? 1 : -1, fixed: s3, ruin: new THREE.Group(), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); shops[shops.length - 1].pick.position.y += groundH(x, z) };
-  [[1, HB.x + 7, HB.z - 6.5, 0], [2, HB.x + 11.5, HB.z - 6.5, 0], [3, HB.x + 16, HB.z - 6.5, 0], [4, HB.x + 9, HB.z + 6.5, Math.PI], [5, HB.x + 13.5, HB.z + 6.5, Math.PI], [7, HB.x + 18, HB.z + 6.5, Math.PI]].forEach(a => put(...a));   /* v3.40 + 🪡 the tailor */
+  const shops = [], put = (i, x, z, ry) => { const s2 = new THREE.Group(); harbourShop(s2, i === 8 ? '#6a2a3a' : ROOF[(i - 1) % ROOF.length]); s2.position.set(x, groundH(x, z), z); s2.rotation.y = ry; const s3 = mergeProp(s2); g.add(s3);   /* v3.42 one mesh per colour (20 → ~6 draw calls) */ addSol({ x, z, hw: 1.3, hd: 1, ry }); shops.push({ i, x, z, fz: ry === 0 ? 1 : -1, fixed: s3, ruin: new THREE.Group(), owner: null, pick: addPick(W, x, z, 1.6, 3, { kind: 'shop', i }) }); shops[shops.length - 1].pick.position.y += groundH(x, z) };
+  [[1, HB.x + 7, HB.z - 6.5, 0], [2, HB.x + 11.5, HB.z - 6.5, 0], [3, HB.x + 16, HB.z - 6.5, 0], [4, HB.x + 9, HB.z + 6.5, Math.PI], [5, HB.x + 13.5, HB.z + 6.5, Math.PI], [7, HB.x + 18, HB.z + 6.5, Math.PI], [8, HB.x + 22.5, HB.z - 6.5, 0]].forEach(a => put(...a));   /* v3.43 + 🍹 the bar */   /* v3.40 + 🪡 the tailor */
   const sg = new THREE.Group(); part(sg, '#4a2e1a', '#7a5232', [0, .8, 0], [.08, .8, .08], [0, 0, 0], { A: 0 }); part(sg, '#c8a070', '#f0d8b0', [0, 1.55, 0], [.8, .32, .05], [0, 0, 0], { A: 0 }); sg.position.set(HB.x + 2.5, groundH(HB.x + 2.5, HB.z - 2), HB.z - 2); g.add(sg);
   const bp = addPick(W, HB.x - 6.5, HB.z + 1.9, 1.6, 1.6, { kind: 'boat' });
   const T = buildHarbour(HB, groundH), tm = mergeProp(T.G); tm.traverse(o => { if (o.isMesh) { o.castShadow = !eco; o.receiveShadow = true; o.userData.occ = 1 } }); g.add(tm); for (const e of T.sols) addSol(e);   /* v3.41 ⚓ the new harbour town */
@@ -842,7 +842,8 @@ function pickSword() {
 }
 function openShopBuilding(i) {
   const def = D.SHOPS[i], k = def.k;
-  if (S.shops[k] && isNight() && k !== 'gacha' && HB && dist(me().x, me().z, HB.x, HB.z) < 60) { sfx('knock'); toast(`🌙 ${def.icon} ${def.name} ปิดแล้ว<br><small>${def.owner || 'เจ้าของร้าน'}กลับบ้านไปพัก · เปิดอีกครั้งตอนเช้า</small>`, 2200); return }   /* v3.42 the harbour shops close at night */
+  if (k === 'bar' && !barOpen()) { sfx('knock'); toast(`🍹 ${def.name} ยังไม่เปิด<br><small>${def.owner}: เปิด ${hhmm(D.BAR.open)}–${hhmm(D.BAR.close)} น. แวะมาตอนค่ำนะ</small>`, 2400); return }   /* v3.43 */
+  if (S.shops[k] && isNight() && k !== 'gacha' && k !== 'bar' && HB && dist(me().x, me().z, HB.x, HB.z) < 60) { sfx('knock'); toast(`🌙 ${def.icon} ${def.name} ปิดแล้ว<br><small>${def.owner || 'เจ้าของร้าน'}กลับบ้านไปพัก · เปิดอีกครั้งตอนเช้า</small>`, 2200); return }   /* v3.42 the harbour shops close at night */
   if (S.shops[k]) return openShopKind(k); if (jobLeft('shop:' + k)) return;
   if (!def.cost) { toast(`${def.icon} ${def.name}: ยังซ่อมไม่ได้ (เร็วๆ นี้)`); return }
   if (!S.story.townClear) { hint('ยังมีสไลม์อยู่ในเมือง กำจัดให้หมดก่อน'); return }
@@ -858,6 +859,7 @@ function openShopBuilding(i) {
 function openShopKind(k) {
   const def = D.SHOPS.find(s => s.k === k);
   if (k === 'tools') return openTools();
+  if (k === 'bar') return openBar(def);
   if (k === 'tailor') return sheet(`${def.icon} ${def.name}`, (b, redraw) => { b.innerHTML = `<p class="mut">${def.owner}: ชุดสวยๆ ใส่สบาย กันร้อน กันหนาว · เอาวัตถุดิบมา ป้าเย็บให้</p>${orderCard('tailor') || '<p class="mut">ยังไม่มีแบบชุด · เรียนแบบได้จากผู้คนทั่วแผนที่</p>'}`; b.querySelectorAll('[data-od]').forEach(x => x.onclick = () => { if (makerOrder(+x.dataset.od)) redraw() }) });
   if (k === 'potion' || k === 'food') return sheet(`${def.icon} ${def.name}`, (b, redraw) => {
     const list = k === 'food' ? D.FOODS : D.SHOP, box = k === 'food' ? S.food : S.potions;
@@ -2667,7 +2669,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
 let guard = false, guardTog = false, guardHold = false, bTap = 0;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0, bstop = null;   /* v3.18.2 B = 🛡️ only while held (shield · or parry with the weapon) · a window / menu / aim open → back */
-  B.addEventListener('pointerdown', e => { e.preventDefault(); if (SKW.on) { skwUse('B'); return } if (SMENU.on) { smenuShow(false); sfx('tap'); return } if (AIM && !document.querySelector('.ov')) { aimEnd(false); sfx('tap'); t0 = 0; return } if (PICK) { pickClose(); return } if (GLIDE && GLIDE.para) return;   /* v3.26 B no longer folds the glider (over water you fell in) */
+  B.addEventListener('pointerdown', e => { e.preventDefault(); if (SKW.on) { skwUse('B'); return } if (SMENU.on) { smenuShow(false); sfx('tap'); return } if (AIM && !document.querySelector('.ov')) { aimEnd(false); sfx('tap'); t0 = 0; return } if (PICK) { pickClose(); return } if (GLIDE && GLIDE.para) { closePara(); hint('🍃 พับใบไม้แล้ว · ยังไม่ถึงพื้น กด X เพื่อร่อนใหม่', 1500); return }   /* v3.43 B folds the glider again (X in the air re-opens it) */
     if (HORSE && !document.querySelector('.ov')) { dismount(); return } if (RUNON) { RUNON = false; sprintT = 0 } t0 = performance.now(); if (wheelOn) { closeWheel(); return }
     if (document.querySelector('.ov') || BM || PL.swim || RIDE || GLIDE) return; unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { }
     if (shieldOn() || weaponOf()) { guardHold = true; walkT = null; work = null; stopAuto(); updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ ยังไม่มีอาวุธ' : '🛡️ ยังไม่ได้สวมโล่ · ไม่มีอาวุธปัด', 1200) });
@@ -2954,6 +2956,19 @@ function npcHome(k, n, idx) { const K = KINGDOMS[k], c = (S.restored || {})[k] &
   if (c) { const [lx, lz] = CAP_HOMES[idx % CAP_HOMES.length], cs = Math.cos(c.ry), sn = Math.sin(c.ry), f = .72; return { x: c.x + lx * f * cs + lz * f * sn, z: c.z - lx * f * sn + lz * f * cs, cap: 1, ax: c.x, az: c.z } }
   let x = K.x + n.dx, z = K.z + n.dz; for (let r = 0; r < 40 && (!walkLand(x, z) || waterAt(x, z)); r += 1.5) { x = K.x + n.dx + Math.cos(r * 2.3) * r; z = K.z + n.dz + Math.sin(r * 2.3) * r } return { x, z, ax: K.x, az: K.z } }
 const KROOF = { navalee: '#3a7ab0', sylvaren: '#6a8a3a', asrah: '#c87a3a', frosthelm: '#8ab0d8', valkara: '#8a3a2a', deadgar: '#5a4a6a', luminia: '#b0402e' };
+/* v3.43 🍹 the bar: open late · drinks served at the counter · 👂 rumours */
+const barOpen = () => S.time >= D.BAR.open || S.time < D.BAR.close;
+function rumors() { const q = me(), L = [], far = (x, z) => `ไปทาง${dir8(x - q.x, z - q.z)} ราว ${Math.round(dist(q.x, q.z, x, z) / 10) * 10} ม.`;
+  if (typeof merchantRumor === 'function') { const r = merchantRumor(); if (r) L.push(r, r) }
+  for (const k in D.MINIB) if (!(S.minib || {})[k]) { const T = D.MON[D.MINIB[k][0]]; L.push(`ได้ยินว่ามี ${T.name} ตัวใหญ่ เฝ้าอยู่แถว ${KINGDOMS[k].name}`) }
+  for (const c of CHESTS) if (!(S.chests || {})[c.id]) L.push(`นักเดินทางคนหนึ่งเล่าว่าเห็นหีบ 📦 ${c.cave ? 'ในถ้ำ ' : ''}${far(c.x, c.z)}${c.trap ? ' · แต่ระวังกับดักนะ' : ''}`);
+  for (const k in D.GOLEMS) if (!(S.golems || {})[k]) L.push(`กองหินประหลาดแถว ${KINGDOMS[k].name} ขยับได้… คนเล่าว่ามันคือ ⛰️ โกเลม`);
+  return L.length ? L : ['ช่วงนี้เงียบๆ ไม่มีข่าวอะไรเลย… ลองมาใหม่คืนอื่นนะ'] }
+function openBar(def) { sheet(`${def.icon} ${def.name}`, (b, redraw) => {
+  b.innerHTML = `<p class="mut">${def.owner}: ดึกแล้วยังไม่นอนอีกเหรอ นักผจญภัย? นั่งก่อนสิ · เปิด ${hhmm(D.BAR.open)}–${hhmm(D.BAR.close)} น.</p>` + D.BAR.menu.map(x => `<div class="card"><div class="row"><b>${x.icon} ${x.name}</b></div><div class="row"><span class="mut">${effTxt(x.eff)}</span><button class="btn sm go" data-bar="${x.k}" ${S.coin < x.price ? 'disabled' : ''}>สั่ง 🪙 ${fmt(x.price)}</button></div></div>`).join('')
+    + `<div class="card"><div class="row"><b>👂 ฟังข่าวลือ</b><button class="btn sm" id="barRum" ${S.coin < D.BAR.rumor ? 'disabled' : ''}>เลี้ยงน้ำ 🪙 ${D.BAR.rumor}</button></div><p class="mut" id="barRumT">${S.barRum || 'คนในบาร์รู้เรื่องแปลกๆ ทั่วเมิร์จแลน'}</p></div>`;
+  b.querySelectorAll('[data-bar]').forEach(x => x.onclick = () => { const it = D.BAR.menu.find(i => i.k === x.dataset.bar); if (S.coin < it.price || EAT) return; S.coin -= it.price; bump('buys'); bump('barDrinks'); save(); hud(); redraw(); eatAnim(it.icon, () => eatDone(it)) });
+  b.querySelector('#barRum').onclick = () => { if (S.coin < D.BAR.rumor) return; S.coin -= D.BAR.rumor; const L = rumors(); S.barRum = '💬 ' + L[Math.floor(Math.random() * L.length)]; bump('rumors'); sfx('coin'); save(); hud(); redraw() } }) }
 function kqTick(q) { const nt = isNight();
   for (const k in KQ) { const K = KINGDOMS[k], cp = (S.restored || {})[k] && CAPS[k], ax = cp ? cp.x : K.x, az = cp ? cp.z : K.z, d = dist(q.x, q.z, ax, az);
     KQ[k].npcs.forEach((n, idx) => { const key = k + ':' + n.id, A = KNPC[key];
@@ -2965,7 +2980,7 @@ function kqTick(q) { const nt = isNight();
         idleReg(a); KNPC[key] = { A: a, k, n, mk, house, hsol, cap: !!H.cap, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; a.wander = { home: [x, z], t: [x, z], wait: 1 + Math.random() * 4, r: 3 }; a.pick = KNPC[key].pick;   /* v3.2 they stroll around their spot */ KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
       else if (d > 110 && A) { scene.remove(A.A.root); removePick(W, A.pick); if (A.house) { scene.remove(A.house); A.house.traverse(o => o.isMesh && o.geometry.dispose()); delSol(A.hsol) } delete KNPC[key] }
       else if (A && A.A.root.visible === nt) { A.A.root.visible = !nt; if (!nt) kqMarks() } }) }
-  for (const sh of TW.shops || []) if (sh && sh.owner) sh.owner.root.visible = !nt }
+  for (const sh of TW.shops || []) if (sh && sh.owner) sh.owner.root.visible = D.SHOPS[sh.i] && D.SHOPS[sh.i].k === 'bar' ? barOpen() : !nt }
 function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
   const id = qNext(ids); if (!id) return ''; const st = T[id]; if (st) return qProg(id).ok ? '❓' : '…'; return qActive() ? '' : '❗' }   /* v3.5.1 ❗ only when no other quest is running */
 function kqMarks() { for (const key in KNPC) { const N = KNPC[key], s2 = npcState(N.k, N.n); N.mk.visible = !!s2; if (s2 && N.mk.userData.s !== s2) { N.mk.material.map = emojiTex(s2); N.mk.material.needsUpdate = true; N.mk.userData.s = s2 } } }

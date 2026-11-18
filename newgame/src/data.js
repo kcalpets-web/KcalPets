@@ -375,6 +375,7 @@ export const SHOPS = [
   { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
   { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: '', cost: null },
   { k: 'tailor', name: 'ร้านตัดเสื้อ', icon: '🪡', owner: 'ป้าเข็ม', cost: null },   // v3.40 clothes · hats
+  { k: 'bar', name: 'บาร์นกนางนวล', icon: '🍹', owner: 'ลุงโจ้', cost: null },   // v3.43 open late (BAR.open → BAR.close)
 ];
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
 export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
@@ -606,7 +607,7 @@ export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 /* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
-export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor'] };
+export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = .5, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const LUM_RESPAWN = 300;   // v3.25 seconds before the ruins' guards come back once all are beaten
@@ -705,3 +706,14 @@ export const WX = { types: { clear: { icon: '☀️', name: 'ฟ้าใส', r
   block: 360, boltS: [6, 14], highBolt: 18, boltDmg: 18 };
 export const TEMP = { night: -.4, noon: .3, perM: -.022, highFrom: 22, swim: -.45, fire: .7, forest: -.12, storm: -.35, sun: .15, coldAt: -.6, hotAt: .6, hotRegen: .6 };
 export const JUMP = { h: .75, t: .55, en: 3 };
+
+/* v3.43 🍹 the bar at the harbour: open late (game minutes · past midnight wraps) · drinks are served at the counter (drunk at once, eff like RECIPES)
+   · 👂 a rumour for `rumor` coins: a minibosses / chest / golem / the wandering merchant hint */
+export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
+  { k: 'coco', icon: '🥥', name: 'น้ำมะพร้าวเย็นเจี๊ยบ', price: 30, eff: { en: 40, buff: { cool: 1, min: 8 } } },
+  { k: 'ginger', icon: '🍵', name: 'ชาขิงร้อน', price: 30, eff: { en: 30, buff: { warm: 1, min: 8 } } },
+  { k: 'honeymilk', icon: '🥛', name: 'นมน้ำผึ้งอุ่นๆ', price: 40, eff: { hp: 60 } },
+  { k: 'stew', icon: '🍲', name: 'สตูว์ปลาหม้อดิน', price: 70, eff: { hp: 50, en: 50, buff: { def: 3, min: 6 } } },
+  { k: 'sailor', icon: '🍹', name: 'ม็อกเทลกะลาสี', price: 90, eff: { buff: { atk: 4, min: 6 } } },
+  { k: 'storm', icon: '🧉', name: 'ชาพายุ (ชาเย็นเข้มข้น)', price: 90, eff: { en: 80, buff: { stam: 1, min: 6 } } },
+] };
