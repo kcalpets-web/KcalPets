@@ -696,7 +696,9 @@ const BEAM_G = new THREE.CylinderGeometry(.06, .16, 5, 8, 1, true); BEAM_G.trans
 /* v2.9 ✨ little twinkles (not a beam): a few star sprites that pulse round things you can pick up (loot · fruit · flowers) · ticked in twinkleTick */
 const STAR = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,240,1)'); gr.addColorStop(.25, 'rgba(255,240,180,.9)'); gr.addColorStop(1, 'rgba(255,230,150,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
   g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(16, 0); g.lineTo(18, 14); g.lineTo(32, 16); g.lineTo(18, 18); g.lineTo(16, 32); g.lineTo(14, 18); g.lineTo(0, 16); g.lineTo(14, 14); g.fill(); const t = new THREE.CanvasTexture(c); return t })();
-const TWINK = [];
+const TWINK = [], SOFT = new Set(['flower', 'mushroom', 'herb']);
+/* v3.49 the loot look (a ring + sparkles) for things lying on the ground that are not drops: thrown weapons */
+function lootMark(x, z) { const g = new THREE.Group(), r = new THREE.Mesh(new THREE.TorusGeometry(.42, .045, 6, 20), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); r.rotation.x = -Math.PI / 2; r.position.y = .05; g.add(r); twinkle(g, .5, .4, 3, .26); g.position.set(x, Math.max(-.05, groundH(x, z)), z); scene.add(g); return g }
 function twinkle(parent, r, y, n = 3, size = .22) { for (let i = 0; i < n; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: STAR, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: '#fff4c0' })); sp.userData.tw = { a: i / n * 6.28 + Math.random(), r, y, s: size, ph: Math.random() * 6 }; sp.name = 'tw'; parent.add(sp); TWINK.push(sp) } }
 const _twp = new THREE.Vector3();
 function twinkleTick(now) { const q = me(); for (let i = TWINK.length - 1; i >= 0; i--) { const sp = TWINK[i], u = sp.userData.tw; if (sp.parent && sp.parent.parent) { sp.parent.getWorldPosition(_twp); sp.visible = Math.abs(_twp.x - q.x) < 16 && Math.abs(_twp.z - q.z) < 16; if (!sp.visible) continue }   /* only near ones (each sprite is a draw call) */ if (!sp.parent || !sp.parent.parent) { if (!sp.parent || !sp.parent.parent) { TWINK.splice(i, 1); continue } } const k = Math.max(0, Math.sin(now / 260 + u.ph)), a = u.a + now / 2400; sp.position.set(Math.cos(a) * u.r, u.y + Math.sin(now / 700 + u.ph) * .08, Math.sin(a) * u.r); sp.scale.setScalar(u.s * (.25 + k * .9)); sp.material.opacity = .25 + k * .75 } }
@@ -2344,9 +2346,9 @@ function throwGear(a) { const it = weaponOf(); if (!it || it.br || (D.ITEMS[it.t
   const v = dir.multiplyScalar(D.THROW.speed * (.55 + .45 * k)); v.y += D.THROW.grav * .1; const g = new THREE.Group(); itemMesh(g, it.t); g.scale.setScalar(1.3); g.position.copy(o); scene.add(g);
   it.away = { x: o.x, z: o.z }; S.eq.sword = null; if (S.hand !== 'torch') S.hand = 'w'; DRAWN = false; ALOCK = false; setTool('');
   THROWN.push({ it, g, v, dmg, spin: kd === 'spear' ? 0 : 13, t: 0 }); sfx('tap'); bump('throws'); gearView(); save() }
-function throwLand(P) { P.landed = true; const p = P.g.position, x = p.x, z = p.z; p.y = Math.max(groundH(x, z), waterAt(x, z) ? -.05 : -99) + .12; P.g.rotation.set(Math.PI / 2, P.g.rotation.y, (P.it.id % 7) * .4); P.it.away = { x: +x.toFixed(2), z: +z.toFixed(2) }; save() }
+function throwLand(P) { P.landed = true; const p = P.g.position, x = p.x, z = p.z; p.y = Math.max(groundH(x, z), waterAt(x, z) ? -.05 : -99) + .12; P.g.rotation.set(Math.PI / 2, P.g.rotation.y, (P.it.id % 7) * .4); P.it.away = { x: +x.toFixed(2), z: +z.toFixed(2) }; if (!P.mk) P.mk = lootMark(x, z); save() }
 const nearThrown = () => { const q = me(); return THROWN.find(P => P.landed && dist(q.x, q.z, P.g.position.x, P.g.position.z) < D.THROW.pick && Math.abs(q.y - P.g.position.y) < 2.5) };
-function pickThrown(P) { const i = THROWN.indexOf(P); if (i < 0) return; const p = P.g.position; scene.remove(P.g); THROWN.splice(i, 1); delete P.it.away; const T = D.ITEMS[P.it.t]; floater(`${T.icon} เก็บเข้ากระเป๋า`, 'item', p.x, 1.4, p.z); sfx('tap'); gearView(); save() }   /* v3.49 back into the bag only · you equip it yourself */
+function pickThrown(P) { const i = THROWN.indexOf(P); if (i < 0) return; const p = P.g.position; scene.remove(P.g); if (P.mk) scene.remove(P.mk); THROWN.splice(i, 1); delete P.it.away; const T = D.ITEMS[P.it.t]; floater(`${T.icon} เก็บเข้ากระเป๋า`, 'item', p.x, 1.4, p.z); sfx('tap'); gearView(); save() }   /* v3.49 back into the bag only · you equip it yourself */
 function throwTick(dt) { const q = me();
   for (let i = THROWN.length - 1; i >= 0; i--) { const P = THROWN[i], p = P.g.position;
     if (P.landed) continue;   /* v3.49 a thrown weapon stays where it fell until you press A by it (you may want to leave it) */
@@ -2355,7 +2357,7 @@ function throwTick(dt) { const q = me();
       if (Math.hypot(m.x - p.x, m.z - p.z, (p.y - (m.y + .6 * sc)) * .7) < .6 * Math.max(1, sc)) { P.hitM = true; M.hit = true; hurtMon(M, dmgCalc(P.dmg, M.T.def).d, 'dmg'); VF.burst(p.x, p.y, p.z, '#ffffff', 10, 3); sfx('chop');
         P.it.d = Math.max(0, durLeft(P.it) - D.THROW.wear); if (P.it.d <= 0) { P.it.br = Date.now() + (D.BREAK.min[P.it.r] || 5) * 60e3; floater(`💔 ${D.ITEMS[P.it.t].name} พัง`, 'hurt', p.x, 2, p.z) } P.v.set(P.v.x * -.12, 2, P.v.z * -.12); break } }
     if (p.y <= groundH(p.x, p.z) + .1 || P.t > 4) throwLand(P) } }
-for (const it of S.bag) if (it.away && D.ITEMS[it.t]) { const g = new THREE.Group(); itemMesh(g, it.t); g.scale.setScalar(1.3); g.position.set(it.away.x, groundH(it.away.x, it.away.z) + .12, it.away.z); g.rotation.x = Math.PI / 2; scene.add(g); THROWN.push({ it, g, landed: true }) }   /* where you left them */
+for (const it of S.bag) if (it.away && D.ITEMS[it.t]) { const g = new THREE.Group(); itemMesh(g, it.t); g.scale.setScalar(1.3); g.position.set(it.away.x, groundH(it.away.x, it.away.z) + .12, it.away.z); g.rotation.x = Math.PI / 2; scene.add(g); THROWN.push({ it, g, landed: true, mk: lootMark(it.away.x, it.away.z) }) }   /* where you left them */
 function aimStart0(kind = 'bow') {
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
   if (kind === 'draw') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .05, tgt: null, draw: 1 }; document.body.classList.add('aim', 'drawaim'); $('xN').textContent = '🖍️ จัดกรอบภาพ'; gearView(); return }
@@ -2530,7 +2532,7 @@ const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; d
 let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
 function ctxTick(now, dt, mv) {
   walkS = mv && !PL.swim && !RIDE ? walkS + dt : 0; if (walkS > 1.2) tutEv('move'); if (RUNON || (joy.run && mv)) tutEv('run'); tutTick(now); if (!mv && RUNON && (now - (PL.stopT || 0)) > 600) RUNON = false; if (mv) PL.stopT = now;
-  if (now > fruitT) { fruitT = now + 1000; const q = me(); for (const o of W.clear.values()) if (o.g && D.FRUIT[o.t] && Math.abs(o.x - q.x) < 40 && Math.abs(o.z - q.z) < 40) fruitView(o, fruitOn(o)) }
+  if (now > fruitT) { fruitT = now + 1000; const q = me(); for (const o of W.clear.values()) { if (!o.g || Math.abs(o.x - q.x) > 40 || Math.abs(o.z - q.z) > 40) continue; if (D.FRUIT[o.t]) fruitView(o, fruitOn(o)); if (SOFT.has(o.t) && !o.g.userData.tw && Math.abs(o.x - q.x) < 18 && Math.abs(o.z - q.z) < 18) { o.g.userData.tw = 1; const sc = o.g.scale.x || 1; twinkle(o.g, .32 / sc, .3 / sc, 2, .2 / sc) } } }   /* v3.49 everything you can pick sparkles (flowers · mushrooms · herbs too) */
   if (mv) ctxStill = now; if (now < ctxT) { ctxPos(now); return } ctxT = now + 120; CTX = null;
   if (!CUT && !CATCHING && !AIM && !F && !BM && !document.querySelector('.ov') && PL && S.avatar) {
     const t = nearTarget(), farm = S.mode === 'farm', q = me();
