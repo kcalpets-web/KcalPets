@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.38';
+export const APP_VER = '3.39';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -253,6 +253,8 @@ export const GEAR_JOB = { axe: 'axe', sickle: 'sickle', pick: 'hammer', hammer: 
 /* v3.22 🎯 double-tap A = throw what you hold (aim like Y): spread rad · damage × · speed m/s · gravity · wear · pick it up where it lands */
 export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4 };
 /* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
+/* v3.39 broken gear rests and comes back by itself (minutes by rarity) · the blacksmith fixes it at once · weapons / shields / bows are made by the blacksmith (coins = his labour, you bring the materials) */
+export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
 export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 };
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
 export const MON_GEAR = { goblin: ['stoneKnife', 'axe1', 'mallet0'], goblinChief: ['axe2'], shadeKnight: ['ironKnife', 'mallet1'], ghoul: ['pick1', 'sickle1'], branchImp: ['sickle0', 'axe0'], witherImp: ['sickle1', 'pick0'] }, GEAR_DROP = .2;

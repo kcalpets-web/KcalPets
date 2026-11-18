@@ -37,7 +37,7 @@ export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 
 /* v2.0 an item = { id, t, r, ba (bonus atk / def), bd (bonus durability), d (durability left) } */
 export function itemStats(it) { const T = ITEMS[it.t] || ITEMS.branch, sh = T.slot === 'shield', ba = it.ba || 0;
-  return { atk: sh ? 0 : (T.atk || 0) + ba, def: (T.def || 0) + (sh ? ba : 0), hp: 0, dur: (T.dur || 1) + (it.bd || 0) } }
+  return { atk: sh ? 0 : (T.atk || 0) + ba, def: (T.def || 0) + (sh ? ba : 0), hp: 0, dur: ((T.dur || 1) + (it.bd || 0)) * 3 } }   // v3.39 gear lasts 3× longer
 export const durLeft = it => it.d == null ? itemStats(it).dur : it.d;
 export function newItem(t, r = 'B') { const T = ITEMS[t], [A, Dr] = RAR_BONUS[r] || RAR_BONUS.B, R = ([a, b]) => a + Math.floor(Math.random() * (b - a + 1));
   const it = { id: S.nextItem++, t, r, ba: T.slot === 'shield' ? Math.ceil(R(A) / 2) : R(A), bd: R(Dr) }; it.d = itemStats(it).dur; return it }

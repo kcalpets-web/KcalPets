@@ -354,6 +354,15 @@ body:has(.ov) #bA.ctx{background-color:#3fae6a;animation:none}body:has(.ov) #bA 
 .invtabs.car{display:flex;justify-content:center;align-items:center;gap:10px;overflow:hidden;padding:4px 0}.invtabs.car button.hid{display:none}
 .invtabs.car button{flex:0 0 auto;width:84px;opacity:.55;transform:scale(.88);display:flex;flex-direction:column;align-items:center;position:relative}.invtabs.car button.on{width:112px;opacity:1;transform:none;font-size:30px}.invtabs.car button.on small{font-size:14px;font-weight:800}
 .invtabs.car .ar{position:absolute;top:50%;margin-top:-10px;font-style:normal;font-size:14px;color:#ffd23f}.invtabs.car button.nb:first-child .ar,.invtabs.car button.nb .ar{left:2px}.invtabs.car button.nb[style*="order:2"] .ar{left:auto;right:2px}
+
+/* v3.39 durability bars under A / B */
+.durb{position:fixed;z-index:7;width:62px;height:16px;border-radius:8px;background:#2a2030cc;border:2px solid #2a2030;display:none;overflow:hidden;pointer-events:none}.durb i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}.durb span{position:relative;display:block;text-align:center;font:800 10px/12px system-ui;color:#fff;text-shadow:0 1px 0 #000}
+#durA{right:15px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 56px)}#durB{right:81px;bottom:calc(max(14px,env(safe-area-inset-bottom)) - 8px)}
+body:has(.ov) .durb,body.cut .durb{display:none!important}
+@media (max-width:360px){#durA{right:6px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 52px);width:58px}#durB{right:64px;bottom:calc(max(14px,env(safe-area-inset-bottom)) - 8px);width:58px}}
+
+.cnote{background:#fff3d8;border:2px dashed #c8a060;border-radius:12px;padding:8px 10px;margin:4px 0;font-size:14px}.ctile .cok.smith{background:#ffb02a;box-shadow:0 0 0 2px #1a1626,0 0 8px #ffb02a}
+.ord{border-top:1px solid #0001;padding:6px 0}.ord .row{display:flex;justify-content:space-between;align-items:center;gap:6px}.ord .ipic.sm{width:28px;vertical-align:middle}.ord small{display:block;font-size:12px;margin-top:2px}.ord small .dn{color:#c0402a}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
