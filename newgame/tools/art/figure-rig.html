@@ -1,0 +1,76 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · jointed figure</title>
+<style>body{margin:0;background:#f4efe6;font:700 15px system-ui,sans-serif;color:#3a2a30}canvas{display:block}</style></head><body>
+<script type="module">
+/* v3.49 preview (not in the game): the main character as a jointed toy figure, built on the mannequin skeleton the designer sent
+   joints: waist (pelvis→abdomen) · chest · neck · shoulders (ball) · elbows (ball) · wrists · hips (ball) · knees (ball) · ankles
+   look: blocky rounded parts, big head, hair in 3 pieces (fringe · sides · back) — the game's own style, the sheets are reference only
+   #m = the bare mannequin (joints shown) · default = dressed */
+import * as THREE from '../../lib/three.module.min.js';
+const W = 1800, H = 1250, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.setScissorTest(true); document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff6ec', '#b8a890', 1.35)); const key = new THREE.DirectionalLight('#fff1dc', 2.3); key.position.set(-2, 4, 5); S.add(key); const rim = new THREE.DirectionalLight('#dce8ff', 1); rim.position.set(3, 2, -4); S.add(rim);
+/* a rounded box (clay / vinyl toy) */
+function rbg(w, h, d, r = .03, s = 5) { const g = new THREE.BoxGeometry(w, h, d, s, s, s), p = g.attributes.position, v = new THREE.Vector3(), hw = w / 2 - r, hh = h / 2 - r, hd = d / 2 - r;
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const c = new THREE.Vector3(Math.max(-hw, Math.min(hw, v.x)), Math.max(-hh, Math.min(hh, v.y)), Math.max(-hd, Math.min(hd, v.z))); v.sub(c).normalize().multiplyScalar(r).add(c); p.setXYZ(i, v.x, v.y, v.z) } g.computeVertexNormals(); return g }
+const M = {}; const mat = (c, o = {}) => M[c + JSON.stringify(o)] || (M[c + JSON.stringify(o)] = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .42, metalness: 0 }, o)));
+const BARE = location.hash.startsWith('#m');
+const C = BARE ? { skin: '#ececec', top: '#e4e4e4', pants: '#dedede', boot: '#d6d6d6', hair: '#d0d0d0', belt: '#cacaca', col: '#dadada', joint: '#8e8e94' }
+  : { skin: '#f6d2b4', top: '#3d78d8', top2: '#2f62b8', pants: '#3a6ec8', cuff: '#2f5aa8', boot: '#7a4424', belt: '#6a3e22', buckle: '#e8c040', col: '#d83a3a', hair: '#8a4628', joint: '#2f62b8' };
+const part = (g, geo, c, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m };
+const joint = (parent, name, x, y, z) => { const j = new THREE.Group(); j.name = name; j.position.set(x, y, z); parent.add(j); return j };
+const ball = (g, r, c) => part(g, new THREE.SphereGeometry(r * (BARE ? 1.25 : 1), 18, 12), c);   /* the mannequin shows its joints */
+/* proportions (units ≈ m · 1.3 tall · head ≈ 1/3) */
+const P = { hipY: .46, thigh: .2, shin: .17, foot: .09, pelvis: [.3, .1, .2], abd: [.27, .11, .19], chest: [.36, .19, .23], neck: .05, head: [.46, .43, .41], uarm: .19, farm: .16, hand: [.1, .1, .09], sh: .215 };
+function figure(look = {}) { const root = new THREE.Group(), L = Object.assign({}, C, look);
+  /* pelvis = the root of the body (sits on the hips) */
+  const pelvis = joint(root, 'pelvis', 0, P.hipY, 0); part(pelvis, rbg(...P.pelvis, .04), L.pants, 0, .03, 0);
+  const waist = joint(pelvis, 'waist', 0, .09, 0); ball(waist, .045, L.joint); part(waist, rbg(...P.abd, .04), L.top2 || L.top, 0, .065, 0);
+  if (!BARE) { part(waist, rbg(P.abd[0] + .02, .035, P.abd[2] + .02, .012), L.belt, 0, .02, 0); part(waist, rbg(.05, .04, .02, .008), L.buckle, 0, .02, P.abd[2] / 2 + .012) }
+  const chestJ = joint(waist, 'chest', 0, .13, 0); ball(chestJ, .045, L.joint); part(chestJ, rbg(...P.chest, .05), L.top, 0, .1, 0);
+  const neck = joint(chestJ, 'neck', 0, .2, 0); part(neck, new THREE.CylinderGeometry(P.neck, P.neck * 1.1, .06, 14), L.skin, 0, .02, 0); if (!BARE) part(neck, new THREE.TorusGeometry(.075, .022, 8, 20), L.col, 0, .005, 0).rotation.x = Math.PI / 2;
+  const head = joint(neck, 'head', 0, .05, 0); part(head, rbg(...P.head, .11, 7), L.skin, 0, P.head[1] / 2, 0);
+  if (!BARE) face(head); if (!BARE) hair(head, L.hair);
+  for (const s of [-1, 1]) { const n = s < 0 ? 'L' : 'R';
+    const sh = joint(chestJ, 'shoulder' + n, s * P.sh, .15, 0); ball(sh, .055, L.joint); const ua = rbg(.11, P.uarm, .11, .04); part(sh, ua, L.top, s * .02, -P.uarm / 2, 0);
+    const el = joint(sh, 'elbow' + n, s * .02, -P.uarm, 0); ball(el, .045, L.joint); part(el, rbg(.1, P.farm, .1, .035), BARE ? L.top : L.top, 0, -P.farm / 2, 0); if (!BARE) part(el, rbg(.105, .04, .105, .015), L.top2, 0, -P.farm + .02, 0);
+    const wr = joint(el, 'wrist' + n, 0, -P.farm, 0); part(wr, rbg(...P.hand, .035), L.skin, 0, -P.hand[1] / 2, 0);
+    const hp = joint(pelvis, 'hip' + n, s * .085, 0, 0); ball(hp, .055, L.joint); part(hp, rbg(.13, P.thigh, .14, .04), L.pants, 0, -P.thigh / 2, 0);
+    const kn = joint(hp, 'knee' + n, 0, -P.thigh, 0); ball(kn, .048, L.joint); part(kn, rbg(.12, P.shin, .13, .035), L.pants, 0, -P.shin / 2, 0); if (!BARE) part(kn, rbg(.125, .045, .135, .015), L.cuff, 0, -P.shin + .05, 0);
+    const an = joint(kn, 'ankle' + n, 0, -P.shin, 0); part(an, rbg(.14, P.foot, .2, .04), L.boot, 0, -P.foot / 2, .03); if (!BARE) part(an, rbg(.145, .025, .205, .01), '#5a3018', 0, -P.foot + .012, .03) }
+  root.userData.J = n => root.getObjectByName(n); return root }
+function face(h) { const y = .2, z = P.head[2] / 2 + .003;
+  for (const s of [-1, 1]) { const e = new THREE.Group(); e.position.set(s * .095, y, z); h.add(e);
+    part(e, new THREE.CircleGeometry(.058, 24), '#ffffff').scale.set(.82, 1, 1); part(e, new THREE.CircleGeometry(.046, 24), '#a8641e', 0, -.004, .001).scale.set(.82, 1, 1); part(e, new THREE.CircleGeometry(.026, 18), '#2a1a12', 0, -.006, .002).scale.set(.82, 1, 1); part(e, new THREE.CircleGeometry(.013, 12), '#ffffff', -.012, .016, .003); part(e, new THREE.BoxGeometry(.1, .012, .004), '#3a2218', 0, .062, .002).rotation.z = -s * .12 }
+  part(h, new THREE.CircleGeometry(.03, 16, 0, Math.PI), '#c83a3a', 0, .085, z + .001).rotation.z = Math.PI; for (const s of [-1, 1]) { const b = part(h, new THREE.CircleGeometry(.03, 16), '#ff9a9a', s * .15, .12, z + .001); b.material = mat('#ff9a9a', { transparent: true, opacity: .5 }) } }
+function hair(h, c) { const H0 = P.head[1], W0 = P.head[0], D0 = P.head[2];   /* 3 pieces: the fringe, the sides, the back (a hat can replace the top) */
+  const cap = part(h, new THREE.SphereGeometry(W0 * .62, 28, 16, 0, Math.PI * 2, 0, Math.PI * .5), c, 0, H0 * .66, -.01); cap.scale.set(1, .78, 1.02);
+  for (let i = 0; i < 7; i++) { const x = -W0 * .42 + i * W0 * .14, lock = part(h, rbg(.075, .14 + (i % 2) * .03, .06, .025), c, x, H0 * .78 - (i % 2) * .015, D0 / 2 + .015); lock.rotation.x = -.25; lock.rotation.z = (x / W0) * .5 }   /* the fringe */
+  for (const s of [-1, 1]) { const sd = part(h, rbg(.07, .26, .3, .03), c, s * (W0 / 2 + .02), H0 * .52, -.02); sd.rotation.z = s * .06 }   /* the sides */
+  part(h, rbg(W0 * 1.04, H0 * .62, .09, .04), c, 0, H0 * .55, -D0 / 2 - .02) }   /* the back */
+/* poses: rotations by joint name (x forward/back · z sideways) */
+const POSE = {
+  t:     { shoulderL: [0, 0, -1.5], shoulderR: [0, 0, 1.5] },
+  stand: { shoulderL: [0, 0, -.12], shoulderR: [0, 0, .12], elbowL: [-.15, 0, 0], elbowR: [-.15, 0, 0] },
+  wave:  { shoulderL: [0, 0, -.12], shoulderR: [0, 0, 2.6], elbowR: [0, 0, .5], wristR: [0, 0, .2], head: [.05, 0, -.12], hipL: [.25, 0, 0], kneeL: [-.45, 0, 0], ankleL: [.25, 0, 0], waist: [0, 0, .05] },
+  walk:  { shoulderL: [.65, 0, -.1], shoulderR: [-.6, 0, .1], elbowL: [-.5, 0, 0], elbowR: [-.4, 0, 0], hipL: [-.6, 0, 0], kneeL: [.35, 0, 0], hipR: [.55, 0, 0], kneeR: [-.9, 0, 0], ankleR: [.3, 0, 0], chest: [.05, .12, 0], waist: [.04, 0, 0] },
+  run:   { shoulderL: [1.1, 0, -.15], shoulderR: [-1, 0, .15], elbowL: [-1.4, 0, 0], elbowR: [-1.4, 0, 0], hipL: [-1.1, 0, 0], kneeL: [.5, 0, 0], hipR: [.75, 0, 0], kneeR: [-1.5, 0, 0], ankleR: [.4, 0, 0], chest: [.22, .15, 0], waist: [.12, 0, 0] },
+  sit:   { pelvis: [0, 0, 0], hipL: [-1.5, 0, -.12], hipR: [-1.5, 0, .12], kneeL: [.25, 0, 0], kneeR: [.25, 0, 0], ankleL: [-.2, 0, 0], ankleR: [-.2, 0, 0], shoulderL: [-.3, 0, -.35], shoulderR: [-.3, 0, .35], elbowL: [-.3, 0, 0], elbowR: [-.3, 0, 0], head: [-.05, 0, .15], _y: -.19 },
+  jump:  { shoulderL: [0, 0, -2.5], shoulderR: [0, 0, 2.5], elbowL: [0, 0, -.3], elbowR: [0, 0, .3], hipL: [-.9, 0, 0], kneeL: [1.3, 0, 0], hipR: [-.2, 0, 0], kneeR: [.6, 0, 0], head: [-.12, 0, 0], _y: .16 },
+  slash: { chest: [.1, -.7, 0], waist: [0, -.2, 0], shoulderR: [-1.9, 0, .5], elbowR: [-.4, 0, 0], shoulderL: [.4, 0, -.5], elbowL: [-1, 0, 0], hipL: [-.5, 0, 0], kneeL: [.3, 0, 0], hipR: [.45, 0, 0], kneeR: [-.4, 0, 0] } };
+function pose(f, p) { f.traverse(o => { if (o.isGroup && o.name) o.rotation.set(0, 0, 0) }); f.position.y = 0; for (const k in POSE[p]) { if (k === '_y') { f.position.y = POSE[p][k]; continue } const j = f.userData.J(k); if (j) j.rotation.set(...POSE[p][k]) } }
+/* the sheet */
+const cells = [], add = (x, y, w, h, build, cam, label) => cells.push({ x, y, w, h, build, cam, label });
+const view = (yaw, p = 'stand', h = .64, d = 3.4) => (p === 'jump' || p === 'run') ? viewF(yaw, p, .78, 3.9) : viewF(yaw, p, h, d);
+const viewF = (yaw, p, h, d) => () => { const f = figure(); pose(f, p); f.rotation.y = yaw; return { g: f, cam: [0, h, d], look: [0, h, 0] } };
+add(0, 0, 300, 600, view(.25, 't', .66, 4.2), 0, BARE ? 'โครงหุ่น · T-pose' : 'T-pose');
+add(300, 0, 300, 600, view(0), 0, 'ด้านหน้า'); add(600, 0, 300, 600, view(Math.PI / 2), 0, 'ด้านข้าง'); add(900, 0, 300, 600, view(Math.PI), 0, 'ด้านหลัง');
+add(1200, 0, 600, 600, () => { /* exploded: the parts pulled apart along their joints */ const f = figure(); pose(f, 't'); f.traverse(o => { if (o.isGroup && o.name && o.name !== 'pelvis') { o.position.multiplyScalar(1.45) } }); f.rotation.y = .3; return { g: f, cam: [0, .66, 4.8], look: [0, .66, 0] } }, 0, 'ชิ้นส่วนแยก (ข้อต่อดึงออก)');
+const poses = [['wave', 'โบกมือ'], ['walk', 'เดิน'], ['run', 'วิ่ง'], ['jump', 'กระโดด'], ['sit', 'นั่ง'], ['slash', 'ฟันดาบ']];
+poses.forEach(([p, n], i) => add(i * 300, 625, 300, 600, view(p === 'slash' ? .9 : i % 2 ? -.5 : .45, p), 0, n));
+const labels = [];
+for (const c of cells) { const { g, cam, look } = c.build(); S.add(g); const pc = new THREE.PerspectiveCamera(28, c.w / c.h, .05, 50); pc.position.set(...cam); pc.lookAt(...look);
+  R.setViewport(c.x, H - c.y - c.h, c.w, c.h); R.setScissor(c.x, H - c.y - c.h, c.w, c.h); R.setClearColor(BARE ? '#1a1a1e' : '#f4efe6'); R.clear(); R.render(S, pc); S.remove(g); labels.push(c) }
+/* labels on a 2D layer */
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g2 = cv.getContext('2d'); g2.drawImage(R.domElement, 0, 0); g2.font = '700 22px system-ui'; g2.fillStyle = BARE ? '#e8e8e8' : '#3a2a30'; g2.textAlign = 'center';
+for (const c of labels) g2.fillText(c.label, c.x + c.w / 2, c.y + c.h - 18); g2.fillStyle = BARE ? '#ffffff' : '#3a2a30'; g2.font = '800 26px system-ui'; g2.textAlign = 'left'; g2.fillText('KEALEE · หุ่นข้อต่อ (ร่าง)', 18, 34);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
