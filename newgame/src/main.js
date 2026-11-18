@@ -13,7 +13,7 @@ import { decor } from './scenery.js';
 import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD, CAP_WIN, CAP_FIRE, CAP_FIRE2 } from './capitals.js';
 import { buildHarbour } from './harbour.js';
-import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
@@ -3354,7 +3354,7 @@ const SPARK = new THREE.MeshBasicMaterial({ color: '#fff27a' });
 const cellOf = (x, z) => [Math.round(x), Math.round(z)], keyOf = (cx, cz) => cx + ',' + cz;
 /* v3.21 🌾 farm land = (almost) the whole of Vaneya: grass / soil, not water or its edge, not steep, away from the harbour town, the house, builds and clutter */
 function farmLand(cx, cz, why) { const F = D.FARMLAND, no = t => { if (why) why.t = t; return false };
-  if (inFarm(cx, cz)) return true; if (!inIsle(cx, cz)) return no('🪏 ขุดแปลงได้เฉพาะบนเกาะวาเนย่า');
+  if (inFarm(cx, cz)) return true; if (!inField(cx, cz)) return no('🪏 ขุดได้เฉพาะบนลานดินสีน้ำตาลข้างบ้าน');   /* v3.49 only the soil fields */
   if (walkWorld(cx, cz) !== 'land' || waterAt(cx, cz)) return no('🪏 ตรงนี้ขุดไม่ได้'); for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (waterAt(cx + dx, cz + dz)) return no('🪏 ใกล้น้ำเกินไป');
   if (Math.abs(groundH(cx + .5, cz) - groundH(cx - .5, cz)) > F.slope || Math.abs(groundH(cx, cz + .5) - groundH(cx, cz - .5)) > F.slope) return no('🪏 พื้นชันเกินไป');
   if (dist(cx, cz, HB.x, HB.z) < F.harbourR || zoneOf(cx, cz) === 'town') return no('🪏 ในเมืองขุดไม่ได้');
@@ -3411,7 +3411,7 @@ function plotView(key) {   /* the tap target only (the look is instanced) */
     if (p.c) { if (Math.round(Math.min(1, (Date.now() - (p.t || 0)) / (D.CROPS[p.c].min * 60e3))) >= 1) { const C2 = D.CROPS[p.c]; S.ingr = S.ingr || {}; S.ingr[p.c] = (S.ingr[p.c] || 0) + C2.n[0] } S.seeds[p.c] = (S.seeds[p.c] || 0) + 1 } delete S.plots[k]; n++ }
   if (n) { save(); setTimeout(() => toast(`🧺 ย้ายแปลงผักนอกเกาะ ${n} แปลง · ผลผลิตและเมล็ดเก็บเข้ากระเป๋า`, 3200), 5000) } }
 for (const k in S.plots) plotView(k);
-if (S.has.hoe && !S.has.can) { S.has.can = true; save(); setTimeout(() => toast('💧 ได้รับบัวรดน้ำ! ผักต้องรดน้ำทุกวันถึงจะโต (ฝนตก = รดให้เอง)<br>เกาะวาเนย่าขุดแปลง ปลูกผัก สร้างบ้านได้เกือบทั้งเกาะแล้ว', 4200), 6500) }
+if (S.has.hoe && !S.has.can) { S.has.can = true; save(); setTimeout(() => toast('💧 ได้รับบัวรดน้ำ! ผักต้องรดน้ำทุกวันถึงจะโต (ฝนตก = รดให้เอง)<br>ขุดแปลงได้บนลานดินสีน้ำตาลข้างบ้าน · สร้างบ้านได้เกือบทั้งเกาะ', 4200), 6500) }
 let farmT = 0, LUSHC = null;
 function farmTick(now) { if (now < farmT) return; farmT = now + 1000; const dn = S.dayN || 0;
   if (S.farmDay == null) S.farmDay = dn;
@@ -3488,7 +3488,7 @@ for (const d of S.debris || []) if (!S.cleared[d.id]) debrisAdd({ ...d, g: null,
 function farmGift() {
   S.story.farmGift = 1; S.has.hoe = true; S.has.can = true; for (const c in D.FARM_GIFT) S.seeds[c] = (S.seeds[c] || 0) + D.FARM_GIFT[c]; storyProps(); save();
   talk([['👴 ลุงฮาวซิฟ', 'ร่างกายลุงกลับมาแข็งแรงแล้ว… มา ลุงสอนปลูกผักให้'], ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🪏 จอบ กับเมล็ด 🥕 แครอท ×${D.FARM_GIFT.carrot} 🥬 กะหล่ำ ×${D.FARM_GIFT.cabbage}`],
-    ['💡 ปลูกผัก', 'เลือก 🪏 พลั่วไว้ที่ Y · แตะ Y เล็งพื้นหญ้า กด A = ขุดแปลง (ขุดได้เกือบทั้งเกาะวาเนย่า)<br>แตะแปลง/กด A หน้าแปลง = ปลูก · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · เช้าวันใหม่ผักที่รดน้ำจะโต · ✨ = เก็บได้แล้ว'], ['👴 ลุงฮาวซิฟ', 'เอา 💧 บัวรดน้ำไปด้วย! ทุกเช้าจะมีหิน กิ่งไม้ หญ้าขึ้นใหม่ เก็บไปใช้ได้ · เกาะนี้ไม่มีมอนสเตอร์ สบายใจได้'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
+    ['💡 ปลูกผัก', 'เลือก 🪏 พลั่วไว้ที่ Y · แตะ Y เล็งพื้นหญ้า กด A = ขุดแปลง (ขุดได้บนลานดินสีน้ำตาลข้างบ้าน)<br>แตะแปลง/กด A หน้าแปลง = ปลูก · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · เช้าวันใหม่ผักที่รดน้ำจะโต · ✨ = เก็บได้แล้ว'], ['👴 ลุงฮาวซิฟ', 'เอา 💧 บัวรดน้ำไปด้วย! ทุกเช้าจะมีหิน กิ่งไม้ หญ้าขึ้นใหม่ เก็บไปใช้ได้ · เกาะนี้ไม่มีมอนสเตอร์ สบายใจได้'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
 }
 function howsifMenu() { sfx('tap'); const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
   sheet('👴 ลุงฮาวซิฟ', (b, redraw, close) => { b.innerHTML = `<p>“มีอะไรให้ลุงช่วยล่ะ?”</p><div class="hgrid">${S.story.farmGift ? '<button class="htile" data-hm="seed"><b>🌱</b><span>ซื้อเมล็ดผัก</span></button>' : ''}<button class="htile" data-hm="sail"><b>⛵</b><span>${to === 'main' ? 'ข้ามฟากไปเมืองท่า' : 'กลับเกาะวาเนย่า'}</span></button></div>`;
@@ -4282,7 +4282,7 @@ import('./lush.js').then(({ lushPlace, lushKind, LUSH, lushClear }) => { LUSH.hi
     if (Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue; if (x < 7 && x > -1 && Math.abs(z) < 9) continue;   // the farm field stays open for plots
     const f = x > 79 ? .55 : .35; if (R() > (f > .5 ? .35 : .22)) continue; let k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue; if (k === 'mush' || k === 'stump' || k === 'bigleaf') continue; /* v3.29 no more sunflower fields (Vaneya is overgrown) */   /* v3.16.2 calmer: far less ground clutter */   /* v3.13 one island look: Vaneya's sunflowers everywhere */
     list.push({ k, x, y: groundH(x, z) - .03, z, r: R() * 6, s: k === 'blossom' ? .6 + R() * .25 : .6 + R() * .6 }) }
-  for (let c = 0; c < 26; c++) { const cx = -12 + R() * 120, cz = -12 + R() * 24; for (let i = 0; i < 14; i++) { const x = cx + (R() - .5) * 5, z = cz + (R() - .5) * 4; if (x > 36 && x < 56 || !walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0 || Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || x < 7 && x > -1 && Math.abs(z) < 9) continue; list.push({ k: 'sunflower', x, y: groundH(x, z) - .03, z, r: R() * .6 - .3, s: .75 + R() * .45 }) } }   /* v3.13 sunflower patches */
+  for (let c = 0; c < 26; c++) { const cx = -12 + R() * 120, cz = -12 + R() * 24; for (let i = 0; i < 14; i++) { const x = cx + (R() - .5) * 5, z = cz + (R() - .5) * 4; if (x > 36 && x < 56 || !walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0 || Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || x < 7 && x > -1 && Math.abs(z) < 9 || fieldK(x, z) > 0) continue; list.push({ k: 'sunflower', x, y: groundH(x, z) - .03, z, r: R() * .6 - .3, s: .75 + R() * .45 }) } }   /* v3.13 sunflower patches */
   const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);
   for (const p of list) if (p.k === 'blossom' || p.k === 'stump') addSol({ x: p.x, z: p.z, r: (p.k === 'blossom' ? .26 : .34) * p.s });   /* v3.3 blossom trees and stumps are solid too */
 });

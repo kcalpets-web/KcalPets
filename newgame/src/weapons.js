@@ -74,3 +74,28 @@ export const BOW_MESH = {
 };
 /* an arrow along +y (nock at the origin) */
 export function ARROW_MESH(g) { seg(g, [0, 0, 0], [0, .7, 0], .009, '#c8a070', 4); add(g, G('arTip', () => new THREE.ConeGeometry(.022, .08, 4)), '#a8acb8', [0, .73, 0]); for (const a of [0, 2.1, 4.2]) box(g, .004, .1, .035, '#e8e0d0', [Math.sin(a) * .015, .06, Math.cos(a) * .015], [0, a, 0]) }
+/* v3.49 farm tools, redrawn (chunky, readable at a glance): a turned wooden handle with a leather wrap · a head with a socket and a bright cutting edge
+   t = tier: 0 wood (a hardwood head lashed with cord) · 1 stone (flint, lashed) · 2 iron (a riveted collar) · 3 crystal (a gold collar)
+   same space as the weapons: the grip at the origin, the head up +y */
+const TOOL_T = [{ h: '#b07c48', e: '#e0b47a', c: '#d8c49a', lash: 1 }, { h: '#7c7870', e: '#c4beb2', c: '#d8c49a', lash: 1 }, { h: '#8e96a8', e: '#eef2fa', c: '#4a4652' }, { h: '#5ec8f0', e: '#d8f6ff', c: GOLD }];
+const tHandle = (g, len, c = '#9a6a3a') => { cyl(g, .021, .025, len, c, [0, len / 2 - .1, 0], [0, 0, 0], 7); cyl(g, .027, .027, .14, '#5a3420', [0, -.03, 0], [0, 0, 0], 7); for (const y of [-.09, .03]) cyl(g, .029, .029, .012, '#3a2414', [0, y, 0], [0, 0, 0], 7); ico(g, .032, '#5a3420', [0, -.11, 0]) };
+const tCollar = (g, y, T, w = .05) => { if (T.lash) for (let i = 0; i < 3; i++) cyl(g, .034, .034, .014, T.c, [0, y - .03 + i * .03, 0], [0, 0, (i - 1) * .25], 6); else { box(g, w, .1, .06, T.c, [0, y, 0]); for (const s of [-1, 1]) ico(g, .011, '#e8e0d0', [0, y + s * .025, .031]) } };
+export const TOOL_MESH = {
+  axe(g, t = 0) { const T = TOOL_T[t] || TOOL_T[0]; tHandle(g, .66); const y = .5;
+    add(g, shape('tAxe', [[0, -.06], [.07, -.055], [.17, -.12], [.215, -.1], [.235, 0], [.215, .1], [.17, .12], [.07, .055], [0, .06]], .045, .01), T.h, [.015, y, 0]);   /* a wide bearded head */
+    add(g, shape('tAxeE', [[0, -.1], [.03, -.11], [.045, 0], [.03, .11], [0, .1]], .05, .006), T.e, [.2, y, 0]);   /* the bright edge */
+    box(g, .06, .07, .055, T.h, [-.03, y, 0]); tCollar(g, y, T, .07); if (t === 3) ico(g, .022, '#ff6ab4', [-.04, y, .03]) },
+  pick(g, t = 0) { const T = TOOL_T[t] || TOOL_T[0]; tHandle(g, .66); const y = .52;
+    add(g, shape('tPick', [[-.26, -.05], [-.19, -.005], [-.1, .025], [0, .04], [.1, .025], [.19, -.005], [.26, -.05], [.2, .02], [.1, .065], [0, .08], [-.1, .065], [-.2, .02]], .045, .008), T.h, [0, y - .02, 0]);   /* a curved two-point head */
+    for (const s of [-1, 1]) add(g, G('tPickT', () => new THREE.ConeGeometry(.024, .08, 5)), T.e, [s * .27, y - .06, 0], [0, 0, s * 2.2]);   /* bright points */
+    box(g, .07, .1, .06, T.h, [0, y + .01, 0]); tCollar(g, y + .01, T, .08) },
+  hoe(g, t = 0) { const T = TOOL_T[t] || TOOL_T[0]; tHandle(g, .92); const y = .78;
+    box(g, .06, .08, .055, T.h, [0, y, 0]); box(g, .07, .035, .04, T.h, [.055, y - .005, 0], [0, 0, -.25]);   /* socket · neck */
+    box(g, .22, .028, .19, T.h, [.165, y - .045, 0], [0, 0, -.45]); box(g, .03, .032, .192, T.e, [.268, y - .095, 0], [0, 0, -.45]);   /* the flat blade, angled down · its bright edge */
+    tCollar(g, y, T, .07) },
+  sickle(g, t = 0) { const T = TOOL_T[t] || TOOL_T[0]; cyl(g, .022, .026, .24, '#9a6a3a', [0, .02, 0], [0, 0, 0], 7); cyl(g, .028, .028, .12, '#5a3420', [0, -.02, 0], [0, 0, 0], 7); ico(g, .03, '#5a3420', [0, -.11, 0]);
+    const W = u => .055 * (1 - u * .85), arc = (fo, fi) => { const A = [], B = []; for (let i = 0; i <= 14; i++) { const u = i / 14, a = Math.PI - u * 3.75, ro = fo(u), ri = fi(u); A.push([.13 + Math.cos(a) * ro, .3 + Math.sin(a) * ro]); B.push([.13 + Math.cos(a) * ri, .3 + Math.sin(a) * ri]) } return [...A, ...B.reverse()] };
+    add(g, shape('tSick', arc(() => .15, u => .15 - W(u) * .62), .016, .004), T.h, [0, 0, 0]); add(g, shape('tSickE', arc(u => .15 - W(u) * .62 + .004, u => .15 - W(u)), .018, .003), T.e, [0, 0, 0]);   /* a crescent from the handle top, over and round · the bright inner edge */
+    box(g, .045, .1, .04, T.h, [-.01, .24, 0]); box(g, .05, .06, .045, T.h, [0, .16, 0]); tCollar(g, .16, T, .055) },
+
+};

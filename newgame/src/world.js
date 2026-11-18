@@ -3,7 +3,7 @@
    sand near the sea  w = 1 − smoothstep(1.6, 3.6, d + .35n)  (d = distance from the shoreline)
    sea colour by depth from the shore · instanced grass tufts / flowers / pebbles / foam / sparkles. */
 import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS, rbox, rboxGeo, VILLAGE } from './clay.js';
-import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL } from './data.js';
+import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL, FIELDS } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
 import { paintGround } from './scenery.js';
@@ -13,6 +13,9 @@ export const shore = z => -3.0 + z * .28;                      // west coastline
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
 export const HOUSE = { x: 3.2, z: -8.4 }, BOAT = { x: shore(-1.6) - 1.05, z: -1.6 }, EXIT = { x: 7.9, z: 2.3 }, SPAWN = { x: 0, z: -4 };
 export const FARM = { x0: 1, z0: -3, nx: 6, nz: 3, gx: 3.5 };   // v3.7 the fenced vegetable bed: 6 × 3 = 18 cells (integer cell centres x0…x0+nx−1, z0…z0+nz−1) · gate on the north side at x = gx (toward the tree house)
+/* v3.49 the soil fields: fieldK = 1 inside (soft, slightly ragged edge) → 0 outside · inField = a cell you may dig */
+export const inField = (x, z) => FIELDS.some(f => x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1);
+export const fieldK = (x, z) => { let k = 0; for (const f of FIELDS) { const dx = Math.max(f.x0 - .5 - x, 0, x - f.x1 - .5), dz = Math.max(f.z0 - .5 - z, 0, z - f.z1 - .5), d = Math.hypot(dx, dz) - .12 * Math.sin(x * 2.3 + z * 1.7); k = Math.max(k, 1 - Math.min(1, Math.max(0, d) / .45)) } return k };
 export const inFarm = (x, z, m = 0) => x > FARM.x0 - .55 - m && x < FARM.x0 + FARM.nx - .45 + m && z > FARM.z0 - .55 - m && z < FARM.z0 + FARM.nz - .45 + m;
 export const WRECK = { x: shore(2.2) + 1.6, z: 2.2 }, HOWSIF = { x: shore(-.4) + 1.2, z: -.4 };
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
@@ -145,12 +148,12 @@ export { SOL_R, SOL_TOP };
 function coreEdge(geo, ox) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + ox, z = P.getZ(i), d = coreDist(x, z); if (d > 0) P.setY(i, Math.min(P.getY(i), wildH(x, z) - .02 - .12 * Math.min(1, d / 1.5))) } geo.computeVertexNormals() }
 /* v3.3 zone 1 (island · meadow · town · hills) is ONE piece of ground: every hand-made ground mesh takes its height from coreY and its colour from coreCol,
    on the same grid (so the meshes meet vertex for vertex) and with the streamed land's own material · roads, the plaza and the beach are painted with soft edges */
-const _SOIL = C('#8a6440'), _ROAD = C('#c8a878'), _ROADF = C('#b08a5a'), _PLAZA = C('#cfc6b4'), _EA = C('#c49a68'), _SA = C('#efe2c4'), _WET = C('#d8c9a4'), _CL1 = C('#8aa05a'), _CL2 = C('#9a7a58'), _BANK = C('#c8b890'), _c2 = new THREE.Color();
+const _SOIL = C('#8a6440'), _FIELD = C('#a8794c'), _ROAD = C('#c8a878'), _ROADF = C('#b08a5a'), _PLAZA = C('#cfc6b4'), _EA = C('#c49a68'), _SA = C('#efe2c4'), _WET = C('#d8c9a4'), _CL1 = C('#8aa05a'), _CL2 = C('#9a7a58'), _BANK = C('#c8b890'), _c2 = new THREE.Color();
 const segD = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz))); return Math.hypot(px - ax - dx * t, pz - az - dz * t) };
 const shopFront = ([dx, dz, ry], d = 1.5) => [dx + Math.sin(ry) * d, dz + Math.cos(ry) * d];              // the doorstep of a shop (town-local)
 function coreY(x, z) { const n = nz(x, z); return groundH(x, z) + .02 * n * (x < 9 ? 1 : 1 - smw(34, 36, x) * (1 - smw(56, 58, x))) }   // the town square is flat (things stand on it)                        // the town square is flat (things stand on it)
 function coreCol(x, z, c) { grassCol(x, z, c); const n = nz(x, z);
-  if (x < 17) { const d = x - shore(z), ke = smw(10, 14, Math.abs(z)); if (earth(x, z)) c.lerp(_EA, .85); if (inFarm(x, z)) c.lerp(_SOIL, .8);   // v3.7 the fenced bed is bare soil     // the island: a dug patch · the beach (the same sand as the wild coast where the two meet)
+  if (x < 17) { const d = x - shore(z), ke = smw(10, 14, Math.abs(z)); if (earth(x, z)) c.lerp(_EA, .85); if (inFarm(x, z)) c.lerp(_SOIL, .8); { const fk = fieldK(x, z); if (fk > 0) c.lerp(_c2.copy(_FIELD).multiplyScalar(.94 + .12 * n), .92 * fk) }   /* v3.49 the soil fields read as 'dig here' */   // v3.7 the fenced bed is bare soil     // the island: a dug patch · the beach (the same sand as the wild coast where the two meet)
     c.lerp(_c2.copy(_SA).lerp(_SD, ke), 1 - sm(1.6, 3.6, d + .35 * n * (1 - ke))); if (d < 0) c.lerp(_WET, .5) }
   else { const h = groundH(x, z); if (h > .35) c.lerp(_CL1, .5); if (h > .35 && h < MESA.h - .2) c.lerp(_CL2, .75); if (h < -.05) c.lerp(_BANK, .8) }   // grass · rock cliffs · banks
   if (x > 6 && x < 81) { const hw = .7 + .35 * smw(34, 36, x) * (1 - smw(56, 58, x));                      // the road: island gate → bridge → town → hills → forest
@@ -434,7 +437,7 @@ export function mapColor(x, z) {
   if (x < 9 && x < shore(z) + 3) return '#e8dcb8';
   return '#7cc060';
 }
-export const CAMPS = { home: { name: 'แคมป์ที่พัก (บ้านต้นไม้)', x: HOUSE.x - 2.4, z: HOUSE.z + 2.8 }, meadow: { name: 'แคมป์ริมธาร', x: 15.5, z: -6.5 }, mesa: { name: 'แคมป์บนผาสูง', x: MESA.x, z: MESA.z }, forest: { name: 'แคมป์ก็อบลิน (ร้าง)', x: FOREST.camp.x, z: FOREST.camp.z } };
+export const CAMPS = { home: { name: 'แคมป์ที่พัก (บ้านต้นไม้)', x: HOUSE.x - 2.4, z: HOUSE.z + 2.8 }, meadow: { name: 'แคมป์ริมธาร', x: 17, z: -12.4 }, mesa: { name: 'แคมป์บนผาสูง', x: MESA.x, z: MESA.z }, forest: { name: 'แคมป์ก็อบลิน (ร้าง)', x: FOREST.camp.x, z: FOREST.camp.z } };
 export function buildWild(W, eco) {
   const scene = W.scene, R = rng(91), ST = new THREE.Group(), out = {};
   const at = (fn, x, z, ry = 0, s = 1, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };

@@ -30,7 +30,7 @@ fs.mkdirSync(OUT, { recursive: true });
     await pickTo('hammer'); id = await near('rock'); await wait(1500); if (!(await hitAll(id, 14))) errs.push('the pickaxe did not break the rock'); else log('rock broken');
     // Y double tap → shovel → dig
     await pg.evaluate(() => window.__ng.placeMe(3.5, -4.3)); await wait(2500); await close();   /* v3.7 by the fenced bed */
-    await close(); await pickTo('hoe'); log('hand', await pg.evaluate(() => window.__ng.S.hand)); if (await pg.evaluate(() => window.__ng.S.hand) !== 'hoe') errs.push('v3.22 the hoe (A slot) was not picked');
+    await close(); await pg.evaluate(() => { const N = window.__ng; N.placeMe(14.5, -5); for (const o of [...N.W.clear.values()]) if (o.g && Math.abs(o.x - 14.5) < 3 && Math.abs(o.z + 5) < 3) N.finishClear(o) }); await wait(2000); await pickTo('hoe');   /* v3.49 only the soil fields dig: stand in the middle of one */ log('hand', await pg.evaluate(() => window.__ng.S.hand)); if (await pg.evaluate(() => window.__ng.S.hand) !== 'hoe') errs.push('v3.22 the hoe (A slot) was not picked');
     const p0 = await pg.evaluate(() => Object.keys(window.__ng.S.plots).length); let dug = false;
     for (const yaw of [0, 1.57, 3.14, 4.71]) { await pg.evaluate(y => { window.__ng.CAM.yaw = y }, yaw); await wait(600); await close(); const [ax, ay] = await box('bA');   /* v3.22 the hoe in the A hand: A digs */ await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(200); await pg.mouse.up(); await wait(800);   /* v3.18 tap Y = aim · A = dig */
       if (await pg.evaluate(n => Object.keys(window.__ng.S.plots).length > n, p0)) { dug = true; break } }

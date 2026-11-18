@@ -1,0 +1,20 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · farm tools</title>
+<style>body{margin:0;background:#f4efe6}canvas{display:block}</style></head><body>
+<script type="module">
+/* v3.49 the farm tools redrawn: old (top) vs new (below) · axe · pickaxe · hoe · sickle · 4 tiers (wood · stone · iron · crystal) · plus held in the hand */
+import * as THREE from '../../lib/three.module.min.js';
+import { TOOLMESH, part } from '../../src/clay.js';
+import { TOOL_MESH } from '../../src/weapons.js';
+const oldHoe = g => { part(g, '#6a4024', '#b07a44', [0, .4, 0], [.03, .45, .03], [0, 0, 0], { A: 0 }); part(g, '#8a8a96', '#e8ecf4', [.08, .84, 0], [.14, .05, .04], [0, 0, -.3], { A: 0 }) };
+const OLD = { axe: TOOLMESH.axe, pick: TOOLMESH.hammer, hoe: oldHoe, sickle: TOOLMESH.sickle }, KINDS = [['axe', 'ขวาน'], ['pick', 'อีเต้อ (ค้อนขุดหิน)'], ['hoe', 'จอบ'], ['sickle', 'เคียว']], TIER = ['ไม้', 'หิน', 'เหล็ก', 'คริสตัล'];
+const CW = 230, CH = 300, W = CW * 8 + 40, H = CH * 4 + 120, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.setScissorTest(true); document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff6ec', '#b8a890', 1.5)); const key = new THREE.DirectionalLight('#fff1dc', 2.4); key.position.set(-2, 3, 4); S.add(key); const rim = new THREE.DirectionalLight('#dce8ff', 1.1); rim.position.set(3, 2, -3); S.add(rim);
+const cells = []; KINDS.forEach(([k, nm], r) => { for (let t = 0; t < 4; t++) { cells.push({ x: 20 + t * CW, y: 60 + r * CH, f: g => { OLD[k](g, t); g.scale.setScalar(1.25) }, lab: `เดิม · ${nm} ${TIER[t]}` }); cells.push({ x: 20 + (4 + t) * CW, y: 60 + r * CH, f: g => { TOOL_MESH[k](g, t); g.scale.setScalar(1.25) }, lab: `ใหม่ · ${nm} ${TIER[t]}`, nu: 1 }) } });
+for (const c of cells) { const g = new THREE.Group(); c.f(g); const p = new THREE.Group(); p.add(g); p.rotation.set(0, -.5, -.35); S.add(p); p.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(p), ctr = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3()).length();
+  const cam = new THREE.PerspectiveCamera(30, CW / (CH - 40), .05, 30); cam.position.set(ctr.x, ctr.y + .05, ctr.z + sz * 1.75); cam.lookAt(ctr.x, ctr.y, ctr.z);
+  R.setViewport(c.x, H - c.y - CH + 40, CW, CH - 40); R.setScissor(c.x, H - c.y - CH + 40, CW, CH - 40); R.setClearColor(c.nu ? '#efe8d8' : '#e4ddd0'); R.clear(); R.render(S, cam); S.remove(p) }
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#f4efe6'; x.fillRect(0, 0, W, H); x.drawImage(R.domElement, 0, 0);
+x.font = '700 17px system-ui'; x.fillStyle = '#3a2a30'; x.textAlign = 'center'; for (const c of cells) x.fillText(c.lab, c.x + CW / 2, c.y + CH - 12);
+x.textAlign = 'left'; x.font = '800 26px system-ui'; x.fillText('อุปกรณ์ฟาร์ม · ซ้าย = แบบเดิม · ขวา = แบบใหม่ (ไม้ · หิน · เหล็ก · คริสตัล)', 20, 38);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>

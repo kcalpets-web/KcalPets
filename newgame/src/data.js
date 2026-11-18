@@ -618,6 +618,7 @@ export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 1
 export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 /* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
+export const FIELDS = [{ x0: 10, x1: 19, z0: -9, z1: -1 }, { x0: 10, x1: 19, z0: 5, z1: 12 }];   // v3.49 the soil fields beside the tree house (integer cell centres, inclusive) · only these (and the fenced bed) can be dug
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 /* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
