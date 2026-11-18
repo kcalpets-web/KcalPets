@@ -142,6 +142,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; for (const o of [...N.W.clear.values()]) if (o.perm && o.g && Math.hypot(o.x - 3.5, o.z + 2) < 9) N.finishClear(o) });   /* v3.36 Vaneya's weeds next to the bed would pull the swipe away */
     { await E(() => window.__ng.setTool('sickle')); const pts = await E(() => Object.keys(window.__ng.plots).map(k => { const [x, z] = k.split(',').map(Number); return window.__ng.project(x, .3, z) })); pts.sort((a, b) => a.x - b.x);
       for (const row of [pts.filter((p, i) => i % 2 === 0), pts.filter((p, i) => i % 2)]) if (row.length) { await pg.mouse.move(row[0].x - 40, row[0].y); await pg.mouse.down(); for (const p of row) await pg.mouse.move(p.x, p.y, { steps: 4 }); await pg.mouse.move(row[row.length - 1].x + 40, row[row.length - 1].y, { steps: 3 }); await pg.mouse.up(); await wait(300) } }
+    log('plots', JSON.stringify(await N(() => Object.entries(window.__ng.plots).map(([k, p]) => k + ':' + (p.c || '-') + ':' + window.__ng.cropStage(p)))));
     log('harvested', await N(() => window.__ng.S.stat.harvested || 0), 'ingr', JSON.stringify(await N(() => window.__ng.S.ingr)));
     if (!((await N(() => window.__ng.S.stat.harvested || 0)) >= 1)) errs.push('sickle swipe did not harvest');
     await E(() => { const N = window.__ng; N.S.ingr.carrot = (N.S.ingr.carrot || 0) + 1; N.S.ingr.cabbage = (N.S.ingr.cabbage || 0) + 1; N.openPot('home') }); await wait(300); await pg.click('#pC'); await wait(300);

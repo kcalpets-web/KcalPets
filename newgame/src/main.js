@@ -437,7 +437,7 @@ function faceSwing(x, z) { tutEv(tool === 'sword' ? 'swing' : tool === 'hammer' 
 /* v2.1.1 A draws the weapon (the next A attacks) · tap B puts everything away */
 let DRAWN = false;
 function drawWeapon() { if (!weaponOf()) { hint('⚔️ ยังไม่มีอาวุธ', 1200); return false } DRAWN = true; if (tool !== 'sword') setTool('sword'); sfx('knock'); gearView(); return true }
-function stowAll() { const was = DRAWN || guardTog; DRAWN = false; guardTog = false; updGuard(); if (tool === 'sword') setTool(''); if (was) sfx('knock'); gearView() }
+function stowAll() { const was = DRAWN || guardTog; DRAWN = false; ALOCK = false;   /* v3.38 put away = the A lock drops at once */ guardTog = false; updGuard(); if (tool === 'sword') setTool(''); if (was) sfx('knock'); gearView() }
 /* v2.1.1 gear lives on the back (Zelda-like) · it comes out only when used: A → sword (+ shield) · B → shield · working → the tool · Y → the bow · tap B = put away */
 let drawT = 0;
 function inHand() { if (AIM || !PL || PL.swim || RIDE || GLIDE) return ''; const now = performance.now();
@@ -2146,7 +2146,7 @@ const handTool = () => S.hand && S.hand !== 'w' && D.HAND[S.hand] ? S.hand : 'sw
 let ATKMUL = 1, AIRAIM = null, CHGA = null, LIFT = null;   /* v3.12.6 a charged slash multiplies the hit */
 const handAtk = () => pStats().atk * (S.hand === 'torch' ? D.HAND.torch.atk : 1) * ATKMUL;   /* v3.22 a tool item's atk is in pStats already */
 function cutsWith(h, t) { const T = D.CLEAR[t]; if (!T || h === 'torch') return false; return effOf(CLEAR_CAT[T.tool]) > 0 }   /* v3.22 every striking gear cuts: how well = D.GEAR_EFF */
-let atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
+var atkT = 0, ALOCK = false;   /* v3.20 A with a foe in range = lock on it until the weapon is put away */
 function actA() { atkT = performance.now(); if (handTool() === 'sword' && weaponOf() && !RIDE && !HORSE) { const q = me(); let bd = D.LOCK_ON, f = LOCK && mons.includes(LOCK) && lockable(LOCK) ? LOCK : null; if (!f) for (const M of mons) if (lockable(M)) { const d = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (d < bd) { bd = d; f = M } } if (f) { if (LOCK !== f || !ALOCK) sfx('tap'); LOCK = f; ALOCK = true; if (!DRAWN) drawWeapon() } }
   stopAuto(); const now = performance.now();
   if (BM) { placeBuild(); return }
@@ -3841,7 +3841,8 @@ function dayBar() { const t = S.time, d0 = D.DAY.dawn, d1 = D.DAY.dusk, n = isNi
 var GOL = null, GPILE = {}, GLAIR = {}, FREEZE = 0;
 for (const k in D.GOLEMS) MSCALE[D.GOLEMS[k].kind] = 3;
 function golemLair(k) { if (GLAIR[k]) return GLAIR[k]; const G = D.GOLEMS[k], K = KINGDOMS[k]; let x = K.x + G.dx, z = K.z + G.dz;
-  for (let r = 0; r < 200 && !(walkLand(x, z) && !waterAt(x, z) && !inCap(x, z, 24)); r += 2) { x = K.x + G.dx + Math.cos(r) * r; z = K.z + G.dz + Math.sin(r) * r } return GLAIR[k] = { x, z } }
+  const flat = (x, z) => { const h = groundH(x, z); return [[10, 0], [-10, 0], [0, 10], [0, -10], [7, 7], [-7, -7]].every(([a, b]) => Math.abs(groundH(x + a, z + b) - h) < 1.6 && walkLand(x + a, z + b)) };   /* v3.38 a moved lair needs a flat arena */
+  for (let r = 0; r < 260 && !(walkLand(x, z) && !waterAt(x, z) && !inCap(x, z, 24) && (r === 0 || flat(x, z))); r += 2) { x = K.x + G.dx + Math.cos(r) * r; z = K.z + G.dz + Math.sin(r) * r } return GLAIR[k] = { x, z } }
 const golemReady = k => !(S.golems || {})[k] || Date.now() - S.golems[k] > 2 * D.DAY_MS;
 const golemBusy = () => !!(GOL && (!GOL.on || now0() < FREEZE));
 /* the same body is the pile: each top-level piece lies on the ground (k = 0) and flies to its place (k = 1), legs first, eyes last */
