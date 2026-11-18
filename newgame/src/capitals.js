@@ -23,7 +23,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   const L = LOOK[k], std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .93, flatShading: true }, o));
   const M = { stone: std(L.stone), dark: std(L.dark), pave: std(L.pave, { roughness: 1 }), roof: std(L.roof), moss: std(L.moss, { roughness: 1 }), wood: std('#6a4c36'), bone: std('#e6dcc4'), bark: std('#4a3a2e'),
     void: std('#1c1820', { flatShading: false }), cloth: new THREE.MeshStandardMaterial({ color: '#9a2a22', roughness: 1, side: THREE.DoubleSide }),
-    glow: new THREE.MeshStandardMaterial({ color: L.glow, emissive: L.glow, emissiveIntensity: 1.1, roughness: .6 }),
+    glow: new THREE.MeshStandardMaterial({ color: L.glow, emissive: L.glow, emissiveIntensity: .65, roughness: .6 }),   /* v3.30.2 softer (it filled the screen up close) */
     water: new THREE.MeshStandardMaterial({ color: k === 'valkara' ? '#ff7a1a' : '#4a9ac0', emissive: k === 'valkara' ? '#ff4a00' : '#000000', emissiveIntensity: k === 'valkara' ? 1.2 : 0, roughness: .2, transparent: k !== 'valkara', opacity: .85 }),
     ice: new THREE.MeshStandardMaterial({ color: '#bfe6ff', emissive: '#4aa8ff', emissiveIntensity: .25, roughness: .25, transparent: true, opacity: .9, flatShading: true }) };
   const G = new THREE.Group(), sols = [], c = Math.cos(ry), s = Math.sin(ry); let seed = 1 + k.length * 977; const R = () => (seed = seed * 16807 % 2147483647) / 2147483647;
@@ -115,7 +115,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   { G.updateMatrixWorld(true); const skip = new Set([M.moss, M.cloth, M.void, M.water, M.glow]), P = new THREE.Vector3(), Q = new THREE.Quaternion(), SC = new THREE.Vector3(), E = new THREE.Euler();
     G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.userData.nosol) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry' && t !== 'ConeGeometry') return;
       o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return; const h = pr.height * SC.y, bottom = P.y - h / 2 - H;
-      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2 - H }); return }   /* steps / the base: flat tops you stand on */ if (!(h >= 1 && bottom <= .8)) return;
+      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2 - H }); return }   /* steps / the base: flat tops you stand on */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* v3.30.2 the keep's hall stands on its base: still a wall */
       if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y }) }
       else { const r = (t === 'ConeGeometry' ? pr.radius * .8 : Math.max(pr.radiusTop, pr.radiusBottom)) * Math.max(SC.x, SC.z); if (r > .25) sols.push({ x: P.x, z: P.z, r }) } }) }
   const guards = [[-9, 8], [10, 10], [-16, -2], [16, -4], [0, 18], [-22, 14], [22, 16], [0, KZ + KD / 2 + 7]].map(([x, z]) => W(x, z));

@@ -1014,6 +1014,7 @@ function useThing(k) {
     case 'wchest': return openWChest(k.id);
     case 'knpc': return talkNpc(k.key);
     case 'tower': return towerDoor();
+    case 'capdoor': return capDoor(k.k);
     case 'note': return readNote(k.id);
     case 'sign': return readSign(k.id);
     case 'lstone': return openLStone(k.k);
@@ -2361,7 +2362,7 @@ function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f ===
     const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
   twinkle(g, .55 / (o.g.scale.x || 1), (o.t === 'tree' ? 1.9 : .65) / (o.g.scale.x || 1), o.t === 'tree' ? 3 : 2, .24); o.g.add(g) }
 function pickFruit(o) { tutEv('gather'); const F = fruitOf(o), n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
-const CTX_ICO = { lstone: '💠', sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
+const CTX_ICO = { capdoor: '🚪', lstone: '💠', sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
 const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper', 'knpc']);
 const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; document.body.appendChild(e); return e })();
 let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
@@ -2942,11 +2943,13 @@ const CAPV = {}; let capT = 0;
 function capTick(now) { if (now < capT) return; capT = now + 400; const q = me();
   for (const k in CAPS) { const c = CAPS[k], d = dist(q.x, q.z, c.x, c.z); let V = CAPV[k];
     if (!V && d < 260) { const B = buildCapital(k, c.x, c.z, c.h, c.ry), g = mergeProp(B.G); g.traverse(o => { if (o.isMesh) { o.castShadow = !eco; o.receiveShadow = true; o.userData.occ = 1 } }); scene.add(g); for (const e of B.sols) addSol(e);
-      CAPV[k] = V = { g, B, mons: [], next: 0, lit: null }; return }
-    if (V && d > 330) { scene.remove(V.g); V.g.traverse(o => { if (o.isMesh) o.geometry.dispose() }); for (const e of V.B.sols) delSol(e); for (const m of V.mons) if (mons.includes(m) && !m.aggro) monGone(m); delete CAPV[k]; continue }
+      CAPV[k] = V = { g, B, mons: [], next: 0, lit: null }; V.pick = addPick(W, B.door[0], B.door[1], 2, 3, { kind: 'capdoor', k }); V.pick.position.y += c.h + 1.4; return }
+    if (V && d > 330) { removePick(W, V.pick); scene.remove(V.g); V.g.traverse(o => { if (o.isMesh) o.geometry.dispose() }); for (const e of V.B.sols) delSol(e); for (const m of V.mons) if (mons.includes(m) && !m.aggro) monGone(m); delete CAPV[k]; continue }
     if (!V) continue; const lit = !!(S.restored || {})[k]; if (V.lit !== lit) { V.lit = lit; for (const m of V.B.glows) { m.color.set(lit ? CAP_GOLD : V.B.look.glow); m.emissive.set(lit ? CAP_GOLD : V.B.look.glow) } }
     V.mons = V.mons.filter(m => mons.includes(m)); if (d > 150 && V.mons.length) { for (const m of V.mons) if (!m.aggro) monGone(m); V.mons = V.mons.filter(m => mons.includes(m)) }
     if (!lit && d < 75 && !V.mons.length && now > V.next && !CUT) { const L = D.K_MONS[k] || ['slime']; for (const [x, z] of V.B.guards) V.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], x, z, { area: 'wild' })); V.next = now + D.LUM_RESPAWN * 1000 } } }
+/* v3.30.2 the glowing doorway of a capital's keep: sealed by the dark until the kingdom is restored */
+function capDoor(k) { const K = KINGDOMS[k]; sfx('knock'); toast((S.restored || {})[k] ? `🌈 ประตูของ${K.name} สงบลงแล้ว<br><small>ข้างในยังพังทลาย… วันหนึ่งผู้คนจะกลับมาซ่อมแซม</small>` : `🔒 ประตูถูกผนึกด้วยพลังมืด<br><small>ฟื้นฟู${K.name}ให้สำเร็จเพื่อคลายผนึก</small>`, 2600) }
 function capCloud() { const left = Math.max(0, MAIN_Q.need - restoredN()) / MAIN_Q.need; CAPC.visible = left > 0 && !S.story.cloudGone; const sc = 2.2 + left * 6; CAPC.scale.setScalar(sc); CAPC.position.y = wildH(KINGDOMS.luminia.x, KINGDOMS.luminia.z) + D.SKYCLOUD.capY + sc * 9.5; /* the cloud's underside reaches ~9.5×scale below its centre: keep it above the tower at any size */ const o = TOWER.getObjectByName('orb'); o.material.emissiveIntensity = left > 0 ? .15 : 1.4 }
 capCloud();
 function towerDoor() { if (S.story.cloudGone) { toast('🗼 แสงจากหอคอยส่องไปทั่วแผ่นดินแล้ว ☀️', 2200); return }
