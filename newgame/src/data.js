@@ -731,3 +731,9 @@ export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
 ] };
 /* v3.43 ⚔️ armour + helmets some monsters wear (chance per kill) */
 export const WEAR_DROP = { shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };
+/* v3.43 🎩 the wandering merchant: every `cycle` game days he camps `stay` days at a forest spot in some kingdom, then is gone · stock is drawn per visit (limited)
+   · gear: rare weapons (rarity E/L) · wear: pieces no shop sells · mats: [n, price] · prices in coins (🪙) and gems (💎) */
+export const MERCHANT = { cycle: 10, stay: 3, near: 110, n: { gear: 2, wear: 2, mats: 3 },
+  gear: ['scimitar', 'knightSword', 'crystalBlade', 'dragonBlade', 'trident', 'kingSword', 'golemCrusher', 'knightBow', 'crystalBow', 'crystalShield', 'kingShield'],
+  wear: [['o_mage', 2400, 6], ['o_kimono', 2600, 6], ['o_cape', 2200, 5], ['h_crown', 3000, 8], ['a_knight', 3200, 8]],
+  mats: { diamond: [1, 900], golemCore: [1, 1200], crystal: [3, 300], aquamarine: [2, 350], emerald: [2, 350], goldBar: [2, 500], lavaCoal: [2, 400] } };
