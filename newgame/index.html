@@ -308,6 +308,20 @@ body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.pad:not(.gamepad).smenuOn
 body.smenuOn #bA,body.smenuOn #bB,body.skwOn #bA,body.skwOn #bB,body.skwOn #bX,body.skwOn #bY{z-index:46;filter:brightness(1.15) saturate(1.2);box-shadow:0 0 0 4px #fff,0 0 22px #ffffffaa;animation:padGlow 1.2s ease-in-out infinite}
 @keyframes padGlow{0%,100%{box-shadow:0 0 0 4px #fff,0 0 14px #ffffff88}50%{box-shadow:0 0 0 4px #fff,0 0 28px #ffffffdd}}
 body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #bA span,body.skwOn #bA span{display:block}   /* in a menu A is A (not the 'use this' icon) */
+
+/* v3.34 📱 small phones: no button overlaps the stick (narrow) · menus sit higher and the bag keeps its details above the controls (short) — buttons stay ≥ 58 px */
+@media (max-width:360px){
+  #stick{width:116px;height:116px;left:10px}#stickK{left:28px;top:28px}
+  #bA,#bB,#bX,#bY{width:58px;height:58px;font-size:22px}
+  #bA{right:8px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px)}#bB{right:66px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 10px)}#bX{right:66px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 128px)}#bY{right:124px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px)}
+  #bArw{right:128px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 136px)}#dpad{width:140px;height:140px;left:6px}
+}
+@media (max-height:700px){
+  #smenu,#skw{top:36%}
+  .ov.inv .invgrid{max-height:30vh}.ov.inv .invcv{height:22vh}.invmain.wide .invgrid{max-height:40vh}
+  .ov.inv .invdet{padding:6px 8px;font-size:12px;line-height:1.4}.ov.inv .invdet b{font-size:14px}
+}
+@media (max-height:600px){.ov.inv .invcv{height:15vh}.ov.inv .invhint{display:none}.ov.inv .shb{gap:5px}.ov.inv .invgrid{max-height:26vh}}   /* v3.34 the shortest phones: the item card stays above the D-pad */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
