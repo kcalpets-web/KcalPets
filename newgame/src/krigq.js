@@ -8,10 +8,11 @@ import { part, cone } from './clay.js';
 export const QCLIPS = ['idle', 'walk', 'run', 'jump', 'sit', 'crouch', 'lie', 'attack', 'hurt', 'happy', 'stretch', 'turn'];
 export const QCLIP_TH = { idle: 'ยืน', walk: 'เดิน', run: 'วิ่ง', jump: 'กระโดด', sit: 'นั่ง', crouch: 'หมอบ', lie: 'นอน', attack: 'ตะปบ', hurt: 'โดนตี', happy: 'ดีใจ', stretch: 'บิดขี้เกียจ', turn: 'หันมอง' };
 export const QLOOK = {
-  shiba: { fur: '#f2a35a', dark: '#c4672e', belly: '#fff3e2', bellyD: '#efd9bf', paw: '#fff3e2', pawD: '#e8cfb0', ear: 'up', tail: 'curl', nose: '#1e1520', snout: 1 },
+  shiba: { smooth: 1, fur: '#f2a35a', dark: '#c4672e', belly: '#fff3e2', bellyD: '#efd9bf', paw: '#fff3e2', pawD: '#e8cfb0', ear: 'up', tail: 'curl', nose: '#1e1520', snout: 1, iris: '#5a3014', collar: '#3a7ad8', bell: '#f2c23a', head: 1.12 },   /* v3.52 smooth · a collar = one of yours */
   /* v3.52 the smooth kitten: no joints showing · a big head · bright eyes that close when happy · tabby bands · a collar + bell */
   tabby: { smooth: 1, fur: '#f4a24a', dark: '#d9822e', belly: '#fff4e4', bellyD: '#f2dcc0', paw: '#fff4e4', pawD: '#efd6b8', ear: 'cat', tail: 'up', nose: '#e8808e', snout: .5, bands: '#d06a1e', iris: '#8a4a1a', collar: '#d83a3a', bell: '#f2c23a', head: 1.15 },
-  cat: { fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', paw: '#ffffff', pawD: '#dcdce8', ear: 'cat', tail: 'long', nose: '#d06a80', snout: .6, stripes: '#5a5c70' },
+  cat: { smooth: 1, fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', paw: '#ffffff', pawD: '#dcdce8', ear: 'cat', tail: 'up', nose: '#d06a80', snout: .5, bands: '#6a6c80', iris: '#c8922a', collar: '#d83a3a', bell: '#f2c23a', head: 1.15 },
+  joint: { fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', paw: '#ffffff', pawD: '#dcdce8', ear: 'cat', tail: 'long', nose: '#d06a80', snout: .6, stripes: '#5a5c70' },   /* the first (ball-joint) test look */
 };
 const J = (parent, name, x, y, z) => { const j = new THREE.Group(); j.name = name; j.position.set(x, y, z); parent.add(j); return j };
 const ball = (g, c1, c2, r, pos = [0, 0, 0]) => part(g, c1, c2, pos, [r, r, r], [0, 0, 0], { A: 0 });

@@ -30,14 +30,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => window.__ng.openBag('pets')); await wait(700); await shot('04-bag-pets'); await closeAll();
     /* 🐋 a whale pet in the team → into the sea → A → ride */
     await E(() => { const N = window.__ng, p = { id: 'pw', kind: 'whale', name: 'โบลู', rar: 'E', el: '💧', lv: 3, exp: 0 }; N.S.pets.push(p); N.S.team = ['pw']; N.buildPet(p, 0, -3) });
-    await E(() => { const N = window.__ng; N.placeMe(-7, 0); N.S.en = null }); await wait(1200); await E(() => window.__ng.actA()); await wait(800);
+    await E(() => { const N = window.__ng; N.placeMe(-13, 0); N.S.en = null }); await wait(1200); await E(() => window.__ng.actA());   /* v3.50 deep water (the beach is wadeable now) */ await wait(800);
     const rw = await N(() => !!(window.__ng.RIDE && window.__ng.RIDE.whale)); log('ride whale', rw); if (!rw) errs.push('could not ride the whale');
     const w0 = await N(() => window.__ng.me.x); await E(() => { const N = window.__ng; N.PL.yaw = N.PL.yawT = -Math.PI / 2; N.walkTo(N.me.x - 16, N.me.z) }); await wait(5000); await shot('05-whale');
     const w1 = await N(() => ({ x: window.__ng.me.x, en: window.__ng.S.en })); log('whale moved', (w0 - w1.x).toFixed(1)); if (!(w0 - w1.x > 2)) errs.push('the whale did not swim');
     await E(() => { const N = window.__ng; N.walkTo(N.me.x + 40, N.me.z) }); let off = false; for (let k = 0; k < 20 && !off; k++) { await wait(1500); off = await N(() => window.__ng.unboard()) } log('off the whale', off); if (!off) errs.push('could not get off the whale');
     /* 🦅 a hawk pet → stand on the mesa edge → A → glide down */
     await E(() => { const N = window.__ng, p = { id: 'ph', kind: 'hawk', name: 'ฟ้า', rar: 'R', el: '⚡', lv: 2, exp: 0 }; N.S.pets.push(p); N.S.team = ['ph']; N.buildPet(p, 0, -3) });
-    const spot = await E(() => { const N = window.__ng; for (let x = 55; x < 82; x += .5) for (let z = -14; z < 14; z += .5) for (const yaw of [0, 1.57, 3.14, -1.57]) { N.placeMe(x, z); N.PL.yaw = N.PL.yawT = yaw; if (N.canGlide() != null && N.canGlide() === yaw) return [x, z, yaw] } return null });
+    const spot = await E(() => { const N = window.__ng; for (let x = 200; x < 300; x += 1) for (let z = -40; z < 100; z += 1)   /* v3.50 the isle's mesa is gone: a ledge on the mainland */ for (const yaw of [0, 1.57, 3.14, -1.57]) { N.placeMe(x, z); N.PL.yaw = N.PL.yawT = yaw; if (N.canGlide() != null && N.canGlide() === yaw) return [x, z, yaw] } return null });
     log('glide spot', JSON.stringify(spot)); if (!spot) errs.push('no glide spot found');
     if (spot) { await E(s => { const N = window.__ng; N.placeMe(s[0], s[1]); N.PL.yaw = N.PL.yawT = s[2]; N.CAM.yaw = s[2] }, spot); await wait(2000); log('pre-glide', JSON.stringify(await N(() => ({ cg: window.__ng.canGlide(), ab: window.__ng.hasAbility('glide'), yaw: window.__ng.PL.yaw, me: [window.__ng.me.x, window.__ng.me.z], ride: !!window.__ng.RIDE, swim: window.__ng.envState().swim })))); await E(() => window.__ng.actA()); await wait(700); await shot('06-glide');
       const g0 = await N(() => ({ g: !!window.__ng.GLIDE, y: window.__ng.me.y })); log('gliding', JSON.stringify(g0)); if (!g0.g) errs.push('A did not start the glide');

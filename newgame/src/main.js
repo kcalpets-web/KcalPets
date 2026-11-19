@@ -7,6 +7,7 @@ import { PROPS, MAT, rboxGeo, npcHat, THREE, C, part, cone, Q, PETS, MONS, TOOLM
 import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
+import { buildQuad, poseQ, QLOOK } from './krigq.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH, TOOL_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
@@ -261,7 +262,13 @@ function animate(A, moving, dt, now, rate = 11) {
   const br = 1 + Math.sin(now / 650) * .02 * (1 - c); A.body.scale.set(A.base, A.base * br, A.base);
 }
 const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
-const COLLAR_Y = { chick: .45 }, CROWN_Y = { chick: 1.5, bunny: 1.66 };
+const COLLAR_Y = { chick: .45 }, CROWN_Y = { chick: 1.5, bunny: 1.66, shiba: 1.95, cat: 1.95 };
+/* v3.52 🐾 the dog and the cat are four-legged now (KRIG-Q · krigq.js): a smooth clay body on the standard quadruped rig · their own collar + bell · the clips follow what they do */
+const QUAD_SC = 1.55; for (const k of ['shiba', 'cat']) PETS[k] = g => { const q = new THREE.Group(); q.scale.setScalar(QUAD_SC); g.add(q); const R = buildQuad(q, k); poseQ(R, 'idle', 0); g.userData.quad = R };
+function quadTick(e, mv, now, dt) { const R = e.A.body.userData.quad; if (!R) return false; const fight = e.mode === 'fight' && e.foe, atk = fight && now < e.atkT && e.atkT - now > D.PET_ATK_CD / speed - 450;
+  if (mv) e.stillT = 0; else e.stillT = (e.stillT || 0) + dt;
+  const clip = e.mode === 'down' ? 'lie' : atk ? 'attack' : mv ? (fight ? 'run' : 'walk') : fight ? 'crouch' : e.stillT > 9 ? 'lie' : e.stillT > 4 ? 'sit' : 'idle', per = { walk: 900, run: 520, attack: 450, idle: 2600 }[clip] || 1600;
+  poseQ(R, clip, clip === 'attack' ? 1 - (e.atkT - now - (D.PET_ATK_CD / speed - 450)) / 450 : (now % per) / per); e.A.body.position.y = 0; return true }
 
 /* ---------- Uncle Howsif: lying face down under the wreck → standing by the jetty once rescued ---------- */
 const gullsUp = gulls(scene, 3, -8, 0, 5);
@@ -293,7 +300,7 @@ function openSberh() {
 /* ---------- pets (none until the forest) ---------- */
 const PA = new Map();
 function buildPet(p, x, z) {
-  const f = formOf(p), A = rigOf(makeActor(g => { (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76) }, D.FORMS[f].scale));
+  const f = formOf(p), A = rigOf(makeActor(g => { (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1 && !QLOOK[p.kind]) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76) }, D.FORMS[f].scale));
   A.root.position.set(x, 0, z); const old = PA.get(p.id);
   const e = { p, A, pick: addPick(W, x, z, .55, 1.3, { kind: 'pet', id: p.id }), home: old ? old.home : [x, z], t: [x, z], wait: Math.random() * 2, mode: 'wander', atkT: 0, skT: 0 };
   if (old) { scene.remove(old.A.root); removePick(W, old.pick) } PA.set(p.id, e); return e;
@@ -1165,7 +1172,7 @@ function frame(now) {
         let foe = null, fd = 6; for (const M of mons) if (M.born + 800 < now && M.hit) {   /* v1.4.1: pets attack only what you hit (or what attacks you) */ const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
       } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
-    animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob; e.pick.position.set(q.x, q.y + .65, q.z);
+    if (!quadTick(e, mv, now, dt)) { animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob } e.pick.position.set(q.x, q.y + .65, q.z);
   }
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
   for (let i = mons.length - 1; i >= 0; i--) {
@@ -1579,7 +1586,7 @@ function invPreview(cv, tab, sel) {
     PV = { r, sc, cam: new THREE.PerspectiveCamera(30, 1, .1, 30), doll: null, key: '', yaw: .4, drag: null } }
   const k = tab === 'pets' && sel && sel.pet ? 'pet:' + sel.pet.id + formOf(sel.pet) : 'me:' + JSON.stringify(S.eq) + JSON.stringify(S.avatar || {});
   if (k !== PV.key) { PV.key = k; if (PV.doll) PV.sc.remove(PV.doll); const g = new THREE.Group();
-    if (tab === 'pets' && sel && sel.pet) { const p = sel.pet, f = formOf(p); (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76); g.scale.setScalar(D.FORMS[f].scale * 1.6); PV.h = 1.1 }
+    if (tab === 'pets' && sel && sel.pet) { const p = sel.pet, f = formOf(p); (PETS[p.kind] || ANIMALS[p.kind] || PETS.cat)(g); if (f >= 1 && !QLOOK[p.kind]) ACC.collar(g, COLLAR_Y[p.kind] ?? .92); if (f >= 2) ACC.crown(g, CROWN_Y[p.kind] ?? 1.76); g.scale.setScalar(D.FORMS[f].scale * 1.6); PV.h = 1.1 }
     else { vinyl(g, S.avatar || {}); g.scale.setScalar(.82); PV.h = 1.3;
       const sw = S.eq.sword && S.bag.find(x => x.id === S.eq.sword), shd = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), hand = g.getObjectByName('handR'), arm = g.getObjectByName('armL2');
       if (hand && sw) { const t = new THREE.Group(), kd = D.ITEMS[sw.t].kind; itemMesh(t, sw.t); t.scale.setScalar(1.25 * VBACK.held / VSCALE * 1.45); t.rotation.x = kd === 'spear' ? .3 : .15; if (kd !== 'spear') t.rotation.y = -Math.PI / 2; t.position.set(0, -.02, .02); hand.add(t) }   /* v3.17.1 tip up by the side (the arm hangs here, so not the combat angles) */
