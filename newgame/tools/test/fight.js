@@ -35,17 +35,12 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8836, OUT = process.arg
     await pg.screenshot({ path: OUT + '/guard-lock.png' }); await dp('bB', 'pointerup'); await wait(300); log('lock before B', l0, 'B held', JSON.stringify(g));
     if (!g.guard || !g.lock) errs.push('holding B did not lock on the foe'); if (g.off > .4) errs.push('holding B did not turn you to face the foe');
     // 🎒 bag by stick
-    await E(() => window.__ng.openBag('sword')); await wait(700); const z0 = await E(() => { window.__ng.navCur(); const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('v3.23 the bag starts on a section', z0); if (!z0) errs.push('the bag should start on the sections');
-    await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(500);   /* A = into the section */ await dpad('down');
-    const f0 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await dpad('up');
-    const f1 = await E(() => { const e = document.querySelector('.nfocus'); return e ? (e.dataset.k || e.dataset.bt || e.textContent.trim().slice(0, 12)) : null }); await pg.screenshot({ path: OUT + '/bag-nav.png' }); log('frame', f0, '→', f1);
-    if (!f0 || !f1 || f0 === f1) errs.push('the stick did not move the frame in the bag');
+    await E(() => window.__ng.openBag()); await wait(700); const z0 = await E(() => { window.__ng.navCur(); const e = document.querySelector('.nfocus'); return e && e.dataset.k }); log('v3.72 the bag starts on the first ⚔️ slot', z0); if (!z0) errs.push('the bag should start on the first slot');
+    await dpad('right'); const f0 = await E(() => { const e = document.querySelector('.nfocus'); return e && e.dataset.k }); await dpad('down');
+    const f1 = await E(() => { const e = document.querySelector('.nfocus'); return e && e.dataset.k }); await pg.screenshot({ path: OUT + '/bag-nav.png' }); log('frame', z0, '→', f0, '→', f1);
+    if (!f0 || !f1 || f0 === z0 || f1 === f0) errs.push('the stick did not move the frame in the bag');
     const vis = await E(() => ['dpad', 'bA', 'bB'].map(id => { const r = document.getElementById(id).getBoundingClientRect(), e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!(e && (e.id === id || e.closest('#' + id))) })); log('stick/A/B on top of the bag', vis); if (vis.includes(false)) errs.push('D-pad / A / B are under the bag');
-    await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(400);   /* v3.23 B = back to the sections */
-    const ft = await E(() => { const e = document.querySelector('.nfocus'); return e && e.dataset.bt }); log('frame on a tab', ft); if (!ft) errs.push('B did not step back to the sections');
-    if (ft) { await dpad('right'); await dp('bA', 'pointerdown'); await dp('bA', 'pointerup'); await wait(600); await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(400);
-      const tab = await E(() => (document.querySelector('.invtabs .on') || {}).dataset.bt); log('A on the next tab →', tab); if (tab === 'sword') errs.push('A on a tab did not switch to it') }
-    await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(500); if (await E(() => !!document.querySelector('.ov'))) errs.push('B did not close the bag');
+    await dp('bB', 'pointerdown'); await dp('bB', 'pointerup'); await wait(500); if (await E(() => !!document.querySelector('.ov'))) errs.push('B did not close the bag');   /* v3.72 no section row to step back to */
     // 🖍️ no draw button
     await E(() => window.__ng.aimStart('draw')); await wait(400); const db = await E(() => getComputedStyle(document.getElementById('bDrawNow')).display); log('draw button', db); if (db !== 'none') errs.push('the 🖍️ draw button is still on screen'); await E(() => window.__ng.aimEnd(false));
   } catch (e) { errs.push('X ' + e.stack) }
