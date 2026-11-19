@@ -438,10 +438,12 @@ body:has(.ov[data-atlas]) #bX,body:has(.ov[data-atlas]) #bY{z-index:46;box-shado
 /* v3.75 the atlas pages keep A / B (and the stick / D-pad) on top · the bag grid sits right under its header · landscape keeps the same sizes · picker = bag slots · clothes' ability badges */
 body.pad:not(.gamepad):has(.ov[data-atlas]) #bA,body.pad:not(.gamepad):has(.ov[data-atlas]) #bB,body.pad:not(.gamepad):has(.ov[data-atlas]) #stick,body.pad:not(.gamepad):has(.ov[data-atlas]) #dpad{z-index:46}
 .ov.inv .invhint{margin-top:0!important;padding:2px 0 6px}.ov.inv .invslots b.over{color:#ff8a7a}
-@media (orientation:landscape){.ov:not(.mapfs) .sh .shb,.ov:not(.mapfs) .sh .shh,.ov:not(.mapfs) .atlasT{width:100%;max-width:min(560px,100%);margin-left:auto;margin-right:auto}.ov.inv .invgrid{max-width:min(100%,calc((100vh - 200px) * 1.02));margin:0 auto}.ov .sh{max-width:none}#pick .win{max-width:420px;margin:0 auto}}
+/* v3.75 one size for every window: 430px wide (a phone's width) in both orientations · landscape shrinks it a little (zoom) so more fits in the short screen */
+.ov:not(.mapfs) .sh{width:100%;max-width:430px!important;margin-left:auto;margin-right:auto}
+@media (orientation:landscape) and (max-height:600px){.ov:not(.mapfs) .sh{zoom:.82}.ov.inv .sh,.ov.qatl .sh,.ov[data-atlas]:not(.mapfs) .sh{height:calc(100vh / .82)!important;max-height:none!important}#pick,#smenu,#skw{zoom:.82}}
 #pick .row i.ptile{position:relative;background:#1e1a2a;border:3px solid var(--rc,#5a5060);border-radius:14px;display:grid;place-items:center}#pick .row i.ptile em{position:absolute;right:4px;bottom:3px;background:#000c;color:#fff;font:900 13px system-ui;font-style:normal;border-radius:7px;padding:0 5px}#pick .row i.ptile q{position:absolute;left:8%;top:5px;height:5px;border-radius:3px}#pick .row i.ptile q::before,#pick .row i.ptile q::after{content:none}#pick .row i.ptile u{display:none}
 .tile .wab{position:absolute;left:3px;top:3px;display:flex;gap:1px;font-size:11px;font-weight:400}.tile .wab span{background:#ffd23f;border:1.5px solid #fff;border-radius:50%;min-width:20px;height:20px;display:grid;place-items:center;line-height:1;padding:0 2px;font-size:10px}.tile .wab img.cic{width:12px;height:12px}
-@media (orientation:landscape) and (max-height:520px){#mBtns{position:fixed;right:132px;top:calc(env(safe-area-inset-top) + 62px);flex-direction:column;margin:0}}   /* v3.75 landscape: 🎒 🗺️ beside the minimap (not over the pad) */
+@media (orientation:landscape) and (max-height:400px){#mBtns{position:fixed;right:132px;top:calc(env(safe-area-inset-top) + 62px);flex-direction:column;margin:0}}   /* v3.75 landscape: 🎒 🗺️ beside the minimap (not over the pad) */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
