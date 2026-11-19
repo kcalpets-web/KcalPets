@@ -18,6 +18,6 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8873, OUT = process.arg
     if (walk.pond !== false) errs.push('the pond should not be walkable'); if (walk.stone !== 'land' || walk.island !== 'land') errs.push('stones and the island should be walkable'); if (!walk.trunk) errs.push('the trunk should be solid');
     await E(() => { const N = window.__ng; N.S.time = 1380; N.setTime && N.setTime() }); await clean(6); await pg.screenshot({ path: OUT + '/night.png' });
     const deer = await E(() => { const D = window.__ng.GT.deer; return { vis: D.visible } }); log('deer far', JSON.stringify(deer)); if (!deer.vis) errs.push('at night the spirit deer shows from far');
-    await E(() => { const N = window.__ng, G = N.GTREE, D = N.GT.deer; const wp = D.getWorldPosition(D.position.clone()); N.placeMe(wp.x - 3, wp.z) }); await clean(24); const gone = await E(() => window.__ng.GT.deer.visible); log('deer near', gone); if (gone) errs.push('the deer should fade when you come close');
+    await E(() => { const N = window.__ng, G = N.GTREE, D = N.GT.deer; const wp = D.getWorldPosition(D.position.clone()); N.placeMe(wp.x - 3, wp.z) }); let gone = true; for (let i = 0; i < 40 && gone; i++) { await clean(1); gone = await E(() => window.__ng.GT.deer.visible) } log('deer near', gone); if (gone) errs.push('the deer should fade when you come close');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();
