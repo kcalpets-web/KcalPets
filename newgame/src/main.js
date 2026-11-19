@@ -267,7 +267,10 @@ const COLLAR_Y = { chick: .45 }, CROWN_Y = { chick: 1.5, bunny: 1.66, shiba: 1.9
 const QUAD_SC = 1.55; for (const k of ['shiba', 'cat']) PETS[k] = g => { const q = new THREE.Group(); q.scale.setScalar(QUAD_SC); g.add(q); const R = buildQuad(q, k); poseQ(R, 'idle', 0); g.userData.quad = R };
 function quadTick(e, mv, now, dt) { const R = e.A.body.userData.quad; if (!R) return false; const fight = e.mode === 'fight' && e.foe, atk = fight && now < e.atkT && e.atkT - now > D.PET_ATK_CD / speed - 450;
   if (mv) e.stillT = 0; else e.stillT = (e.stillT || 0) + dt;
-  const clip = e.mode === 'down' ? 'lie' : atk ? 'attack' : mv ? (fight ? 'run' : 'walk') : fight ? 'crouch' : e.stillT > 9 ? 'lie' : e.stillT > 4 ? 'sit' : 'idle', per = { walk: 900, run: 520, attack: 450, idle: 2600 }[clip] || 1600;
+  const st = e.stillT, q = e.A.root.position, pq = PL && me(), ouch = PL && now < (PL.hurtT || 0) + 250 && pq && Math.hypot(q.x - pq.x, q.z - pq.z) < 7;   /* v3.54 event poses: hop when it levels up, is fed or you cheer · flinch when you get hit nearby · look round, then stretch, before it sits */
+  const glad = now < (e.happyT || 0) || (now < cheerT && !fight);
+  const clip = e.mode === 'down' ? 'lie' : atk ? 'attack' : ouch && !mv ? 'hurt' : glad && !atk ? 'happy' : mv ? (fight ? 'run' : 'walk') : fight ? 'crouch' : st > 10 ? 'lie' : st > 5.2 ? 'sit' : st > 4 ? 'stretch' : st > 2 && st < 3.2 ? 'turn' : 'idle', per = { walk: 900, run: 520, attack: 450, idle: 2600, happy: 700 }[clip] || 1600;
+  e.clip = clip; if (clip === 'hurt') { poseQ(R, 'hurt', 1 - (PL.hurtT + 250 - now) / 700); e.A.body.position.y = 0; return true }
   poseQ(R, clip, clip === 'attack' ? 1 - (e.atkT - now - (D.PET_ATK_CD / speed - 450)) / 450 : (now % per) / per); e.A.body.position.y = 0; return true }
 
 /* ---------- Uncle Howsif: lying face down under the wreck → standing by the jetty once rescued ---------- */
@@ -578,6 +581,7 @@ function playerExpOld(n, x, z) { const up = gainPlayerExp(n); if (x != null) flo
 function petExp(p, n) { const r = gainPetExp(p, n), e = PA.get(p.id); if (!e) return r;
   if (r.evolved) { const q = e.A.root.position; buildPet(p, q.x, q.z); floater('✨ พัฒนาร่าง!', 'item', q.x, 2, q.z); toast(`✨ ${esc(p.name)} พัฒนาเป็น <b>${D.FORMS[formOf(p)].name}</b>!`, 3200) }
   else if (r.up) { const q = e.A.root.position; floater(`Lv ${p.lv}!`, 'exp', q.x, 1.6, q.z) }
+  if (r.evolved || r.up) { const e2 = PA.get(p.id) || e; e2.happyT = performance.now() + 2400 }
   return r }
 
 /* ---------- monsters: any number at once (the farm one is saved in S.mon; town slimes respawn on each visit until cleared) ---------- */
@@ -1173,7 +1177,7 @@ function frame(now) {
         if (d > 15) q.set(tx, 0, tz); else if (d > 2) { stepTo(e.A, tx, tz, d > 5 ? 4.5 : 2.6, dt); mv = true }
         let foe = null, fd = 6; for (const M of mons) if (M.born + 800 < now && M.hit) {   /* v1.4.1: pets attack only what you hit (or what attacks you) */ const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
-      } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
+      } else if ((e.wait -= dt) <= 0) { const d = stepTo(e.A, e.t[0], e.t[1], 1.2, dt, walkable); if (d < .1) { e.wait = e.A.body.userData.quad ? 3 + Math.random() * 8 : 1.5 + Math.random() * 3; e.t = [e.home[0] + (Math.random() - .5) * 4, e.home[1] + (Math.random() - .5) * 4]; if (!walkable(e.t[0], e.t[1])) e.t = e.home.slice() } else mv = true } }
     if (!quadTick(e, mv, now, dt)) { animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob } e.pick.position.set(q.x, q.y + .65, q.z);
   }
   /* monsters: grow in · wander until hit (or until the player has a sword) · then chase pets or the player's view and bite */
@@ -1504,7 +1508,7 @@ function petCard(p) { const ps = petStats(p), f = formOf(p), dn = p.down > Date.
 function feed(p, kind, key) {
   if (p.lv >= D.PET_LV_MAX) { toast('น้องเลเวลสูงสุดแล้ว'); return }
   let exp; if (kind === 'food') { if (!(S.food[key] > 0)) return; S.food[key]--; exp = D.FOODS.find(f => f.k === key).exp } else { if (!(S.fish[key] > 0)) return; S.fish[key]--; exp = D.FISH[key].exp }
-  const e = PA.get(p.id), q = e.A.root.position; floater(`😋 +${exp} Exp`, 'exp', q.x, 1.5, q.z); petExp(p, exp); playerExp(D.FEED_PLAYER_EXP); bump('feeds'); questCheck(); save(); hud();
+  const e = PA.get(p.id), q = e.A.root.position; floater(`😋 +${exp} Exp`, 'exp', q.x, 1.5, q.z); e.happyT = Math.max(e.happyT || 0, performance.now() + 1400); petExp(p, exp); playerExp(D.FEED_PLAYER_EXP); bump('feeds'); questCheck(); save(); hud();
 }
 function feedList(p) {
   const f = D.FOODS.filter(x => S.food[x.k] > 0).map(x => `<button class="btn sm" data-ff="${x.k}">${x.icon} ${x.name} ×${S.food[x.k]} <small>+${x.exp}</small></button>`);

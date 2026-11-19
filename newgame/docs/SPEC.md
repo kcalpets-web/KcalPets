@@ -278,6 +278,7 @@
 | v3.51 (20 พ.ย.) | 🚶 เดินอัตโนมัติ `autoGo`/`autoGoTick` (ช่วง 12 ม. · อ้อม · ข้ามทะเล → เรือ · จอย = หยุด) · สมุดเควส `#trAuto` · ✅ ส่งเควสจากสมุด `#trDone` · แหล่งวัตถุดิบ `msGo` ถาม ⭐/🚶 |
 | v3.52 (20 พ.ย.) | 🐾 น้องสี่ขา KRIG-Q (`src/krigq.js`: `buildQuad`/`poseQ`/`faceQ` · 12 ท่า · ผิวเนื้อเดียว `skinQ` = SDF → surface nets → SkinnedMesh ผูกกับข้อต่อ · cache ต่อแบบ) · `PETS.shiba/cat` ถูกแทนใน main.js (`QUAD_SC` · `quadTick` เลือกท่า) · ปลอกคอ+กระดิ่งในตัว · การ์ดเควสสร้างใหม่เฉพาะเมื่อเปลี่ยน (`Qe._h`) · ประกายตา (vinyl.js `faceTex`) ไปทางเดียวกัน |
 | v3.53 (20 พ.ย.) | 🕹️ จัดปุ่มเอง `layEdit`/`layApply` (localStorage `ng_lay` {pos,size,alpha,pal,col}) · ชุดสี `body.pal-gray/mono` · แถบหัวข้อ `tabCar`/`tabBind` (สมุดบันทึก · วิธีเล่น `hCur` · เมนูตั้งค่า `MSECS`/`secOf`) · เมนูจอยหน้า `shoot` (PICKCAT bow/other · `bow:<id>`) |
+| v3.54 (20 พ.ย.) | 🌲 `D.STORY_EASE` · 🦴 ของหล่นตามพื้น `GL`/`glChunk`/`pickGL` (`D.GLOOT`, เซฟ `S.gl`) + `branch`/`woodClub`/`boneBit` · 🐾 ท่าน้องตามเหตุการณ์ `e.happyT` / `PL.hurtT` / `stillT` → happy · hurt · turn · stretch (`e.clip`) |
 | ต่อไป | v2.3 เควสรองจาก NPC ทั่วแผนที่ (15–20 คน · 60+ เควส: หาของ ล่าสัตว์ วาดภาพ ตกปลา ทำอาหาร ซ่อมสถานที่) · v2.4 บทนำใหม่เป็นความฝัน (ค้างคาวชนคีลีตกหน้าผา) + เควสหลักเหลือ 'กำจัดเมฆทมิฬ ช่วยคีลี' · เควสเดิมเป็นบทนำสอนเล่น + เควสรองของลุงฮาวซิฟ/Sberh | |
 
 ## 11. ลำดับการสร้าง (ส่งภาพ/ตัวอย่างให้ดูทุกรอบ)
