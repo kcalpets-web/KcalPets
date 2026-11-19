@@ -29,7 +29,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8862, OUT = process.arg
     // 👆 touch mode: the dock
     await E(() => { localStorage.setItem('ng_ctrl', 'touch') }); await pg.reload(); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const tm = await E(() => ({ dock: getComputedStyle(document.getElementById('tdock')).display, pad: getComputedStyle(document.getElementById('pad')).display })); log('touch', JSON.stringify(tm)); if (tm.dock === 'none' || tm.pad !== 'none') errs.push('touch mode: the dock shows and the stick does not');
-    await E(() => document.getElementById('tdMenu').click()); await wait(800); await pg.screenshot({ path: OUT + '/touch-menu.png' }); if (!(await E(() => document.body.classList.contains('smenuOn')))) errs.push('🎒 should open the menu');
-    await E(() => document.getElementById('tdMenu').click()); await E(() => document.getElementById('tdPad').click()); await wait(500); if (!(await E(() => document.body.classList.contains('pad')))) errs.push('🕹️ should switch to the stick');
+    await E(() => document.getElementById('qIcon').click()); await wait(800); await pg.screenshot({ path: OUT + '/touch-menu.png' }); if (!(await E(() => !!document.querySelector('.ov.hub')))) errs.push('v3.58 🎒 should open the one menu');
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await E(() => document.getElementById('tdPad').click()); await wait(500); if (!(await E(() => document.body.classList.contains('pad')))) errs.push('🕹️ should switch to the stick');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

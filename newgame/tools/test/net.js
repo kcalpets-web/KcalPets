@@ -32,7 +32,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
     await pg.mouse.up(); if (!fr.aim || fr.btn !== 'none' || fr.ov) errs.push('v3.19 tapping Y (draw) should frame the view (no 🖍️ button: A draws)');
     await E(() => { const a = document.getElementById('bA'); a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); a.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })) }); await wait(2500);
     const d1 = await E(() => window.__ng.S.stat.drawings || 0); log('drawings', d0, '→', d1); if (!(d1 > d0)) errs.push('A did not draw'); await close();
-    await close(); await E(() => window.__ng.smenuGo('left')); await wait(600);   /* v3.17 the stick menu ← opens the Y picker (even holding the crayon) */
+    await close(); await E(() => window.__ng.smenuGo('left')); await wait(300); await E(() => window.__ng.smenuGo('left')); await wait(600);   /* v3.53 ← = 🏹 ของยิง page → ← bows · v3.17 the stick menu ← opens the Y picker (even holding the crayon) */
     if (!(await E(() => !!window.__ng.pick() && window.__ng.pick().slot === 'y'))) errs.push('the stick menu did not open the Y picker while holding the crayon');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
