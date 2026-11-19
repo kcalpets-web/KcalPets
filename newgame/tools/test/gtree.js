@@ -12,6 +12,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8873, OUT = process.arg
     const G = await E(() => { const N = window.__ng, G = N.GTREE; N.placeMe(G.x + 3, G.z + 18); N.PL.yaw = N.PL.yawT = Math.PI; N.CAM.yaw = Math.PI; N.CAM.manualT = performance.now() + 60000; return [G.x, G.z, G.h] }); await clean(10);
     const st = await E(() => ({ gt: !!window.__ng.GT, season: window.__ng.seasonNow() })); log('built', JSON.stringify(st), G); if (!st.gt) errs.push('the tree should be built near it'); if (st.season !== 'autumn') errs.push('day 23 = autumn (10 days a season)');
     await pg.screenshot({ path: OUT + '/day.png' });
+    const disc = await E(() => !!window.__ng.S.story.gtree); log('discovered', disc); if (!disc) errs.push('coming close should discover the tree');
+    await E(() => window.__ng.openMap && window.__ng.openMap()); await wait(1500); await pg.screenshot({ path: OUT + '/map.png' }); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const walk = await E(async () => { const W = await import('/newgame/src/world.js'), G = W.GTREE, s = W.GT_STONES[3]; return { pond: W.walkWorld(G.x + 10 * Math.cos(-1), G.z + 10 * Math.sin(-1)), stone: W.walkWorld(G.x + s[0], G.z + s[1]), island: W.walkWorld(G.x + 3, G.z + 2), trunk: !!W.solHit(G.x, G.z) } }); log('walk', JSON.stringify(walk));
     if (walk.pond !== false) errs.push('the pond should not be walkable'); if (walk.stone !== 'land' || walk.island !== 'land') errs.push('stones and the island should be walkable'); if (!walk.trunk) errs.push('the trunk should be solid');
     await E(() => { const N = window.__ng; N.S.time = 1380; N.setTime && N.setTime() }); await clean(6); await pg.screenshot({ path: OUT + '/night.png' });

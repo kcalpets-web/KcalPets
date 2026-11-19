@@ -3123,6 +3123,7 @@ function openMap() {
     if (mapZ >= 3) for (const r of RV) if (S.ruins[r.id]) label(r.x, r.z + 4 / Math.min(1, kk * 2), r.def.name + ' ' + r.def.npc.split(' ')[0]);
     if (mapZ >= 5) for (const k in CAMPS) if (campOn(k)) label(CAMPS[k].x, CAMPS[k].z + 3, CAMPS[k].name);
     for (const k in CAMPS) if (campOn(k)) { const [x, y] = P(CAMPS[k].x, CAMPS[k].z); g.fillText('🍲', x, y) }
+    if (S.story.gtree || seen(GTREE.x, GTREE.z)) { const [x, y] = P(GTREE.x, GTREE.z); const f0 = g.font; g.font = fs(22) + ' sans-serif'; g.fillText('🌳', x, y); g.font = f0; if (S.story.gtree) label(GTREE.x, GTREE.z + 9, 'ต้นไม้แห่งฤดูกาล') }   /* v3.62 the Great Tree */
     for (const Ls of LSTONES) if (seen(Ls.x, Ls.z)) { const [x, y] = P(Ls.x, Ls.z); g.globalAlpha = lsAwake(Ls.k) ? 1 : .55; g.fillText('💠', x, y); g.globalAlpha = 1 }   /* v3.14 */
     for (const c of WC) if (c.fort && seen(c.x, c.z) && !(S.wcamps[c.id] || {}).c) { const [x, y] = P(c.x, c.z); g.fillText('🏴', x, y) }
     for (const b of S.builds) if (BICON[b.k] && b.done) { const [x, y] = P(b.x, b.z); g.fillText(BICON[b.k], x, y) }
@@ -3414,7 +3415,8 @@ function gtTick(now, dt) { const q = me(), d = dist(q.x, q.z, GTREE.x, GTREE.z);
   if (!GT && d < 220) { const T = greatTree({ season: seasonNow(), leaves: eco ? 5000 : 9000 }); T.g.position.set(GTREE.x, GTREE.h, GTREE.z); scene.add(T.g); T.sol = addSol({ x: GTREE.x, z: GTREE.z, r: 1.75 }); T.pick = addPick(W, GTREE.x, GTREE.z, 2.4, 6, { kind: 'gtree' }); T.pick.position.y += GTREE.h; GT = T; gtSeason = null; gtNight = -1 }
   if (GT && d > 300) { scene.remove(GT.g); delSol(GT.sol); removePick(W, GT.pick); GT.g.traverse(o => { if (o.isMesh) o.geometry.dispose() }); GT = null; return }
   if (!GT) return; const sn = seasonNow(); if (sn !== gtSeason) { gtSeason = sn; GT.season(sn) } const nk = Math.round(nightK() * 20) / 20; if (nk !== gtNight) { gtNight = nk; GT.night(nk) }
-  if (d < 140) GT.tick(now / 1000, dt, q) }
+  if (d < 140) GT.tick(now / 1000, dt, q);
+  if (!S.story.gtree && d < 24 && !CUT && !document.querySelector('.ov')) { S.story.gtree = 1; bump('gtree'); save(); sfx('level'); cheer(1600); look(GTREE.x, GTREE.z); toast(`🌳 ค้นพบ <b>ต้นไม้แห่งฤดูกาล</b>!<br><small>ต้นไม้เก่าแก่ที่สุดในแผ่นดิน · ใบเปลี่ยนไปตามฤดู · ${SEASON_IC[seasonNow()]} ตอนนี้${SEASON_TH[seasonNow()]}<br>ลองกลับมาดูตอนกลางคืน…</small>`, 4600) } }   /* v3.62 the first visit */
 let seasonSeen = null;
 function seasonCheck() { const sn = seasonNow(); if (seasonSeen == null) { seasonSeen = S.seasonSeen || sn; S.seasonSeen = seasonSeen } if (sn !== seasonSeen) { seasonSeen = S.seasonSeen = sn; save(); toast(`${SEASON_IC[sn]} เข้าสู่<b>${SEASON_TH[sn]}</b><br><small>ต้นไม้แห่งฤดูกาลในซิลวาเรนเปลี่ยนไปแล้ว…</small>`, 3200) } }
 const CAPV = {}; let capT = 0;
