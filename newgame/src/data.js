@@ -221,6 +221,7 @@ export const GOLEMS = {
   navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
   frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
+export const TOWN_R = { harbour: 45 };   // v3.70 how far the harbour town reaches from its plaza (golems / monsters keep out)
 export const GOLEM = { wake: 13, arena: 17, slam: { r: 4.6, wind: 1.3 }, rock: { r: 2.2, wind: 1.4 }, stun: 2.4, armor: .45, coreX: 2.6, drop: [3, 5] };
 /* v3.0 🍖 fullness + 💤 sleepiness (minutes of game time) */
 export const NEEDS = { fullPerMin: 100 / (1.5 * 1440), hungryAt: 20, sleepyAt: 1440, wornAt: 2100, starveDmg: 4, starveTick: 12, slow: .45, enMul: 1.8, drain: 1.1, wakeFull: 26, foodPer: .35, sleepFood: -10 };
