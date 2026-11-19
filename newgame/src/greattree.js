@@ -46,6 +46,13 @@ export function greatTree(o = {}) {
   const CL = new THREE.Group(); tree.add(CL); const clumps = [];
   for (const p of tips) for (let k = 0; k < 7; k++) { const r = .75 + R() * .95, ox = (R() - .5) * 3.2, oy = (R() - .35) * 1.9, oz = (R() - .5) * 3.2, m = new THREE.Mesh(blobGeo('#ffffff', '#ffffff', .12, 1.6, R() * 6, 18), new THREE.MeshStandardMaterial({ vertexColors: false, color: '#5aa840', roughness: .85, emissive: '#000000' }));
     m.position.set(p[0] + ox, p[1] + oy, p[2] + oz); m.scale.set(r, r * .72, r); m.rotation.set(R() * .6, R() * 6, R() * .6); m.castShadow = true; m.userData.k = R(); CL.add(m); clumps.push(m) }
+  /* fine foliage: thousands of small leaves on the clumps' surface (one draw) */
+  const LEAFG = (() => { const sh = new THREE.Shape(); sh.moveTo(0, -.2); sh.bezierCurveTo(.16, -.08, .16, .1, 0, .22); sh.bezierCurveTo(-.16, .1, -.16, -.08, 0, -.2); const g2 = new THREE.ShapeGeometry(sh, 3); return g2 })();
+  const NL = o.leaves || 9000, lmat = new THREE.MeshStandardMaterial({ roughness: .8, side: THREE.DoubleSide, emissive: '#000000' }), leaves = new THREE.InstancedMesh(LEAFG, lmat, NL), lk = new Float32Array(NL), lob = new THREE.Object3D();
+  for (let i = 0; i < NL; i++) { const c = clumps[i % clumps.length], a = R() * 6.283, b = Math.acos(1 - 2 * Math.pow(R(), .75)), r = .98 + R() * .14;
+    lob.position.set(c.position.x + Math.cos(a) * Math.sin(b) * c.scale.x * r, c.position.y + Math.cos(b) * c.scale.y * r, c.position.z + Math.sin(a) * Math.sin(b) * c.scale.z * r); lob.rotation.set(R() * 6.28, R() * 6.28, R() * 6.28); lob.scale.setScalar(1.3 + R() * 1); lob.updateMatrix(); leaves.setMatrixAt(i, lob.matrix); lk[i] = R() }
+  leaves.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(NL * 3), 3); leaves.castShadow = true; CL.add(leaves);
+  clumps.forEach(m => m.scale.multiplyScalar(.9));
   /* ---- the island, the pond round it, stepping stones across ---- */
   const ISL = 5.4, POND = 14.5;
   const grass = new THREE.Mesh(new THREE.CircleGeometry(ISL + .4, 48), new THREE.MeshStandardMaterial({ color: '#6aa848', roughness: 1 })); grass.rotation.x = -Math.PI / 2; grass.position.y = .02; g.add(grass);
@@ -73,11 +80,14 @@ export function greatTree(o = {}) {
   ANIMALS.deer(deer); deer.traverse(m => { if (m.isMesh) { m.material = dmat; m.castShadow = false } }); deer.scale.setScalar(1.4); const dhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: '#7ad8ff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); dhalo.scale.setScalar(4); dhalo.position.y = 1; deer.add(dhalo);
   const DEER_AT = [POND + 4.5, 0, -2]; deer.position.set(...DEER_AT); deer.rotation.y = -Math.PI / 2 - .4; g.add(deer);
   let cur = null, nightK = 0, deerK = 0;
-  function season(s) { cur = SEASON[s] ? s : 'summer'; const P = SEASON[cur];
-    clumps.forEach((m, i) => { m.visible = m.userData.k < P.fill; m.material.color.set(P.leaf[i % P.leaf.length]).offsetHSL((m.userData.k - .5) * .03, 0, (m.userData.k - .5) * .12) }); mirror.traverse(m => { if (m.isMesh && m.userData.k == null) return; });
+  const mLeaves = []; mirror.traverse(m => { if (m.isInstancedMesh) { m.instanceMatrix = leaves.instanceMatrix; mLeaves.push(m) } });
+  function season(s) { cur = SEASON[s] ? s : 'summer'; const P = SEASON[cur], c = new THREE.Color(), off = new THREE.Matrix4().makeScale(0, 0, 0);
+    for (let i = 0; i < NL; i++) { c.set(P.leaf[i % P.leaf.length]).offsetHSL((lk[i] - .5) * .04, 0, (lk[i] - .5) * .16); leaves.setColorAt(i, c) } leaves.instanceColor.needsUpdate = true;
+    leaves.count = Math.round(NL * P.fill); for (const m of mLeaves) { m.instanceColor = leaves.instanceColor; m.count = leaves.count }
+    clumps.forEach((m, i) => { m.visible = m.userData.k < P.fill; m.material.color.set(P.leaf[i % P.leaf.length]).offsetHSL(0, -.02, -.04 + (m.userData.k - .5) * .06) });   /* the inner volume, a shade darker under the leaves */ mirror.traverse(m => { if (m.isMesh && m.userData.k == null) return; });
     mirror.children.forEach(() => { }); const mc = []; mirror.traverse(m => { if (m.isMesh && m.geometry.type !== 'TubeGeometry') mc.push(m) }); mc.forEach((m, i) => { const src = clumps[i]; if (src) { m.visible = src.visible; m.material = src.material } });
     fmat.color.set(P.fall); fmat.size = cur === 'winter' ? .2 : .28; falls.userData.n = P.fallN }
-  function night(k) { nightK = k; const P = SEASON[cur || 'summer']; ffm.opacity = k; glow.intensity = 40 * k; clumps.forEach((m, i) => { m.material.emissive.set(P.glow); m.material.emissiveIntensity = (i % 3 ? .08 : .22) * k }) }
+  function night(k) { nightK = k; const P = SEASON[cur || 'summer']; ffm.opacity = k; glow.intensity = 40 * k; clumps.forEach((m, i) => { m.material.emissive.set(P.glow); m.material.emissiveIntensity = .06 * k }); lmat.emissive.set(P.glow); lmat.emissiveIntensity = .28 * k }
   function tick(t, dt, viewer) {
     const n = falls.userData.n || 0, p = fgeo.attributes.position; for (let i = 0; i < FN; i++) { const v = fv[i]; if (i >= n) { p.setXYZ(i, 0, -50, 0); continue } v[1] -= dt * (cur === 'winter' ? .7 : 1.1); v[3] += dt; const x = v[0] + Math.sin(v[3] * 1.3 + i) * .6, z = v[2] + Math.cos(v[3] + i) * .6; if (v[1] < .05) { v[0] = (R() - .5) * 18; v[1] = 9 + R() * 5; v[2] = (R() - .5) * 18 } p.setXYZ(i, x, v[1], z) } p.needsUpdate = true;
     ffm.size = .75 + Math.sin(t * 3) * .12;
