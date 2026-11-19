@@ -1323,7 +1323,7 @@ function petSkill(p) { if (!p || CUT) return; const now = Date.now(); if ((PSK[p
   if (a === 'glide') { if (PL.swim || RIDE || HORSE || GLIDE || LIFT) { hint('🦅 ใช้ตอนยืนบนบก', 1200); return } LIFT = { t0: performance.now(), y0: q.y, top: q.y + D.PETSKILL.lift, dur: 1400 }; jumpT = 0; walkT = null; work = null; scene.add(HK.root); VF.ring(q.x, q.y, q.z, '#ffffff', 2.2, .5); VF.rise(q.x, q.y, q.z, '#ffffff', 22); sfx('dive'); ok = true;   /* v3.16.5 the hawk lifts you · the glider is yours to open (X in the air) */
     toast(`🦅 ${esc(p.name)} พาบินขึ้นฟ้า!${S.has.glider ? '<br><small>กด X กลางอากาศเพื่อกางใบไม้ร่อน</small>' : ''}`, 2200) }
   else if (a === 'ride') { if (HORSE && HORSE.p === p) { dismount(); return } if (formOf(p) < 1) { hint(`${PET_ICO[p.kind]} ${esc(p.name)} ยังเด็กอยู่ · โตเป็นวัยรุ่น (Lv ${D.FORMS[1].lv}) ก่อนถึงจะขี่ได้`, 2000); return } if (PL.swim || RIDE || HORSE || GLIDE || LIFT || PL.climb) { hint(`${PET_ICO[p.kind]} ขี่ได้ตอนยืนบนบก`, 1200); return } mountPet(p); ok = !!HORSE }
-  else if (a === 'swim') { if (formOf(p) < 1) { hint(`🐋 ${esc(p.name)} ยังเด็กอยู่ · โตเป็นวัยรุ่น (Lv ${D.FORMS[1].lv}) ก่อนถึงจะพาขี่ได้`, 2000); return } if (RIDE) { hint('🐋 กำลังขี่อยู่', 900); return } rideWhale(); ok = !!RIDE }   /* v3.54 🐋 = ride in the water (the water barrier is gone) */
+  else if (a === 'swim') { if (formOf(p) < 1) { hint(`🐋 ${esc(p.name)} ยังเด็กอยู่ · โตเป็นวัยรุ่น (Lv ${D.FORMS[1].lv}) ก่อนถึงจะพาขี่ได้`, 2000); return } if (RIDE) { hint('🐋 กำลังขี่อยู่', 900); return } rideWhale(true); ok = !!RIDE }   /* v3.54 🐋 = ride in the water (the water barrier is gone) */
   else { const X = D.PET_SPECIAL[petEl(p) || Object.keys(D.PET_SPECIAL)[0]] || {}; let M = LOCK && mons.includes(LOCK) ? LOCK : null, bd = D.PETSKILL.range; if (!M) for (const m of mons) { if (m.T.animal && !m.T.charge) continue; const d = dist(q.x, q.z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; M = m } }
     if (!M && X.kind !== 'heal' && X.kind !== 'guard') { hint('🐾 ไม่มีมอนสเตอร์ใกล้ๆ', 1100); return } const fake = { p, A: { root: { position: new THREE.Vector3(q.x, q.y, q.z) } } }; ok = petSpecial(fake, M || { A: { root: { position: new THREE.Vector3(q.x, q.y, q.z) } } }, performance.now()) !== false; if (ok && M) { M.hit = true; petExp(p, 6) } }
   if (ok && (a === 'swim' || a === 'ride')) { sfx('tap'); hud(); return }   /* v3.54 rides: the cooldown starts when you get off */
@@ -1806,8 +1806,8 @@ function throwNet(a) { const now = performance.now(); if (now < netT) return; if
   requestAnimationFrame(fly) }
 /* 🐋 ride the whale */
 const WH = makeActor(g => ANIMALS.whale(g), 1.25);
-function rideWhale() {
-  if (RIDE || !hasAbility('swim')) return; if ((PSK.whale || 0) > Date.now()) { hint(`🐋 น้องวาฬพักอยู่ ${Math.ceil((PSK.whale - Date.now()) / 1000)} วิ`, 1000); return } const q = me(); let sp = PL.swim ? [q.x, q.z] : null;
+function rideWhale(skill) {
+  if (RIDE || (!skill && !hasAbility('swim'))) return; if ((PSK.whale || 0) > Date.now()) { hint(`🐋 น้องวาฬพักอยู่ ${Math.ceil((PSK.whale - Date.now()) / 1000)} วิ`, 1000); return } const q = me(); let sp = PL.swim ? [q.x, q.z] : null;
   if (!sp) for (let r = 1; r <= 3.5 && !sp; r += .5) for (let a = 0; a < 16; a++) { const x = q.x + Math.sin(a * .39) * r, z = q.z + Math.cos(a * .39) * r; if (swimOk(x, z)) { sp = [x, z]; break } }
   if (!sp) { hint('🐋 ต้องอยู่ในน้ำหรือริมน้ำ'); return } fishEnd(); placeMe(sp[0], sp[1]); RIDE = { id: 'whale', whale: 1 }; scene.add(WH.root); document.body.classList.add('ride'); CTX = null; sfx('dive'); VF.ring(sp[0], -.4, sp[1], '#cfefff', 2.5, .6);
   toast('🐋 ขี่น้องวาฬ! พายข้ามทะเลได้เร็ว ไม่เสียพลังงาน · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3000);
@@ -3898,7 +3898,7 @@ function board(b) {
   document.body.classList.add('ride'); sfx('splash'); save();
   toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>🎣 หันไปทางน้ำแล้วกด A = ตกปลา · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3400);
 }
-function leaveRaft() { const b = RIDE; if (!b) return; if (b.whale) { const wp = S.pets.find(p => S.team.includes(p.id) && petAb(p) === 'swim'); if (wp) PSK[wp.id] = PSK.whale = Date.now() + D.PETSKILL.whaleCd; scene.remove(WH.root); RIDE = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); return } b.x = me().x; b.z = me().z; b.r = PL.yaw; RIDE = null; S.ride = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); bView(b) }
+function leaveRaft() { const b = RIDE; if (!b) return; if (b.whale) { const wp = S.pets.find(p => petAb(p) === 'swim' && formOf(p) >= 1); if (wp) PSK[wp.id] = PSK.whale = Date.now() + D.PETSKILL.whaleCd; scene.remove(WH.root); RIDE = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); return } b.x = me().x; b.z = me().z; b.r = PL.yaw; RIDE = null; S.ride = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); bView(b) }
 function unboard() { if (!RIDE) return false; const sp = landNear(); if (!sp) return false; fishEnd(); leaveRaft(); placeMe(sp[0], sp[1]); sfx('tap');
   for (const e of PA.values()) if (S.team.includes(e.p.id)) e.A.root.position.set(sp[0] + .8, groundH(sp[0] + .8, sp[1] + .5), sp[1] + .5); save(); return true }
 $('bRide').onclick = () => unboard();
