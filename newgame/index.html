@@ -315,7 +315,13 @@ body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.dlg) #
 @media (max-height:720px){.invmain:not(.wide) .invgrid{flex-basis:40%}.ov.inv .invmain:not(.wide) .invgrid{max-height:33vh}.ov.inv .invmain:not(.wide) .invcv{height:24vh}}   /* shorter phones: smaller slots so the item card stays above the D-pad */
 
 /* v3.33 the stick menu takes the D-pad too · while it (or the skill wheel) is open the face buttons stay bright above the dimmed world */
-body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.smenuLR #dpad [data-dp=up],body.smenuLR #dpad [data-dp=down]{visibility:hidden}body.pad:not(.gamepad).smenuOn #stick{display:none}
+body.pad:not(.gamepad).smenuOn #dpad{display:grid}
+/* v3.53 🕹️ the layout editor + colour sets */
+body.pal-gray #bA,body.pal-gray #bB,body.pal-gray #bX,body.pal-gray #bY{background-color:#7a7c86!important;color:#fff}body.pal-mono #bA,body.pal-mono #bB,body.pal-mono #bX,body.pal-mono #bY{background-color:#f4f2ee!important;color:#2a2030!important}
+body.layedit #stick,body.layedit #bA,body.layedit #bB,body.layedit #bX,body.layedit #bY{outline:3px dashed #ffd23f;outline-offset:3px;z-index:95}body.layedit .laysel{outline-color:#ff5a8a!important;outline-style:solid!important}
+body.layedit::before{content:'';position:fixed;inset:0;background:#0007;z-index:94;pointer-events:none}
+#layEd{position:fixed;left:10px;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 8px);z-index:96;background:#fff8ee;border:3px solid var(--ink);border-radius:16px;padding:10px 12px;font-size:13px;box-shadow:0 4px 0 #0003}
+#layEd p{margin:2px 0 6px;color:#6a5a60;font-size:12px}#layEd label{display:flex;align-items:center;gap:8px;margin:4px 0;font-weight:700}#layEd input[type=range]{flex:1}#layEd .lyrow{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}body.smenuLR #dpad [data-dp=up],body.smenuLR #dpad [data-dp=down]{visibility:hidden}body.pad:not(.gamepad).smenuOn #stick{display:none}
 body.smenuOn #bA,body.smenuOn #bB,body.skwOn #bA,body.skwOn #bB,body.skwOn #bX,body.skwOn #bY{z-index:46;filter:brightness(1.15) saturate(1.2);box-shadow:0 0 0 4px #fff,0 0 22px #ffffffaa;animation:padGlow 1.2s ease-in-out infinite}
 @keyframes padGlow{0%,100%{box-shadow:0 0 0 4px #fff,0 0 14px #ffffff88}50%{box-shadow:0 0 0 4px #fff,0 0 28px #ffffffdd}}
 body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #bA span,body.skwOn #bA span{display:block}   /* in a menu A is A (not the 'use this' icon) */
