@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.54';
+export const APP_VER = '3.55';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -204,7 +204,7 @@ export const KIND = {                                          // cd = swing tim
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 10, shopN: 10, shopPrice: 50, assist: 1.1 };
 /* v2.4 the A-prompt: hit cooldown by size (ms) · fruit on some trees/bushes · run after walking · swim burst */
 export const HIT_CD = { s: 300, m: 550, l: 850 };
-export const FRUIT = { tree: [['apple', 1, 2, '#e8403a'], ['peach', 1, 2, '#ffa07a']], bush: [['berry', 1, 3, '#6a5ad8'], ['chili', 1, 2, '#e8302a'], ['mint', 2, 3, '#8ae86a']] }, FRUIT_EVERY = 3,   /* v2.6 [ingredient, min, max, colour] · which one = by the plant's id */ FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
+export const FRUIT = { tree: [['apple', 1, 2, '#e8403a'], ['peach', 1, 2, '#ffa07a'], ['coconut', 1, 2, '#6a4020'], ['banana', 2, 3, '#f0d040']], bush: [['berry', 1, 3, '#6a5ad8'], ['chili', 1, 2, '#e8302a'], ['mint', 2, 3, '#8ae86a'], ['leaf', 2, 3, '#4aa83a']] }, FRUIT_EVERY = 3,   /* v2.6 [ingredient, min, max, colour] · which one = by the plant's id */ FRUIT_REGROW = 8 * 60e3;   // [ingredient, min, max] · every 3rd tree/bush bears fruit
 export const TAG_SHOW = 8;                                       // v2.4.1 seconds a monster's name + HP bar stays after it is hit
 export const HUNT = { chance: .35, r: 7 };                         // v2.6 monsters hunting animals: chance to look for prey (every ~4 s) · how far they see it
 export const DROP_LIFE = 300;
@@ -244,6 +244,7 @@ export const NOTES = [
 export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
+export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62 };   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, gap: .25 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · rest between dashes (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
@@ -450,8 +451,13 @@ export const INGR = {
   mint:     { icon: '🌱', name: 'ใบมินต์', tag: 'cool', price: 20 },
   flower:   { icon: '🌼', name: 'ดอกไม้ป่า', tag: 'flower', price: 15 },
   honey:    { icon: '🍯', name: 'น้ำผึ้งป่า', tag: 'sweet', price: 60 },
+  /* v3.55 */
+  banana:   { icon: '🍌', name: 'กล้วย', tag: 'fruit', price: 15 },
+  coconut:  { icon: '🥥', name: 'มะพร้าว', tag: 'nut', price: 25 },
+  leaf:     { icon: '🍃', name: 'ใบไม้ห่ออาหาร', tag: 'wrap', price: 5 },
 };
-export const CLEAR_INGR = { tree: ['apple', .35], bush: ['berry', .5], grass: ['berry', .12] };   // chance to find an ingredient while clearing
+export const CLEAR_INGR = { tree: ['apple', .35], bush: ['leaf', .5], grass: ['leaf', .15] };   // v3.55 bushes / grass give 🍃 leaves (berries come from the bush fruit)
+export const SPOIL = { poison: .4 };   // v3.55 a wrong mix: chance it is poison (else rotten)   // chance to find an ingredient while clearing
 /* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
    the most specific matching recipe wins · undiscovered recipes show as ??? with a hint in the journal */
 export const RECIPES = [
@@ -480,6 +486,13 @@ export const RECIPES = [
   { k: 'heartstew', desc: 'สตูว์เนื้อดอกไม้ ตำรับนักเดินทาง กินแล้วหัวใจพองโต', icon: '💛', name: 'สตูว์หัวใจ', need: { meat: 1, flower: 1, veg: 1 }, eff: { hp: 80, buff: { heart: 2, min: 10 } }, hint: 'เนื้อ + ดอกไม้ + ผัก' },
   { k: 'boneBroth', desc: 'ซุปข้นจากกระดูกโกเลม ต้มนานทั้งคืน อิ่มท้องไปอีกนาน', icon: '🍲', name: 'ซุปกระดูกโกเลม', need: { golemBoneOnly: 99 }, eff: { hp: 150, en: 80, buff: { def: 4, heart: 1, min: 10 } }, hint: 'สร้างที่ 🛠️ จากกระดูกโกเลม', craft: 1 },
   { k: 'mystery', desc: '…หน้าตาแปลกๆ แต่ก็กินได้นะ', icon: '❓', name: 'อาหารปริศนา', need: {}, eff: { hp: 8 }, hint: 'ผสมมั่วๆ ก็ได้อันนี้…' },
+  { k: 'rotten', desc: 'ผสมมั่วไปหน่อย… กลิ่นแปลกๆ', icon: '🤢', name: 'อาหารเน่า', need: {}, eff: {}, hint: 'ผสมไม่เข้ากัน = อาหารเน่า' },   // v3.55 a wrong mix (no refunds)
+  { k: 'poison', desc: 'สีเขียวๆ ม่วงๆ … ไม่น่ากินเลย', icon: '☠️', name: 'อาหารเป็นพิษ', need: {}, eff: {}, deb: 'poison', hint: 'ผสมไม่เข้ากัน = อาหารเป็นพิษ' },
+  /* v3.55 🍌 🥥 🍃 */
+  { k: 'leafmeat', desc: 'เนื้อห่อใบไม้ย่างไฟ หอมกลิ่นใบไม้', icon: '🫔', name: 'เนื้อห่อใบไม้ย่าง', need: { wrap: 1, meat: 1 }, eff: { hp: 30, en: 20 } },
+  { k: 'leaffish', desc: 'ปลานึ่งห่อใบไม้ ชุ่มฉ่ำ', icon: '🥟', name: 'ปลานึ่งใบไม้', need: { wrap: 1, fish: 1 }, eff: { hp: 26, en: 25 } },
+  { k: 'cococurry', desc: 'แกงกะทิมะพร้าวกับเนื้อ เข้มข้น อุ่นท้อง', icon: '🍛', name: 'แกงกะทิ', need: { coconut: 1, meat: 1 }, eff: { hp: 36, buff: { warm: 1, min: 6 } } },
+  { k: 'bananacoco', desc: 'กล้วยต้มกะทิหวานมัน', icon: '🍌', name: 'กล้วยบวชชี', need: { banana: 1, coconut: 1 }, only: 1, eff: { en: 45, buff: { stam: .25, min: 5 } } },
 ];
 export const COOK_TIME = 15;                                   // seconds the pot needs (a ladle stirs meanwhile)
 export const POTS = { meadow: 'แคมป์ริมธาร', mesa: 'แคมป์บนผาสูง', home: 'แคมป์ที่พัก', forest: 'แคมป์ก็อบลิน (ร้าง)' };
