@@ -1792,7 +1792,7 @@ function bagX() { if (bagTab !== 'mats') { sfx('knock'); return } const ov = top
 /* v3.50 the slot menu: what you can do with it (wear / use / sell … from the item's own buttons) + 📋 details (the full card: stats · throw away) */
 function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key === key); if (!sel) return; const k0 = NAV.key, c = key[0];
   let btns = ''; const no = (txt, why) => `<button class="btn" disabled title="${why || ''}">${txt}</button>`;
-  if (c === 'i') { const it = S.bag.find(x => x.id === +key.slice(1)), on = it && S.eq[D.ITEMS[it.t].slot] === it.id; btns = (on ? no('✔ ใส่อยู่') : it && !it.br && !it.away ? `<button class="btn go" data-im="wear">⚔️ สวมใส่</button>` : no('สวมใส่ไม่ได้')) + '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>' }
+  if (c === 'i') { const it = S.bag.find(x => x.id === +key.slice(1)), on = it && S.eq[D.ITEMS[it.t].slot] === it.id; btns = (on ? no('✔ ใส่อยู่') : it && !it.br && !it.away ? `<button class="btn go" data-im="wear">⚔️ สวมใส่</button>` : no('สวมใส่ไม่ได้')) + '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>'; if (bagSellMode && it && !on && !D.ITEMS[it.t].starter) { const x = itemStats(it), v = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)); btns += `<button class="btn" data-sell="${it.id}" data-v="${v}">🪙 ขาย ${fmt(v)}</button>` } }   /* at the smith: sell */
   else if (key === 'arw' || key.startsWith('ax')) btns = `<button class="btn go" data-im="arrow">🏹 ใช้ลูกธนูนี้</button><button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>`;
   else if (c === 'w') { const X = D.WEAR[key.slice(1)], on = X && S.wear[X.slot] === key.slice(1); btns = `<button class="btn go" data-im="wearC">${on ? '🔄 ถอด' : '👕 สวมใส่'}</button><button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>` }
   else if (c === 'p') btns = `<button class="btn go" data-im="feed">🍖 ให้อาหาร</button><button class="btn ghost" data-im="free">🌿 ปล่อย</button>`;
@@ -1800,6 +1800,7 @@ function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key 
   else if (c === 'r' || c === 'u') btns = `<button class="btn go" data-im="use">${c === 'r' ? '😋 กิน' : '🧪 ใช้'}</button>`;
   sheet(`${sel.icon} ${sel.name}${sel.n > 1 && !/^[iwp]/.test(key) ? ' ×' + sel.n : ''}`, (b, r2, close) => { b.innerHTML = `${sel.sub ? `<p class="mut">${sel.sub}</p>` : ''}<div class="row2 imenu">${btns}<button class="btn" data-im="cancel">✖️ ยกเลิก</button></div>`;
     const done = () => { close(); redraw() };
+    bagBind(b, done);
     b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { const a = x.dataset.im, k = key.slice(1);
       if (a === 'cancel') { close(); return }
       if (a === 'wear') { const it = S.bag.find(q => q.id === +k); if (D.ITEMS[it.t].slot === 'sword') { equipA(it); DRAWN = false; setTool(S.hand === 'w' ? '' : S.hand) } else S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); sfx('knock'); save(); hud(); gearView(); done(); return }
