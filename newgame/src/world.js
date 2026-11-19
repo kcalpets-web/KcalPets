@@ -140,7 +140,7 @@ export function buildWorld(scene, eco) {
     else if (rocky) t = roll2 < .45 ? 'pebble' : roll2 < .85 ? 'rock' : 'boulder';
     else if (east) t = roll2 < .3 ? 'grass' : roll2 < .5 ? 'bush' : roll2 < .62 ? 'flower' : roll2 < .9 ? 'tree' : 'bigtree';   // v3.13 far fewer trees round the farm
     else t = roll2 < .5 ? 'grass' : roll2 < .7 ? 'bush' : roll2 < .85 ? 'tree' : roll2 < .95 ? 'pebble' : 'rock';
-    W.clear.set('c' + id, { id: 'c' + id, t, x: px, z: pz, ry: QR() * 6.28, g: null, pick: null, left: 0 });
+    if (!BALD_ON) W.clear.set('c' + id, { id: 'c' + id, t, x: px, z: pz, ry: QR() * 6.28, g: null, pick: null, left: 0 });
   }
   Q.seg = 32;
   return W;
@@ -432,7 +432,7 @@ export function groundH(x, z) {
   const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
 }
 function coreH(x, z) {
-  if (BALD.on) { const d = x - shore(z); let h = d < 0 ? (d > -8 ? d * BALD.beach : -.8 + (d + 8) * .5) : .02;   /* v3.50 the bald isle: flat · a long shallow beach (wade first, then swim) */
+  if (BALD.on) { const d = x - shore(z); let h = d < 0 ? (d > -4 ? d * .2 : -.8 + (d + 4) * .7) : .02;   /* a short shelf (wade ~4 m) then the deep sea, like the rest of the coast */   /* v3.50 the bald isle: flat · a long shallow beach (wade first, then swim) */
     if (x > BALD.tip[0]) { const r = Math.hypot((x - BALD.tip[0]) / BALD.tip[1], z / BALD.tip[2]); if (r > 1) h = Math.min(h, -(r - 1) * BALD.tip[1] * .18) }   /* the old strip's east end: a round point into the sea */
     return Math.max(h, -6) }   /* v3.50 the bald isle: flat ground · a long shallow beach (wade first, then swim) */
   if (x < 9) { const d = x - shore(z); return d < 0 ? Math.max(d * .35, -6) : 0 }   /* v3.7 the island's sea floor slopes on down to the open sea's depth (was a flat shelf → a box on the map) */
@@ -504,7 +504,7 @@ export function buildWild(W, eco) {
   for (const [x0, x1, n] of [[58.5, 78.5, 40]])   /* v3.29 the meadow is Vaneya's overgrowth now */ for (let i = 0; i < n * 6 && k < 999; i++) { const x = x0 + R() * (x1 - x0), z = -10.5 + R() * 21, t = types[Math.floor(R() * types.length)];
     if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
     const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
-    const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
+    const id = 'w' + (k++); if (!BALD_ON) W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
   scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(out.meadow, out.hills); return out;
 }
 
