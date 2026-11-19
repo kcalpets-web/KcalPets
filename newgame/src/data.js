@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.73';
+export const APP_VER = '3.74';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -221,6 +221,9 @@ export const GOLEMS = {
   navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
   frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
+export const PINS = { max: 100, reach: 22, curSpeed: 240, beamH: 160,   // v3.74 📍 map pins: how many in all · A finds a point this close (screen px) · the cursor's speed (screen px/s) · beam height (m)
+  icons: [['⚔️', 'ดาบ'], ['🛡️', 'โล่'], ['🏹', 'ธนู'], ['🪵', 'วัตถุดิบ'], ['🍲', 'อาหาร'], ['💀', 'มอนสเตอร์'], ['📦', 'หีบ'], ['⛏️', 'แร่'], ['⭐', 'ชื่นชอบ']],
+  beam: ['#ff5a5a', '#ffd23f', '#5adc7a', '#5ab4ff', '#d77aff'] };   // 🔆 five beacon colours (one each)
 export const GSET = { hold: .6, swap: [70, 0] };   // v3.73 hold Y this long (melee) = ⚔️ combat ↔ 🌾 farm · 🔄 sits this far right of X (px at full size)
 export const QAIM = { zoom: 1.5, circle: .28, range: 40, btn: [-28, -32] };   // btn: the 🏹 button's offset from the X–Y gap (px at full button size)   // v3.71 🏹 quick aim: zoom of a plain bow · circle radius (share of the screen's short side) · lock range (m)
 export const TOWN_R = { harbour: 45 };
