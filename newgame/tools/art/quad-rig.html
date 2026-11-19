@@ -1,0 +1,22 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · four-legged rig</title>
+<style>body{margin:0;background:#f4efe6}canvas{display:block}</style></head><body>
+<script type="module">
+/* KRIG-Q preview: the pet as a four-legged clay toy on the standard quadruped rig · side / front / back / top views · the 10 shared clips · #shiba or #cat */
+import * as THREE from '../../lib/three.module.min.js';
+import { buildQuad, poseQ, QCLIPS, QCLIP_TH } from '../../src/krigq.js';
+const SP = (location.hash.slice(1) || 'shiba'), CW = 300, CH = 300, W = CW * 5, H = CH * 3 + 90;
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true; R.setScissorTest(true); document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff6ec', '#b8a890', 1.4)); const key = new THREE.DirectionalLight('#fff1dc', 2.3); key.position.set(-2, 4, 3); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); Object.assign(key.shadow.camera, { left: -1.2, right: 1.2, top: 1.6, bottom: -.6 }); S.add(key); const rim = new THREE.DirectionalLight('#dce8ff', 1); rim.position.set(3, 2, -4); S.add(rim);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(1.1, 40), new THREE.ShadowMaterial({ opacity: .18 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; S.add(floor);
+const cells = [], add = (i, row, label, clip, t, yaw, cam, look = [0, .5, 0]) => cells.push({ x: i * CW, y: 60 + row * CH, label, clip, t, yaw, cam, look });
+[['ด้านข้าง', -Math.PI / 2, [0, .75, 3.0]], ['ด้านหน้า', 0, [0, .75, 3.0]], ['ด้านหลัง', Math.PI, [0, .75, 3.0]], ['ด้านบน', 0, [0, 3.4, .01]]].forEach(([n, yaw, cam], i) => add(i, 0, n, 'idle', 0, yaw, cam, i === 3 ? [0, 0, 0] : undefined));
+const T = { walk: .2, run: .15, jump: .5, sit: 0, crouch: 0, lie: 0, attack: .5, hurt: .25, happy: .1, idle: .25 };
+QCLIPS.forEach((c, i) => add(i % 5, 1 + Math.floor(i / 5), `${QCLIP_TH[c]} · ${c}`, c, T[c], c === 'sit' || c === 'happy' || c === 'hurt' ? -1.0 : -1.35, ['jump', 'sit', 'happy', 'hurt'].includes(c) ? [0, 1.0, 3.5] : [0, .7, 3.0], ['jump', 'sit', 'happy', 'hurt'].includes(c) ? [0, .7, 0] : undefined));
+for (const c of cells) { const g = new THREE.Group(), r = buildQuad(g, SP); poseQ(r, c.clip, c.t); g.rotation.y = c.yaw; S.add(g); g.traverse(o => { if (o.isMesh) o.castShadow = true }); g.updateMatrixWorld(true);
+  const cam = new THREE.PerspectiveCamera(30, CW / (CH - 30), .05, 30); cam.position.set(...c.cam); cam.lookAt(...c.look);
+  R.setViewport(c.x, H - c.y - CH + 30, CW, CH - 30); R.setScissor(c.x, H - c.y - CH + 30, CW, CH - 30); R.setClearColor(c.y < 100 ? '#efe8da' : '#f4efe6'); R.clear(); R.render(S, cam); S.remove(g) }
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#f4efe6'; x.fillRect(0, 0, W, H); x.drawImage(R.domElement, 0, 0);
+x.font = '700 18px system-ui'; x.fillStyle = '#3a2a30'; x.textAlign = 'center'; for (const c of cells) x.fillText(c.label, c.x + CW / 2, c.y + CH - 8);
+x.textAlign = 'left'; x.font = '800 26px system-ui'; x.fillText(`โครงสัตว์สี่เท้า (KRIG-Q) · ${SP === 'cat' ? 'แมว' : 'หมาชิบะ'} · มุมมอง 4 ด้าน + ท่าทาง 10 แบบ`, 16, 38);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
