@@ -13,7 +13,7 @@ import { decor } from './scenery.js';
 import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD, CAP_WIN, CAP_FIRE, CAP_FIRE2 } from './capitals.js';
 import { buildHarbour } from './harbour.js';
-import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, BALD_ON, isleBand, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
@@ -1971,7 +1971,7 @@ function showLogin() {
 function welcome() { if (S.stat.welcomed) return; S.stat.welcomed = 1; save(); setTimeout(() => toast('🕹️ จอยซ้าย = เดิน · ลากนิ้วบนจอ = หมุนกล้อง<br>A = ทำ/โจมตี · แตะการ์ดเควส = ไปทำเลย<br>🎬 วิธีเล่นดูได้ที่ 📜', 5200), 400) }
 
 /* ================= v0.6: camp pots · cooking · sleep · journal · sketching · achievements ================= */
-const POT = {}; for (const k in CAMPS) POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);
+const POT = {}; for (const k in CAMPS) if (!BALD_ON || k === 'home') POT[k] = cookPot(W, k, CAMPS[k].x, CAMPS[k].z);   /* v3.50 the bald isle keeps only the home camp fire */
 /* v3.4 one fire light shared by all camp fires (it sits on the nearest lit one): every point light costs every lit pixel on screen, even when dark */
 const POTL = new THREE.PointLight('#ff9a4a', 0, 5); scene.add(POTL); for (const k in POT) { const p = POT[k]; p.g.remove(p.light); p.light = { intensity: 0 } }
 FW.fire.visible = false;
@@ -2874,12 +2874,12 @@ function fogDraw() { const g = fogCv.getContext('2d'), img = g.createImageData(F
   for (let pass = 0; pass < 2; pass++) { const B = new Float32Array(A.length); for (let r = 0; r < FR; r++) for (let c = 0; c < FC; c++) { let t = 0, n = 0; for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr < 0 || cc < 0 || rr >= FR || cc >= FC) continue; t += A[rr * FC + cc]; n++ } B[r * FC + c] = t / n } A = B }   /* v3.7 soft edges: explored land is no longer a staircase of squares */
   for (let i = 0; i < A.length; i++) { const j = i * 4, k = S.fog[i] === '1' ? 0 : Math.max(A[i], .72); img.data[j] = 10; img.data[j + 1] = 9; img.data[j + 2] = 14; img.data[j + 3] = Math.round(255 * k) }   /* v3.7 unexplored = covered in black (no more see-through fog) */ g.putImageData(img, 0, 0); fogDirty = false }
 if (S.fog.indexOf('1') < 0 && S.story.intro) { S.zones = Object.assign({ farm: 1 }, S.zones); revealVisited() }
-const campOn = k => k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
+const campOn = k => BALD_ON && !POT[k] ? false : k === 'home' ? !!S.story.built : k === 'forest' ? !!S.story.campClear : !!(S.camps || {})[k];
 let mapT = 0;
 function mapTick(now) {
   if (now < mapT || CUT) return; const dtm = mapT ? Math.min(1, (now - mapT + 250) / 1000) : 0; mapT = now + 250; if (!document.hidden) S.playS = (S.playS || 0) + dtm; const q = me(); reveal(q.x, q.z);   /* v2.5 ⏱️ play time */
   if (tool === 'rod' && !F && !(AIM && AIM.rod) && !nearWater(7)) { setTool(''); hint('🎣 เก็บเบ็ดแล้ว (ไม่มีน้ำแถวนี้)', 1600) } if (tool === 'hoe' && zoneOf(q.x, q.z) !== 'farm') setTool('');
-  for (const k of ['meadow', 'mesa']) if (!(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
+  for (const k of ['meadow', 'mesa']) if (POT[k] && !(S.camps || {})[k] && dist(q.x, q.z, CAMPS[k].x, CAMPS[k].z) < 3.5) { S.camps = Object.assign(S.camps || {}, { [k]: 1 }); sfx('level'); toast(`🍲 ค้นพบ <b>${CAMPS[k].name}</b>!<br>ทำอาหาร · นอน · วาร์ปมาได้จากแผนที่ 🗺️`, 3200); save() }
   if (spiritNew && !CUT && !document.querySelector('.ov') && now > (spiritT || (spiritT = now + 2000))) { spiritNew = false; spiritT = 0; if (!S.story.spiritTip) { S.story.spiritTip = 1; save(); openSpirit(true) } else hint(`✨ จิตวิญญาณแห่งลูโทเนีย ×${S.spirit.free} · ใช้อัปเกรดได้ที่ 👤 ตัวละคร`, 2200) }   /* v3.11 the sheet pops up only the first time (✨ now comes with every quest) */
   ruinTick(now); shrineTick(now); townLife(now); kingTick(now); occTick(now); if ((TOON || FACET) && now > toonT) { toonT = now + 1000; TOON ? toonify(scene) : facetify(scene) } wcampTick(now); if (fogDirty) fogDraw();
 }
@@ -2998,7 +2998,7 @@ function torchPost(x, y, z) { const g = new THREE.Group(); g.position.set(x, y, 
   const f = new THREE.Mesh(TPG.f1, TPM.f1); f.position.y = 1.8; f.name = 'flame'; const f2 = new THREE.Mesh(TPG.f2, TPM.f2); f2.position.y = 1.75; g.add(p, h, f, f2); g.userData.torch = 1; return g }
 const SIGNS = (() => { const out = [], ok = (x, z) => walkLand(x, z) && !waterAt(x, z) && !out.some(s => dist(s.x, s.z, x, z) < 40);
   const near = (x, z) => { for (let r = 0; r <= 24; r += 3) for (let a = 0; a < 6.28; a += .7) { const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (ok(px, pz)) return [px, pz] } return null };
-  for (const [x, z] of [[EXIT.x + 2.2, EXIT.z - 2.6], [CAMPS.meadow.x + 2.6, CAMPS.meadow.z - 2.2], [CAMPS.forest.x + 3.5, CAMPS.forest.z + 3.5]]) if (walkLand(x, z)) out.push({ id: out.length, x, z });
+  for (const [x, z] of [[EXIT.x + 2.2, EXIT.z - 2.6], [CAMPS.meadow.x + 2.6, CAMPS.meadow.z - 2.2], [CAMPS.forest.x + 3.5, CAMPS.forest.z + 3.5]]) if (!BALD_ON && walkLand(x, z)) out.push({ id: out.length, x, z });
   for (const s of out) s.to = Object.keys(KINGDOMS).sort((a, b) => dist(s.x, s.z, KINGDOMS[a].x, KINGDOMS[a].z) - dist(s.x, s.z, KINGDOMS[b].x, KINGDOMS[b].z)).slice(0, 3);
   /* v3.44 🪧 on the mainland: a signpost where each road leaves a town · one arm per road (the way it goes · how far by road) */
   const NN = k => k === 'harbour' ? ['⚓ เมืองท่า', '#3a8ad8', 'harbour'] : k.startsWith('cap:') ? ['🏰 เมืองหลวง' + KINGDOMS[k.slice(4)].name.replace(/^\S+\s/, ''), KINGDOMS[k.slice(4)].col, k] : k.startsWith('lum:') ? ['🏰 ลูมิเนีย', '#d8b040', 'luminia'] : [KINGDOMS[k].name, KINGDOMS[k].col, k];
@@ -3006,7 +3006,7 @@ const SIGNS = (() => { const out = [], ok = (x, z) => walkLand(x, z) && !waterAt
   for (const r of ROADS) for (const [from, to, P] of [[r.a, r.b, r.pts], [r.b, r.a, [...r.pts].reverse()]]) { if (from.startsWith('lum:') || r.len < 40) continue; const p = along(P, 16); if (!p) continue; const [x0, z0, a] = p, x = x0 + Math.cos(a) * 3.4, z = z0 - Math.sin(a) * 3.4;
     if (!walkLand(x, z) || waterAt(x, z)) continue; const [name, col, key] = NN(to); let sg = out.find(o => o.arms && dist(o.x, o.z, x, z) < 22); if (!sg) out.push(sg = { id: out.length, x, z, arms: [], to: [], at: NN(from)[0] }); if (!sg.arms.some(m => m.key === key)) sg.arms.push({ name, col, key, a, d: r.len }) }
   return out })();
-for (const k in CAMPS) { const x = CAMPS[k].x - 1.6, z = CAMPS[k].z - 1.4; if (walkLand(x, z)) scene.add(torchPost(x, groundH(x, z), z)) }   /* v3.12.1 a torch at every checkpoint */
+for (const k in CAMPS) { const x = CAMPS[k].x - 1.6, z = CAMPS[k].z - 1.4; if (POT[k] && walkLand(x, z)) scene.add(torchPost(x, groundH(x, z), z)) }   /* v3.12.1 a torch at every checkpoint */
 /* v3.14 wooden fences along the routes from the harbour to each kingdom (decor: not solid) */
 const FENCES = (() => { const out = []; for (const k of []) { const K = KINGDOMS[k], x0 = HB.x + 10, z0 = HB.z, L = dist(x0, z0, K.x, K.z), ux = (K.x - x0) / L, uz = (K.z - z0) / L;
     for (let d = 20; d < L - 40; d += 34) { const side = (Math.floor(d / 34) % 2 ? 1 : -1) * 3.2, x = x0 + ux * d - uz * side, z = z0 + uz * d + ux * side; if (!walkLand(x, z) || waterAt(x, z) || out.some(f => dist(f.x, f.z, x, z) < 12)) continue; out.push({ x, z, ry: Math.atan2(ux, uz), g: null }) } } return out })();
@@ -3357,11 +3357,11 @@ const SPARK = new THREE.MeshBasicMaterial({ color: '#fff27a' });
 const cellOf = (x, z) => [Math.round(x), Math.round(z)], keyOf = (cx, cz) => cx + ',' + cz;
 /* v3.21 🌾 farm land = (almost) the whole of Vaneya: grass / soil, not water or its edge, not steep, away from the harbour town, the house, builds and clutter */
 function farmLand(cx, cz, why) { const F = D.FARMLAND, no = t => { if (why) why.t = t; return false };
-  if (inFarm(cx, cz)) return true; if (!inField(cx, cz)) return no('🪏 ขุดได้เฉพาะบนลานดินสีน้ำตาลข้างบ้าน');   /* v3.49 only the soil fields */
+  if (BALD_ON) { if (isleBand(cx, cz) !== 2) return no('🪏 ขุดได้บนพื้นเพาะปลูก (สีดินปนหญ้า) · ไม่ใช่ทรายหรือหญ้าขอบเกาะ') } else { if (inFarm(cx, cz)) return true; if (!inField(cx, cz)) return no('🪏 ขุดได้เฉพาะบนลานดินสีน้ำตาลข้างบ้าน') }   /* v3.49 only the soil fields */
   if (walkWorld(cx, cz) !== 'land' || waterAt(cx, cz)) return no('🪏 ตรงนี้ขุดไม่ได้'); for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (waterAt(cx + dx, cz + dz)) return no('🪏 ใกล้น้ำเกินไป');
   if (Math.abs(groundH(cx + .5, cz) - groundH(cx - .5, cz)) > F.slope || Math.abs(groundH(cx, cz + .5) - groundH(cx, cz - .5)) > F.slope) return no('🪏 พื้นชันเกินไป');
-  if (dist(cx, cz, HB.x, HB.z) < F.harbourR || zoneOf(cx, cz) === 'town') return no('🪏 ในเมืองขุดไม่ได้');
-  if (dist(cx, cz, HOUSE.x, HOUSE.z) < F.houseR) return no('🪏 ใกล้บ้านเกินไป');
+  if (!BALD_ON && (dist(cx, cz, HB.x, HB.z) < F.harbourR || zoneOf(cx, cz) === 'town')) return no('🪏 ในเมืองขุดไม่ได้');
+  if (!BALD_ON && dist(cx, cz, HOUSE.x, HOUSE.z) < F.houseR) return no('🪏 ใกล้บ้านเกินไป');
   if (S.builds.some(b => dist(b.x, b.z, cx, cz) < 2)) return no('🪏 มีสิ่งก่อสร้างอยู่'); if (solHit(cx, cz, .1)) return no('🪏 มีของขวางอยู่');
   for (const o of W.clear.values()) if (o.g && Math.abs(o.x - cx) < .9 && Math.abs(o.z - cz) < .9) return no('🪏 เคลียร์ของตรงนี้ออกก่อน (หิน/หญ้า/กิ่งไม้)');
   return true }
@@ -3414,7 +3414,7 @@ function plotView(key) {   /* the tap target only (the look is instanced) */
     if (p.c) { if (Math.round(Math.min(1, (Date.now() - (p.t || 0)) / (D.CROPS[p.c].min * 60e3))) >= 1) { const C2 = D.CROPS[p.c]; S.ingr = S.ingr || {}; S.ingr[p.c] = (S.ingr[p.c] || 0) + C2.n[0] } S.seeds[p.c] = (S.seeds[p.c] || 0) + 1 } delete S.plots[k]; n++ }
   if (n) { save(); setTimeout(() => toast(`🧺 ย้ายแปลงผักนอกเกาะ ${n} แปลง · ผลผลิตและเมล็ดเก็บเข้ากระเป๋า`, 3200), 5000) } }
 for (const k in S.plots) plotView(k);
-if (S.has.hoe && !S.has.can) { S.has.can = true; save(); setTimeout(() => toast('💧 ได้รับบัวรดน้ำ! ผักต้องรดน้ำทุกวันถึงจะโต (ฝนตก = รดให้เอง)<br>ขุดแปลงได้บนลานดินสีน้ำตาลข้างบ้าน · สร้างบ้านได้เกือบทั้งเกาะ', 4200), 6500) }
+if (S.has.hoe && !S.has.can) { S.has.can = true; save(); setTimeout(() => toast('💧 ได้รับบัวรดน้ำ! ผักต้องรดน้ำทุกวันถึงจะโต (ฝนตก = รดให้เอง)<br>ขุดแปลงและสร้างบ้านได้บนพื้นเพาะปลูกกลางเกาะ (ไม่ใช่ทราย/หญ้าขอบเกาะ)', 4200), 6500) }
 let farmT = 0, LUSHC = null;
 function farmTick(now) { if (now < farmT) return; farmT = now + 1000; const dn = S.dayN || 0;
   if (S.farmDay == null) S.farmDay = dn;
@@ -3457,7 +3457,7 @@ const OGD = new THREE.Object3D(), OG = { tiles: new Map(), free: [], M: {}, cap:
     bigrock: proto(g => PROPS.boulder(g, .9)) };
   Q.seg = seg0; const caps = { ...Object.fromEntries(O.kinds.map(k => [k[0], k[2]])), tree: O.trees };
   for (const k in G) { const m = new THREE.InstancedMesh(G[k], k === 'tree' || k === 'bush' || k === 'grass' ? WMAT : MAT, caps[k] * n); m.count = 0; m.castShadow = k !== 'grass' && k !== 'pebble'; m.receiveShadow = true; m.frustumCulled = false; if (k === 'tree' || k === 'bigrock') m.userData.occ = 1; scene.add(m); OG.M[k] = m; OG.cap[k] = caps[k] } }
-const ogKeep = (x, z) => { const O = D.OVERGROW; if (O.keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || dist(x, z, HOUSE.x, HOUSE.z) < O.house || inFarm(x, z, 1.5)) return true;
+const ogKeep = (x, z) => { const O = D.OVERGROW; if (BALD_ON) { const b = isleBand(x, z); if (b !== 2) return true; if (dist(x, z, WRECK.x, WRECK.z) < 6 || dist(x, z, SPAWN.x, SPAWN.z) < 4 || dist(x, z, CAMPS.home.x, CAMPS.home.z) < 3) return true; return S.builds.some(b2 => dist(x, z, b2.x, b2.z) < 3) }   /* v3.50 the bald isle: overgrowth only on the farmland */ if (O.keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || dist(x, z, HOUSE.x, HOUSE.z) < O.house || inFarm(x, z, 1.5)) return true;
   if (x > 5 && x < 110 && Math.abs(z - roadZ(x)) < 1.7) return true; if (zoneOf(x, z) === 'town' || (TRAIN && Math.abs(x - TRAIN.x) < TRAIN.hw + 6 && Math.abs(z - TRAIN.z) < TRAIN.hw + 6)) return true;
   if (S.builds.some(b => dist(b.x, b.z, x, z) < 3)) return true; for (const p of W.picks) { const k = p.userData.pick; if (k && k.kind !== 'clear' && Math.abs(p.position.x - x) < 2.6 && Math.abs(p.position.z - z) < 2.6) return true } return false };
 function ogBuild(tx, tz) { const O = D.OVERGROW, T = O.tile, slot = OG.free.pop(); if (slot == null) return null; let s = (Math.abs(tx * 73856093 ^ tz * 19349663) % 2147483646) + 1; const R = () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -3491,7 +3491,7 @@ for (const d of S.debris || []) if (!S.cleared[d.id]) debrisAdd({ ...d, g: null,
 function farmGift() {
   S.story.farmGift = 1; S.has.hoe = true; S.has.can = true; for (const c in D.FARM_GIFT) S.seeds[c] = (S.seeds[c] || 0) + D.FARM_GIFT[c]; storyProps(); save();
   talk([['👴 ลุงฮาวซิฟ', 'ร่างกายลุงกลับมาแข็งแรงแล้ว… มา ลุงสอนปลูกผักให้'], ['👴 ลุงฮาวซิฟ', `เอานี่ไป 🪏 จอบ กับเมล็ด 🥕 แครอท ×${D.FARM_GIFT.carrot} 🥬 กะหล่ำ ×${D.FARM_GIFT.cabbage}`],
-    ['💡 ปลูกผัก', 'เลือก 🪏 พลั่วไว้ที่ Y · แตะ Y เล็งพื้นหญ้า กด A = ขุดแปลง (ขุดได้บนลานดินสีน้ำตาลข้างบ้าน)<br>แตะแปลง/กด A หน้าแปลง = ปลูก · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · เช้าวันใหม่ผักที่รดน้ำจะโต · ✨ = เก็บได้แล้ว'], ['👴 ลุงฮาวซิฟ', 'เอา 💧 บัวรดน้ำไปด้วย! ทุกเช้าจะมีหิน กิ่งไม้ หญ้าขึ้นใหม่ เก็บไปใช้ได้ · เกาะนี้ไม่มีมอนสเตอร์ สบายใจได้'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
+    ['💡 ปลูกผัก', 'เลือก 🪏 พลั่วไว้ที่ Y · แตะ Y เล็งพื้นหญ้า กด A = ขุดแปลง (ขุดได้บนพื้นเพาะปลูกกลางเกาะ)<br>แตะแปลง/กด A หน้าแปลง = ปลูก · 💧 รดน้ำทุกวัน (ฝนตก = รดให้) · เช้าวันใหม่ผักที่รดน้ำจะโต · ✨ = เก็บได้แล้ว'], ['👴 ลุงฮาวซิฟ', 'เอา 💧 บัวรดน้ำไปด้วย! ทุกเช้าจะมีหิน กิ่งไม้ หญ้าขึ้นใหม่ เก็บไปใช้ได้ · เกาะนี้ไม่มีมอนสเตอร์ สบายใจได้'], ['👴 ลุงฮาวซิฟ', 'อยากได้เมล็ดเพิ่มก็มาซื้อกับลุงได้นะ']], () => { setTool('hoe'); questCheck() });
 }
 function howsifMenu() { sfx('tap'); const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
   sheet('👴 ลุงฮาวซิฟ', (b, redraw, close) => { b.innerHTML = `<p>“มีอะไรให้ลุงช่วยล่ะ?”</p><div class="hgrid">${S.story.farmGift ? '<button class="htile" data-hm="seed"><b>🌱</b><span>ซื้อเมล็ดผัก</span></button>' : ''}<button class="htile" data-hm="sail"><b>⛵</b><span>${to === 'main' ? 'ข้ามฟากไปเมืองท่า' : 'กลับเกาะวาเนย่า'}</span></button></div>`;
@@ -3690,13 +3690,14 @@ function exitBuild() { if (!BM) return; scene.remove(BM.g); BM = null; document.
 function buildSpot() { const q = me(), B = BP[BM.k], d = 1 + Math.max(B.w, B.d) / 2 + (B.water ? 1 : 0); return [Math.round((q.x + Math.sin(PL.yaw) * d) * 2) / 2, Math.round((q.z + Math.cos(PL.yaw) * d) * 2) / 2] }
 function canBuild(k, x, z, r) {
   const B = BP[k], c = Math.cos(r), sn = Math.sin(r), pts = []; for (const a of [-.5, 0, .5]) for (const e of [-.5, 0, .5]) { const lx = a * B.w, lz = e * B.d; pts.push([x + lx * c + lz * sn, z - lx * sn + lz * c]) }
-  if (zoneOf(x, z) === 'town') return 'สร้างในเมืองไม่ได้';
+  if (BALD_ON && !B.water && pts.some(([px, pz]) => isleBand(px, pz) >= 0 && isleBand(px, pz) !== 2)) return 'สร้างได้บนพื้นเพาะปลูก (สีดินปนหญ้า) เท่านั้น · ไม่ใช่บนทรายหรือหญ้าขอบเกาะ';   /* v3.50 the bald isle's bands */
+  if (!BALD_ON && zoneOf(x, z) === 'town') return 'สร้างในเมืองไม่ได้';
   if (B.water) { if (pts.some(([px, pz]) => walkWorld(px, pz) !== 'water')) return 'ต้องวางบนน้ำ (หันหน้าไปทางน้ำ)'; let land = false; for (let a = 0; a < 12 && !land; a++) land = walkLand(x + Math.cos(a * .52) * 3.5, z + Math.sin(a * .52) * 3.5) && !waterAt(x + Math.cos(a * .52) * 3.5, z + Math.sin(a * .52) * 3.5); if (!land) return 'ต้องอยู่ใกล้ฝั่ง' }
   else { if (pts.some(([px, pz]) => !walkLand(px, pz) || waterAt(px, pz))) return 'ต้องวางบนพื้นดิน'; const hs = pts.map(([px, pz]) => groundH(px, pz)); if (Math.max(...hs) - Math.min(...hs) > (B.w > 2.5 ? 1.2 : .8)) return 'พื้นชันเกินไป' }
   const R = Math.max(B.w, B.d) / 2;
   for (const b of S.builds) { const o = BP[b.k]; if (dist(b.x, b.z, x, z) < (R + Math.max(o.w, o.d) / 2) * .8) return 'ชนกับสิ่งก่อสร้างอื่น' }
   for (const o of W.clear.values()) if (o.g && dist(o.x, o.z, x, z) < R + .5) return 'มีต้นไม้หรือหินขวาง · เคลียร์ก่อน';
-  if (dist(x, z, HOUSE.x, HOUSE.z) < R + 3 || dist(x, z, WRECK.x, WRECK.z) < R + 2.5 || dist(x, z, HOWSIF.x, HOWSIF.z) < R + 1.5) return 'ใกล้บ้านหรือเรือของลุงเกินไป';
+  if (!BALD_ON && dist(x, z, HOUSE.x, HOUSE.z) < R + 3 || dist(x, z, WRECK.x, WRECK.z) < R + 2.5 || dist(x, z, HOWSIF.x, HOWSIF.z) < R + 1.5) return 'ใกล้บ้านหรือเรือของลุงเกินไป';
   for (const k2 in POT) if (dist(x, z, POT[k2].x, POT[k2].z) < R + 1.4) return 'ใกล้หม้อแคมป์เกินไป';
   for (const c2 of WC) if (!(S.wcamps[c2.id] || {}).c && dist(x, z, c2.x, c2.z) < 10) return 'แคมป์มอนสเตอร์ยังไม่ถูกยึด';
   for (const key in S.plots) { const [cx, cz] = key.split(',').map(Number); if (dist(cx, cz, x, z) < R + .6) return 'ทับแปลงผัก' }
@@ -4286,6 +4287,7 @@ import('./lush.js').then(({ lushPlace, lushKind, LUSH, lushClear }) => { LUSH.hi
     const f = x > 79 ? .55 : .35; if (R() > (f > .5 ? .35 : .22)) continue; let k = lushKind(R, f, 0); if (k === 'blossom' && (x < 60 || R() < .5)) continue; if (k === 'mush' || k === 'stump' || k === 'bigleaf') continue; /* v3.29 no more sunflower fields (Vaneya is overgrown) */   /* v3.16.2 calmer: far less ground clutter */   /* v3.13 one island look: Vaneya's sunflowers everywhere */
     list.push({ k, x, y: groundH(x, z) - .03, z, r: R() * 6, s: k === 'blossom' ? .6 + R() * .25 : .6 + R() * .6 }) }
   for (let c = 0; c < 26; c++) { const cx = -12 + R() * 120, cz = -12 + R() * 24; for (let i = 0; i < 14; i++) { const x = cx + (R() - .5) * 5, z = cz + (R() - .5) * 4; if (x > 36 && x < 56 || !walkLand(x, z) || waterAt(x, z) || coreDist(x, z) > 0 || Math.abs(z - roadZ(x)) < 1.6 || keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r) || x < 7 && x > -1 && Math.abs(z) < 9 || fieldK(x, z) > 0) continue; list.push({ k: 'sunflower', x, y: groundH(x, z) - .03, z, r: R() * .6 - .3, s: .75 + R() * .45 }) } }   /* v3.13 sunflower patches */
+  if (BALD_ON) list.length = 0;   /* v3.50 the bald isle: no decor (sunflowers · flowers · blossom trees) */
   const g = new THREE.Group(); lushPlace(g, list, R); scene.add(g);
   for (const p of list) if (p.k === 'blossom' || p.k === 'stump') addSol({ x: p.x, z: p.z, r: (p.k === 'blossom' ? .26 : .34) * p.s });   /* v3.3 blossom trees and stumps are solid too */
 });

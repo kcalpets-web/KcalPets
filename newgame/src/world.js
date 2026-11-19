@@ -9,15 +9,41 @@ import { lushPlace, lushKind, G as LG } from './lush.js';
 import { paintGround } from './scenery.js';
 import { ROADS, NODES } from './roaddata.js';
 
+export const BALD_ON = true;   /* v3.50 🏝️ the bald isle (see BALD below) */
 export const shore = z => -3.0 + z * .28;                      // west coastline (sea is x < shore)
 export const BOUND = { x0: -9.5, x1: 7.4, z0: -13.5, z1: 13 };
-export const HOUSE = { x: 3.2, z: -8.4 }, BOAT = { x: shore(-1.6) - 1.05, z: -1.6 }, EXIT = { x: 7.9, z: 2.3 }, SPAWN = { x: 0, z: -4 };
+export const HOUSE = { x: 3.2, z: -8.4 }, BOAT = BALD_ON ? { x: 123.6, z: 4.2 } : { x: shore(-1.6) - 1.05, z: -1.6 }, EXIT = { x: 7.9, z: 2.3 }, SPAWN = { x: 0, z: -4 };
 export const FARM = { x0: 1, z0: -3, nx: 6, nz: 3, gx: 3.5 };   // v3.7 the fenced vegetable bed: 6 × 3 = 18 cells (integer cell centres x0…x0+nx−1, z0…z0+nz−1) · gate on the north side at x = gx (toward the tree house)
 /* v3.49 the soil fields: fieldK = 1 inside (soft, slightly ragged edge) → 0 outside · inField = a cell you may dig */
 export const inField = (x, z) => FIELDS.some(f => x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1);
 export const fieldK = (x, z) => { let k = 0; for (const f of FIELDS) { const dx = Math.max(f.x0 - .5 - x, 0, x - f.x1 - .5), dz = Math.max(f.z0 - .5 - z, 0, z - f.z1 - .5), d = Math.hypot(dx, dz) - .12 * Math.sin(x * 2.3 + z * 1.7); k = Math.max(k, 1 - Math.min(1, Math.max(0, d) / .45)) } return k };
+/* v3.50 🏝️ the bald isle (Vaneya): three bands from the sea in · sand → a grass rim (no digging / building) → the farmland (dig · plant · build)
+   a coarse grid of 'metres from the water' over the isle, worked out once (flood fill from the island's middle so other lands are left alone) */
+export const BALD = { on: true, beach: .1, tip: [999, 22, 14.5], sand: 4.5, grass: 10.5, st: 2, x0: -26, x1: 156, z0: -250, z1: 180, seed: [40, 0] };
+let ISG = null;
+function isleGrid() { if (ISG) return ISG; const B = BALD, st = B.st, nx = Math.ceil((B.x1 - B.x0) / st) + 1, nz = Math.ceil((B.z1 - B.z0) / st) + 1, N = nx * nz, land = new Uint8Array(N), comp = new Uint8Array(N), d = new Float32Array(N);
+  ISG = { nx, nz, comp, d: null };   /* guards against re-entry while groundH is sampled below */
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const x = B.x0 + i * st, z = B.z0 + j * st; land[j * nx + i] = groundH(x, z) > (coreDist(x, z) > 0 ? -.45 : -.08) ? 1 : 0   /* the same shore as walking uses */ }
+  const q = [Math.round((B.seed[1] - B.z0) / st) * nx + Math.round((B.seed[0] - B.x0) / st)]; comp[q[0]] = 1;
+  while (q.length) { const k = q.pop(), i = k % nx, j = (k - i) / nx; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= nx || b >= nz) continue; const n = b * nx + a; if (land[n] && !comp[n]) { comp[n] = 1; q.push(n) } } }
+  for (let k = 0; k < N; k++) d[k] = land[k] ? 1e9 : 0; const D1 = st, D2 = st * 1.414;   /* two-pass chamfer distance to the water */
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const k = j * nx + i; if (!d[k]) continue; let v = d[k]; if (i > 0) v = Math.min(v, d[k - 1] + D1); if (j > 0) { v = Math.min(v, d[k - nx] + D1); if (i > 0) v = Math.min(v, d[k - nx - 1] + D2); if (i < nx - 1) v = Math.min(v, d[k - nx + 1] + D2) } d[k] = v }
+  for (let j = nz - 1; j >= 0; j--) for (let i = nx - 1; i >= 0; i--) { const k = j * nx + i; if (!d[k]) continue; let v = d[k]; if (i < nx - 1) v = Math.min(v, d[k + 1] + D1); if (j < nz - 1) { v = Math.min(v, d[k + nx] + D1); if (i < nx - 1) v = Math.min(v, d[k + nx + 1] + D2); if (i > 0) v = Math.min(v, d[k + nx - 1] + D2) } d[k] = v }
+  ISG.d = d; return ISG }
+/* metres from the sea on the isle (bilinear) · -1 = not on the isle */
+export function isleDist(x, z) { const B = BALD; if (!B.on || x < B.x0 || x > B.x1 - B.st || z < B.z0 || z > B.z1 - B.st) return -1; const G = isleGrid(); if (!G.d) return -1;
+  const fx = (x - B.x0) / B.st, fz = (z - B.z0) / B.st, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, k = j * G.nx + i;
+  if (!(G.comp[k] || G.comp[k + 1] || G.comp[k + G.nx] || G.comp[k + G.nx + 1])) return -1;
+  return (G.d[k] * (1 - u) + G.d[k + 1] * u) * (1 - v) + (G.d[k + G.nx] * (1 - u) + G.d[k + G.nx + 1] * u) * v }
+/* 0 sand · 1 grass rim · 2 farmland (-1 off the isle) · the edges wander a little */
+export function isleBand(x, z) { const d = isleDist(x, z); if (d < 0) return -1; const e = d + 1.4 * (vnoise(x * .21, z * .21) - .5); return e < BALD.sand ? 0 : e < BALD.grass ? 1 : 2 }
+const _BS = C('#ecdcb4'), _BW = C('#d8c49a'), _BG = C('#6cbf4a'), _BF = C('#93a04c'), _BF2 = C('#a88a52');
+function bandCol(x, z, c, h) { if (h < -.45) return false; const d = isleDist(x, z); if (d < 0) return false; const e = d + 1.4 * (vnoise(x * .21, z * .21) - .5), n = vnoise(x * .5, z * .5);
+  c.copy(_BF).lerp(_BF2, .25 + .45 * vnoise(x * .12 + 7, z * .12)).multiplyScalar(.95 + .1 * n);   /* the farmland: olive grass worn to earth in patches */
+  c.lerp(_c2.copy(_BG).multiplyScalar(.96 + .08 * n), 1 - smw(BALD.grass - .6, BALD.grass + .6, e));   /* the grass rim */
+  c.lerp(_c2.copy(_BS).lerp(_BW, 1 - smw(.5, 2.5, e)), 1 - smw(BALD.sand - .5, BALD.sand + .5, e)); return true }   /* the sand (wet by the water) */
 export const inFarm = (x, z, m = 0) => x > FARM.x0 - .55 - m && x < FARM.x0 + FARM.nx - .45 + m && z > FARM.z0 - .55 - m && z < FARM.z0 + FARM.nz - .45 + m;
-export const WRECK = { x: shore(2.2) + 1.6, z: 2.2 }, HOWSIF = { x: shore(-.4) + 1.2, z: -.4 };
+export const WRECK = BALD_ON ? { x: 118.6, z: 7.6 } : { x: shore(2.2) + 1.6, z: 2.2 }, HOWSIF = BALD_ON ? { x: 117.6, z: .6 } : { x: shore(-.4) + 1.2, z: -.4 };   /* v3.50 the isle's east point, looking over the strait to the harbour town */
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 const nz = (x, z) => Math.sin(.45 * x + .2 * z) + .7 * Math.sin(.6 * z - .3 * x) + .25 * Math.sin(1.3 * (x + z));
 export const earth = (x, z) => Math.hypot((x - 1.2) * .8, z - 4.8) < 2.4 + .4 * Math.sin(x * 2 + z);
@@ -37,7 +63,7 @@ export function buildWorld(scene, eco) {
   const c = new THREE.Color(), land = coreGround(-17, 17, 20, eco); land.userData.ground = 1; scene.add(land); W.ground = land;
   /* ---- sea ---- */
   const sg = new THREE.PlaneGeometry(320, 140, 160, 70); sg.rotateX(-Math.PI / 2); sg.translate(40, 0, 0); const SP = sg.attributes.position, sc = [];   // reaches the horizon from the camera behind the character
-  for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; if ((coreDist(x, z) > 1 && wildH(x, z) > -.45) || (coreDist(x, z) <= 1 && x > 9)) SP.setY(i, -.6);   /* v2.9 the island's own sea stays at the island (elsewhere the ocean plane / lakes show) */ c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
+  for (let i = 0; i < SP.count; i++) { const x = SP.getX(i), z = SP.getZ(i), d = shore(z) - x; if ((coreDist(x, z) > 1 && wildH(x, z) > -.45) || (coreDist(x, z) <= 1 && (BALD.on ? groundH(x, z) > .0 : x > 9))) SP.setY(i, -.6);   /* v2.9 the island's own sea stays at the island (elsewhere the ocean plane / lakes show) */ c.set('#7fd6cf').lerp(C('#3b8fc2'), sm(0, 6, d)).lerp(C('#24578f'), sm(5, 14, d)); sc.push(c.r, c.g, c.b) }
   sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
   const sea = new THREE.Mesh(sg, addWaves(new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .2, transparent: true, opacity: .46, clearcoat: .7, depthWrite: false })));   /* v3.35 clear water: you see the sand below */ sea.position.y = -.12; scene.add(sea); W.sea = sea;
   const R = rng(5);
@@ -52,49 +78,50 @@ export function buildWorld(scene, eco) {
   inst(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshStandardMaterial({ roughness: .7 }), eco ? 50 : 110, (o, cc) => { const x = -5 + R() * 12, z = -12 + R() * 24; if (x - shore(z) < 2.6 || earth(x, z)) return 0; o.position.set(x, .18 + R() * .1, z); o.scale.set(1, .7, 1); cc.set(['#ff8fb6', '#ffffff', '#ffd23f', '#b98aff', '#ff6a58'][Math.floor(R() * 5)]); return 1 }, false);
   inst(new THREE.IcosahedronGeometry(.12, 1), new THREE.MeshStandardMaterial({ roughness: .8 }), 25, (o, cc) => { const z = -13 + R() * 26, x = shore(z) + 1.0 + R() * 1.6; o.position.set(x, .02, z); o.scale.set(1 + R(), .5, 1 + R() * .6); o.rotation.y = R() * 3; cc.set(R() < .5 ? '#b9b2a6' : '#e2dbcf'); return 1 }, false);
   /* ---- east edge: a wooden palisade (clearly not choppable) with the adventure gate; hills + far mountains behind it ---- */
+  const atx = BALD_ON ? (fn, x, z, ry = 0, s = 1, y = 0) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); return g } : at, solx = BALD_ON ? () => 0 : addSol, pickx = BALD_ON ? () => new THREE.Object3D() : addPick;   /* v3.50 the bald isle: no structures */
   const FX = 7.75, GW = 1.3;                                   // GW = half the gate opening
   for (let z = -14.5; z <= 14; z += .42) { if (Math.abs(z - EXIT.z) < GW + .22) continue; R(); R(); R() }   /* v3.12.1 the palisade is gone (the gate arch stays) · same random draws so the rest of the island stays put */
-  at(g => { gateway(g, '#8a3a2a', '#d8584a', GW); rbox(g, '#e8d8b0', '#fff6e0', [-.17, 1.7, 0], [.06, .4, 1.15], [0, 0, 0], .03) }, FX, EXIT.z);
-  for (const s2 of [-1, 1]) addSol({ x: FX, z: EXIT.z + s2 * GW, r: .24 });
+  atx(g => { gateway(g, '#8a3a2a', '#d8584a', GW); rbox(g, '#e8d8b0', '#fff6e0', [-.17, 1.7, 0], [.06, .4, 1.15], [0, 0, 0], .03) }, FX, EXIT.z);
+  for (const s2 of [-1, 1]) solx({ x: FX, z: EXIT.z + s2 * GW, r: .24 });
   /* palms along the beach */
   const palm = (x, z, s) => at(g => { for (let k = 0; k < 7; k++) part(g, '#8a5a30', '#c89058', [k * .06 * s, (.25 + k * .32) * s, 0], [.13 * s, .18 * s, .13 * s]); for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; part(g, '#2f7a3a', '#8ad86a', [.42 * s + Math.cos(a) * .7 * s, 2.25 * s, Math.sin(a) * .7 * s], [.75 * s, .07 * s, .2 * s], [0, -a, -.35], { A: .05 }) } }, x, z, R() * 3);
   for (const z of [-11, -7, 6.5, 10]) { const px = shore(z) + 2.2 + R() * .5; palm(px, z, .85 + R() * .2); addSol({ x: px, z, r: .2 }) }
   /* ---- tree house (tap = enter the house) ---- */
-  W.house = at(g => { part(g, '#5a3420', '#9a6238', [0, 1.1, 0], [.4, 1.15, .4], [0, 0, 0], { A: .12 }); [[0, 3.1, -.2, 1.5], [-1, 2.8, 0, 1], [1, 2.9, -.3, 1.05], [0, 4, -.4, 1]].forEach(([x, y, z, s]) => part(g, '#2f7a3a', '#9ade6c', [x, y, z], [s, s * .75, s], [0, 0, 0], { A: .12, f: 1.5 }));
+  W.house = atx(g => { part(g, '#5a3420', '#9a6238', [0, 1.1, 0], [.4, 1.15, .4], [0, 0, 0], { A: .12 }); [[0, 3.1, -.2, 1.5], [-1, 2.8, 0, 1], [1, 2.9, -.3, 1.05], [0, 4, -.4, 1]].forEach(([x, y, z, s]) => part(g, '#2f7a3a', '#9ade6c', [x, y, z], [s, s * .75, s], [0, 0, 0], { A: .12, f: 1.5 }));
     part(g, '#8a4c26', '#dc9a5e', [0, 1.95, .55], [.95, .62, .5]); part(g, '#a8342e', '#ff6a58', [0, 2.7, .6], [1.1, .28, .62]); part(g, '#3a2418', '#7a4a30', [-.25, 1.78, 1.02], [.22, .36, .05], [0, 0, 0], { A: 0 });
     part(g, '#ffe27a', '#fff6c8', [.4, 2.0, 1.02], [.15, .15, .04], [0, 0, 0], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#7a4422', '#c8843a', [-.25, .3 + i * .32, 1.08], [.26, .04, .04], [0, 0, 0], { A: 0 });
     part(g, '#ff6a8a', '#ffb0c0', [0, 3.75, 1.0], [.22, .2, .08], [0, 0, 0], { A: 0 }) }, HOUSE.x, HOUSE.z, -.15, 1, 0, true);
   /* story: before the tree house is built there is only a building site (a pile of planks + stones) */
-  W.site = at(g => { for (let i = 0; i < 7; i++) part(g, '#6a4024', '#b07a44', [(i % 3 - 1) * .35, .08 + Math.floor(i / 3) * .12, (i % 2) * .25], [.5, .06, .1], [0, i * .4, 0], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#7f7a74', '#d0cbc2', [.9 + (i % 2) * .3, .12, -.3 + i * .2], [.18, .14, .16], [0, i, 0], { A: .2 });
+  W.site = atx(g => { for (let i = 0; i < 7; i++) part(g, '#6a4024', '#b07a44', [(i % 3 - 1) * .35, .08 + Math.floor(i / 3) * .12, (i % 2) * .25], [.5, .06, .1], [0, i * .4, 0], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#7f7a74', '#d0cbc2', [.9 + (i % 2) * .3, .12, -.3 + i * .2], [.18, .14, .16], [0, i, 0], { A: .2 });
     part(g, '#6a4024', '#a8703e', [-.9, .6, .2], [.06, .6, .06], [0, 0, 0], { A: 0 }); part(g, '#e8d8b0', '#fff6e0', [-.9, 1.05, .26], [.32, .18, .03], [0, 0, 0], { A: 0 }) }, HOUSE.x, HOUSE.z + .4, 0, 1, 0, true);
   flatten(W.house); flatten(W.site);   /* v3.4 the tree house: 1–2 meshes instead of ~27 */
   /* story: ruined houses on the island (scenery) */
   const WALL = new THREE.MeshStandardMaterial({ color: '#d8bf98', roughness: .9 });
-  const ruin = (x, z, ry) => { at(g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .2), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); g.add(m) };
+  const ruin = (x, z, ry) => { atx(g => { const wall = (wx, wz, w, h, r, rz = 0) => { const m = new THREE.Mesh(rbGeo(w, h, .2), WALL); m.position.set(wx, h / 2, wz); m.rotation.set(0, r, rz); g.add(m) };
     wall(-.5, -.7, 1.8, 1.3, 0); wall(.8, -.3, 1.1, .8, 1.5, .1); wall(-1.1, .4, .9, .6, 1.6, -.15); cone(g, '#5a2a1a', '#a84a30', [.4, .3, .5], [1, .35, .8], [.5, .6, .9], .98);
     for (let i = 0; i < 5; i++) part(g, '#6a6460', '#b8b0a6', [-.7 + (i % 3) * .6, .1, .9 + Math.floor(i / 3) * .35], [.2, .14, .16], [0, i, 0], { A: .2 }) }, x, z, ry) };
   ruin(-.6, 9.6, .4); ruin(5.6, 8.8, -.3); ruin(5.9, -12.2, .2);
-  addPick(W, HOUSE.x, HOUSE.z + .6, 1.4, 4, { kind: 'house' }); addSol({ x: HOUSE.x, z: HOUSE.z, r: .6 });
-  for (const [rx, rz, ry] of [[-.6, 9.6, .4], [5.6, 8.8, -.3], [5.9, -12.2, .2]]) addSol({ x: rx, z: rz + .1, hw: 1.3, hd: 1.15, ry });   // the ruins: walls + rubble
+  pickx(W, HOUSE.x, HOUSE.z + .6, 1.4, 4, { kind: 'house' }); solx({ x: HOUSE.x, z: HOUSE.z, r: .6 });
+  for (const [rx, rz, ry] of [[-.6, 9.6, .4], [5.6, 8.8, -.3], [5.9, -12.2, .2]]) solx({ x: rx, z: rz + .1, hw: 1.3, hd: 1.15, ry });   // the ruins: walls + rubble
   /* ---- the boat vault + jetty (tap = collect / upgrade) ---- */
   W.boat = at(g => { part(g, '#7a4422', '#c8843a', [0, .05, 0], [1.25, .32, .5], [0, 0, 0], { A: .04 }); part(g, '#d8d8e0', '#ffffff', [.35, .55, 0], [.32, .22, .26]); part(g, '#a8342e', '#ff6a58', [.35, .8, 0], [.38, .07, .3]); part(g, '#6a4024', '#a8703e', [-.25, 1.35, 0], [.05, 1.1, .05], [0, 0, 0], { A: 0 });
     const s2 = new THREE.BufferGeometry(); s2.setAttribute('position', new THREE.Float32BufferAttribute([-.3, .55, 0, -.3, 2.2, 0, -1.25, .6, 0], 3)); s2.computeVertexNormals(); const sl = new THREE.Mesh(s2, new THREE.MeshStandardMaterial({ color: '#f6f4f0', side: THREE.DoubleSide })); sl.castShadow = true; g.add(sl);
-    part(g, '#c03a3a', '#ff6a5a', [-.05, 2.35, 0], [.22, .1, .02], [0, 0, 0], { A: 0 }) }, BOAT.x, BOAT.z, -.35, 1, -.25, true);
+    part(g, '#c03a3a', '#ff6a5a', [-.05, 2.35, 0], [.22, .1, .02], [0, 0, 0], { A: 0 }) }, BOAT.x, BOAT.z, BALD_ON ? Math.PI - .35 : -.35, 1, -.25, true);
   /* story: Uncle Howsif's boat lies wrecked on the beach until it is repaired */
   W.wreck = at(g => { part(g, '#3a2418', '#7a4a30', [0, .2, 0], [1.3, .3, .5], [0, 0, .35], { A: .05 }); part(g, '#3a2418', '#6a4028', [-.5, .8, 0], [.05, .8, .05], [0, 0, .9], { A: 0 });
     part(g, '#d8d0c0', '#f4ece0', [-1, .5, .1], [.45, .03, .35], [0, 0, .8], { A: 0 }); for (let i = 0; i < 4; i++) part(g, '#4a2a18', '#8a5a30', [.6 + i * .3, .05, .6 - i * .2], [.35, .04, .08], [0, i, 0], { A: 0 }) }, WRECK.x, WRECK.z, .5, 1, 0, true);
   W.bubble = at(g => { part(g, '#e8e8f0', '#ffffff', [0, 0, 0], [.34, .34, .1], [0, 0, 0], { A: 0 }); const cn = new THREE.Group(); PROPS.coin(cn); cn.position.z = .1; cn.scale.setScalar(.8); g.add(cn) }, BOAT.x + .3, BOAT.z, -.35, 1, 1.85, true);
-  at(g => { for (let i = 0; i < 4; i++) part(g, '#7a4a2a', '#b88050', [i * .55, .02, 0], [.28, .05, .5], [0, 0, 0], { A: 0 }) }, shore(-1.6) - .1, -.7, -.27, 1, .02);
+  at(g => { for (let i = 0; i < 4; i++) part(g, '#7a4a2a', '#b88050', [i * .55, .02, 0], [.28, .05, .5], [0, 0, 0], { A: 0 }) }, ...(BALD_ON ? [BOAT.x - 2.7, BOAT.z, 0] : [shore(-1.6) - .1, -.7, -.27]), 1, .02);
   addPick(W, BOAT.x, BOAT.z, 1.6, 3, { kind: 'boat' });
   /* ---- adventure sign ---- */
-  at(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 6.6, 1.3, -.2); addSol({ x: 6.6, z: 1.3, r: .14 });
+  atx(g => { part(g, '#6a4024', '#a8703e', [0, .6, 0], [.07, .6, .07]); part(g, '#8a4c26', '#d8a060', [.25, 1.15, 0], [.45, .2, .05], [0, 0, 0], { A: 0 }) }, 6.6, 1.3, -.2); solx({ x: 6.6, z: 1.3, r: .14 });
   { const x0 = FARM.x0 - .55, x1 = FARM.x0 + FARM.nx - .45, z0 = FARM.z0 - .55, z1 = FARM.z0 + FARM.nz - .45, gw = .65;   /* v3.7 a low fence round the bed (solid) · a gate toward the tree house */
-    const post = (x, z) => at(g => { part(g, '#6a4024', '#b07a44', [0, .32, 0], [.07, .32, .07], [0, 0, 0], { A: .03 }); part(g, '#6a4024', '#b07a44', [0, .66, 0], [.08, .05, .08], [0, 0, 0], { A: 0 }) }, x, z);
-    const rail = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az); for (const y of [.25, .5]) at(g => rbox(g, '#5a3420', '#9a6238', [0, 0, 0], [.06, .06, L], [0, 0, 0], .02), (ax + bx) / 2, (az + bz) / 2, ry, 1, y);
-      for (let t = 0; t <= L + .01; t += Math.min(1, L / Math.max(1, Math.round(L)))) post(ax + (bx - ax) * t / L, az + (bz - az) * t / L); addSol({ x: (ax + bx) / 2, z: (az + bz) / 2, hw: Math.abs(bx - ax) / 2 + .08, hd: Math.abs(bz - az) / 2 + .08, ry: 0 }) };
+    const post = (x, z) => atx(g => { part(g, '#6a4024', '#b07a44', [0, .32, 0], [.07, .32, .07], [0, 0, 0], { A: .03 }); part(g, '#6a4024', '#b07a44', [0, .66, 0], [.08, .05, .08], [0, 0, 0], { A: 0 }) }, x, z);
+    const rail = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az); for (const y of [.25, .5]) atx(g => rbox(g, '#5a3420', '#9a6238', [0, 0, 0], [.06, .06, L], [0, 0, 0], .02), (ax + bx) / 2, (az + bz) / 2, ry, 1, y);
+      for (let t = 0; t <= L + .01; t += Math.min(1, L / Math.max(1, Math.round(L)))) post(ax + (bx - ax) * t / L, az + (bz - az) * t / L); solx({ x: (ax + bx) / 2, z: (az + bz) / 2, hw: Math.abs(bx - ax) / 2 + .08, hd: Math.abs(bz - az) / 2 + .08, ry: 0 }) };
     rail(x0, z1, x1, z1); rail(x0, z0, x0, z1); rail(x1, z0, x1, z1); rail(x0, z0, FARM.gx - gw, z0); rail(FARM.gx + gw, z0, x1, z0) }
   addSol({ x: WRECK.x, z: WRECK.z, r: .55, o: { get g() { return W.wreck.visible } } });                // the wreck (only while it lies there)
-  addPick(W, EXIT.x, EXIT.z, 1.3, 2.5, { kind: 'exit' });
+  pickx(W, EXIT.x, EXIT.z, 1.3, 2.5, { kind: 'exit' });
   scene.add(mergeStatic(ST, ZCELL));
   W.eco = eco;
   [[.9, .6], [-.5, 1.0], [1.3, -.4]].forEach(([dx, dz], i) => W.clear.set('d' + (i + 1), { id: 'd' + (i + 1), t: 'debris', x: WRECK.x + dx, z: WRECK.z + dz, ry: i * 1.3, g: null, pick: null, left: 0 }));
@@ -120,7 +147,8 @@ export function buildWorld(scene, eco) {
 }
 /* v2.4.1 solid things (trees · rocks · walls · houses · pots): circles {x,z,r} or boxes {x,z,hw,hd,ry} in a 4 m grid · e.o = a clearable (solid only while it stands) */
 const SOLC = new Map(), SCELL = 4;
-export function addSol(e) { const R = (e.r || Math.hypot(e.hw, e.hd)) + 1; e.cells = [];
+let MUTE = false;   /* v3.50 */
+export function addSol(e) { if (MUTE) return e; const R = (e.r || Math.hypot(e.hw, e.hd)) + 1; e.cells = [];
   for (let i = Math.floor((e.x - R) / SCELL); i <= Math.floor((e.x + R) / SCELL); i++) for (let j = Math.floor((e.z - R) / SCELL); j <= Math.floor((e.z + R) / SCELL); j++) { const k = i + ',' + j; let l = SOLC.get(k); if (!l) SOLC.set(k, l = []); l.push(e); e.cells.push(k) } return e }
 export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells) { const l = SOLC.get(k); if (!l) continue; const i = l.indexOf(e); if (i >= 0) l.splice(i, 1) } e.cells = null }
 /* v3.26 like solHit, but a solid you stand on top of (its top within reach of y) does not block · so standing on a base never lets you through its walls */
@@ -152,7 +180,7 @@ const _SOIL = C('#8a6440'), _FIELD = C('#a8794c'), _ROAD = C('#c8a878'), _ROADF 
 const segD = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz))); return Math.hypot(px - ax - dx * t, pz - az - dz * t) };
 const shopFront = ([dx, dz, ry], d = 1.5) => [dx + Math.sin(ry) * d, dz + Math.cos(ry) * d];              // the doorstep of a shop (town-local)
 function coreY(x, z) { const n = nz(x, z); return groundH(x, z) + .02 * n * (x < 9 ? 1 : 1 - smw(34, 36, x) * (1 - smw(56, 58, x))) }   // the town square is flat (things stand on it)                        // the town square is flat (things stand on it)
-function coreCol(x, z, c) { grassCol(x, z, c); const n = nz(x, z);
+function coreCol(x, z, c) { if (BALD.on && bandCol(x, z, c, groundH(x, z))) return c; grassCol(x, z, c); const n = nz(x, z);
   if (x < 17) { const d = x - shore(z), ke = smw(10, 14, Math.abs(z)); if (earth(x, z)) c.lerp(_EA, .85); if (inFarm(x, z)) c.lerp(_SOIL, .8); { const fk = fieldK(x, z); if (fk > 0) c.lerp(_c2.copy(_FIELD).multiplyScalar(.94 + .12 * n), .92 * fk) }   /* v3.49 the soil fields read as 'dig here' */   // v3.7 the fenced bed is bare soil     // the island: a dug patch · the beach (the same sand as the wild coast where the two meet)
     c.lerp(_c2.copy(_SA).lerp(_SD, ke), 1 - sm(1.6, 3.6, d + .35 * n * (1 - ke))); if (d < 0) c.lerp(_WET, .5) }
   else { const h = groundH(x, z); if (h > .35) c.lerp(_CL1, .5); if (h > .35 && h < MESA.h - .2) c.lerp(_CL2, .75); if (h < -.05) c.lerp(_BANK, .8) }   // grass · rock cliffs · banks
@@ -184,7 +212,7 @@ function planter(g, k = 0) { lathe(g, '#8a8478', '#e4ded2', [[0, 0], [.62, 0], [
 const RBGM = new Map(), rbGeo = (w, h, d) => { const k = w + '|' + h + '|' + d; if (!RBGM.has(k)) { const g = rboxGeo(w, h, d, .08); const g2 = g.clone(); g2.deleteAttribute('color'); RBGM.set(k, g2) } return RBGM.get(k) };   /* v2.9 rounded ruin walls */
 const PICK_MAT = new THREE.MeshBasicMaterial({ visible: false });   /* v3.4 tap targets: raycast only, never drawn (was ~200 empty draw calls) */
 const PICKG = new Map();   /* v3.30 pick shapes shared by size (many overgrowth picks) */
-export function addPick(W, x, z, r, h, data) { const gk = r + '|' + h; let geo = PICKG.get(gk); if (!geo) PICKG.set(gk, geo = new THREE.CylinderGeometry(r, r, h, 10)); const m = new THREE.Mesh(geo, PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
+export function addPick(W, x, z, r, h, data) { if (MUTE) return new THREE.Object3D(); const gk = r + '|' + h; let geo = PICKG.get(gk); if (!geo) PICKG.set(gk, geo = new THREE.CylinderGeometry(r, r, h, 10)); const m = new THREE.Mesh(geo, PICK_MAT); m.position.set(x, h / 2, z); m.userData.pick = data; W.scene.add(m); W.picks.push(m); return m }
 export function removePick(W, m) { if (!m) return; W.scene.remove(m); const i = W.picks.indexOf(m); if (i >= 0) W.picks.splice(i, 1) }
 const GLOW = new THREE.MeshBasicMaterial({ color: '#fff6a0' }), GLOW2 = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
 /* a cooking pot on a camp fire (tap = cook or sleep) */
@@ -278,11 +306,12 @@ export const FOREST = { x0: FX - 13, x1: FX + 13, z0: -9.5, z1: 9.5, gateW: { x:
 export const walkForest = (x, z) => x > FOREST.x0 && x < FOREST.x1 && z > FOREST.z0 && z < FOREST.z1;
 const pathZ = x => Math.sin((x - FX) * .35) * 2.2 * Math.max(0, Math.min(1, (FX + 6 - x) / 4));      // the path winds, then opens into the camp
 export function buildForest(W, eco) {
-  const scene = W.scene, F = {}, ST = new THREE.Group(), R = rng(31);
+  const scene = BALD_ON ? new THREE.Group() : W.scene, F = {}, ST = new THREE.Group(), R = rng(31); MUTE = BALD_ON;   /* v3.50 the bald isle: built but not placed (the story moves to the harbour town) */
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   Q.seg = eco ? 11 : 16;
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
   for (let i = 0; i < P.count; i++) { const x = P.getX(i) + FX, z = P.getZ(i), n = nz(x, z), dp = Math.abs(z - pathZ(x)), camp = Math.hypot((x - FOREST.camp.x) * .8, z - FOREST.camp.z);
+    if (BALD_ON) { coreCol(x, z, c); col.push(c.r, c.g, c.b); P.setY(i, coreY(x, z)); continue }
     grassCol(x, z, c).multiplyScalar(1 - .2 * smw(FX - 13, FX - 8, x)); if (dp < 1.1 || camp < 4.4) c.lerp(C('#b08a5a'), dp < 1.1 ? .85 : .7); col.push(c.r, c.g, c.b);
     P.setY(i, .02 * n) }   /* v2.9 no raised forest rim any more (the open world goes on) */
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals(); coreEdge(geo, FX);
@@ -314,7 +343,7 @@ export function buildForest(W, eco) {
   /* glowing herbs (sickle) */
   [[FX - 9, 3.6], [FX - 4.2, -6.2], [FX - .5, -2.4], [FX + 1.8, 6.8], [FX + 4.6, -7.4], [FX - 7.6, -2.2]].forEach(([x, z], i) => W.clear.set('m' + (i + 1), { id: 'm' + (i + 1), t: 'mushroom', x, z, ry: i, g: null, pick: null, left: 0 }));
   [[FX - 6.5, -4.6], [FX - 1.2, 5.2], [FX + 2.6, -5.6]].forEach(([x, z], i) => W.clear.set('h' + (i + 1), { id: 'h' + (i + 1), t: 'herb', x, z, ry: i, g: null, pick: null, left: 0 }));
-  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return F;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(F.ground); return F;
 }
 
 export const TX = 46;                                          // town centre x · plaza at (TX, 0)
@@ -334,7 +363,7 @@ export function harbourShop(g, roof, lit) { const b = (w, h, d, x, y, z, c, ry =
   for (let k = 0; k < 5; k++) b(.56, .05, .7, -1.12 + k * .56, 1.2, 1.4, k % 2 ? '#f4f0e8' : roof, 0, -.45);   /* the striped awning */
   b(.9, .3, .06, 0, 2.45, 1.14, '#e8d8b0') }
 export function buildTown(W, eco) {
-  const scene = W.scene, T = { shops: [] }, ST = new THREE.Group();
+  const scene = BALD_ON ? new THREE.Group() : W.scene, T = { shops: [] }, ST = new THREE.Group(); MUTE = BALD_ON;   /* v3.50 the bald isle: built but not placed (the story moves to the harbour town) */
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   Q.seg = eco ? 11 : 16;
   const g0 = coreGround(TX - 11, TX + 11, 17, eco); scene.add(g0); T.ground = g0;
@@ -362,7 +391,7 @@ export function buildTown(W, eco) {
   }   /* v3.13 no fences or lamps by the gates */
   T.lock = at(g => { for (let i = 0; i < 3; i++) part(g, '#6a4024', '#b07a44', [0, .5 + i * .4, 0], [.08, .08, 1.2], [0, 0, 0], { A: 0 }) }, TOWN.gateE.x, TOWN.gateE.z, 0, 1, 0, true);
   addPick(W, TOWN.gateW.x, TOWN.gateW.z, 1.4, 2.6, { kind: 'gateW' }); addPick(W, TOWN.gateE.x, TOWN.gateE.z, 1.4, 2.6, { kind: 'gateE' });
-  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return T;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(T.ground); return T;
 }
 
 
@@ -393,6 +422,9 @@ export function groundH(x, z) {
   const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
 }
 function coreH(x, z) {
+  if (BALD.on) { const d = x - shore(z); let h = d < 0 ? (d > -8 ? d * BALD.beach : -.8 + (d + 8) * .5) : .02;   /* v3.50 the bald isle: flat · a long shallow beach (wade first, then swim) */
+    if (x > BALD.tip[0]) { const r = Math.hypot((x - BALD.tip[0]) / BALD.tip[1], z / BALD.tip[2]); if (r > 1) h = Math.min(h, -(r - 1) * BALD.tip[1] * .18) }   /* the old strip's east end: a round point into the sea */
+    return Math.max(h, -6) }   /* v3.50 the bald isle: flat ground · a long shallow beach (wade first, then swim) */
   if (x < 9) { const d = x - shore(z); return d < 0 ? Math.max(d * .35, -6) : 0 }   /* v3.7 the island's sea floor slopes on down to the open sea's depth (was a flat shelf → a box on the map) */
   if (x >= 9 && x < 35) { const rl = Math.hypot(x - POND.x, z - POND.z); return rl < POND.r + .7 ? -.8 * (1 - smw(POND.r - .5, POND.r + .7, rl)) : 0 }   /* v3.29 a pond (the stream is gone) */   /* v3.7 the stream ends softly before the rim */
   if (x >= 57 && x < 79) { const rl = Math.hypot(x - LAKE.x, z - LAKE.z); if (rl < LAKE.r + .7) return -.8 * (1 - smw(LAKE.r - .4, LAKE.r + .7, rl));
@@ -403,6 +435,7 @@ export function waterAt(x, z) {
   if (inTr(x, z)) { const [px, pz, pw, pd] = TRAIN.pond; return Math.abs(x - px) < pw && Math.abs(z - pz) < pd ? 'fresh' : trainH(x, z) < -1.5 ? 'sea' : null }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
+  if (BALD.on) return coreH(x, z) < -.08 ? 'sea' : null;
   if (x < 9) return x < shore(z) - .05 && x > shore(z) - 7 ? 'sea' : null;
   if (x < 35) return Math.hypot(x - POND.x, z - POND.z) < POND.r ? 'fresh' : null;
   if (x >= 57 && x < 79) return Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r ? 'fresh' : null;
@@ -412,6 +445,7 @@ export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
+  if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island
   if (x < 9.6) return 'land';                                                                                   // the island gate (open world)
   if (x < 33.5) return waterAt(x, z) ? 'water' : 'land';                                                       // the meadow opens north and south (v1.1)
@@ -439,7 +473,7 @@ export function mapColor(x, z) {
 }
 export const CAMPS = { home: { name: 'แคมป์ที่พัก (บ้านต้นไม้)', x: HOUSE.x - 2.4, z: HOUSE.z + 2.8 }, meadow: { name: 'แคมป์ริมธาร', x: 17, z: -12.4 }, mesa: { name: 'แคมป์บนผาสูง', x: MESA.x, z: MESA.z }, forest: { name: 'แคมป์ก็อบลิน (ร้าง)', x: FOREST.camp.x, z: FOREST.camp.z } };
 export function buildWild(W, eco) {
-  const scene = W.scene, R = rng(91), ST = new THREE.Group(), out = {};
+  const scene = BALD_ON ? new THREE.Group() : W.scene, R = rng(91), ST = new THREE.Group(), out = {}; MUTE = BALD_ON;   /* v3.50 the bald isle: the meadow / hills ground only */
   const at = (fn, x, z, ry = 0, s = 1, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   Q.seg = eco ? 11 : 16;
   out.meadow = coreGround(17, 35, 17, eco); out.hills = coreGround(57, 74, 17, eco); scene.add(out.meadow, out.hills);   /* v3.3 one ground recipe for the whole first zone (the road is painted into it) */
@@ -461,7 +495,7 @@ export function buildWild(W, eco) {
     if (Math.abs(z - roadZ(x)) < 1.5 || waterAt(x, z) || groundH(x, z) < -.05 || Math.abs(x - RIVER.x) < RIVER.w + 1 || (x < 13 && Math.abs(z - EXIT.z) < 2.5)) continue;
     const h = groundH(x, z); if (h > .2 && h < MESA.h - .15) continue; if (Math.hypot(x - CAMPS.meadow.x, z - CAMPS.meadow.z) < 2.2 || Math.hypot(x - CAMPS.mesa.x, z - CAMPS.mesa.z) < 1.6) continue;
     const id = 'w' + (k++); W.clear.set(id, { id, t, x, z, ry: R() * 6, g: null, pick: null, left: 0 }); if (k >= (x0 < 50 ? 46 : 86)) break }
-  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; return out;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(out.meadow, out.hills); return out;
 }
 
 
@@ -549,7 +583,7 @@ function lampsIn(g, x0, z0) { const L = lamps().filter(l => l.x >= x0 && l.x < x
   const posts = new THREE.InstancedMesh(LPOST, M_POST, L.length), heads = new THREE.InstancedMesh(LHEAD, M_LAMP, L.length), hp = new Float32Array(L.length * 3), hc = new Float32Array(L.length * 3);
   L.forEach((l, i) => { o.position.set(l.x, l.y - .05, l.z); o.updateMatrix(); posts.setMatrixAt(i, o.matrix); heads.setMatrixAt(i, o.matrix); c.set(LAMP_COL[l.k] || '#ffd890'); heads.setColorAt(i, c); hp.set([l.x, l.y + 2.84, l.z], i * 3); hc.set([c.r, c.g, c.b], i * 3) });
   posts.castShadow = true; posts.userData.lamp = 1; const pool = new THREE.InstancedMesh(LPOOL, M_POOL, L.length); L.forEach((l, i) => { o.position.set(l.x, l.y, l.z); o.updateMatrix(); pool.setMatrixAt(i, o.matrix); c.set(LAMP_COL[l.k] || '#ffd890'); pool.setColorAt(i, c) }); pool.renderOrder = 4; g.add(posts, heads, pool); const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(hp, 3)); pg.setAttribute('color', new THREE.BufferAttribute(hc, 3)); const pts = new THREE.Points(pg, M_HALO); pts.renderOrder = 5; pts.frustumCulled = false; g.add(pts) }
-function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -3.5 ? '#6a7460' : h < -1.4 ? '#8a8a66' : '#b0a47a');   /* v3.35 the bed under the water: sand → weedy deep (seen through clear water) */ grassCol(x, z, out);
+function landCol(x, z, out) { const h = wildH(x, z); if (h < -.45) return out.set(h < -3.5 ? '#6a7460' : h < -1.4 ? '#8a8a66' : '#b0a47a');   /* v3.35 the bed under the water: sand → weedy deep (seen through clear water) */ if (BALD.on && bandCol(x, z, out, h)) return out; grassCol(x, z, out);
   const sl = Math.abs(wildH(x + 2, z) - wildH(x - 2, z)) + Math.abs(wildH(x, z + 2) - wildH(x, z - 2));
   const B = kingdomAt(x, z), g = (1 - B.home) * B.w;   /* v2.7 kingdom ground (after the generic rock/snow, so a volcano is never snowy) · lava in the volcano */
   out.lerp(_GH, smw(10, 18, h) * .8).lerp(_RK, smw(2.6, 3.8, sl) * (1 - g * .5)).lerp(_SN, smw(26, 32, h) * (1 - g)); if (g > 0) { out.lerp(_KC[B.k], g * .85); if (B.k === 'valkara' && (B.d < 20 || vnoise(x * .15, z * .15) > .82)) out.lerp(_LV, g * (B.d < 20 ? 1 : .6)) } const cx = coastX(z), kb = smw(0, 30, coreDist(x, z)); out.lerp(_SD, (1 - smw(.5, 1.1, h) * kb) * (1 - smw(cx + 1.6 + 9.4 * kb, cx + 3.6 + 11.4 * kb, x)));
