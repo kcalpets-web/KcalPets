@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.63';
+export const APP_VER = '3.64';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -266,7 +266,7 @@ export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 }
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
 export const MON_GEAR = { goblin: ['stoneKnife', 'axe1', 'mallet0'], goblinChief: ['axe2'], shadeKnight: ['ironKnife', 'mallet1'], ghoul: ['pick1', 'sickle1'], branchImp: ['sickle0', 'axe0'], witherImp: ['sickle1', 'pick0'] }, GEAR_DROP = .2;
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
-export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, draw: { icon: '🖍️', name: 'วาดภาพ' } };
+export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' } };
 export const NET = { range: 14, en: 6, cd: 1.2, fly: .45, base: .4, weak: .5, sneak: .12, min: .08, max: .95 };   // v3.8.1 🕸️ throw: reach (m) · energy · cooldown (s) · flight (s) · catch chance = base ÷ diff + weak × (lost HP) + sneak (crouching), clamped   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
 /* v2.1.1 crouch: walk speed × · monster sight × · animals bolt at × distance · hitting / shooting an unaware monster = damage × */
 export const SNEAK = { sp: .5, sight: .45, flee: .45, dmg: 2 };
@@ -775,6 +775,13 @@ export const JUMP = { h: .75, t: .55, en: 3 };
 
 /* v3.43 🍹 the bar at the harbour: open late (game minutes · past midnight wraps) · drinks are served at the counter (drunk at once, eff like RECIPES)
    · 👂 a rumour for `rumor` coins: a minibosses / chest / golem / the wandering merchant hint */
+/* v3.64 🎵 the flute: 7 notes on ◀ ▲ ▶ ▼ X Y A (B = put it away) · songs = note orders · finish one at the bar while it is open = a tip */
+export const FLUTE = { price: 600, keys: ['left', 'up', 'right', 'down', 'X', 'Y', 'A'], names: ['โด', 'เร', 'มี', 'ฟา', 'ซอล', 'ลา', 'ที'], glyph: ['◀', '▲', '▶', '▼', 'X', 'Y', 'A'], tip: [60, 160], tipsPerNight: 5, barR: 9 };
+export const SONGS = [
+  { k: 'dawn', icon: '🌅', name: 'เพลงอรุณ', notes: [0, 2, 4, 2, 0], eff: 'en', desc: 'สดชื่นขึ้น ⚡ +15' },
+  { k: 'lull', icon: '🌙', name: 'เพลงกล่อมน้อง', notes: [4, 2, 1, 2, 4, 4], eff: 'pets', desc: 'น้องๆ ดีใจ' },
+  { k: 'sea', icon: '🌊', name: 'เพลงลมทะเล', notes: [1, 3, 5, 6, 5, 3, 1], eff: 'tip', desc: 'คนในบาร์ชอบเพลงนี้ที่สุด (ทิปเพิ่ม)' },
+];
 export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
   { k: 'coco', icon: '🥥', name: 'น้ำมะพร้าวเย็นเจี๊ยบ', price: 30, eff: { en: 40, buff: { cool: 1, min: 8 } } },
   { k: 'ginger', icon: '🍵', name: 'ชาขิงร้อน', price: 30, eff: { en: 30, buff: { warm: 1, min: 8 } } },

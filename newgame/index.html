@@ -326,6 +326,16 @@ body:not(.pad) #smenu p{display:none}body:not(.pad) #smenu::after{content:'แ�
 body:not(.pad) #tdock{display:flex}#tdMenu{display:none}
 .invtabs.car button small{height:auto;line-height:1.35;padding-bottom:2px;white-space:nowrap}   /* v3.58 the label under the middle one was cut off */
 .pathhd{text-align:center}.pathhd .hi{display:block;font-size:48px}.pathhd>b:nth-of-type(2){display:block;font-size:20px}.pbar{height:8px;border-radius:6px;background:#0002;overflow:hidden;margin:6px 0}.pbar i{display:block;height:100%;background:linear-gradient(90deg,#f2c94c,#ffd23f)}.pstep.got{opacity:.6}.pstep.ready{box-shadow:0 0 0 3px #f2c94c inset}.ov.inv .pathhd,.ov.inv .pstep{background:#1a1c2cee;color:#fff;border:2px solid #ffffff22}.ov.inv .pathhd .mut,.ov.inv .pstep .mut{color:#fffc}
+body.fluting #pad,body.fluting #tdock{display:none!important}
+#fluteUI{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:45;padding:0 10px;pointer-events:none}
+#fluteUI .flhd,#fluteUI .flsongs{pointer-events:auto;max-width:440px;margin:0 auto 6px;background:#0f1120e6;color:#fff;border-radius:16px;padding:8px 12px}
+#fluteUI .flhd{display:flex;justify-content:space-between;align-items:center}#fluteUI .flhd small{opacity:.8;font-size:12px}
+#fluteUI .flsongs div{display:flex;justify-content:space-between;align-items:center;padding:3px 0;opacity:.75}#fluteUI .flsongs div.kn{opacity:1}#fluteUI .flsongs b{font-size:13px}
+#fluteUI .flsongs i{display:inline-block;min-width:20px;text-align:center;font-style:normal;font-weight:800;margin-left:2px;border-radius:6px;background:#ffffff18;font-size:12px}#fluteUI .flsongs i.on{background:#f2c94c;color:#2a2030}
+#fluteUI .flkeys{pointer-events:auto;max-width:440px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#fluteUI .flkeys button{height:62px;border-radius:18px;border:3px solid var(--ink);background:var(--paper);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 0 #0003}
+#fluteUI .flkeys b{font-size:22px}#fluteUI .flkeys small{font-size:11px;opacity:.75}#fluteUI .flkeys .fk4{background:#4a8ad8;color:#fff}#fluteUI .flkeys .fk5{background:#e8b030}#fluteUI .flkeys .fk6{background:#4aa860;color:#fff}#fluteUI .flkeys .fkB{background:#d85a48;color:#fff}
+#fluteUI .flkeys button.hit{animation:flhit .25s}@keyframes flhit{0%{transform:scale(.88)}100%{transform:none}}
 .hubsel{text-align:center}.ov.inv .hubsel{background:#1a1c2cee;color:#fff;border:2px solid #ffffff22}.ov.inv .hubsel .mut{color:#fffc}.hubsel .hi{display:block;font-size:56px;line-height:1.1;margin:6px 0}.hubsel>b:nth-of-type(2){display:block;font-size:20px}
 .hgrid.hub{grid-template-columns:repeat(3,1fr);gap:8px}.hgrid.hub .htile{padding:10px 4px}.hgrid.hub .htile b{font-size:28px}.hgrid.hub .htile span{font-size:12px;text-align:center}.htile.lock{opacity:.45}   /* v3.57 the 🎒 top-left is the one menu */body.autoq #tdock{display:none}
 #tdock button{width:52px;height:52px;border-radius:16px;border:3px solid var(--ink);background:var(--paper);font-size:24px;box-shadow:0 3px 0 #0003}

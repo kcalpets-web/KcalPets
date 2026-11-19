@@ -66,3 +66,9 @@ const FX = {
   dive: t => { noise('lowpass', 2500, .6, .7, t, .6, 200); noise('lowpass', 400, 1.2, .3, t + .2) },
 };
 export function sfx(name) { if (!ctx || !on || ctx.state !== 'running' || !FX[name]) return; try { FX[name](ctx.currentTime) } catch (e) { } }
+/* v3.64 🎵 the flute: a breathy sine with a little vibrato (i = 0…6 → C D E F G A B) */
+const NOTE_HZ = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77];
+export function note(i, len = .55) { if (!ctx || !on || ctx.state !== 'running') return; try { const t = ctx.currentTime, f = NOTE_HZ[i] || 523.25, o = ctx.createOscillator(), v = ctx.createOscillator(), vg = ctx.createGain(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = f; v.frequency.value = 5.2; vg.gain.value = f * .006; v.connect(vg); vg.connect(o.frequency); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .05); g.gain.setTargetAtTime(.15, t + .08, .1); g.gain.setTargetAtTime(0, t + len, .09);
+  o.connect(g); g.connect(master); o.start(t); v.start(t); o.stop(t + len + .5); v.stop(t + len + .5);
+  const n = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain(); n.buffer = noiseBuf; nf.type = 'bandpass'; nf.frequency.value = f * 2; nf.Q.value = 4; ng.gain.setValueAtTime(.05, t); ng.gain.setTargetAtTime(0, t + .06, .05); n.connect(nf); nf.connect(ng); ng.connect(master); n.start(t); n.stop(t + .3) } catch (e) { } }
