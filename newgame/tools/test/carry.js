@@ -17,8 +17,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8851, OUT = process.arg
     await wait(800); await pg.screenshot({ path: OUT + '/carry.png' });
     // B = back in the bag
     await E(() => window.__ng.carryBack()); const back = await E(() => ({ n: window.__ng.S.hold.length, apple: window.__ng.S.ingr.apple })); log('back', JSON.stringify(back)); if (back.n || back.apple !== 3) errs.push('B should put the food back in the bag');
-    // far from a pot: A only hints
-    await E(() => { const N = window.__ng; N.carryTake('banana'); N.carryTake('coconut'); N.placeMe(N.POT.home.x + 9, N.POT.home.z + 9) }); await wait(500); await E(() => window.__ng.carryA()); if ((await E(() => window.__ng.S.hold.length)) !== 2) errs.push('A away from a pot should not drop the food');
+    // far from a pot: A eats the last piece (v3.68) · X/Y put it all away
+    await E(() => { const N = window.__ng; N.carryTake('banana'); N.carryTake('coconut'); N.carryTake('apple'); N.S.enB = 0; N.placeMe(N.POT.home.x + 9, N.POT.home.z + 9) }); await wait(500); await E(() => window.__ng.carryA());
+    const ate = await E(() => ({ n: window.__ng.S.hold.length, en: window.__ng.S.enB, apple: window.__ng.S.ingr.apple, ctx: window.__ng.CTX && window.__ng.CTX.k })); log('ate', JSON.stringify(ate)); if (ate.n !== 2 || !(ate.en > 0) || ate.apple !== 2) errs.push('A away from a pot should eat the apple');
+    await wait(400); if ((await E(() => window.__ng.CTX && window.__ng.CTX.k)) !== 'eat') errs.push('the A hint should be 😋 while holding food');
     // at the pot: A puts each in · empty hands: cook
     await E(() => { const N = window.__ng; N.placeMe(N.POT.home.x + 1.3, N.POT.home.z + .4) }); await wait(600); await E(() => { window.__ng.carryA(); window.__ng.carryA() }); await wait(700);
     const pin = await E(() => ({ pin: (window.__ng.S.potIn.home || []).map(h => h.k), hold: window.__ng.S.hold.length, near: window.__ng.nearPot() })); log('in the pot', JSON.stringify(pin)); if (pin.pin.join() !== 'banana,coconut' || pin.hold) errs.push('A at the pot should put the food in');

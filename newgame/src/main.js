@@ -594,12 +594,15 @@ let drawT = 0;
    B = back into the bag · a wrong mix = rotten 🤢 or poison ☠️ (no refunds) ================= */
 const carryN = () => (S.hold || []).length, carryKey = () => (S.hold || []).map(h => h.k).join(',');
 const carryIco = h => h.fish ? '🐟' : (D.INGR[h.k] || {}).icon || '❔', carryName = h => h.fish ? D.FISH[h.k].name : (D.INGR[h.k] || {}).name || h.k;
-function carryTake(k, fish) { S.hold = S.hold || []; if (S.hold.length >= D.CARRY.max) { hint(`✋ ถือได้ ${D.CARRY.max} ชิ้น · วางในหม้อก่อน (หรือกด B เก็บ)`, 1600); return false } const st = fish ? S.fish : S.ingr; if (!(st[k] > 0)) return false;
+function carryTake(k, fish, inBag) { S.hold = S.hold || []; if (S.hold.length >= D.CARRY.max) { hint(`✋ ถือได้ ${D.CARRY.max} ชิ้น · วางในหม้อก่อน (หรือกด B เก็บ)`, 1600); return false } const st = fish ? S.fish : S.ingr; if (!(st[k] > 0)) return false;
   if (DRAWN || S.hand !== 'w') { DRAWN = false; S.hand = 'w'; setTool('') } aimEnd(false); st[k]--; S.hold.push(fish ? { k, fish: 1 } : { k }); sfx('tap'); save(); hud(); gearView();
-  hint(`✋ ถือ ${carryIco(S.hold[S.hold.length - 1])} (${S.hold.length}/${D.CARRY.max}) · เดินไปที่หม้อ/กระทะที่ติดไฟ แล้วกด A วาง · B = เก็บ`, 2400); return true }
-function carryBack(quiet) { if (!carryN()) return; for (const h of S.hold) { const st = h.fish ? S.fish : S.ingr; st[h.k] = (st[h.k] || 0) + 1 } S.hold = []; if (!quiet) { sfx('tap'); hint('🎒 เก็บวัตถุดิบเข้ากระเป๋าแล้ว', 1200) } else hint('🎒 ถืออาวุธ → เก็บวัตถุดิบเข้ากระเป๋า', 1400); save(); hud(); if (PL) PL.gearK = null; setTimeout(() => gearView()) }
+  if (inBag) toast(`✋ ถือ ${S.hold.map(carryIco).join('')} (${S.hold.length}/${D.CARRY.max})`, 1200); else hint(`✋ ถือ ${carryIco(S.hold[S.hold.length - 1])} (${S.hold.length}/${D.CARRY.max}) · A = กิน (ใกล้หม้อ = วาง) · B = เก็บ`, 2400); return true }
+function carryBack(quiet) { if (!carryN()) return; for (const h of S.hold) { const st = h.fish ? S.fish : S.ingr; st[h.k] = (st[h.k] || 0) + 1 } S.hold = []; if (!quiet) { sfx('tap'); hint('🎒 เก็บวัตถุดิบเข้ากระเป๋าแล้ว', 1200) } else hint('🎒 เก็บวัตถุดิบเข้ากระเป๋า', 1200); save(); hud(); if (PL) PL.gearK = null; setTimeout(() => gearView()) }
+/* v3.68 ✋ A away from a pot = eat the last piece held raw (a little ⚡ + 🍖) */
+function carryEat() { const h = S.hold.pop(); if (!h) return; const n = h.fish ? D.FISH_EN[D.FISH[h.k].r] : (D.CARRY.eat[(D.INGR[h.k] || {}).tag] ?? D.CARRY.eat.other);
+  addEn(n); S.full = Math.min(100, (S.full ?? 100) + D.CARRY.full); S.starveT = 0; needsHud(); cheer(); sfx('coin'); const q = me(); floater(`😋 ${carryIco(h)} ⚡+${n}`, 'item', q.x, 2, q.z); save(); hud(); if (PL) PL.gearK = null; gearView() }
 function nearPot(r = D.CARRY.reach) { const q = me(); let best = null, bd = r; for (const k in POT) { const P = POT[k]; if (!P || !P.x && P.x !== 0) continue; const d = dist(q.x, q.z, P.x, P.z); if (d < bd) { bd = d; best = k } } return best }
-function carryA() { const k = nearPot(); if (!k) { hint(`✋ ถือ ${S.hold.map(carryIco).join('')} · เดินไปที่หม้อ/กระทะที่ติดไฟ แล้วกด A วาง · B = เก็บเข้ากระเป๋า`, 2000); return }
+function carryA() { const k = nearPot(); if (!k) { carryEat(); return }
   if (key0Blocked(k)) return; const pin = (S.potIn = S.potIn || {})[k] || (S.potIn[k] = []); if (pin.length >= 5) { hint('🍲 หม้อเต็มแล้ว (5 ชิ้น) · มือว่างแล้วกด A = ปรุง', 1600); return }
   const h = S.hold.shift(); pin.push(h); const P = POT[k]; look(P.x, P.z); faceSwing(P.x, P.z); VF.burst(P.x, groundH(P.x, P.z) + .7, P.z, '#ffffff', 6, 1.5); sfx('splash'); floater(`${carryIco(h)} ลงหม้อ (${pin.length}/5)`, 'item', P.x, 1.5, P.z); potView(k); save(); hud(); if (PL) PL.gearK = null; gearView();
   if (!carryN()) hint(pin.length >= 2 ? '🔥 มือว่างแล้ว กด A ที่หม้อ = ปรุงเลย!' : '🍲 ใส่อย่างน้อย 2 ชิ้นแล้วกด A ปรุง', 2000) }
@@ -1516,12 +1519,12 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
 /* v2.1 X = jump · keep holding 3 s = crouch (sneak) · tap X while crouching = stand up */
 { const X = $('bX'); let stop = null;
   X.addEventListener('pointerdown', e => { e.preventDefault(); if (!CUT && winFlip(1)) return; if (CUT || document.querySelector('.ov')) return; unlock(); try { X.setPointerCapture(e.pointerId) } catch (_) { }
-    if (SKW.on) { skwUse('X'); return } if (SMENU.on) return; if (AIM) { aimZoom(-1); return }   /* v3.18.1 aiming: hold X = zoom out */ if (S.mode === 'farm') { farmX(); return } if (CROUCH) { CROUCH = false; sfx('tap'); return } doJump(); stop = holdWatch(X, D.PETSKILL.hold, () => { stop = null; skwShow(true) }) });   /* v3.26 hold X = 🐾 the skill wheel */   /* v3.17 hold X = 🦅 fly up (the crouch moved to B) */
+    if (SKW.on) { skwUse('X'); return } if (SMENU.on) return; if (carryN()) carryBack(true); if (AIM) { aimZoom(-1); return }   /* v3.18.1 aiming: hold X = zoom out */ if (S.mode === 'farm') { farmX(); return } if (CROUCH) { CROUCH = false; sfx('tap'); return } doJump(); stop = holdWatch(X, D.PETSKILL.hold, () => { stop = null; skwShow(true) }) });   /* v3.26 hold X = 🐾 the skill wheel */   /* v3.17 hold X = 🦅 fly up (the crouch moved to B) */
   const up = () => { if (AIM) aimZoom(0); if (stop) { stop(); stop = null } }; X.addEventListener('pointerup', up); X.addEventListener('pointercancel', up); X.addEventListener('contextmenu', e => e.preventDefault()) }
 /* v2.1 Y = 🏹 bow: press = aim (slide the thumb / drag the screen / tilt the phone) · let go = shoot */
 { const Y = $('bY'); let lx = 0, ly = 0, t0 = 0;   /* v3.26 Y = aim at once (bow / rod / net / crayon) · aiming: hold = zoom in · in the skill wheel: the Y slot */
   Y.addEventListener('pointerdown', e => { e.preventDefault(); if (!CUT && winFlip(-1)) return; if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; const now = performance.now();
-    if (SKW.on) { skwUse('Y'); return } if (PICK) { pickClose(); return } t0 = now; if (SMENU.on) return; if (AIM) { aimZoom(1); return }
+    if (SKW.on) { skwUse('Y'); return } if (PICK) { pickClose(); return } t0 = now; if (SMENU.on) return; if (carryN()) carryBack(true); if (AIM) { aimZoom(1); return }
     const k = S.ytool || 'bow'; try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
     if (k === 'rod') { if (F) { if (F.phase === 'wait') fishEnd(); else F.hold = true; return } if (!S.has.rod) { hint('🎣 ยังไม่มีเบ็ด', 1500); return } setTool('rod'); aimStart('rod'); return }
     if (k === 'flute') { fluteOpen(); return } if (k === 'draw') { aimStart('draw'); return } if (k === 'net') { aimStart('net'); return } gyroAsk(); aimStart() });
@@ -1776,7 +1779,7 @@ function bagBind(b, redraw) {
     b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => { usePotion(x.dataset.use); redraw() });
     b.querySelectorAll('[data-wr]').forEach(x => x.onclick = () => { const k = x.dataset.wr, sl = D.WEAR[k].slot; S.wear[sl] = S.wear[sl] === k ? null : k; sfx('tap'); save(); wearView(); redraw() });
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const k = x.dataset.sm; S.mats[k]--; S.coin += Math.round(D.MATS[k][2] * D.SELL_RATE); save(); hud(); redraw() });
-    b.querySelectorAll('[data-hold]').forEach(x => x.onclick = () => { const v = x.dataset.hold, f = v.startsWith('f:'); if (carryTake(f ? v.slice(2) : v, f)) { closeSheets() } else redraw() });   /* v3.55 ✋ */
+    b.querySelectorAll('[data-hold]').forEach(x => x.onclick = () => { const v = x.dataset.hold, f = v.startsWith('f:'); const k = f ? v.slice(2) : v; const left = (f ? S.fish : S.ingr)[k] || 0; if (carryTake(k, f, 1) && left > 1) { x.textContent = `✋ ถือ (${carryN()}/${D.CARRY.max})`; const n = document.querySelector(`.invgrid [data-k="${f ? 'f' : 'g'}${k}"] i`); if (n) n.textContent = left - 1 } else redraw() });   /* v3.68 ✋ the menu stays open: tap again to take more · B steps back */
     b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { closeSheets(); eatMeal(x.dataset.meal) });
     b.querySelectorAll('[data-ef]').forEach(x => x.onclick = () => { const k = x.dataset.ef; if (!(S.fish[k] > 0)) return; S.fish[k]--; addEn(D.FISH_EN[D.FISH[k].r]); sfx('coin'); toast(`😋 ⚡ +${D.FISH_EN[D.FISH[k].r]}`, 1400); save(); hud(); redraw() });
     b.querySelectorAll('[data-sf]').forEach(x => x.onclick = () => { const k = x.dataset.sf; S.fish[k]--; S.coin += Math.round(D.FISH[k].price * D.SELL_RATE); save(); hud(); redraw() });
@@ -2750,7 +2753,7 @@ function fruitView(o, on) { const f = o.g.getObjectByName('fruits'); if (!!f ===
     const b = new THREE.Mesh(new THREE.SphereGeometry(o.t === 'tree' ? .085 : .06, 8, 6), m), p = hit.point.addScaledVector(dir, o.t === 'tree' ? .06 : .04); b.position.copy(o.g.worldToLocal(p)); b.scale.divideScalar(o.g.scale.x || 1); b.castShadow = true; g.add(b) }
   twinkle(g, .55 / (o.g.scale.x || 1), (o.t === 'tree' ? 1.9 : .65) / (o.g.scale.x || 1), o.t === 'tree' ? 3 : 2, .24); o.g.add(g) }
 function pickFruit(o) { tutEv('gather'); const F = fruitOf(o), n = F[1] + Math.floor(Math.random() * (F[2] - F[1] + 1)); (S.fruit = S.fruit || {})[o.id] = Date.now(); fruitView(o, false); faceSwing(o.x, o.z); addIngr(F[0], n, o.x, o.z); sfx('grass'); bump('fruit'); save() }
-const CTX_ICO = { cook: '🔥', capdoor: '🚪', lstone: '💠', sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
+const CTX_ICO = { eat: '😋', cook: '🔥', capdoor: '🚪', lstone: '💠', sign: '🪧', raft: '🛶', horse: '🐴', tower: '🗼', wchest: '📦', note: '📜',  talk: '💬', pot: '🍲', house: '🚪', shop: '🛒', ruin: '🔨', shrine: '⛩️', chest: '📦', scroll: '📜', boat: '⛵', catch: '🫳', fruit: '✋', axe: '🪓', hammer: '⛏️', sickle: '🌾', sword: '⚔️', fight: '⚔️', run: '🏃', swim: '🏊', whale: '🐋', loot: '✋', use: '✋' };
 const TALK = new Set(['howsif', 'sberh', 'rnpc', 'npc', 'villager', 'kealee', 'shopkeeper', 'knpc']);
 const ctxEl = (() => { const e = document.createElement('div'); e.id = 'ctxI'; document.body.appendChild(e); return e })();
 let ctxT = 0, fruitT = 0, ctxStill = 0, ctxKey = '', ctxKeyT = 0;   /* v2.4.1 the bubble shows after standing still near the thing for D.CTX_WAIT s · A works right away */
@@ -2762,7 +2765,7 @@ function ctxTick(now, dt, mv) {
     const t = nearTarget(), farm = S.mode === 'farm', q = me();
     const rf = !RIDE && S.builds.find(b => b.k === 'raft' && b.done && dist(b.x, b.z, q.x, q.z) < 3.2);   /* v3.8.1 a raft close by: A = climb on (swimming or from the shore) */
     const pk = nearPot(), pin = pk && ((S.potIn || {})[pk] || []);
-    if (carryN()) CTX = pk ? { k: 'pot', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: carryA } : null;   /* v3.55 ✋ A puts one in */
+    if (carryN()) CTX = pk ? { k: 'pot', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: carryA } : { k: 'eat', h: 2.2, go: carryA };   /* v3.55 ✋ A puts one in */
     else if (pk && pin.length >= 2 && !S.jobs['cook:' + pk]) CTX = { k: 'cook', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: () => potCook(pk) };   /* empty hands: A = cook */
     else if (rf) CTX = { k: 'raft', go: () => board(rf) };
     /* v3.28 no whale ride from the water (the whale is a water barrier now) */
@@ -2787,7 +2790,7 @@ function ctxTick(now, dt, mv) {
   const key = CTX ? CTX.k + ':' + (CTX.xz ? CTX.xz.join() : CTX.at ? CTX.at.x.toFixed(0) + ',' + CTX.at.z.toFixed(0) : '') : ''; if (key !== ctxKey) { ctxKey = key; ctxKeyT = now }
   ctxPos(now);
 }
-const CTX_NOW = new Set(['run', 'swim', 'whale', 'catch', 'loot', 'raft']);
+const CTX_NOW = new Set(['eat', 'run', 'swim', 'whale', 'catch', 'loot', 'raft']);
 function ctxPos(now = performance.now()) {
   const c = CTX; let p = null; if (c && c.at) p = [c.at.x, (c.at.y || 0) + (c.h || 1.8), c.at.z]; else if (c && c.xz) p = [c.xz[0], groundH(c.xz[0], c.xz[1]) + (c.h || 1.6), c.xz[1]];
   if (c && CTX_NOW.has(c.k) && !c.at) { const q = me(); p = [q.x, q.y + 2.1, q.z] }
