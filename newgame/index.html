@@ -446,6 +446,22 @@ body.pad:not(.gamepad):has(.ov[data-atlas]) #bA,body.pad:not(.gamepad):has(.ov[d
 #pick .row i.ptile{position:relative;background:#1e1a2a;border:3px solid var(--rc,#5a5060);border-radius:14px;display:grid;place-items:center}#pick .row i.ptile em{position:absolute;right:4px;bottom:3px;background:#000c;color:#fff;font:900 13px system-ui;font-style:normal;border-radius:7px;padding:0 5px}#pick .row i.ptile q{position:absolute;left:8%;top:5px;height:5px;border-radius:3px}#pick .row i.ptile q::before,#pick .row i.ptile q::after{content:none}#pick .row i.ptile u{display:none}
 .tile .wab{position:absolute;left:3px;top:3px;display:flex;gap:1px;font-size:11px;font-weight:400}.tile .wab span{background:#ffd23f;border:1.5px solid #fff;border-radius:50%;min-width:20px;height:20px;display:grid;place-items:center;line-height:1;padding:0 2px;font-size:10px}.tile .wab img.cic{width:12px;height:12px}
 @media (orientation:landscape) and (max-height:400px){#mBtns{position:fixed;right:132px;top:calc(env(safe-area-inset-top) + 62px);flex-direction:column;margin:0}}   /* v3.75 landscape: 🎒 🗺️ beside the minimap (not over the pad) */
+/* v3.75 every window in the bag's colours: dark glass · white text · dark cards / buttons (the map page keeps its paper) */
+.ov:not(.mapfs):not(.inv) .sh{background:#0a0c18e0;color:#fff;border-color:#ffffff33}
+.ov:not(.mapfs):not(.inv) .shh{border-bottom-color:#ffffff1a}.ov:not(.mapfs):not(.inv) .shh h2{color:#fff;text-shadow:0 2px 0 #000}
+.ov:not(.mapfs) .back{background:#ffffff22;color:#fff;border-color:#fff8}
+.ov:not(.mapfs):not(.inv) .card{background:#ffffff14;border-color:#ffffff33;color:#fff}
+.ov:not(.mapfs) .mut,.ov:not(.mapfs) small.mut,.ov:not(.mapfs) p.mut{color:#c9c1d9}
+.ov:not(.mapfs) .btn{background:#ffffff1c;color:#fff;border-color:#ffffffaa;box-shadow:0 3px 0 #0006}.ov:not(.mapfs) .btn.go{background:#3fae6a;border-color:#fff}.ov:not(.mapfs) .btn:disabled{opacity:.45}
+.ov:not(.mapfs) .btn.ghost{background:transparent}
+.ov:not(.mapfs) .qsub button,.ov .atlasT button{background:#ffffff14;color:#fff;border-color:#ffffff33}.ov:not(.mapfs) .qsub button.on,.ov .atlasT button.on{background:#2e2840;border-color:#ffd23f;color:#ffd23f}
+.ov:not(.mapfs) .atlasT{background:#0a0c18ee;border-radius:12px}.ov.mapfs .atlasT{background:#0a0c18e8}
+.ov:not(.mapfs) .tabs button,.ov:not(.mapfs) .invtabs:not(.car) button{background:#ffffff14;color:#fff;border-color:#ffffff33}
+.ov:not(.mapfs) input,.ov:not(.mapfs) select,.ov:not(.mapfs) textarea{background:#ffffff14;color:#fff;border-color:#ffffff55}
+.ov:not(.mapfs) .card.trk.on{background:#3a3218;border-color:#ffd23f}
+.ov:not(.mapfs) h3,.ov:not(.mapfs) b{color:inherit}
+.ov:not(.mapfs) .advcar,.ov:not(.mapfs) .invtabs.car{background:#0a0c18ee!important;border-radius:12px}.ov:not(.mapfs) .advcar button{color:#fff}.ov:not(.mapfs) .advcar button.on{background:#ffffff1c;box-shadow:inset 0 -3px 0 #ffd23f}.ov:not(.mapfs) .advcar .ar{color:#ffd23f}
+.ov:not(.mapfs) .advst div{background:#ffffff14;border-color:#ffffff33}.ov:not(.mapfs) .advst span{color:#c9c1d9}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
