@@ -753,7 +753,7 @@ async function openCage() {
   const r = await playPetRescue(R, S.profile.name), pet = r.pet || { kind: 'shiba', name: 'โมจิ' };
   document.body.classList.remove('cut'); CUT = false; last = performance.now();
   const p = { id: 'p1', kind: pet.kind, name: pet.name || (pet.kind === 'cat' ? 'มิว' : 'โมจิ'), rar: D.STARTER_PET.rar, el: D.STARTER_PET.el, lv: 1, exp: 0, hp: null, mp: null, down: 0 };
-  if (!S.pets.some(x => x.id === 'p1')) { S.pets.push(p); S.team = ['p1']; buildPet(p, me().x + 1, me().z + .5) }
+  if (!S.pets.some(x => x.id === 'p1')) { S.pets.push(p); S.team = ['p1']; petHome(p); buildPet(p, me().x + 1, me().z + .5) }
   S.story.freed = 1; S.story.pet = 1; storyProps(); ambience(); questCheck(); save(); hud();
   talk([['🧑‍🔬 Sberh', 'ผมจะกลับไปที่หมู่บ้านก่อนนะ… ร้านยาของผมอยู่ที่นั่น'], [`🐾 ${esc(p.name)}`, `${p.kind === 'cat' ? 'เมี้ยว~' : 'โฮ่ง!'} (${esc(p.name)} จะเดินตามและช่วยสู้ให้คุณ · แตะที่น้องเพื่อป้อนอาหาร)`]]);
 }
@@ -1266,7 +1266,8 @@ function frame(now) {
         if (d > 15) q.set(tx, 0, tz); else if (d > 2) { stepTo(e.A, tx, tz, d > 5 ? 4.5 : 2.6, dt); mv = true }
         let foe = null, fd = 6; for (const M of mons) if (M.born + 800 < now && M.hit) {   /* v1.4.1: pets attack only what you hit (or what attacks you) */ const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } }
         if (foe) { e.mode = 'fight'; e.foe = foe }
-      } else if ((e.wait -= dt) <= 0) { const ok = petWalk(e), d = stepTo(e.A, e.t[0], e.t[1], PET_SWIM[e.p.kind] ? 1.6 : 1.2, dt, ok); if (d < .1) { e.wait = e.A.body.userData.quad ? 3 + Math.random() * 8 : 1.5 + Math.random() * 3; e.graze = Math.random() < .55; const H = e.p.home || e.home, r = 3 + Math.random() * 11, a = Math.random() * 6.28; e.t = [H[0] + Math.cos(a) * r, H[1] + Math.sin(a) * r]; if (!ok(e.t[0], e.t[1])) e.t = H.slice() } else { mv = true; e.graze = false } } }   /* v3.66 roam ~14 m round its spot · graze in between */
+      } else if (e.p.home && dist(q.x, q.z, e.p.home[0], e.p.home[1]) > 40) { if (!e.goneT) e.goneT = now + 5000; else if (now > e.goneT) { VF.burst(q.x, q.y + .5, q.z, '#ffffff', 10, 2.5); q.set(e.p.home[0], groundH(e.p.home[0], e.p.home[1]), e.p.home[1]); e.t = e.p.home.slice(); e.goneT = 0 } }   /* v3.66 a new / far pet trots off home to the isle */
+      else if ((e.wait -= dt) <= 0) { const ok = petWalk(e), d = stepTo(e.A, e.t[0], e.t[1], PET_SWIM[e.p.kind] ? 1.6 : 1.2, dt, ok); if (d < .1) { e.wait = e.A.body.userData.quad ? 3 + Math.random() * 8 : 1.5 + Math.random() * 3; e.graze = Math.random() < .55; const H = e.p.home || e.home, r = 3 + Math.random() * 11, a = Math.random() * 6.28; e.t = [H[0] + Math.cos(a) * r, H[1] + Math.sin(a) * r]; if (!ok(e.t[0], e.t[1])) e.t = H.slice() } else { mv = true; e.graze = false } } }   /* v3.66 roam ~14 m round its spot · graze in between */
     if (PET_SWIM[e.p.kind] && e.mode !== 'down') q.y = -.55 + Math.sin(now / 700 + q.x) * .06;
     if (!quadTick(e, mv, now, dt)) { animate(e.A, mv, dt, now, mv && e.mode === 'fight' ? 14 : 10); e.A.body.position.y = e.A.bob } e.pick.position.set(q.x, q.y + .65, q.z);
   }
@@ -3997,7 +3998,7 @@ function openBuild() {
     b.querySelectorAll('[data-bb]').forEach(x => x.onclick = () => { close(); enterBuild(x.dataset.bb) }) });
 }
 const bCost = k => BALD_ON && k === 'cabin' && !S.story.built && !S.builds.some(b => b.k === 'cabin') ? D.BUILD.house : BP[k].cost;   /* v3.50 the first hut costs what the tree house did */
-function enterBuild(k, mv) {
+function enterBuild(k, mv) { if (AQ) aqStop(); AUTOGO = null; walkT = null;   /* v3.66 building = you are in charge (auto-walk stops) */
   exitBuild(); if (RIDE) { hint('🛶 ขึ้นฝั่งก่อนแล้วค่อยสร้าง'); return } const g = bModel(k), pl = new THREE.Mesh(new THREE.PlaneGeometry(BP[k].w + .3, BP[k].d + .3), GHOK); pl.rotation.x = -Math.PI / 2; pl.position.y = .06; g.add(pl); tint(g, GHOK); scene.add(g);
   BM = { k, g, r: mv ? bOf(mv).r : Math.round(PL.yaw / (Math.PI / 2)) * Math.PI / 2 + Math.PI, ok: false, why: '', move: mv || null }; work = null; walkT = null; setTool('');
   document.body.classList.add('build'); $('bbN').textContent = `${BP[k].icon} ${BP[k].name}`; sfx('tap');
