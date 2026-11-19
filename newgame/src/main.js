@@ -659,13 +659,13 @@ const stackN = n => n > 0 ? Math.ceil(n / D.BAG.stack) : 0;
 const bagPage = {};
 const bagCap = c => D.BAG.cap[c] ?? Infinity;   /* v3.72 fixed sizes (no upgrades) */
 const STK = { mats: () => [S.mats, S.ingr, S.fish, S.seeds || {}], food: () => [S.meals, S.potions, S.food || {}], bow: () => [{ arw: S.arrows || 0 }, S.arrowsX || {}] };
-function bagUsed(c) { let n = c === 'pets' ? S.pets.length : 0; if (c === 'sword' || c === 'shield' || c === 'bow') n += S.bag.filter(it => D.ITEMS[it.t] && D.ITEMS[it.t].slot === c && !D.ITEMS[it.t].starter).length; if (c === 'wear') n += Object.keys(S.clothes || {}).filter(k => S.clothes[k] && D.WEAR[k]).length;
+function bagUsed(c) { let n = c === 'pets' ? S.pets.length : 0; if (['sword', 'shield', 'bow', 'tools'].includes(c)) n += S.bag.filter(it => D.ITEMS[it.t] && itemCat(it.t) === c && !D.ITEMS[it.t].starter).length; if (c === 'wear') n += Object.keys(S.clothes || {}).filter(k => S.clothes[k] && D.WEAR[k]).length;
   for (const box of (STK[c] ? STK[c]() : [])) for (const k in box) n += stackN(box[k] || 0); return n }
 /* would n more of this fit? box = the store it goes into (stacks) · no box = one piece of gear / clothing */
 function bagFits(c, box, k, n = 1) { const add = box ? stackN((box[k] || 0) + n) - stackN(box[k] || 0) : (c === 'wear' && (S.clothes || {})[k] ? 0 : 1); return add <= 0 || bagUsed(c) + add <= bagCap(c) }
 let bagFullT = 0;
 function bagFullHint(c) { const now = performance.now(); if (now < bagFullT) return; bagFullT = now + 2500; const C = D.BAG.cats[c]; sfx('hurt'); hint(`🎒 ช่อง${C[1]}เต็ม (${bagUsed(c)}/${bagCap(c)}) · ขาย/ใช้ของ หรืออัปเกรดด้วย ✨`, 2400) }
-const itemCat = t => D.ITEMS[t] ? D.ITEMS[t].slot : 'sword';
+const itemCat = t => D.ITEMS[t] ? (D.ITEMS[t].tool ? 'tools' : D.ITEMS[t].slot) : 'sword';   /* v3.72 farm tools have their own 🧰 section */
 function dropMat(k, n, x, z) { const g = new THREE.Group(), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex(D.MATS[k][0]), transparent: true })); sp.scale.setScalar(.5); sp.position.y = .4; g.add(sp); dropPut(g, x, z, '#ffe8a0', { mat: k, n }) }
 function addIngr(k, n, x, z) { if (!bagFits('mats', S.ingr, k, n)) { dropIngr(k, n, x, z); bagFullHint('mats'); return } S.ingr[k] = (S.ingr[k] || 0) + n;   /* v3.12 full = it stays on the ground */
   floater(`${D.INGR[k].icon} +${n}`, 'mat', x, 1.6, z) }
@@ -1684,8 +1684,8 @@ let bagTab = 'sword', bagSel = {};
 const INV_TABS = () => Object.entries(D.BAG.cats).map(([k, [ic, nm]]) => [k, ic, nm]);   /* v3.72 the seven sections: ดาบ · ธนู · โล่ · ชุดเกราะ · วัตถุดิบ · อาหารและยา · สัตว์เลี้ยง */   /* v3.40 making things lives in 📖 the adventure journal (and the makers) */   /* v3.27 🛠️ crafting is a bag section */   /* v3.12 the six bag sections (+ pets until v3.14) · quests / achievements / settings live under 📜 */
 function invItems(tab) {
   const L = [], st = pStats();
-  if (['sword', 'shield', 'bow'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t].slot === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
-    const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), eq = S.eq[tab] === it.id, val = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)), dl = Math.ceil(durLeft(it));
+  if (['sword', 'shield', 'bow', 'tools'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t] && itemCat(it.t) === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
+    const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), eq = S.eq[T.slot] === it.id, val = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)), dl = Math.ceil(durLeft(it));
     L.push({ key: 'i' + it.id, icon: picTag(itemPic(it.t), T.icon) + (it.br ? '<b class="brk">💔</b>' : it.away ? '<b class="brk">🎯</b>' : ''), n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better, dur: dl / x.dur,
       name: T.name, sub: `<span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span> ${c.stats}${it.ba ? ` <span class="up">✨+${it.ba}</span>` : ''} · ${T.starter ? '♾️ ไม่พัง · ตีมอนสเตอร์ได้ 1' : `🔧 ${dl}/${x.dur}`}${T.kind ? `<br>${D.KIND[T.kind].name}` : (tab === 'shield' && !kindOf().shield ? '<br><span class="dn">อาวุธในมือถือโล่ไม่ได้ (โล่อยู่ที่หลัง)</span>' : '')}`,
       desc: (eq ? 'กำลังสวมอยู่' : `${c.verdict} <span class="mut">${c.vs}</span>`) + `<div class="dbar"><i style="width:${dl / x.dur * 100}%;background:${dl / x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></i></div>`,
@@ -1737,6 +1737,7 @@ function bagFlip(d, redraw) { const L0 = invItems(bagTab), PG = D.BAG.page, cap 
 function winFlip(d) { const ov = topOv(); if (!ov) return false; if (ov.classList.contains('cbook') && CBOOK) { CBOOK.flip(d); return true } if (ov.classList.contains('inv')) { if (d > 0) bagX(); return true } return !!ov }
 let bagSellMode = false;   /* v3.12.3 selling gear only from a shop (the smith) — never by a stray tap in the bag */
 function openBag(tab, sell) {
+  document.querySelectorAll('.ov.inv').forEach(o => o.remove());   /* v3.72 one bag at a time */
   bagTab = tab && D.BAG.cats[tab] ? tab : 'sword'; bagSellMode = !!sell; bagPage[bagTab] = 0; { const f = invItems(bagTab)[0]; bagSel[bagTab] = f ? f.key : 'e0'; NAV.zone = 'items'; NAV.key = 'data-k=' + bagSel[bagTab]; NAV.el = null }   /* v3.72 the frame always starts on the first slot of the section (⚔️ ดาบ) */
   sheet('🎒 กระเป๋า', (b, redraw) => {
     const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
@@ -3738,7 +3739,7 @@ function glChunk(ch, on) { const pre = 'gl:' + ch.cx + ',' + ch.cz + ':'; if (!o
     glPut({ id, t: pool[Math.floor(pk * pool.length)], r: rr < G.rare ? (tier >= 3 && rr < .03 ? 'E' : 'R') : 'B', x, z, ry }) } }
 function glSpawn(t, x, z) { glPut({ id: 'gd:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, r: 'B', x: x + (Math.random() - .5) * 1.4, z: z + (Math.random() - .5) * 1.4, ry: Math.random() * 6.28 }) }
 const nearGL = () => { const q = me(); let b = null, bd = D.THROW.pick; for (const L of GL.values()) { const d = dist(q.x, q.z, L.x, L.z); if (d < bd && Math.abs(q.y - L.g.position.y) < 2.5) { bd = d; b = L } } return b };
-function pickGL(L) { const T = D.ITEMS[L.t]; if (!bagFits(T.slot)) { bagFullHint(T.slot); return } S.bag.push(newItem(L.t, L.r)); if (L.id.startsWith('gl:')) (S.gl = S.gl || {})[L.id] = Date.now(); glDrop(L); floater(`${T.icon} ${T.name}${L.r !== 'B' ? ' ✨' : ''}`, 'item', L.x, 1.4, L.z); sfx('coin'); bump('glPick'); save(); hud() }
+function pickGL(L) { const T = D.ITEMS[L.t], cat = itemCat(L.t); if (!bagFits(cat)) { bagFullHint(cat); return } S.bag.push(newItem(L.t, L.r)); if (L.id.startsWith('gl:')) (S.gl = S.gl || {})[L.id] = Date.now(); glDrop(L); floater(`${T.icon} ${T.name}${L.r !== 'B' ? ' ✨' : ''}`, 'item', L.x, 1.4, L.z); sfx('coin'); bump('glPick'); save(); hud() }
 function setNear(ch, on) {
   if (ch.near === on) return; ch.near = on; glChunk(ch, on);
   if (on) { for (const o of ch.clears) { if (!W.clear.has(o.id)) W.clear.set(o.id, o); if (!S.cleared[o.id]) spawnClear(W, o); else remnant(W, o, true) }

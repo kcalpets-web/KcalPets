@@ -27,7 +27,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => window.__ng.openSpirit(true)); await wait(600); await shot('02-spirit'); await pg.click('[data-sp="hp"]'); await wait(800);
     const h1 = await N(() => document.querySelectorAll('#hearts .hr').length); log('hearts after ❤️', h1); if (h1 !== 6) errs.push('spirit ❤️ did not add a heart');
     await closeAll(); await E(() => { window.__ng.S.hp = 47 }); await wait(800); await shot('03-hearts-hurt'); log('hearts html', await N(() => [...document.querySelectorAll('#hearts .hr')].map(h => h.style.getPropertyValue('--f')).join(' ')));
-    for (const t of ['sword', 'shield', 'mats', 'food', 'quest', 'ach', 'set']) { await E(t => window.__ng.openBag(t), t); await wait(500); await shot('04-bag-' + t); await closeAll() }
+    for (const t of ['sword', 'shield', 'mats', 'food']) { await E(t => window.__ng.openBag(t), t); await wait(500); await shot('04-bag-' + t); await closeAll() }
     /* v1.4.1: pets leave alone what you haven't hit */
     await E(() => { const N = window.__ng, q = N.me; N.__calm = N.monSpawn('slime', q.x + 3, q.z - 2, { area: 'farm' }) }); await wait(5000);
     const calm = await N(() => { const m = window.__ng.__calm; return { hp: m.hp, max: m.T.hp, hit: !!m.hit } }); log('calm slime', JSON.stringify(calm)); if (calm.hp < calm.max) errs.push('pets attacked a monster the player had not hit');
@@ -50,7 +50,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.addDeb('burn'); N.placeMe(-6, 0) }); await wait(3000); const bo = await N(() => window.__ng.debOn('burn')); log('burn in water', bo, JSON.stringify(await N(() => window.__ng.envState())), await N(() => window.__ng.me.x)); if (bo) errs.push('water did not put the fire out');
     await E(() => window.__ng.placeMe(2, -4)); await wait(800); await closeAll();
     /* eating: animation, then ❤️ */
-    await E(() => { const N = window.__ng; N.S.meals.salad = 2; N.S.hp = 50 }); await E(() => window.__ng.openBag('food')); await wait(600); await pg.click('.invgrid [data-k*="salad"]'); await wait(600); await pg.click('[data-meal="salad"]');   /* v3.50 the eat button is in the slot menu */ await wait(700); await shot('07-eating'); await wait(2200);
+    await E(() => { const N = window.__ng; N.S.meals.salad = 2; N.S.hp = 50 }); await E(() => window.__ng.openBag('food')); await wait(600); await pg.click('.invgrid [data-k*="salad"]'); await wait(600); await pg.click('[data-im="use"]');   /* v3.72 the slot menu: กิน · ยกเลิก */ await wait(700); await shot('07-eating'); await wait(2200);
     const ate = await N(() => ({ hp: window.__ng.S.hp, meals: window.__ng.S.meals.salad })); log('ate', JSON.stringify(ate)); if (!(ate.hp > 50 && ate.meals === 1)) errs.push('eating did not heal');
     /* drowning: energy gone in the water → sink, wash up nearby, −1 heart */
     const hp0 = await N(() => window.__ng.S.hp); await E(() => { const N = window.__ng; N.placeMe(-9, 0); N.S.en = .3; N.S.enB = 0; N.S.tired = false }); await wait(1200); await shot('08-drowning'); await wait(5000); await closeAll();

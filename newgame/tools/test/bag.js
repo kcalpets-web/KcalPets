@@ -1,27 +1,50 @@
-/* v3.12 🎒 bag slots (v3.16.4: mats/food/wear unlimited): 10 per section · one kind of small thing = 1 slot per 999 · a full section leaves new things on the ground · ✨ buys +5 slots · arrows in the bow tab · a wear tab.
-   NODE_PATH=$(npm root -g) node newgame/tools/test/bag.js   (~1 min) */
-const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path');
-const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, wait = ms => new Promise(r => setTimeout(r, ms));
-(async () => {
-  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
+/* v3.72 🎒 the bag: 8 sections (ดาบ ธนู โล่ เครื่องมือ ชุดเกราะ วัตถุดิบ อาหารและยา สัตว์เลี้ยง) × pages of 5×5 · fixed sizes · the frame starts on ⚔️'s first slot · ▶ past a row = next page / section · swipe · small menus · 🪵 X hold → A add → X all back → B to the game
+   NODE_PATH=$(npm root -g) node newgame/tools/test/bag.js outDir   (~2 min) */
+const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'), fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8873, OUT = process.argv[2] || '/tmp/ng_bag', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
+(async () => { const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
-  try {
-    const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on('pageerror', e => errs.push('PE ' + e.message));
-    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, time: 600, spirit: { hp: 0, en: 0, free: 2 }, spiritV: 1,
-        mats: { hide: 1, feather: 1, grass: 1, wood: 1500, stone: 1, ore: 1, copper: 1, silver: 1, goldOre: 1 }, clothes: { coat: 1, h_cap: 1 } })) });
+  try { const pg = await b.newPage({ viewport: { width: 390, height: 760 }, deviceScaleFactor: 2 }); pg.on('pageerror', e => errs.push('PE ' + e.message));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 640, quest: 99, coin: 500 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
-    const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
-    const u0 = await E(() => [window.__ng.bagUsed('mats'), window.__ng.bagCap('mats')]); log('mats', u0); if (u0[0] !== 10 || u0[1] !== Infinity) errs.push('v3.16.4 materials have no limit (10/∞ here), got ' + u0);
-    const r1 = await E(() => { const N = window.__ng; N.addMats({ coal: 2 }, 0, -4); N.addMats({ wood: 5 }, 0, -4); return { coal: N.S.mats.coal || 0, wood: N.S.mats.wood } }); log('more', JSON.stringify(r1));
-    if (r1.coal !== 2 || r1.wood !== 1505) errs.push('an unlimited section should take anything');
-    await E(() => window.__ng.openBag('mats')); await wait(500); const bar = await E(() => (document.querySelector('.invslots') || {}).textContent || ''); log('bar', bar); if (!/∞/.test(bar) || /\+5/.test(bar)) errs.push('mats bar should show ∞ and no ✨ upgrade');
-    await E(() => document.querySelector('[data-bt="sword"]').click()); await wait(300); const sw0 = await E(() => window.__ng.bagCap('sword')); log('sword cap', sw0); if (sw0 !== 12) errs.push('v3.38 weapons should start with 12 slots');
-    await E(() => document.querySelector('[data-bu="sword"]').click()); await wait(300); const u1 = await E(() => [window.__ng.bagCap('sword'), window.__ng.S.spirit.free]); log('upgraded', u1); if (u1[0] !== 24 || u1[1] !== 0) errs.push('v3.38 2 ✨ should buy +12 slots ' + u1);
-    const tabs = await E(() => [...document.querySelectorAll('[data-bt]')].map(x => x.dataset.bt)); log('tabs', tabs); for (const t of ['sword', 'shield', 'bow', 'mats', 'food', 'wear']) if (!tabs.includes(t)) errs.push('no tab ' + t);
-    await E(() => document.querySelector('[data-bt="bow"]').click()); await wait(300); const arw = await E(() => !!document.querySelector('[data-k="arw"]')); log('arrows in bow tab', arw); if (!arw) errs.push('arrows are not in the bow tab');
-    await E(() => document.querySelector('[data-bt="wear"]').click()); await wait(300); await pg.click('[data-k="wh_cap"]'); await wait(600);   /* v3.50 a real tap opens the slot menu (wear · details) */ await E(() => document.querySelector('[data-wr="h_cap"]').click()); await wait(500);
-    const hat = await E(() => window.__ng.S.wear.hat); log('wear tab', hat); if (hat !== 'h_cap') errs.push('the wear tab did not put the cap on');
+    const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    const home = await E(() => { const P = window.__ng.POT.home; return P ? [P.x, P.z] : null }); log('home pot', home); if (!home) throw new Error('no home pot');
+    const st = () => E(() => { const N = window.__ng; return { tab: N.bagTab, sel: N.bagSel[N.bagTab], hold: (N.S.hold || []).map(h => h.k), ov: document.querySelectorAll('.ov').length, tiles: document.querySelectorAll('.ov.inv .invgrid [data-k]').length, slots: (document.querySelector('.invslots b') || {}).textContent, page: (document.querySelector('.invslots small') || {}).textContent } });
+    const pad = d => E(d => window.__ng.navMove(d), d), press = (id, t) => E(([id, t]) => { const el = document.getElementById(id), r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 3, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }, [id, t]), tapB = async id => { await press(id, 'pointerdown'); await press(id, 'pointerup'); await wait(400) };
+    const redraw = () => E(() => { const ov = document.querySelector('.ov.inv'); ov && ov._redraw && ov._redraw() });
+    await E(() => { const N = window.__ng, S = N.S; for (const t of ['knightSword', 'crystalBlade', 'woodSpear', 'axe0', 'pick0']) S.bag.push(N.newItem(t, 'R')); S.mats = { wood: 12, stone: 5 }; S.ingr = { apple: 3, berry: 2 }; N.hud() });
+    // sizes
+    const cap = await E(() => { const N = window.__ng; return Object.fromEntries(N.INV_TABS().map(t => [t[0], N.bagCap(t[0])])) }); log('caps', JSON.stringify(cap));
+    if (JSON.stringify(cap) !== JSON.stringify({ sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25 })) errs.push('the section sizes are wrong');
+    // open = ⚔️ first slot · 25 tiles · tools not among the swords
+    await E(() => window.__ng.openBag()); await wait(700); const s0 = await st(); log('open', JSON.stringify(s0)); await pg.screenshot({ path: OUT + '/1-sword.png' });
+    const first = await E(() => (document.querySelector('.ov.inv .invgrid [data-k]') || {}).dataset?.k); if (s0.tab !== 'sword' || s0.sel !== first || s0.tiles !== 25 || !/\/25/.test(s0.slots)) errs.push('the bag should open on ⚔️ with the frame on the first of 25 slots');
+    const tl = await E(() => { const N = window.__ng, inT = k => N.S.bag.find(i => 'i' + i.id === k); return { sword: [...document.querySelectorAll('.ov.inv .invgrid [data-k^="i"]')].map(e => inT(e.dataset.k).t) } }); log('swords', JSON.stringify(tl)); if (tl.sword.some(t => /axe|pick|hoe|sickle/.test(t))) errs.push('farm tools belong in 🧰, not ⚔️');
+    // ▶ past the row's end = the next section (same row) · ◀ back
+    for (let i = 0; i < 5; i++) { await pad('right'); await wait(250) } const s1 = await st(); log('▶×5', JSON.stringify(s1)); if (s1.tab !== 'bow') errs.push('▶ past the row should go to the next section');
+    await pad('left'); await wait(300); const s2 = await st(); log('◀', JSON.stringify(s2)); if (s2.tab !== 'sword') errs.push('◀ past the row should go back a section');
+    // swipe the grid = the next section
+    await E(() => { const g = document.querySelector('.ov.inv .invgrid'), r = g.getBoundingClientRect(), y = r.y + 30; g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.right - 20, clientY: y })); g.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: r.left + 20, clientY: y })) }); await wait(500); const s3 = await st(); log('swipe ←', JSON.stringify(s3)); if (s3.tab !== 'bow') errs.push('a swipe should change the section');
+    // 🧰 tools · 👕 four pages
+    await E(() => window.__ng.openBag('tools')); await wait(500); const tt = await E(() => document.querySelectorAll('.ov.inv .invgrid [data-k^="i"]').length); log('tools', tt); if (tt < 2) errs.push('🧰 should list the farm tools');
+    await E(() => window.__ng.openBag('wear')); await wait(500); const sw = await st(); log('wear', JSON.stringify(sw)); if (!/1\/4/.test(sw.page || '')) errs.push('👕 should have 4 pages of 25');
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    // A on a weapon: สวมใส่ · ทิ้ง · ยกเลิก → wear it · drop another
+    await E(() => window.__ng.openBag()); await wait(600); const m1 = await E(() => { const N = window.__ng; N.bagA(N.bagSel.sword, () => {}); return [...document.querySelectorAll('.ov.dlg [data-im]')].map(b => b.dataset.im) }); log('weapon menu', JSON.stringify(m1)); await pg.screenshot({ path: OUT + '/2-menu.png' });
+    if (m1.join() !== 'wear,drop,cancel' && m1.join() !== 'drop,cancel') errs.push('a weapon menu should be สวมใส่ · ทิ้ง · ยกเลิก');
+    const eq = await E(() => { const N = window.__ng, k = N.bagSel.sword, b = document.querySelector('.ov.dlg [data-im="wear"]'); if (b) b.click(); return [k, 'i' + N.S.eq.sword] }); log('worn', JSON.stringify(eq)); if (eq[0] !== eq[1]) errs.push('สวมใส่ should equip it');
+    const n0 = await E(() => window.__ng.S.bag.length); await E(() => { const N = window.__ng, k = [...document.querySelectorAll('.ov.inv .invgrid [data-k^="i"]')].map(e => e.dataset.k).find(k => k !== 'i' + N.S.eq.sword && !N.S.bag.find(i => 'i' + i.id === k).t.startsWith('traveler')); N.bagSel.sword = k; N.bagA(k, () => {}) }); await wait(300);
+    await E(() => document.querySelector('.ov.dlg [data-im="drop"]').click()); await wait(300); await E(() => { const b = [...document.querySelectorAll('.ov button')].find(b => /ทิ้ง/.test(b.textContent) && !b.dataset.im); b && b.click() }); await wait(400); const n1 = await E(() => window.__ng.S.bag.length); log('dropped', n0, '→', n1); if (n1 !== n0 - 1) errs.push('ทิ้ง should throw the piece away');
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    // 🪵: the menu (wood cannot be eaten) · X hold → A adds → X all back · X → B = back to the game holding
+    await E(() => window.__ng.openBag('mats')); await wait(500); const mm = await E(() => { const N = window.__ng; N.bagSel.mats = 'mwood'; N.bagA('mwood', () => {}); const r = [...document.querySelectorAll('.ov.dlg [data-im], .ov.dlg button[disabled]')].map(b => (b.dataset.im || 'x') + (b.disabled ? '-off' : '')); document.querySelectorAll('.ov.dlg').forEach(o => o.remove()); return r }); log('wood menu', JSON.stringify(mm)); if (!mm.includes('x-off') || !mm.includes('hold')) errs.push('wood: กิน off · ถือ on');
+    await E(() => { window.__ng.bagSel.mats = 'mwood' }); await tapB('bX'); const h1 = await st(); await E(() => { const N = window.__ng; N.bagSel.mats = 'gapple'; N.bagA('gapple', () => { const ov = document.querySelector('.ov.inv'); ov && ov._redraw && ov._redraw() }) }); await wait(400); const h2 = await st(); await pg.screenshot({ path: OUT + '/3-hold.png' });
+    await tapB('bX'); const h3 = await E(() => ({ hold: (window.__ng.S.hold || []).length, wood: window.__ng.S.mats.wood, apple: window.__ng.S.ingr.apple })); log('hold', JSON.stringify(h1.hold), '+A', JSON.stringify(h2.hold), 'X back', JSON.stringify(h3));
+    if (h1.hold.join() !== 'wood' || h2.hold.join() !== 'wood,apple' || h3.hold || h3.wood !== 12 || h3.apple !== 3) errs.push('🪵 X hold → A add → X all back failed');
+    await E(() => { window.__ng.bagSel.mats = 'gberry' }); await tapB('bX'); await tapB('bB'); const out = await st(); log('B out', JSON.stringify(out)); if (out.ov || out.hold.join() !== 'berry') errs.push('B while holding should go back to the game with it');
+    await E(() => window.__ng.carryBack(true));
+    // full: 25 weapons = no more · 25 pets = no catching
+    const full = await E(() => { const N = window.__ng, S = N.S; while (N.bagUsed('sword') < 25) S.bag.push(N.newItem('knightSword', 'B')); const a = N.bagFits('sword'); S.pets = Array.from({ length: 25 }, (_, i) => ({ id: 'z' + i, kind: 'dog', name: 'd' + i, lv: 1, rar: 'B' })); return [a, N.bagFits('pets')] }); log('full', JSON.stringify(full)); if (full[0] || full[1]) errs.push('a full section should take no more');
   } catch (e) { errs.push('X ' + e.stack) }
-  await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
-})();
+  await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

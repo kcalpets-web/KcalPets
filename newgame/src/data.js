@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.71';
+export const APP_VER = '3.72';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -181,8 +181,8 @@ export const FORGE = [
   { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
 export const BAG = { page: 25, cols: 5, stack: 999,   // v3.72 every section is pages of 5×5 · a stack of one kind holds up to 999 (more = another slot) · no upgrades
-  cap: { sword: 25, bow: 25, shield: 25, wear: 100, mats: 200, food: 50, pets: 25 },   // slots per section
-  cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], wear: ['🛡️', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'] } };
+  cap: { sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25 },   // slots per section
+  cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], tools: ['🧰', 'เครื่องมือ'], wear: ['🛡️', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'] } };
 export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
 export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
