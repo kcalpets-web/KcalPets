@@ -258,7 +258,7 @@ export const GEAR_EFF = { one: { wood: .5, grass: 1, stone: 0 }, two: { wood: .7
 export const GEAR_JOB = { axe: 'axe', sickle: 'sickle', pick: 'hammer', hammer: 'hammer', hoe: 'hoe' };   // which A-hand a kind is (the rest = 'w', the weapon)
 /* v3.22 🎯 double-tap A = throw what you hold (aim like Y): spread rad · damage × · speed m/s · gravity · wear · pick it up where it lands */
 export const PICK_MAX = 12;   /* v3.49 the item picker shows your first 12 (loops round) */
-export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4 };
+export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4, up: .12, windRot: 3.0 };   // v3.69 up: lift of a wound-up throw with no target
 /* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
 /* v3.39 broken gear rests and comes back by itself (minutes by rarity) · the blacksmith fixes it at once · weapons / shields / bows are made by the blacksmith (coins = his labour, you bring the materials) */
 export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
