@@ -19,6 +19,8 @@ export const WEAPON_MESH = {
   branch(g) { cyl(g, .02, .028, .62, WOOD, [0, .22, 0], [0, 0, .06]); cyl(g, .012, .016, .2, WOOD, [.06, .38, 0], [0, 0, -.7]); ico(g, .05, LEAF, [.13, .46, 0], [1, .6, .4]); ico(g, .04, LEAF, [-.01, .56, 0], [1, .6, .4]) },
   leafBlade(g) { grip(g, .14, WOODD, WOODD, .1, WOOD); add(g, shape('leafB', [[-.03, 0], [.03, 0], [.05, .2], [0, .48], [-.05, .2]], .012), LEAF, [0, .06, 0]); box(g, .005, .4, .016, '#3a7a30', [0, .26, 0]) },
   travelerSword(g) { grip(g, .15, '#6a4a2a', DARK, .17, DARK); blade(g, 'bTrav', .028, .58, STEEL) },
+  woodClub(g) { cyl(g, .022, .024, .22, WOODD, [0, -.05, 0]); cyl(g, .03, .058, .42, WOOD, [0, .25, 0], [0, 0, .04], 7); ico(g, .062, WOOD, [.005, .47, 0], [1, .9, 1]); for (const [x, y] of [[.05, .3], [-.05, .38], [.04, .43]]) ico(g, .016, WOODD, [x, y, .02]) },   /* v3.54 a knotty wooden club */
+  boneBit(g) { cyl(g, .02, .024, .5, BONE, [0, .15, 0], [0, 0, .05], 7); for (const y of [-.1, .4]) for (const s of [-1, 1]) ico(g, .035, BONE, [s * .028, y, 0], [1, .85, .85]) },   /* v3.54 a big bone (knobs both ends) */
   branchSword(g) { grip(g, .15, WOODD, WOODD, .14, WOOD); blade(g, 'bBranch', .032, .55, '#b89060'); for (let i = 0; i < 3; i++) ico(g, .02, LEAF, [.03, .2 + i * .14, 0]) },
   boneClub(g) { cyl(g, .022, .022, .2, WOODD, [0, -.04, 0]); cyl(g, .03, .065, .45, BONE, [0, .3, 0], [0, 0, 0], 7); ico(g, .07, BONE, [0, .54, 0], [1.1, .8, 1]); for (const s of [-1, 1]) add(g, G('spk', () => new THREE.ConeGeometry(.018, .08, 4)), '#a89878', [s * .07, .45, 0], [0, 0, -s * 1.3]) },
   stoneClub(g) { cyl(g, .022, .022, .22, WOODD, [0, -.05, 0]); cyl(g, .028, .04, .3, WOOD, [0, .2, 0]); ico(g, .1, '#8a8478', [0, .44, 0], [1, 1.3, .9]); ico(g, .06, '#9a9488', [.06, .36, .04]) },

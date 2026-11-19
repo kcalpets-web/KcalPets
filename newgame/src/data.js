@@ -116,6 +116,8 @@ export const ITEM_DROP = .55;                  // chance an item drops at all (m
    dur = hits before it breaks (Zelda-like) · rarity rolls a bonus (RAR_BONUS) · tier = where it shows up (1 near home … 4 far away) */
 export const ITEMS = {
   branch:        { slot: 'sword', kind: 'one', name: 'กิ่งไม้', icon: '🌿', atk: 4, dur: 8, tier: 1 },
+  woodClub:      { slot: 'sword', kind: 'one', name: 'กระบองไม้', icon: '🪵', atk: 8, dur: 14, tier: 1 },   // v3.54 found on the ground · from felled trees
+  boneBit:       { slot: 'sword', kind: 'one', name: 'กระดูก', icon: '🦴', atk: 7, dur: 12, tier: 1 },   // v3.54 from medium / large animals · on the ground
   leafBlade:     { slot: 'sword', kind: 'one', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 7, dur: 12, tier: 1 },
   travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1 },
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
@@ -279,6 +281,8 @@ export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6, can: 1 }
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
 export const UPHILL = { from: .3, en: 9 };   // v3.1 stamina/s walking up a slope steeper than `from` (full at SLOPE)
+/* v3.54 🗡️ gear lying around the world (sparkles · A to pick up): a few per chunk, better the farther from the start isle · felled trees drop branches / clubs · big animals drop bones */
+export const GLOOT = { per: [0, 2], p: .55, back: 3 * 3600e3, ring: [[150, 1], [420, 2], [800, 3], [1e9, 4]], t1: ['branch', 'branch', 'woodClub', 'boneBit'], rare: .15, tree: [['branch', .3], ['woodClub', .1]], bone: .5 };
 export const STORY_EASE = .6;   // v3.54 the chapter 1–2 fights (the harbour slimes · the goblin camp) hit at 60%: a new player with only the traveller's sword gets through
 export const SAFE_HOME = 12;   // v3.50 the bald isle: the safe zone (no weapons) is the ring round your hut, not the whole island
 export const WADE = { deep: .85, sp: .62, ring: .35 };   // v3.50 shallow water: you wade (walk, slower, splashes) · you swim only where the bed is deeper than `deep` m
