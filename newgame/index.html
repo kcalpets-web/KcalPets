@@ -421,6 +421,8 @@ body:has(.ov) .durb,body.cut .durb{display:none!important}
 .advmk{background:#fff;border:2px solid #e0d0b8;border-radius:14px;padding:8px;margin-bottom:8px}.advmk .row{display:flex;justify-content:space-between;align-items:center}.advmk .cgrid{margin-top:6px}.advmk .ctile{background:#2a2638}
 .ctile .cown{position:absolute;top:4px;right:6px;font-style:normal;color:#5ad870;font-weight:900}
 body.pad:not(.gamepad):has(.ov.adv) #dpad{display:grid}body.pad:not(.gamepad):has(.ov.adv) #stick{display:none}body.pad:not(.gamepad):has(.ov.adv) #bA,body.pad:not(.gamepad):has(.ov.adv) #bB{z-index:46}body.pad:not(.gamepad) .ov.adv .shb{padding-bottom:190px}
+/* v3.72 🎒 every section = pages of 5×5 (the whole width · no scrolling) */
+.ov.inv .invgrid,.ov.inv .invmain.wide .invgrid{grid-template-columns:repeat(5,1fr)!important;max-height:none!important;overflow:visible;flex:1 1 auto!important}.ov.inv .invgrid .tile{aspect-ratio:1;min-height:0}.ov.inv .tile.emp{background:#00000010;border-style:dashed}.invslots .hold{background:#3fae6a;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px}.invhint b.ka,.invhint b.kx,.invhint b.kb{display:inline-block;min-width:18px;border-radius:50%;color:#fff;text-align:center;font-size:11px}.invhint b.ka{background:#3fae6a}.invhint b.kx{background:#4a8ad8}.invhint b.kb{background:#e8604a}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

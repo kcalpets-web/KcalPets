@@ -180,9 +180,9 @@ export const FORGE = [
   { t: 'scimitar', need: { goldOre: 2, ore: 1 } }, { t: 'crystalBlade', need: { crystal: 2, silver: 1 } }, { t: 'crystalShield', need: { crystal: 2, stone: 2 } }, { t: 'crystalBow', need: { crystal: 1, aquamarine: 1, wood: 2 } },
   { t: 'trident', need: { aquamarine: 2, silver: 1 } }, { t: 'golemCrusher', need: { golemCore: 1, stone: 3 } }, { t: 'dragonBlade', need: { lavaCoal: 2, diamond: 1, goldBar: 1 } },
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
-export const BAG = { page: 12, start: 12, step: 12, max: 60, stack: 999, cost: 2,   // v3.38 pages of 12 · start 1 page · +1 page per 2 ✨ · 5 pages max
-  free: ['mats', 'food', 'wear'],   // v3.16.4 materials · food · clothes (and pets) have no limit   // v3.12 🎒 slots per section: start · +step per ✨ cost · ceiling · a stack of one kind holds up to 999 (more = another slot)
-  cats: { sword: ['⚔️', 'อาวุธ'], shield: ['🛡️', 'โล่'], bow: ['🏹', 'ธนู/ลูกธนู'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหาร'], wear: ['👕', 'ชุด'] } };
+export const BAG = { page: 25, cols: 5, stack: 999,   // v3.72 every section is pages of 5×5 · a stack of one kind holds up to 999 (more = another slot) · no upgrades
+  cap: { sword: 25, bow: 25, shield: 25, wear: 100, mats: 200, food: 50, pets: 25 },   // slots per section
+  cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], wear: ['🛡️', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'] } };
 export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
 export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
