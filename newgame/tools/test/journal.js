@@ -27,10 +27,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8879, OUT = process.arg
     if (!r3.includes('w:tunic')) errs.push('a self-portrait should record the outfit you wear');
     // 4 · the journal page + a reward
     await E(() => { const N = window.__ng; for (const k of N.jList('animal').slice(0, 5)) N.S.journal.sketch[k] = 1; N.openJournal('animal') }); await wait(600); await pg.screenshot({ path: OUT + '/1-animals.png' });
-    const j4 = await E(() => ({ cards: document.querySelectorAll('.jc').length, rew: document.querySelectorAll('[data-jr]').length, tabs: document.querySelectorAll('.tabs [data-t]').length })); log('page', JSON.stringify(j4));
+    const j4 = await E(() => ({ cards: document.querySelectorAll('.jc').length, rew: document.querySelectorAll('[data-jr]').length, tabs: document.querySelectorAll('.ov [data-bt]').length })); log('page', JSON.stringify(j4));
     if (j4.cards < 8 || !j4.rew || j4.tabs < 9) errs.push('the animal page should list every animal with a reward to claim');
     const c0 = await E(() => window.__ng.S.coin); await E(() => document.querySelector('[data-jr]').click()); await wait(300); const c1 = await E(() => window.__ng.S.coin); log('reward', c0, '→', c1); if (!(c1 > c0)) errs.push('claiming a drawing reward should pay');
-    await E(() => document.querySelector('.tabs [data-t="mats"]').click()); await wait(400); await pg.screenshot({ path: OUT + '/2-mats.png' });
+    await E(() => document.querySelector('.ov [data-bt="mats"]').click()); await wait(400); await pg.screenshot({ path: OUT + '/2-mats.png' });
     const j5 = await E(() => document.querySelectorAll('[data-show]').length); log('place buttons', j5); if (!j5) errs.push('owned materials should offer 🖍️ place-and-draw');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

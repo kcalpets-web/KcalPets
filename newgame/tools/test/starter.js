@@ -25,7 +25,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8897, OUT = process.arg
     const wpn = await row('left'); log('weapons row', JSON.stringify(wpn)); if (!wpn || wpn.ts.some(t => /^(sickle|axe|pick|hoe|mallet)/.test(t)) || !wpn.ts.includes('soldierSpear')) errs.push('⚔️ อาวุธ should list weapons only');
     await E(() => { window.__ng.smenuShow(true); window.__ng.smenuGo('right') }); const frm = await row('right'); log('farm row', JSON.stringify(frm)); if (!frm || frm.ts.includes('soldierSpear') || frm.ts.length < 4) errs.push('🧰 อุปกรณ์ฟาร์ม should list the farm tools only');
     await E(() => window.__ng.openBag('sword')); await wait(600); await pg.screenshot({ path: OUT + '/1-bag.png' });
-    const s4 = await E(() => ({ inf: (document.querySelector('.ov') || {}).innerText.includes('ไม่พัง') })); if (!s4.inf) errs.push('the bag should say starter tools never break');
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.smenuShow(true); N.smenuGo('right'); N.smenuGo('right') }); await wait(800); const s4 = await E(() => ({ inf: document.getElementById('pick').innerText.includes('ไม่พัง') }));   /* v3.50 the bag's details moved into the slot menu: the farm picker says it */ if (!s4.inf) errs.push('the bag should say starter tools never break');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
