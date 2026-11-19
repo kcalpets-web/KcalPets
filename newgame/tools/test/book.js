@@ -37,7 +37,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8863, OUT = process.arg
     await tap('#dpad [data-dp=left]'); await close();
     // draw a chicken → feather unlocked → 🧭 go sets the target
     await E(() => { const N = window.__ng, q = N.me; N.monSpawn('chicken', q.x + Math.sin(N.PL.yaw) * 3, q.z + Math.cos(N.PL.yaw) * 3); N.CAM.yaw = N.PL.yaw; N.msDraw() }); await wait(300); const fk = await E(() => !!window.__ng.msKnown('feather')); log('feather known after drawing a chicken', fk); if (!fk) errs.push('drawing a chicken should reveal where feathers are');
-    await E(i => window.__ng.craftPage([i], i), ai); await wait(500); const gb = await E(() => document.querySelectorAll('[data-mg]').length); await pg.screenshot({ path: OUT + '/book-known.png' }); await E(() => { const b = document.querySelector('[data-mg="feather"]'); b && b.click() }); await wait(800);
+    await E(i => window.__ng.craftPage([i], i), ai); await wait(500); const gb = await E(() => document.querySelectorAll('[data-mg]').length); await pg.screenshot({ path: OUT + '/book-known.png' }); await E(() => { const b = document.querySelector('[data-mg="feather"]'); b && b.click() }); await wait(800); await E(() => { const t = document.querySelector('#mgT'); t && t.click() }); await wait(600);   /* v3.50 the source asks: ⭐ follow or 🚶 walk there */
     const tr = await E(() => ({ tr: window.__ng.S.track, map: !!window.__ng.MAPNAV })); log('go', gb, JSON.stringify(tr)); if (!gb || tr.tr !== 'mat') errs.push('🧭 go should follow the source on the map');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
