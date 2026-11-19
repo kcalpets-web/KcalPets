@@ -1,0 +1,21 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · the Great Tree</title><style>body{margin:0;background:#f4efe6}canvas{display:block}</style></head><body>
+<script type="module">
+/* v3.60 preview of the Great Tree of Seasons (src/greattree.js): 4 seasons by day · night with fireflies + the spirit deer · shot by shoot-greattree.js */
+import * as THREE from '../../lib/three.module.min.js';
+import { greatTree, SEASON_TH } from '../../src/greattree.js';
+const CW = 520, CH = 400, COLS = 3, P = [['spring', 0], ['summer', 0], ['autumn', 0], ['winter', 0], ['summer', 1], ['autumn', 1]], W = CW * COLS, H = CH * 2 + 60;
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(CW, CH); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true;
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#f4efe6'; x.fillRect(0, 0, W, H);
+x.font = '800 26px system-ui'; x.fillStyle = '#3a2a30'; x.fillText('ต้นไม้แห่งฤดูกาล (ตัวอย่าง) · ตัดไม่ได้ · บ่อน้ำล้อมรอบ · หินข้ามน้ำ · กลางคืนหิงห้อย + ภูตกวาง', 16, 40);
+P.forEach(([s, n], i) => {
+  const S = new THREE.Scene(); S.background = new THREE.Color(n ? '#0c1428' : s === 'winter' ? '#cfdcea' : '#a8d4f0'); S.fog = new THREE.Fog(S.background, 40, 110);
+  const hemi = new THREE.HemisphereLight(n ? '#4a5a8a' : '#fff6ec', n ? '#101828' : '#7a8a60', n ? .5 : 1.4); S.add(hemi); const sun = new THREE.DirectionalLight(n ? '#8aa8ff' : '#fff1dc', n ? .35 : 2.2); sun.position.set(-20, 30, 18); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -25, right: 25, top: 25, bottom: -25 }); S.add(sun);
+  const ground = new THREE.Mesh(new THREE.RingGeometry(18.5, 90, 64), new THREE.MeshStandardMaterial({ color: s === 'winter' ? '#e8eef4' : '#5a9a40', roughness: 1 })); ground.rotation.x = -Math.PI / 2; ground.position.y = -.01; ground.receiveShadow = true; S.add(ground);
+  for (let k = 0; k < 18; k++) { const a = Math.PI + k / 17 * Math.PI, r = 30 + (k % 3) * 6, t = new THREE.Mesh(new THREE.ConeGeometry(2.2, 8, 7), new THREE.MeshStandardMaterial({ color: n ? '#1a3028' : s === 'winter' ? '#8aa0a0' : '#2e6a38' })); t.position.set(Math.cos(a) * r, 4, Math.sin(a) * r); S.add(t) }   // the forest around the glade
+  const T = greatTree({ season: s, night: n }); S.add(T.g); T.g.traverse(o => { if (o.isMesh) o.receiveShadow = true });
+  for (let f = 0; f < 40; f++) T.tick(f * .1, .1, { x: 0, z: 60 });
+  const cam = new THREE.PerspectiveCamera(42, CW / CH, .1, 200); if (n && s === 'autumn') { cam.position.set(30, 5, 6); cam.lookAt(14, 2, -2) } else { cam.position.set(5, 4.2, 31); cam.lookAt(0, 4.5, 0) }
+  R.render(S, cam); const cx = (i % COLS) * CW, cy = 56 + Math.floor(i / COLS) * CH; x.drawImage(R.domElement, cx, cy);
+  x.fillStyle = '#0008'; x.fillRect(cx, cy + CH - 34, CW, 34); x.fillStyle = '#fff'; x.font = '700 18px system-ui'; x.fillText(`${SEASON_TH[s]}${n ? ' · กลางคืน' : ''}${n && s === 'autumn' ? ' · ภูตกวางไกลๆ' : ''}`, cx + 12, cy + CH - 11) });
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
