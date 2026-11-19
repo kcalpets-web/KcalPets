@@ -28,7 +28,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8873, OUT = process.arg
     await E(() => { const g = document.querySelector('.ov.inv .invgrid'), r = g.getBoundingClientRect(), y = r.y + 30; g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.right - 20, clientY: y })); g.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: r.left + 20, clientY: y })) }); await wait(500); const s3 = await st(); log('swipe ←', JSON.stringify(s3)); if (s3.tab !== 'bow') errs.push('a swipe should change the section');
     // 🧰 tools · 👕 four pages
     await E(() => window.__ng.openBag('tools')); await wait(500); const tt = await E(() => document.querySelectorAll('.ov.inv .invgrid [data-k^="i"]').length); log('tools', tt); if (tt < 2) errs.push('🧰 should list the farm tools');
-    await E(() => window.__ng.openBag('wear')); await wait(500); const sw = await st(); log('wear', JSON.stringify(sw)); if (!/1\/4/.test(sw.page || '')) errs.push('👕 should have 4 pages of 25');
+    await E(() => window.__ng.openBag('wear')); await wait(500); const sw = await st(); log('wear', JSON.stringify(sw)); if (sw.page) errs.push('v3.75 👕 with a few clothes should show one page only (no pager)'); if (!/\/100/.test(sw.slots || '')) errs.push('👕 holds 100');
     await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     // A on a weapon: สวมใส่ · ทิ้ง · ยกเลิก → wear it · drop another
     await E(() => window.__ng.openBag()); await wait(600); const m1 = await E(() => { const N = window.__ng; N.bagA(N.bagSel.sword, () => {}); return [...document.querySelectorAll('.ov.dlg [data-im]')].map(b => b.dataset.im) }); log('weapon menu', JSON.stringify(m1)); await pg.screenshot({ path: OUT + '/2-menu.png' });
