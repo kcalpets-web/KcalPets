@@ -266,6 +266,12 @@ function animate(A, moving, dt, now, rate = 11) {
 const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 const COLLAR_Y = { chick: .45 }, CROWN_Y = { chick: 1.5, bunny: 1.66, shiba: 1.95, cat: 1.95 };   /* v3.54 unused: pets no longer wear a collar / crown as they grow */
 /* v3.52 🐾 the dog and the cat are four-legged now (KRIG-Q · krigq.js): a smooth clay body on the standard quadruped rig · their own collar + bell · the clips follow what they do */
+/* v3.61 the wild four-legged animals on the same smooth rig (deer · boar · rabbit) — as monsters in the wild and as pets */
+const WILDQ = { deer: 1.45, boar: 1.4, rabbit: 1.05 }; for (const k in WILDQ) ANIMALS[k] = g => { const q = new THREE.Group(); q.scale.setScalar(WILDQ[k]); g.add(q); const R = buildQuad(q, k); poseQ(R, 'idle', 0); g.userData.quad = R };
+function monQuad(M, spd, now, dt) { const R = M.A.body.userData.quad, A = M.A; A.yaw = A.yaw ?? A.yawT ?? 0; A.yaw += angDiff(A.yaw, A.yawT ?? A.yaw) * Math.min(1, dt * 10); A.body.rotation.y = A.yaw;
+  if (spd > .05) M.stillT = 0; else M.stillT = (M.stillT || 0) + dt; const close = M.aggro && dist(me().x, me().z, A.root.position.x, A.root.position.z) < 1.6;
+  const clip = now < (M.qHurtT || 0) ? 'hurt' : close ? 'attack' : spd > 1.6 ? 'run' : spd > .05 ? 'walk' : M.alert === 1 ? 'turn' : M.stillT > 12 && M.kind === 'rabbit' ? 'sit' : 'idle', per = { walk: 900, run: 480, attack: 620, idle: 2600, hurt: 400 }[clip] || 1600;
+  poseQ(R, clip, (now % per) / per); A.body.position.y = 0 }
 const QUAD_SC = 1.55; for (const k of ['shiba', 'cat']) PETS[k] = g => { const q = new THREE.Group(); q.scale.setScalar(QUAD_SC); g.add(q); const R = buildQuad(q, k); poseQ(R, 'idle', 0); g.userData.quad = R };
 function quadTick(e, mv, now, dt) { const R = e.A.body.userData.quad; if (!R) return false; const fight = e.mode === 'fight' && e.foe, atk = fight && now < e.atkT && e.atkT - now > D.PET_ATK_CD / speed - 450;
   if (mv) e.stillT = 0; else e.stillT = (e.stillT || 0) + dt;
@@ -653,7 +659,7 @@ function callPets(m) { const q = m.A.root.position; for (const e of PA.values())
 function monGone(m) { scene.remove(m.A.root); m.tag.remove(); removePick(W, m.pick); mons.splice(mons.indexOf(m), 1); for (const e of PA.values()) if (e.foe === m) { e.mode = 'wander'; e.foe = null }
   if (m.farm) { S.mon = null; setTool(prevTool) } }
 const farmMon = () => mons.find(m => m.farm);
-function hurtMon(m, d, cls, label) { if (m.T.horse) { const q0 = m.A.root.position; floater('🐴 💛', 'tool', q0.x, 1.8, q0.z); return } if (m.T.golem) { const g = golemDmg(m, d); if (!g[0]) return; d = g[0]; if (g[1]) label = g[1] } const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
+function hurtMon(m, d, cls, label) { m.qHurtT = performance.now() + 400; if (m.T.horse) { const q0 = m.A.root.position; floater('🐴 💛', 'tool', q0.x, 1.8, q0.z); return } if (m.T.golem) { const g = golemDmg(m, d); if (!g[0]) return; d = g[0]; if (g[1]) label = g[1] } const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
 function monDie(m) {
   if (m.occ) setTimeout(() => occKill(m)); if (m.lstone) setTimeout(() => lsKill(m));   /* v3.14 a light-stone guardian */   /* v3.8 one of the squatters at your camp fire */
   { const q = m.A.root.position, big = (MSCALE[m.kind] || .85) > 1; VF.burst(q.x, q.y + .6, q.z, m.T.animal ? '#ffffff' : '#c8a0ff', big ? 30 : 16, big ? 5 : 3.5); VF.ring(q.x, q.y, q.z, '#ffffff', big ? 3.2 : 1.8, .45) }
@@ -1261,7 +1267,7 @@ function frame(now) {
     else if (M.alert !== 1 && huntTick(M, m, sp, dt, now, ok)) { }   /* v2.6 monsters hunt wild animals for food (the meat stays where the prey fell) */
     else if (M.alert !== 1 && (M.wait -= dt) <= 0) { const d = stepTo(M.A, M.t[0], M.t[1], .6, dt, ok); if (d < .1) { M.wait = 1 + Math.random() * 2.5; M.t = [M.home[0] + (Math.random() - .5) * 3, M.home[1] + (Math.random() - .5) * 3] } }
     if (M.T.swim) m.y = -.55 + Math.sin(now / 600 + i) * .06;
-    if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, m.y + .8, m.z);
+    if (M.A.body.userData.quad) monQuad(M, Math.hypot(m.x - ox, m.z - oz) / Math.max(dt, 1e-3), now, dt); else if (M.A.rig) { animate(M.A, Math.hypot(m.x - ox, m.z - oz) > .001, dt, now, 13); M.A.body.position.y = M.A.bob } else { M.A.body.rotation.y = M.A.yawT; M.A.body.position.y = Math.abs(Math.sin(now / 160 + i)) * .1 } M.pick.position.set(m.x, m.y + .8, m.z);
     if (!AN && M.aggro && age > 1.2 && now > M.atkT && (tgt ? td < 1.4 : pd < 2.4)) { M.atkT = now + D.MON_ATK_CD / speed;
       if (!tgt || Math.random() < D.MON_HIT_PLAYER) hitPlayer(M, now);
       else { const tq = tgt.A.root.position; floater('💨', 'tool', tq.x, 1.4, tq.z) } }   /* pets have no HP (v1.4): they dodge */

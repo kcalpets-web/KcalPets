@@ -12,6 +12,10 @@ export const QLOOK = {
   /* v3.52 the smooth kitten: no joints showing · a big head · bright eyes that close when happy · tabby bands · a collar + bell */
   tabby: { smooth: 1, fur: '#f4a24a', dark: '#d9822e', belly: '#fff4e4', bellyD: '#f2dcc0', paw: '#fff4e4', pawD: '#efd6b8', ear: 'cat', tail: 'up', nose: '#e8808e', snout: .5, bands: '#d06a1e', iris: '#8a4a1a', collar: '#d83a3a', bell: '#f2c23a', head: 1.15 },
   cat: { smooth: 1, fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', paw: '#ffffff', pawD: '#dcdce8', ear: 'cat', tail: 'up', nose: '#d06a80', snout: .5, bands: '#6a6c80', iris: '#c8922a', collar: '#d83a3a', bell: '#f2c23a', head: 1.15 },
+  /* v3.61 the wild animals on the same rig: proportions (leg · body · bulk · neck · tailLen) + their own ears / tails / extras */
+  deer: { smooth: 1, fur: '#c07a3e', dark: '#8a5228', belly: '#f6e8d2', bellyD: '#e8d4b8', paw: '#5a3a26', pawD: '#3a2418', ear: 'deer', tail: 'short', nose: '#2a1a14', snout: 1.1, iris: '#2a1810', head: .9, leg: 1.6, body: 1.15, bulk: .85, neck: 1.7, tailLen: .45, antlers: 1, spots: '#f6e8d2' },
+  boar: { smooth: 1, fur: '#6e5040', dark: '#4a3428', belly: '#8e7262', bellyD: '#7a5e50', paw: '#3a2a22', pawD: '#2a1e18', ear: 'small', tail: 'thin', nose: '#d89a8a', snout: 1.7, pig: 1, iris: '#2a1810', head: 1.05, leg: .78, body: 1.15, bulk: 1.3, neck: .55, tailLen: .6, tusks: 1, mane: '#3a2820' },
+  rabbit: { smooth: 1, fur: '#e8ddd0', dark: '#c8b8a8', belly: '#ffffff', bellyD: '#f0eae4', paw: '#ffffff', pawD: '#eee6dc', ear: 'long', tail: 'puff', nose: '#e8808e', snout: .45, iris: '#3a2418', head: 1.25, leg: .62, body: .85, bulk: 1.05, neck: .7, tailLen: .4 },
   joint: { fur: '#a4a6b8', dark: '#6a6c80', belly: '#ffffff', bellyD: '#e6e6f0', paw: '#ffffff', pawD: '#dcdce8', ear: 'cat', tail: 'long', nose: '#d06a80', snout: .6, stripes: '#5a5c70' },   /* the first (ball-joint) test look */
 };
 const J = (parent, name, x, y, z) => { const j = new THREE.Group(); j.name = name; j.position.set(x, y, z); parent.add(j); return j };
@@ -24,30 +28,37 @@ const eye = (g, x, y, z, iris) => { const o = new THREE.Group(); o.name = 'eyeO'
 
 /* build the clay body on the rig · returns { root, j: { name → joint } } */
 export function buildQuad(g, look) { const k = typeof look === 'string' ? QLOOK[look] : look, j = {}, part0 = part, P_ = k.smooth ? () => null : part;   /* smooth: the body shapes become one skin (skinQ) */
-  const root = J(g, 'root', 0, 0, 0); j.root = root; j.hips = J(root, 'hips', 0, .52, -.24); j.spine = J(j.hips, 'spine', 0, .02, .22); j.chest = J(j.spine, 'chest', 0, .02, .2);
+  const L = k.leg || 1, B = k.body || 1, BU = k.bulk || 1, NK = k.neck || 1, TL = k.tailLen || 1; const root = J(g, 'root', 0, 0, 0); j.root = root; j.hips = J(root, 'hips', 0, .07 + .45 * L, -.24 * B); j.spine = J(j.hips, 'spine', 0, .02, .22 * B); j.chest = J(j.spine, 'chest', 0, .02, .2 * B);
   P_(j.spine, k.dark, k.fur, [0, .02, 0], [.2, .18, .3]); P_(j.spine, k.bellyD, k.belly, [0, -.07, .02], [.14, .11, .22]);   /* the body (an oval) · its belly */
   P_(j.hips, k.dark, k.fur, [0, 0, 0], [.18, .17, .16]); P_(j.chest, k.dark, k.fur, [0, .02, 0], [.19, .19, .17]); P_(j.chest, k.bellyD, k.belly, [0, -.02, .1], [.12, .14, .08]);
-  j.neck = J(j.chest, 'neck', 0, .14, .12); if (!k.smooth) ball(j.neck, k.dark, k.fur, .08, [0, .04, .02]);
-  j.head = J(j.neck, 'head', 0, .22, .06); const H0 = j.head, H = new THREE.Group(); H.scale.setScalar(k.head || 1); H0.add(H);
+  j.neck = J(j.chest, 'neck', 0, .14 * Math.min(1.2, BU), .12); if (!k.smooth) ball(j.neck, k.dark, k.fur, .08, [0, .04, .02]);
+  j.head = J(j.neck, 'head', 0, .22 * NK, .06 + .05 * (NK - 1)); const H0 = j.head, H = new THREE.Group(); H.scale.setScalar(k.head || 1); H0.add(H);
   P_(H, k.dark, k.fur, [0, 0, 0], [.27, .25, .25]); P_(H, k.bellyD, k.belly, [0, -.07, .17 + .05 * k.snout], [.13, .09, .06 + .05 * k.snout]); part(H, k.nose, k.nose, [0, -.03, .23 + .1 * k.snout], [.035, .025, .02], [0, 0, 0], { A: 0 }); if (k.smooth) for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.TorusGeometry(.022, .006, 6, 10, Math.PI), new THREE.MeshStandardMaterial({ color: '#7a3a2a' })); m.rotation.z = Math.PI; m.position.set(s * .021, -.075, .23 + .1 * k.snout - .01); H.add(m) }   /* a little ω mouth */
   eye(H, -.1, .04, .22, k.iris); eye(H, .1, .04, .22, k.iris); for (const s of [-1, 1]) part(H, '#ff8fa6', '#ffb3c0', [s * .16, -.06, .19], [.035, .02, .015], [0, s * .5, 0], { A: 0, shadow: false });
   if (k.bands && !k.smooth) { for (let i = -1; i <= 1; i++) part(H, k.bands, k.dark, [i * .075, .2, .1], [.022, .07, .02], [.9, 0, 0], { A: 0 }); for (const s of [-1, 1]) for (const d of [0, 1]) part(H, k.bands, k.dark, [s * .25, .02 - d * .07, .05], [.012, .02, .05], [0, 0, s * .2], { A: 0 }) }   /* forehead M · cheek bands */
   if (k.stripes) for (let i = -1; i <= 1; i++) part(H, k.stripes, k.dark, [i * .07, .18, .14], [.018, .05, .015], [.6, 0, 0], { A: 0 });
-  for (const s of [-1, 1]) { const e = j['ear' + (s < 0 ? 'L' : 'R')] = J(H, 'ear' + (s < 0 ? 'L' : 'R'), s * .15, .19, -.02); e.rotation.z = -s * (k.ear === 'cat' ? .15 : .3);
-    cone(e, k.dark, k.fur, [0, .07, 0], [.08, .12, .05], [0, 0, 0], .95); cone(e, '#f0b9a0', '#ffd9c8', [0, .065, .025], [.04, .08, .015], [0, 0, 0], .95) }
+  for (const s of [-1, 1]) { const e = j['ear' + (s < 0 ? 'L' : 'R')] = J(H, 'ear' + (s < 0 ? 'L' : 'R'), s * (k.ear === 'deer' ? .2 : .15), k.ear === 'deer' ? .12 : .19, -.02); e.rotation.z = -s * earZ(k);
+    const es = k.ear === 'long' ? [.065, .32, .04] : k.ear === 'deer' ? [.06, .14, .035] : k.ear === 'small' ? [.06, .08, .04] : [.08, .12, .05], ey = es[1] * .55;
+    cone(e, k.dark, k.fur, [0, ey, 0], es, [0, 0, 0], k.ear === 'long' ? .6 : .95); cone(e, '#f0b9a0', '#ffd9c8', [0, ey - .005, .022], [es[0] * .5, es[1] * .66, .015], [0, 0, 0], k.ear === 'long' ? .6 : .95) }
+  if (k.antlers) for (const s of [-1, 1]) { const a = new THREE.Group(); a.position.set(s * .09, .22, -.02); a.rotation.z = -s * .35; H.add(a); const ant = '#e8d8b8', antD = '#a8946e';   /* little branching antlers */
+    part(a, antD, ant, [0, .14, 0], [.022, .15, .022]); part(a, antD, ant, [s * .06, .2, .03], [.016, .08, .016], [.4, 0, -s * .8]); part(a, antD, ant, [-s * .02, .27, -.02], [.016, .07, .016], [-.3, 0, s * .4]) }
+  if (k.pig) { const tz = .23 + .1 * k.snout; part(H, k.nose, '#f4c0b4', [0, -.06, tz - .01], [.09, .075, .035], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) part(H, '#5a2a24', '#7a3a30', [s * .032, -.06, tz + .022], [.016, .022, .01], [0, 0, 0], { A: 0 }) }   /* the pig's disc nose at the muzzle tip */
+  if (k.tusks) { const tz = .2 + .1 * k.snout; for (const s of [-1, 1]) cone(H, '#e8e0cc', '#fffaf0', [s * .1, -.12, tz - .05], [.026, .11, .026], [-.5, 0, -s * .45], .9) }
+  if (k.mane) for (let i = 0; i < 6; i++) cone(i < 3 ? j.chest : j.spine, k.mane, k.dark, [0, .19 * BU, .1 - (i % 3) * .1], [.035, .1, .03], [-.3, 0, 0], .9);   /* a bristly ridge */
+  if (k.spots) for (let i = 0; i < 7; i++) part(j.spine, k.spots, k.spots, [(i % 2 ? .1 : -.1) * BU, .14, -.22 + i * .07], [.026, .012, .026], [0, 0, 0], { A: 0, shadow: false });   /* fawn spots on the back */
   /* legs: shoulder/hip ball · upper · elbow/knee ball · lower · paw */
-  const leg = (parent, side, front) => { const n = (front ? 'f' : 'h') + side, sx = side === 'L' ? -1 : 1, top = J(parent, n + 'Top', sx * .15, front ? -.08 : -.06, front ? .04 : -.02);
+  const leg = (parent, side, front) => { const n = (front ? 'f' : 'h') + side, sx = side === 'L' ? -1 : 1, top = J(parent, n + 'Top', sx * .15 * BU, front ? -.08 : -.06, front ? .04 : -.02);
     if (k.smooth) { } else { ball(top, k.dark, k.fur, .075); part(top, k.dark, k.fur, [0, -.1, 0], [.06, .11, .06]) }
-    const mid = J(top, n + 'Mid', 0, -.21, 0); if (k.smooth) { } else { ball(mid, k.pawD, k.fur, .05); part(mid, k.pawD, k.fur, [0, -.09, 0], [.05, .1, .05]) }   /* smooth: soft overlapping limbs (no joints showing) · white socks */
-    const paw = J(mid, n + 'Paw', 0, -.19, 0); P_(paw, k.pawD, k.paw, [0, -.005, .03], k.smooth ? [.075, .05, .09] : [.065, .04, .085]);
+    const mid = J(top, n + 'Mid', 0, -.21 * L, 0); if (k.smooth) { } else { ball(mid, k.pawD, k.fur, .05); part(mid, k.pawD, k.fur, [0, -.09, 0], [.05, .1, .05]) }   /* smooth: soft overlapping limbs (no joints showing) · white socks */
+    const paw = J(mid, n + 'Paw', 0, -.19 * L, 0); P_(paw, k.pawD, k.paw, [0, -.005, .03], k.smooth ? [.075, .05, .09] : [.065, .04, .085]);
     j[n + 'Top'] = top; j[n + 'Mid'] = mid; j[n + 'Paw'] = paw };
   leg(j.chest, 'L', 1); leg(j.chest, 'R', 1); leg(j.hips, 'L', 0); leg(j.hips, 'R', 0);
   if (k.bands && !k.smooth) for (const [jn, z] of [['hips', 0], ['spine', -.12], ['spine', .05], ['spine', .2], ['chest', .04]]) part(j[jn], k.bands, k.dark, [0, jn === 'spine' ? .1 : .09, z], [.19, .1, .028], [0, 0, 0], { A: 0 });   /* tabby bands over the back */
   if (k.collar) { const c = new THREE.Mesh(new THREE.TorusGeometry(.12, .026, 8, 22), new THREE.MeshStandardMaterial({ color: k.collar, roughness: .5 })); c.rotation.x = Math.PI / 2 + .5; c.position.set(0, -.03, .03); j.neck.add(c);
     const b = new THREE.Mesh(new THREE.SphereGeometry(.035, 14, 10), new THREE.MeshStandardMaterial({ color: k.bell, metalness: .6, roughness: .25 })); b.position.set(0, -.1, .14); j.neck.add(b) }   /* the collar + its bell */
   /* tail: 4 joints */
-  let t = j.hips; for (let i = 1; i <= 4; i++) { t = J(t, 'tail' + i, 0, i === 1 ? .08 : 0, i === 1 ? -.12 : -.1); j['tail' + i] = t; { const r = k.tail === 'curl' ? .055 - i * .006 : k.tail === 'up' ? .05 - i * .004 : .038 - i * .004; P_(t, k.dark, k.fur, [0, 0, -.05], [r, r, .075], [0, 0, 0], { A: 0 }); if (k.bands && i % 2) P_(t, k.bands, k.dark, [0, 0, -.05], [r * 1.04, r * 1.04, .02], [0, 0, 0], { A: 0 }); if (i === 4 && k.tail !== 'curl') P_(t, k.belly, k.belly, [0, 0, -.12], [r * .9, r * .9, r * 1.2], [0, 0, 0], { A: 0 }) }   /* a solid tail (a white tip on the cat) */ }
-  const R = g.userData.quad = { root, j, k, H }; if (k.smooth) { rest(R); skinQ(R, typeof look === 'string' ? look : JSON.stringify(look)) } return R }
+  let t = j.hips; for (let i = 1; i <= 4; i++) { t = J(t, 'tail' + i, 0, i === 1 ? .08 : 0, i === 1 ? -.12 * B : -.1 * TL); j['tail' + i] = t; { const r = k.tail === 'curl' ? .055 - i * .006 : k.tail === 'up' ? .05 - i * .004 : .038 - i * .004; P_(t, k.dark, k.fur, [0, 0, -.05], [r, r, .075], [0, 0, 0], { A: 0 }); if (k.bands && i % 2) P_(t, k.bands, k.dark, [0, 0, -.05], [r * 1.04, r * 1.04, .02], [0, 0, 0], { A: 0 }); if (i === 4 && k.tail !== 'curl') P_(t, k.belly, k.belly, [0, 0, -.12], [r * .9, r * .9, r * 1.2], [0, 0, 0], { A: 0 }) }   /* a solid tail (a white tip on the cat) */ }
+  const R = g.userData.quad = { root, j, k, H, L }; if (k.smooth) { rest(R); skinQ(R, typeof look === 'string' ? look : JSON.stringify(look)) } return R }
 /* v3.52 one seamless skin (like a soft toy): a signed-distance body (ellipsoids + tapered capsules on the joints, smoothly melted together) → a mesh (surface nets) →
    skinned to the same joints (each vertex follows the nearest parts, blended) · colours by part (fur · white belly / muzzle / paws · tabby bands) · built once per look and shared */
 const SKC = new Map();
@@ -55,11 +66,11 @@ const smin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; retu
 function skinQ(R, key) { const { j, k, root } = R; root.updateMatrixWorld(true); let C = SKC.get(key);
   if (!C) { const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), V = (o, x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z).applyMatrix4(o.matrixWorld).applyMatrix4(inv), hs = k.head || 1, sn = k.snout || .6, pr = [];
     const E = (b, x, y, z, rx, ry, rz, tag = 'fur') => pr.push({ e: 1, c: V(j[b], x, y, z), r: [rx, ry, rz], b, tag }), Cp = (b, a, c, r0, r1, tag = 'fur') => pr.push({ a, c, r0, r1, b, tag });
-    E('hips', 0, 0, 0, .18, .17, .16); E('spine', 0, .02, 0, .2, .18, .3); E('chest', 0, .02, 0, .19, .19, .17); E('spine', 0, -.07, .02, .14, .11, .22, 'belly'); E('chest', 0, -.02, .1, .12, .14, .08, 'belly');
-    Cp('neck', V(j.chest, 0, .06, .06), V(j.head, 0, -.06, 0), .1, .1); E('head', 0, 0, 0, .27 * hs, .25 * hs, .25 * hs); E('head', 0, -.07 * hs, (.17 + .05 * sn) * hs, .13 * hs, .09 * hs, (.06 + .05 * sn) * hs, 'belly');
-    for (const n of ['fL', 'fR', 'hL', 'hR']) { const a = V(j[n + 'Top'], 0, .03, 0), m = V(j[n + 'Mid']), p = V(j[n + 'Paw']); Cp(n + 'Top', a, m, .085, .066); Cp(n + 'Mid', m, p, .063, .056); E(n + 'Paw', 0, -.005, .03, .075, .05, .09, 'paw') }
-    const tp = [1, 2, 3, 4].map(i => V(j['tail' + i])); tp.push(V(j.tail4, 0, 0, -.1)); const tr = i => k.tail === 'curl' ? .058 - i * .007 : k.tail === 'up' ? .05 - i * .005 : .04 - i * .005;
-    for (let i = 0; i < 4; i++) Cp('tail' + (i + 1), tp[i], tp[i + 1], tr(i), tr(i + 1), i === 3 && k.tail !== 'curl' ? 'tip' : 'tail');
+    const B = k.body || 1, BU = k.bulk || 1, LG = k.leg || 1; E('hips', 0, 0, 0, .18 * BU, .17 * BU, .16 * B); E('spine', 0, .02, 0, .2 * BU, .18 * BU, .3 * B); E('chest', 0, .02, 0, .19 * BU, .19 * BU, .17 * B); E('spine', 0, -.07 * BU, .02, .14 * BU, .11 * BU, .22 * B, 'belly'); E('chest', 0, -.02, .1, .12 * BU, .14 * BU, .08, 'belly');
+    Cp('neck', V(j.chest, 0, .06, .06), V(j.head, 0, -.06, 0), .1 * Math.max(.85, BU * .9), .1 * (k.neck > 1.3 ? .8 : 1)); E('head', 0, 0, 0, .27 * hs, .25 * hs, .25 * hs); E('head', 0, -.07 * hs, (.17 + .05 * sn) * hs, .13 * hs, .09 * hs, (.06 + .05 * sn) * hs, 'belly');
+    for (const n of ['fL', 'fR', 'hL', 'hR']) { const a = V(j[n + 'Top'], 0, .03, 0), m = V(j[n + 'Mid']), p = V(j[n + 'Paw']); const th = LG > 1.3 ? .72 : 1; Cp(n + 'Top', a, m, .085 * th * Math.sqrt(BU), .066 * th); Cp(n + 'Mid', m, p, .063 * th * (LG > 1.3 ? .8 : 1), .056 * th * (LG > 1.3 ? .75 : 1)); if (k.ear === 'deer' || k.pig) E(n + 'Paw', 0, -.01, .015, .045, .045, .05, 'paw'); else E(n + 'Paw', 0, -.005, .03, .075, .05, .09, 'paw') }   /* hooves: small and dark */
+    const tp = [1, 2, 3, 4].map(i => V(j['tail' + i])); tp.push(V(j.tail4, 0, 0, -.1)); const tr = i => k.tail === 'curl' ? .058 - i * .007 : k.tail === 'up' ? .05 - i * .005 : k.tail === 'short' ? .045 - i * .006 : k.tail === 'thin' ? .022 - i * .003 : k.tail === 'puff' ? .03 : .04 - i * .005;
+    for (let i = 0; i < 4; i++) Cp('tail' + (i + 1), tp[i], tp[i + 1], tr(i), tr(i + 1), i === 3 && k.tail !== 'curl' && k.tail !== 'thin' ? 'tip' : 'tail'); if (k.tail === 'puff') E('tail2', 0, 0, -.02, .09, .09, .09, 'belly');   /* a cotton tail */
     const dist = (P, q) => { if (q.e) { const x = (P.x - q.c.x) / q.r[0], y = (P.y - q.c.y) / q.r[1], z = (P.z - q.c.z) / q.r[2]; return (Math.hypot(x, y, z) - 1) * Math.min(...q.r) }
       const ax = q.c.x - q.a.x, ay = q.c.y - q.a.y, az = q.c.z - q.a.z, L2 = ax * ax + ay * ay + az * az, t = Math.max(0, Math.min(1, ((P.x - q.a.x) * ax + (P.y - q.a.y) * ay + (P.z - q.a.z) * az) / L2));
       return Math.hypot(P.x - q.a.x - ax * t, P.y - q.a.y - ay * t, P.z - q.a.z - az * t) - (q.r0 + (q.r1 - q.r0) * t) };
@@ -91,15 +102,17 @@ function skinQ(R, key) { const { j, k, root } = R; root.updateMatrixWorld(true);
 /* the face: open eyes · happy (closed arcs) · wink (one closed) */
 export function faceQ(R, f) { const E = R.H.children.filter(o => o.name === 'eyeO'), C = R.H.children.filter(o => o.name === 'eyeC'); E.forEach((e, i) => { const shut = f === 'happy' || (f === 'wink' && i === 1); e.visible = !shut; C[i].visible = shut }) }
 
+const earZ = k => k.ear === 'cat' ? .15 : k.ear === 'long' ? .08 : k.ear === 'deer' ? 1.15 : k.ear === 'small' ? .5 : .3;
 /* rest pose (all joints back to zero) */
 function rest(R) { for (const n in R.j) { const o = R.j[n]; o.rotation.set(0, 0, 0) } R.j.root.position.y = 0; const k = R.k;
-  for (const s of ['L', 'R']) R.j['ear' + s].rotation.z = (s === 'L' ? 1 : -1) * (k.ear === 'cat' ? .15 : .3);
-  const curl = k.tail === 'curl', up = k.tail === 'up'; R.j.tail1.rotation.x = curl ? 1.25 : up ? .95 : -.5; for (let i = 2; i <= 4; i++) R.j['tail' + i].rotation.x = curl ? .8 : up ? .3 - (i === 4 ? .55 : 0) : -.12; if (R.H) faceQ(R, 'open') }
+  for (const s of ['L', 'R']) R.j['ear' + s].rotation.z = (s === 'L' ? 1 : -1) * earZ(k);
+  const curl = k.tail === 'curl', up = k.tail === 'up' || k.tail === 'short' || k.tail === 'puff'; R.j.tail1.rotation.x = curl ? 1.25 : up ? .95 : k.tail === 'thin' ? -1 : -.5; for (let i = 2; i <= 4; i++) R.j['tail' + i].rotation.x = curl ? .8 : up ? .3 - (i === 4 ? .55 : 0) : -.12; if (R.H) faceQ(R, 'open') }
 
 const S = Math.sin, PI = Math.PI;
 const legsQ = (R, fl, fr, hl, hr) => { for (const [n, a] of [['fL', fl], ['fR', fr], ['hL', hl], ['hR', hr]]) { const [top, mid, paw] = a; R.j[n + 'Top'].rotation.x = top; R.j[n + 'Mid'].rotation.x = mid; R.j[n + 'Paw'].rotation.x = paw || 0 } };
 /* poseQ: the 10 clips (t loops 0…1) */
-export function poseQ(R, clip, t = 0) { rest(R); const j = R.j, w = t * PI * 2;
+export function poseQ(R, clip, t = 0) { poseQ0(R, clip, t); if (R.L && R.L !== 1) R.j.root.position.y *= R.L }   /* v3.61 long / short legs: the body rises and drops by the same share */
+function poseQ0(R, clip, t = 0) { rest(R); const j = R.j, w = t * PI * 2;
   if (R.H && ['run', 'jump', 'sit', 'happy', 'lie'].includes(clip)) faceQ(R, 'happy');
   if (clip === 'idle') { j.spine.position.y = .02 + S(w) * .006; j.head.rotation.x = S(w) * .04; j.tail2.rotation.z = S(w) * .25 }
   else if (clip === 'walk') { const a = S(w) * .42, b = S(w + PI) * .42, lift = p => Math.max(0, S(p)) * .5;   /* diagonal pairs */
