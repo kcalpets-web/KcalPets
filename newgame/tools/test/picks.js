@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8817, OUT = process.arg
     // hold A → the picker opens with pictures + stats
     await E(() => { window.__ng.smenuShow(true); window.__ng.smenuGo('right'); window.__ng.smenuGo('left') }); await wait(800);   /* v3.17 the stick menu → ของตี → v3.47 ⚔️ weapons */
     const pk = await E(() => [...document.querySelectorAll('#pick .row i')].map(i => ({ img: !!i.querySelector('img'), st: (i.querySelector('em') || {}).textContent }))); log('picker', JSON.stringify(pk));
-    if (!pk.length || pk.filter(x => x.img).length < 1) errs.push('the picker has no item pictures'); if (!pk.some(x => /⚔️\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');
+    if (!pk.length || pk.filter(x => x.img).length < 1) errs.push('the picker has no item pictures'); if (!pk.some(x => /\d/.test(x.st || ''))) errs.push('the picker shows no attack numbers');   /* v3.68 ⚔ is a clay picture now */
     await pg.screenshot({ path: OUT + '/picker.png' });
     { const r = await E(() => { const N = window.__ng, S = N.S; document.getElementById('pick').classList.remove('on'); for (let k = 0; k < 15; k++) S.bag.push(N.newItem('woodSpear', 'B')); const last = S.bag[S.bag.length - 1]; N.equipA(last); N.openPick('a'); const P = N.pick(); if (!P) return null; const n = P.L.length, has = P.L.includes('w:' + last.id), i0 = P.i; return { n, has, i0 } });
       log('v3.49 picker cap', JSON.stringify(r)); if (!r || r.n !== 12) errs.push('v3.49 the picker should show 12 items'); if (r && !r.has) errs.push('v3.49 what you hold should be among the 12');
