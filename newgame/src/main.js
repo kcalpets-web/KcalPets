@@ -7,7 +7,7 @@ import { PROPS, MAT, rboxGeo, npcHat, THREE, C, part, cone, Q, PETS, MONS, TOOLM
 import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
-import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH } from './weapons.js';
+import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH, TOOL_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
 import { ambient, landLife } from './ambient.js';
@@ -2754,7 +2754,9 @@ function thumb(key, build) { if (THUMB.has(key)) return THUMB.get(key); let url 
     const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.35 + sz.z;
     THR.cam.position.set(c.x, c.y, c.z + d); THR.cam.lookAt(c); THR.r.render(THR.sc, THR.cam); url = THR.r.domElement.toDataURL('image/png'); THR.sc.remove(g) } catch (e) { url = '' }
   THUMB.set(key, url); return url }
-TOOLMESH.hoe = (g, t = 0) => YMESH.hoe(g);
+/* v3.49 the farm tools redrawn (weapons.js TOOL_MESH · preview tools/art/tools.html) · scaled to sit in the hand like before, a little bigger to read clearly */
+for (const [k, m, sc] of [['axe', 'axe', .72], ['hammer', 'pick', .72], ['sickle', 'sickle', .85], ['hoe', 'hoe', .9]]) TOOLMESH[k] = (g, t = 0) => { const h = new THREE.Group(); TOOL_MESH[m](h, t); h.scale.setScalar(sc); g.add(h) };
+YMESH.hoe = g => TOOLMESH.hoe(g, 0);
 const itemPic = t => thumb('i:' + t, g => itemMesh(g, t)), toolPic = k => thumb('t:' + k + (S.tools[k] || 0), g => (TOOLMESH[k] || YMESH[k])(g, S.tools[k] || 0)), yPic = k => thumb('y:' + k, g => YMESH[k](g));
 const picTag = (url, ico, cls = '') => url ? `<img class="ipic${cls}" src="${url}" alt="">` : ico;
 function pickPos() { if (!PICK) return; const r = pickEl.querySelector('.row'); if (!r) return; const L = PICK.L, n = L.length, i = PICK.i, side = [n > 1 ? (i - 1 + n) % n : -1, i, n > 1 ? (i + 1) % n : -1];
