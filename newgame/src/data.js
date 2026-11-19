@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.68';
+export const APP_VER = '3.69';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -796,7 +796,15 @@ export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
 export const WEAR_DROP = { shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };
 /* v3.43 🎩 the wandering merchant: every `cycle` game days he camps `stay` days at a forest spot in some kingdom, then is gone · stock is drawn per visit (limited)
    · gear: rare weapons (rarity E/L) · wear: pieces no shop sells · mats: [n, price] · prices in coins (🪙) and gems (💎) */
-export const MERCHANT = { cycle: 10, stay: 3, near: 110, n: { gear: 2, wear: 2, mats: 3 },
+export const MERCHANT = { cycle: 3, stay: 3, near: 110, n: { gear: 1, wear: 1, mats: 2 }, legend: .3,   // v3.69 moves town every 3 days (never gone) · n = the common picks on top of the town's own
+  /* v3.69 each town's own stock: gear (one is the rare piece, legend = chance it is ⭐) · wear [k, coin, gem] · mats {k: [n, coin]} */
+  town: { navalee: { gear: ['trident'], wear: [['h_sailor', 1600, 3]], mats: { aquamarine: [3, 320] } },
+    sylvaren: { gear: ['crystalBow', 'knightBow'], wear: [['h_flower', 1400, 3]], mats: { emerald: [3, 320] } },
+    frosthelm: { gear: ['crystalBlade', 'crystalShield'], wear: [['k_frosthelm', 2600, 6], ['h_hood', 1500, 3]], mats: { crystal: [3, 300] } },
+    deadgar: { gear: ['golemCrusher'], wear: [['h_knight', 2200, 5]], mats: { golemCore: [1, 1200], bone: [3, 220] } },
+    asrah: { gear: ['scimitar'], wear: [['o_kimono', 2600, 6], ['h_straw', 1200, 2]], mats: { goldBar: [2, 500] } },
+    valkara: { gear: ['dragonBlade'], wear: [['h_goggles', 1600, 3]], mats: { lavaCoal: [2, 400] } },
+    luminia: { gear: ['kingSword', 'kingShield', 'knightSword'], wear: [['h_crown', 3000, 8], ['a_knight', 3200, 8]], mats: { diamond: [1, 900] } } },
   gear: ['scimitar', 'knightSword', 'crystalBlade', 'dragonBlade', 'trident', 'kingSword', 'golemCrusher', 'knightBow', 'crystalBow', 'crystalShield', 'kingShield'],
   wear: [['o_mage', 2400, 6], ['o_kimono', 2600, 6], ['o_cape', 2200, 5], ['h_crown', 3000, 8], ['a_knight', 3200, 8]],
   mats: { diamond: [1, 900], golemCore: [1, 1200], crystal: [3, 300], aquamarine: [2, 350], emerald: [2, 350], goldBar: [2, 500], lavaCoal: [2, 400] } };
