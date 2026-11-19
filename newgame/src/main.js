@@ -1843,7 +1843,8 @@ function openBag(tab, sell) {
     b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; sfx('tap'); redraw() });
     b.querySelectorAll('[data-pg]').forEach(x => x.onclick = () => bagFlip(+x.dataset.pg, redraw));
     b.querySelectorAll('[data-k]').forEach(x => x.onclick = e => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw(); if (e && e.isTrusted && x.closest('.invgrid')) bagA(x.dataset.k, redraw) });
-    bagSwipe(b.querySelector('.invgrid'));   /* a real tap opens the menu · the frame moving onto a slot only selects it */
+    bagSwipe(b.querySelector('.invgrid'));
+    bagFit(b);   /* a real tap opens the menu · the frame moving onto a slot only selects it */
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, craft: openCraft, me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'craft') craftBody(b.querySelector('#bagCraft'), redraw);
@@ -1859,6 +1860,9 @@ function openBag(tab, sell) {
   }, { cls: 'inv', onClose: () => { bagSellMode = false } });
 }
 /* ================= v3.72 🎒 the bag: 7 sections × pages of 5×5 · the frame starts on ⚔️'s first slot · ⬅️➡️ past the row's end = the next page / section (same row) · swipe = the same · A = a small menu · 🪵: X = hold (n/5) → A adds · X again = all back · B = back to the game ================= */
+/* v3.75 landscape (a short screen): the 5×5 grid shrinks so all five rows fit under the header */
+function bagFit(b) { const g = b.querySelector('.invgrid'); if (!g) return; g.style.gridTemplateColumns = ''; g.style.justifyContent = ''; if (!(innerWidth > innerHeight && innerHeight <= 600)) return; const t = g.querySelector('.tile'); if (!t) return; const f = t.getBoundingClientRect().width / (parseFloat(getComputedStyle(t).width) || 1), room = (innerHeight - g.getBoundingClientRect().top - 8) / (f || 1), sz = Math.floor((room - 4 * 5) / 5); if (sz * 5 + 20 < parseFloat(getComputedStyle(g).width)) { g.style.setProperty('grid-template-columns', `repeat(5, ${sz}px)`, 'important'); g.style.justifyContent = 'center' } }   /* the zoom makes css px ≠ screen px: measure a slot */
+addEventListener('resize', () => { const ov = document.querySelector('.ov.inv'); if (ov) bagFit(ov) });
 const bagNp = t => Math.max(1, Math.ceil(invItems(t).length / D.BAG.page));   /* v3.75 only the pages that hold something (the size stays the cap) */
 function bagEdge(d, row, redraw) { const T = INV_TABS().map(t => t[0]), np = bagNp(bagTab); let pg = (bagPage[bagTab] || 0) + d, tab = bagTab;
   if (pg < 0 || pg >= np) { tab = T[(T.indexOf(bagTab) + d + T.length) % T.length]; pg = d > 0 ? 0 : bagNp(tab) - 1 }
