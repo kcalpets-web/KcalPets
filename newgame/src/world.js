@@ -455,7 +455,7 @@ export function waterAt(x, z) {
 export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
-  if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
+  if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island
   if (x < 9.6) return 'land';                                                                                   // the island gate (open world)
@@ -544,9 +544,16 @@ function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 
       for (let r = 0; r <= 40; r += 10) for (let j = 0; j < (r ? 10 : 1); j++) { const px = x + Math.cos(j * .628) * r, pz = z + Math.sin(j * .628) * r, h = wildH0(px, pz), B = kingdomAt(px, pz); if (h < .6) bad++; if (B.k !== k || B.w < .8) bad += 3; sum += h; sq += h * h; n++ }   /* deep inside its own kingdom (never on a border wall) */
       const m = sum / n, v = sq / n - m * m + bad * 60; if (v < bs) { bs = v; best = { x, z, h: Math.max(1.2, m), r: 36, edge: 14, ry: Math.atan2(K.x - x, K.z - z) } } }
     if (best) CAPS[k] = best } }
+/* v3.60 🌳 the Great Tree's glade in Sylvaren: flat · a round pond (only the stepping stones cross it) · nothing else grows there */
+export const GTREE = { x: 0, z: 0, h: 2, r: 26, edge: 14, isl: 5.4, pond: 14.5, ok: false };
+export const GT_STONES = Array.from({ length: 7 }, (_, i) => { const t = i / 6, r = 5.7 + t * (14.5 - 5.4 - .6), a = 1.2 + Math.sin(t * 3) * .18; return [Math.cos(a) * r, Math.sin(a) * r] });
+function gtSite() { if (GTREE.ok) return; GTREE.ok = true; const K = KINGDOMS.sylvaren, c = CAPS.sylvaren; let dx = 1, dz = 0; if (c) { dx = K.x - c.x; dz = K.z - c.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l } GTREE.x = K.x + dx * 45; GTREE.z = K.z + dz * 45; GTREE.h = Math.max(1.2, wildH0(GTREE.x, GTREE.z)) }
+export const inGlade = (x, z, m = 0) => { if (!GTREE.ok) return false; const dx = x - GTREE.x, dz = z - GTREE.z; return dx * dx + dz * dz < (GTREE.r + m) ** 2 };
+export function gladePond(x, z) { if (!GTREE.ok) return false; const dx = x - GTREE.x, dz = z - GTREE.z, d = Math.hypot(dx, dz); if (d < GTREE.isl + .3 || d > GTREE.pond - .2) return false; return !GT_STONES.some(([sx, sz]) => Math.hypot(dx - sx, dz - sz) < 1.05) }   /* in the water, off the stones */
 export const HARBC = { x: 194, z: 20, r: 21, edge: 10, h: .7 };   /* v3.41 the harbour town's ground (flattened) */
 export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); { const d = Math.hypot(x - HARBC.x, z - HARBC.z); if (d < HARBC.r + HARBC.edge && h > -1.5) { const t = smw(HARBC.r + HARBC.edge, HARBC.r, d); h = h * (1 - t) + t * Math.max(h, HARBC.h) } }
   if (BALD_ON) { const d = Math.hypot(x - GOBC.x, z - GOBC.z); if (d < GOBC.r + GOBC.edge) { const t = smw(GOBC.r + GOBC.edge, GOBC.r, d); h = h * (1 - t) + t * GOBC.h } }   /* v3.50 */
+  if (!GTREE.ok) gtSite(); { const d = Math.hypot(x - GTREE.x, z - GTREE.z); if (d < GTREE.r + GTREE.edge) { const t = smw(GTREE.r + GTREE.edge, GTREE.r, d); h = h * (1 - t) + t * GTREE.h; if (d > GTREE.isl && d < GTREE.pond + .4) h -= 1.3 * Math.sin(Math.PI * (d - GTREE.isl) / (GTREE.pond + .4 - GTREE.isl)) } }   /* v3.60 the glade + its pond */
   for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h;
       if (k === 'navalee' && d < 20) { const cs = Math.cos(c.ry), sn = Math.sin(c.ry), dx = x - c.x, dz = z - c.z, lx = dx * cs - dz * sn, lz = dx * sn + dz * cs, e = Math.hypot(lx / 1.15, lz + 14); if (e > 12.2 && e < 15.3) h -= .75 * Math.sin(Math.PI * (e - 12.2) / 3.1) } } } return h }   /* v3.59 Navalee's moat is a real ditch now (the stone bridge in front of the keep crosses it) */
 function wildH0(x, z) {
@@ -583,7 +590,7 @@ export const LAMP_COL = { navalee: '#a0f0e0', sylvaren: '#e8ff9a', frosthelm: '#
 let LAMPS = null; export function lamps() { if (LAMPS) return LAMPS; LAMPS = []; if (!capsReady) capSites();
   for (const r of ROADS) { let since = 13, side = 1; for (let i = 1; i < r.pts.length; i++) { const [ax, az] = r.pts[i - 1], [bx, bz] = r.pts[i], L = Math.hypot(bx - ax, bz - az) || 1, ux = (bx - ax) / L, uz = (bz - az) / L; let t = 26 - since; since += L;
       for (; t < L; t += 26) { side = -side; since = L - t; const x = ax + ux * t - uz * side * 2.9, z = az + uz * t + ux * side * 2.9;
-        if (wildH(x, z) < -.2 || LAMPS.some(l => Math.abs(l.x - x) < 9 && Math.abs(l.z - z) < 9) || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 2) || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 4) continue;
+        if (wildH(x, z) < -.2 || LAMPS.some(l => Math.abs(l.x - x) < 9 && Math.abs(l.z - z) < 9) || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 2) || inGlade(x, z, 4) || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 4) continue;
         LAMPS.push({ x, z, y: wildH(x, z), k: kingdomAt(x, z).k }) } } } return LAMPS }
 export const M_POOL = new THREE.MeshBasicMaterial({ color: '#ffffff', vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2 }),   /* v3.44 the light on the ground (no real lights: fps) */
   M_LAMP = new THREE.MeshBasicMaterial({ color: '#ffffff' }), M_POST = new THREE.MeshStandardMaterial({ color: '#3a3238', roughness: .7, metalness: .3 });
@@ -636,7 +643,7 @@ export function decorLook(x, z, out, peb) { if (peb === 'sand') { if (waterAt(x,
   if (peb === 'sea') { if (waterAt(x, z) !== 'sea') return null; const d = groundH(x, z); return d < -.5 && d > -2.8 ? { y: d } : null }   /* coral grounds */
   if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
   if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
-  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z) || inGlade(x, z, -GTREE.r + GTREE.pond + 1.5) && !inGlade(x, z, -GTREE.r + GTREE.isl - .5)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
   const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
   if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }
@@ -661,7 +668,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || roadD(x, z) < 3.6 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || (BALD_ON && Math.hypot(x - GOBC.x, z - GOBC.z) < GOBC.r + 4) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || roadD(x, z) < 3.6 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || inGlade(x, z, 6) || (BALD_ON && Math.hypot(x - GOBC.x, z - GOBC.z) < GOBC.r + 4) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
