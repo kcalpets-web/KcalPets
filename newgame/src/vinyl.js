@@ -122,8 +122,8 @@ function faceTex(skin, style, eye, sex = 'm', cheek = '', mouth = 'smile', expr 
     ell(cx, ey, .052 * E, .064 * E, '#ffffff');
     const gr = d.createLinearGradient(0, Y(ey + .05 * E), 0, Y(ey - .06 * E)); gr.addColorStop(0, dark); gr.addColorStop(.45, eye); gr.addColorStop(1, light); ell(cx + s * .003, ey - .003, .044 * E, .055 * E, gr);
     ell(cx + s * .003, ey - .001, (expr === 'surprised' ? .011 : .02) * E, (expr === 'surprised' ? .016 : .03) * E, '#140a06');   /* surprised = small pupils */
-    if (style === 'sparkle') { d.fillStyle = '#fff'; d.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 2, r = (k % 2 ? .3 : 1) * .02; const x = X(cx - s * .008 + Math.cos(a) * r), y = Y(ey + .015 + Math.sin(a) * r); k ? d.lineTo(x, y) : d.moveTo(x, y) } d.fill(); ell(cx + s * .015, ey - .02, .006, .006, '#fff') }
-    else { ell(cx - s * .01, ey + .017, .013, .012, '#ffffff'); ell(cx + s * .013, ey - .021, .006, .005, '#ffffff', .85) }
+    if (style === 'sparkle') { d.fillStyle = '#fff'; d.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 2, r = (k % 2 ? .3 : 1) * .02; const x = X(cx - .008 + Math.cos(a) * r), y = Y(ey + .015 + Math.sin(a) * r); k ? d.lineTo(x, y) : d.moveTo(x, y) } d.fill(); ell(cx + .015, ey - .02, .006, .006, '#fff') }
+    else { ell(cx - .01, ey + .017, .013, .012, '#ffffff'); ell(cx + .013, ey - .021, .006, .005, '#ffffff', .85) }   /* v3.52 the shine falls the same way in both eyes (one light) */
     if (style === 'sleepy') { d.fillStyle = skin; d.fillRect(X(cx - .06), Y(ey + .075), .12 * U, .066 * U); arc(cx, ey + .01, .047, .004, Math.PI, Math.PI * 2, lash, .011) }
     else if (girl) { arc(cx, ey + .003, .048, .055, Math.PI * .06, Math.PI * .94, lash, .012); d.beginPath(); d.moveTo(X(cx + s * .045), Y(ey + .017)); d.lineTo(X(cx + s * .066), Y(ey + .031)); d.moveTo(X(cx + s * .04), Y(ey + .034)); d.lineTo(X(cx + s * .056), Y(ey + .048)); d.stroke() }
     else { arc(cx, ey + .003, .047, .052, Math.PI * .12, Math.PI * .88, lash, .008); arc(cx + s * .003, ey + .088, .04, .012, Math.PI * .15, Math.PI * .85, shade(skin, .55), .007) }
