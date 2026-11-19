@@ -2567,9 +2567,10 @@ function aimFire() { const a = AIM; if (!a) return; if (a.draw) { drawNow(); ret
   if (a.ch) { shoot(a); a.ch = 0 } }   /* the bow stays up: shoot again */
 /* v3.69 🎯 hold A = wind up a throw (no first-person aim): turns to the nearest target (locked) · charge while held · let go = throw · slide the thumb onto B = cancel */
 let WIND = null, TORCHUP = false;
-/* v3.68 🔥 hold A with a lit torch = hold it up high (brighter, lights further) · it stays up until B */
+/* v3.68 🔥 a lit torch in hand is held up high at once (brighter, lights further) · B lowers it · hold A raises it again */
 function torchUp(on) { if (on === TORCHUP) return; TORCHUP = on; sfx('tap'); if (on) hint('🔥 ชูคบเพลิง · กด B = ลดลง', 1500); gearView() }
-function torchUpTick() { if (!TORCHUP) return; if (!torchOn()) { TORCHUP = false; return } const hand = PL.body.getObjectByName('handR'), g = hand && hand.children.find(o => o.name === 'gear' && o.userData.q0); if (g) { g.quaternion.copy(g.userData.q0); g.rotateX(D.TORCH.upRot[0]); g.rotateZ(D.TORCH.upRot[1]) } }
+let torchWas = false;
+function torchUpTick() { const on = torchOn(); if (on && !torchWas) TORCHUP = true; torchWas = on;   /* picking a lit torch = it goes up at once (B lowers it · hold A raises it again) */ if (!TORCHUP) return; if (!on) { TORCHUP = false; return } const hand = PL.body.getObjectByName('handR'), g = hand && hand.children.find(o => o.name === 'gear' && o.userData.q0); if (g) { g.quaternion.copy(g.userData.q0); g.rotateX(D.TORCH.upRot[0]); g.rotateZ(D.TORCH.upRot[1]) } }
 function windStart() { const w = weaponOf(); if (!w || w.br) { hint('✋ ไม่มีอะไรให้ปา', 1100); return } if (D.ITEMS[w.t].tool) { hint(`🧰 ${D.ITEMS[w.t].icon} ${D.ITEMS[w.t].name} เป็นเครื่องมือฟาร์ม ปาไม่ได้`, 1400); return }
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; walkT = null; work = null; stopAuto(); if (!DRAWN) { DRAWN = true; setTool('sword') }
   WIND = { ch: performance.now(), thr: 1, wind: 1, tgt: windTgt() }; sfx('tap'); gearView(); hint('🎯 ปล่อย A = ปา · ลากไปที่ B = ยกเลิก', 1500) }

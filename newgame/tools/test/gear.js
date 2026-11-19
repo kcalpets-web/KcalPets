@@ -36,8 +36,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8838, OUT = process.arg
     await E(() => { const N = window.__ng, S = N.S; N.placeMe(20, 2); for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); const it = N.newItem('woodSpear', 'B'); S.bag.push(it); N.equipA(it); window.__sp = it; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(500);
     // v3.69 hold A = wind up (no first-person aim) · slide onto B = cancel · hold again and let go = throw
     const bA = await pg.locator('#bA').boundingBox(), bB = await pg.locator('#bB').boundingBox(), ax = bA.x + bA.width / 2, ay = bA.y + bA.height / 2;
-    // 🔥 a lit torch: hold A = hold it up (stays up) · B = lower it
+    // 🔥 a lit torch goes up at once · B = lower it · hold A = up again
     await E(() => { const N = window.__ng, S = N.S; S.has.torch = 1; S.torchT = 120; S.hand = 'torch'; N.gearView() }); await wait(400);
+    await wait(800); const tu0 = await E(() => window.__ng.TORCHUP); if (!tu0) errs.push('a lit torch should go up at once'); await pg.dispatchEvent('#bB', 'pointerdown'); await pg.dispatchEvent('#bB', 'pointerup'); await wait(300); if (await E(() => window.__ng.TORCHUP)) errs.push('B should lower the torch');
     await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(1400); await pg.mouse.up(); await wait(800); const tu = await E(() => ({ up: window.__ng.TORCHUP, pose: window.__ng.PL.pose.lift })); await pg.screenshot({ path: OUT + '/torch-up.png' });
     await pg.dispatchEvent('#bB', 'pointerdown'); await pg.dispatchEvent('#bB', 'pointerup'); await wait(300); const td = await E(() => window.__ng.TORCHUP); log('torch up', JSON.stringify(tu), 'after B', td); if (!tu.up || !tu.pose || td) errs.push('hold A should hold the torch up until B');
     await E(() => { const N = window.__ng, S = N.S; S.hand = 'w'; N.equipA(window.__sp); N.gearView() }); await wait(300);
