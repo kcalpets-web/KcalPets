@@ -5,8 +5,8 @@
 import * as THREE from '../lib/three.module.min.js';
 import { part, cone } from './clay.js';
 
-export const QCLIPS = ['idle', 'walk', 'run', 'jump', 'sit', 'crouch', 'lie', 'attack', 'hurt', 'happy', 'stretch', 'turn'];
-export const QCLIP_TH = { idle: 'ยืน', walk: 'เดิน', run: 'วิ่ง', jump: 'กระโดด', sit: 'นั่ง', crouch: 'หมอบ', lie: 'นอน', attack: 'ตะปบ', hurt: 'โดนตี', happy: 'ดีใจ', stretch: 'บิดขี้เกียจ', turn: 'หันมอง' };
+export const QCLIPS = ['idle', 'walk', 'run', 'jump', 'sit', 'crouch', 'lie', 'attack', 'hurt', 'happy', 'stretch', 'turn', 'graze'];
+export const QCLIP_TH = { idle: 'ยืน', graze: 'กินหญ้า', walk: 'เดิน', run: 'วิ่ง', jump: 'กระโดด', sit: 'นั่ง', crouch: 'หมอบ', lie: 'นอน', attack: 'ตะปบ', hurt: 'โดนตี', happy: 'ดีใจ', stretch: 'บิดขี้เกียจ', turn: 'หันมอง' };
 export const QLOOK = {
   shiba: { smooth: 1, fur: '#f2a35a', dark: '#c4672e', belly: '#fff3e2', bellyD: '#efd9bf', paw: '#fff3e2', pawD: '#e8cfb0', ear: 'up', tail: 'curl', nose: '#1e1520', snout: 1, iris: '#5a3014', collar: '#3a7ad8', bell: '#f2c23a', head: 1.12 },   /* v3.52 smooth · a collar = one of yours */
   /* v3.52 the smooth kitten: no joints showing · a big head · bright eyes that close when happy · tabby bands · a collar + bell */
@@ -68,7 +68,7 @@ function skinQ(R, key) { const { j, k, root } = R; root.updateMatrixWorld(true);
     const E = (b, x, y, z, rx, ry, rz, tag = 'fur') => pr.push({ e: 1, c: V(j[b], x, y, z), r: [rx, ry, rz], b, tag }), Cp = (b, a, c, r0, r1, tag = 'fur') => pr.push({ a, c, r0, r1, b, tag });
     const B = k.body || 1, BU = k.bulk || 1, LG = k.leg || 1; E('hips', 0, 0, 0, .18 * BU, .17 * BU, .16 * B); E('spine', 0, .02, 0, .2 * BU, .18 * BU, .3 * B); E('chest', 0, .02, 0, .19 * BU, .19 * BU, .17 * B); E('spine', 0, -.07 * BU, .02, .14 * BU, .11 * BU, .22 * B, 'belly'); E('chest', 0, -.02, .1, .12 * BU, .14 * BU, .08, 'belly');
     Cp('neck', V(j.chest, 0, .06, .06), V(j.head, 0, -.06, 0), .1 * Math.max(.85, BU * .9), .1 * (k.neck > 1.3 ? .8 : 1)); E('head', 0, 0, 0, .27 * hs, .25 * hs, .25 * hs); E('head', 0, -.07 * hs, (.17 + .05 * sn) * hs, .13 * hs, .09 * hs, (.06 + .05 * sn) * hs, 'belly');
-    for (const n of ['fL', 'fR', 'hL', 'hR']) { const a = V(j[n + 'Top'], 0, .03, 0), m = V(j[n + 'Mid']), p = V(j[n + 'Paw']); const th = LG > 1.3 ? .72 : 1; Cp(n + 'Top', a, m, .085 * th * Math.sqrt(BU), .066 * th); Cp(n + 'Mid', m, p, .063 * th * (LG > 1.3 ? .8 : 1), .056 * th * (LG > 1.3 ? .75 : 1)); if (k.ear === 'deer' || k.pig) E(n + 'Paw', 0, -.01, .015, .045, .045, .05, 'paw'); else E(n + 'Paw', 0, -.005, .03, .075, .05, .09, 'paw') }   /* hooves: small and dark */
+    for (const n of ['fL', 'fR', 'hL', 'hR']) { const a = V(j[n + 'Top'], 0, .03, 0), m = V(j[n + 'Mid']), p = V(j[n + 'Paw']); const th = LG > 1.3 ? .72 : 1; Cp(n + 'Top', a, m, .085 * th * Math.sqrt(BU) * (n[0] === 'h' ? 1.12 : 1), .066 * th); Cp(n + 'Mid', m, p, .063 * th * (LG > 1.3 ? .8 : 1), .056 * th * (LG > 1.3 ? .75 : 1)); const ps = n[0] === 'h' ? 1.18 : .9; if (k.ear === 'deer' || k.pig) E(n + 'Paw', 0, -.01, .015, .045 * ps, .045, .05 * ps, 'paw'); else E(n + 'Paw', 0, -.005, .03 * ps, .075 * ps, .05, .09 * ps, 'paw') }   /* v3.66 the hind feet are bigger than the front ones */   /* hooves: small and dark */
     const tp = [1, 2, 3, 4].map(i => V(j['tail' + i])); tp.push(V(j.tail4, 0, 0, -.1)); const tr = i => k.tail === 'curl' ? .058 - i * .007 : k.tail === 'up' ? .05 - i * .005 : k.tail === 'short' ? .045 - i * .006 : k.tail === 'thin' ? .022 - i * .003 : k.tail === 'puff' ? .03 : .04 - i * .005;
     for (let i = 0; i < 4; i++) Cp('tail' + (i + 1), tp[i], tp[i + 1], tr(i), tr(i + 1), i === 3 && k.tail !== 'curl' && k.tail !== 'thin' ? 'tip' : 'tail'); if (k.tail === 'puff') E('tail2', 0, 0, -.02, .09, .09, .09, 'belly');   /* a cotton tail */
     const dist = (P, q) => { if (q.e) { const x = (P.x - q.c.x) / q.r[0], y = (P.y - q.c.y) / q.r[1], z = (P.z - q.c.z) / q.r[2]; return (Math.hypot(x, y, z) - 1) * Math.min(...q.r) }
@@ -131,6 +131,7 @@ function poseQ0(R, clip, t = 0) { rest(R); const j = R.j, w = t * PI * 2;
     legsQ(R, [.35 * k, .2, 0], [.25 * k, .2, 0], [-.2 * k, .3, 0], [-.25 * k, .3, 0]); for (const s of ['L', 'R']) j['ear' + s].rotation.x = -1.1 * k; j.tail1.rotation.x = .4 }
   else if (clip === 'stretch') { j.hips.rotation.x = -.25; j.root.position.y = -.04; legsQ(R, [-1.25, .2, .3], [-1.25, .2, .3], [.15, -.05, 0], [.15, -.05, 0]); j.chest.rotation.x = .2; j.neck.rotation.x = .25; j.head.rotation.x = -.35; j.tail1.rotation.x -= .3; faceQ(R, 'happy') }   /* front low, rear up, the tail high */
   else if (clip === 'turn') { j.neck.rotation.y = 1.0; j.head.rotation.y = .5; j.head.rotation.z = .12; j.spine.rotation.y = .15; legsQ(R, [-.15, .1, 0], [.1, 0, 0], [.1, 0, 0], [-.1, .1, 0]); j.tail2.rotation.z = .4; faceQ(R, 'wink') }   /* a look back over the shoulder · a wink */
+  else if (clip === 'graze') { j.neck.rotation.x = 1.05 + S(w * 3) * .06; j.head.rotation.x = .35; legsQ(R, [.12, -.05, 0], [.12, -.05, 0], [0, 0, 0], [0, 0, 0]); j.tail2.rotation.z = S(w * 2) * .3 }   /* v3.66 head down in the grass, nibbling */
   else if (clip === 'happy') { const hop = Math.max(0, S(w * 2)); j.root.position.y = hop * .1; j.neck.rotation.x = -.2; j.head.rotation.x = -.25 + S(w * 2) * .1;   /* a play bow, a little hop, the tail wagging fast */
     legsQ(R, [-.5, .9, -.3], [-.5, .9, -.3], [.1, -.1, 0], [.1, -.1, 0]); j.spine.rotation.x = .18; for (let i = 1; i <= 4; i++) j['tail' + i].rotation.z = S(w * 6) * (.35 + i * .08) }
 }
