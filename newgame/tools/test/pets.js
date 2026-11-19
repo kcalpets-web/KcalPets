@@ -29,7 +29,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const i = document.getElementById('pnN'); if (i) { i.value = 'ปุยฝ้าย'; document.getElementById('pnOk').click() } }); await wait(400); await closeAll();
     await E(() => window.__ng.openBag('pets')); await wait(700); await shot('04-bag-pets'); await closeAll();
     /* 🐋 a whale pet in the team → into the sea → A → ride */
-    await E(() => { const N = window.__ng, p = { id: 'pw', kind: 'whale', name: 'โบลู', rar: 'E', el: '💧', lv: 3, exp: 0 }; N.S.pets.push(p); N.S.team = ['pw']; N.buildPet(p, 0, -3) });
+    await E(() => { const N = window.__ng, p = { id: 'pw', kind: 'whale', name: 'โบลู', rar: 'E', el: '💧', lv: 6, exp: 0 }; N.S.pets.push(p); N.S.team = ['pw']; N.buildPet(p, 0, -3) });
     await E(() => { const N = window.__ng; N.placeMe(-13, 0); N.S.en = null }); await wait(1200); await E(() => window.__ng.actA());   /* v3.50 deep water (the beach is wadeable now) */ await wait(800);
     const rw = await N(() => !!(window.__ng.RIDE && window.__ng.RIDE.whale)); log('ride whale', rw); if (!rw) errs.push('could not ride the whale');
     const w0 = await N(() => window.__ng.me.x); await E(() => { const N = window.__ng; N.PL.yaw = N.PL.yawT = -Math.PI / 2; N.walkTo(N.me.x - 16, N.me.z) }); await wait(5000); await shot('05-whale');

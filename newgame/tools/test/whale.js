@@ -1,4 +1,4 @@
-/* v3.28 🐋 the whale skill = a blue water barrier (swim ×1.8, no tiring, X = dive / come up) · 🎯 A locks animals too · 🍖 hungry = ⚡ costs more (no passing out)
+/* v3.54 🐋 the whale skill = ride it in the water (teen+ · cooldown after you get off) — the water barrier is gone · 🎯 A locks animals too · 🍖 hungry = ⚡ costs more (no passing out)
    NODE_PATH=$(npm root -g) node newgame/tools/test/whale.js outDir   (~1.5 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs');
 const ROOT = path.resolve(__dirname, '../../..'), PORT = 8845, OUT = process.argv[2] || '/tmp/ngwhale', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
@@ -16,16 +16,12 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8845, OUT = process.arg
     // 🐋 into deep water (west sea off the island), use the skill from the wheel
     await E(() => { const N = window.__ng; N.placeMe(-12, 0) }); await wait(1500);
     const sw0 = await E(() => ({ swim: window.__ng.PL.swim, y: +window.__ng.me.y.toFixed(2) })); log('in the sea', JSON.stringify(sw0)); if (!sw0.swim) errs.push('test spot is not water');
-    await E(() => window.__ng.skwUse('Y')); await wait(600); const w1 = await E(() => ({ on: window.__ng.wbOn(), vis: window.__ng.WBUB.visible, ride: !!window.__ng.RIDE })); log('barrier', JSON.stringify(w1));
-    if (!w1.on || !w1.vis || w1.ride) errs.push('the whale skill should raise a blue barrier (not a ride)');
-    await pg.screenshot({ path: OUT + '/barrier.png' });
-    // swim speed + no tiring
-    const s1 = await E(async () => { const N = window.__ng, e0 = N.S.en; N.walkTo(N.me.x - 12, N.me.z); await new Promise(r => setTimeout(r, 2500)); return { spd: N.SPD, en0: e0, en1: N.S.en } }); log('swim', JSON.stringify(s1)); if (!(s1.spd > 0) || s1.en1 < s1.en0 - .01) errs.push('inside the barrier you should not tire while swimming');
-    // dive with X
-    await dp('bX', 'pointerdown'); await wait(80); await dp('bX', 'pointerup'); await wait(2200); const d1 = await E(() => ({ dive: window.__ng.DIVE, y: +window.__ng.me.y.toFixed(2), cls: document.body.classList.contains('dive') })); log('dive', JSON.stringify(d1));
-    await pg.screenshot({ path: OUT + '/dive.png' }); if (!d1.dive || !(d1.y < -1.2) || !d1.cls) errs.push('X in the water with the barrier should dive');
-    await dp('bX', 'pointerdown'); await wait(80); await dp('bX', 'pointerup'); await wait(1500); const d2 = await E(() => ({ dive: window.__ng.DIVE, y: +window.__ng.me.y.toFixed(2) })); log('up', JSON.stringify(d2)); if (d2.dive || d2.y < -.8) errs.push('X again should come back up');
-    await E(() => { window.__ng.WBUB.until = 0 }); await wait(500); if (await E(() => window.__ng.WBUB.visible)) errs.push('the barrier should vanish when it runs out');
+    await E(() => window.__ng.skwUse('Y')); await wait(600); const w0 = await E(() => ({ ride: !!window.__ng.RIDE, bub: window.__ng.WBUB.visible })); log('child whale', JSON.stringify(w0)); if (w0.ride || w0.bub) errs.push('a child whale (Lv 3) should not carry you yet');
+    await E(() => { const N = window.__ng; N.S.pets[0].lv = 6; N.buildPet(N.S.pets[0], N.me.x, N.me.z - 3) }); await E(() => window.__ng.skwUse('Y')); await wait(800);
+    const w1 = await E(() => ({ ride: !!(window.__ng.RIDE && window.__ng.RIDE.whale), bub: window.__ng.WBUB.visible })); log('teen whale', JSON.stringify(w1)); if (!w1.ride || w1.bub) errs.push('the teen whale skill should be a ride (no barrier)');
+    await pg.screenshot({ path: OUT + '/ride.png' });
+    await E(() => window.__ng.leaveRaft()); await wait(400); const w2 = await E(() => ({ ride: !!window.__ng.RIDE, cd: Math.round(((window.__ng.PSK.whale || 0) - Date.now()) / 1000) })); log('off', JSON.stringify(w2)); if (w2.ride || !(w2.cd > 20)) errs.push('getting off should start the cooldown');
+    await E(() => window.__ng.skwUse('Y')); await wait(500); if (await E(() => !!window.__ng.RIDE)) errs.push('the skill should wait for its cooldown');
     // 🎯 A locks an animal
     await E(() => { const N = window.__ng; N.placeMe(20, 2); for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg') }); await wait(800);
     const al = await E(async () => { const N = window.__ng, q = N.me; N.stowAll(); N.monSpawn('rabbit', q.x + 3, q.z + 1); const m = N.mons[N.mons.length - 1]; m.stunT = performance.now() + 20000; N.actA(); await new Promise(r => setTimeout(r, 600)); return { lock: N.LOCK === m, a: N.ALOCK, animal: !!m.T.animal } }); log('A lock animal', JSON.stringify(al)); if (!al.animal || !al.lock || !al.a) errs.push('A should lock on an animal');

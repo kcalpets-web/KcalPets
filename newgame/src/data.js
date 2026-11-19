@@ -244,6 +244,7 @@ export const NOTES = [
 export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
+export const DASH = { sp: 7.6, t: 1.1, en: 4, gap: .25 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · rest between dashes (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
 export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .32;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
@@ -305,7 +306,7 @@ export const PET_BASE = { hp: 50, mp: 30, atk: 6, def: 2 };
 export const PET_GROW = { hp: 7, mp: 3, atk: 2, def: 1 };
 export const PET_RAR_MUL = { B: 1, R: 1.15, E: 1.35, L: 1.6 };
 export const PET_LV_MAX = 15;
-export const FORMS = [{ lv: 1, name: 'ร่างเด็ก', mul: 1, scale: .6 }, { lv: 5, name: 'ร่างโต', mul: 1.25, scale: .7 }, { lv: 10, name: 'ร่างสุดยอด', mul: 1.55, scale: .8 }];
+export const FORMS = [{ lv: 1, name: 'วัยเด็ก', mul: 1, scale: .6 }, { lv: 5, name: 'วัยรุ่น', mul: 1.25, scale: .78 }, { lv: 10, name: 'โตเต็มวัย', mul: 1.55, scale: .95 }];
 export const ELEM_SKILL = { '🔥': 'ลูกไฟ', '⚡': 'สายฟ้าฟาด', '🌱': 'ใบไม้คม', '💧': 'น้ำกระแทก', '❄️': 'เกล็ดน้ำแข็ง', '🪨': 'หินถล่ม' };
 export const PET_SKILL = { mp: 0, mul: 2.2, cd: 8000, basicMul: .4 };   // v1.4: pets have no HP / MP — two skills on cooldown, cast by themselves
 export const PET_SPECIAL = {                                                  // the 2nd skill (by element) · cd 25 s
@@ -313,7 +314,8 @@ export const PET_SPECIAL = {                                                  //
   '💧': { name: 'สายน้ำชโลม', kind: 'heal', hearts: 1.5 }, '❄️': { name: 'ลมหนาวแช่แข็ง', kind: 'stun', ms: 3500, r: 3.5 }, '🪨': { name: 'โล่หิน', kind: 'guard', ms: 6000 } };
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
-export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 90000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
+export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
+export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .62, seat: [.9, 1.06, 1.3] };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },
