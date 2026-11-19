@@ -311,6 +311,8 @@ body.dive::before{content:'';position:fixed;inset:0;z-index:2;pointer-events:non
 body.pad:not(.gamepad):has(.ov.inv) #dpad,body.pad:not(.gamepad):has(.ov.dlg) #dpad,body.pad:not(.gamepad):has(.ov.qbook) #dpad{display:grid}
 body.pad:not(.gamepad):has(.ov.inv) #stick,body.pad:not(.gamepad):has(.ov.dlg) #stick,body.pad:not(.gamepad):has(.ov.qbook) #stick{display:none}
 .invmain.wide .invgrid{grid-template-columns:repeat(6,1fr);max-height:52vh}
+.invmain:not(.wide) .invgrid{flex:0 0 49%;grid-template-columns:repeat(3,1fr)}.invmain:not(.wide) .invside{flex:1;width:auto}.ov.inv .invmain:not(.wide) .invgrid{max-height:38vh}.ov.inv .invmain:not(.wide) .invcv{height:30vh}   /* v3.50 three to a row: more room for your character */
+@media (max-height:720px){.invmain:not(.wide) .invgrid{flex-basis:40%}.ov.inv .invmain:not(.wide) .invgrid{max-height:33vh}.ov.inv .invmain:not(.wide) .invcv{height:24vh}}   /* shorter phones: smaller slots so the item card stays above the D-pad */
 
 /* v3.33 the stick menu takes the D-pad too · while it (or the skill wheel) is open the face buttons stay bright above the dimmed world */
 body.pad:not(.gamepad).smenuOn #dpad{display:grid}body.smenuLR #dpad [data-dp=up],body.smenuLR #dpad [data-dp=down]{visibility:hidden}body.pad:not(.gamepad).smenuOn #stick{display:none}
@@ -330,7 +332,7 @@ body.smenuOn #bA.ctx,body.skwOn #bA.ctx{background-color:#3fae6a}body.smenuOn #b
   .ov.inv .invgrid{max-height:30vh}.ov.inv .invcv{height:22vh}.invmain.wide .invgrid{max-height:40vh}
   .ov.inv .invdet{padding:6px 8px;font-size:12px;line-height:1.4}.ov.inv .invdet b{font-size:14px}
 }
-@media (max-height:600px){.ov.inv .invcv{height:15vh}.ov.inv .invhint{display:none}.ov.inv .shb{gap:5px}.ov.inv .invgrid{max-height:26vh}}   /* v3.34 the shortest phones: the item card stays above the D-pad */
+@media (max-height:600px){.ov.inv .invmain:not(.wide) .invgrid{max-height:28vh}.ov.inv .invmain:not(.wide) .invcv{height:18vh}.ov.inv .invcv{height:15vh}.ov.inv .invhint{display:none}.ov.inv .shb{gap:5px}.ov.inv .invgrid{max-height:26vh}}   /* v3.34 the shortest phones: the item card stays above the D-pad */
 
 /* v3.38 the A / Y / B pickers: ◀ ▶ buttons (the D-pad without up / down) instead of the stick */
 body.pad:not(.gamepad):has(#pick.on) #dpad{display:grid}body.pad:not(.gamepad):has(#pick.on) #stick{display:none}body:has(#pick.on) #dpad [data-dp=up],body:has(#pick.on) #dpad [data-dp=down]{visibility:hidden}
