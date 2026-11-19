@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.62';
+export const APP_VER = '3.63';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -499,6 +499,34 @@ export const RECIPES = [
 export const COOK_TIME = 15;                                   // seconds the pot needs (a ladle stirs meanwhile)
 export const POTS = { meadow: 'แคมป์ริมธาร', mesa: 'แคมป์บนผาสูง', home: 'แคมป์ที่พัก', forest: 'แคมป์ก็อบลิน (ร้าง)' };
 /* journal achievements · check(S) → progress number · goal · reward */
+/* v3.63 🧭 the six paths: what you become by playing · 5 steps each (a stat or f(S) and a goal) · a reward per step · finishing a path = its title */
+const nRec = S => Object.keys(S.journal.recipes || {}).filter(k => !['mystery', 'rotten', 'poison'].includes(k)).length, nSk = S => Object.keys(S.journal.sketch || {}).length;
+export const PATHS = [
+  { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเมิร์จแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
+    { text: 'วาปไปยังจุดพักครั้งแรก', stat: 'warps', goal: 1, reward: { coin: 200 } }, { text: 'เปิดหีบสมบัติ 5 ใบ', stat: 'chests', goal: 5, reward: { coin: 600 } },
+    { text: 'ค้นพบต้นไม้แห่งฤดูกาล', f: S => S.story.gtree ? 1 : 0, goal: 1, reward: { gem: 40 } }, { text: 'ปลุกศิลาแห่งแสง 2 ก้อน', stat: 'lstones', goal: 2, reward: { gem: 60 } },
+    { text: 'เปิดหีบสมบัติ 25 ใบ', stat: 'chests', goal: 25, reward: { gem: 120 } }] },
+  { k: 'hero', icon: '⚔️', name: 'ฮีโร่', title: '⚔️ ฮีโร่ผู้พิทักษ์', desc: 'ปกป้องผู้คนจากมอนสเตอร์ ช่วยอาณาจักรที่ล่มสลาย', steps: [
+    { text: 'กำจัดมอนสเตอร์ 10 ตัว', stat: 'kills', goal: 10, reward: { coin: 300 } }, { text: 'ยึดแคมป์มอนสเตอร์ 1 แห่ง', stat: 'wcamps', goal: 1, reward: { coin: 800 } },
+    { text: 'ทำเควสในอาณาจักร 5 เควส', stat: 'kquests', goal: 5, reward: { gem: 50 } }, { text: 'ปราบโกเลม 1 ตัว', stat: 'golems', goal: 1, reward: { gem: 80 } },
+    { text: 'กำจัดมอนสเตอร์ 200 ตัว', stat: 'kills', goal: 200, reward: { gem: 150 } }] },
+  { k: 'cook', icon: '🍳', name: 'พ่อครัว', title: '🍳 เชฟแห่งกองไฟ', desc: 'ถือวัตถุดิบไปวางในหม้อ ลองผสม ค้นพบสูตรใหม่', steps: [
+    { text: 'ปรุงอาหารครั้งแรก', stat: 'cooked', goal: 1, reward: { coin: 200 } }, { text: 'ค้นพบสูตรอาหาร 5 สูตร', f: nRec, goal: 5, reward: { coin: 600 } },
+    { text: 'ปรุงอาหาร 20 ครั้ง', stat: 'cooked', goal: 20, reward: { gem: 50 } }, { text: 'ค้นพบสูตรลับ 1 สูตร', f: S => RECIPES.filter(r => r.secret && S.journal.recipes[r.k]).length, goal: 1, reward: { gem: 80 } },
+    { text: 'ค้นพบสูตรอาหาร 15 สูตร', f: nRec, goal: 15, reward: { gem: 150 } }] },
+  { k: 'paint', icon: '🎨', name: 'จิตรกร', title: '🎨 จิตรกรพเนจร', desc: 'วาดภาพสิ่งที่พบ ผู้คน สัตว์ และมอนสเตอร์ลงสมุด', steps: [
+    { text: 'วาดภาพลงสมุด 1 ภาพ', f: nSk, goal: 1, reward: { coin: 200 } }, { text: 'วาดภาพลงสมุด 5 ภาพ', f: nSk, goal: 5, reward: { coin: 600 } },
+    { text: 'วาดมอนสเตอร์ 4 ชนิด', f: S => Object.keys(S.journal.sketch || {}).filter(k => MON[k]).length, goal: 4, reward: { gem: 50 } }, { text: 'วาดภาพ 20 ครั้ง', stat: 'drawings', goal: 20, reward: { gem: 80 } },
+    { text: 'วาดภาพลงสมุด 20 ภาพ', f: nSk, goal: 20, reward: { gem: 150 } }] },
+  { k: 'farm', icon: '🌾', name: 'ชาวไร่', title: '🌾 ชาวไร่แห่งวาเนย่า', desc: 'ขุดแปลง ปลูกผัก รดน้ำ เก็บเกี่ยวรอบบ้าน', steps: [
+    { text: 'ขุดแปลงผัก 3 ช่อง', stat: 'tilled', goal: 3, reward: { coin: 200 } }, { text: 'ปลูกผัก 5 ครั้ง', stat: 'planted', goal: 5, reward: { coin: 500 } },
+    { text: 'เก็บเกี่ยว 10 ครั้ง', stat: 'harvested', goal: 10, reward: { gem: 40 } }, { text: 'รดน้ำ 30 ครั้ง', stat: 'watered', goal: 30, reward: { gem: 60 } },
+    { text: 'เก็บเกี่ยว 60 ครั้ง', stat: 'harvested', goal: 60, reward: { gem: 150 } }] },
+  { k: 'music', icon: '🎵', name: 'นักดนตรี', title: '🎵 นักเป่าขลุ่ยแห่งบาร์', desc: 'เป่าขลุ่ย 7 โน้ต เล่นเพลงที่บาร์ ได้ทิปจากผู้คน', soon: 1, steps: [
+    { text: 'ได้รับขลุ่ย', stat: 'flute', goal: 1, reward: { coin: 200 } }, { text: 'เป่าโน้ต 50 ครั้ง', stat: 'notes', goal: 50, reward: { coin: 400 } },
+    { text: 'เล่นเพลงที่บาร์ 3 ครั้ง', stat: 'barPlays', goal: 3, reward: { gem: 50 } }, { text: 'เรียนเพลง 3 เพลง', stat: 'songs', goal: 3, reward: { gem: 80 } },
+    { text: 'ได้ทิปรวม 🪙 2,000', stat: 'tips', goal: 2000, reward: { gem: 150 } }] },
+];
 export const ACH = [
   { k: 'cook1', icon: '🍳', name: 'เชฟมือใหม่', text: 'ปรุงอาหารครั้งแรก', stat: 'cooked', goal: 1, reward: { coin: 200 } },
   { k: 'recipe5', icon: '📖', name: 'นักสะสมสูตร', text: 'ค้นพบสูตรอาหาร 5 สูตร', f: S => Object.keys(S.journal.recipes).filter(k => k !== 'mystery').length, goal: 5, reward: { gem: 50 } },
