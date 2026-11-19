@@ -77,8 +77,9 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   /* ---- each kingdom's own landmark ---- */
   const anim = [];
   if (k === 'navalee') {   // 🌊 a moat round the keep · arch bridges · the drowned king with his trident · waterfalls · a wreck
-    const moat = add(new THREE.RingGeometry(12.5, 15, 32), M.water, 0, .09, KZ, -Math.PI / 2); moat.userData.nosol = 1; moat.scale.set(1.15, 1, 1);
+    const moat = add(new THREE.RingGeometry(12.3, 15.2, 40), M.water, 0, -.3, KZ, -Math.PI / 2);   /* v3.59 the water sits down in the ditch */ moat.userData.nosol = 1; moat.scale.set(1.15, 1, 1);
     for (let i = 0; i < 3; i++) arch(-9 + i * 9, 0, KZ + 13.6, 2.1, .45, M.stone, 0);
+    { const deck = box(0, 0, KZ + 13.7, 3.2, .32, 4.6, M.stone); deck.userData.walk = 1; for (const sx of [-1, 1]) box(sx * 1.5, .32, KZ + 13.7, .25, .5, 4.6, M.dark).userData.nosol = 1 }   /* v3.59 a low stone bridge over the moat, in front of the keep (you walk on it) */
     const kx = -15, kz = -2; cyl(kx, 0, kz, 2.6, 2.4, 2.2, M.dark, 10); box(kx, 2.2, kz, 2.2, 4.5, 1.4, M.stone); box(kx, 6.7, kz, 3.2, 3.6, 1.8, M.stone); add(new THREE.SphereGeometry(1.1, 10, 8), M.stone, kx, 9.6 + .2, kz);
     for (let j = 0; j < 5; j++) cone(kx - .8 + j * .4, 10.5, kz, .2, .9, M.glow, 4); box(kx + 2.2, 2.2, kz + .5, .3, 11, .3, M.dark); for (const dx of [-.6, 0, .6]) cone(kx + 2.2 + dx, 13.2, kz + .5, .14, 1.1, M.dark, 4); box(kx + 2.2, 13, kz + .5, 1.6, .25, .25, M.dark);
     for (let i = 0; i < 3; i++) { const f = add(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ color: '#d8f2ff', transparent: true, opacity: .7, side: THREE.DoubleSide }), -9 + i * 9, 2.4, KZ + 13.9); anim.push(f) }
@@ -121,9 +122,9 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   { G.updateMatrixWorld(true); const skip = new Set([M.moss, M.cloth, M.void, M.water, M.glow]), P = new THREE.Vector3(), Q = new THREE.Quaternion(), SC = new THREE.Vector3(), E = new THREE.Euler();
     G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.userData.nosol) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry' && t !== 'ConeGeometry') return;
       o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return; const h = pr.height * SC.y, bottom = P.y - h / 2 - H;
-      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2 - H }); return }   /* steps / the base: flat tops you stand on */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* v3.30.2 the keep's hall stands on its base: still a wall */
-      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push(Object.assign({ x: P.x, z: P.z, hw, hd, ry: E.y }, o.userData.roof ? { top: o.userData.roof } : {})) }
-      else { const r = (t === 'ConeGeometry' ? pr.radius * .8 : Math.max(pr.radiusTop, pr.radiusBottom)) * Math.max(SC.x, SC.z); if (r > .25) sols.push({ x: P.x, z: P.z, r }) } }) }
+      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2, abs: 1 }); return }   /* steps / the base: flat tops you stand on */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* v3.30.2 the keep's hall stands on its base: still a wall */
+      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y, top: o.userData.roof ? o.userData.roof + H : P.y + h / 2, abs: 1 }) }   /* v3.59 walls / houses: land on top from the air (glider · hawk) and walk along them */
+      else { const r = (t === 'ConeGeometry' ? pr.radius * .8 : Math.max(pr.radiusTop, pr.radiusBottom)) * Math.max(SC.x, SC.z); if (r > .25) sols.push(t === 'CylinderGeometry' ? { x: P.x, z: P.z, r, top: P.y + h / 2, abs: 1, flat: 1 } : { x: P.x, z: P.z, r }) } }) }
   const guards = [[-9, 8], [10, 10], [-16, -2], [16, -4], [0, 18], [-22, 14], [22, 16], [0, KZ + KD / 2 + 7]].map(([x, z]) => W(x, z));
   return { G, sols, glows, anim, guards, center: W(0, 0), door: W(0, KZ + KD / 2 + 3), look: L };
 }

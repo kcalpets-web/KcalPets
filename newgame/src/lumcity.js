@@ -87,7 +87,7 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   const wm = new THREE.MeshStandardMaterial({ color: '#58a8d0', roughness: .15, metalness: .1, transparent: true, opacity: .85 });
   box(31, -.02, 8, 3.4, .1, 30, wm, .5); box(38, -.02, 22, 3.4, .1, 16, wm, .7);
   for (let i = 0; i < 5; i++) { const x = 30 + i * 2.6, z = -2 + i * 5; arch(x, 0, z, 2.2, .5, M.stone, .5 + Math.PI / 2) }
-  box(31, 2.1, 8, 4, .5, 4.5, M.stone, .5);   // the bridge deck
+  box(31, 2.1, 8, 4, .5, 4.5, M.stone, .5).userData.walk = 1;   // the bridge deck (v3.59 you stand on it)
   const falls = []; for (let i = 0; i < 4; i++) { const f = add(new THREE.PlaneGeometry(3.2, 2.6), new THREE.MeshBasicMaterial({ color: '#cfeefa', transparent: true, opacity: .75, side: THREE.DoubleSide }), 44 + i * 2.4, -1 - i * 1.8, 28 + i * 2, -1.1, .7, 0); falls.push(f) }   // cascades down the edge
   /* ---- trees and moss through the ruins (nature takes the city back) ---- */
   for (const [x, z, k] of [[-34, -6, 1.2], [34, 4, 1.1], [-26, 30, 1.3], [-36, 22, 1], [22, -24, 1.2], [-20, 34, .9], [-10, -14, 1.1], [12, -16, 1], [-32, 6, 1.3], [33, -18, 1.2], [-8, 30, 1], [9, 31, .9], [-30, -24, 1.4], [26, 30, 1.1], [3, 15, .8], [-14, -26, 1.2], [18, -28, 1]]) tree(x, z, k);
@@ -101,9 +101,9 @@ export function buildLumCity(cx, cz, H, ry = 0) {
     G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.material.transparent || o.userData.nosol) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry') return;
       o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return;   /* fallen / leaning beams: walk over */
       const h = (t === 'BoxGeometry' ? pr.height : pr.height) * SC.y, bottom = P.y - h / 2 - H;
-      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2 - H }); return }   /* steps / the base: you can stand on them */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* on the ground · or tall walls / towers on the cathedral's base */
-      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .15 && hd < .15) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y }) }
-      else sols.push({ x: P.x, z: P.z, r: Math.max(pr.radiusTop, pr.radiusBottom) * Math.max(SC.x, SC.z) }) }) }
+      if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2, abs: 1 }); return }   /* steps / the base: you can stand on them */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* on the ground · or tall walls / towers on the cathedral's base */
+      if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .15 && hd < .15) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y, top: P.y + h / 2, abs: 1 }) }   /* v3.59 land on walls from the air */
+      else sols.push(Object.assign({ x: P.x, z: P.z, r: Math.max(pr.radiusTop, pr.radiusBottom) * Math.max(SC.x, SC.z) }, t === 'CylinderGeometry' ? { top: P.y + h / 2, abs: 1, flat: 1 } : {})) }) }   /* v3.59 a tower: a flat top */
   const doorZ = CZ + 11.5 + (FZ + 2.2 - CZ - 11.5) * K, [dx, dz] = W(0, doorZ), guards = [[-10, 10], [12, 8], [-20, -6], [20, -12], [0, 24], [-28, 18], [28, 20], [0, doorZ + 4], [-5, doorZ - 12], [5, doorZ - 24]].map(([x, z]) => W(x, z));
   return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, center: W(0, 0) };
 }

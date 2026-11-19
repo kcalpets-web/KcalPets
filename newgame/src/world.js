@@ -152,11 +152,12 @@ export function addSol(e) { if (MUTE) return e; const R = (e.r || Math.hypot(e.h
   for (let i = Math.floor((e.x - R) / SCELL); i <= Math.floor((e.x + R) / SCELL); i++) for (let j = Math.floor((e.z - R) / SCELL); j <= Math.floor((e.z + R) / SCELL); j++) { const k = i + ',' + j; let l = SOLC.get(k); if (!l) SOLC.set(k, l = []); l.push(e); e.cells.push(k) } return e }
 export function delSol(e) { if (!e || !e.cells) return; for (const k of e.cells) { const l = SOLC.get(k); if (!l) continue; const i = l.indexOf(e); if (i >= 0) l.splice(i, 1) } e.cells = null }
 /* v3.26 like solHit, but a solid you stand on top of (its top within reach of y) does not block · so standing on a base never lets you through its walls */
+const solBase = e => e.abs ? 0 : groundH(e.x, e.z);   /* v3.59 abs = a world height (decks / piers over water: the sea floor under them is not their base) */
 const topAt = (e, lz) => e.ramp ? e.top * Math.min(1, Math.max(0, (e.hd - lz) / (2 * e.hd))) : e.top;   /* v3.26 a ramp rises along its local −z */
 export function solBlock(x, z, y, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
-    if (e.ramp) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad && y < groundH(e.x, e.z) + topAt(e, lz) - .55) return e; continue }   /* a ramp: walk up from its low end · its high sides block */
-    if (e.top && y >= groundH(e.x, e.z) + e.top - .42) continue;
+    if (e.ramp) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad && y < solBase(e) + topAt(e, lz) - .55) return e; continue }   /* a ramp: walk up from its low end · its high sides block */
+    if (e.top && y >= solBase(e) + e.top - .42) continue;
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
 /* v3.30.3 stuck inside a solid (landed in it from the air, pushed in…)? → the nearest point just outside it (null = free) · tops you stand on and ramps are fine */
 export function solPush(x, z, y) { const e = solBlock(x, z, y, 0); if (!e || e.ramp) return null; const dx = x - e.x, dz = z - e.z;
@@ -169,7 +170,7 @@ export function solHit(x, z, pad = .22) { const l = SOLC.get(Math.floor(x / SCEL
 /* v3.2 the top of something you can stand on under (x, z) (world height) or null */
 export function solTop(x, z) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null; let best = null;
   for (const e of l) { if (!e.top || (e.o && !e.o.g)) continue; const dx = x - e.x, dz = z - e.z, d2 = dx * dx + dz * dz;
-    if (!e.r) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + .02 && Math.abs(lz) < e.hd + .02) { const t = groundH(e.x, e.z) + topAt(e, lz); if (best == null || t > best) best = t } continue }   /* v3.26 a flat top (steps · a stone base) */ if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = groundH(e.x, e.z) + e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5); if (best == null || t > best) best = t } return best }
+    if (!e.r) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + .02 && Math.abs(lz) < e.hd + .02) { const t = solBase(e) + topAt(e, lz); if (best == null || t > best) best = t } continue }   /* v3.26 a flat top (steps · a stone base) */ if (d2 > (e.r + .12) ** 2) continue; const sc = e.o && e.o.left != null && e.o.tot ? .55 + .45 * e.o.left / e.o.tot : 1, t = solBase(e) + (e.flat ? e.top : e.top * sc * Math.sqrt(Math.max(0, 1 - d2 / ((e.r + .12) ** 2)) * .5 + .5));   /* v3.59 a tower: a flat top */ if (best == null || t > best) best = t } return best }
 const SOL_R = { tree: .3, bigtree: .42, rock: .38, boulder: .62, stump: .34, bigrock: .62 }, SOL_TOP = { rock: .48, boulder: 1.05, stump: .4, bigrock: .9 };
 export { SOL_R, SOL_TOP };
 /* v2.4.1 hand-made ground meshes reach a little past the core: outside it they tuck just under the streamed land (no z-fighting, no double ground) */
@@ -546,7 +547,8 @@ function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 
 export const HARBC = { x: 194, z: 20, r: 21, edge: 10, h: .7 };   /* v3.41 the harbour town's ground (flattened) */
 export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); { const d = Math.hypot(x - HARBC.x, z - HARBC.z); if (d < HARBC.r + HARBC.edge && h > -1.5) { const t = smw(HARBC.r + HARBC.edge, HARBC.r, d); h = h * (1 - t) + t * Math.max(h, HARBC.h) } }
   if (BALD_ON) { const d = Math.hypot(x - GOBC.x, z - GOBC.z); if (d < GOBC.r + GOBC.edge) { const t = smw(GOBC.r + GOBC.edge, GOBC.r, d); h = h * (1 - t) + t * GOBC.h } }   /* v3.50 */
-  for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h } } return h }
+  for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h;
+      if (k === 'navalee' && d < 20) { const cs = Math.cos(c.ry), sn = Math.sin(c.ry), dx = x - c.x, dz = z - c.z, lx = dx * cs - dz * sn, lz = dx * sn + dz * cs, e = Math.hypot(lx / 1.15, lz + 14); if (e > 12.2 && e < 15.3) h -= .75 * Math.sin(Math.PI * (e - 12.2) / 3.1) } } } return h }   /* v3.59 Navalee's moat is a real ditch now (the stone bridge in front of the keep crosses it) */
 function wildH0(x, z) {
 
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));

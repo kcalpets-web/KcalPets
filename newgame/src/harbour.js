@@ -25,7 +25,7 @@ export function buildHarbour(HB, groundH) {
   /* ---- piers + crane + crates ---- */
   const pier = (x0, z0, len, w, ry = 0) => { const g = new THREE.Group(); for (let i = 0; i < len / .9; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(.85, .1, w), i % 3 ? M.plank : M.wood); p.position.set(-i * .9, .32, 0); g.add(p) }
     for (let i = 0; i < len / .9; i += 3) for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, 1.6, 7), M.woodD); p.position.set(-i * .9, -.35, s * (w / 2 - .05)); g.add(p) }
-    g.position.set(ox + x0, 0, oz + z0); g.rotation.y = ry; G.add(g); g.updateMatrixWorld(true); sols.push({ x: ox + x0 - Math.cos(ry) * len / 2, z: oz + z0 + Math.sin(ry) * len / 2, hw: len / 2, hd: w / 2, ry, top: .37, walkOn: 1 }) };
+    g.position.set(ox + x0, 0, oz + z0); g.rotation.y = ry; G.add(g); g.updateMatrixWorld(true); sols.push({ x: ox + x0 - Math.cos(ry) * len / 2, z: oz + z0 + Math.sin(ry) * len / 2, hw: len / 2, hd: w / 2, ry, top: .37, abs: 1, walkOn: 1 }) };
   pier(-3, -9, 12, 2.2); pier(-3, 9, 10, 2.2); pier(-10, -9, 6, 1.6, Math.PI / 2);
   { const cx = -6, cz = -11.5; box(cx, .37, cz, 1.4, .3, 1.4, M.woodD); for (const [a, b] of [[-.5, -.5], [.5, -.5], [-.5, .5], [.5, .5]]) cyl(cx + a, .67, cz + b, .09, .09, 3.6, M.wood, 6); add(new THREE.BoxGeometry(5, .22, .22), M.wood, cx - 1.5, 4.3, cz, 0, 0, -.25); add(new THREE.CylinderGeometry(.02, .02, 2.4, 4), M.woodD, cx - 3.6, 3.4, cz); box(cx - 3.6, 2.2, cz, .7, .5, .7, M.crate) }   // the crane
   for (let i = 0; i < 9; i++) box(-1 - R() * 7, .37, -10.5 + R() * 3, .55 + R() * .2, .5, .55, M.crate, R() * 3);
