@@ -1606,13 +1606,13 @@ function openBag(tab, sell) {
       const pvw = ['sword', 'shield', 'bow', 'wear', 'pets'].includes(bagTab);   /* v3.32 the 3D preview only where it shows something (not for materials / food) */
       h += (np > 1 ? `<div class="invpg"><button class="btn sm" data-pg="-1"${pg ? '' : ' disabled'}><i class="ky">Y</i> ◀</button><b>หน้า ${pg + 1}/${np}</b><button class="btn sm" data-pg="1"${pg < np - 1 ? '' : ' disabled'}>▶ <i class="kx">X</i></button></div>` : '') + `<div class="invmain${pvw ? '' : ' wide'}"><div class="invgrid">${L.map(x => `<button class="tile${x.eq ? ' eq' : ''}${sel && x.key === sel.key ? ' sel' : ''}" data-k="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.n != null ? `<i>${x.nIcon === 'Lv' ? 'Lv' + x.n : x.n}</i>` : ''}${x.up ? '<u>▲</u>' : ''}${x.dur != null ? `<em style="width:${x.dur * 84}%;background:${x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></em>` : ''}</button>`).join('') + '<div class="tile emp"></div>'.repeat(L.length ? empty : 0) || `<p class="mut" style="grid-column:1/-1">ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', pets: 'เข้าใกล้สัตว์ป่าแล้วกด 🫳 จับ', mats: 'ตัดต้นไม้ ทุบหิน ล่าสัตว์', food: 'ทำอาหารที่หม้อหรือกองไฟ' }[bagTab] || ''}</p>`}</div>
         ${pvw ? `<div class="invside"><canvas class="invcv"></canvas><div class="mut invst">${bagTab === 'pets' ? `ทีม ${S.team.length}/${D.TEAM_MAX}` : `⚔️ ${st.atk} · 🛡️ ${st.def}`}</div></div>` : ''}</div>
-        ${sel ? `<div class="invdet"><b>${sel.icon} ${sel.name}</b><div class="mut">${sel.sub || ''}</div><div>${sel.desc || ''}</div><div class="row2">${sel.act || ''}</div></div>` : ''}`; bagSel._cur = sel }
-    h += '<div class="invhint">⬆️⬇️⬅️➡️ = เลื่อนกรอบ · A = ใส่/ใช้ · ค้าง A = รายละเอียด/ทิ้ง · B = กลับ · แตะได้เหมือนเดิม</div>';
+        `; bagSel._cur = sel }   /* v3.50 no always-on detail box: A / tap on a slot = a small menu (wear · details) */
+    h += '<div class="invhint">⬆️⬇️⬅️➡️ = เลื่อนกรอบ · A / แตะ = เมนู (สวมใส่ · ดูรายละเอียด) · B = กลับ</div>';
     b.innerHTML = h; { const ov = b.closest('.ov'); if (ov) ov._redraw = redraw }
     const cv = b.querySelector('.invcv'); if (cv) invPreview(cv, bagTab, bagSel._cur);
     b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; sfx('tap'); redraw() });
     b.querySelectorAll('[data-pg]').forEach(x => x.onclick = () => bagFlip(+x.dataset.pg, redraw));
-    b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw() });
+    b.querySelectorAll('[data-k]').forEach(x => x.onclick = e => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw(); if (e && e.isTrusted && x.closest('.invgrid')) itemMenu(bagTab, x.dataset.k, redraw) });   /* a real tap opens the menu · the frame moving onto a slot only selects it */
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, craft: openCraft, me: openProfile })[k]() });
     if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
     if (bagTab === 'craft') craftBody(b.querySelector('#bagCraft'), redraw);
@@ -1627,6 +1627,10 @@ function openBag(tab, sell) {
       x.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(go, 450) }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) x.addEventListener(ev, () => { clearTimeout(t); t = 0 }); x.addEventListener('contextmenu', e => e.preventDefault()) });
   }, { cls: 'inv', onClose: () => { bagSellMode = false } });
 }
+/* v3.50 the slot menu: what you can do with it (wear / use / sell … from the item's own buttons) + 📋 details (the full card: stats · throw away) */
+function itemMenu(tab, key, redraw) { const sel = bagSel._cur; if (!sel || sel.key !== key) return; const k0 = NAV.key;
+  sheet(`${sel.icon} ${sel.name}`, (b, r2, close) => { b.innerHTML = `${sel.sub ? `<p class="mut">${sel.sub}</p>` : ''}<div class="row2 imenu">${sel.act || ''}<button class="btn" id="imD">📋 ดูรายละเอียด</button></div>`;
+    bagBind(b, () => { close(); redraw() }); b.querySelector('#imD').onclick = () => { close(); bagItem(tab, key, redraw) } }, { cls: 'dlg', onClose: () => { NAV.zone = 'items'; NAV.key = k0; NAV.el = null } }) }
 function bagBind(b, redraw) {
     b.querySelectorAll('[data-sks]').forEach(x => x.onclick = () => { const [sl, k] = x.dataset.sks.split(':'); setSkSlot(sl, k); redraw() });   /* v3.17 */
     b.querySelectorAll('[data-pf]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.pf)));
@@ -2256,7 +2260,7 @@ function navMove(dir) { const ov = topOv(), cur = ov && navCur(); if (!cur) retu
 function navStick(x, y) { NAV.on = true; const d = Math.hypot(x, y), now = performance.now(); if (d < .5) { NAV.dir = null; return } const dir = Math.abs(x) > Math.abs(y) ? (x > 0 ? 'right' : 'left') : (y > 0 ? 'down' : 'up');
   if (dir !== NAV.dir) { NAV.dir = dir; NAV.rep = now + 420; navMove(dir) } else if (now > NAV.rep) { NAV.rep = now + 150; navMove(dir) } }
 function navADown() { const e = navCur(); if (!e) return; NAV.a = { e, t: performance.now() }; if (e.dataset.k && e.closest('.invgrid')) e.dispatchEvent(new PointerEvent('pointerdown')) }   /* a held slot opens its card (the slot's own long press) */
-function navAUp() { const a = NAV.a; NAV.a = null; if (!a || !a.e.isConnected) return; if (a.e.dataset.bt) { NAV.zone = 'items'; NAV.key = ''; a.e.click(); { const ov = topOv(); if (ov && !navAll(ov).length) { NAV.zone = 'tabs'; sfx('knock'); return } } sfx('tap'); return }   /* v3.23 A on a section = go in */ if (a.e.dataset.k && a.e.closest('.invgrid')) { if (performance.now() - a.t >= 450) return; a.e.dispatchEvent(new PointerEvent('pointerup')); const ov = a.e.closest('.ov'), act = ov && ov.querySelector('.invdet .row2 button'); if (act) act.click(); else sfx('knock'); return } a.e.click() }
+function navAUp() { const a = NAV.a; NAV.a = null; if (!a || !a.e.isConnected) return; if (a.e.dataset.bt) { NAV.zone = 'items'; NAV.key = ''; a.e.click(); { const ov = topOv(); if (ov && !navAll(ov).length) { NAV.zone = 'tabs'; sfx('knock'); return } } sfx('tap'); return }   /* v3.23 A on a section = go in */ if (a.e.dataset.k && a.e.closest('.invgrid')) { if (performance.now() - a.t >= 450) return; a.e.dispatchEvent(new PointerEvent('pointerup')); sfx('tap'); itemMenu(bagTab, a.e.dataset.k, (a.e.closest('.ov') || {})._redraw || (() => {})); return }   /* v3.50 A on a slot = its menu */ a.e.click() }
 setInterval(() => { if (NAV.on) navCur() }, 150);
 /* v3.32 the D-pad in windows: tap = one step · hold = repeat */
 document.querySelectorAll('#dpad [data-dp]').forEach(b => { let t = null; const stop = () => { clearTimeout(t); t = null; b.classList.remove('on') };
