@@ -221,7 +221,7 @@ export const GOLEMS = {
   navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
   frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
-export const QAIM = { zoom: 1.5, circle: .28, range: 40 };   // v3.71 🏹 quick aim: zoom of a plain bow · circle radius (share of the screen's short side) · lock range (m)
+export const QAIM = { zoom: 1.5, circle: .28, range: 40, btn: [-28, -32] };   // btn: the 🏹 button's offset from the X–Y gap (px at full button size)   // v3.71 🏹 quick aim: zoom of a plain bow · circle radius (share of the screen's short side) · lock range (m)
 export const TOWN_R = { harbour: 45 };
 export const GUARD = { near: 120, run: 5.4, walk: 1.3, reach: 1.7, every: .6, dmg: .35 };   // v3.70 💂 town guards: show up within `near` m · run / walk speed · reach to hit · seconds between hits · each hit = this share of the monster's max HP   // v3.70 how far the harbour town reaches from its plaza (golems / monsters keep out)
 export const GOLEM = { wake: 13, arena: 17, slam: { r: 4.6, wind: 1.3 }, rock: { r: 2.2, wind: 1.4 }, stun: 2.4, armor: .45, coreX: 2.6, drop: [3, 5] };

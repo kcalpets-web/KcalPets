@@ -1538,7 +1538,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   BW.addEventListener('pointermove', e => { if (AIM && AIM.quick) qaimMove(e) }); const up = () => { if (AIM && AIM.quick) qaimUp() };
   BW.addEventListener('pointerup', up); BW.addEventListener('pointercancel', up); BW.addEventListener('contextmenu', e => e.preventDefault()) }
 function bowBtn() { const el = $('bBow'), on = !!bowOf() && S.mode !== 'farm'; el.classList.toggle('on', on); if (!on) return; const x = $('bX').getBoundingClientRect(), y = $('bY').getBoundingClientRect(); if (!x.width || !y.width) return;   /* sits in the gap between X and Y (wherever the layout put them) */
-  const cx = (x.left + x.right + y.left + y.right) / 4, cy = (x.top + x.bottom + y.top + y.bottom) / 4, w = el.offsetWidth || 34; el.style.left = Math.round(cx - w / 2) + 'px'; el.style.top = Math.round(cy - w / 2) + 'px'; el.style.right = el.style.bottom = 'auto' }
+  const k = x.width / 64, cx = (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, cy = (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k, w = el.offsetWidth || 34;   /* v3.71 a little up-left of the X–Y gap */ el.style.left = Math.round(cx - w / 2) + 'px'; el.style.top = Math.round(cy - w / 2) + 'px'; el.style.right = el.style.bottom = 'auto' }
 addEventListener('resize', () => setTimeout(bowBtn, 200));
 /* v3.26 🐾 the skill wheel (hold X): 4 slots in the middle of the screen · ⬆️ X · ⬇️ B · ⬅️ Y · ➡️ A · press that button = use the skill at once · the stick or a tap outside closes it */
 const SKW = { on: false, el: (() => { const e = document.createElement('div'); e.id = 'skw'; document.body.appendChild(e); return e })(), t: 0 };
