@@ -55,28 +55,19 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng, q = N.me; if (N.finishClear) for (const o of N.W.clear.values()) if (o.g && Math.abs(o.x - q.x) < 2.5 && o.z > q.z && o.z < q.z + 11) N.finishClear(o); N.monSpawn('slime', q.x, q.z + 9); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0 }); await wait(1200);
     const hp0 = await N(() => { const N = window.__ng, m = N.mons.filter(m => m.kind === 'slime').sort((a, b) => Math.hypot(a.A.root.position.x - N.me.x, a.A.root.position.z - N.me.z) - Math.hypot(b.A.root.position.x - N.me.x, b.A.root.position.z - N.me.z))[0]; window.__sl = m; return m.hp });
     log('pre-aim', await N(() => JSON.stringify({ ov: [...document.querySelectorAll('.ov')].map(o => o.textContent.slice(0, 80)).join(','), swim: window.__ng.PL.swim, bow: window.__ng.S.eq.bow, ar: window.__ng.S.arrows })));
-    await press('bY', 'pointerdown'); await press('bY', 'pointerup'); if (!(await until(() => !!window.__ng.AIM, 1500))) errs.push('v3.18 a Y tap did not aim');
+    await press('bBow', 'pointerdown'); if (!(await until(() => !!window.__ng.AIM, 1500))) errs.push('v3.71 holding 🏹 did not aim');   /* v3.71 the bow has its own button: hold = aim · let go = shoot */
     await wait(1500); const aim = await N(() => ({ body: document.body.classList.contains('aim'), xh: getComputedStyle(document.getElementById('xhair')).display, on: document.getElementById('xhair').classList.contains('on'), pose: window.__ng.PL.pose.aim }));
     log('arms', await N(() => { const N = window.__ng, R = N.PL.rig, q = N.me, r = o => { const v = o.getWorldPosition(o.position.clone()); return [v.x - q.x, v.y - q.y, v.z - q.z].map(x => +x.toFixed(2)) }; const g = R.elL.children.find(o => o.userData.bow); const bm = g && g.children[0], sa = bm && bm.getObjectByName('strA'); return JSON.stringify({ str: sa ? [sa.visible, +sa.scale.y.toFixed(2), bm.getObjectByName('string').visible] : null, bow: g ? r(g) : null, handR: r(N.PL.body.getObjectByName('handR')), shL: r(R.armL), elL: r(R.elL), shR: r(R.armR), elR: r(R.elR), rx: [R.armL.rotation.x, R.armL.rotation.z, R.elL.rotation.x].map(x => +x.toFixed(2)), body: [N.PL.body.rotation.x, N.PL.body.rotation.y].map(x => +x.toFixed(2)) }) }));
     await E(() => { window.__ng.AIM.p = -.35 }); await wait(900); await shot('b2b-sky'); await E(() => { window.__ng.AIM.p = .05 }); await wait(600);
     log('vm', await N(() => { const N = window.__ng, V = N.VM, c = N.camera; return JSON.stringify({ vis: V.visible, n: V.children.length, aimk: N.AIMK, d: V.position.distanceTo(c.position), kids: V.children.map(o => o.name + ':' + o.visible).join(',') }) }));
     log('aim', JSON.stringify(aim), await N(() => { const c = window.__ng.camera.position, q = window.__ng.me; return JSON.stringify([c.x - q.x, c.y - q.y, c.z - q.z, window.__ng.CAM.yaw, window.__ng.PL.yaw]) })); if (!aim.body || aim.xh === 'none') errs.push('no crosshair while aiming'); if (!aim.on) errs.push('crosshair did not find the slime'); await shot('b2-aim');
     await E(() => { const N = window.__ng; for (const m of [...N.mons]) if (m !== window.__sl && Math.hypot(m.A.root.position.x - N.me.x, m.A.root.position.z - N.me.z) < 14) N.hurtMon(m, 99999, 'dmg'); N.S.arrows = 20; N.S.en = null; N.S.tired = false; for (const A of [...N.ARROWS]) N.ARROWS.splice(N.ARROWS.indexOf(A), 1); const y = N.CAM.ys ?? N.CAM.yaw, x = N.me.x + Math.sin(y) * 8, z = N.me.z + Math.cos(y) * 8; window.__sl.A.root.position.set(x, N.groundH(x, z), z); window.__sl.t = [x, z]; window.__sl.home = [x, z] }); await wait(300);   // the slime right under the crosshair   // a wanderer could step into the shot
-    await press('bA', 'pointerdown'); await wait(900); await press('bA', 'pointerup'); await wait(200); const fl = await N(() => window.__ng.ARROWS.length); if (!fl) errs.push('no arrow in the air'); await shot('b3-shot');
+    await wait(900); await press('bBow', 'pointerup'); await wait(200); const fl = await N(() => window.__ng.ARROWS.length); if (!fl) errs.push('no arrow in the air'); await shot('b3-shot');
     if (!(await until(() => window.__sl.hp < 0 || window.__sl.hp < window.__hp0 || !window.__ng.mons.includes(window.__sl), 3000).then(() => true))) { }
     const hit = await N(() => ({ hp: window.__sl.hp, alive: window.__ng.mons.includes(window.__sl), arrows: window.__ng.S.arrows })); log('after', JSON.stringify(hit), 'hp0', hp0);
     if (hit.alive && hit.hp >= hp0) errs.push('the arrow did not hit the slime'); if (hit.arrows !== 19) errs.push('arrow count did not go down');
-    /* holding Y does not shoot · a short top view check · no arrows = a hint, no aim */
-    /* v3.18 still aiming after a shot · Y zoom in · X zoom out · legend · B leaves */
-    const zs = await N(() => !!window.__ng.AIM); if (!zs) errs.push('the bow should stay up after a shot');
-    await press('bY', 'pointerdown'); await wait(1500); await press('bY', 'pointerup'); await wait(200); const z2 = await N(() => window.__ng.zm); const fov2 = await N(() => window.__ng.camera.fov); await shot('b4-zoom');
-    await press('bX', 'pointerdown'); await wait(500); await press('bX', 'pointerup'); await wait(200); const z1 = await N(() => window.__ng.zm); log('v3.18.1 smooth zoom', z2.toFixed(2), z1.toFixed(2), 'fov', fov2.toFixed(1));
-    if (!(z2 > 1.8) || !(z1 < z2 && z1 >= 1)) errs.push('hold Y / X should zoom smoothly ' + z2 + ' ' + z1);
-    const lg = await N(() => { const e = document.getElementById('ylg'); return [getComputedStyle(e).display, e.textContent] }); log('legend', lg); if (lg[0] === 'none' || !/ซูมเข้า/.test(lg[1])) errs.push('no aim legend');
-    if (await N(() => window.__ng.S.arrows) !== 19) errs.push('zooming shot an arrow');
-    await press('bB', 'pointerdown'); await press('bB', 'pointerup'); await wait(300);
-    if (await N(() => !!window.__ng.AIM)) errs.push('B did not leave the aim');
-    await E(() => { window.__ng.S.arrows = 0 }); await press('bY', 'pointerdown'); await press('bY', 'pointerup'); await wait(300); if (await N(() => !!window.__ng.AIM)) errs.push('aimed with no arrows');
+    const zs = await N(() => !!window.__ng.AIM); if (zs) errs.push('v3.71 letting go of 🏹 should leave the aim');
+    await E(() => { window.__ng.S.arrows = 0 }); await press('bBow', 'pointerdown'); await wait(300); if (await N(() => !!window.__ng.AIM)) errs.push('aimed with no arrows'); await press('bBow', 'pointerup');
     
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
