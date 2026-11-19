@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.55';
+export const APP_VER = '3.56';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -244,6 +244,7 @@ export const NOTES = [
 export const ALBUM_MAX = 60;                                     // v2.5 🖼️ pictures kept in the album (newest)
 export const STAM_FADE = 1.2;                                    // v2.4.2 seconds the ⚡ wheel stays after it is full
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
+export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
 export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62 };   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, gap: .25 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · rest between dashes (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
