@@ -1440,7 +1440,9 @@ function questGo(q) {
     case 'potionShop': { const sh = TW.shops[0]; goNear(sh.x, sh.z); point(sh.x, sh.z, 3.4); setTool(''); toast(S.shops.potion ? '🧪 ร้านยาเปิดแล้ว' : '🏚️ แตะที่ร้านยาเพื่อซ่อม'); return }
     case 'gather': { const needWood = (S.mats.wood || 0) < 10, tl = needWood ? 'axe' : 'hammer', o = nearestClear(o => needWood ? (o.t === 'tree' || o.t === 'bush') : o.t === 'rock');
       if (o) { point(o.x, o.z, 1.3); workOn(o); toast(`${D.TOOLS[tl][0]} ลากนิ้วผ่าน${D.CLEAR[o.t].name}`) } else toast('ไม่เจอเป้าหมาย ลองเลื่อนดูรอบเกาะ'); return }
-    case 'house': goNear(HOUSE.x, HOUSE.z); point(HOUSE.x, HOUSE.z + .4, S.story.built ? 4.4 : 1.2); setTool(''); toast(S.story.built ? '🏠 แตะที่บ้านต้นไม้เพื่อนอน' : '🏠 แตะที่กองไม้ใต้ต้นไม้ใหญ่เพื่อสร้าง'); return;
+    case 'house': if (BALD_ON && !S.story.built) { closeSheets(); if (S.builds.some(b => b.k === 'cabin')) { const c = S.builds.find(b => b.k === 'cabin'); goNear(c.x, c.z); point(c.x, c.z, 2); return } enterBuild('cabin'); toast('🏠 เลือกที่ตั้งกระท่อมบน<b>พื้นเพาะปลูก</b> (สีดินปนหญ้า) แล้วกดวาง', 3200); return }   /* v3.50 the first hut: you place it yourself */
+                  if (BALD_ON) { goNear(HOUSE.x, HOUSE.z); point(HOUSE.x, HOUSE.z, 3.2); setTool(''); toast('🏠 แตะที่กระท่อมเพื่อนอน'); return }
+    case 'house0': goNear(HOUSE.x, HOUSE.z); point(HOUSE.x, HOUSE.z + .4, S.story.built ? 4.4 : 1.2); setTool(''); toast(S.story.built ? '🏠 แตะที่บ้านต้นไม้เพื่อนอน' : '🏠 แตะที่กองไม้ใต้ต้นไม้ใหญ่เพื่อสร้าง'); return;
     case 'wreck': { point(WRECK.x, WRECK.z, 1.4); const o = nearestClear(o => o.t === 'debris'); if (o) workOn(o); else goNear(WRECK.x, WRECK.z); toast('🪓 เคลียร์ซากไม้รอบเรือ'); return }
     case 'howsif': { const n = Object.values(S.fish).reduce((a, v) => a + v, 0); if (n < D.HOWSIF_FISH) { goNear(HOWSIF.x - 2, HOWSIF.z + 1); point(HOWSIF.x - 3.2, HOWSIF.z + .5, .4); setTool('rod'); toast('🎣 แตะที่น้ำทะเลเพื่อเหวี่ยงเบ็ด') } else { goNear(HOWSIF.x, HOWSIF.z); point(HOWSIF.x, HOWSIF.z, 2.1); setTool(''); toast('👴 แตะที่ลุงฮาวซิฟ') } return }
     case 'boat': goNear(WRECK.x, WRECK.z); point(WRECK.x, WRECK.z, 1.4); setTool(''); toast('🔨 แตะที่ซากเรือเพื่อซ่อม'); return;
@@ -3648,6 +3650,11 @@ function bpCard(k, isNew) {
 /* ================= v1.3 building from blueprints (anywhere on land except the town) · 🛶 the raft · glowing blueprint scrolls ================= */
 const BP = D.BLUEPRINTS, BV = new Map(), BICON = { campfire: '🔥', cabin: '🏠', raft: '🛶', tower: '🗼' }, WARPB = { campfire: 1, cabin: 1 };
 const bOf = id => S.builds.find(b => b.id === id);
+function setHome(b) { HOUSE.x = b.x; HOUSE.z = b.z }   /* v3.50 'home' follows your first hut (sleep · respawn · the 🏠 warp · quest arrows) */
+function homeMigrate() { if (!BALD_ON) return; let h = S.home && bOf(S.home);
+  if (!h && S.story.built) { let best = null; for (let r = 0; r < 40 && !best; r += 1) for (let a = 0; a < 6.28 && !best; a += .3) { const x = Math.round((8 + Math.cos(a) * r) * 2) / 2, z = Math.round((-4 + Math.sin(a) * r) * 2) / 2; if (!BM && !canBuild('cabin', x, z, Math.PI)) best = [x, z] }
+    if (best) { h = { id: 'bhome', k: 'cabin', x: best[0], z: best[1], r: Math.PI, done: 1, fix: Date.now() }; S.builds.push(h); S.home = h.id; save(); setTimeout(() => toast('🏠 บ้านต้นไม้หายไปกับเกาะเดิม… สร้าง<b>กระท่อม</b>ให้แล้วบนพื้นเพาะปลูก · แตะกระท่อม → 🚚 ย้ายได้', 4200), 2500) } }   /* v3.50 */
+  if (h) setHome(h) }
 const GHOK = new THREE.MeshBasicMaterial({ color: '#6aff8a', transparent: true, opacity: .5, depthWrite: false }), GHNO = new THREE.MeshBasicMaterial({ color: '#ff5a4a', transparent: true, opacity: .5, depthWrite: false });
 const GHBP = new THREE.MeshBasicMaterial({ color: '#8ac8ff', transparent: true, opacity: .32, depthWrite: false });
 function bModel(k) { const g = new THREE.Group();
@@ -3681,9 +3688,10 @@ function openBuild() {
       (ks.length ? ks.map(k => bpCard(k) + `<button class="btn sm go" data-bb="${k}" style="margin:-6px 0 10px"${hasCost(BP[k].cost) ? '' : ' disabled'}>🔨 สร้าง${BP[k].name}</button>`).join('') : '<p>ยังไม่มีแบบแปลน · ลองคุยกับลุงฮาวซิฟ หรือหาในหีบสมบัติของแคมป์มอนสเตอร์ ⛺</p>');
     b.querySelectorAll('[data-bb]').forEach(x => x.onclick = () => { close(); enterBuild(x.dataset.bb) }) });
 }
-function enterBuild(k) {
+const bCost = k => BALD_ON && k === 'cabin' && !S.story.built && !S.builds.some(b => b.k === 'cabin') ? D.BUILD.house : BP[k].cost;   /* v3.50 the first hut costs what the tree house did */
+function enterBuild(k, mv) {
   exitBuild(); if (RIDE) { hint('🛶 ขึ้นฝั่งก่อนแล้วค่อยสร้าง'); return } const g = bModel(k), pl = new THREE.Mesh(new THREE.PlaneGeometry(BP[k].w + .3, BP[k].d + .3), GHOK); pl.rotation.x = -Math.PI / 2; pl.position.y = .06; g.add(pl); tint(g, GHOK); scene.add(g);
-  BM = { k, g, r: Math.round(PL.yaw / (Math.PI / 2)) * Math.PI / 2 + Math.PI, ok: false, why: '' }; work = null; walkT = null; setTool('');
+  BM = { k, g, r: mv ? bOf(mv).r : Math.round(PL.yaw / (Math.PI / 2)) * Math.PI / 2 + Math.PI, ok: false, why: '', move: mv || null }; work = null; walkT = null; setTool('');
   document.body.classList.add('build'); $('bbN').textContent = `${BP[k].icon} ${BP[k].name}`; sfx('tap');
 }
 function exitBuild() { if (!BM) return; scene.remove(BM.g); BM = null; document.body.classList.remove('build') }
@@ -3695,25 +3703,26 @@ function canBuild(k, x, z, r) {
   if (B.water) { if (pts.some(([px, pz]) => walkWorld(px, pz) !== 'water')) return 'ต้องวางบนน้ำ (หันหน้าไปทางน้ำ)'; let land = false; for (let a = 0; a < 12 && !land; a++) land = walkLand(x + Math.cos(a * .52) * 3.5, z + Math.sin(a * .52) * 3.5) && !waterAt(x + Math.cos(a * .52) * 3.5, z + Math.sin(a * .52) * 3.5); if (!land) return 'ต้องอยู่ใกล้ฝั่ง' }
   else { if (pts.some(([px, pz]) => !walkLand(px, pz) || waterAt(px, pz))) return 'ต้องวางบนพื้นดิน'; const hs = pts.map(([px, pz]) => groundH(px, pz)); if (Math.max(...hs) - Math.min(...hs) > (B.w > 2.5 ? 1.2 : .8)) return 'พื้นชันเกินไป' }
   const R = Math.max(B.w, B.d) / 2;
-  for (const b of S.builds) { const o = BP[b.k]; if (dist(b.x, b.z, x, z) < (R + Math.max(o.w, o.d) / 2) * .8) return 'ชนกับสิ่งก่อสร้างอื่น' }
+  for (const b of S.builds) { if (BM && BM.move === b.id) continue; const o = BP[b.k]; if (dist(b.x, b.z, x, z) < (R + Math.max(o.w, o.d) / 2) * .8) return 'ชนกับสิ่งก่อสร้างอื่น' }
   for (const o of W.clear.values()) if (o.g && dist(o.x, o.z, x, z) < R + .5) return 'มีต้นไม้หรือหินขวาง · เคลียร์ก่อน';
   if (!BALD_ON && dist(x, z, HOUSE.x, HOUSE.z) < R + 3 || dist(x, z, WRECK.x, WRECK.z) < R + 2.5 || dist(x, z, HOWSIF.x, HOWSIF.z) < R + 1.5) return 'ใกล้บ้านหรือเรือของลุงเกินไป';
   for (const k2 in POT) if (dist(x, z, POT[k2].x, POT[k2].z) < R + 1.4) return 'ใกล้หม้อแคมป์เกินไป';
   for (const c2 of WC) if (!(S.wcamps[c2.id] || {}).c && dist(x, z, c2.x, c2.z) < 10) return 'แคมป์มอนสเตอร์ยังไม่ถูกยึด';
   for (const key in S.plots) { const [cx, cz] = key.split(',').map(Number); if (dist(cx, cz, x, z) < R + .6) return 'ทับแปลงผัก' }
   if (dist(me().x, me().z, x, z) < R - .2) return 'ถอยออกมาอีกนิด';
-  if (!hasCost(B.cost)) return 'วัสดุไม่พอ: ' + costTxt(B.cost);
+  if (!(BM && BM.move) && !hasCost(bCost(k))) return 'วัสดุไม่พอ: ' + costTxt(bCost(k));   /* v3.50 moving is free · the first hut is cheap */
   return '';
 }
 function buildTick() {
   const [x, z] = buildSpot(), B = BP[BM.k], why = canBuild(BM.k, x, z, BM.r); BM.x = x; BM.z = z; BM.why = why;
   BM.g.position.set(x, B.water ? -.3 : groundH(x, z), z); BM.g.rotation.y = BM.r;
-  if (BM.ok !== !why) { BM.ok = !why; tint(BM.g, BM.ok ? GHOK : GHNO) } const el = $('bbS'); el.textContent = why ? '❌ ' + why : '✅ วางได้ · ' + costTxt(B.cost); el.className = why ? 'no' : 'ok';
+  if (BM.ok !== !why) { BM.ok = !why; tint(BM.g, BM.ok ? GHOK : GHNO) } const el = $('bbS'); el.textContent = why ? '❌ ' + why : BM.move ? '✅ ย้ายมาตรงนี้ได้' : '✅ วางได้ · ' + costTxt(bCost(BM.k)); el.className = why ? 'no' : 'ok';
 }
 function placeBuild() {
   if (!BM) return; buildTick(); if (!BM.ok) { hint('❌ ' + BM.why, 1800); return }
+  if (BM.move) { const b = bOf(BM.move), nx = BM.x, nz = BM.z, nr = BM.r; exitBuild(); if (!b) return; bDrop(b); b.x = nx; b.z = nz; b.r = nr; bView(b); if (b.id === S.home) setHome(b); sfx('knock'); hint(`🚚 ย้าย${BP[b.k].name}แล้ว`, 1400); save(); return }   /* v3.50 🚚 moving a build: free */
   const B = BP[BM.k], b = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 99), k: BM.k, x: BM.x, z: BM.z, r: BM.r };
-  payCost(B.cost); S.builds.push(b); exitBuild(); bView(b); startJob('bld:' + b.id, B.t); sfx('knock'); hud(); save();
+  if (!hasCost(bCost(BM.k))) { hint('❌ วัสดุไม่พอ · ' + costTxt(bCost(BM.k)), 1800); return } payCost(bCost(BM.k)); S.builds.push(b); exitBuild(); bView(b); startJob('bld:' + b.id, BALD_ON && b.k === 'cabin' && !S.story.built ? D.BUILD_TIME.house : B.t); sfx('knock'); hud(); save();
   toast(`🔨 เริ่มสร้าง <b>${B.icon} ${B.name}</b>! ใช้เวลา ${B.t} วินาที`, 2200);
 }
 /* the things themselves */
@@ -3739,6 +3748,7 @@ function bView(b) {
 }
 function buildDone(id) {
   const b = bOf(id); if (!b) return; b.done = 1; b.fix = Date.now();   /* v3.15 wear starts now */ bView(b); const B = BP[b.k]; bump('built'); sfx('done');
+  if (BALD_ON && b.k === 'cabin' && !S.story.built) { S.story.built = 1; S.home = b.id; setHome(b); storyProps() }   /* v3.50 the first hut = your home (sleep · respawn · 🏠 warp) */
   if (b.k === 'scarecrow') for (const key in S.plots) { const [cx, cz] = key.split(',').map(Number); if (dist(cx, cz, b.x, b.z) < 8) S.plots[key].f = .8 }
   toast(`🎉 ${B.icon} <b>${B.name}</b> สร้างเสร็จแล้ว!<br><small>${B.desc}</small>`, 3200); questCheck(); achCheck(); save(); hud();
 }
@@ -3753,9 +3763,10 @@ function openBuilt(id) {
     const cnd = bCond(b), rc = repairCost(b);
     bx.innerHTML = `<p>${B.desc}</p><div class="card"><div class="row"><b>🔧 สภาพ ${Math.round(cnd * 100)}%</b><span class="mut">${cnd < D.DECAY.worn ? '🏚️ ทรุดโทรม' : 'ใช้ได้ดี'}</span></div><div class="dbar"><i style="width:${cnd * 100}%;background:${cnd < D.DECAY.worn ? '#ff8a3a' : '#7ac850'}"></i></div><p class="mut">ผุพังหมดใน ~${Math.max(0, Math.ceil(cnd * bLife(b) / 864e5))} วัน</p>${cnd < .95 ? `<button class="btn wide${hasCost(rc) ? ' go' : ''}" id="bFix" ${hasCost(rc) ? '' : 'disabled'}>🔨 ซ่อม (${Object.entries(rc).map(([k, n]) => costName(k) + ' ' + n).join(' · ')})</button>` : ''}</div>` + (b.k === 'chest' ? `<p class="mut">เก็บผักให้แล้ว ${b.n || 0} ครั้ง</p>` : '') +
       (sleepy ? `<div class="row2"><button class="btn go" id="slM">🌅 นอนถึงเช้า</button><button class="btn" id="slN">🌙 นอนถึงค่ำ</button></div>` : '') +
-      `<button class="btn" id="bDel" style="margin-top:14px">🗑️ รื้อถอน (ได้วัสดุคืนครึ่งหนึ่ง)</button>`;
-    if (sleepy) { bx.querySelector('#slM').onclick = () => { close(); sleepTo(D.DAY.dawn); if (b.k === 'bed') setTimeout(() => addEn(50), 1500) }; bx.querySelector('#slN').onclick = () => { close(); sleepTo(20 * 60) } }
+      `<div class="row2" style="margin-top:14px"><button class="btn" id="bMv">🚚 ย้าย</button><button class="btn" id="bDel">🗑️ รื้อถอน (ได้วัสดุคืนครึ่งหนึ่ง)</button></div>`;
+    if (sleepy) { bx.querySelector('#slM').onclick = () => { close(); if (BALD_ON && S.story.built && !S.story.slept) return sleepNight(); sleepTo(D.DAY.dawn); if (b.k === 'bed') setTimeout(() => addEn(50), 1500) }; bx.querySelector('#slN').onclick = () => { close(); sleepTo(20 * 60) } }
     { const f = bx.querySelector('#bFix'); if (f) f.onclick = () => { if (!hasCost(rc)) return; payCost(rc); b.fix = Date.now(); decT = 0; sfx('done'); hint('🔨 ซ่อมเสร็จ สภาพ 100%', 1300); save(); hud(); redraw() } }
+    bx.querySelector('#bMv').onclick = () => { close(); enterBuild(b.k, b.id); toast('🚚 เดินไปที่ใหม่ แล้วกดวาง (ย้ายฟรี)', 2200) };
     bx.querySelector('#bDel').onclick = () => confirmBox(`รื้อ${B.name}?`, () => { close(); demolish(b) }, '🗑️ รื้อ');
   });
 }
@@ -3819,7 +3830,7 @@ function howsifBlueprints() {
 }
 { const old = S.builds.filter(b => b.k === 'forge'); if (old.length || S.bp.forge) { for (const b of old) for (const [k, n] of Object.entries(D.FORGE_TABLE_REFUND)) S.mats[k] = (S.mats[k] || 0) + n; S.builds = S.builds.filter(b => b.k !== 'forge'); delete S.bp.forge; save();   /* v3.11 the home forge table is gone: its materials come back */
     if (old.length) setTimeout(() => toast('⚒️ ตอนนี้ตีอาวุธได้ที่ร้านช่างเหล็กในเมือง · คืนวัสดุโต๊ะช่างเข้ากระเป๋าแล้ว', 3200), 5000) } }
-for (const b of S.builds) bView(b);
+homeMigrate(); for (const b of S.builds) bView(b);
 if (S.ride && bOf(S.ride)) { RIDE = bOf(S.ride); document.body.classList.add('ride') } else S.ride = null;
 
 /* ================= v1.6 🏚️ fallen towns: find them, talk to the survivor, rebuild 3 places → the town lives again (✨ + villagers + a warp) ================= */
