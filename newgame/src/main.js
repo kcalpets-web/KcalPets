@@ -1459,9 +1459,9 @@ $('qIcon').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySele
 /* ================= v3.12.8 🎬 how to play: little animated clips (a pad, a finger, the bar, what happens) · open any time from 📜 ================= */
 const HOWTO = [
   ['move', '🕹️', 'เดิน · กล้อง · กระโดด', [{ st: 'up', t: 'โยกจอยซ้าย = เดิน (ตัวละครหันตามกล้อง · โยกลง = ถอยหลัง)' }, { drag: 1, t: 'ลากนิ้วบนจอ = หมุนกล้อง · ลากขึ้น = เงยมองฟ้า' }, { b: 'X', a: 'tap', fx: '⤴️', t: 'แตะ X = กระโดด' }, { st: 'hold', fx: '🤫', t: 'กดจอยค้างนิ่งๆ = ย่อตัวลอบเข้าใกล้ · ค้างอีกครั้ง/แตะ X = ลุก' }]],
-  ['attack', '⚔️', 'โจมตี · ป้องกัน · เก็บของ', [{ b: 'Y', a: 'tap', fx: '⚔️', t: 'แตะ Y = ฟัน (ครั้งแรกจะชักดาบ+โล่ ถือไว้ตลอด)' }, { b: 'B', a: 'tap', fx: '🎒', t: 'แตะ B = เก็บอาวุธ' }, { b: 'B', a: 'hold', fx: '🛡️', t: 'B ค้าง = ยกโล่กันด้านหน้า (ไม่มีโล่ = ปัดด้วยอาวุธ)' }, { b: 'A', a: 'tap', fx: '✋', t: 'A = เก็บของ · คุย · เปิด · ขึ้นม้า' }, { fx: '🎯', t: 'ปุ่ม 🎯 (ซ้ายของ X) ค้าง = ง้างปาอาวุธ · ปล่อย = ปา · ลากไป B = ยกเลิก' }]],   /* v3.73 */
+  ['attack', '⚔️', 'โจมตี · ป้องกัน · เก็บของ', [{ b: 'Y', a: 'tap', fx: '⚔️', t: 'แตะ Y = ฟัน (ครั้งแรกจะชักดาบ+โล่ ถือไว้ตลอด)' }, { b: 'B', a: 'tap', fx: '🎒', t: 'แตะ B = เก็บอาวุธ' }, { b: 'B', a: 'hold', fx: '🛡️', t: 'B ค้าง = ยกโล่กันด้านหน้า (ไม่มีโล่ = ปัดด้วยอาวุธ)' }, { b: 'A', a: 'tap', fx: '✋', t: 'A = เก็บของ · คุย · เปิด · ขึ้นม้า' }, { b: 'Y', a: 'hold', fx: '🎯', t: 'ค้าง Y = ง้างปาอาวุธ · ปล่อย = ปา · ลากไป B = ยกเลิก' }]],   /* v3.73 */
   ['bow', '🏹', 'ธนู (โหมดยิง)', [{ fx: '🔄', t: 'แตะ 🔄 (ขวาของ X) = สลับ ตี ↔ ยิง' }, { b: 'Y', a: 'hold', bar: '🏹 แรง', fx: '🎯', t: 'ค้าง Y = เล็ง (ซูม ×1.5 · ศัตรูเข้าวงกลม = ล็อก)' }, { b: 'Y', a: 'tap', fx: '🏹', t: 'ปล่อยนิ้ว = ยิง · ลากนิ้วไปที่ B = ยกเลิก' }]],
-  ['swap', '🔁', 'เปลี่ยนอุปกรณ์ · โหมด', [{ st: 'up', t: 'แตะปุ่มเดิน 2 ครั้ง = เมนูเลือก X / Y' }, { b: 'Y', a: 'tap', fx: '⚔️', t: 'กด Y = เลือกอาวุธ/ธนู/เครื่องมือ · โยก ◀▶ แล้วกด A' }, { b: 'X', a: 'tap', fx: '🛡️', t: 'กด X = เลือกโล่ / ลูกธนู' }, { b: 'Y', a: 'hold', fx: '🌾', t: 'ค้าง Y (โหมดตี) = สลับ ⚔️ ต่อสู้ ↔ 🌾 ฟาร์ม' }, { st: 'up', t: 'แตะปุ่มเดิน 1 ครั้ง = นั่ง' }]],
+  ['swap', '🔁', 'เปลี่ยนอุปกรณ์ · โหมด', [{ st: 'up', t: 'แตะปุ่มเดิน 2 ครั้ง = เมนูเลือก X / Y' }, { b: 'Y', a: 'tap', fx: '⚔️', t: 'กด Y = เลือกอาวุธ/ธนู/เครื่องมือ · โยก ◀▶ แล้วกด A' }, { b: 'X', a: 'tap', fx: '🛡️', t: 'กด X = เลือกโล่ / ลูกธนู' }, { fx: '🌾', t: '🔄 ซ้ายของ X = สลับ ⚔️ ต่อสู้ ↔ 🌾 ฟาร์ม · 🔄 ขวาของ X = สลับ ตี ↔ ยิง' }, { st: 'up', t: 'แตะปุ่มเดิน 1 ครั้ง = นั่ง' }]],
   ['pets', '🐾', 'สกิลสัตว์', [{ b: 'X', a: 'hold', fx: '🐾', t: 'กด X ค้าง = วงล้อสกิลกลางจอ (บน X · ขวา A · ซ้าย Y · B ปิด)' }, { b: 'A', a: 'tap', fx: '🦅', t: 'กดปุ่มนั้นใช้สกิลทันที เช่น 🦅 เหยี่ยวพาบิน 🐗 ม่านพลัง (ต้องจับสัตว์ก่อน) · กด X กลางอากาศ = ใบไม้ร่อน' }, { b: 'A', a: 'hold', fx: '🎯', t: 'กด A ค้าง = โหมดปาอาวุธ/เครื่องมือ (หอกแม่นสุด)' }, { fx: '⏳', t: 'ไอคอนสกิลอยู่ใต้ 📜 · มีเวลาพักก่อนใช้ซ้ำ' }]],
   ['glide', '🍃', 'ร่อน', [{ b: 'X', a: 'tap', fx: '⤴️', t: 'กระโดดจากที่สูง…' }, { b: 'X', a: 'tap', fx: '🍃', t: '…แล้วแตะ X อีกครั้ง = กางใบไม้ร่อน (ใช้ ⚡)' }, { st: 'up', fx: '🍃', t: 'โยกจอย = บังคับทิศ · เหนือกองไฟลมร้อนพาลอยขึ้น' }]],
   ['fish', '🎣', 'ตกปลา', [{ b: 'Y', a: 'tap', fx: '🎣', t: 'โหมดฟาร์ม · 🔄 · เลือก 🎣 · แตะ Y = เข้าโหมดเล็ง' }, { b: 'A', a: 'hold', bar: '🎣 ระยะ', swing: 1, t: 'A ค้าง หลอดขึ้นลง = ระยะเหวี่ยง · ปล่อยตอนวงฟ้าอยู่บนน้ำ' }, { fx: '❗', t: 'ทุ่นจม = แตะจอทันที!' }, { reel: 1, t: 'กดค้างยกกรอบเขียวให้ปลาอยู่ในกรอบจนหลอดเต็ม' }]],
@@ -1533,20 +1533,20 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   Y.addEventListener('pointerdown', e => { e.preventDefault(); if (!CUT && winFlip(-1)) return; if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; const now = performance.now();
     if (SKW.on) { skwUse('Y'); return } if (PICK) { pickChoose(); return } t0 = now; if (SMENU.on) { smenuGo('left'); return } if (AIM && !AIM.quick) { aimZoom(1); return } if (AIM) return;
     try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
-    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; setSet(!gFarm()) }); return }   /* v3.73 melee: tap = hit (on release) · hold = ⚔️ combat ↔ 🌾 farm */
+    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (gFarm()) hint('🧰 เครื่องมือฟาร์มปาไม่ได้', 1100); else windStart() }); return }   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
     if (carryN()) carryBack(true); if (!gFarm()) { qaimStart('bow', Y); if (AIM) { AIM.lx = e.clientX; AIM.ly = e.clientY } return }   /* ranged combat: hold = aim the bow */
     const k = yTool();
     if (k === 'rod') { if (F) { if (F.phase === 'wait') fishEnd(); else F.hold = true; return } if (!S.has.rod) { hint('🎣 ยังไม่มีเบ็ด', 1500); return } setTool('rod'); aimStart('rod'); return }
     if (k === 'flute') { fluteOpen(); return } if (k === 'draw') { aimStart('draw'); return } qaimStart('net', Y) });   /* v3.71 the net: hold = aim (big circle locks on) · let go = throw · slide onto B = cancel */
-  Y.addEventListener('pointermove', e => { if (!AIM) return; if (AIM.quick) qaimMove(e); else aimTurn(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY });
-  const yUp = () => { if (yHold) { yHold(); yHold = null; actHit(); return } if (yHeld) { yHeld = false; return } if (AIM && AIM.quick) { qaimUp(); return } if (AIM) aimZoom(0); if (F && F.hold) F.hold = false; t0 = 0 };
+  Y.addEventListener('pointermove', e => { if (WIND) { windOverB(e.clientX, e.clientY); return } if (!AIM) return; if (AIM.quick) qaimMove(e); else aimTurn(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY });
+  const yUp = () => { if (yHold) { yHold(); yHold = null; actHit(); return } if (yHeld) { yHeld = false; if (WIND) windEnd(true); return } if (AIM && AIM.quick) { qaimUp(); return } if (AIM) aimZoom(0); if (F && F.hold) F.hold = false; t0 = 0 };
   Y.addEventListener('pointercancel', yUp); Y.addEventListener('pointerup', yUp); Y.addEventListener('contextmenu', e => e.preventDefault()) }
 function bowBtn() { padExtras() }   /* v3.73 the 🏹 button became 🔄 + 🎯 */
 /* ================= v3.73 🎮 the sets: ⚔️ combat / 🌾 farm (hold Y in melee) × melee / ranged (🔄) · each set keeps its own A-hand item · the chooser: double-tap the stick → X / Y ================= */
 function setSet(farm, quiet) { if (farm === gFarm()) return; stowAll(); aimEnd(false); const keep = S.eqKeep = S.eqKeep || {}; keep[gFarm() ? 'farm' : 'fight'] = S.eq.sword; S.gset = farm ? 'farm' : 'fight';
   const fits = x => x && D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !x.br && !x.away && !!D.ITEMS[x.t].tool === farm; let it = S.bag.find(x => x.id === keep[S.gset] && fits(x));
   if (!it) it = S.bag.filter(fits).sort((p, q) => (D.ITEMS[q.t].tier || 1) - (D.ITEMS[p.t].tier || 1))[0]; S.eq.sword = it ? it.id : null; if (S.hand !== 'torch' || !farm) S.hand = it ? jobHand(it) : 'w'; setTool('');
-  sfx('level'); if (!quiet) toast(farm ? '🌾 โหมดฟาร์ม<br><small>Y = ใช้เครื่องมือ · 🔄 = ตาข่าย/เบ็ด/ขลุ่ย/วาด · ค้าง Y = กลับโหมดต่อสู้</small>' : '⚔️ โหมดต่อสู้<br><small>Y = ฟัน · 🔄 = ธนู · ค้าง Y = โหมดฟาร์ม</small>', 2200); save(); hud(); gearView() }
+  sfx('level'); if (!quiet) toast(farm ? '🌾 โหมดฟาร์ม<br><small>Y = ใช้เครื่องมือ · 🔄 (ขวาของ X) = ตาข่าย/เบ็ด/ขลุ่ย/วาด · 🔄 ซ้ายของ X = กลับโหมดต่อสู้</small>' : '⚔️ โหมดต่อสู้<br><small>Y = ฟัน · ค้าง Y = ง้างปา · 🔄 (ขวาของ X) = ธนู</small>', 2200); save(); hud(); gearView() }
 function setRange(r) { if (!!r === gRange()) return; aimEnd(false); if (r) stowAll(); S.grange = !!r; sfx('tap'); hint(r ? (gFarm() ? `${D.YTOOL[yTool()].icon} ${D.YTOOL[yTool()].name} · Y = ใช้` : '🏹 ธนู · ค้าง Y = เล็ง · ปล่อย = ยิง') : gFarm() ? '🪓 เครื่องมือ · Y = ใช้' : '⚔️ ดาบ · Y = ฟัน', 1400); save(); hud(); gearView() }
 /* what X and Y choose in this set */
 function gSlots() { const f = gFarm(), r = gRange(), w = weaponOf(), sh = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), b = bowOf(), at = arwT();
@@ -1561,11 +1561,10 @@ function gPick(sl) { const f = gFarm(), r = gRange();
   if (!r) { PICKCAT = f ? 'farm' : 'weapon'; openPick('a'); PICKCAT = null; return } PICKCAT = f ? 'other' : 'bow'; openPick('y'); PICKCAT = null }
 /* 🔄 (right of X) · 🎯 throw (left of X): hold = wind up · let go = throw · slide onto B = cancel */
 { const SW = $('bSwap'); SW.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov') || SKW.on || SMENU.on || PICK) return; unlock(); setRange(!gRange()) }); SW.addEventListener('contextmenu', e => e.preventDefault()) }
-{ const TB = $('bThrow'); TB.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov') || SKW.on || SMENU.on) return; unlock(); try { TB.setPointerCapture(e.pointerId) } catch (_) { } if (gFarm() || gRange()) { hint('🎯 ปาได้เฉพาะอาวุธ (โหมดต่อสู้ · ตี)', 1300); return } windStart() });
-  TB.addEventListener('pointermove', e => { if (WIND) windOverB(e.clientX, e.clientY) }); const up = () => { if (WIND) windEnd(true) }; TB.addEventListener('pointerup', up); TB.addEventListener('pointercancel', up); TB.addEventListener('contextmenu', e => e.preventDefault()) }
+{ const FB = $('bFarm'); FB.addEventListener('pointerdown', e => { e.preventDefault(); if (CUT || document.querySelector('.ov') || SKW.on || SMENU.on || PICK) return; unlock(); setSet(!gFarm()) }); FB.addEventListener('contextmenu', e => e.preventDefault()) }   /* v3.73 🔄 ⚔️ combat ↔ 🌾 farm */
 function padExtras() { const x = $('bX').getBoundingClientRect(), y = $('bY').getBoundingClientRect(); if (!x.width || !y.width) return; const k = x.width / 64, put = (el, cx, cy) => { const w = el.offsetWidth || 34; el.style.left = Math.round(cx - w / 2) + 'px'; el.style.top = Math.round(cy - w / 2) + 'px'; el.style.right = el.style.bottom = 'auto' };
-  const sw = $('bSwap'), tb = $('bThrow'); sw.innerHTML = `<span>${gRange() ? '🏹' : gFarm() ? '🪓' : '⚔️'}</span><i>🔄</i>`; sw.classList.toggle('farm', gFarm());
-  put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.classList.toggle('off', gFarm() || gRange() || !weaponOf()) }
+  const sw = $('bSwap'), tb = $('bFarm'); sw.innerHTML = `<span>${gRange() ? '🏹' : gFarm() ? '🪓' : '⚔️'}</span><i>🔄</i>`; sw.classList.toggle('farm', gFarm());
+  put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.innerHTML = `<span>${gFarm() ? '🌾' : '⚔️'}</span><i>🔄</i>`; tb.classList.toggle('farm', gFarm()) }
 addEventListener('resize', () => setTimeout(padExtras, 200));
 /* v3.26 🐾 the skill wheel (hold X): 4 slots in the middle of the screen · ⬆️ X · ⬇️ B · ⬅️ Y · ➡️ A · press that button = use the skill at once · the stick or a tap outside closes it */
 const SKW = { on: false, el: (() => { const e = document.createElement('div'); e.id = 'skw'; document.body.appendChild(e); return e })(), t: 0 };
@@ -1574,7 +1573,7 @@ function skwShow(on) { SKW.on = on; SKW.el.classList.toggle('on', on); document.
     return `<i data-skw="${sl}" class="${pos}${has ? '' : ' empty'}${left ? ' cd' : ''}"><b class="k${sl.toLowerCase()}">${sl}</b>${has ? SKILLS[k].icon : '➕'}<small>${has ? (left ? Math.ceil(left / 1000) + ' วิ' : SKILLS[k].name) : 'ว่าง'}</small></i>` }).join('') + '<p>กดปุ่มนั้นเพื่อใช้สกิล · B = ปิด</p>';
   SKW.el.querySelectorAll('[data-skw]').forEach(x => x.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); skwUse(x.dataset.skw) })) }
 function skwUse(sl) { skwShow(false); if (sl === 'B' || sl === 'close') { sfx('tap'); return } slotSkill(sl) }   /* B closes */
-document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest('#skw,#bA,#bB,#bX,#bY,#bSwap,#bThrow,#stick') && performance.now() - SKW.t > 250) skwShow(false) }, true);
+document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest('#skw,#bA,#bB,#bX,#bY,#bSwap,#bFarm,#stick') && performance.now() - SKW.t > 250) skwShow(false) }, true);
 /* the card's line: also in both modes */
 $('aqChip').onclick = () => { aqStop('🕹️ บังคับเองแล้ว', 1200) };
 /* v3.56 the first time: pick how to play (changeable in ⚙️ settings) */
@@ -1828,7 +1827,7 @@ function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key 
     bagBind(b, done);
     b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { const a = x.dataset.im, k = key.slice(1);
       if (a === 'cancel') { close(); return }
-      if (a === 'wear') { const it = S.bag.find(q => q.id === +k); if (D.ITEMS[it.t].slot === 'sword' && !!D.ITEMS[it.t].tool !== gFarm()) { (S.eqKeep = S.eqKeep || {})[gFarm() ? 'fight' : 'farm'] = it.id; hint(D.ITEMS[it.t].tool ? '🧰 ใช้ในโหมดฟาร์ม (ค้าง Y)' : '⚔️ ใช้ในโหมดต่อสู้ (ค้าง Y)', 1500); save(); done(); return } if (D.ITEMS[it.t].slot === 'sword') { equipA(it); DRAWN = false; setTool(S.hand === 'w' ? '' : S.hand) } else S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); sfx('knock'); save(); hud(); gearView(); done(); return }
+      if (a === 'wear') { const it = S.bag.find(q => q.id === +k); if (D.ITEMS[it.t].slot === 'sword' && !!D.ITEMS[it.t].tool !== gFarm()) { (S.eqKeep = S.eqKeep || {})[gFarm() ? 'fight' : 'farm'] = it.id; hint(D.ITEMS[it.t].tool ? '🧰 ใช้ในโหมดฟาร์ม (🔄 ซ้ายของ X)' : '⚔️ ใช้ในโหมดต่อสู้ (🔄 ซ้ายของ X)', 1500); save(); done(); return } if (D.ITEMS[it.t].slot === 'sword') { equipA(it); DRAWN = false; setTool(S.hand === 'w' ? '' : S.hand) } else S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); sfx('knock'); save(); hud(); gearView(); done(); return }
       if (a === 'wearC') { const X = D.WEAR[k]; S.wear[X.slot] = S.wear[X.slot] === k ? null : k; sfx('tap'); save(); wearView(); done(); return }
       if (a === 'arrow') { S.arrowT = key === 'arw' ? '' : key.slice(2); sfx('tap'); aimHud(); save(); done(); return }
       if (a === 'drop' || a === 'free') { close(); const all = (sel.n || 1) > 1 && !/^[iwp]/.test(key); confirmBox(`${a === 'free' ? 'ปล่อย' : 'ทิ้ง'} ${sel.name}${all ? ` ทั้งหมด ×${sel.n}` : ''}?`, () => { discardItem(key, all ? Infinity : 1); redraw() }, a === 'free' ? '🌿 ปล่อย' : '🗑️ ทิ้ง'); return }
@@ -2502,7 +2501,7 @@ function smenuGo(dir) { if (!dir) { smenuShow(false); return } sfx('tap'); joy.o
   if (SMENU.page === 'hit') { if (dir !== 'left' && dir !== 'right') return; smenuShow(false); PICKCAT = dir === 'left' ? 'weapon' : 'farm'; openPick('a'); PICKCAT = null; return }
   smenuShow(false); if (dir === 'up') { openHub(); return } openPick({ left: 'y', down: 'b' }[dir]) }
 function smenuBack() { if (SMENU.page !== 'main') { smenuPage('main'); SMENU.el.querySelectorAll('[data-sd]').forEach(x => x.classList.remove('sel')); sfx('tap'); return true } return false }
-document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('#stick,#bA,#bB,#bX,#bY,#bSwap,#bThrow')) e.preventDefault() }, { passive: false });   /* v3.17.1 iOS: double-tap-hold on the stick / buttons popped the text magnifier (loupe) — pointer events still fire */
+document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('#stick,#bA,#bB,#bX,#bY,#bSwap,#bFarm')) e.preventDefault() }, { passive: false });   /* v3.17.1 iOS: double-tap-hold on the stick / buttons popped the text magnifier (loupe) — pointer events still fire */
 { const st = $('stick'), kn = $('stickK'); let pid = null, sTap = 0, sDown = 0, sMove = 0, sHold = 0;
   const mv = e => { const r = st.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), k = Math.min(1, d / 46);
     if (mapNavOn()) { joy.on = false; mapStick(dx / 46, dy / 46); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)`; return }   /* v3.12.1 the map is open: hop between warp points */
@@ -2827,12 +2826,12 @@ function doJump() { const now = performance.now(); CROUCH = false; if (GLIDE && 
 const TUT = [
   ['move', '🕹️', 'ลากจอยซ้ายเพื่อเดิน', () => true], ['jump', '🦘', 'กด <b>X</b> เพื่อกระโดด', () => true],
   ['run', '🏃', 'ระหว่างเดิน กด <b>A</b> = วิ่งพุ่ง (ใช้ ⚡ นิดหน่อย · กดซ้ำได้เป็นช่วงๆ)', () => true], ['crouch', '🥷', 'กด <b>X</b> ค้าง 3 วิ เพื่อย่อตัว (แตะ X อีกครั้งเพื่อยืน)', () => true],
-  ['gather', '🌿', 'เข้าใกล้ผลไม้/ของที่ตก แล้วกด <b>A</b> เพื่อเก็บ · ตัดหญ้า/ต้นไม้/หิน: ค้าง <b>Y</b> เข้าโหมดฟาร์ม แล้วกด <b>Y</b>', () => true],
+  ['gather', '🌿', 'เข้าใกล้ผลไม้/ของที่ตก แล้วกด <b>A</b> เพื่อเก็บ · ตัดหญ้า/ต้นไม้/หิน: แตะ 🔄 ซ้ายของ X เข้าโหมดฟาร์ม แล้วกด <b>Y</b>', () => true],
   ['swing', '⚔️', 'กด <b>Y</b> ชักอาวุธ แล้วกด <b>Y</b> อีกครั้งเพื่อฟัน · แตะ <b>B</b> = เก็บอาวุธ', () => !!weaponOf()],
   ['guard', '🛡️', 'กด <b>B</b> ค้าง = ยกโล่ป้องกันด้านหน้า · ปล่อย = เก็บ (ไม่มีโล่ = ปัดด้วยอาวุธ)', () => !!(shieldOn() || weaponOf())],
   ['shoot', '🏹', 'กด 🔄 เป็นโหมดยิง แล้วกด <b>Y</b> ค้างเพื่อเล็ง ปล่อยเพื่อยิง', () => !!(bowOf() && S.arrows > 0)],
-  ['hand', '🪓', 'แตะปุ่มเดิน 2 ครั้ง → กด <b>Y</b> แล้วเลื่อน ◀▶ เลือกอาวุธ · ค้าง <b>Y</b> = สลับโหมดต่อสู้/ฟาร์ม', () => true],
-  ['pick', '⛏️', 'ค้าง <b>Y</b> เข้าโหมดฟาร์ม · แตะปุ่มเดิน 2 ครั้งเลือก ⛏️ อีเต้อ แล้วกด <b>Y</b> ที่หิน', () => true], ['draw', '🖍️', 'กด 🖍️ ใต้ปุ่ม 🏠 เลือกกรอบ แล้ววาดภาพ', () => !!S.has.hoe],
+  ['hand', '🪓', 'แตะปุ่มเดิน 2 ครั้ง → กด <b>Y</b> แล้วเลื่อน ◀▶ เลือกอาวุธ · แตะ 🔄 ซ้ายของ X = สลับโหมดต่อสู้/ฟาร์ม', () => true],
+  ['pick', '⛏️', 'แตะ 🔄 ซ้ายของ X เข้าโหมดฟาร์ม · แตะปุ่มเดิน 2 ครั้งเลือก ⛏️ อีเต้อ แล้วกด <b>Y</b> ที่หิน', () => true], ['draw', '🖍️', 'กด 🖍️ ใต้ปุ่ม 🏠 เลือกกรอบ แล้ววาดภาพ', () => !!S.has.hoe],
   ['net', '🕸️', 'โหมดฟาร์ม กด 🔄 เป็นตาข่าย · ค้าง <b>Y</b> เล็ง ปล่อยเพื่อโยน', () => true],
   ['shield', '🛡️', 'แตะปุ่มเดิน 2 ครั้ง → กด <b>X</b> เลือกโล่', () => S.bag.some(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield')], ['glide', '🍃', 'กระโดดจากที่สูง แล้วกด <b>X</b> กลางอากาศเพื่อกางใบไม้ร่อน', () => !!S.has.glider]];
 const tutEl = (() => { const e = document.createElement('div'); e.id = 'tut'; document.body.appendChild(e); return e })();
@@ -3716,10 +3715,10 @@ const WILD_MONS = [['slime', 'grassSprite', 'slime', 'branchImp'], ['branchImp',
 /* v3.5 🎮 game controller (Xbox / PlayStation / Switch Pro over Bluetooth): left stick walks · right stick turns the camera · the 4 face buttons press the on-screen ones
    by position (bottom = B · right = A · left = Y · top = X, the same diamond as the screen) · RT / RB / L3 = run · Start = menu · Select = map · on-screen buttons hide while one is connected */
 /* v3.12.8 🎮 remappable: which controller button does what (saved on this device) · learn = the next button you press */
-const PAD_DEF = { A: 1, B: 0, X: 3, Y: 2, bow: 6, thr: 4, run: 7, map: 8, menu: 9 }, PAD_ACT = [['A', '⚔️ A · โจมตี/ทำ'], ['B', '🛡️ B · ป้องกัน/กลับ'], ['X', '⤴️ X · กระโดด'], ['Y', '🎣 Y · อุปกรณ์ (ตาข่าย เบ็ด ฯลฯ)'], ['bow', '🔄 สลับ ตี/ยิง'], ['thr', '🎯 ปา (ค้าง)'], ['run', '🏃 วิ่งพุ่ง'], ['map', '🗺️ แผนที่'], ['menu', '📜 เมนู']];
+const PAD_DEF = { A: 1, B: 0, X: 3, Y: 2, bow: 6, thr: 4, run: 7, map: 8, menu: 9 }, PAD_ACT = [['A', '⚔️ A · โจมตี/ทำ'], ['B', '🛡️ B · ป้องกัน/กลับ'], ['X', '⤴️ X · กระโดด'], ['Y', '🎣 Y · อุปกรณ์ (ตาข่าย เบ็ด ฯลฯ)'], ['bow', '🔄 สลับ ตี/ยิง'], ['thr', '🔄 ต่อสู้ ↔ ฟาร์ม'], ['run', '🏃 วิ่งพุ่ง'], ['map', '🗺️ แผนที่'], ['menu', '📜 เมนู']];
 const PAD_NAME = { 0: 'ล่าง', 1: 'ขวา', 2: 'ซ้าย', 3: 'บน', 4: 'LB', 5: 'RB', 6: 'LT', 7: 'RT', 8: 'Select', 9: 'Start', 10: 'L3', 11: 'R3', 12: '⬆', 13: '⬇', 14: '⬅', 15: '➡' }, padNm = i => `ปุ่ม ${i}${PAD_NAME[i] ? ' (' + PAD_NAME[i] + ')' : ''}`;
 let PADM = (() => { try { return Object.assign({}, PAD_DEF, JSON.parse(localStorage.getItem('ng_padmap') || '{}')) } catch (e) { return Object.assign({}, PAD_DEF) } })(), PADLEARN = null;
-const padB = () => ({ [PADM.B]: 'bB', [PADM.A]: 'bA', [PADM.Y]: 'bY', [PADM.X]: 'bX', [PADM.bow]: 'bSwap', [PADM.thr]: 'bThrow' }), padPrev = {}; let padOn = false;
+const padB = () => ({ [PADM.B]: 'bB', [PADM.A]: 'bA', [PADM.Y]: 'bY', [PADM.X]: 'bX', [PADM.bow]: 'bSwap', [PADM.thr]: 'bFarm' }), padPrev = {}; let padOn = false;
 function padSave() { try { localStorage.setItem('ng_padmap', JSON.stringify(PADM)) } catch (e) { } }
 function padPress(id, down) { const el = $(id); if (!el) return; const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(down ? 'pointerdown' : 'pointerup', { bubbles: true, cancelable: true, pointerId: 77, pointerType: 'touch', clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 })) }
 function padTick(dt) {
