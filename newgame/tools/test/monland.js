@@ -30,7 +30,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8826, OUT = process.arg
     // trackers + castle door
     const tl = await E(() => window.__ng.trackList().map(t => t.id + ':' + t.text)); log('trackers', tl); if (!tl.some(t => t === 'main:กำจัดเมฆทมิฬ')) errs.push('main quest still has a count'); if (!tl.some(t => t.startsWith('restore:'))) errs.push('no restore quest');
     await E(() => window.__ng.towerDoor()); await wait(500); const td = await E(() => (document.querySelector('.ov') || {}).textContent || ''); log('castle door', td.slice(0, 80)); if (!/ปราสาท/.test(td)) errs.push('the castle door did not open'); await close();
-    const fn = await E(() => window.__ng.FENCES.length); log('fences', fn); if (fn < 10) errs.push('too few route fences');
+    const fn = await E(() => window.__ng.FENCES.length); log('fences (retired v3.44: roads keep packs away)', fn);
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
