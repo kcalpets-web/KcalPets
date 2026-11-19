@@ -36,9 +36,11 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8838, OUT = process.arg
     await E(() => { const N = window.__ng, S = N.S; N.placeMe(20, 2); for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); const it = N.newItem('woodSpear', 'B'); S.bag.push(it); N.equipA(it); window.__sp = it; N.CAM.yaw = 0; N.CAM.pitch = .3 }); await wait(500);
     // v3.69 hold A = wind up (no first-person aim) · slide onto B = cancel · hold again and let go = throw
     const bA = await pg.locator('#bA').boundingBox(), bB = await pg.locator('#bB').boundingBox(), ax = bA.x + bA.width / 2, ay = bA.y + bA.height / 2;
-    // no enemy near: holding A only raises it · letting go does not throw
-    await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(1400); const w0 = await E(() => ({ lift: !!window.__ng.WIND && !window.__ng.WIND.tgt, pose: window.__ng.PL.pose.lift })); await pg.screenshot({ path: OUT + '/lift.png' }); await pg.mouse.up(); await wait(300);
-    const w0b = await E(() => ({ eq: window.__ng.S.eq.sword, away: !!window.__sp.away })); log('lift', JSON.stringify(w0), JSON.stringify(w0b)); if (!w0.lift || !w0.pose || w0b.away || !w0b.eq) errs.push('with no enemy, holding A should only raise the weapon');
+    // 🔥 a lit torch: hold A = hold it up (stays up) · B = lower it
+    await E(() => { const N = window.__ng, S = N.S; S.has.torch = 1; S.torchT = 120; S.hand = 'torch'; N.gearView() }); await wait(400);
+    await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(1400); await pg.mouse.up(); await wait(800); const tu = await E(() => ({ up: window.__ng.TORCHUP, pose: window.__ng.PL.pose.lift })); await pg.screenshot({ path: OUT + '/torch-up.png' });
+    await pg.dispatchEvent('#bB', 'pointerdown'); await pg.dispatchEvent('#bB', 'pointerup'); await wait(300); const td = await E(() => window.__ng.TORCHUP); log('torch up', JSON.stringify(tu), 'after B', td); if (!tu.up || !tu.pose || td) errs.push('hold A should hold the torch up until B');
+    await E(() => { const N = window.__ng, S = N.S; S.hand = 'w'; N.equipA(window.__sp); N.gearView() }); await wait(300);
     await E(() => { const N = window.__ng, q = N.PL.root.position; N.monSpawn('boar', q.x + 7, q.z, { area: 'wild' }) }); await wait(600);
     await pg.mouse.move(ax, ay); await pg.mouse.down(); await wait(1400); const w1 = await E(() => ({ wind: !!window.__ng.WIND, tgt: !!(window.__ng.WIND && window.__ng.WIND.tgt), aim: !!window.__ng.AIM })); log('wind', JSON.stringify(w1)); if (!w1.wind || !w1.tgt || w1.aim) errs.push('holding A by an enemy should wind up a throw without the aim view');
     await pg.mouse.move(bB.x + bB.width / 2, bB.y + bB.height / 2, { steps: 4 }); await wait(200); await pg.mouse.up(); await wait(300);

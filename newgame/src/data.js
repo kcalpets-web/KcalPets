@@ -258,7 +258,7 @@ export const GEAR_EFF = { one: { wood: .5, grass: 1, stone: 0 }, two: { wood: .7
 export const GEAR_JOB = { axe: 'axe', sickle: 'sickle', pick: 'hammer', hammer: 'hammer', hoe: 'hoe' };   // which A-hand a kind is (the rest = 'w', the weapon)
 /* v3.22 🎯 double-tap A = throw what you hold (aim like Y): spread rad · damage × · speed m/s · gravity · wear · pick it up where it lands */
 export const PICK_MAX = 12;   /* v3.49 the item picker shows your first 12 (loops round) */
-export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4, up: .12, windRot: 3.0, liftRot: { def: [0, 0], spear: [-1.5, 0] }, liftArm: [-1.6, -1.8] };   // windRot: the weapon back over the shoulder · liftRot: held up high (no enemy)   // v3.69 up: lift of a wound-up throw with no target
+export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4, up: .12, windRot: 3.0 };   // windRot: the weapon back over the shoulder while winding up   // v3.69 up: lift of a wound-up throw with no target
 /* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
 /* v3.39 broken gear rests and comes back by itself (minutes by rarity) · the blacksmith fixes it at once · weapons / shields / bows are made by the blacksmith (coins = his labour, you bring the materials) */
 export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
@@ -684,7 +684,7 @@ export const YHELP = 3;               // v3.18 the button legend blinks the firs
 export const CHARGE = { cycle: 1.5, rodMin: 3, rodMax: 16, netMin: .3, zoom: 2.6, weak: .3 };
 /* v3.12.4 the struggle bar (net catch · wild horse): hold = lift the green frame · keep the animal inside until the bar fills */
 export const STRUG = { zone: .3, up: 2.4, grav: 2.0, fill: .26, drain: .2, start: .35, horseEn: 25, horseZone: .26 };
-export const TORCH = { burn: 180, warm: 1, camp: [1, 3], light: 2.6, night: 7, range: 9 };
+export const TORCH = { burn: 180, warm: 1, camp: [1, 3], light: 2.6, night: 7, range: 9, upArm: [-1.6, -1.8], upRot: [2.4, 0], upK: 1.4 };   // v3.68 up*: the torch held up (hold A · B lowers it) · upK = brighter
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
