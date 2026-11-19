@@ -20,7 +20,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, wait = ms => new 
     await E(() => document.querySelector('[data-bu="sword"]').click()); await wait(300); const u1 = await E(() => [window.__ng.bagCap('sword'), window.__ng.S.spirit.free]); log('upgraded', u1); if (u1[0] !== 24 || u1[1] !== 0) errs.push('v3.38 2 ✨ should buy +12 slots ' + u1);
     const tabs = await E(() => [...document.querySelectorAll('[data-bt]')].map(x => x.dataset.bt)); log('tabs', tabs); for (const t of ['sword', 'shield', 'bow', 'mats', 'food', 'wear']) if (!tabs.includes(t)) errs.push('no tab ' + t);
     await E(() => document.querySelector('[data-bt="bow"]').click()); await wait(300); const arw = await E(() => !!document.querySelector('[data-k="arw"]')); log('arrows in bow tab', arw); if (!arw) errs.push('arrows are not in the bow tab');
-    await E(() => document.querySelector('[data-bt="wear"]').click()); await wait(300); await E(() => document.querySelector('[data-k="wh_cap"]').click()); await wait(200); await E(() => document.querySelector('[data-wr="h_cap"]').click()); await wait(500);
+    await E(() => document.querySelector('[data-bt="wear"]').click()); await wait(300); await pg.click('[data-k="wh_cap"]'); await wait(600);   /* v3.50 a real tap opens the slot menu (wear · details) */ await E(() => document.querySelector('[data-wr="h_cap"]').click()); await wait(500);
     const hat = await E(() => window.__ng.S.wear.hat); log('wear tab', hat); if (hat !== 'h_cap') errs.push('the wear tab did not put the cap on');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');

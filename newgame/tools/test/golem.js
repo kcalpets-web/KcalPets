@@ -53,6 +53,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       const bad = D.CRAFT.filter(r => r.give.item && !D.ITEMS[r.give.item[0]]).map(r => r.k); return { sword: N.S.bag.some(it => it.t === 'kingSword'), broth: N.S.meals.boneBroth || 0, bad } });
     log('craft', JSON.stringify(cr)); if (!cr.sword || !cr.broth || cr.bad.length) errs.push('golem crafting failed ' + JSON.stringify(cr)); await shot('05-craft'); await closeAll();
     /* ore veins by land */
+    await N(() => window.__ng.placeMe(30, 0)); await wait(4000);   /* v3.50 the bald isle's rocks are its overgrowth (streams in round you) */
     const vn = await N(() => { const N = window.__ng, c = {}; for (const o of N.W.clear.values()) { const v = N.veinOf(o); if (v) c[v] = (c[v] || 0) + 1 } return c }); log('veins', JSON.stringify(vn)); if (!Object.keys(vn).length) errs.push('no ore veins');
     /* 🍖 / 💤 */
     const nd = await E(async () => { const N = window.__ng, S = N.S; S.full = 30; S.awake = 1400; for (let i = 0; i < 60; i++) N.needsTick(20); const a = { full: Math.round(S.full), awake: S.awake, pills: document.querySelectorAll('#needs button').length };

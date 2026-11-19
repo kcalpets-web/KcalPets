@@ -1696,7 +1696,7 @@ function debTick(now) {
   if (now < debT) return; const step = debL ? Math.min(1000, now - debL) : 0; debL = now; debT = now + 250; const T = Date.now();   /* v3.7 real time since the last check (was short by 250 ms each time → poison barely ticked) */
   for (const k in S.deb) if (S.deb[k] <= T) { delete S.deb[k]; toast(`${D.DEBUFF[k].icon} หาย${D.DEBUFF[k].name}แล้ว`, 1400); hud() }
   for (const k of ['poison', 'burn']) if (debOn(k)) { const X = D.DEBUFF[k]; S['dT_' + k] = (S['dT_' + k] || 0) + step; if (S['dT_' + k] >= X.tick) { S['dT_' + k] = 0; if (pHp() > 1) { S.hp = Math.max(1, pHp() - X.dmg); floater(`${X.icon} -${X.dmg}`, 'hurt', me().x, 2, me().z) } } }
-  if (debOn('burn') && PL.swim) { delete S.deb.burn; toast('💧 ดับไฟแล้ว!', 1400) }
+  if (debOn('burn') && (PL.swim || PL.wade)) { delete S.deb.burn; toast('💧 ดับไฟแล้ว!', 1400) }
   if (debOn('cold') && nearFire()) { delete S.deb.cold; toast('🔥 อุ่นขึ้นแล้ว!', 1400) }
   swimT = PL.swim ? swimT + step / 1000 : 0;
   tempTick(); climateTick(step); if (!debOn('cold') && !nearFire() && !RIDE && (TEMPV < D.TEMP.coldAt - .05 || isNight() && swimT > D.COLD_SWIM_S)) addDeb('cold');
@@ -3691,7 +3691,7 @@ function huntTick(M, m, sp, dt, now, ok) {
     if (P.hp <= 0) { const ig = P.T.ingr; monGone(P); if (ig) dropIngr(ig[0], ig[2] || 1, q.x, q.z); M.prey = null; if (nearMe(M, 18)) floater('🍖', 'item', m.x, 1.8, m.z) } } return true }
 function walkMon(x, z) { return walkLand(x, z) && !(S.builds.length && solidAt(x, z)) && !solHit(x, z, .05) }   /* v2.5.1 monsters can't stand inside trees/houses either (or you could never reach them) */
 /* v2.4.1 safe zones: the home island (once its monster is gone) and the town (once cleared) · no monsters walk in · no attacking there */
-function safeAt(x, z) { const zn = zoneOf(x, z); return (zn === 'farm' && !S.mon) || (zn === 'town' && !!S.story.townClear) || dist(x, z, HB.x + 8, HB.z) < 20 }   /* v3.13 the harbour town is safe */
+function safeAt(x, z) { const zn = zoneOf(x, z); return (zn === 'farm' && !S.mon && (!BALD_ON || dist(x, z, HOUSE.x, HOUSE.z) < D.SAFE_HOME)) || (zn === 'town' && !!S.story.townClear) || dist(x, z, HB.x + 8, HB.z) < 20 }   /* v3.13 the harbour town is safe */
 const safeHere = () => safeAt(me().x, me().z);
 function walkMonH(x, z) { return walkMon(x, z) && !safeAt(x, z) }
 let safeHintT = 0; function safeHint() { const n = performance.now(); if (n > safeHintT) { safeHintT = n + 2500; hint('🕊️ เขตปลอดภัย · ที่นี่ใช้อาวุธไม่ได้', 1600) } }

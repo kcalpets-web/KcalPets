@@ -43,7 +43,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(400); await shot('03-horse');
     await E(() => window.__ng.dismount()); if (await N(() => !!window.__ng.HORSE)) errs.push('could not get off the horse');
     /* 🪨 stand on a rock */
-    const rk = await E(async () => { const N = window.__ng, q = N.me; let best = null; for (const o of N.W.clear.values()) if (o.g && o.t === 'rock' && Math.hypot(o.x - q.x, o.z - q.z) < 80) { best = o; break } if (!best) return null;
+    const rk = await E(async () => { const N = window.__ng, q = N.me; let best = null; for (const o of N.W.clear.values()) if (o.g && o.t === 'rock' && Math.hypot(o.x - q.x, o.z - q.z) < 80 && N.solTop(o.x, o.z) != null) { best = o; break }   /* v3.50 a rock you can stand on */ if (!best) return null;
       N.placeMe(best.x, best.z); const top = N.solTop(best.x, best.z); q.y = top + .1; await new Promise(r => setTimeout(r, 900)); return { top: +top.toFixed(2), g: +N.groundH(best.x, best.z).toFixed(2), y: +q.y.toFixed(2) } });
     log('rock', JSON.stringify(rk)); if (rk && !(rk.y > rk.g + .25)) errs.push('did not stay on top of the rock ' + JSON.stringify(rk)); await shot('04-rock');
   } catch (e) { errs.push('EX ' + e.message) } finally { await b.close(); srv.kill() }
