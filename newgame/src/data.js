@@ -279,6 +279,7 @@ export const TOOL_EN = { sickle: 4, axe: 8, hammer: 8, rod: 10, hoe: 6, can: 1 }
 export const SWORD_EN = 5, RUN_EN = 22, SWIM_EN = 12;                      // per sword swing · per second running · per second swimming (v0.9)
 export const EN_FULL_S = 8, EN_DELAY = .9, TIRED_SPEED = .45;               // seconds to refill from empty · pause before it refills · walk speed while exhausted
 export const UPHILL = { from: .3, en: 9 };   // v3.1 stamina/s walking up a slope steeper than `from` (full at SLOPE)
+export const STORY_EASE = .6;   // v3.54 the chapter 1–2 fights (the harbour slimes · the goblin camp) hit at 60%: a new player with only the traveller's sword gets through
 export const SAFE_HOME = 12;   // v3.50 the bald isle: the safe zone (no weapons) is the ring round your hut, not the whole island
 export const WADE = { deep: .85, sp: .62, ring: .35 };   // v3.50 shallow water: you wade (walk, slower, splashes) · you swim only where the bed is deeper than `deep` m
 export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
