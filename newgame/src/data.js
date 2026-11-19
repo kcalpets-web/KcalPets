@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.64';
+export const APP_VER = '3.65';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -776,6 +776,8 @@ export const JUMP = { h: .75, t: .55, en: 3 };
 /* v3.43 🍹 the bar at the harbour: open late (game minutes · past midnight wraps) · drinks are served at the counter (drunk at once, eff like RECIPES)
    · 👂 a rumour for `rumor` coins: a minibosses / chest / golem / the wandering merchant hint */
 /* v3.64 🎵 the flute: 7 notes on ◀ ▲ ▶ ▼ X Y A (B = put it away) · songs = note orders · finish one at the bar while it is open = a tip */
+/* v3.65 🌉 the Vaneya bridge: from the isle's east shore (near the boat) to the harbour's west pier · Uncle Howsif builds it from what you bring */
+export const BRIDGE = { a: [116.5, 7.2], b: [175.5, 11.2], w: 2.6, endY: .3, endY2: .75, peak: 1.6, cost: { wood: 60, stone: 30, ore: 5 }, coin: 1500, secs: 90 };
 export const FLUTE = { price: 600, keys: ['left', 'up', 'right', 'down', 'X', 'Y', 'A'], names: ['โด', 'เร', 'มี', 'ฟา', 'ซอล', 'ลา', 'ที'], glyph: ['◀', '▲', '▶', '▼', 'X', 'Y', 'A'], tip: [60, 160], tipsPerNight: 5, barR: 9 };
 export const SONGS = [
   { k: 'dawn', icon: '🌅', name: 'เพลงอรุณ', notes: [0, 2, 4, 2, 0], eff: 'en', desc: 'สดชื่นขึ้น ⚡ +15' },

@@ -157,7 +157,7 @@ const topAt = (e, lz) => e.ramp ? e.top * Math.min(1, Math.max(0, (e.hd - lz) / 
 export function solBlock(x, z, y, pad = .22) { const l = SOLC.get(Math.floor(x / SCELL) + ',' + Math.floor(z / SCELL)); if (!l) return null;
   for (const e of l) { if (e.o && !e.o.g) continue; const dx = x - e.x, dz = z - e.z;
     if (e.ramp) { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad && y < solBase(e) + topAt(e, lz) - .55) return e; continue }   /* a ramp: walk up from its low end · its high sides block */
-    if (e.top && y >= solBase(e) + e.top - .42) continue;
+    if (e.top && y >= solBase(e) + e.top - .42) continue; if (e.minY != null && y < e.minY) continue;   /* v3.65 a rail: only in the way up on the deck (swim under the bridge) */
     if (e.r) { if (dx * dx + dz * dz < (e.r + pad) ** 2) return e } else { const c = Math.cos(e.ry || 0), s = Math.sin(e.ry || 0), lx = dx * c - dz * s, lz = dx * s + dz * c; if (Math.abs(lx) < e.hw + pad && Math.abs(lz) < e.hd + pad) return e } } return null }
 /* v3.30.3 stuck inside a solid (landed in it from the air, pushed in…)? → the nearest point just outside it (null = free) · tops you stand on and ramps are fine */
 export function solPush(x, z, y) { const e = solBlock(x, z, y, 0); if (!e || e.ramp) return null; const dx = x - e.x, dz = z - e.z;
