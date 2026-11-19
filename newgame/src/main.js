@@ -13,7 +13,7 @@ import { decor } from './scenery.js';
 import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD, CAP_WIN, CAP_FIRE, CAP_FIRE2 } from './capitals.js';
 import { buildHarbour } from './harbour.js';
-import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, BALD_ON, isleBand, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
+import { M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, BALD_ON, isleBand, STC, GOBC, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
 import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
@@ -143,6 +143,19 @@ function lsKill(m) { const L = LSTONES.find(l => l.k === m.lstone); if (!L || L.
   (S.lstone = S.lstone || {})[L.k] = Date.now(); if (S.lsq === L.k) S.lsq = null; S.spirit.free += D.LSTONE.spirit; spiritNew = true; bump('lstones'); if (L.g) { lsDrop(L); lsView(L) } sfx('level'); cheer && cheer(2000);
   toast(`💠 <b>ศิลาแห่งแสง · ${KINGDOMS[L.k].name}</b> ตื่นแล้ว!<br>✨ +${D.LSTONE.spirit} · วาปมาที่นี่ได้จากแผนที่`, 3600); save(); hud() }
 for (const sh of HARB.shops) TW.shops[sh.i] = sh; for (let i = 0; i < D.SHOPS.length; i++) if (!TW.shops[i]) TW.shops[i] = { i, x: HB.x, z: HB.z, fz: 1, fixed: new THREE.Group(), ruin: new THREE.Group(), owner: null, pick: null };   /* index = D.SHOPS index */
+/* v3.50 🌾 Sberh's straw stall in the harbour town (an islander's booth) · before it is fixed: the roof down in a heap */
+function strawStall(g, broken) { const P = ['#7a5a32', '#b08a50'], S1 = '#d0a850', S2 = '#f2d98a', mat = new THREE.MeshStandardMaterial({ color: S1, roughness: .95, flatShading: true });
+  if (!broken) { for (const [x, z] of [[-1, -.7], [1, -.7], [-1, .7], [1, .7]]) part(g, P[0], P[1], [x, .8, z], [.06, .8, .06], [0, 0, 0], { A: 0 });
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1.1, 4, 1), mat); roof.rotation.y = Math.PI / 4; roof.position.y = 2.1; roof.castShadow = true; g.add(roof);
+    for (let i = 0; i < 20; i++) { const t = i / 20 * 4, e = Math.floor(t), f = t - e, c = [[-1.27, -1.27], [1.27, -1.27], [1.27, 1.27], [-1.27, 1.27]], a = c[e], b = c[(e + 1) % 4]; cone(g, S1, S2, [a[0] + (b[0] - a[0]) * f, 1.48, a[1] + (b[1] - a[1]) * f], [.08, .22, .08], [Math.PI, 0, 0], .95) }   /* straw fringe */
+    part(g, '#6a4a2a', '#a8784a', [0, .5, .78], [1.05, .45, .24], [0, 0, 0], { A: .03 }); part(g, '#8a6a3a', '#c89a5a', [0, .97, .78], [1.12, .04, .3], [0, 0, 0], { A: 0 });   /* the counter */
+    ['#5ad06a', '#ff6a8a', '#5aa8ff', '#ffd23f'].forEach((c, i) => { part(g, c, '#ffffff', [-.6 + i * .4, 1.12, .78], [.07, .12, .07], [0, 0, 0], { A: .02 }); part(g, '#8a5a30', '#c89058', [-.6 + i * .4, 1.27, .78], [.035, .04, .035], [0, 0, 0], { A: 0 }) });   /* potions */
+    part(g, '#c8a070', '#f0d8b0', [0, 1.62, 1.12], [.62, .16, .03], [0, 0, 0], { A: 0 }); part(g, '#3aa86a', '#8af0a8', [0, 1.62, 1.15], [.1, .1, .01], [0, 0, 0], { A: 0 }) }   /* the sign (a green cross) */
+  else { for (const [x, z, rz] of [[-1, -.7, .5], [1, .7, -.6], [.2, -.6, 1.2]]) part(g, P[0], P[1], [x, .45, z], [.06, .7, .06], [0, 0, rz], { A: 0 });
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.6, .9, 4, 1), mat); roof.rotation.set(.35, .6, .2); roof.position.set(.2, .35, .1); g.add(roof); part(g, '#6a4a2a', '#a8784a', [-.3, .18, .9], [.9, .18, .22], [0, .3, .25], { A: .03 }) } }
+if (BALD_ON) { const x = STC.x - 11, z = STC.z + 8.5, ry = Math.atan2(STC.x - x, STC.z - z), y = groundH(x, z), mk = br => { const g = new THREE.Group(); strawStall(g, br); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g); return g };
+  const old = TW.shops[0]; if (old) { old.fixed.visible = old.ruin.visible = false } const pk = addPick(W, x, z, 1.6, 3, { kind: 'shop', i: 0 }); pk.position.y += y; addSol({ x, z, hw: 1.15, hd: .85, ry });
+  TW.shops[0] = Object.assign(old || {}, { i: 0, x, z, ry, fixed: mk(false), ruin: mk(true), pick: pk }) }   /* v3.50 */
 for (const k of D.VANEYA.shops) S.shops[k] = S.shops[k] || 1;
 if (S.wearMsg) { const [rf, it] = S.wearMsg; S.wearMsg = null; save(); setTimeout(() => toast(`👗 ชุดรวมเป็นชิ้นเดียวแล้ว${it ? `<br>ชุดที่คุณเลือกไว้ → ${D.WEAR[it].icon} ${D.WEAR[it].name} (ใส่อยู่)` : ''}${rf ? `<br>กางเกงเก่าแลกเป็น 🪙 ${rf}` : ''}`, 4200), 4000) }   /* v3.43 */   /* the harbour shops are open (no repairs) */
 function boatSide() { const at = S.boatAt || 'isle', fixed = !!S.story.boatFixed; W.boat.visible = fixed && at === 'isle'; HARB.boat.visible = fixed && at === 'main' }
@@ -152,8 +165,8 @@ function openBoat() { if (!S.story.boatFixed) return; const to = (S.side || 'isl
     b.querySelector('#bSail').onclick = () => { close(); sail(to) }; const bc = b.querySelector('#bCoin'); if (bc) bc.onclick = () => { S.coin += c; S.boat.c = 0; sfx('coin'); save(); hud(); redraw() } }) }
 function sail(to) { if (RIDE) leaveRaft && leaveRaft(); if (HORSE) dismount(); aimEnd(false);
   loading('⛵ ล่องเรือ', to === 'main' ? 'ลุงฮาวซิฟพายเรือข้ามทะเล… มุ่งหน้าสู่เมืองท่าแห่งเมิร์จแลน' : 'ลุงฮาวซิฟพายเรือกลับ… ทุ่งทานตะวันของวาเนย่าอยู่ข้างหน้าแล้ว', () => {
-    const p = to === 'main' ? { x: HB.x + 1.6, z: HB.z - .8 } : { x: BOAT.x + 1.8, z: BOAT.z + .6 }; placeMe(p.x, p.z); isleOk = { x: p.x, z: p.z }; S.side = to; S.boatAt = to; PL.yaw = PL.yawT = to === 'main' ? Math.PI / 2 : Math.PI / 2;
-    boatSide(); placeHowsif(); enterZone(zoneOf(p.x, p.z)); bump('sails'); save(); if (to === 'main' && !S.story.titleSeen) setTimeout(runTitle, 900);   /* v3.23 the first crossing = the game's title */ toast(to === 'main' ? '⚓ <b>เมืองท่า</b> · แผ่นดินใหญ่แห่งเมิร์จแลน<br><small>ร้านช่าง ร้านอาหาร ตลาด กิลด์ อยู่ที่นี่ · ลุงรออยู่ที่เรือเสมอ</small>' : '🌻 <b>เกาะวาเนย่า</b> · หมู่เกาะแห่งทานตะวัน', 3000) }) }
+    const p = to === 'main' ? { x: HB.x + 1.6, z: HB.z - .8 } : BALD_ON ? { x: BOAT.x - 3.4, z: BOAT.z + .4 } : { x: BOAT.x + 1.8, z: BOAT.z + .6 }; placeMe(p.x, p.z); isleOk = { x: p.x, z: p.z }; S.side = to; S.boatAt = to; PL.yaw = PL.yawT = to === 'main' || !BALD_ON ? Math.PI / 2 : -Math.PI / 2;   /* v3.50 the isle's jetty is on its east point */
+    boatSide(); placeHowsif(); enterZone(zoneOf(p.x, p.z)); if (to !== 'main') setTimeout(sickEvent, 900); bump('sails'); save(); if (to === 'main' && !S.story.titleSeen) setTimeout(runTitle, 900);   /* v3.23 the first crossing = the game's title */ toast(to === 'main' ? '⚓ <b>เมืองท่า</b> · แผ่นดินใหญ่แห่งเมิร์จแลน<br><small>ร้านช่าง ร้านอาหาร ตลาด กิลด์ อยู่ที่นี่ · ลุงรออยู่ที่เรือเสมอ</small>' : '🌻 <b>เกาะวาเนย่า</b> · หมู่เกาะแห่งทานตะวัน', 3000) }) }
 let isleOk = null, isleHT = 0;
 function isleTick(now) { if (!PL || CUT || !S.avatar) return; const q = me(), inI = inIsle(q.x, q.z);
   if (!S.side) S.side = inI ? 'isle' : 'main'; if (!S.boatAt) S.boatAt = S.side;
@@ -258,7 +271,7 @@ const sick = () => S.story.sickSeen && !S.story.cured;
 function placeHowsif() {
   BED.visible = sick(); HS.body.traverse(o => { if (o.userData.hat) o.visible = !sick() });
   if (sick()) { HS.lying = true; const b = BED.position; HS.root.position.set(b.x + Math.sin(-1.2) * .8, .2, b.z + Math.cos(-1.2) * .8); HS.yaw = HS.yawT = -1.2; HS.body.rotation.x = -Math.PI / 2 }
-  else if (S.story.howsif) { HS.lying = false; HS.body.rotation.x = 0; if (S.story.boatFixed) { const m = (S.boatAt || 'isle') === 'main', x = m ? HB.x - 1.2 : BOAT.x + 1.5, z = m ? HB.z + 1.4 : BOAT.z + 1.3; HS.root.position.set(x, m ? Math.max(.3, groundH(x, z)) : 0, z); HS.yawT = HS.yaw = m ? -Math.PI / 2 : -1.2 } else { HS.root.position.set(HOWSIF.x, 0, HOWSIF.z); HS.yawT = HS.yaw = -1.2 } }   /* v3.13 after the boat is fixed he always waits by it */
+  else if (S.story.howsif) { HS.lying = false; HS.body.rotation.x = 0; if (S.story.boatFixed) { const m = (S.boatAt || 'isle') === 'main', x = m ? HB.x - 1.2 : BALD_ON ? BOAT.x - 2.6 : BOAT.x + 1.5, z = m ? HB.z + 1.4 : BOAT.z + 1.3; HS.root.position.set(x, m ? Math.max(.3, groundH(x, z)) : BALD_ON ? Math.max(0, groundH(x, z)) : 0, z); HS.yawT = HS.yaw = m ? -Math.PI / 2 : -1.2 } else { HS.root.position.set(HOWSIF.x, 0, HOWSIF.z); HS.yawT = HS.yaw = -1.2 } }   /* v3.13 after the boat is fixed he always waits by it */
   else { HS.lying = true; HS.root.position.set(WRECK.x + .3, .05, WRECK.z + .9); HS.body.rotation.x = 1.4; HS.yaw = HS.yawT = .6 }
   HS.pick.position.set(HS.root.position.x, .8, HS.root.position.z);
 }
@@ -267,8 +280,8 @@ function placeHowsif() {
 const SB = idleReg(rigOf(makeActor(HUMANS.sberh, .8))); SB.pick = addPick(W, 0, 0, .7, 1.6, { kind: 'sberh' });
 function placeSberh() {
   const sh = TW.shops[0];
-  if (!S.story.freed) { SB.root.position.set(FOREST.cage.x, 0, FOREST.cage.z); SB.yaw = SB.yawT = -.6 }
-  else { SB.root.position.set(sh.x + .9, 0, sh.z + 1.8); SB.yaw = SB.yawT = 0 }
+  if (!S.story.freed) { SB.root.position.set(FOREST.cage.x, BALD_ON ? groundH(FOREST.cage.x, FOREST.cage.z) : 0, FOREST.cage.z); SB.yaw = SB.yawT = -.6 }
+  else { const px = BALD_ON ? sh.x + Math.sin(sh.ry || 0) * 1.6 : sh.x + .9, pz = BALD_ON ? sh.z + Math.cos(sh.ry || 0) * 1.6 : sh.z + 1.8; SB.root.position.set(px, BALD_ON ? groundH(px, pz) : 0, pz); SB.yaw = SB.yawT = BALD_ON ? (sh.ry || 0) + Math.PI : 0 }
   SB.pick.position.set(SB.root.position.x, .8, SB.root.position.z);
 }
 function openSberh() {
@@ -600,8 +613,8 @@ function usePotion(kind) {
 function townSpawn() {
   if (S.story.townClear || mons.some(m => m.area === 'town')) return;
   const left = Math.max(0, D.TOWN_SLIMES - sk('slime'));
-  for (let i = 0; i < left; i++) { const a = i / Math.max(1, left) * 6.28 + .4; monSpawn('slime', TX + Math.cos(a) * 5, Math.sin(a) * 4, { area: 'town' }) }
-  if (!left && !(sk('slimeKing') > 0)) monSpawn('slimeKing', TX + 2, 1, { area: 'town', aggro: S.has.sword });
+  for (let i = 0; i < left; i++) { const a = i / Math.max(1, left) * 6.28 + .4; monSpawn('slime', STC.x + Math.cos(a) * 5, STC.z + Math.sin(a) * 4, { area: 'town' }) }
+  if (!left && !(sk('slimeKing') > 0)) monSpawn('slimeKing', STC.x + 2, STC.z + 1, { area: 'town', aggro: S.has.sword });
 }
 /* v1.2: the story counts only kills in the town / the forest camp (wild slimes and camp chiefs elsewhere don't finish chapters) */
 const sk = k => S.stat['story_' + k] ?? (S.stat['kill_' + k] || 0);
@@ -609,14 +622,14 @@ if (!S.story.town) for (const k of ['slime', 'slimeKing']) S.stat['story_' + k] 
 if (!S.stat.forestIn) for (const k of ['goblin', 'goblinChief']) S.stat['story_' + k] ??= 0;
 function townCheck() {
   if (S.story.townClear) return;
-  if (sk('slime') >= D.TOWN_SLIMES && !(sk('slimeKing') > 0) && !mons.some(m => m.kind === 'slimeKing' && m.area === 'town')) { monSpawn('slimeKing', TX + 2, 1, { area: 'town', aggro: true }); toast('👑 <b>ราชาสไลม์</b> โผล่มากลางลานเมือง!', 3000) }
+  if (sk('slime') >= D.TOWN_SLIMES && !(sk('slimeKing') > 0) && !mons.some(m => m.kind === 'slimeKing' && m.area === 'town')) { monSpawn('slimeKing', STC.x + 2, STC.z + 1, { area: 'town', aggro: true }); toast('👑 <b>ราชาสไลม์</b> โผล่มากลางลานเมือง!', 3000) }
   if (sk('slimeKing') > 0) { S.story.townClear = 1; storyProps(); toast('🎉 เมืองปลอดภัยแล้ว! กลับไปเล่าให้ลุงฮาวซิฟฟังที่เกาะกันเถอะ', 4200); save() }
 }
 
 /* forest: a few wanderers along the path every visit · the goblin camp until it is cleared, then its chief */
 function forestSpawn() {
   if (mons.some(m => m.area === 'forest')) return;
-  D.FOREST_MONS.forEach((k, i) => monSpawn(k, FX - 7 + i * 4.5, (i % 2 ? 2.5 : -2.5), { area: 'forest' }));
+  D.FOREST_MONS.forEach((k, i) => monSpawn(k, FOREST.camp.x - 14.5 + i * 4.5, FOREST.camp.z + (i % 2 ? 2.5 : -2.5), { area: 'forest' }));
   if (S.story.campClear) return; const left = Math.max(0, D.GOBLINS - sk('goblin'));
   for (let i = 0; i < left; i++) { const a = -1.2 + i / Math.max(1, left - 1) * 2.4; monSpawn('goblin', FOREST.camp.x - 1 + Math.cos(a) * 2.8, FOREST.camp.z + Math.sin(a) * 2.8, { area: 'forest' }) }
   if (!left && !(sk('goblinChief') > 0)) monSpawn('goblinChief', FOREST.camp.x + 1, FOREST.camp.z, { area: 'forest', aggro: true });
@@ -653,11 +666,11 @@ function cureHowsif() {
   talk([['👴 ลุงฮาวซิฟ', 'อ๊ะ… ตัวเบาขึ้นเยอะเลย! ยานี่ใช้ได้ผลจริงๆ'], ['👴 ลุงฮาวซิฟ', 'Sberh กลับมาแล้วเหรอ… ดีจริงๆ ขอบใจมากนะ ที่ช่วยทั้งลุงและเขา'], ['📖 บทที่ 2 จบ', 'ยังมีผู้คนอีกมากที่หายไป… และคีลีอยู่ที่ไหนกันนะ?<br>การผจญภัยต่อไปกำลังมา!']]);
 }
 function sickEvent() {
-  if (S.story.sickSeen || !S.story.townClear || S.area !== 'farm' || CUT) return; S.story.sickSeen = 1; storyProps(); save(); look(HOWSIF.x, HOWSIF.z);
+  if (S.story.sickSeen || !S.story.townClear || (BALD_ON ? !inIsle(me().x, me().z) : S.area !== 'farm') || CUT) return; S.story.sickSeen = 1; storyProps(); save(); look(HOWSIF.x, HOWSIF.z);
   talk([['💭', 'ลุงฮาวซิฟ…? ลุงนอนอยู่ริมท่าเรือ'], ['👴 ลุงฮาวซิฟ', 'แค่ก แค่ก… ตัวร้อนเหลือเกิน… คงเพราะแช่น้ำทะเลทั้งคืนตอนติดใต้เรือ'], ['👴 ลุงฮาวซิฟ', 'ได้ยินว่าใน<b>ป่าทางตะวันออกของเมือง</b> มี<b>สมุนไพรเรืองแสง</b> ที่รักษาไข้ได้… แค่ก…'], ['💭', `ต้องไปเก็บสมุนไพร ${D.HERBS} ต้นมาให้ลุง! (เลือก 🌾 เคียว แล้วลากผ่านสมุนไพร)`]], questCheck);
 }
 /* ---------- v0.9 one world: zones change as you walk (no loading) · travel() = a faded warp (camps, tests) ---------- */
-const AREA_ENTRY = { farm: [EXIT.x - 3, EXIT.z], meadow: [12, 2.3], town: [TX - 8, 0], hills: [60, -1], forest: [FOREST.gateW.x + 2.5, 0] };
+const AREA_ENTRY = { farm: [EXIT.x - 3, EXIT.z], meadow: [12, 2.3], town: [STC.x - 8, STC.z], hills: [60, -1], forest: [FOREST.gateW.x + 2.5, FOREST.gateW.z] };
 function travel(area, after, at) {
   const f = $('sleep'); f.querySelector('b').textContent = '📍 ' + (ZONES[area] || area); f.style.display = 'flex'; f.style.opacity = 1;
   if (RIDE) leaveRaft(); setTimeout(() => { const p = at || AREA_ENTRY[area]; fishEnd(); placeMe(p[0], p[1]);
@@ -1398,7 +1411,7 @@ document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest(
 $('quest').onclick = e => { if (CUT) return; closeSheets(); sfx('tap'); openTrack() };   /* v3.27 tap the card = 📖 the quest book (no small ⇄) */   /* v3.14 tap = go do it (or the map) · ⇄ = choose another quest */
 /* v3.12.2 ⭐ follow one quest at a time: ☁️ the main quest · 📖 the story chapter · 📜 each people-quest you hold (one per person) · only the followed one blinks on the maps */
 const STORY_AT = { home: () => HS.root.position, howsif2: () => HS.root.position, howsif: () => HS.root.position, herb: () => FOREST.c || FOREST.camp, camp: () => FOREST.camp, cage: () => FOREST.cage, farm: () => ({ x: 2, z: -3 }), pot: () => POT.home, potionShop: () => TW.shops[0], gather: () => HOUSE, house: () => HOUSE,
-  wreck: () => WRECK, boat: () => WRECK, exit: () => EXIT, sword: () => TOWN.sword, slime: () => ({ x: TX, z: 0 }), shops: () => ({ x: TX, z: 0 }), town: () => ({ x: TX, z: 0 }), forest: () => TOWN.gateE };
+  wreck: () => WRECK, boat: () => WRECK, exit: () => EXIT, sword: () => TOWN.sword, slime: () => ({ x: STC.x, z: STC.z }), shops: () => ({ x: STC.x, z: STC.z }), town: () => ({ x: TX, z: 0 }), forest: () => TOWN.gateE };
 function kqGiver(id) { for (const k in KQ) for (const n of KQ[k].npcs) if ((n.q || []).includes(id) || n.lead && (KQ[k].restore || []).includes(id)) { const K = KINGDOMS[k]; return { k, n, x: K.x + n.dx, z: K.z + n.dz } } return null }
 const distTxt = d => d >= 1000 ? (d / 1000).toFixed(1) + ' กม.' : Math.round(d) + ' ม.';   /* v3.44 */
 function trackList() { const L = [{ id: 'main', icon: MAIN_Q.icon, text: 'กำจัดเมฆทมิฬ', sub: '🏰 ปราสาทใต้เมฆทมิฬ (ลูมิเนีย)', x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z + 5.6 }];   /* v3.14 the main quest has no count */

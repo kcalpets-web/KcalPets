@@ -306,7 +306,7 @@ export const FOREST = { x0: FX - 13, x1: FX + 13, z0: -9.5, z1: 9.5, gateW: { x:
 export const walkForest = (x, z) => x > FOREST.x0 && x < FOREST.x1 && z > FOREST.z0 && z < FOREST.z1;
 const pathZ = x => Math.sin((x - FX) * .35) * 2.2 * Math.max(0, Math.min(1, (FX + 6 - x) / 4));      // the path winds, then opens into the camp
 export function buildForest(W, eco) {
-  const scene = BALD_ON ? new THREE.Group() : W.scene, F = {}, ST = new THREE.Group(), R = rng(31); MUTE = BALD_ON;   /* v3.50 the bald isle: built but not placed (the story moves to the harbour town) */
+  const scene = BALD_ON ? new THREE.Group() : W.scene, F = {}, ST = new THREE.Group(), R = rng(31); MUTE = BALD_ON; const clr0 = new Set(W.clear.keys());   /* v3.50 the bald isle: built but not placed (the story moves to the harbour town) */
   const at = (fn, x, z, ry = 0, s = 1, y = 0, dyn = false) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); (dyn ? scene : ST).add(g); return g };
   Q.seg = eco ? 11 : 16;
   const geo = new THREE.PlaneGeometry(36, 28, 72, 56); geo.rotateX(-Math.PI / 2); const P = geo.attributes.position, col = [], c = new THREE.Color();
@@ -343,7 +343,12 @@ export function buildForest(W, eco) {
   /* glowing herbs (sickle) */
   [[FX - 9, 3.6], [FX - 4.2, -6.2], [FX - .5, -2.4], [FX + 1.8, 6.8], [FX + 4.6, -7.4], [FX - 7.6, -2.2]].forEach(([x, z], i) => W.clear.set('m' + (i + 1), { id: 'm' + (i + 1), t: 'mushroom', x, z, ry: i, g: null, pick: null, left: 0 }));
   [[FX - 6.5, -4.6], [FX - 1.2, 5.2], [FX + 2.6, -5.6]].forEach(([x, z], i) => W.clear.set('h' + (i + 1), { id: 'h' + (i + 1), t: 'herb', x, z, ry: i, g: null, pick: null, left: 0 }));
-  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(F.ground); return F;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false;
+  if (BALD_ON) { W.scene.add(F.ground); const dx = GOBC.x - FX, dz = GOBC.z; scene.position.set(dx, GOBC.h - .02, dz); W.scene.add(scene);   /* v3.50 */
+    for (const o of [FOREST.camp, FOREST.cage, FOREST.gateW]) { o.x += dx; o.z += dz } FOREST.x0 += dx; FOREST.x1 += dx; FOREST.z0 += dz; FOREST.z1 += dz; FOREST.cx = GOBC.x; FOREST.cz = GOBC.z;
+    for (const [k, o] of W.clear) if (!clr0.has(k)) { o.x += dx; o.z += dz }
+    F.cagePick = addPick(W, FOREST.cage.x, FOREST.cage.z, 1, 2, { kind: 'cage' }); F.cagePick.position.y += GOBC.h }
+  return F;
 }
 
 export const TX = 46;                                          // town centre x · plaza at (TX, 0)
@@ -391,7 +396,9 @@ export function buildTown(W, eco) {
   }   /* v3.13 no fences or lamps by the gates */
   T.lock = at(g => { for (let i = 0; i < 3; i++) part(g, '#6a4024', '#b07a44', [0, .5 + i * .4, 0], [.08, .08, 1.2], [0, 0, 0], { A: 0 }) }, TOWN.gateE.x, TOWN.gateE.z, 0, 1, 0, true);
   addPick(W, TOWN.gateW.x, TOWN.gateW.z, 1.4, 2.6, { kind: 'gateW' }); addPick(W, TOWN.gateE.x, TOWN.gateE.z, 1.4, 2.6, { kind: 'gateE' });
-  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false; if (BALD_ON) W.scene.add(T.ground); return T;
+  scene.add(mergeStatic(ST, ZCELL)); Q.seg = 32; MUTE = false;
+  if (BALD_ON) { W.scene.add(T.ground); TOWN.sword.x = STC.x - 7.5; TOWN.sword.z = STC.z - 1.4; W.scene.add(T.sword); T.sword.position.set(TOWN.sword.x, groundH(TOWN.sword.x, TOWN.sword.z), TOWN.sword.z); T.swordPick = addPick(W, TOWN.sword.x, TOWN.sword.z, .8, 1, { kind: 'sword' }); T.swordPick.position.y += groundH(TOWN.sword.x, TOWN.sword.z) }   /* v3.50 the sword waits in the harbour town */
+  return T;
 }
 
 
@@ -403,7 +410,10 @@ export const POND = { x: 25, z: -6.5, r: 3.4 };   /* v3.29 the stream is gone: a
 export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, riverC = z => RIVER.x + .7 * Math.sin(z * .45 + .6) * smw(2.4, 5, Math.abs(z - RIVER.bz)), riverW = z => RIVER.w * (1 + .14 * Math.sin(z * .9)) * (1 - .4 * smw(6.5, 11.5, Math.abs(z))),   // v3.7 the stream winds a little and narrows to its ends (straight under the bridge)
   LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
 export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะวาเนย่า · บ้านต้นไม้', meadow: 'เกาะวาเนย่า · ทุ่งทานตะวัน', town: 'เกาะวาเนย่า · หมู่บ้าน', hills: 'เกาะวาเนย่า · เนินผา', forest: 'เกาะวาเนย่า · ป่าตะวันออก' };   // v3.13 the island is Vaneya, the sunflower isles
-export const zoneOf = (x, z = 0) => coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
+if (BALD_ON) Object.assign(ZONES, { farm: 'เกาะวาเนย่า', town: 'เมืองท่า', forest: 'ป่าก็อบลิน (เหนือเมืองท่า)' });   /* v3.50 */
+export const STC = BALD_ON ? { x: 192, z: 20, r: 24 } : { x: 46, z: 0, r: 11 };   /* v3.50 the story's town: the harbour plaza (slimes · the sword · Sberh's stall) */
+export const GOBC = { x: 212, z: 80, r: 15, edge: 9, h: 2.4 };   /* v3.50 the goblin wood + cage: a cleared ground north of the harbour town */
+export const zoneOf = (x, z = 0) => BALD_ON ? (coreDist(x, z) <= 0 ? 'farm' : Math.hypot(x - STC.x, z - STC.z) < STC.r ? 'town' : Math.hypot(x - GOBC.x, z - GOBC.z) < GOBC.r + 6 ? 'forest' : 'wild') : coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
 export const CLOUD = { x: 2600, z: 0, r: 34 };                                   // v1.7 the storm island (its own map, past the eastern sea)
@@ -535,6 +545,7 @@ function capSites() { capsReady = true; for (const k of ['navalee', 'sylvaren', 
     if (best) CAPS[k] = best } }
 export const HARBC = { x: 194, z: 20, r: 21, edge: 10, h: .7 };   /* v3.41 the harbour town's ground (flattened) */
 export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); { const d = Math.hypot(x - HARBC.x, z - HARBC.z); if (d < HARBC.r + HARBC.edge && h > -1.5) { const t = smw(HARBC.r + HARBC.edge, HARBC.r, d); h = h * (1 - t) + t * Math.max(h, HARBC.h) } }
+  if (BALD_ON) { const d = Math.hypot(x - GOBC.x, z - GOBC.z); if (d < GOBC.r + GOBC.edge) { const t = smw(GOBC.r + GOBC.edge, GOBC.r, d); h = h * (1 - t) + t * GOBC.h } }   /* v3.50 */
   for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h } } return h }
 function wildH0(x, z) {
 
@@ -645,7 +656,7 @@ export function buildChunk(W, cx, cz) {
   const x0 = cx * CHUNK, z0 = cz * CHUNK, g = new THREE.Group(), R = rng(Math.abs(cx * 7919 + cz * 104729) + 11), out = { g, clears: [] };
   const land = new THREE.Mesh(landGeo(x0, z0, CHUNK, 32, 0), M_LAND); land.position.set(x0 + CHUNK / 2, 0, z0 + CHUNK / 2); land.receiveShadow = true; g.add(land);
   const spots = [], o = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || roadD(x, z) < 3.6 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
+  for (let i = 0; i < 260; i++) { const x = x0 + R() * CHUNK, z = z0 + R() * CHUNK; if (coreDist(x, z) < 3 || roadD(x, z) < 3.6 || Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r + 6 || Object.values(CAPS).some(c => Math.hypot(x - c.x, z - c.z) < c.r + 6) || (BALD_ON && Math.hypot(x - GOBC.x, z - GOBC.z) < GOBC.r + 4) || Math.hypot(x - HARBC.x, z - HARBC.z) < HARBC.r + 12) continue; const h = wildH(x, z);   /* v3.25 nothing grows through the city */ if (h < .3 || x < coastX(z) + 12) continue;
     const sl = Math.abs(wildH(x + 1.5, z) - wildH(x - 1.5, z)) + Math.abs(wildH(x, z + 1.5) - wildH(x, z - 1.5)); const B = kingdomAt(x, z), kg = (1 - B.home) * B.w; spots.push({ x, z, h, sl, f: fbm(x / 60 + 4, z / 60), kk: kg > .55 ? B.k : '' }) }
   const BARE = { asrah: 1, valkara: 1, frosthelm: 1, deadgar: 1 }, TM = { asrah: 0, valkara: .03, sylvaren: 1.3 };   /* v2.7 what grows where */
   const trees = spots.filter(p => p.sl < 2.6 && p.h < 28 && R() < (p.f > .55 ? .55 : .1) * (TM[p.kk] ?? 1)), rocks = spots.filter(p => R() < (p.sl > 2.2 ? .12 : .02)), grass = spots.filter(p => p.sl < 1.5 && p.h < 16 && p.f < .6 && !BARE[p.kk]);
