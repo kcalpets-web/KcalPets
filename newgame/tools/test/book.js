@@ -14,7 +14,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8863, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     const tap = async sel => { await E(sel => { const el = document.querySelector(sel), r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, pointerId: 4, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 }; el.dispatchEvent(new PointerEvent('pointerdown', o)); el.dispatchEvent(new PointerEvent('pointerup', o)) }, sel); await wait(350) };
     // 🎒 caps: old bagUp 2 (= 20 slots) → 2 pages (36) · shield 12
-    const caps = await E(() => [window.__ng.bagCap('sword'), window.__ng.bagCap('shield')]); log('caps', caps); if (caps[0] < 20 || caps[0] % 12 || caps[1] !== 12) errs.push('caps should be whole pages of 12 and keep old upgrades ' + caps);
+    const caps = await E(() => [window.__ng.bagCap('sword'), window.__ng.bagCap('shield')]); log('caps', caps); if (caps[0] !== 25 || caps[1] !== 25) errs.push('v3.72 weapons / shields hold 25 (no upgrades) ' + caps);
     /* v3.72 the bag is pages of 5×5 now: see bag.js */
     // ◀ ▶ picker
     await E(() => window.__ng.openPick('a')); await wait(500); const pk = await E(() => ({ dp: getComputedStyle(document.getElementById('dpad')).display, i: window.__ng.pick().i })); await tap('#dpad [data-dp=left]'); const pk2 = await E(() => window.__ng.pick().i); log('picker', JSON.stringify(pk), '→', pk2);
