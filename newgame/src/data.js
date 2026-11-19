@@ -247,7 +247,7 @@ export const CTX_WAIT = 3;                                       // v2.4.1 secon
 export const SEASON_DAYS = 10;   // v3.60 🍂 game days per season (spring → summer → autumn → winter)
 export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
 export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62 };   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
-export const DASH = { sp: 7.6, t: 1.1, en: 4, gap: .25 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · rest between dashes (horse / pet ride: gallop · free)
+export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
 export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .32;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
