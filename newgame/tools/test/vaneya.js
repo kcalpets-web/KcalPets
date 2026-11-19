@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     const st = () => E(() => ({ side: window.__ng.S.side, at: window.__ng.S.boatAt, x: +window.__ng.me.x.toFixed(1), z: +window.__ng.me.z.toFixed(1) }));
     log('start', JSON.stringify(await st()));
     // the village: one shop, no walkers
-    const vil = await E(() => ({ walkers: window.__ng.WALKERS.length, shopsHere: window.__ng.TW.shops.filter(s => Math.abs(s.x - 46) < 15).length })); log('village', JSON.stringify(vil)); if (vil.shopsHere !== 1) errs.push('the island village should keep only Sberh\'s shop');
+    const vil = await E(() => ({ walkers: window.__ng.WALKERS.length, shopsHere: window.__ng.TW.shops.filter(s => Math.abs(s.x - 46) < 15).length, stall: window.__ng.TW.shops[0] && Math.round(window.__ng.TW.shops[0].x) })); log('village', JSON.stringify(vil)); if (vil.shopsHere !== 0 || !(vil.stall > 170)) errs.push('v3.50 no shops on the isle · Sberh\'s stall is in the harbour town');
     // Howsif waits by the boat
     const hs = await E(() => { const p = window.__ng.HS.root.position; return [+p.x.toFixed(1), +p.z.toFixed(1)] }); log('howsif', hs);
     // swim out east → pushed back
@@ -34,7 +34,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     // swimming back west is pushed back too
     await E(() => window.__ng.placeMe(160, 20)); await wait(1200); await E(() => { const N = window.__ng; N.S.side = 'main'; N.placeMe(152, 20) }); await wait(600); await E(() => { const N = window.__ng; for (let i = 0; i < 10; i++) N.me.x -= .5 }); await wait(800); const s3 = await st(); log('push west', JSON.stringify(s3)); if (s3.side !== 'isle') errs.push('v3.16.2 swimming back should switch the side to the island');
     // sail home
-    await E(() => window.__ng.placeMe(181, 20)); await wait(800); await E(() => window.__ng.openBoat()); await wait(400); await E(() => document.getElementById('bSail').click()); await wait(5000); await close(); const s4 = await st(); log('home', JSON.stringify(s4)); if (s4.side !== 'isle' || s4.x > 20) errs.push('sailing back failed');
+    await E(() => window.__ng.placeMe(181, 20)); await wait(800); await E(() => window.__ng.openBoat()); await wait(400); await E(() => document.getElementById('bSail').click()); await wait(5000); await close(); const s4 = await st(); log('home', JSON.stringify(s4)); if (s4.side !== 'isle' || s4.x > 150) errs.push('sailing back failed');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

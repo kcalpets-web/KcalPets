@@ -11,9 +11,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     await pg.addInitScript(() => { window.__pad = { connected: false, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) }; navigator.getGamepads = () => [window.__pad.connected ? window.__pad : null];
       if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, time: 1380, mats: { wood: 4, grass: 6 },
-        camps: { meadow: 1, mesa: 1 }, bp: { campfire: 1 }, builds: [{ id: 'b1', k: 'campfire', x: 20, z: 4, ry: 0, done: 1 }] })) });
+        camps: { meadow: 1, mesa: 1 }, lstone: { navalee: 1, sylvaren: 1, luminia: 1 }, side: 'main', boatAt: 'main', bp: { campfire: 1 }, builds: [{ id: 'b1', k: 'campfire', x: 20, z: 4, ry: 0, done: 1 }] })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
-    const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
+    const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close(); await E(() => window.__ng.placeMe(186, 20)); await wait(2500);   /* v3.50 on the mainland */
     // builds are not warp points
     const ws = await E(() => window.__ng.WARPS().map(w => w.id)); log('warps', ws); if (ws.some(id => id.startsWith('b:'))) errs.push('a build is a warp point'); if (ws.length < 3) errs.push('too few warp points to test');
     // the palisade is gone: walk east through where it stood (away from the gate)
@@ -45,7 +45,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
       const m1 = await E(() => ({ x: window.__ng.me.x, z: window.__ng.me.z })), mv = Math.hypot(m1.x - m0.x, m1.z - m0.z); log('walk after map', mv.toFixed(2)); if (mv < .4) errs.push('the stick is stuck on the map after it closed') }
     // signposts
     const sg = await E(() => ({ n: window.__ng.SIGNS.length, to: window.__ng.SIGNS[0] && window.__ng.SIGNS[0].to })); log('signs', JSON.stringify(sg)); if (sg.n < 10) errs.push('too few signposts');
-    await E(() => window.__ng.readSign(0)); await wait(400); const sc = await E(() => document.querySelectorAll('.ov .card').length); log('sign cards', sc); if (sc !== 7) errs.push('the sign does not list the 7 kingdoms'); await pg.screenshot({ path: OUT + '/sign.png' }); await close();
+    await E(() => window.__ng.readSign(0)); await wait(400); const sc = await E(() => document.querySelectorAll('.ov .card').length); log('sign cards', sc); if (sc < 1) errs.push('the road sign shows no way');   /* v3.50 the isle's kingdom sign went with the old buildings · road signs list their roads */ await pg.screenshot({ path: OUT + '/sign.png' }); await close();
     { const s0 = await E(() => window.__ng.SIGNS[1]); await E(([x, z]) => window.__ng.placeMe(x - 3, z - 3), [s0.x, s0.z]); await wait(2500); const vis = await E(() => !!window.__ng.SIGNS[1].g); log('sign built near', vis); if (!vis) errs.push('a sign near you is not built'); await pg.screenshot({ path: OUT + '/sign-3d.png' }) }
     // torches: craft, hold, warm, light, burn out
     await E(() => window.__ng.placeMe(2, 2)); await wait(1200);
