@@ -2245,7 +2245,8 @@ const LAYK = ['stick', 'bA', 'bB', 'bX', 'bY'], LAYBASE = { stick: 130, bA: 64, 
 let LAY = {}; try { LAY = JSON.parse(localStorage.getItem('ng_lay') || '{}') || {} } catch (e) { LAY = {} }
 function layApply() { const L = LAY.pos || {}; for (const id of LAYK) { const el = $(id); if (!el) continue; const p = L[id], sc = (LAY.size || {})[id] || 1, w = Math.round(LAYBASE[id] * sc);
     if (p) Object.assign(el.style, { left: Math.round(p[0] * innerWidth - w / 2) + 'px', top: Math.round(p[1] * innerHeight - w / 2) + 'px', right: 'auto', bottom: 'auto', margin: '0' }); else Object.assign(el.style, { left: '', top: '', right: '', bottom: '', margin: '' });
-    Object.assign(el.style, { width: w + 'px', height: w + 'px', fontSize: sc !== 1 && id !== 'stick' ? Math.round(24 * sc) + 'px' : '', opacity: LAY.alpha != null && LAY.alpha < 1 ? String(LAY.alpha) : '' }) }
+    Object.assign(el.style, { width: w + 'px', height: w + 'px', fontSize: sc !== 1 && id !== 'stick' ? Math.round(24 * sc) + 'px' : '', opacity: LAY.alpha != null && LAY.alpha < 1 ? String(LAY.alpha) : '' });
+    const cc = (LAY.col || {})[id]; if (cc) { el.style.setProperty('background-color', id === 'stick' ? cc + '88' : cc, 'important'); const c3 = new THREE.Color(cc), lum = c3.r * .3 + c3.g * .59 + c3.b * .11; el.style.setProperty('color', lum > .6 ? '#2a2030' : '#ffffff', 'important') } else { el.style.removeProperty('background-color'); el.style.removeProperty('color') } }   /* v3.53 🖌️ a colour of your own per control */
   for (const c of ['gray', 'mono']) document.body.classList.toggle('pal-' + c, LAY.pal === c) }
 const laySave = () => { try { localStorage.setItem('ng_lay', JSON.stringify(LAY)) } catch (e) { } layApply() };
 layApply(); addEventListener('resize', layApply);
@@ -2256,11 +2257,13 @@ function layEdit() { closeSheets(); if (LAYED) return; LAYED = { sel: 'bA' }; do
     ui.innerHTML = `<b>🕹️ จัดปุ่มเอง</b><p>ลากปุ่มไปวางตรงไหนก็ได้ · แตะปุ่มเพื่อเลือกแล้วปรับขนาด</p>
       <label>ขนาด ${nm} <input type="range" id="lySz" min="70" max="160" value="${Math.round(sz * 100)}"></label>
       <label>ความทึบ <input type="range" id="lyAl" min="35" max="100" value="${Math.round((LAY.alpha ?? 1) * 100)}"></label>
+      <label>🖌️ สีของ ${nm} <input type="color" id="lyC" value="${(LAY.col || {})[LAYED.sel] || ({ bA: '#3fae6a', bB: '#e8604a', bX: '#4a8ad8', bY: '#e0b030', stick: '#ffffff' })[LAYED.sel]}"><button class="btn sm" id="lyC0">ล้าง</button></label>
       <div class="lyrow">${[['', '🎨 สีเดิม'], ['gray', '⚪ เทาล้วน'], ['mono', '⚫ ขาวดำ']].map(([k, n]) => `<button class="btn sm${(LAY.pal || '') === k ? ' go' : ''}" data-lp="${k}">${n}</button>`).join('')}</div>
       <div class="lyrow"><button class="btn sm" id="lyR">↺ คืนค่าเดิม</button><button class="btn go" id="lyOk">✅ เสร็จ</button></div>`;
     ui.querySelector('#lySz').oninput = e => { (LAY.size = LAY.size || {})[LAYED.sel] = +e.target.value / 100; laySave() };
+    ui.querySelector('#lyC').oninput = e => { (LAY.col = LAY.col || {})[LAYED.sel] = e.target.value; laySave() }; ui.querySelector('#lyC0').onclick = () => { if (LAY.col) delete LAY.col[LAYED.sel]; laySave(); draw() };
     ui.querySelector('#lyAl').oninput = e => { LAY.alpha = +e.target.value / 100; laySave() };
-    ui.querySelectorAll('[data-lp]').forEach(x => x.onclick = () => { LAY.pal = x.dataset.lp || undefined; laySave(); draw() });
+    ui.querySelectorAll('[data-lp]').forEach(x => x.onclick = () => { LAY.pal = x.dataset.lp || undefined; LAY.col = {}; laySave(); draw() });   /* a colour set clears the per-button colours */
     ui.querySelector('#lyR').onclick = () => { LAY = {}; laySave(); draw() }; ui.querySelector('#lyOk').onclick = layDone;
     for (const id of LAYK) $(id).classList.toggle('laysel', id === LAYED.sel) };
   LAYED.draw = draw; draw() }
