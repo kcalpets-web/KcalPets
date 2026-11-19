@@ -26,13 +26,14 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8800, wait = ms => new 
     await E(() => window.__ng.actA()); await wait(800); if (!(await E(() => !!window.__ng.RIDE))) errs.push('A next to the raft did not climb on');
     // draw on Y
     await E(() => { const N = window.__ng; if (N.RIDE) N.leaveRaft(); N.placeMe(15, -6); N.S.ytool = 'draw' }); await wait(1500); await close();
+    await E(() => { const N = window.__ng; N.setSet(true, 1); N.setRange(true) });   /* v3.73 the crayon lives in the 🌾 set, ranged */
     const yb = await E(() => { const r = document.getElementById('bY').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] });
     const d0 = await E(() => window.__ng.S.stat.drawings || 0); await pg.mouse.move(yb[0], yb[1]); await pg.mouse.down(); await wait(900);
     const fr = await E(() => ({ aim: document.body.classList.contains('drawaim'), btn: getComputedStyle(document.getElementById('bDrawNow')).display, ov: !!document.querySelector('.ov') })); log('framing', JSON.stringify(fr));
     await pg.mouse.up(); if (!fr.aim || fr.btn !== 'none' || fr.ov) errs.push('v3.19 tapping Y (draw) should frame the view (no 🖍️ button: A draws)');
     await E(() => { const a = document.getElementById('bA'); a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); a.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })) }); await wait(2500);
     const d1 = await E(() => window.__ng.S.stat.drawings || 0); log('drawings', d0, '→', d1); if (!(d1 > d0)) errs.push('A did not draw'); await close();
-    await close(); await E(() => window.__ng.smenuGo('left')); await wait(300); await E(() => window.__ng.smenuGo('left')); await wait(600);   /* v3.53 ← = 🏹 ของยิง page → ← bows · v3.17 the stick menu ← opens the Y picker (even holding the crayon) */
+    await close(); await E(() => window.__ng.smenuShow(true)); await wait(300); await E(() => window.__ng.smenuGo('left')); await wait(600);   /* v3.73 the chooser's Y = the tools of this set */   /* v3.53 ← = 🏹 ของยิง page → ← bows · v3.17 the stick menu ← opens the Y picker (even holding the crayon) */
     if (!(await E(() => !!window.__ng.pick() && window.__ng.pick().slot === 'y'))) errs.push('the stick menu did not open the Y picker while holding the crayon');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
