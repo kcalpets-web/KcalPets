@@ -13,7 +13,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8823, OUT = process.arg
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     // 🎬 clips
-    await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => document.querySelector('.ov [data-q="howto"]').click()); await wait(500);
+    await E(() => window.__ng.hubGo('howto')); await wait(500);
     const topics = await E(() => [...document.querySelectorAll('.ov [data-bt]')].map(x => x.dataset.bt)); log('topics', topics); if (topics.length < 8) errs.push('too few how-to topics');
     for (const k of topics) { await E(k => document.querySelector(`.ov [data-bt="${k}"]`).click(), k); await wait(1500); const st = await E(() => ({ t: (document.querySelector('.ctxt') || {}).textContent || '', dots: document.querySelectorAll('.cdots i').length })); if (!st.t || st.dots < 2) errs.push('clip ' + k + ' did not play');
       if (k === 'attack' || k === 'swap') { await wait(2000); await pg.screenshot({ path: OUT + '/clip-' + k + '.png' }) } }   /* v3.53 the topics are a carousel: stay in the window */
@@ -24,7 +24,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8823, OUT = process.arg
     const cs = await E(() => ({ imgs: document.querySelectorAll('.ov .skcmp img').length })); log('compare', JSON.stringify(cs)); if (cs.imgs !== 2) errs.push('drawing the same subject did not show old vs new');
     await pg.screenshot({ path: OUT + '/compare.png' }); await E(() => document.getElementById('skOld').click()); await wait(300); const kept = await E(() => localStorage.getItem('ng_sk_howsif').startsWith('data:image/gif')); log('kept old', kept); if (!kept) errs.push('keep old replaced it'); await close();
     // 🎮 remap
-    await E(() => { window.__pad.connected = true }); await wait(500); await E(() => document.getElementById('qIcon').click()); await wait(400); await E(() => document.querySelector('.ov [data-q="set"]').click()); await wait(600);
+    await E(() => { window.__pad.connected = true }); await wait(500); await E(() => window.__ng.hubGo('set')); await wait(600);
     await E(() => document.querySelector('.ov [data-pm="A"]').click()); await wait(400); const learning = await E(() => /กดปุ่มบนจอย/.test(document.getElementById('padCard').textContent)); await E(() => { window.__pad.buttons[5].pressed = true }); await wait(600); await E(() => { window.__pad.buttons[5].pressed = false }); await wait(300);
     const pm = await E(() => JSON.parse(localStorage.getItem('ng_padmap') || '{}')); log('learning', learning, 'map', JSON.stringify(pm)); if (!learning || pm.A !== 5) errs.push('remapping A did not take the pressed button');
     await pg.screenshot({ path: OUT + '/remap.png' }); await E(() => document.getElementById('pmR').click()); await wait(300); const rs = await E(() => JSON.parse(localStorage.getItem('ng_padmap') || '{}')); if (rs.A !== 1) errs.push('reset did not restore the default');
