@@ -8,6 +8,7 @@ import * as D from './data.js';
 import { KQ, KQUEST, MAIN_Q } from './quests.js';
 import { S, load, save, bump, pStats, pHp, pEn, petStats, petHp, petMp, formOf, gainPlayerExp, gainPetExp, boatTick, itemStats, newItem, durLeft, weaponOf, kindOf, shieldOn } from './state.js';
 import { buildQuad, poseQ, QLOOK } from './krigq.js';
+import { CICON } from './cicons.js';
 import { WEAPON_MESH, SHIELD_MESH, BOW_MESH, ARROW_MESH, TOOL_MESH } from './weapons.js';
 import { goblinCamp } from './gcamp.js';
 import { decor } from './scenery.js';
@@ -2869,6 +2870,15 @@ function openPick(slot, x0) { if (SG || HORSE && slot === 'a') return; const P =
 const PSTEP = 72;
 /* v3.12.3 item pictures: one small renderer draws each item once (cached as an image) · used by the pickers and the bag */
 const THUMB = new Map(); let THR = null;
+/* v3.55 🧸 clay icons: every emoji that has a clay toy (cicons.js) is swapped for its picture wherever text shows up (one watcher on the page) */
+const CIC_ALIAS = { '📒': '📖', '📓': '📖', '📕': '📖', '❤️': '❤', '♥': '❤' }, cicKey = e => { e = e.replace(/\uFE0F/g, ''); return CICON[e] ? e : CIC_ALIAS[e] && CICON[CIC_ALIAS[e]] ? CIC_ALIAS[e] : null };
+const cicUrl = e => { const k = cicKey(e); return k ? thumb('c:' + k, g => CICON[k](g), [-.12, .32, 0]) : '' };
+const CIC_RE = new RegExp('(' + [...Object.keys(CICON), ...Object.keys(CIC_ALIAS)].sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\uFE0F?', 'gu');
+let cicOn = (() => { try { return localStorage.getItem('ng_cic') !== '0' } catch (e) { return true } })();
+function cicSwap(root) { if (!cicOn || !root) return; const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => { const p = n.parentNode; if (!p || p.closest && p.closest('script,style,textarea,input,.nocic,canvas')) return NodeFilter.FILTER_REJECT; CIC_RE.lastIndex = 0; return CIC_RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP } }), L = []; while (w.nextNode()) L.push(w.currentNode);
+  for (const n of L) { const t = n.nodeValue, f = document.createDocumentFragment(); let i = 0; CIC_RE.lastIndex = 0; for (const m of t.matchAll(CIC_RE)) { const u = cicUrl(m[0]); if (!u) continue; if (m.index > i) f.append(t.slice(i, m.index)); const im = document.createElement('img'); im.className = 'cic'; im.src = u; im.alt = m[0]; im.draggable = false; f.append(im); i = m.index + m[0].length } if (!i) continue; if (i < t.length) f.append(t.slice(i)); n.parentNode.replaceChild(f, n) } }
+const CIC_MO = new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') cicSwap(m.target.parentNode); else for (const n of m.addedNodes) cicSwap(n.nodeType === 3 ? n.parentNode : n) } });
+setTimeout(() => { cicSwap(document.body); CIC_MO.observe(document.body, { childList: true, subtree: true, characterData: true }) }, 0);
 /* v3.22 more hand models: knife · mallet (ค้อน) · hoe */
 TOOLMESH.knife = (g, t = 0) => { part(g, '#5a3420', '#8a5a30', [0, 0, 0], [.035, .12, .035], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#b8c0d8', '#d8e0f0', '#a8e8ff'][t] || '#b8c0d8', '#ffffff', [0, .2, 0], [.035, .16, .012], [0, 0, 0], { A: 0 }) };
 TOOLMESH.mallet = (g, t = 0) => { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .3, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a5a30', '#9a9aa8', '#b8c0d8', '#a8e8ff'][t] || '#9a9aa8', '#e8e8f0', [0, .32, 0], [.16, .09, .09], [0, 0, 0], { A: .04 }) };
@@ -2876,10 +2886,10 @@ const YMESH = { rod(g) { part(g, '#6a4024', '#b07a44', [0, .45, 0], [.03, .5, .0
   net(g) { part(g, '#6a4024', '#b07a44', [0, .3, 0], [.03, .35, .03], [0, 0, 0], { A: 0 }); const r = new THREE.Mesh(new THREE.TorusGeometry(.22, .02, 6, 20), new THREE.MeshStandardMaterial({ color: '#8a6a44' })); r.position.y = .86; g.add(r); const m = new THREE.Mesh(new THREE.SphereGeometry(.21, 10, 8, 0, 6.3, 0, 1.6), new THREE.MeshStandardMaterial({ color: '#e8e0c8', wireframe: true })); m.position.y = .86; m.rotation.x = Math.PI / 2; g.add(m) },
   draw(g) { part(g, '#e8a81a', '#ffe27a', [0, .35, 0], [.06, .32, .06], [0, 0, 0], { A: 0 }); part(g, '#f4d8b0', '#fff2dc', [0, .72, 0], [.055, .07, .055], [0, 0, 0], { A: 0 }); part(g, '#d84a3a', '#ff8a6a', [0, .8, 0], [.025, .04, .025], [0, 0, 0], { A: 0 }) },
   hoe(g) { part(g, '#6a4024', '#b07a44', [0, .4, 0], [.03, .45, .03], [0, 0, 0], { A: 0 }); part(g, '#8a8a96', '#e8ecf4', [.08, .84, 0], [.14, .05, .04], [0, 0, -.3], { A: 0 }) } };
-function thumb(key, build) { if (THUMB.has(key)) return THUMB.get(key); let url = '';
+function thumb(key, build, rot) { if (THUMB.has(key)) return THUMB.get(key); let url = '';
   try { if (!THR) { const r = new THREE.WebGLRenderer({ canvas: document.createElement('canvas'), antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setSize(96, 96, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
       const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.6)); const l = new THREE.DirectionalLight('#ffffff', 2.2); l.position.set(-1, 3, 4); sc.add(l); const rim = new THREE.DirectionalLight('#9ac8ff', 1.2); rim.position.set(2, 2, -3); sc.add(rim); THR = { r, sc, cam: new THREE.PerspectiveCamera(26, 1, .01, 60) } }
-    const g = new THREE.Group(), w = new THREE.Group(); build(w); g.add(w); g.rotation.set(.25, .5, -.75); THR.sc.add(g); g.updateMatrixWorld(true);   /* lie it diagonally, like an item icon */
+    const g = new THREE.Group(), w = new THREE.Group(); build(w); g.add(w); g.rotation.set(...(rot || [.25, .5, -.75])); THR.sc.add(g); g.updateMatrixWorld(true);   /* lie it diagonally, like an item icon */
     const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.35 + sz.z;
     THR.cam.position.set(c.x, c.y, c.z + d); THR.cam.lookAt(c); THR.r.render(THR.sc, THR.cam); url = THR.r.domElement.toDataURL('image/png'); THR.sc.remove(g) } catch (e) { url = '' }
   THUMB.set(key, url); return url }
