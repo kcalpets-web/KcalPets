@@ -2890,9 +2890,16 @@ function albumAdd(url) { ALB.tx('readwrite', st => st.put({ id: Date.now(), url 
 async function albumAll() { try { const a = await ALB.tx('readonly', st => st.getAll()); return (a || []).sort((x, y) => y.id - x.id) } catch (e) { return [] } }
 async function sharePic(url) { try { const blob = await (await fetch(url)).blob(), f = new File([blob], `kealee-${Date.now()}.jpg`, { type: 'image/jpeg' });
   if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: 'KEALEE', text: '🖍️ ภาพจากโลกของ KEALEE' }); return } } catch (e) { if (e && e.name === 'AbortError') return } hint('📤 เครื่องนี้แชร์ภาพตรงๆ ไม่ได้ · กด 💾 บันทึกแล้วส่งจากอัลบั้มเครื่องแทนนะ', 2600) }
+/* v3.66 💾 save to the phone: iPhone / iPad (and home-screen apps) ignore download links → the share sheet ("บันทึกภาพ") · elsewhere a real download · last resort: hold the picture */
+const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function savePic(url) { const name = `kealee-${Date.now()}.jpg`;
+  try { const blob = await (await fetch(url)).blob(), f = new File([blob], name, { type: 'image/jpeg' });
+    if (isIOS() && navigator.canShare && navigator.canShare({ files: [f] })) { hint('💾 เลือก “บันทึกภาพ” ในเมนูที่ขึ้นมา', 2600); await navigator.share({ files: [f] }); return }
+    if (!isIOS()) { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); hint('💾 บันทึกแล้ว (ดูในไฟล์ดาวน์โหลด / อัลบั้ม)', 2000); return } } catch (e) { if (e && e.name === 'AbortError') return }
+  const v = document.createElement('div'); v.className = 'holdsave'; v.innerHTML = `<img src="${url}" alt=""><p>แตะค้างที่ภาพ → “บันทึกภาพ” · แตะที่ว่างเพื่อปิด</p>`; v.onclick = e => { if (e.target === v || e.target.tagName === 'P') v.remove() }; document.body.appendChild(v) }
 function picSheet(title, url, extra = '', del) {
-  sheet(title, (b, redraw, close) => { b.innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;border:3px solid var(--ink);box-shadow:0 3px 0 #0003">${extra}<div class="row2"><a class="btn go" download="kealee-${Date.now()}.jpg" href="${url}">💾 บันทึกลงเครื่อง</a><button class="btn" data-sh>📤 แชร์</button></div>${del ? '<div class="row2"><button class="btn" data-del>🗑️ ลบภาพนี้</button></div>' : ''}`;
-    b.querySelector('[data-sh]').onclick = () => sharePic(url); if (del) b.querySelector('[data-del]').onclick = () => { del(); close() } });
+  sheet(title, (b, redraw, close) => { b.innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;border:3px solid var(--ink);box-shadow:0 3px 0 #0003">${extra}<div class="row2"><button class="btn go" data-sv>💾 บันทึกลงเครื่อง</button><button class="btn" data-sh>📤 แชร์</button></div>${del ? '<div class="row2"><button class="btn" data-del>🗑️ ลบภาพนี้</button></div>' : ''}`;
+    b.querySelector('[data-sh]').onclick = () => sharePic(url); b.querySelector('[data-sv]').onclick = () => savePic(url); if (del) b.querySelector('[data-del]').onclick = () => { del(); close() } });
 }
 async function openAlbum() {
   const L = await albumAll();
