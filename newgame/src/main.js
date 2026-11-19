@@ -506,7 +506,7 @@ function walkTick(dt, now) {
     if (d < w.best - .01) { w.best = d; w.stuck = 0 } else w.stuck += dt;
     if (w.queue && w.queue.length && (d <= w.near + .05 || w.stuck > 1.5)) { const n = w.queue.shift(); walkTo(n[0], n[1], w.then, w.queue.length ? .4 : w.qNear); walkT.queue = w.queue; walkT.qNear = w.qNear }
     else if (d <= w.near + .05 || w.stuck > .5) { walkT = null; ring.visible = false; mv = false; if (w.then && (d < w.near + 1.2 || w.stuck > .5)) w.then() } }
-  if (DRAWN && mv && joy.on && !guard && !CHGA && !AIM && (run || now - atkT > D.STOW_WALK * 1000)) stowAll();   /* v3.19 run = put the weapon away · walk = after a moment without attacking */
+  /* v3.73 the weapon stays out while walking / running (only B puts it away) */
   lockTick(now);
   envTick(dt, now, mv);
   if (AIM) { aimTick(now); PL.yawT = camTP() ? CAM.yaw : PL.yawT }
@@ -1815,14 +1815,14 @@ function bagTakeKey(key) { const b = bagSrc(key); if (!b) { sfx('knock'); return
 function bagX() { if (bagTab !== 'mats') { sfx('knock'); return } const ov = topOv(), re = () => ov && ov._redraw && ov._redraw(); if (carryN()) { carryBack(); re(); return } const k = bagSel.mats; if (k && k[0] !== 'e') { bagTakeKey(k); re() } else sfx('knock') }
 /* v3.50 the slot menu: what you can do with it (wear / use / sell … from the item's own buttons) + 📋 details (the full card: stats · throw away) */
 function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key === key); if (!sel) return; const k0 = NAV.key, c = key[0];
-  let btns = ''; const no = (txt, why) => `<button class="btn" disabled title="${why || ''}">${txt}</button>`;
+  let btns = '', extra = ''; const no = (txt, why) => `<button class="btn" disabled title="${why || ''}">${txt}</button>`;
   if (c === 'i') { const it = S.bag.find(x => x.id === +key.slice(1)), on = it && S.eq[D.ITEMS[it.t].slot] === it.id; btns = (on ? no('✔ ใส่อยู่') : it && !it.br && !it.away ? `<button class="btn go" data-im="wear">⚔️ สวมใส่</button>` : no('สวมใส่ไม่ได้')) + '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>'; if (bagSellMode && it && !on && !D.ITEMS[it.t].starter) { const x = itemStats(it), v = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)); btns += `<button class="btn" data-sell="${it.id}" data-v="${v}">🪙 ขาย ${fmt(v)}</button>` } }   /* at the smith: sell */
   else if (key === 'arw' || key.startsWith('ax')) btns = `<button class="btn go" data-im="arrow">🏹 ใช้ลูกธนูนี้</button><button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>`;
   else if (c === 'w') { const X = D.WEAR[key.slice(1)], on = X && S.wear[X.slot] === key.slice(1); btns = `<button class="btn go" data-im="wearC">${on ? '🔄 ถอด' : '👕 สวมใส่'}</button><button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>` }
-  else if (c === 'p') btns = `<button class="btn go" data-im="feed">🍖 ให้อาหาร</button><button class="btn ghost" data-im="free">🌿 ปล่อย</button>`;
+  else if (c === 'p') { const p = S.pets.find(q => q.id === key.slice(1)); btns = `<button class="btn go" data-im="feed">🍖 ให้อาหาร</button><button class="btn ghost" data-im="free">🌿 ปล่อย</button>`; if (p && SKILLS[p.kind]) extra = `<p class="mut">${SKILLS[p.kind].icon} สกิลในวงล้อ (ค้าง X):</p><div class="row2">${['X', 'A', 'Y'].map(sl => `<button class="btn sm${skSlot(sl) === p.kind ? ' go' : ''}" data-sks="${sl}:${p.kind}">${sl}</button>`).join('')}</div>` }   /* v3.73 the skill slot buttons stay with the pet */
   else if ('gfms'.includes(c) && tab === 'mats') { const h = { k: key.slice(1), b: c }; btns = (edible(h) ? '<button class="btn go" data-im="eat">😋 กิน</button>' : no('😋 กิน', 'กินไม่ได้')) + '<button class="btn go" data-im="hold">✋ ถือ</button>' }
   else if (c === 'r' || c === 'u') btns = `<button class="btn go" data-im="use">${c === 'r' ? '😋 กิน' : '🧪 ใช้'}</button>`;
-  sheet(`${sel.icon} ${sel.name}${sel.n > 1 && !/^[iwp]/.test(key) ? ' ×' + sel.n : ''}`, (b, r2, close) => { b.innerHTML = `${sel.sub ? `<p class="mut">${sel.sub}</p>` : ''}<div class="row2 imenu">${btns}<button class="btn" data-im="cancel">✖️ ยกเลิก</button></div>`;
+  sheet(`${sel.icon} ${sel.name}${sel.n > 1 && !/^[iwp]/.test(key) ? ' ×' + sel.n : ''}`, (b, r2, close) => { b.innerHTML = `${sel.sub ? `<p class="mut">${sel.sub}</p>` : ''}<div class="row2 imenu">${btns}<button class="btn" data-im="cancel">✖️ ยกเลิก</button></div>${extra}`;
     const done = () => { close(); redraw() };
     bagBind(b, done);
     b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { const a = x.dataset.im, k = key.slice(1);
