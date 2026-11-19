@@ -25,18 +25,16 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     await pg.screenshot({ path: OUT + '/map-open.png' });
     await E(() => document.querySelector('.wzoom [data-z="1"]').click()); await wait(500); const cz = await E(() => document.querySelector('#wmC').style.height); log('zoom in', cz); if (cz !== '2560px') errs.push('＋ did not zoom in');
     // the on-screen stick hops: try all 4 directions, at least 2 moves
-    const st = await (await pg.$('#stick')).boundingBox(), seen = new Set([await E(() => window.__ng.mapSel)]);
-    for (const [dx, dy] of [[40, 0], [-40, 0], [0, 40], [0, -40], [30, 30], [-30, -30]]) {
-      await E(([x, y, dx, dy]) => { const s = document.getElementById('stick'); s.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, clientX: x, clientY: y })); s.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, clientX: x + dx, clientY: y + dy })) }, [st.x + st.width / 2, st.y + st.height / 2, dx, dy]);
-      await wait(250); await E(() => document.getElementById('stick').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 }))); await wait(150); seen.add(await E(() => window.__ng.mapSel)) }
-    log('stick hops', [...seen]); if (seen.size < 2) errs.push('the on-screen stick did not hop between warp points');
+    /* v3.74 the stick moves a blinking square cursor (it starts on you) */
+    const st = await (await pg.$('#stick')).boundingBox(), c0 = await E(() => [window.__ng.MAPNAV.cx, window.__ng.MAPNAV.cz]);
+    await E(([x, y]) => { const s = document.getElementById('stick'); s.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, clientX: x, clientY: y })); s.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, clientX: x + 40, clientY: y })) }, [st.x + st.width / 2, st.y + st.height / 2]); await wait(700); await E(() => document.getElementById('stick').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 }))); await wait(200);
+    const c1 = await E(() => [window.__ng.MAPNAV.cx, window.__ng.MAPNAV.cz, !!document.querySelector('.wcur')]); log('cursor', JSON.stringify(c0), '→', JSON.stringify(c1)); if (!c1[2] || !(c1[0] > c0[0] + 1)) errs.push('the on-screen stick did not move the map cursor');
     await pg.screenshot({ path: OUT + '/map-hop.png' });
-    // controller: stick right/left + A = warp
-    await E(() => { window.__pad.connected = true }); await wait(400); const p0 = await E(() => window.__ng.mapSel);
-    const ps = new Set([p0]); for (const [ax, ay] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]]) { await E(([ax, ay]) => { window.__pad.axes[0] = ax; window.__pad.axes[1] = ay }, [ax, ay]); await wait(300); await E(() => { window.__pad.axes[0] = 0; window.__pad.axes[1] = 0 }); await wait(250); ps.add(await E(() => window.__ng.mapSel)) }
-    if (ps.size < 2) errs.push('the controller stick did not hop');
-    const p1 = await E(() => window.__ng.mapSel), tgt = await E(() => { const w = window.__ng.WARPS().find(w => w.id === window.__ng.mapSel); return w && [w.x, w.z] }); log('pad hop', p0, '→', p1, [...ps]);
-    await E(() => { window.__pad.buttons[1].pressed = true }); await wait(300); await E(() => { window.__pad.buttons[1].pressed = false }); await wait(4000);
+    // controller: the stick moves the cursor · A on a warp point = its card · A again = warp
+    await E(() => { window.__pad.connected = true }); await wait(400); const q0 = await E(() => window.__ng.MAPNAV.cz);
+    await E(() => { window.__pad.axes[1] = 1 }); await wait(600); await E(() => { window.__pad.axes[1] = 0 }); await wait(300); const q1 = await E(() => window.__ng.MAPNAV.cz); log('pad cursor', q0, '→', q1); if (!(q1 > q0 + 1)) errs.push('the controller stick did not move the cursor');
+    const tgt = await E(() => { const N = window.__ng, w = N.WARPS().find(w => w.id !== 'home') || N.WARPS()[0]; N.MAPNAV.cx = w.x; N.MAPNAV.cz = w.z; return w && [w.x, w.z] }); log('cursor on warp', JSON.stringify(tgt));
+    for (let k = 0; k < 2; k++) { await E(() => { window.__pad.buttons[1].pressed = true }); await wait(300); await E(() => { window.__pad.buttons[1].pressed = false }); await wait(k ? 4000 : 600) }
     const at = [0, await E(() => document.querySelectorAll('.ov.mapfs').length)];
     log('after A: map open', at[1]); if (at[1]) errs.push('controller A did not warp (map still open)');
     await E(() => { window.__pad.connected = false }); await wait(400); await close();
