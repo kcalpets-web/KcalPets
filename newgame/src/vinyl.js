@@ -32,7 +32,7 @@ export function vinylLayers(root, show) { root.traverse(o => { if (o.isMesh && o
 const STARG = (() => { const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? .45 : 1; i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r) } const g = new THREE.ExtrudeGeometry(sh, { depth: .35, bevelEnabled: true, bevelThickness: .15, bevelSize: .12, bevelSegments: 2 }); g.center(); return g })();
 /* v3.9 head gear (layer 2) after the reference sheet: hats sit over the hair (the fringe and the sides still show) · bands and ears ride on top · clips on the side
    head-local: the skull top ≈ y .28, the hair top ≈ y .32, the brim line ≈ y .12–.16 */
-function hatPiece(h, kind, col) { if (!kind || kind === 'none') return; const H = new THREE.Group(); H.name = 'hat'; h.add(H);
+function hatPiece(h, kind, col, hairC) { if (!kind || kind === 'none') return; const H = new THREE.Group(); H.name = 'hat'; h.add(H);
   const M = (c, o = {}) => mat(c, { r: .45, ds: 1, ...o }), GOLD = M('#f0c040', { m: .6, r: .3 });
   const dome = (r, y0, y1, m, s = 28) => add(H, lathe([[r, y0], [r * .99, y0 + (y1 - y0) * .35], [r * .9, y0 + (y1 - y0) * .7], [r * .6, y0 + (y1 - y0) * .93], [.001, y1]], s), m);
   const star = (m, p, sc, rx = 0) => { const o = add(H, STARG, m, p); o.scale.setScalar(sc); o.rotation.x = rx; return o };
@@ -46,11 +46,11 @@ function hatPiece(h, kind, col) { if (!kind || kind === 'none') return; const H 
   else if (kind === 'sailor') { const W2 = M('#f8f6f0'), B = M(col || '#2a5ab8'); add(H, new THREE.CylinderGeometry(.33, .3, .14, 28), W2, [0, .24, 0]); add(H, new THREE.CylinderGeometry(.31, .31, .05, 28), B, [0, .16, 0]); dome(.3, .31, .36, W2); const a2 = star(B, [0, .25, .32], .05, -.1) }
   else if (kind === 'knight') { const S2 = M(col || '#8aa0d0', { m: .6, r: .3 }); dome(.335, .0, .43, S2); add(H, lathe([[.34, -.02], [.345, .05], [.34, .07]], 28), S2); for (let i = -3; i <= 3; i++) add(H, new THREE.BoxGeometry(.03, .16, .03), M('#4a5a8a', { m: .5 }), [i * .06, .06, .32 - Math.abs(i) * .012]) }
   else if (kind === 'straw') { const S2 = M('#e8c868', { r: .7 }); dome(.3, .14, .4, S2); add(H, lathe([[.3, .15], [.52, .12], [.56, .1], [.52, .11]], 32), S2); add(H, lathe([[.305, .15], [.31, .2], [.305, .22]], 28), M(col || '#c84a3a')) }
-  else if (kind === 'catEars' || kind === 'bunnyEars') { const cat = kind === 'catEars', B = M(cat ? (col || '#2a2228') : '#f4f0f0'), P = M(cat ? '#f08aa8' : '#f8b0c8'); band(.34, .02, B, .07, Math.PI * 1.0);
-    for (const s2 of [-1, 1]) cat ? ear(B, P, s2 * .19, .38, .0, .085, .16, .06, -s2 * .35, 1) : ear(B, P, s2 * .1, .52, -.02, .055, .17, .04, -s2 * .12) }
+  else if (kind === 'catEars' || kind === 'bunnyEars') { const cat = kind === 'catEars', B = M(cat ? (hairC || col || '#2a2228') : '#f4f0f0'), P = M(cat ? '#f08aa8' : '#f8b0c8');   /* v3.87 the ears grow out of the hair (no band floating above it) */
+    for (const s2 of [-1, 1]) cat ? ear(B, P, s2 * .17, .3, .0, .085, .15, .06, -s2 * .35, 1) : ear(B, P, s2 * .09, .44, -.02, .055, .17, .04, -s2 * .12) }
   else if (kind === 'beret') { const C = M(col || '#c83a3a'); const b = ball(H, .34, C, [.04, .27, -.01], [1, .38, 1], 24); b.rotation.z = -.18; ball(H, .025, C, [.06, .4, -.01]) }
-  else if (kind === 'headband') band(.34, .025, M(col || '#f07aa8'), .07, Math.PI * 1.0);
-  else if (kind === 'ribbon') { const C = M(col || '#d83a3a'); for (const s2 of [-1, 1]) { const w = ball(H, .08, C, [.18 + s2 * .08, .3, .05], [1.1, .7, .45], 16); w.rotation.z = s2 * .4 } ball(H, .04, C, [.18, .3, .06]) }
+  else if (kind === 'headband') band(.285, .02, M(col || '#f07aa8'), .06, Math.PI * 1.0);   /* v3.87 sits on the hair */
+  else if (kind === 'ribbon') { const C = M(col || '#d83a3a'); for (const s2 of [-1, 1]) { const w = ball(H, .08, C, [.16 + s2 * .08, .27, .04], [1.1, .7, .45], 16); w.rotation.z = s2 * .4 } ball(H, .04, C, [.16, .27, .05]) }   /* v3.87 pinned on the hair */
   else if (kind === 'goggles') { const L2 = M('#6a4a2a'), G = M('#9ad0f0', { m: .1, r: .1 }), R2 = M('#c8c8d0', { m: .7, r: .3 }); { const st = add(H, new THREE.TorusGeometry(.335, .022, 8, 40), L2, [0, .17, -.02]); st.rotation.x = Math.PI / 2 - .3 } for (const s2 of [-1, 1]) { const r = add(H, new THREE.CylinderGeometry(.075, .075, .06, 20), R2, [s2 * .1, .2, .27]); r.rotation.x = Math.PI / 2 - .5; const g = add(H, new THREE.CircleGeometry(.06, 20), G, [s2 * .1, .21, .3]); g.rotation.x = -.5 } }
   else if (kind === 'hood') { const C = M(col || '#2a2a34'), Rd = M('#c83a3a'); add(H, new THREE.SphereGeometry(.4, 32, 20, Math.PI / 2 + .95, Math.PI * 2 - 1.9, 0, Math.PI * .8), C, [0, .0, -.05]);   /* open at the face */
     for (const s2 of [-1, 1]) { const e = add(H, new THREE.TorusGeometry(.4, .022, 8, 24, Math.PI * .8), Rd, [0, .0, -.05]); e.rotation.set(0, Math.PI / 2 - s2 * .95, Math.PI / 2) } }
@@ -326,7 +326,7 @@ export function vinylLayered(root, a0 = {}) {
   if (!['long', 'bob'].includes(a.hair)) for (const s of [-1, 1]) ball(skull, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
   { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); const hd = a.hatHair || (a.hat && a.hat !== 'none' ? HAT_HAIR[a.hat] || 'messy' : null); hairPiece(hg, hd || a.hair || 'messy', a.hairCol || '#7a4428', !!hd || a.hat === 'hood'); LY(hg, 1) }   /* v3.87 a head item brings its own (tucked) hair: nothing pokes through */
-  hatPiece(head, a.hat, a.hatCol);
+  hatPiece(head, a.hat, a.hatCol, a.hairCol);
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
 }
