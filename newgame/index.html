@@ -475,6 +475,13 @@ body.pad:not(.gamepad) .ov:not(.mapfs) .shb{padding-bottom:14px!important}
 .ov:not(.mapfs):not(.dlg):not(.inv) .sh{border:2px solid #ffffff2a;border-top:0;box-shadow:0 8px 24px #0008}
 /* v3.75 a gap + round corners at the top too */
 .ov:not(.mapfs):not(.dlg):not(.inv) .sh{margin-top:calc(var(--winTop,12px) / .82)!important;height:calc((var(--winH,100vh) - var(--winTop,12px)) / .82)!important;border-radius:18px!important;border-top:2px solid #ffffff2a}
+/* v3.77 the map = the standard window (same size as the album) · every window keeps the stick / A / B on top */
+.ov.mapfs{background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);align-items:flex-start}
+.ov.mapfs .sh{width:calc(100% - 24px)!important;max-width:352px!important;height:calc(var(--winH,100vh) - var(--winTop,12px))!important;max-height:none!important;margin:var(--winTop,12px) auto 0!important;padding-top:0!important;border:2px solid #ffffff2a!important;border-radius:18px!important;overflow:hidden;box-shadow:0 8px 24px #0008;background:#0a0c18}
+.ov.mapfs .shh{top:6px!important;left:6px!important;zoom:.82}.ov.mapfs .wcomp{zoom:.82;top:10px!important}.ov.mapfs:has(.atlasT) .shh{top:calc(var(--mapBar,64px) + 4px)!important}.ov.mapfs:has(.atlasT) .wcomp{top:calc((var(--mapBar,64px) + 8px) / .82)!important}.ov.mapfs .wzoom{zoom:.82}
+.ov.mapfs .atlasT{top:0!important;left:0!important;right:0!important;zoom:.82}.ov.mapfs .atlasT .invtabs.car{border-radius:0!important;margin:0!important}
+.ov.mapfs .wtip{display:none}
+body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.pad:not(.gamepad):has(.ov) #bB{z-index:46}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
