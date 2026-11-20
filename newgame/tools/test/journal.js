@@ -24,7 +24,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8879, OUT = process.arg
     if (!r2.shown || !r2.drawn) errs.push('🖍️ place-and-draw should record the material'); if (!r2.gone) errs.push('the placed item should be put away after drawing');
     // 3 · a self-portrait (nothing in front) → outfit + sword
     const r3 = await E(async pic => { const N = window.__ng, sl = ms => new Promise(r => setTimeout(r, ms)); N.placeMe(-40, 0); await sl(1500); N.finishDrawing(eval(`(${pic})`)()); await sl(400); document.querySelectorAll('.ov').forEach(o => o.remove()); return Object.keys(N.S.journal.sketch) }, pic.toString()); log('self', r3.join());
-    if (!r3.includes('w:tunic')) errs.push('a self-portrait should record the outfit you wear');
+    if (!r3.includes('w:s_tank')) errs.push('a self-portrait should record the outfit you wear');
     // 4 · the journal page + a reward
     await E(() => { const N = window.__ng; for (const k of N.jList('animal').slice(0, 5)) N.S.journal.sketch[k] = 1; N.openJournal('animal') }); await wait(600); await pg.screenshot({ path: OUT + '/1-animals.png' });
     const j4 = await E(() => ({ cards: document.querySelectorAll('.jc').length, rew: document.querySelectorAll('[data-jr]').length, tabs: document.querySelectorAll('.ov [data-bt]').length })); log('page', JSON.stringify(j4));
