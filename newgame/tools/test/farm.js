@@ -23,7 +23,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8837, OUT = process.arg
     if (draw.soil[0] + draw.soil[1] !== field.length || draw.soil[1] !== 2) errs.push('soil instances wrong ' + JSON.stringify(draw.soil)); if (draw.tplMeshes > 6) errs.push('too many crop meshes for one crop / stage: ' + draw.tplMeshes);
     await E(k => { const N = window.__ng, [x, z] = k.split(',').map(Number); N.placeMe(x - 4, z - 4); N.CAM.yaw = Math.atan2(4, 4); N.CAM.pitch = .5 }, field[12]); await wait(2500); await pg.screenshot({ path: OUT + '/field.png' });
     // ☀️ next morning: watered +1 day, dry ones stay
-    const day = async () => { await E(() => { window.__ng.S.dayN++ }); await wait(1600) };
+    const day = async () => { await E(() => { window.__ng.S.dayN++ }); await wait(4000) };   /* v3.91 room for the slow emulator (the farm checks the day about once a second) */
     await day(); const g1 = await E(([k0, k2]) => [window.__ng.S.plots[k0].g, window.__ng.S.plots[k2].g], [k0, field[5]]); log('after a day (watered, dry)', g1); if (g1[0] !== 1 || g1[1] !== 0) errs.push('only watered crops should grow a day');
     await E(k0 => { const N = window.__ng; N.S.en = null; N.waterPlot(k0) }, k0); await day(); const st = await E(k0 => window.__ng.cropStage(window.__ng.S.plots[k0]), k0); log('carrot after 2 watered days stage', st); if (st !== 3) errs.push('a carrot watered 2 days should be ripe');
     const ing0 = await E(() => (window.__ng.S.ingr || {}).carrot || 0); await E(k0 => window.__ng.plotAction(k0), k0); const ing1 = await E(() => (window.__ng.S.ingr || {}).carrot || 0); log('harvest', ing0, '→', ing1); if (!(ing1 > ing0)) errs.push('could not harvest the ripe carrot');
