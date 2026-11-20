@@ -59,6 +59,8 @@ function hatPiece(h, kind, col) { if (!kind || kind === 'none') return; const H 
   else if (kind === 'beanie') { const C = M(col || '#3aa86a'); dome(.315, .05, .44, C); add(H, lathe([[.322, .03], [.33, .07], [.33, .13], [.318, .15]], 28), mat(shade(col || '#3aa86a', .7), { ds: 1 })); ball(H, .07, M('#f4f0e8'), [0, .46, 0]) }
   else if (kind === 'helmet') { const M2 = M('#a8acb8', { m: .7, r: .3 }); dome(.325, .02, .43, M2); add(H, lathe([[.335, .0], [.34, .05], [.335, .08]], 28), M('#7a7e8a', { m: .7, r: .35 })); add(H, new THREE.BoxGeometry(.035, .08, .05), M2, [0, .4, .1]) }
   H.position.set(0, .02, -.02); LY(H, 2) }
+/* v3.87 the hair style under each head item (the player's own style comes back when it is taken off) */
+export const HAT_HAIR = { cap: 'messy', baseball: 'messy', wizard: 'messy', crown: 'bob', sailor: 'messy', knight: 'messy', straw: 'bob', catEars: 'bob', bunnyEars: 'bob', beret: 'bob', headband: 'bob', ribbon: 'bob', goggles: 'messy', hood: 'messy', flower: 'bob', starClip: 'bob', beanie: 'messy', helmet: 'messy' };
 export function vinylHat(root, kind, col) { const h = root.getObjectByName('head'); if (!h) return; const o = h.getObjectByName('hat'); if (o) h.remove(o); hatPiece(h, kind, col) }                     // base units → the body group (≈ 1.5 tall before the actor scale)
 /* old avatars (v1) → the new options */
 export function vinylFrom(a = {}) {
@@ -239,6 +241,7 @@ function torsoWear(g, w, top) {
   if (w === 'knight') { const S2 = mat('#b8c0d0', { m: .65, r: .3, ds: 1 }), Bl = mat(top || '#3a6ad8', { ds: 1 }); shell(Bl); add(g, lathe([[.06, .45], [.122, .43], [.142, .37], [.142, .28], [.13, .24]]), S2, [0, 0, 0], [1, 1, .95]); belt('#6a3e22');
     for (const s2 of [-1, 1]) ball(g, .075, S2, [s2 * .13, .41, 0], [1.2, .7, 1.1], 16) }
   if (w === 'cape') { shell(mat(top || '#e0c060', { ds: 1 })); belt('#6a3e22'); const C = mat('#c83a3a', { ds: 1 }); const cp = add(g, new THREE.CylinderGeometry(.13, .22, .38, 20, 1, true, Math.PI * .6, Math.PI * .8), C, [0, .26, -.02]); collar('#e0b84a') }
+  if (w === 'tank') { const T = mat(top, { ds: 1 }); shell(T, .2, .142); for (const s2 of [-1, 1]) add(g, new THREE.BoxGeometry(.035, .06, .05), T, [s2 * .07, .45, 0]); return }   /* v3.87 the starter tank top: a plain shell with two straps */
   if (w === 'vest') { shell(mat('#f8f4ec', { ds: 1 })); const B = mat('#7a4a2a', { ds: 1 }); for (const s2 of [-1, 1]) add(g, new THREE.CylinderGeometry(.143, .158, .3, 14, 1, true, s2 > 0 ? .25 : Math.PI * 2 - .25 - Math.PI * .9, Math.PI * .9), B, [0, .26, 0]).scale.z = .95; belt('#3a2418', .15) }
   if (w === 'robe') { const P = mat(top || '#6a4ab8', { ds: 1 }), G = mat('#e0b84a', { m: .6, r: .3, ds: 1 }); add(g, lathe([[.06, .45], [.118, .43], [.136, .37], [.14, .28], [.17, .16], [.205, .05], [.2, .04]]), P, [0, 0, 0], [1, 1, .95]);
     add(g, lathe([[.2, .045], [.208, .05], [.205, .065]]), G, [0, 0, 0], [1, 1, .95]); add(g, new THREE.BoxGeometry(.03, .3, .012), G, [0, .26, .14]); ball(g, .02, mat('#7ad8ff', { e: '#3a90c0' }), [0, .4, .125]) }
@@ -292,25 +295,25 @@ const tubeO = (...a) => { const g = tube(...a), ix = g.index.array; for (let k =
 export function vinylLayered(root, a0 = {}) {
   const a = vinylFrom(a0), skin = a.skin || '#f2cfa6', VIN = mat(skin, { r: .5 }), g = new THREE.Group(); g.scale.setScalar(VSCALE); root.add(g); root.userData.vinyl = 1; root.userData.layered = 1;
   const full = !!a0.full, sk = (o, covered) => covered && !full ? null : o;   /* in the game the body under clothes is not built (no extra draw calls) · full = every layer (the art preview) */
-  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', skirt = a.bottom === 'skirt' && w !== 'mage', shoe = mat({ traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a', sailor: '#2a2a34', kimono: '#c83a5a', knight: '#7a7e8a', cape: '#5a3a24', vest: '#3a2418', robe: '#3a2a4a' }[w] || '#7a4a2a'), pantC = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a' }[w] || '#3a3f58', pant = mat(pantC), sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top), K = .9;   // K = the body under the clothes is slimmer
+  const top = a.top || '#3d6fc4', w = a.wear || 'traveler', LG = a.legs || (a.bottom === 'skirt' && w !== 'mage' ? 'skirt' : 'pants'), skirt = LG === 'skirt', shorts = LG === 'shorts', bare = w === 'tank', shoe = mat(a.shoe || { traveler: '#7a4a2a', farmer: '#5a3a24', mage: '#3a2a4a', sailor: '#2a2a34', kimono: '#c83a5a', knight: '#7a7e8a', cape: '#5a3a24', vest: '#3a2418', robe: '#3a2a4a', tank: '#e8e0d0' }[w] || '#7a4a2a'), pantC = a.legCol || { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a', tank: '#4a6aa8' }[w] || '#3a3f58', pant = mat(pantC), sleeve = mat(w === 'farmer' ? '#f4ecd8' : w === 'mage' ? '#4a3a8a' : top), K = .9;   // K = the body under the clothes is slimmer · v3.87 legs: pants / shorts / skirt with their own colour · a tank top = bare arms
   /* torso: waist (pivot at the hips) + chest (pivot at the belly) */
   const waist = new THREE.Group(); waist.position.y = .16; g.add(waist); role(waist, 'waist'); const wi = new THREE.Group(); wi.position.y = -.16; waist.add(wi);
   LY(add(wi, lathe([[.001, .1], [.085, .11], [.118, .15], [.124, .22], [.122, .28], [.001, .28]], 24), VIN, [0, 0, 0], [K, 1, .9 * K]), 0);
   const chest = new THREE.Group(); chest.position.y = .12; waist.add(chest); role(chest, 'chest'); const ci = new THREE.Group(); ci.position.y = -.28; chest.add(ci);
   LY(add(ci, lathe([[.001, .28], [.122, .28], [.12, .3], [.118, .36], [.11, .41], [.075, .44], [.05, .46], [.048, .53], [.001, .53]], 24), VIN, [0, 0, 0], [K, 1, .9 * K]), 0);
   { const cw = new THREE.Group(); ci.add(cw); torsoWear(cw, w, top); LY(cw, 1) }
-  if (skirt) { const SK = mat(w === 'farmer' ? '#4a6aa8' : shade(top, .78), { ds: 1 }); LY(add(wi, lathe([[.138, .23], [.15, .17], [.18, .1], [.205, .06], [.2, .055]], 24), SK, [0, 0, 0], [1, 1, .95]), 1) }
+  if (skirt) { const SK = mat(a.legCol || (w === 'farmer' ? '#4a6aa8' : shade(top, .78)), { ds: 1 }); LY(add(wi, lathe([[.138, .23], [.15, .17], [.18, .1], [.205, .06], [.2, .055]], 24), SK, [0, 0, 0], [1, 1, .95]), 1) }
   /* legs: thigh → shin → foot */
   for (const s of [-1, 1]) {
     const hip = new THREE.Group(); hip.position.set(s * .062, .16, 0); g.add(hip); if (skirt || full) LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074 * K, .074 * K, .07 * K], 12, 1), VIN), 0); if (!skirt) LY(add(hip, tubeO([[0, .02, 0], [0, -.03, 0], [0, -.06, 0]], [.074, .074, .07], 12, 1), pant), 1);
-    const knee = new THREE.Group(); knee.position.y = -.06; hip.add(knee); if (full) LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07 * K, .068 * K, .066 * K], 12, 1), VIN), 0); LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07, .068, .066], 12, 1), skirt ? mat('#f4f0e8') : pant), 1);
+    const knee = new THREE.Group(); knee.position.y = -.06; hip.add(knee); if (full || shorts) LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07 * K, .068 * K, .066 * K], 12, 1), VIN), 0); if (!shorts) LY(add(knee, tubeO([[0, .01, 0], [0, -.04, 0], [0, -.065, 0]], [.07, .068, .066], 12, 1), skirt ? mat('#f4f0e8') : pant), 1); else LY(add(hip, lathe([[.078, -.065], [.08, -.06], [.077, -.05]], 14), mat(shade(pantC, .8))), 1);   /* shorts: bare shins · a hem */
     const foot = new THREE.Group(); foot.position.y = -.065; knee.add(foot); role(foot, s < 0 ? 'footR' : 'footL');
     LY(add(foot, lathe([[.07, -.04], [.077, -.025], [.073, .0], [.079, .01], [.001, .012]], 14), shoe), 1); LY(ball(foot, .072, shoe, [0, -.03, .018], [1, .62, 1.25]), 1);
     role(hip, s < 0 ? 'hipR' : 'hipL'); role(knee, s < 0 ? 'kneeR' : 'kneeL') }
   /* arms: upper arm → fore arm → hand (all on the chest, so they follow its twist) */
   for (const s of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(s * .112, .385 - .28, 0); sh.rotation.z = s * .32; chest.add(sh); if (full) { LY(ball(sh, .056 * K, VIN, [0, 0, 0]), 0); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056 * K, .054 * K, .052 * K], 12, 1), VIN), 0) }
-    LY(ball(sh, .056, sleeve, [0, 0, 0]), 1); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056, .054, .052], 12, 1), sleeve), 1);
+    if (bare) { LY(ball(sh, .056 * K, VIN, [0, 0, 0]), 0); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056 * K, .054 * K, .052 * K], 12, 1), VIN), 0) } else { LY(ball(sh, .056, sleeve, [0, 0, 0]), 1); LY(add(sh, tubeO([[0, 0, 0], [0, -.035, 0], [0, -.065, 0]], [.056, .054, .052], 12, 1), sleeve), 1) }   /* v3.87 a tank top: bare arms */
     const el = new THREE.Group(); el.position.y = -.065; sh.add(el); if (w !== 'mage' || full) LY(add(el, tubeO([[0, .005, 0], [0, -.03, 0], [0, -.055, 0]], [.052 * K, .05 * K, .048 * K], 12, 1), VIN), 0);
     if (w === 'mage') { LY(add(el, tubeO([[0, .005, 0], [0, -.03, 0], [0, -.055, 0]], [.052, .05, .048], 12, 1), sleeve), 1); LY(add(el, lathe([[.05, .0], [.06, -.03], [.075, -.06], [.08, -.065]], 14), mat('#4a3a8a', { ds: 1 })), 1) }
     const hand = new THREE.Group(); hand.position.y = -.09; hand.name = s < 0 ? 'handR' : 'handL'; el.add(hand); LY(ball(hand, .052, VIN, [0, .01, 0], [.95, 1.05, .85]), 0); LY(ball(hand, .022, VIN, [-s * .04, .02, .028], [1, 1.3, 1]), 0);
@@ -322,7 +325,7 @@ export function vinylLayered(root, a0 = {}) {
   const hm = add(skull, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair)) for (const s of [-1, 1]) ball(skull, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
-  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); hairPiece(hg, a.hair || 'messy', a.hairCol || '#7a4428', a.hat === 'hood'); LY(hg, 1) }
+  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); const hd = a.hatHair || (a.hat && a.hat !== 'none' ? HAT_HAIR[a.hat] || 'messy' : null); hairPiece(hg, hd || a.hair || 'messy', a.hairCol || '#7a4428', !!hd || a.hat === 'hood'); LY(hg, 1) }   /* v3.87 a head item brings its own (tucked) hair: nothing pokes through */
   hatPiece(head, a.hat, a.hatCol);
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
