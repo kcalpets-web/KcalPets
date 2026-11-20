@@ -462,6 +462,13 @@ body.pad:not(.gamepad):has(.ov[data-atlas]) #bA,body.pad:not(.gamepad):has(.ov[d
 .ov:not(.mapfs) h3,.ov:not(.mapfs) b{color:inherit}
 .ov:not(.mapfs) .advcar,.ov:not(.mapfs) .invtabs.car{background:#0a0c18ee!important;border-radius:12px}.ov:not(.mapfs) .advcar button{color:#fff}.ov:not(.mapfs) .advcar button.on{background:#ffffff1c;box-shadow:inset 0 -3px 0 #ffd23f}.ov:not(.mapfs) .advcar .ar{color:#ffd23f}
 .ov:not(.mapfs) .advst div{background:#ffffff14;border-color:#ffffff33}.ov:not(.mapfs) .advst span{color:#c9c1d9}
+/* v3.75 windows stop above the pad (portrait) · confirm boxes in the middle of the window space · every menu's top row = the bag's carousel */
+.ov:not(.mapfs){align-items:flex-start}
+.ov:not(.mapfs):not(.dlg) .sh{height:calc(var(--winH,100vh) / .82)!important;max-height:none!important;margin:0 auto!important;border-radius:0 0 18px 18px}
+.ov.dlg{bottom:auto;height:var(--winH,100vh);align-items:center}.ov.dlg .sh{height:auto!important;max-height:calc(var(--winH,100vh) / .82 - 20px)!important;margin:0 auto!important;border-radius:18px;border:3px solid #ffffff33}
+body.pad:not(.gamepad) .ov:not(.mapfs) .shb{padding-bottom:14px!important}
+.atlasT{display:block!important;padding:0!important;background:none!important;overflow:visible!important}.atlasT .invtabs.car,.qsubc{background:#0a0c18ee!important;border-radius:12px;margin:0 0 6px}.ov.mapfs .atlasT .invtabs.car{background:#0a0c18e8!important}
+.qsubc button{font-size:22px}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

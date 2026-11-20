@@ -1567,11 +1567,16 @@ function padExtras() { const x = $('bX').getBoundingClientRect(), y = $('bY').ge
   put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.innerHTML = `<span>${gFarm() ? '🌾' : '⚔️'}</span><i>🔄</i>`; tb.classList.toggle('farm', gFarm()) }
 addEventListener('resize', () => setTimeout(padExtras, 200));
 /* ================= v3.74 🗺️ the atlas · 🎒 + 🗺️ under the minimap · pages (X → · Y ←): แผนที่ · อัลบั้ม · เควส · สมุดผจญภัย · โปรไฟล์ · ตั้งค่า ================= */
+/* v3.75 the bag's carousel bar for every menu's top row: the one you are on big in the middle · the one before / after at the sides */
+function carBar(T, cur, attr, extra = '') { const ci = Math.max(0, T.findIndex(t => t[0] === cur)), n = T.length, pos = j => { const d = (j - ci + n) % n; return d === 0 ? 1 : d === 1 ? 2 : d === n - 1 ? 0 : -1 };
+  return `<div class="invtabs car ${extra}">${T.map(([k, ic, nm], j) => { const p = pos(j); return `<button class="${p === 1 ? 'on' : p < 0 ? 'hid' : 'nb'}" ${attr}="${k}" style="order:${p < 0 ? 9 : p}">${p === 0 ? '<i class="ar">◀</i>' : ''}${ic}<small>${nm}</small>${p === 2 ? '<i class="ar">▶</i>' : ''}</button>` }).join('')}</div>` }
 const ATLAS = [['map', '🗺️', 'แผนที่', () => openMap()], ['album', '📸', 'อัลบั้ม', () => openAlbum()], ['quest', '📜', 'เควส', () => openQuests()], ['adv', '📖', 'สมุดผจญภัย', () => openAdv()], ['me', '👤', 'โปรไฟล์', () => openProfile()], ['set', '⚙️', 'ตั้งค่า', () => openMenu()]];
 let atlasK = 'map';
 async function openAtlas(k) { closeSheets(); atlasK = ATLAS.some(t => t[0] === k) ? k : 'map'; const T = ATLAS.find(t => t[0] === atlasK); await T[3](); const ov = topOv(); if (!ov) return; ov.dataset.atlas = atlasK;
-  const bar = document.createElement('div'); bar.className = 'atlasT'; bar.innerHTML = '<b class="ky">Y</b>' + ATLAS.map(([k, ic, nm]) => `<button data-at="${k}" class="${k === atlasK ? 'on' : ''}">${ic}<small>${nm}</small></button>`).join('') + '<b class="kx">X</b>';
+  const bar = document.createElement('div'); bar.className = 'atlasT'; bar.innerHTML = carBar(ATLAS, atlasK, 'data-at');
   bar.querySelectorAll('[data-at]').forEach(x => x.onclick = () => { if (x.dataset.at !== atlasK) { sfx('tap'); openAtlas(x.dataset.at) } }); (ov.querySelector('.sh') || ov.firstElementChild || ov).prepend(bar) }
+function winLine() { const port = innerHeight >= innerWidth, h = port ? Math.max(360, innerHeight - D.WIN.padRoom) : innerHeight; document.documentElement.style.setProperty('--winH', h + 'px') }
+winLine(); addEventListener('resize', () => setTimeout(winLine, 100));
 function atlasStep(d) { const i = ATLAS.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(ATLAS[(i + d + ATLAS.length) % ATLAS.length][0]) }
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
 $('mMap').onclick = () => { if (CUT) return; sfx('tap'); openAtlas('map') };
@@ -1609,7 +1614,7 @@ let qSub = 'main';
 const MEMS = [['intro', '🌅', 'คืนที่ทุกอย่างหายไป', () => S.story.intro, () => startIntro(true)], ['title', '⛵', 'ข้ามทะเลสู่แผ่นดินใหญ่', () => S.story.titleSeen, () => memPlay(playTitle)], ['pet', '🐾', 'เงาดำในป่า', () => S.story.freed, () => memPlay(playPetRescue)], ['flash', '🎞️', 'ความทรงจำของ Sberh', () => S.story.flashback, () => memPlay(playFlashback)]];
 async function memPlay(fn) { if (CUT) return; CUT = true; closeSheets(); document.body.classList.add('cut'); try { await fn(R, S.profile.name) } catch (e) { console.warn(e) } document.body.classList.remove('cut'); CUT = false; last = performance.now(); ambience() }
 function openQuests() { NAV.zone = 'items'; NAV.key = ''; NAV.el = null; sheet('📜 เควส', (b, redraw, close) => { const L = trackList(), cur = trackNow(), i = QSUB.findIndex(t => t[0] === qSub);
-    let h = `<div class="qsub">${QSUB.map(([k, ic, nm]) => `<button data-qs="${k}" class="${k === qSub ? 'on' : ''}">${ic} ${nm}</button>`).join('')}</div>`;
+    let h = carBar(QSUB, qSub, 'data-qs', 'qsubc');
     if (qSub === 'main' || qSub === 'npc') { const M = L.filter(t => (qSub === 'npc') === t.id.startsWith('kq:')); h += M.length ? M.map(t => `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div><small class="mut">${t.sub || ''}</small></button>`).join('') : '<p class="mut">ยังไม่มีเควสในหัวข้อนี้</p>'; h += '<p class="mut qhelp"><b class="ka">A</b> ติดตาม (กะพริบบนแผนที่) · <b class="kx">X</b> เดินไปอัตโนมัติ · <b class="kb">B</b> กลับ · ◀▶ หัวข้อ</p>' }
     else if (qSub === 'mem') { const M = MEMS.filter(m => m[3]()); h += M.length ? M.map(m => `<button class="card trk" data-mem="${m[0]}"><b>${m[1]} ${m[2]}</b><small class="mut"> · แตะเพื่อดูอีกครั้ง</small></button>`).join('') : '<p class="mut">ยังไม่มีความทรงจำ</p>' }
     else h += `<div class="invtext">${bagText('ach')}</div>`;
