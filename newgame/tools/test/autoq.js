@@ -14,8 +14,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8862, OUT = process.arg
     await E(() => { const N = window.__ng, q = N.me; for (const m of [...N.mons]) if (!m.T.animal) N.hurtMon(m, 99999, 'dmg'); const m = N.monSpawn('slime', q.x + 4, q.z + 2, { area: 'wild' }); m.hp = 1 }); await wait(500);
     // tap the quest card
     await E(() => { const q = document.getElementById('quest'); q.click() }); await wait(800);
+    { const c = await E(() => ({ go: !!(window.__ng.AUTOGO2 && window.__ng.AUTOGO2.quest), aq: !!window.__ng.AQ })); log('v3.88 card tap', JSON.stringify(c)); if (c.aq) errs.push('v3.88 tapping the quest card should only walk there (no auto-play)') }
+    /* v3.88 🤖 auto-play now starts from the quest book */ await E(() => { const N = window.__ng; N.stopGo(); N.autoQuest(N.trackNow().id) }); await wait(800);
     const s0 = await E(() => ({ aq: !!window.__ng.AQ, cls: document.body.classList.contains('autoq'), chip: getComputedStyle(document.getElementById('aqChip')).display, pad: getComputedStyle(document.getElementById('pad')).display }));
-    log('started', JSON.stringify(s0)); if (!s0.aq || !s0.cls || s0.chip === 'none' || s0.pad !== 'none') errs.push('tapping the quest card should start the auto quest (controls hidden, 🕹️ chip shown)');
+    log('started', JSON.stringify(s0)); if (!s0.aq || !s0.cls || s0.chip === 'none' || s0.pad !== 'none') errs.push('the auto quest (from the book) should start (controls hidden, 🕹️ chip shown)');
     await pg.screenshot({ path: OUT + '/autoq.png' });
     let done = null; for (let i = 0; i < 90 && !done; i++) { await wait(2000); done = await E(() => { const N = window.__ng; return N.S.kq.nv4.st === 'done' ? 'done' : !N.AQ ? 'stopped:' + document.getElementById('toast').textContent.slice(0, 60) : null }) }
     log('result', done, await E(() => window.__ng.S.stat.kk_navalee)); if (done !== 'done') errs.push('the auto quest should kill the monster and turn the quest in');
