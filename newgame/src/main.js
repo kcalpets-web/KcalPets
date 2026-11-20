@@ -2580,7 +2580,11 @@ document.addEventListener('touchstart', e => { if (e.target.closest && e.target.
     joy.on = d > 6; joy.x = dx / (d || 1) * k; joy.z = dy / (d || 1) * k; walkT = null; work = null; ring.visible = false; stopAuto(); kn.style.transform = `translate(${dx / (d || 1) * Math.min(d, 40)}px,${dy / (d || 1) * Math.min(d, 40)}px)` };
   st.addEventListener('pointerdown', e => { if (CUT) return; pid = e.pointerId; try { st.setPointerCapture(pid) } catch (_) { } const now = performance.now(); sDown = now; sMove = 0; if (!PICK && !SKW.on && !mapNavOn() && !topOv() && now - sTap < D.DTAP * 1000) { sTap = 0; smenuShow(true);   /* v3.33 never on top of the skill wheel */ joy.on = false; return } joy.cy = CAM.yaw; mv(e); clearTimeout(sHold); sHold = setTimeout(() => { if (pid != null && sMove < 14 && !SMENU.on && !PICK && !mapNavOn() && !AIM && !document.querySelector('.ov')) { toggleCrouch(); sfx('tap'); kn.animate([{ transform: 'scale(.8)' }, { transform: '' }], { duration: 250 }) } }, D.CROUCH_HOLD * 1000) });   /* v3.18.2 press the stick and hold still = crouch / stand */   // directions stay tied to where the camera faced when you pressed
   st.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e) });
-  const up = e => { if (e.pointerId !== pid) return; pid = null; clearTimeout(sHold); NAV.dir = null; joy.on = false; joy.cy = undefined; kn.style.transform = ''; pickStick(0); mapStick(0, 0); const now = performance.now(); if (SMENU.on) return;   /* v3.18.1 the menu stays: A picks, B goes back */ if (now - sDown < 260 && sMove < 18) { sTap = now; const t1 = now; clearTimeout(sitT); sitT = setTimeout(() => { if (sTap === t1 && !SMENU.on && !PICK && !topOv() && !CUT && !AIM) { SIT = !SIT; if (SIT) stowAll(); sfx('tap') } }, D.DTAP * 1000 + 40) } };   /* v3.73 one tap = sit (two = the chooser) */ st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up) }
+  const up = e => { if (e.pointerId !== pid) return; pid = null; clearTimeout(sHold); NAV.dir = null; joy.on = false; joy.cy = undefined; kn.style.transform = ''; pickStick(0); mapStick(0, 0); const now = performance.now(); if (SMENU.on) return;   /* v3.18.1 the menu stays: A picks, B goes back */ if (now - sDown < 260 && sMove < 18) { sTap = now; const t1 = now; clearTimeout(sitT); sitT = setTimeout(() => { if (sTap === t1 && !SMENU.on && !PICK && !topOv() && !CUT && !AIM) { SIT = !SIT; if (SIT) stowAll(); sfx('tap') } }, D.DTAP * 1000 + 40) } };   /* v3.73 one tap = sit (two = the chooser) */ st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  /* v3.77 the stick never stays pushed: a lost capture · a finger lifted anywhere · the app hidden → let go */
+  st.addEventListener('lostpointercapture', up); for (const ev of ['pointerup', 'pointercancel']) document.addEventListener(ev, e => { if (e.pointerId === pid) up(e) }, true);
+  const letGo = () => { if (pid != null) up({ pointerId: pid }); else if (joy.on) { joy.on = false; kn.style.transform = '' } }; addEventListener('blur', letGo); document.addEventListener('visibilitychange', () => { if (document.hidden) letGo() });
+  window.__stickLetGo = letGo }
 /* v3.19 🕹️ windows by stick (one system for the whole game): a glowing frame jumps to the nearest button in the pushed direction ·
    A = press it (a bag slot: tap = use / wear · hold = its card) · B = back · touch still works */
 const NAV = { el: null, key: '', dir: null, rep: 0, on: false, a: null, zone: 'tabs' };   /* v3.23 the bag has two levels: zone 'tabs' (pick a section) → A → 'items' · B steps back */
@@ -2639,7 +2643,7 @@ function actA() {
   if (BM) { placeBuild(); return }
   if (CATCHING) return;
   if (!RIDE && PL.swim && hasAbility('swim')) { rideWhale(); return }
-  if (!RIDE && !GLIDE && hasAbility('glide') && canGlide() === PL.yaw && !(nearTarget() || {}).m) { startGlide(); return }   /* facing a drop on high ground */
+  /* v3.77 the hawk no longer carries you off a cliff (its skill lifts you up instead) */
   if (RIDE && catchFor && mons.includes(catchFor)) { startCatch(catchFor); return }   /* v2.4.1 catch (the whale) from the raft */
   if (RIDE) { const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (!landNear() && S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return } if (!unboard()) { if (S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz) } else hint('🛶 พายเข้าใกล้ฝั่ง แล้วกด A เพื่อขึ้นฝั่ง') } return }
   if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
@@ -3108,7 +3112,6 @@ const WHEEL = [                                                  // [icon, name,
   ['🎣', 'ตกปลา', () => { setTool('rod'); toast('🎣 หันหน้าไปทางน้ำ แล้วกด A', 2000) }, () => !S.has.rod ? 'ยังไม่มีเบ็ด' : nearWater() ? '' : 'ต้องอยู่ใกล้น้ำก่อน'],
   ['🪏', 'จอบ (ขุดแปลงผัก)', () => { setTool('hoe'); toast('🪏 หันหน้าไปที่พื้นหญ้าใกล้บ้าน แล้วกด A เพื่อขุด', 2200) }, () => !S.has.hoe ? 'ยังไม่มีจอบ' : zoneOf(me().x, me().z) === 'farm' ? '' : 'ขุดได้เฉพาะบนเกาะใกล้บ้าน'],
   ['🐋', 'ขี่น้องวาฬ', () => rideWhale(), () => !hasAbility('swim') ? 'ต้องมีน้องวาฬในทีม' : RIDE ? 'กำลังขี่อยู่' : (PL.swim || waterNear(3)) ? '' : 'ต้องอยู่ในน้ำหรือริมน้ำ'],
-  ['🦅', 'ร่อนกับน้องเหยี่ยว', () => startGlide(), () => !hasAbility('glide') ? 'ต้องมีน้องเหยี่ยวในทีม' : canGlide() != null ? '' : 'ต้องยืนบนที่สูง หันหน้าไปทางที่ต่ำกว่า'],
   ['🔨', 'ก่อสร้าง', () => openBuild(), () => Object.keys(S.bp).length ? '' : 'ยังไม่มีแบบแปลน (คุยกับลุงฮาวซิฟ)'],
   ['✏️', 'วาดภาพ', () => { setTool('sketch'); toast('✏️ เข้าใกล้มอนสเตอร์/คน/น้อง แล้วกด A', 2200) }, () => subjectNear() ? '' : 'ไม่มีอะไรให้วาดแถวนี้'],
   ['🍲', 'กินด่วน (❤️)', () => quickEat(), () => !bestMeal() ? 'ไม่มีอาหารที่เพิ่ม ❤️' : pHp() >= pStats().hp ? 'หัวใจเต็มอยู่แล้ว' : ''],
@@ -3738,8 +3741,9 @@ function idleReg(A) { if (A && A.rig) { A.ph = Math.random() * 6; (IDLE = IDLE |
 function idleTick(now) { const q = me(); if (!IDLE) return;
   for (const A of IDLE) { if (!A.root.parent) continue; const p = A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d > 40) continue;
     if (A.wander) { const W2 = A.wander, dt = Math.min(.05, (now - (A.lt || now)) / 1000); A.lt = now; let mv = false;   /* v3.2 NPCs stroll (they stop when you come close, so you can talk) */
-      if (d > 4.5 && (W2.wait -= dt) <= 0) { const dd = stepTo(A, W2.t[0], W2.t[1], .85, dt, walkLand); if (dd < .15) { W2.wait = 1.5 + Math.random() * 5; const a = Math.random() * 6.28, r = .8 + Math.random() * W2.r; W2.t = [W2.home[0] + Math.cos(a) * r, W2.home[1] + Math.sin(a) * r] } else mv = true }
-      if (d <= 4.5) A.yawT = Math.atan2(q.x - p.x, q.z - p.z); animate(A, mv, dt, now, 9); if (A.pick) { A.pick.position.x = p.x; A.pick.position.z = p.z } }
+      const nearT = d < (A.nearT ? D.NPC_NEAR[1] : D.NPC_NEAR[0]); if (nearT && !A.nearT) W2.wait = Math.max(W2.wait, 2.5); A.nearT = nearT;   /* v3.77 a gap between 'stop and face you' and 'walk on' · no more spinning on the line */
+      if (!nearT && (W2.wait -= dt) <= 0) { const dd = stepTo(A, W2.t[0], W2.t[1], .85, dt, walkLand); if (dd < .15) { W2.wait = 1.5 + Math.random() * 5; const a = Math.random() * 6.28, r = .8 + Math.random() * W2.r; W2.t = [W2.home[0] + Math.cos(a) * r, W2.home[1] + Math.sin(a) * r] } else mv = true }
+      if (nearT) A.yawT = Math.atan2(q.x - p.x, q.z - p.z); animate(A, mv, dt, now, 9); if (A.pick) { A.pick.position.x = p.x; A.pick.position.z = p.z } }
     A.body.scale.y = 1 + Math.sin(now / 650 + A.ph) * .018; const hd = A.rig.head;
     if (hd) { const want = d < 5.5 ? Math.max(-.9, Math.min(.9, ((Math.atan2(q.x - p.x, q.z - p.z) - A.root.rotation.y - (A.body.rotation.y || 0) + Math.PI * 3) % (Math.PI * 2)) - Math.PI)) : Math.sin(now / 2600 + A.ph) * .45; hd.rotation.y += (want - hd.rotation.y) * .08 }
     if (d < 4 && !A.near) { A.near = true; if (now > (A.waveNext || 0)) { A.waveT = now + 1700; A.waveNext = now + 12000 } } else if (d > 7) A.near = false;

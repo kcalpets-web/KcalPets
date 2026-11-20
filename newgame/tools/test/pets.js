@@ -40,8 +40,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const spot = await E(() => { const N = window.__ng; for (let x = 200; x < 300; x += 1) for (let z = -40; z < 100; z += 1)   /* v3.50 the isle's mesa is gone: a ledge on the mainland */ for (const yaw of [0, 1.57, 3.14, -1.57]) { N.placeMe(x, z); N.PL.yaw = N.PL.yawT = yaw; if (N.canGlide() != null && N.canGlide() === yaw) return [x, z, yaw] } return null });
     log('glide spot', JSON.stringify(spot)); if (!spot) errs.push('no glide spot found');
     if (spot) { await E(s => { const N = window.__ng; N.placeMe(s[0], s[1]); N.PL.yaw = N.PL.yawT = s[2]; N.CAM.yaw = s[2] }, spot); await wait(2000); log('pre-glide', JSON.stringify(await N(() => ({ cg: window.__ng.canGlide(), ab: window.__ng.hasAbility('glide'), yaw: window.__ng.PL.yaw, me: [window.__ng.me.x, window.__ng.me.z], ride: !!window.__ng.RIDE, swim: window.__ng.envState().swim })))); await E(() => window.__ng.actA()); await wait(700); await shot('06-glide');
-      const g0 = await N(() => ({ g: !!window.__ng.GLIDE, y: window.__ng.me.y })); log('gliding', JSON.stringify(g0)); if (!g0.g) errs.push('A did not start the glide');
-      for (let k = 0; k < 60 && await N(() => !!window.__ng.GLIDE); k++) await wait(600); const g1 = await N(() => ({ g: !!window.__ng.GLIDE, y: window.__ng.me.y, x: window.__ng.me.x })); log('landed', JSON.stringify(g1)); if (g1.g) errs.push('never landed') }
+      const g0 = await N(() => ({ g: !!window.__ng.GLIDE, y: window.__ng.me.y })); log('v3.77 A at the edge (no hawk glide)', JSON.stringify(g0)); if (g0.g) errs.push('v3.77 the hawk should not carry you off the edge any more');
+       }
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
