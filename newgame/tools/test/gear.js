@@ -37,7 +37,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8838, OUT = process.arg
     // v3.69 hold A = wind up (no first-person aim) · slide onto B = cancel · hold again and let go = throw
     const bA = await pg.locator('#bY').boundingBox(), bB = await pg.locator('#bB').boundingBox(), ax = bA.x + bA.width / 2, ay = bA.y + bA.height / 2;   /* v3.73 hold Y = wind up a throw */
     // 🔥 a lit torch goes up at once · B = lower it · hold A = up again
-    await E(() => { const N = window.__ng, S = N.S; S.has.torch = 1; S.torchT = 120; S.hand = 'torch'; N.gearView() }); await wait(400);
+    await E(() => new Promise(r => { const N = window.__ng, S = N.S; S.has.torch = 1; S.torchT = 120; S.hand = 'torch'; N.gearView(); const t0 = performance.now(), f = () => { N.WXS.rain = 0; if (performance.now() - t0 < 1600) requestAnimationFrame(f); else r() }; f() }));   /* v3.82 dry weather (rain puts the torch out) */
     await wait(800); const tu0 = await E(() => window.__ng.TORCHUP); if (!tu0) errs.push('a lit torch should go up at once'); await pg.dispatchEvent('#bB', 'pointerdown'); await pg.dispatchEvent('#bB', 'pointerup'); await wait(300); if (await E(() => window.__ng.TORCHUP)) errs.push('B should lower the torch');
     /* v3.73 A has no hold any more (the torch goes up by itself) */
     log('torch lowered by B', await E(() => !window.__ng.TORCHUP));
