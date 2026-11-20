@@ -22,22 +22,44 @@ export function fresh() {
     cam: [-1, 0], stat: {}, quest: 0, clearCount: 0, monSeen: 0,
   };
 }
+/* v3.79 🛡️ the save is never lost silently: an unreadable save is kept aside (ng_save_bad_<time>) · the copy before the last write (…_prev) is tried next ·
+   broken fields fall back to the defaults · unknown items are kept in S.lostItems (not deleted) · two tabs: the older one stops saving */
+const PREV = SAVE_KEY + '_prev'; let NOSAVE = false, GEN = 0, warned = false;
+export const saveOff = () => { NOSAVE = true };   /* the reset button: nothing writes the old game back while the page reloads */
+function keepBad(raw, why) { try { localStorage.setItem('ng_save_bad_' + Date.now(), raw) } catch (e) { } try { console.warn('save kept aside:', why) } catch (e) { } }
+function fromObj(o) {
+  S = Object.assign(fresh(), o);
+  const F = fresh();   /* a null / wrong-type field (a hand-edited or half-written save) → the default, never a crash */
+  for (const k in F) { const d = F[k]; if (d && typeof d === 'object') { const v = S[k]; if (v == null || typeof v !== 'object' || Array.isArray(v) !== Array.isArray(d)) S[k] = d } }
+  if (!S.journal.recipes) S.journal = Object.assign(fresh().journal, S.journal);
+  const lost = S.bag.filter(it => !it || !ITEMS[it.t]); if (lost.length) { S.lostItems = (S.lostItems || []).concat(lost); S.bag = S.bag.filter(it => it && ITEMS[it.t]) }   /* gear removed by an update: kept aside, not deleted */
+  for (const sl in S.eq) if (S.eq[sl] != null && !S.bag.some(x => x.id === S.eq[sl])) S.eq[sl] = null;
+  S.journal = Object.assign(fresh().journal, S.journal); if (o.time == null && o.story && o.story.slept) S.time = 8 * 60;
+      if (S.eq && ('weapon' in S.eq || 'armor' in S.eq)) S.eq = { sword: S.eq.weapon || null, shield: S.eq.armor || null };   // v1.4 slots
+      if (o.spiritV == null) S.spiritV = 0;
+      if (!o.wearV) { S.wearV = 2; S.wear = S.wear || {}; let refund = 0;   /* v3.43 one outfit: legs pieces → coins · the outfit picked when you were made → a piece in the bag (worn) */
+        for (const k of Object.keys(S.clothes || {})) if (WEAR[k] && WEAR[k].gone) { delete S.clothes[k]; if (k !== 'pants') refund += 150 } delete S.wear.legs; S.coin = (S.coin || 0) + refund;
+        const lk = S.avatar && S.avatar.wear, it = { farmer: 'o_farmer', sailor: 'o_sailor', mage: 'o_mage', kimono: 'o_kimono', knight: 'a_knight', cape: 'o_cape', vest: 'tank', robe: 'coat' }[lk];
+        if (it) { S.clothes = S.clothes || {}; S.clothes[it] = 1; if (!S.wear.body || S.wear.body === 'tunic') S.wear.body = it } if (S.avatar && lk) S.avatar.wear = 'traveler';
+        S.wearMsg = refund || it ? [refund, it || ''] : null }
+      if (!o.itemV) { for (const it of S.bag) { const T = ITEMS[it.t], old = OLD_ITEM[it.t], m = RAR_MUL[it.r] || 1;   // v2.0: keep old gear as strong as it was
+          if (old) it.ba = Math.max(0, Math.round((T.slot === 'shield' ? old[1] : old[0]) * m) + (T.slot === 'shield' ? 0 : 8) - (T.slot === 'shield' ? T.def : T.atk));   /* +8 = the old bare-hand attack (12 → 4) */ else it.ba = it.ba || 0; it.bd = it.bd || 0; it.d = itemStats(it).dur }
+        S.itemV = 2; S.needSword = !!(S.has && S.has.sword) }   // v1.4: old save → main.js gives the spirits for quests already done
+    GEN = S.gen || 0; return S }
+function tryKey(k) { const raw = localStorage.getItem(k); if (!raw) return { raw: null }; let o = null; try { o = JSON.parse(raw) } catch (e) { return { raw, bad: 'json' } }
+  if (!o || typeof o !== 'object' || o.v !== 3) return { raw, bad: 'version ' + (o && o.v) }; try { return { raw, S: fromObj(o) } } catch (e) { return { raw, bad: 'load ' + e.message } } }
 export function load() {
-  try { const o = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (o && o.v === 3) { S = Object.assign(fresh(), o); S.journal = Object.assign(fresh().journal, S.journal); if (o.time == null && o.story && o.story.slept) S.time = 8 * 60;
-    if (S.eq && ('weapon' in S.eq || 'armor' in S.eq)) S.eq = { sword: S.eq.weapon || null, shield: S.eq.armor || null };   // v1.4 slots
-    if (o.spiritV == null) S.spiritV = 0;
-    if (!o.wearV) { S.wearV = 2; S.wear = S.wear || {}; let refund = 0;   /* v3.43 one outfit: legs pieces → coins · the outfit picked when you were made → a piece in the bag (worn) */
-      for (const k of Object.keys(S.clothes || {})) if (WEAR[k] && WEAR[k].gone) { delete S.clothes[k]; if (k !== 'pants') refund += 150 } delete S.wear.legs; S.coin = (S.coin || 0) + refund;
-      const lk = S.avatar && S.avatar.wear, it = { farmer: 'o_farmer', sailor: 'o_sailor', mage: 'o_mage', kimono: 'o_kimono', knight: 'a_knight', cape: 'o_cape', vest: 'tank', robe: 'coat' }[lk];
-      if (it) { S.clothes = S.clothes || {}; S.clothes[it] = 1; if (!S.wear.body || S.wear.body === 'tunic') S.wear.body = it } if (S.avatar && lk) S.avatar.wear = 'traveler';
-      S.wearMsg = refund || it ? [refund, it || ''] : null }
-    if (!o.itemV) { for (const it of S.bag) { const T = ITEMS[it.t], old = OLD_ITEM[it.t], m = RAR_MUL[it.r] || 1;   // v2.0: keep old gear as strong as it was
-        if (old) it.ba = Math.max(0, Math.round((T.slot === 'shield' ? old[1] : old[0]) * m) + (T.slot === 'shield' ? 0 : 8) - (T.slot === 'shield' ? T.def : T.atk));   /* +8 = the old bare-hand attack (12 → 4) */ else it.ba = it.ba || 0; it.bd = it.bd || 0; it.d = itemStats(it).dur }
-      S.itemV = 2; S.needSword = !!(S.has && S.has.sword) }   // v1.4: old save → main.js gives the spirits for quests already done
-    return S } } catch (e) { }
-  S = fresh(); return S;
+  let r; try { r = tryKey(SAVE_KEY) } catch (e) { r = { bad: 'storage' } }
+  if (r.S) return S;
+  if (r.raw) { keepBad(r.raw, r.bad); const g = /"gen":(\d+)/.exec(r.raw); if (g) GEN = Math.max(GEN, +g[1]) }   /* the bad one is kept aside, so the next save may replace it */
+  if (r.raw || r.bad) { try { const p = tryKey(PREV); if (p.S) { S.loadMsg = 'prev'; const g = r.raw && /"gen":(\d+)/.exec(r.raw); if (g) GEN = Math.max(GEN, +g[1]); return S } } catch (e) { } }   /* the copy from before the last write */
+  const g0 = GEN; S = fresh(); if (r.raw) S.loadMsg = 'bad'; GEN = g0; return S;
 }
-export function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)) } catch (e) { } }
+export function save() { if (NOSAVE || !S) return false;
+  try { const cur = localStorage.getItem(SAVE_KEY);
+    if (cur) { const m = /"gen":(\d+)/.exec(cur); if (m && +m[1] > GEN) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'tab' })) } return false } localStorage.setItem(PREV, cur) }   /* another tab saved newer progress: do not write over it */
+    S.gen = ++GEN; localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true }
+  catch (e) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'full' })) } return false } }
 export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 
 /* v2.0 an item = { id, t, r, ba (bonus atk / def), bd (bonus durability), d (durability left) } */

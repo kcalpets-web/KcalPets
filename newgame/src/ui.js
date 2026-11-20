@@ -10,6 +10,7 @@ export function toast(msg, ms = 2200) { const t = $('toast'); t.innerHTML = msg;
 const stack = [];
 /* sheet(title, render(body, redraw), opts) — render is called again by redraw() */
 export function sheet(title, render, opts = {}) {
+  try { document.activeElement && document.activeElement.blur && document.activeElement.blur() } catch (e) { }   /* v3.79 a button pressed by Enter / the pad must not stay focused under the new window (Enter repeated a sale) */
   const ov = document.createElement('div'); ov.className = 'ov' + (opts.cls ? ' ' + opts.cls : '');
   ov.innerHTML = `<div class="sh"><div class="shh"><button class="back" aria-label="กลับ">←</button><h2>${title}</h2></div><div class="shb"></div></div>`;
   const body = ov.querySelector('.shb'), close = () => { ov.remove(); const i = stack.indexOf(ov); if (i >= 0) stack.splice(i, 1); opts.onClose && opts.onClose() };
@@ -22,7 +23,7 @@ export function closeSheets() { while (stack.length) stack.pop().remove() }
 export function confirmBox(text, yes, yesLabel = 'ตกลง', noLabel = 'ยกเลิก') {
   const s = sheet('ยืนยัน', (b, r, close) => {
     b.innerHTML = `<p class="cf">${text}</p><div class="row2"><button class="btn ghost" id="cfN">${noLabel}</button><button class="btn go" id="cfY">${yesLabel}</button></div>`;
-    b.querySelector('#cfN').onclick = close; b.querySelector('#cfY').onclick = () => { close(); yes() };
+    b.querySelector('#cfN').onclick = close; let done = false; b.querySelector('#cfY').onclick = () => { if (done) return; done = true; close(); yes() };   /* v3.79 once only */
   });
   return s;
 }
