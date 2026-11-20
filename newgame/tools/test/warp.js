@@ -34,7 +34,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* 🗺️ map: pins · tap = card · ✨ warp home */
     await E(() => { const N = window.__ng; N.placeMe(181, 20) }); await wait(1500); await E(() => window.__ng.openMap()); await wait(1500);   /* v3.13 from the harbour (same side as the shrine) */
     const pins = await N(() => document.querySelectorAll('.wpin').length); log('pins', pins); if (pins < 1) errs.push('no blinking warp pins on the map');
-    await E(() => [...document.querySelectorAll('.wpin')].find(p => p.textContent === '⛩️').click()); await wait(800); await shot('w3-card');
+    await E(() => [...document.querySelectorAll('.wpin')].find(p => p.textContent === '⛩️' || [...p.querySelectorAll('img')].some(i => /⛩/.test(i.alt))).click()   /* v3.90 emoji may be clay pictures */); await wait(800); await shot('w3-card');
     if (!(await N(() => !!document.querySelector('#wpCard #wpGo')))) errs.push('no warp card');
     await E(() => document.querySelector('#wpGo').click()); await wait(1400); await shot('w4-whiteout');
     const t0 = Date.now(); while (Date.now() - t0 < 20000 && await N(() => window.__ng.WARPING)) await wait(300); await wait(1000); await shot('w5-arrive');
