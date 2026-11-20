@@ -18,7 +18,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     if (!d1.n || d1.houses !== d1.n || d1.vis !== d1.n) errs.push('by day every villager should be out, each with a house');
     await E(() => { const N = window.__ng, n = Object.values(N.KNPC).find(n => n.k === 'sylvaren'), p = n.A.root.position; N.placeMe(p.x + 4, p.z + 4); N.CAM && (N.CAM.yaw = Math.atan2(p.x - (p.x + 4), p.z - (p.z + 4))) }); await wait(1500); await pg.screenshot({ path: OUT + '/1-day-village.png' });
     // 🌙 night: indoors · talking = asleep
-    await E(() => { window.__ng.S.story.slept = 1; window.__ng.S.time = 23 * 60 }); await wait(1500);
+    await E(() => { window.__ng.S.story.slept = 1; window.__ng.S.time = 23 * 60 }); for (let i = 0; i < 30 && await E(() => Object.values(window.__ng.KNPC).some(n => n.k === 'sylvaren' && n.A.root.visible)); i++) await wait(200);   /* v3.91 the village checks the hour every 0.7 s (slow emulator) */
     const d2 = await E(() => { const N = window.__ng, L = Object.values(N.KNPC).filter(n => n.k === 'sylvaren'); const k = Object.keys(N.KNPC).find(k => k.startsWith('sylvaren:')); N.talkNpc(k); return { vis: L.filter(n => n.A.root.visible).length, dlg: !!document.querySelector('.ov.dlg') } }); await wait(300); let t2 = await toastTxt(); if (!/หลับ/.test(t2)) { await wait(2600); await E(() => window.__ng.talkNpc(Object.keys(window.__ng.KNPC).find(k => k.startsWith('sylvaren:')))); await wait(300); t2 = await toastTxt() } log('night village', JSON.stringify(d2), t2.slice(0, 90));
     await pg.screenshot({ path: OUT + '/2-night-village.png' }); if (d2.vis || d2.dlg || !/หลับ/.test(t2)) errs.push('at night villagers should be indoors and asleep');
     // 🐗 night: animals gone, packs out (the swap)
