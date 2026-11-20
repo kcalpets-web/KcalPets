@@ -17,6 +17,10 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
     // it follows you far from home
     await E(() => window.__ng.placeMe(60, 10)); await wait(5000); let P = await pet(); log('after a warp', JSON.stringify(P)); if (P.d > 12) errs.push('the main pet did not catch up after a warp');
     await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 80 && (await pet()).d > 3.5; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 4) errs.push('the main pet does not come close after a while');
+    // v3.84 it faces the way it walks (not backwards)
+    const fw = await E(async () => { const N = window.__ng, e = N.PA.get('p1'), r = e.A.root.position; N.placeMe(r.x + 14, r.z + 2); let best = null; const t0 = performance.now();
+      while (performance.now() - t0 < 20000) { const x0 = r.x, z0 = r.z; await new Promise(res => setTimeout(res, 400)); const dx = r.x - x0, dz = r.z - z0; if (Math.hypot(dx, dz) > .3) { const mvA = Math.atan2(dx, dz), y = e.A.body.rotation.y, d = Math.abs(Math.atan2(Math.sin(mvA - y), Math.cos(mvA - y))); best = d; break } } return best });
+    log('facing vs walking (rad)', fw == null ? 'no move' : fw.toFixed(2)); if (fw == null) errs.push('the pet did not follow'); else if (fw > 1.2) errs.push('v3.84 the pet walks backwards / sideways');
     // stand still > 3 s → it plays
     let seen = new Set(); for (let i = 0; i < 80 && seen.size < 2; i++) { await wait(500); const p = await pet(); if (p.play) seen.add(p.play) } log('plays seen', [...seen]); if (!seen.size) errs.push('the pet never plays while you stand still');
     await E(() => { const N = window.__ng, e = N.PA.get('p1'); N.placeMe(N.me.x + 3, N.me.z) }); await wait(1500); P = await pet(); log('you moved', JSON.stringify(P)); if (P.play) errs.push('the pet kept playing after you moved');
