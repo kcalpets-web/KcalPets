@@ -3234,8 +3234,10 @@ const CIC_ALIAS = { '📒': '📖', '📓': '📖', '📕': '📖', '❤️': '�
 const cicMake = k => k.startsWith('auto:') ? thumb('a:' + k, g => clayEmoji(g, k.slice(5)), [-.18, .28, 0]) : thumb('c:' + k, g => CICON[k](g), [-.12, .32, 0]);
 /* v3.91 a clay icon is drawn in the background (one every few ms, never inside a game frame) · until it is ready the emoji stays as text, then the page is swapped once */
 const CIC_Q = new Set(); let cicBusy = false;
-function cicPump() { if (cicBusy) return; cicBusy = true; const step = () => { const k = CIC_Q.values().next().value; if (k == null) { cicBusy = false; cicSwap(document.body); return } CIC_Q.delete(k); cicMake(k); setTimeout(step, CIC_Q.size ? 40 : 0) }; setTimeout(step, 60) }
-const cicUrl = e => { const k = cicKey(e); if (!k) return ''; const tk = (k.startsWith('auto:') ? 'a:' : 'c:') + k; if (THUMB.has(tk)) return THUMB.get(tk); CIC_Q.add(k); cicPump(); return '' };
+const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1500 }) : f => setTimeout(f, 80);
+function cicPump() { if (cicBusy) return; cicBusy = true; const step = () => { if (CUT || $('loadScr').style.display === 'flex') { setTimeout(step, 400); return }   /* not during a loading screen / a cutscene */ const k = CIC_Q.values().next().value; if (k == null) { cicBusy = false; cicSwap(document.body); return } CIC_Q.delete(k); cicMake(k); idle(step) }; idle(step) }
+const cicUrl = e => { const k = cicKey(e); if (!k) return ''; const tk = (k.startsWith('auto:') ? 'a:' : 'c:') + k; if (THUMB.has(tk)) return THUMB.get(tk); if (CUT || (typeof gamePaused === 'function' && gamePaused())) return cicMake(k);   /* a window is open (the game waits): draw it now */
+  CIC_Q.add(k); cicPump(); return '' };   /* playing: draw it when the page is idle */
 const CIC_RE = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/gu;   /* v3.90 every emoji (the clay ones + the clay reliefs) */
 let cicOn = (() => { try { return localStorage.getItem('ng_cic') !== '0' } catch (e) { return true } })();
 function cicSwap(root) { if (!cicOn || !root) return; const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => { const p = n.parentNode; if (!p || p.closest && p.closest('script,style,textarea,input,.nocic,canvas')) return NodeFilter.FILTER_REJECT; CIC_RE.lastIndex = 0; return CIC_RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP } }), L = []; while (w.nextNode()) L.push(w.currentNode);
