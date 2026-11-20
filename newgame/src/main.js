@@ -339,6 +339,7 @@ S.pets.forEach(p => { const h = petHome(p); buildPet(p, h[0], h[1]) });   /* v3.
 if (false) { let n = 0; const iv = setInterval(() => { if (++n > 40 || S.story.rideAsk) { clearInterval(iv); return } if (CUT || document.querySelector('.ov')) return; const p = S.pets.find(x => D.PET_RIDE.kinds.includes(x.kind) && formOf(x) >= 1); clearInterval(iv); if (!p || ['X', 'A', 'Y'].some(sl => skSlot(sl) === p.kind)) return; S.story.rideAsk = 1; save(); askSkSlot(p) }, 6000) }   /* v3.54 a teen dog / cat already: offer the new ride skill once */
 
 /* ---------- the player's character (v0.7): tap the ground to walk · tap a thing to walk over and use it · the camera follows ---------- */
+let JHOLD = 0;
 let PL = null, walkT = null, swingT = 0, work = null, sprintT = 0, swimB = 0, RUNON = false, walkS = 0, clearT = 0, CTX = null, AIM = null, AIMK = 0;   // AIM = v2.1 bow drawn
 function spendRun(dt) { if (S.tired) return false; const n = D.RUN_EN * dt * (1 - buffOn('stam')) * (sleepy() ? 1.4 : 1) * hungerK(), b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
 function wornLook() { const body = D.WEAR[S.wear && S.wear.body], top = body && body.col, hat = D.WEAR[S.wear && S.wear.hat]; return Object.assign({}, S.avatar || {}, { wear: body && body.look || 'traveler' }, top ? { top } : {}, hat && hat.hatK ? { hat: hat.hatK } : {}) }   /* v3.43 the outfit's look comes from the worn piece */   /* v3.9 + the hat (layer 2) */
@@ -505,6 +506,7 @@ function walkTick(dt, now) {
   DECOR(me().x, me().z); ogTick(now); capTick(now); gtTick(now, dt); if (now > (seasonCheck.t || 0)) { seasonCheck.t = now + 2000; seasonCheck() } AMB(now, dt); LAND(now, dt);
   if (golemBusy()) return;
   let mv = false;
+  if (joy.on && !AIM && Math.hypot(joy.x, joy.z) > .55) { JHOLD += dt / (speed || 1); if (JHOLD >= D.AUTORUN && !S.tired && !RUNON) { RUNON = true; if (!S.runTip) { S.runTip = 1; hint('🏃 เดินค้างไว้ 3 วิ = วิ่ง · ใช้ ⚡', 1600) } } if (S.tired) JHOLD = 0 } else if (!AUTOGO && !walkT) { JHOLD = 0; if (RUNON && !joy.on) RUNON = false }   /* v3.83 🏃 hold the stick 3 s = run (⚡ while running) · let go = walk again */
   const dashing = now < sprintT, run = !RIDE && !CROUCH && !S.tired && (RUNON || dashing) && (joy.on || walkT) && (HORSE || dashing || spendRun(dt)),   /* v3.54 no steady run: A = a dash in bursts (like swimming) · RUNON = auto-walk only */ spd = GLIDE ? (GLIDE.para ? (GLIDE.drop ? .6 : D.GLIDER.sp) : D.GLIDE.sp) : RIDE ? (RIDE.whale ? D.WHALE_SP : D.RAFT_SP) : PL.swim ? D.SWIM_SP * swimMul() * (now < swimB ? D.SWIM_BURST.mul : 1) * (wbOn() ? D.PETSKILL.whaleSwim : 1) : PL.climb ? D.CLIMB_SP : (S.tired ? D.TIRED_SPEED : 1) * needSlow() * (guard || CROUCH ? D.SNEAK.sp : 1) * (debOn('daze') ? .6 : 1) * (HORSE ? (HORSE.p ? (run ? D.PET_RIDE.gallop : D.PET_RIDE.sp) : run ? D.HORSE.gallop : D.HORSE.sp) * (roadD(me().x, me().z) < D.ROAD.hw + .6 ? D.ROAD.horse : 1) : run ? (dashing ? D.DASH.sp : D.RUN_SP) : D.WALK_SP) * (S.builds.length && onPath(me().x, me().z) ? 1.2 : 1) * (PL.wade ? D.WADE.sp : 1); SPD_LAST = spd;
   if (AIM && !AIM.quick && joy.on) aimTurn(joy.x * D.AIMSTICK * dt, joy.z * D.AIMSTICK * dt);   /* v3.81 the quick aim (Y held): the stick walks · the thumb on Y aims */   /* v3.18 the stick fine-tunes the aim · you stand still */
   if (joy.on && (!AIM || (AIM.quick && !AIRAIM))) { const q = me(), sp = spd * heavyK() * Math.hypot(joy.x, joy.z) * (AIM ? D.QAIM.walk : 1), cy = camTP() ? (joy.cy ?? CAM.yaw) : Math.PI, fx = Math.sin(cy), fz = Math.cos(cy), mx = -Math.cos(cy) * joy.x - fx * joy.z, mz = Math.sin(cy) * joy.x - fz * joy.z, ml = Math.hypot(mx, mz) || 1, nx = q.x + mx / ml * sp * dt, nz = q.z + mz / ml * sp * dt;
@@ -2932,7 +2934,7 @@ function doJump() { const now = performance.now(); CROUCH = false; if (GLIDE && 
 /* ================= v2.5.1 🎓 training: short steps shown one at a time, unlocked by what you carry (move → gather → sword → shield → bow → farm → glider) ================= */
 const TUT = [
   ['move', '🕹️', 'ลากจอยซ้ายเพื่อเดิน', () => true], ['jump', '🦘', 'กด <b>X</b> เพื่อกระโดด', () => true],
-  ['run', '🏃', 'ระหว่างเดิน กด <b>A</b> = วิ่งพุ่ง (ใช้ ⚡ นิดหน่อย · กดซ้ำได้เป็นช่วงๆ)', () => true], ['crouch', '🥷', 'กด <b>X</b> ค้าง 3 วิ เพื่อย่อตัว (แตะ X อีกครั้งเพื่อยืน)', () => true],
+  ['run', '🏃', 'เดินค้างไว้ 3 วินาที = วิ่งเอง (ใช้ ⚡ ระหว่างวิ่ง · ปล่อยจอย = เดิน)', () => true], ['crouch', '🥷', 'กด <b>X</b> ค้าง 3 วิ เพื่อย่อตัว (แตะ X อีกครั้งเพื่อยืน)', () => true],
   ['gather', '🌿', 'เข้าใกล้ผลไม้/ของที่ตก แล้วกด <b>A</b> เพื่อเก็บ · ตัดหญ้า/ต้นไม้/หิน: แตะ 🔄 ซ้ายของ X เข้าโหมดฟาร์ม แล้วกด <b>Y</b>', () => true],
   ['swing', '⚔️', 'กด <b>Y</b> ชักอาวุธ แล้วกด <b>Y</b> อีกครั้งเพื่อฟัน · แตะ <b>B</b> = เก็บอาวุธ', () => !!weaponOf()],
   ['guard', '🛡️', 'กด <b>B</b> ค้าง = ยกโล่ป้องกันด้านหน้า · ปล่อย = เก็บ (ไม่มีโล่ = ปัดด้วยอาวุธ)', () => !!(shieldOn() || weaponOf())],
@@ -2994,8 +2996,8 @@ function ctxTick(now, dt, mv) {
           const hit = () => { if (soft) { setTool(T.tool); toolHit({ kind: 'clear', id: o.id }) } else if (h === 'sword') { DRAWN = true; setTool('sword'); toolHit({ kind: 'clear', id: o.id, w: 1 }) } else { setTool(h); toolHit({ kind: 'clear', id: o.id, ok: 1 }) } };
           if (dist(me().x, me().z, o.x, o.z) > D.REACH_TOOL) walkTo(o.x, o.z, hit, 1.1); else hit() } } } }
     else if (t && t.m && !farm) CTX = { k: 'fight', at: t.m.A.root.position, h: 1.8, go: null };
-    else if (!farm && walkS > .15 && !RUNON && !S.tired && !CROUCH) CTX = { k: 'run', go: dash };
-    else if (!RIDE && !HORSE && !PL.swim && !PL.climb && nearMainPet()) { const E2 = nearMainPet(); CTX = { k: 'pet', at: E2.A.root.position, h: 1.3, go: () => mountPet(E2.p) } }   /* v3.82 standing still with nothing else at hand: A calls the pet (≤ 11 m) and you ride */
+    /* v3.83 A no longer dashes (the stick held 3 s runs) */
+    else if (!RIDE && !HORSE && !PL.swim && !PL.climb && walkS <= .15 && nearMainPet()) { const E2 = nearMainPet(); CTX = { k: 'pet', at: E2.A.root.position, h: 1.3, go: () => mountPet(E2.p) } }   /* v3.82 standing still with nothing else at hand: A calls the pet (≤ 11 m) and you ride */
   }
   /* v2.4.1 the A button keeps its label (no switching) · a bubble floats over the thing once you have stood near it for a while */
   const a = $('bA').querySelector('span'), want = S.mode === 'farm' ? '<b class="fi">🪏</b>' : 'A'; if (a.innerHTML !== want) a.innerHTML = want;
@@ -4656,7 +4658,7 @@ function mountHorse(M) { if (HORSE || !mons.includes(M)) return; HORSE = M; M.ag
 function mountPet(p) { const e = PA.get(p.id) || buildPet(p, me().x, me().z); const q = me(); e.mode = 'wander'; e.foe = null; e.A.root.position.set(q.x, groundH(q.x, q.z), q.z); VF.ring(q.x, q.y, q.z, '#ffffff', 1.6, .4); VF.burst(q.x, q.y + .5, q.z, '#ffe8b8', 14, 3);
   HORSE = e; walkT = null; work = null; RUNON = false; DRAWN = false; setTool(''); sfx('level'); bump('petRide');
   if (!S.story.petRideTip2) { S.story.petRideTip2 = 1; save(); toast(`${PET_ICO[p.kind]} ขี่ ${esc(p.name)} แล้ว! ไม่เสียพลังงาน<br><small>X กระโดด · Y กัด+ตะปบ · A พุ่งชน · B ลง</small>`, 3400) } }   /* v3.54 🐶🐱 ride your pet like the horse */
-function horseTip() { if (!S.story.horseTip) { S.story.horseTip = 1; toast('🐴 ขี่ม้าแล้ว! เร็ว ไม่เสียพลังงาน · ระหว่างเดิน กด A = ควบพุ่ง · B = ลงจากม้า', 3200); save() } }
+function horseTip() { if (!S.story.horseTip) { S.story.horseTip = 1; toast('🐴 ขี่ม้าแล้ว! เร็ว ไม่เสียพลังงาน · เดินค้าง 3 วิ = ควบ · B = ลงจากม้า', 3200); save() } }
 function dismount() { if (!HORSE) return; const M = HORSE; HORSE = null; const q = me(), sx = q.x + Math.cos(PL.yaw) * .9, sz = q.z - Math.sin(PL.yaw) * .9; if (walkLand(sx, sz)) placeMe(sx, sz);
   if (M.p) { M.A.root.scale.setScalar(1); M.A.body.rotation.z = 0; const r = M.A.root.position; r.y = groundH(r.x, r.z); M.play = null; M.pclip = null; M.wait = 0; sfx('tap'); hud(); return }   /* v3.78 the main pet stays by you · no cooldown */   /* v3.54 the pet trots home · its skill cools down from now */ M.home = [M.A.root.position.x, M.A.root.position.z]; M.t = M.home.slice(); M.wait = 3; sfx('tap') }
 /* ================= v3.78 🐶🐱 the main pet: always with you · plays when you stand still · helps you fight · ride it (teen+) ================= */
