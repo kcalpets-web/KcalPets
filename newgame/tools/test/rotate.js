@@ -13,7 +13,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8895, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const inView = (sel, hit = true) => E(([sel, hit]) => { const e = document.querySelector(sel); if (!e) return false; const r = e.getBoundingClientRect(), t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return r.x >= 0 && r.y >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 && (!hit || t === e || e.contains(t)) }, [sel, hit]);
     // 1 · the drawing frame open in landscape → turn → the frame fits portrait, ← and 🖍️ can be tapped
-    await E(() => window.__ng.openFrame()); await wait(700); await pg.setViewportSize({ width: 390, height: 844 }); await wait(1200);
+    await E(() => window.__ng.openFrame()); await wait(700); await pg.setViewportSize({ width: 390, height: 844 }); for (let i = 0; i < 25 && !await inView('#frameR', false); i++) await wait(200);   /* v3.91 the frame re-lays a moment after the turn (slow emulator) */
     const f = { fr: await inView('#frameR', false), fx: await inView('#frameUI [data-fx]'), go: await inView('#frameUI [data-fgo]') }; log('frame after turn', JSON.stringify(f)); await pg.screenshot({ path: OUT + '/1-frame.png' });
     if (!f.fr || !f.fx || !f.go) errs.push('after a turn the drawing frame should fit the screen with ← / 🖍️ tappable');
     await pg.tap('#frameUI [data-fx]'); await wait(400); if (await E(() => !!document.getElementById('frameUI'))) errs.push('← should close the drawing frame after a turn');
