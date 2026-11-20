@@ -1406,6 +1406,7 @@ function hud() { bowBtn();
   $('team').innerHTML = ['X', 'A', 'Y'].map(slot => { const kind = skSlot(slot), p = kind && S.pets.find(x => x.kind === kind); if (!p) return ''; const left = Math.max(0, (PSK[kind] || 0) - Date.now()), cd = SKILLS[kind].cd(), on = kind === 'boar' && BUB.on; if (OPT.ctrl === 'pad' && !(left > 0) && !on) return '';   /* v3.49 pad: the icon only shows while it cools down (or the bubble is up) · skills come from holding X */   /* v3.17 the X and A skill slots (you choose which pet skill goes where) */
     return `<button class="tc psk${left > 0 ? ' cd' : ''}${on ? ' on' : ''}${(S.skTip || {})[kind] ? '' : ' tip'}" data-sk="${kind}" aria-label="${SKILLS[kind].name}"><span>${PET_ICO[kind]}<small>${slot}</small></span><i style="height:${Math.round(left / cd * 100)}%"></i>${left > 0 ? `<em>${Math.ceil(left / 1000)}</em>` : ''}</button>` }).join('');
   { const T = trackList(), t = T.find(x => x.id === S.track) || T.find(x => x.id === 'story') || T[0], jk = Object.keys(S.jobs)[0], jl = jk ? Math.max(0, Math.ceil((S.jobs[jk] - Date.now()) / 1000)) : 0;   /* v3.12.2 the card shows the quest you follow (☁️ by default) · tap = pick another */
+    { const gl = $('goal'), gt = t ? `🎯 ${t.text}` : ''; if (gl && gl.textContent !== gt) gl.textContent = gt }   /* v3.81 the goal line */
     $('quest').style.display = 'block'; { const Qe = $('quest'), h = `<span class="qx" data-qx="1">✕</span><b>${t.icon} ${t.text}</b>${t.sub ? `<br><small>${t.sub}</small>` : ''}${t.x != null ? '<br><small id="qDist" class="qdist"></small>' : ''}${jk ? `<br>${jk.startsWith('cook:') ? '🍳 กำลังปรุง' : '🔨 กำลังสร้าง'}… ${mmss(jl)}` : ''}<br><u>🤖 แตะ = ให้ระบบทำเควสนี้</u> <span class="qbk" data-qb="1">📖${T.length > 1 ? ` ${T.length}` : ''}</span>`; if (Qe._h !== h) { Qe._h = h; Qe.innerHTML = h } }   /* v3.52 rebuild only when it changes (walking re-drew it every step: the 📍 distance blinked) */ }
 }
 $('team').onclick = e => { if (OPT.ctrl === 'pad') return; const t = e.target.closest('[data-sk]'); if (t) petSkillKind(t.dataset.sk) };   /* v3.49 pad: the icons are not buttons */
@@ -1602,6 +1603,7 @@ function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, c
   b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); openAtlas(x.dataset.mp) }) }, { cls: 'menuPick dlg' }) }
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
 $('mMap').onclick = () => { if (CUT) return; sfx('tap'); openMenuPick() };   /* v3.80 ☰ (the minimap is the map) */
+$('goal').onclick = () => { if (CUT) return; sfx('tap'); openAtlas('quest') };
 $('mini').onclick = $('miniW').onclick = () => { if (CUT) return; sfx('tap'); openAtlas('map') };
 /* the map's cursor: the stick moves it (map-speed, not world-speed) · it keeps itself on screen */
 function mapCur(snap) { const N = MAPNAV; if (!N || !N.cur) return; const [x, y] = N.P(N.cx, N.cz); N.cur.style.left = x * N.sc + 'px'; N.cur.style.top = y * N.sc + 'px';

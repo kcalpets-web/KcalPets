@@ -496,6 +496,9 @@ body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.
 #smenu i b.kx,#smenu i b.ky{position:absolute;top:-8px;right:-6px;width:24px;height:24px;border-radius:50%;color:#fff;font:900 13px system-ui;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink)}#smenu i b.kx{background:#4a7ad8}#smenu i b.ky{background:#d8a820}
 /* v3.82 🌡️ the protection status under the hearts: ❄️✔✔ ☀️✔ … · the weather level (red = not enough) */
 #resist{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;pointer-events:none}#resist:empty{display:none}.rs{display:inline-flex;align-items:center;gap:1px;background:#fff8eee0;border:2px solid #2a2030;border-radius:9px;padding:0 4px;font:700 12px system-ui;line-height:18px}.rs i{font-style:normal;color:#2fae5a;font-weight:900;font-size:11px}.rs.lv{background:#d8ecff}.rs.lv.bad{background:#ffd0d0;animation:qa 1.2s ease-in-out infinite}
+/* v3.81 🎯 a slim goal line under the minimap (2 lines at most · tap = the quest page) */
+#goal{display:block;margin:6px 0 0 auto;max-width:150px;padding:3px 7px;border-radius:10px;border:2px solid #2a2030;background:#fff8eee0;color:#2a2030;font:700 11px/1.3 system-ui;text-align:left;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:auto}#goal:empty{display:none}body.wheel #goal,body.mapOn #goal{display:none}
+@media (orientation:landscape) and (max-height:500px){#goal{position:fixed;top:calc(env(safe-area-inset-top) + 36px);left:50%;transform:translateX(-50%);margin:0;max-width:240px;-webkit-line-clamp:1;z-index:6}}   /* landscape: top middle (the side is full of buttons) */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
@@ -505,7 +508,7 @@ body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.
     <div class="rt"><div class="pill" id="hMats"></div></div>
     <div class="rt"><div class="pill clock"><span id="hClock"></span><small id="hSun"></small></div><button class="sq" id="hTemp" aria-label="อุณหภูมิ">🙂</button></div>
     <div class="rt"><div id="miniW"><canvas id="mini"></canvas><b id="miniN">N</b><small id="miniZ"></small></div></div>
-    <div class="rt" id="mBtns"><button class="sq" id="mBag" aria-label="กระเป๋า">🎒</button><button class="sq" id="mMap" aria-label="เมนู"><i class="hb"></i></button></div>
+    <div class="rt" id="mBtns"><button class="sq" id="mBag" aria-label="กระเป๋า">🎒</button><button class="sq" id="mMap" aria-label="เมนู"><i class="hb"></i></button></div><button id="goal" aria-label="เป้าหมาย"></button>
     <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button><button class="sq" id="bWheel" aria-label="เมนู">◎</button></div></div>
 </div>
 <div class="vit"><div id="hearts"></div><div id="debs"></div><div id="needs"></div><div id="resist"></div>
