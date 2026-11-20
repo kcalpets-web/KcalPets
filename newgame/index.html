@@ -473,6 +473,8 @@ body.pad:not(.gamepad) .ov:not(.mapfs) .shb{padding-bottom:14px!important}
 .ov:not(.mapfs):not(.dlg){background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
 /* v3.75 the whole window frame shows (a rim all round · it ends inside the screen) */
 .ov:not(.mapfs):not(.dlg):not(.inv) .sh{border:2px solid #ffffff2a;border-top:0;box-shadow:0 8px 24px #0008}
+/* v3.75 a gap + round corners at the top too */
+.ov:not(.mapfs):not(.dlg):not(.inv) .sh{margin-top:calc(var(--winTop,12px) / .82)!important;height:calc((var(--winH,100vh) - var(--winTop,12px)) / .82)!important;border-radius:18px!important;border-top:2px solid #ffffff2a}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
