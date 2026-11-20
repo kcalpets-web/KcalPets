@@ -67,7 +67,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll(); await clearSome('axe', "o => o.t === 'tree' || o.t === 'bush'", () => (window.__ng.S.mats.wood || 0) >= 10, 140);
     await clearSome('hammer', "o => o.t === 'rock' || o.t === 'pebble'", () => (window.__ng.S.mats.stone || 0) >= 5);
     log('mats', JSON.stringify(await N(() => window.__ng.S.mats)), 'quest', await N(() => window.__ng.S.quest));
-    await E(() => window.__ng.quest()); await wait(600); await shot('04-site'); await E(() => window.__ng.aqStop());   /* v3.56 the card starts the auto quest · here the test builds by hand */
+    await E(() => window.__ng.quest()); await wait(600); await shot('04-site'); await E(() => { window.__ng.aqStop(); window.__ng.stopGo() });   /* v3.88 the card walks you there (stop it: the test drives) */   /* v3.56 the card starts the auto quest · here the test builds by hand */
     await E(() => { const N = window.__ng; N.placeMe(16, -4); N.PL.yaw = N.PL.yawT = Math.PI / 2; for (const o of [...N.W.clear.values()]) if (o.g && Math.abs(o.x - 19.5) < 4 && Math.abs(o.z + 4) < 4) N.finishClear(o) }); await wait(800); await E(() => window.__ng.enterBuild('cabin')); await wait(800); await E(() => window.__ng.placeBuild()); await E(() => { window.__ng.speed = 1; window.__ng.look(19.5, -4) });   /* v3.50 the first hut: placed on the farmland */ await wait(2600); await shot('04b-building'); log('job', JSON.stringify(await N(() => window.__ng.jobs))); await E(() => window.__ng.finishJobs()); await wait(900); await E(() => { window.__ng.speed = 3 });
     await E(() => window.__ng.sleepNight()); await wait(4500); await shot('05-morning');
     /* quest 1: clear the wreck → Howsif → rod → 2 fish */
