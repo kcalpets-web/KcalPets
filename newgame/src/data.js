@@ -221,7 +221,7 @@ export const GOLEMS = {
   navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
   frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
-export const WIN = { padRoom: 320, landGap: 12 };   // v3.75 portrait: windows stop this many px above the screen's bottom (the pad lives there) · landscape: a small gap so the whole frame shows
+export const WIN = { padRoom: 320, landGap: 12, h: 366 };   // h = every window's height (px) in both orientations   // v3.75 portrait: windows stop this many px above the screen's bottom (the pad lives there) · landscape: a small gap so the whole frame shows
 export const PINS = { max: 100, reach: 22, curSpeed: 240, beamH: 160,   // v3.74 📍 map pins: how many in all · A finds a point this close (screen px) · the cursor's speed (screen px/s) · beam height (m)
   icons: [['⚔️', 'ดาบ'], ['🛡️', 'โล่'], ['🏹', 'ธนู'], ['🪵', 'วัตถุดิบ'], ['🍲', 'อาหาร'], ['💀', 'มอนสเตอร์'], ['📦', 'หีบ'], ['⛏️', 'แร่'], ['⭐', 'ชื่นชอบ']],
   beam: ['#ff5a5a', '#ffd23f', '#5adc7a', '#5ab4ff', '#d77aff'] };   // 🔆 five beacon colours (one each)
