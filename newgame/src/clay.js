@@ -19,14 +19,14 @@ export function blobGeo(lo, hi, A = .05, f = 1.2, seed = 1, seg = Q.seg) {
     p.setXYZ(i, v.x * (1 + A * n), v.y * (1 + A * n), v.z * (1 + A * n));
     c.copy(L).lerp(H, sm(-.6, .9, v.y + .25 * n)); col.push(c.r, c.g, c.b);
   }
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); if (Q.facet) { const f2 = g.toNonIndexed(); f2.computeVertexNormals(); GEO.set(key, f2); return f2 } GEO.set(key, g); return g;
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); if (Q.facet) { const f2 = g.toNonIndexed(); f2.computeVertexNormals(); (f2.userData.keep = 1, GEO.set(key, f2)); return f2 } (g.userData.keep = 1, GEO.set(key, g)); return g;
 }
 /* v2.9 a rounded box (vinyl-toy walls) with the same top-light vertex colour as the blobs */
 const RBG = new Map();
 export function rboxGeo(w, h, d, r = .12, lo = '#999', hi = '#fff') { const key = [w, h, d, r, lo, hi].join('|'); if (RBG.has(key)) return RBG.get(key);
   const g = new THREE.BoxGeometry(w, h, d, 6, 6, 6), P = g.attributes.position, v = new THREE.Vector3(), c = new THREE.Vector3(), col = [], L = C(lo), H = C(hi), cc = new THREE.Color(); r = Math.min(r, w / 2, h / 2, d / 2);
   for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); c.set(Math.max(-w / 2 + r, Math.min(w / 2 - r, v.x)), Math.max(-h / 2 + r, Math.min(h / 2 - r, v.y)), Math.max(-d / 2 + r, Math.min(d / 2 - r, v.z))); v.sub(c); if (v.lengthSq() > 1e-9) v.setLength(r); v.add(c); P.setXYZ(i, v.x, v.y, v.z); cc.copy(L).lerp(H, sm(-.6, .9, v.y / (h / 2) * .8 + .1)); col.push(cc.r, cc.g, cc.b) }
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); RBG.set(key, g); return g }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); (g.userData.keep = 1, RBG.set(key, g)); return g }
 export function rbox(grp, lo, hi, pos, [w, h, d], rot = [0, 0, 0], r = .12) { const m = new THREE.Mesh(rboxGeo(w, h, d, r, lo, hi), MAT); m.position.set(...pos); m.rotation.set(...rot); m.castShadow = m.receiveShadow = true; grp.add(m); return m }
 export const MAT = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .8, sheen: .5, sheenRoughness: .5, sheenColor: C('#fff3e6') });
 export const MAT_GOLD = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .38, metalness: .1, clearcoat: .8, emissive: '#3a2400', emissiveIntensity: .25 });
@@ -41,14 +41,14 @@ const CAPS = new Map();
 function capsuleGeo(r, len, lo, hi) { const key = [r, len, lo, hi].join('|'); if (CAPS.has(key)) return CAPS.get(key);
   const g = new THREE.CapsuleGeometry(r, len, 5, 14), p = g.attributes.position, col = [], L = C(lo), H = C(hi), c = new THREE.Color();
   for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + len / 2 + r) / (len + 2 * r), side = p.getX(i) / r; c.copy(L).lerp(H, sm(.0, 1, t * .6 + .4 - Math.abs(side) * .15)); col.push(c.r, c.g, c.b) }
-  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); CAPS.set(key, g); return g }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); (g.userData.keep = 1, CAPS.set(key, g)); return g }
 export function limb(grp, lo, hi, y0, y1, r) { const len = Math.max(.001, Math.abs(y0 - y1)); return part(grp, lo, hi, [0, (y0 + y1) / 2, 0], [1, 1, 1], [0, 0, 0], { geo: capsuleGeo(r, len, lo, hi) }) }
 const CONES = new Map();
 export function cone(grp, lo, hi, pos, s, rot, k = .82) {
   const seg = Math.min(24, Q.seg), key = [lo, hi, k, seg].join('|');   /* v3.4 scenery cones follow Q.seg (grass blades, post tips) and are shared, not cloned per call */
   let g = CONES.get(key); if (!g) { g = blobGeo(lo, hi, .03, 1, 2, seg).clone(); const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const t = (p.getY(i) + 1) / 2; p.setX(i, p.getX(i) * (1 - k * t)); p.setZ(i, p.getZ(i) * (1 - k * t)) }
-    g.computeVertexNormals(); CONES.set(key, g) }
+    g.computeVertexNormals(); (g.userData.keep = 1, CONES.set(key, g)) }
   return part(grp, lo, hi, pos, s, rot, { geo: g });
 }
 function eyes(grp, y, z, dx, r = .085) {
@@ -195,6 +195,8 @@ export const TOOLMESH = {
   sickle(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .22, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [.08, .24, 0], [.14, .03, .03], [0, 0, .6], { A: 0, mat: MAT_GOLD }) },
   torch(g) { part(g, '#6a4024', '#a8703e', [0, .05, 0], [.035, .26, .035], [0, 0, 0], { A: 0 }); part(g, '#7a5a3a', '#c8a070', [0, .3, 0], [.06, .06, .06], [0, 0, 0], { A: 0 });   /* v3.12.1 🔥 a stick, a wrapped head, a flame */
     const f1 = new THREE.Mesh(new THREE.ConeGeometry(.1, .3, 7), new THREE.MeshBasicMaterial({ color: '#ffb040' })), f2 = new THREE.Mesh(new THREE.ConeGeometry(.06, .2, 6), new THREE.MeshBasicMaterial({ color: '#fff2a0' })); f1.position.y = .48; f2.position.y = .45; f1.name = 'flame'; g.add(f1, f2) },
+  lamp(g) { part(g, '#5a5a62', '#a8a8b8', [0, .02, 0], [.05, .03, .05], [0, 0, 0], { A: 0 }); const gl = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, .11, 8), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); gl.position.y = .1; g.add(gl);   /* v3.82 🏮 an oil lamp: a base, a glowing glass, a cap, a ring handle */
+    part(g, '#5a5a62', '#a8a8b8', [0, .18, 0], [.05, .025, .05], [0, 0, 0], { A: 0 }); const h = new THREE.Mesh(new THREE.TorusGeometry(.05, .008, 6, 12), new THREE.MeshStandardMaterial({ color: '#4a4a52', roughness: .5 })); h.position.y = .24; g.add(h) },
   sword(g) { part(g, '#8a8fa8', '#eef2ff', [0, .32, 0], [.04, .34, .015], [0, 0, 0], { A: 0, mat: MAT_GOLD }); part(g, '#7a4422', '#c8843a', [0, 0, 0], [.04, .1, .04], [0, 0, 0], { A: 0 }) },
 };
 

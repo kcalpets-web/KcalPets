@@ -36,11 +36,11 @@ const BASE = { v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true
       const sb = await E(() => !!document.querySelector('.ov.dlg [data-sell]')); if (sb) { await pg.click('.ov.dlg [data-sell]'); await wait(300) }
       for (let i = 0; i < 3; i++) { await pg.keyboard.press('Enter'); await wait(250) } for (let i = 0; i < 4; i++) { const y = await E(() => { const y = document.querySelector('#cfY'); if (y) { y.click(); return 1 } return 0 }); if (!y) break; await wait(300) }
       const c1 = await E(() => window.__ng.S.coin); log('sell + Enter×3', sb, c0, '→', c1); if (!sb) errs.push('no sell button found'); if (sb && c1 - c0 > 1000) errs.push('Enter repeated the sale (coins ' + c0 + ' → ' + c1 + ')'); await ctx.close() }
-    // 7. the creator 18 times: the game view stays alive
-    { const { ctx, pg, E } = await boot({ ng_save_v3: JSON.stringify(BASE) }, 'creator'); let lost = false; pg.on('console', m => { if (/CONTEXT_LOST|Too many active WebGL/i.test(m.text())) lost = true });
-      const can = await E(() => typeof window.__ng.openCreator === 'function'); if (!can) log('openCreator not exposed (skipped)');
-      else { for (let i = 0; i < 18; i++) { await E(() => window.__ng.openCreator(false)); await wait(250); await E(() => { const x = document.querySelector('#mkX') || document.querySelector('#mkX0'); x && x.click() }); await wait(150) }
-        const gl = await E(() => !!document.getElementById('glLost')); log('creator ×18 lost', lost, 'overlay', gl); if (lost || gl) errs.push('opening the creator 18 times lost the game view') } await ctx.close() }
+    // 7. the creator: every closed one gives its GL context back (17 open ones used to black out the game)
+    { const { ctx, pg, E } = await boot({ ng_save_v3: JSON.stringify(BASE) }, 'creator');
+      await E(() => { const C = window.__ctxs = []; const g0 = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { const c = g0.call(this, t, o); if (c && /webgl/.test(t) && !C.includes(c) && this.id === 'mkCv') C.push(c); return c } });
+      for (let i = 0; i < 3; i++) { await E(() => window.__ng.openCreator(false)); await wait(1500); await E(() => { const x = document.querySelector('#mkX') || document.querySelector('#mkX0'); x && x.click() }); await wait(800) }
+      const r = await E(() => ({ n: window.__ctxs.length, lost: window.__ctxs.filter(c => c.isContextLost()).length, main: !document.getElementById('glLost') })); log('creator contexts', JSON.stringify(r)); if (!r.n) errs.push('no creator context seen'); else if (r.lost < r.n) errs.push('a closed creator kept its GL context'); await ctx.close() }
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

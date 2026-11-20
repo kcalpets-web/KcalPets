@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.79';
+export const APP_VER = '3.80';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -227,7 +227,7 @@ export const PINS = { max: 100, reach: 22, curSpeed: 240, beamH: 160,   // v3.74
   icons: [['⚔️', 'ดาบ'], ['🛡️', 'โล่'], ['🏹', 'ธนู'], ['🪵', 'วัตถุดิบ'], ['🍲', 'อาหาร'], ['💀', 'มอนสเตอร์'], ['📦', 'หีบ'], ['⛏️', 'แร่'], ['⭐', 'ชื่นชอบ']],
   beam: ['#ff5a5a', '#ffd23f', '#5adc7a', '#5ab4ff', '#d77aff'] };   // 🔆 five beacon colours (one each)
 export const GSET = { hold: .6, swap: [70, 0] };   // v3.73 hold Y this long (melee) = ⚔️ combat ↔ 🌾 farm · 🔄 sits this far right of X (px at full size)
-export const QAIM = { zoom: 1.5, circle: .28, range: 40, btn: [-28, -32] };   // btn: the 🏹 button's offset from the X–Y gap (px at full button size)   // v3.71 🏹 quick aim: zoom of a plain bow · circle radius (share of the screen's short side) · lock range (m)
+export const QAIM = { walk: .55,  zoom: 1.5, circle: .28, range: 40, btn: [-28, -32] };   // btn: the 🏹 button's offset from the X–Y gap (px at full button size)   // v3.71 🏹 quick aim: zoom of a plain bow · circle radius (share of the screen's short side) · lock range (m)
 export const TOWN_R = { harbour: 45 };
 export const GUARD = { near: 120, run: 5.4, walk: 1.3, reach: 1.7, every: .6, dmg: .35 };   // v3.70 💂 town guards: show up within `near` m · run / walk speed · reach to hit · seconds between hits · each hit = this share of the monster's max HP   // v3.70 how far the harbour town reaches from its plaza (golems / monsters keep out)
 export const GOLEM = { wake: 13, arena: 17, slam: { r: 4.6, wind: 1.3 }, rock: { r: 2.2, wind: 1.4 }, stun: 2.4, armor: .45, coreX: 2.6, drop: [3, 5] };
@@ -259,7 +259,7 @@ export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 8
 export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
-export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .32;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
+export const HOLD_AUTO = 3, HOLD_CROUCH = 3, HOLD_PICK = .45, DTAP = .4;   // v3.6 hold A .45 s = pick a weapon/tool · double-tap Y / B within DTAP s = pick bow-slot / shield
 /* v3.6 what goes in the A hand besides weapons: a sickle cuts like a sword · the axe fells trees · the pickaxe breaks rocks · all of them hit monsters (atk × weapon attack) */
 export const HAND = { sickle: { icon: '🌾', name: 'เคียว', atk: 1 }, axe: { icon: '🪓', name: 'ขวาน', atk: 1 }, torch: { icon: '🔥', name: 'คบเพลิง', atk: .5 }, hammer: { icon: '⛏️', name: 'อีเต้อ', atk: 1 }, hoe: { icon: '🪏', name: 'จอบ', atk: 1 } };   // v3.22 tools are items: their atk is their own
 /* v3.22 how well each kind cuts wood / grass / breaks stone (× speed · 0 = can't) · wear per hit = 1 / eff (the wrong tool wears faster) · an item's own eff wins */
@@ -329,6 +329,8 @@ export const PET_SPECIAL_CD = 25000;
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
 export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
 // v3.78 🐶🐱 the main pet: always with you · A near it = ride (teen+) · riding: X jump · Y bite + claw · A dash (rams) · B get off
+export const FALL = { safe: 10, perM: 5 };   // v3.81 💥 falls: no harm up to 10 m · then −5 HP (¼ heart) per metre
+export const MOUNT = { knock: .3, big: .2 };   // v3.81 a hit knocks you off your mount: 30% chance · always if it takes ≥ 20% of max HP
 export const MPET = { near: 2.4, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back: 1.4, side: .9, help: 9, idle: 3,
   play: { wander: 3, fly: 3, animal: 2, bone: 3, sit: 2, lie: 2, roll: 2, sleep: 1 }, len: { wander: 6, fly: 8, animal: 7, bone: 14, sit: 6, lie: 7, roll: 3.5, sleep: 12 },
   biteCd: 650, biteR: 3.4, biteMul: 1.3, clawMul: .9, ramMul: 1.1, ramR: 1.8, push: 1.8, lunge: 7, lungeT: 260 };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
@@ -689,7 +691,7 @@ export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
-export const PARRY = .5, CROUCH_HOLD = .5, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
+export const PARRY = .5, CROUCH_HOLD = 1, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const LUM_RESPAWN = 300;   // v3.25 seconds before the ruins' guards come back once all are beaten
 export const AIMZOOM = { min: 1, max: 4, rate: 1.4 };   // v3.18.1 🎯 smooth zoom while aiming: hold Y in / X out · rate = how fast (×e per second)
 export const AIMSTICK = 220;          // v3.18 the stick turns the aim (like dragging this many px per second)
@@ -702,6 +704,7 @@ export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
   { k: 'torch2', icon: '🔥', name: 'คบเพลิง ×2', need: { wood: 2, grass: 3 }, give: { mats: { torch: 2 } } },   /* v3.12.1 */
+  { k: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน (ให้แสงแม้ฝนตก · ไม่อุ่น)', need: { copper: 2, wood: 2, ore: 1 }, give: { has: 'lamp' } },   /* v3.82 a farm light */
   { k: 'glider', icon: '🍃', name: 'ใบไม้ร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
   /* v3.0 gear from ores + golem materials (unlimited) */
   { k: 'cSilverSpear', icon: '🔱', name: 'หอกทหาร (เงิน)', need: { silver: 4, ore: 2, wood: 4 }, give: { item: ['soldierSpear', 'R'] } },
