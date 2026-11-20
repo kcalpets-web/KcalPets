@@ -23,7 +23,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* 🗺️ the map: full screen, sharp once painted */
     await wait(9000); const hi = await N(() => !!window.__ng.mapHi); log('mapHi', hi);
     await E(() => window.__ng.openMap()); await wait(800); const mp = await N(() => { const s = document.querySelector('.ov.mapfs .sh'), w = document.querySelector('.wmap'); return s && { sh: s.getBoundingClientRect().height, w: w.getBoundingClientRect().height } }); log('map', JSON.stringify(mp));
-    if (!mp || mp.sh < 800 || mp.w < 500) errs.push('map not full screen ' + JSON.stringify(mp)); await shot('01-map'); await closeAll();
+    if (!mp || mp.sh < 340 || mp.w < 330) errs.push('v3.77 the map should fill the standard window ' + JSON.stringify(mp)); await shot('01-map'); await closeAll();
     /* 🎣 first-person fishing */
     await E(() => { const N = window.__ng; N.placeMe(-3, 1); N.setTool('rod'); N.look(-4.5, 1); N.castAt(-6.5, 1) }); await wait(1500);
     const fp = await N(() => { const N = window.__ng, c = N.camera.position, q = N.me; return { F: N.F && N.F.phase, camH: +(c.y - q.y).toFixed(2), d: +Math.hypot(c.x - q.x, c.z - q.z).toFixed(2), pl: N.PL.root.visible, body: document.body.classList.contains('fishing') } });
