@@ -22,11 +22,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8851, OUT = process.arg
     const ate = await E(() => ({ n: window.__ng.S.hold.length, en: window.__ng.S.enB, apple: window.__ng.S.ingr.apple, ctx: window.__ng.CTX && window.__ng.CTX.k })); log('ate', JSON.stringify(ate)); if (ate.n !== 2 || !(ate.en > 0) || ate.apple !== 2) errs.push('A away from a pot should eat the apple');
     await wait(400); if ((await E(() => window.__ng.CTX && window.__ng.CTX.k)) !== 'eat') errs.push('the A hint should be 😋 while holding food');
     // at the pot: A puts each in · empty hands: cook
-    await E(() => { const N = window.__ng; N.placeMe(N.POT.home.x + 1.3, N.POT.home.z + .4) }); await wait(600); await E(() => { window.__ng.carryA(); window.__ng.carryA() }); await wait(700);
-    const pin = await E(() => ({ pin: (window.__ng.S.potIn.home || []).map(h => h.k), hold: window.__ng.S.hold.length, near: window.__ng.nearPot() })); log('in the pot', JSON.stringify(pin)); if (pin.pin.join() !== 'banana,coconut' || pin.hold) errs.push('A at the pot should put the food in');
-    await pg.screenshot({ path: OUT + '/pot.png' });
-    await E(() => window.__ng.potCook('home')); await wait(1500); await pg.screenshot({ path: OUT + '/cooking.png' });
-    const ck = await E(() => ({ job: !!window.__ng.S.jobs['cook:home'], what: (window.__ng.S.cooking || {}).home })); log('cooking', JSON.stringify(ck)); if (!ck.job || ck.what !== 'bananacoco') errs.push('banana + coconut should cook กล้วยบวชชี');
+    await E(() => { const N = window.__ng; N.placeMe(N.POT.home.x + 1.3, N.POT.home.z + .4) }); await wait(600); const pin = await E(() => { const W = window.__ng.WXS; W.type = 'clear'; W.rain = 0; W.at = performance.now() + 1e7; window.__ng.carryA(); return { hold: window.__ng.S.hold.length, job: !!window.__ng.S.jobs['cook:home'], what: (window.__ng.S.cooking || {}).home } });   /* v3.90 one A = all in + it cooks (read at once: a short cook can finish before a slow frame) */ log('v3.90 one A at the pot', JSON.stringify(pin)); if (pin.hold) errs.push('A at the pot should put all the food in'); if (!pin.job) errs.push('v3.90 one A at the pot should cook at once');
+    await wait(1500); await pg.screenshot({ path: OUT + '/cooking.png' });
+    const ck = pin; log('cooking', JSON.stringify(ck)); if (!ck.job || ck.what !== 'bananacoco') errs.push('banana + coconut should cook กล้วยบวชชี');
     await E(() => { window.__ng.S.jobs['cook:home'] = Date.now() - 10 }); await wait(2500); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const got = await E(() => window.__ng.S.meals.bananacoco || 0); log('dish', got); if (got !== 1) errs.push('the dish should be collected');
     // a wrong mix: honey + chili → rotten / poison

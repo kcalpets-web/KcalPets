@@ -386,6 +386,7 @@ const log = (g, [x, y, z], len, [rx, ry, rz], r = .09, c = WOOD) => { const gk =
   m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; g.add(m); return m };
 export const BUILDS = {
   chest(g) { CAMP.chest(g) },
+  storage(g) { const c = new THREE.Group(); CAMP.chest(c); c.scale.set(1.7, 1.5, 1.7); g.add(c); for (const x of [-.45, .45]) part(g, '#2a4a7a', '#6a9ad8', [x, .38, 0], [.06, .36, .55], [0, 0, 0], { A: 0 }) },   /* v3.90 🗃️ the storage chest: a big chest with blue straps */
   fence(g) { for (const x of [-.95, 0, .95]) log(g, [x, .45, 0], .9, [0, 0, 0], .07); for (const y of [.35, .7]) log(g, [0, y, 0], 2, [0, 0, Math.PI / 2], .05, WOODL) },
   path(g) { const P = [[-.5, -.5], [.5, -.45], [-.45, .5], [.5, .5], [0, 0]]; for (const [x, z] of P) part(g, STONE[0], STONE[1], [x, .03, z], [.36, .04, .34], [0, x * 2 + z, 0], { A: .08, f: 2 }) },
   bed(g) { part(g, ...WOOD, [0, .15, 0], [.6, .12, 1.05], [0, 0, 0], { A: 0 }); part(g, ...STRAW, [0, .32, .05], [.55, .1, .95], [0, 0, 0], { A: .06, f: 3 }); part(g, '#d8d0c0', '#ffffff', [0, .45, -.7], [.32, .09, .18], [0, 0, 0], { A: .04 });

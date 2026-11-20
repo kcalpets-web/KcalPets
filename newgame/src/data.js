@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.89';
+export const APP_VER = '3.90';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -584,6 +584,7 @@ export const CAMP_TIERS = [                                    // by distance fr
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารและนอนพักได้ทุกที่', cost: { wood: 6, stone: 4 }, start: 1, t: 20, w: 1.6, d: 1.6 },
+  storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
   raft:      { icon: '🛶', name: 'เรือแพ', desc: 'วางที่น้ำริมฝั่ง · ขึ้นพายข้ามทะเลได้ไม่เสียพลังงาน · ตกปลากลางทะเลได้', cost: { wood: 16, grass: 8 }, start: 1, t: 40, w: 1.6, d: 2.3, water: 1 },
   fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์และสัตว์เดินผ่านไม่ได้', cost: { wood: 4 }, t: 8, w: 2, d: .3, solid: 1 },
@@ -851,3 +852,5 @@ export const KRIG_ON = true, KRIG_SIT = 14, KRIG_SITY = .3;   // KRIG_SIT: secon
 /* v3.88 ⚡ the eel: 10 fish (a system quest) → its sea shrine rises · beat it → ⚡ สายฟ้าฟาด (every enemy within r m: hit + stun) */
 export const EEL = { fish: 10, cd: 90000, r: 10, stun: 1.5, mul: 2.4, min: 40, hearts: 8,
   atk: { zap: { r: 2.2, wind: 1.2, n: [1, 2, 3] }, nova: { r: 4.6, wind: 1.4 }, dash: { r: 2.4, wind: 1.1 } }, gap: [0, 3000, 2500, 1900] };
+
+export const STORE = 60;   // v3.90 🗃️ storage chest slots (a kind stacks like the bag)
