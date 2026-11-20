@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.86';
+export const APP_VER = '3.87';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -637,24 +637,24 @@ export const WEAR = {
   swimTop:  { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำ', warm: 0, cool: 0, swim: 2, col: '#3a8ad8', look: 'traveler' },
   swimLegs: { slot: 'legs', gone: 1, icon: '🩲', name: 'กางเกงว่ายน้ำ', warm: 0, cool: 0, swim: 0 },
   /* v3.9 👒 hats (slot hat, layer 2 on the head · over the hair) · a few keep you warm / cool, the rest are for looks */
-  h_cap: { slot: 'hat', icon: '🧢', name: 'หมวกแก๊ปดาว', warm: 0, cool: 0, hatK: 'cap' },
-  h_baseball: { slot: 'hat', icon: '🧢', name: 'หมวกเบสบอล', warm: 0, cool: 0, hatK: 'baseball' },
-  h_wizard: { slot: 'hat', icon: '🧙', name: 'หมวกพ่อมด', warm: 0, cool: 0, hatK: 'wizard' },
-  h_crown: { slot: 'hat', icon: '👑', name: 'มงกุฎ', warm: 0, cool: 0, hatK: 'crown' },
-  h_sailor: { slot: 'hat', icon: '⚓', name: 'หมวกกะลาสี', warm: 0, cool: 0, hatK: 'sailor' },
-  h_knight: { slot: 'hat', icon: '⛑️', name: 'หมวกอัศวิน', warm: 0, cool: 0, hatK: 'knight' },
-  h_straw: { slot: 'hat', icon: '👒', name: 'หมวกฟาง', warm: 0, cool: 1, hatK: 'straw' },
-  h_catEars: { slot: 'hat', icon: '🐱', name: 'หูแมว', warm: 0, cool: 0, hatK: 'catEars' },
-  h_bunnyEars: { slot: 'hat', icon: '🐰', name: 'หูกระต่าย', warm: 0, cool: 0, hatK: 'bunnyEars' },
-  h_beret: { slot: 'hat', icon: '🎨', name: 'หมวกเบเร่ต์', warm: 0, cool: 1, hatK: 'beret' },
-  h_headband: { slot: 'hat', icon: '💗', name: 'ที่คาดผม', warm: 0, cool: 0, hatK: 'headband' },
-  h_ribbon: { slot: 'hat', icon: '🎀', name: 'โบว์', warm: 0, cool: 0, hatK: 'ribbon' },
-  h_goggles: { slot: 'hat', icon: '🥽', name: 'แว่นกันลม', warm: 0, cool: 0, hatK: 'goggles' },
-  h_hood: { slot: 'hat', icon: '🧥', name: 'ฮู้ด', warm: 1, cool: 0, hatK: 'hood' },
-  h_flower: { slot: 'hat', icon: '🌼', name: 'ดอกไม้ติดผม', warm: 0, cool: 0, hatK: 'flower' },
-  h_starClip: { slot: 'hat', icon: '⭐', name: 'กิ๊บดาว', warm: 0, cool: 0, hatK: 'starClip' },
-  h_beanie: { slot: 'hat', icon: '🧶', name: 'หมวกไหมพรม', warm: 1, cool: 0, hatK: 'beanie' },
-  h_helmet: { slot: 'hat', icon: '🪖', name: 'หมวกเหล็ก', warm: 0, cool: 0, hatK: 'helmet' },
+  h_cap: { slot: 'head', icon: '🧢', name: 'หมวกแก๊ปดาว', warm: 0, cool: 0, hatK: 'cap' },
+  h_baseball: { slot: 'head', icon: '🧢', name: 'หมวกเบสบอล', warm: 0, cool: 0, hatK: 'baseball' },
+  h_wizard: { slot: 'head', icon: '🧙', name: 'หมวกพ่อมด', warm: 0, cool: 0, hatK: 'wizard' },
+  h_crown: { slot: 'head', icon: '👑', name: 'มงกุฎ', warm: 0, cool: 0, hatK: 'crown' },
+  h_sailor: { slot: 'head', icon: '⚓', name: 'หมวกกะลาสี', warm: 0, cool: 0, hatK: 'sailor' },
+  h_knight: { slot: 'head', icon: '⛑️', name: 'หมวกอัศวิน', warm: 0, cool: 0, hatK: 'knight' },
+  h_straw: { slot: 'head', icon: '👒', name: 'หมวกฟาง', warm: 0, cool: 1, hatK: 'straw' },
+  h_catEars: { slot: 'head', icon: '🐱', name: 'หูแมว', warm: 0, cool: 0, hatK: 'catEars' },
+  h_bunnyEars: { slot: 'head', icon: '🐰', name: 'หูกระต่าย', warm: 0, cool: 0, hatK: 'bunnyEars' },
+  h_beret: { slot: 'head', icon: '🎨', name: 'หมวกเบเร่ต์', warm: 0, cool: 1, hatK: 'beret' },
+  h_headband: { slot: 'head', icon: '💗', name: 'ที่คาดผม', warm: 0, cool: 0, hatK: 'headband' },
+  h_ribbon: { slot: 'head', icon: '🎀', name: 'โบว์', warm: 0, cool: 0, hatK: 'ribbon' },
+  h_goggles: { slot: 'head', icon: '🥽', name: 'แว่นกันลม', warm: 0, cool: 0, hatK: 'goggles' },
+  h_hood: { slot: 'head', icon: '🧥', name: 'ฮู้ด', warm: 1, cool: 0, hatK: 'hood' },
+  h_flower: { slot: 'head', icon: '🌼', name: 'ดอกไม้ติดผม', warm: 0, cool: 0, hatK: 'flower' },
+  h_starClip: { slot: 'head', icon: '⭐', name: 'กิ๊บดาว', warm: 0, cool: 0, hatK: 'starClip' },
+  h_beanie: { slot: 'head', icon: '🧶', name: 'หมวกไหมพรม', warm: 1, cool: 0, hatK: 'beanie' },
+  h_helmet: { slot: 'head', icon: '🪖', name: 'หมวกเหล็ก', warm: 0, cool: 0, hatK: 'helmet' },
   leafMask: { slot: 'head', icon: '🍃', name: 'หน้ากากใบไม้วิเศษ', warm: 0, cool: 0, air: 1, hat: 'mask' },   // v2.7 breathe in Deadgar
   /* v3.43 👗 outfits (slot body · look = the vinyl outfit · col = its colour) · src: tailor (made/bought) · kingdom (a chest in that kingdom / its restore) · drop (monsters) · merchant (🎩 the wandering merchant) */
   o_farmer: { slot: 'body', icon: '👨‍🌾', name: 'ชุดชาวไร่', warm: 0, cool: 1, col: '#e0a040', look: 'farmer', src: 'tailor' },
@@ -670,6 +670,17 @@ export const WEAR = {
   k_valkara:   { slot: 'body', icon: '🌋', name: 'ชุดทนไฟวัลคารา', warm: 0, cool: 2, col: '#8a3a2a', look: 'knight', src: 'kingdom', k: 'valkara', def: 2 },
   k_deadgar:   { slot: 'body', icon: '🦇', name: 'ชุดคลุมเดดการ์', warm: 1, cool: 0, air: 1, col: '#4a3a5a', look: 'robe', src: 'kingdom', k: 'deadgar' },
 };
+/* v3.87 👕 three slots: head · body · legs — a head piece brings its own hair (no clipping) · each outfit top has matching trousers (L_<top>, same abilities, armour only on the top)
+   the starter set is the same for everyone: a tank top + shorts */
+export const LOOK_LEGS = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a', tank: '#4a6aa8' };
+Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 0, col: '#f4f0e8', look: 'tank', starter: 1 },
+  s_shorts: { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 0, legs: 'shorts', legCol: '#4a6aa8', starter: 1 },
+  s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
+for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.slot !== 'body' || !X.look || X.gone || k === 's_tank') continue;
+  const L = { slot: 'legs', icon: '👖', name: 'กางเกง' + X.name.replace(/^(ชุด|เสื้อ|เกราะ|ผ้าคลุม)/, ''), legs: 'pants', legCol: LOOK_LEGS[X.look] || '#3a3f58', of: k };
+  for (const a of ['warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison']) if (X[a]) L[a] = X[a]; for (const a of ['src', 'k', 'price']) if (X[a] != null) L[a] = X[a]; WEAR['L_' + k] = L }
+export const MASK_HAIR = { veil: 'bob', scarf: 'bob', furmask: 'messy', mask: 'bob' };   // the hair under face-wear
+
 export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
 /* v3.12.1 🔥 torch: held in the A hand · lights the dark · counts as 1 warm piece (50%) · burns `burn` game minutes, then the next one lights
    · goblin camps drop some · camps / kingdom roads have torches standing (light only, not pick-up) */

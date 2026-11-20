@@ -342,7 +342,8 @@ if (false) { let n = 0; const iv = setInterval(() => { if (++n > 40 || S.story.r
 let JHOLD = 0;
 let PL = null, walkT = null, swingT = 0, work = null, sprintT = 0, swimB = 0, RUNON = false, walkS = 0, clearT = 0, CTX = null, AIM = null, AIMK = 0;   // AIM = v2.1 bow drawn
 function spendRun(dt) { if (S.tired) return false; const n = D.RUN_EN * dt * (1 - buffOn('stam')) * (sleepy() ? 1.4 : 1) * hungerK(), b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; S.en = pEn() - (n - b); enT = performance.now(); if (S.en <= 0) { S.en = 0; S.tired = true; toast('💦 เหนื่อยแล้ว! หยุดพักก่อน', 2200) } return true }
-function wornLook() { const body = D.WEAR[S.wear && S.wear.body], top = body && body.col, hat = D.WEAR[S.wear && S.wear.hat]; return Object.assign({}, S.avatar || {}, { wear: body && body.look || 'traveler' }, top ? { top } : {}, hat && hat.hatK ? { hat: hat.hatK } : {}) }   /* v3.43 the outfit's look comes from the worn piece */   /* v3.9 + the hat (layer 2) */
+const BARE = sl => sl === 'body' ? 's_tank' : sl === 'legs' ? 's_shorts' : null;   /* v3.87 taking off a top / trousers = back to the starter tank / shorts */
+function wornLook() { const W = S.wear || {}, body = D.WEAR[W.body], top = body && body.col, head = D.WEAR[W.head], lg = D.WEAR[W.legs]; return Object.assign({}, S.avatar || {}, { wear: body && body.look || 'tank', legs: lg && lg.legs || 'shorts', legCol: lg && lg.legCol || '#4a6aa8' }, top ? { top } : {}, head && head.hatK ? { hat: head.hatK } : head ? { hat: 'none', hatHair: D.MASK_HAIR[head.hat] || 'bob' } : { hat: 'none' }) }   /* v3.87 three slots: the head piece (and its hair) · the top · the legs */   /* v3.43 the outfit's look comes from the worn piece */   /* v3.9 + the hat (layer 2) */
 function buildPlayer() {
   const at = PL ? PL.root.position.clone() : null; if (PL) scene.remove(PL.root);
   if (S.avatar && S.avatar.v !== 2) { S.avatar = vinylFrom(S.avatar); save() }   /* v2.3 everyone becomes the vinyl chibi (old looks are converted) */
@@ -1529,12 +1530,12 @@ $('bHome').addEventListener('click', e => { e.preventDefault(); if (CUT) return;
 /* v2.6 👕 wardrobe: 3 slots · tap a piece to wear it · shows what the weather here needs */
 function wearView() { if (!PL) return; const a = wornLook(); const key = JSON.stringify(a) + (S.wear.head || '');
   if (key === PL.wearK) return; const at = PL.root.position.clone(), yaw = PL.yaw; S.avatarWorn = a; buildPlayer(); PL.wearK = key; PL.root.position.copy(at); PL.yaw = PL.yawT = yaw }
-function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (H) npcHat(g, H.hat) }   /* v2.9 the same fitted hats as the people */
+function hatOn(g) { const H = D.WEAR[S.wear && S.wear.head]; if (H && H.hat) npcHat(g, H.hat) }   /* v2.9 the same fitted hats as the people */
 function openWear() {
   sheet('👕 ชุด', (b, redraw) => { const c = climate(), w = wearSum(), own = Object.keys(S.clothes || {}).filter(k => D.WEAR[k] && !D.WEAR[k].gone);
     const need = c.cold ? `🥶 อากาศตอนนี้หนาวระดับ <b>${c.cold}/2</b> · กัน ❄️ ได้ <b>${c.warm}/2</b>` : c.hot ? `🥵 อากาศตอนนี้ร้อนระดับ <b>${c.hot}/2</b> · กัน ☀️ ได้ <b>${c.cool}/2</b>` : '🙂 อากาศตอนนี้ปกติ (ระดับ 0) · ชุดธรรมดาก็ได้';
     b.innerHTML = `<div class="card"><p>${need}</p><p>ความต้านทานของชุด: ${resistHtml() || '—'}</p><p class="mut">อากาศระดับ 1 ต้องมีชุดสัญลักษณ์นั้น 1 ชิ้น · ระดับ 2 ต้อง 2 ชิ้น (สูงสุด 2) · หนาวจัด: ถือคบเพลิงที่ติดไฟ / อยู่ใกล้กองไฟ = 2 · ฝนตกคบเพลิงดับ</p>${c.short >= .01 ? `<p class="dn">⚠️ ${D.CLIMATE.warn} · หัวใจจะลดเรื่อยๆ</p>` : ''}</div>` +
-      [['hat', '👒 หมวก'], ['head', '😷 หน้า'], ['body', '👗 ชุด']].map(([sl, n]) => `<h3>${n}</h3><div class="wrap">${sl === 'head' || sl === 'hat' ? `<button class="btn sm${!S.wear[sl] ? ' go' : ''}" data-w="" data-s="${sl}">❌ ไม่ใส่</button>` : ''}${own.filter(k => D.WEAR[k].slot === sl).map(k => { const X = D.WEAR[k]; return `<button class="btn sm${S.wear[sl] === k ? ' go' : ''}" data-w="${k}" data-s="${sl}">${X.icon} ${X.name} <small>${X.warm ? '❄️ กันหนาว' : ''}${X.cool ? '🔥 กันร้อน' : ''}${X.swim ? '🏊 ว่ายเร็ว' : ''}${X.air ? '🫁 หายใจ' : ''}${X.def ? '🛡️ +' + X.def : ''}</small></button>` }).join('')}</div>`).join('') +
+      [['head', '🎩 หัว'], ['body', '👕 ตัว'], ['legs', '👖 ขา']].map(([sl, n]) => `<h3>${n}</h3><div class="wrap">${sl === 'head' ? `<button class="btn sm${!S.wear[sl] ? ' go' : ''}" data-w="" data-s="${sl}">❌ ไม่ใส่</button>` : ''}${own.filter(k => D.WEAR[k].slot === sl).map(k => { const X = D.WEAR[k]; return `<button class="btn sm${S.wear[sl] === k ? ' go' : ''}" data-w="${k}" data-s="${sl}">${X.icon} ${X.name} <small>${X.warm ? '❄️ กันหนาว' : ''}${X.cool ? '🔥 กันร้อน' : ''}${X.swim ? '🏊 ว่ายเร็ว' : ''}${X.air ? '🫁 หายใจ' : ''}${X.def ? '🛡️ +' + X.def : ''}</small></button>` }).join('')}</div>`).join('') +
       '<p class="mut">ชุดใหม่: 🪡 สั่งตัดที่ร้านตัดเสื้อ · 📦 ชุดประจำอาณาจักรซ่อนในหีบ (หรือได้เมื่อฟื้นฟู) · ⚔️ มอนสเตอร์บางชนิดทิ้งเกราะ · 🎩 พ่อค้าลึกลับ</p>';
     b.querySelectorAll('[data-s]').forEach(x => x.onclick = () => { S.wear[x.dataset.s] = x.dataset.w || null; sfx('tap'); save(); wearView(); redraw() }) });
 }
@@ -1922,7 +1923,7 @@ function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key 
     b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { const a = x.dataset.im, k = key.slice(1);
       if (a === 'cancel') { close(); return }
       if (a === 'wear') { const it = S.bag.find(q => q.id === +k); if (D.ITEMS[it.t].slot === 'sword' && !!D.ITEMS[it.t].tool !== gFarm()) { (S.eqKeep = S.eqKeep || {})[gFarm() ? 'fight' : 'farm'] = it.id; hint(D.ITEMS[it.t].tool ? '🧰 ใช้ในโหมดฟาร์ม (🔄 ซ้ายของ X)' : '⚔️ ใช้ในโหมดต่อสู้ (🔄 ซ้ายของ X)', 1500); save(); done(); return } if (D.ITEMS[it.t].slot === 'sword') { equipA(it); DRAWN = false; setTool(S.hand === 'w' ? '' : S.hand) } else S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); sfx('knock'); save(); hud(); gearView(); done(); return }
-      if (a === 'wearC') { const X = D.WEAR[k]; S.wear[X.slot] = S.wear[X.slot] === k ? null : k; sfx('tap'); save(); wearView(); done(); return }
+      if (a === 'wearC') { const X = D.WEAR[k]; S.wear[X.slot] = S.wear[X.slot] === k ? BARE(X.slot) : k; sfx('tap'); save(); wearView(); done(); return }
       if (a === 'arrow') { S.arrowT = key === 'arw' ? '' : key.slice(2); sfx('tap'); aimHud(); save(); done(); return }
       if (a === 'drop' || a === 'free') { close(); const all = (sel.n || 1) > 1 && !/^[iwp]/.test(key); confirmBox(`${a === 'free' ? 'ปล่อย' : 'ทิ้ง'} ${sel.name}${all ? ` ทั้งหมด ×${sel.n}` : ''}?`, () => { discardItem(key, all ? Infinity : 1); redraw() }, a === 'free' ? '🌿 ปล่อย' : '🗑️ ทิ้ง'); return }
       if (a === 'feed') { close(); openPet(S.pets.find(p => p.id === k)); return }
@@ -1937,7 +1938,7 @@ function bagBind(b, redraw) {
     b.querySelectorAll('[data-un]').forEach(x => x.onclick = () => { S.eq[x.dataset.un] = null; if (x.dataset.un === 'sword' && S.hand !== 'torch') { S.hand = 'w'; DRAWN = false; setTool('') } save(); hud(); redraw() });
     b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => confirmBox(`ขายชิ้นนี้ได้ 🪙 ${x.dataset.v}?`, () => { S.bag = S.bag.filter(i => i.id !== +x.dataset.sell); S.coin += +x.dataset.v; save(); hud(); redraw() }, 'ขาย'));
     b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => { usePotion(x.dataset.use); redraw() });
-    b.querySelectorAll('[data-wr]').forEach(x => x.onclick = () => { const k = x.dataset.wr, sl = D.WEAR[k].slot; S.wear[sl] = S.wear[sl] === k ? null : k; sfx('tap'); save(); wearView(); redraw() });
+    b.querySelectorAll('[data-wr]').forEach(x => x.onclick = () => { const k = x.dataset.wr, sl = D.WEAR[k].slot; S.wear[sl] = S.wear[sl] === k ? BARE(sl) : k; sfx('tap'); save(); wearView(); redraw() });
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const k = x.dataset.sm; if (!(S.mats[k] > 0)) return; S.mats[k]--;   /* v3.79 never below 0 */ S.coin += Math.round(D.MATS[k][2] * D.SELL_RATE); save(); hud(); redraw() });
     b.querySelectorAll('[data-hold]').forEach(x => x.onclick = () => { const v = x.dataset.hold, f = v.startsWith('f:'); const k = f ? v.slice(2) : v; const left = (f ? S.fish : S.ingr)[k] || 0; if (carryTake(k, f, 1) && left > 1) { x.textContent = `✋ ถือ (${carryN()}/${D.CARRY.max})`; const n = document.querySelector(`.invgrid [data-k="${f ? 'f' : 'g'}${k}"] i`); if (n) n.textContent = left - 1 } else redraw() });   /* v3.68 ✋ the menu stays open: tap again to take more · B steps back */
     b.querySelectorAll('[data-meal]').forEach(x => x.onclick = () => { closeSheets(); eatMeal(x.dataset.meal) });
@@ -1954,7 +1955,7 @@ function bagItem(tab, key, redrawBag) { const x = invItems(tab).find(o => o.key 
 function discardItem(key, n) { const dec = (box, k) => { if (!box || !(box[k] > 0)) return; box[k] = Math.max(0, box[k] - Math.min(n, box[k])) };
   if (key.startsWith('i')) { const id = +key.slice(1); for (const sl in S.eq) if (S.eq[sl] === id) S.eq[sl] = null; S.bag = S.bag.filter(i => i.id !== id); gearView() }
   else if (key.startsWith('p')) { const id = key.slice(1), e = PA.get(id); if (e) { scene.remove(e.A.root); removePick(W, e.pick); PA.delete(id) } S.pets = S.pets.filter(p => p.id !== id); S.team = S.team.filter(t => t !== id) }
-  else if (key.startsWith('w')) { const k = key.slice(1), X = D.WEAR[k]; if (X && S.wear[X.slot] === k) { S.wear[X.slot] = null; wearView() } if (S.clothes) delete S.clothes[k] }
+  else if (key.startsWith('w')) { const k = key.slice(1), X = D.WEAR[k]; if (X && X.starter) return; if (X && S.wear[X.slot] === k) { S.wear[X.slot] = BARE(X.slot); wearView() } if (S.clothes) delete S.clothes[k] }
   else if (key === 'arw') S.arrows = Math.max(0, (S.arrows || 0) - Math.min(n, S.arrows || 0));
   else if (key.startsWith('ax')) dec(S.arrowsX, key.slice(2));
   else { const box = { m: S.mats, g: S.ingr, f: S.fish, s: S.seeds, r: S.meals, u: S.potions, o: S.food }[key[0]]; dec(box, key.slice(1)) }
@@ -2447,7 +2448,7 @@ function jCands() { const L = [...mons.filter(m => m.A && m.A.root.visible).map(
   for (const d of drops) { const k = d.it ? 'g:' + d.it.t : d.mat ? 'm:' + d.mat : d.ingr ? 'i:' + d.ingr : null; if (k) L.push([[k], d.g]) }
   const q = me(); for (const o of W.clear.values()) { if (!(o.g || o.inst) || S.cleared[o.id] || Math.abs(o.x - q.x) > 9 || Math.abs(o.z - q.z) > 9) continue; const T = D.CLEAR[o.t], ks = [...Object.keys(T.mat || {}).map(m => 'm:' + m), ...(T.ingr ? ['i:' + T.ingr[0]] : [])].filter(k => D.MATS[k.slice(2)] || D.INGR[k.slice(2)]); if (ks.length) L.push([ks, P(o.x, o.z)]) }
   return L }
-function jSelf() { const L = []; for (const sl of ['body', 'hat', 'head']) if (S.wear && S.wear[sl] && D.WEAR[S.wear[sl]]) L.push('w:' + S.wear[sl]); for (const sl of ['sword', 'shield', 'bow']) { const it = S.eq[sl] && S.bag.find(x => x.id === S.eq[sl]); if (it) L.push('g:' + it.t) } return L }
+function jSelf() { const L = []; for (const sl of ['head', 'body', 'legs']) if (S.wear && S.wear[sl] && D.WEAR[S.wear[sl]]) L.push('w:' + S.wear[sl]); for (const sl of ['sword', 'shield', 'bow']) { const it = S.eq[sl] && S.bag.find(x => x.id === S.eq[sl]); if (it) L.push('g:' + it.t) } return L }
 let SHOW = null;
 function showOff() { if (SHOW && !FRAME) { scene.remove(SHOW.g); SHOW = null } }
 function showDraw(key) { if (FRAME) return; closeSheets(); showOff(); const [p, a] = key.split(':'), g = new THREE.Group(), q = me(), fy = PL.yaw, x = q.x + Math.sin(fy) * 1.8, z = q.z + Math.cos(fy) * 1.8;
@@ -3516,7 +3517,7 @@ function noteView(n) { const g = new THREE.Group(), y = groundH(n.x, n.z); g.pos
 const KCHEST = {}; function kChestOf(c) { const k = kingdomAt(c.x, c.z).k, w = 'k_' + k; if (!D.WEAR[w] || (S.clothes || {})[w]) return null;
   if (!(k in KCHEST)) { const K = KINGDOMS[k]; let best = null, bd = 1e9; for (const c2 of CHESTS) { if (kingdomAt(c2.x, c2.z).k !== k || c2.trap) continue; const d = dist(c2.x, c2.z, K.x, K.z); if (d < bd) { bd = d; best = c2.id } } KCHEST[k] = best }
   return KCHEST[k] === c.id ? w : null }
-function giveWear(k, why) { if (!D.WEAR[k] || (S.clothes || {})[k]) return false; (S.clothes = S.clothes || {})[k] = 1; bump('outfits'); save(); const X = D.WEAR[k];
+function giveWear(k, why) { if (!D.WEAR[k] || (S.clothes || {})[k]) return false; (S.clothes = S.clothes || {})[k] = 1; if (D.WEAR['L_' + k]) S.clothes['L_' + k] = 1;   /* v3.87 an outfit comes with its trousers */ bump('outfits'); save(); const X = D.WEAR[k];
   setTimeout(() => toast(`👗 ${why || 'ได้ชุดใหม่!'}<br><b>${X.icon} ${X.name}</b><br><small>${[X.warm ? '❄️ กันหนาว ' + X.warm : '', X.cool ? '🔥 กันร้อน ' + X.cool : '', X.swim ? '🏊 ว่ายเร็ว' : '', X.air ? '🫁 หายใจในเดดการ์' : '', X.def ? '🛡️ +' + X.def : ''].filter(Boolean).join(' · ')} · ใส่ได้ที่ 🎒 → ชุด</small>`, 3200), 600); return true }
 function openWChest(id) { const c = CHESTS.find(c => c.id === id); if (!c) return; if ((S.chests || {})[id]) { hint('📦 หีบนี้ว่างเปล่าแล้ว', 1200); return } (S.chests = S.chests || {})[id] = Date.now(); if (c.lid) c.lid.rotation.x = -1.9; sfx('done');
   bump('kc_' + kingdomAt(c.x, c.z).k); if (c.trap && !inIsle(c.x, c.z)) { shakeT = .4; sfx('boom'); const B = kingdomAt(c.x, c.z), L = D.K_MONS[B.k] || WILD_MONS[1]; for (let i = 0; i < 3; i++) monSpawn(L[i % L.length], c.x + Math.cos(i * 2.1) * 2.5, c.z + Math.sin(i * 2.1) * 2.5, { area: 'wild', aggro: true }); if (Math.random() < .5) addDeb('poison'); toast('💥 กับดัก! มอนสเตอร์โผล่ออกมา!', 2400); save(); return }

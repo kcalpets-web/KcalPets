@@ -13,7 +13,7 @@ export function fresh() {
     tools: { sickle: 0, axe: 0, hammer: 0, rod: 0 }, has: { sword: false, rod: false, hoe: false },
     plots: {}, seeds: {},                                   // v1.0 farm: 'x,z' → { c: crop|null, t: planted at (ms) } · seed counts
     mats: {}, potions: { antidote: 1, mpS: 1 }, deb: {}, food: {}, fish: {},
-    bag: [], eq: { sword: null, shield: null, bow: null }, clothes: { tunic: 1 }, wear: { head: null, body: 'tunic', hat: null }, wearV: 2, arrows: 0, shrines: {}, nextItem: 1, itemV: 2,
+    bag: [], eq: { sword: null, shield: null, bow: null }, clothes: { s_tank: 1, s_shorts: 1 }, wear: { head: null, body: 's_tank', legs: 's_shorts' }, wearV: 3, arrows: 0, shrines: {}, nextItem: 1, itemV: 2,
     camps: {}, zones: {}, fog: '', bp: {}, wcamps: {}, builds: [], scrolls: {}, ride: null, spirit: { hp: 0, en: 0, free: 0 }, spiritV: 1, ruins: {},     /* v1.2: blueprints owned · wild monster camps { seen, c: cleared, o: chest opened } */                                         // v0.9: discovered camps (warp) · visited zones · explored map cells
     time: DAY.first, ingr: {}, meals: {}, buff: null, ach: {},                // v0.6: game clock (minutes 0–1439) · cooking ingredients · cooked dishes · food buff · claimed achievements
     journal: { recipes: {}, mons: {}, gear: {}, sketch: {} },               // the notebook: discovered recipes · monsters seen/killed · gear collected · sketches drawn (images in localStorage ng_sk_<key>)
@@ -45,7 +45,11 @@ function fromObj(o) {
       if (!o.itemV) { for (const it of S.bag) { const T = ITEMS[it.t], old = OLD_ITEM[it.t], m = RAR_MUL[it.r] || 1;   // v2.0: keep old gear as strong as it was
           if (old) it.ba = Math.max(0, Math.round((T.slot === 'shield' ? old[1] : old[0]) * m) + (T.slot === 'shield' ? 0 : 8) - (T.slot === 'shield' ? T.def : T.atk));   /* +8 = the old bare-hand attack (12 → 4) */ else it.ba = it.ba || 0; it.bd = it.bd || 0; it.d = itemStats(it).dur }
         S.itemV = 2; S.needSword = !!(S.has && S.has.sword) }   // v1.4: old save → main.js gives the spirits for quests already done
-    GEN = S.gen || 0; return S }
+    if ((S.wearV || 0) < 3) {   /* v3.87 head · body · legs: hats + face-wear share the head · every outfit you own gets its trousers · everyone gets the tank top + shorts · what you wore stays on */
+    const W = S.wear || {}, C = S.clothes = S.clothes || {}; C.s_tank = 1; C.s_shorts = 1; for (const k of Object.keys(C)) if (WEAR['L_' + k]) C['L_' + k] = 1;
+    const body = WEAR[W.body] ? W.body : 's_tank'; let legs = WEAR['L_' + body] ? 'L_' + body : 's_shorts'; if (S.avatar && S.avatar.bottom === 'skirt') { C.s_skirt = 1; legs = 's_skirt' }
+    S.wear = { head: W.hat || W.head || null, body, legs }; S.wearV = 3 }
+  GEN = S.gen || 0; return S }
 function tryKey(k) { const raw = localStorage.getItem(k); if (!raw) return { raw: null }; let o = null; try { o = JSON.parse(raw) } catch (e) { return { raw, bad: 'json' } }
   if (!o || typeof o !== 'object' || o.v !== 3) return { raw, bad: 'version ' + (o && o.v) }; try { return { raw, S: fromObj(o) } } catch (e) { return { raw, bad: 'load ' + e.message } } }
 export function load() {
