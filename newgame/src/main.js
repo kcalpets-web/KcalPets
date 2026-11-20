@@ -575,7 +575,8 @@ function envTick(dt, now, mv) { if (GLIDE || LIFT || AIRAIM || RIDE || HORSE || 
   if (AIRAIM && w !== 'water') { AIRAIM.y -= D.HOLD.airSink * dt; q.y = Math.max(h, AIRAIM.y); jumpT = 0; PL.fallV = 0; PL.swim = PL.climb = false; if (q.y <= h + .05) AIRAIM = null; return }   /* v3.12.6 aiming in the air: hover, sink slowly */
   const deck = h > h0g + .25 && h > -.3;   /* v3.59 standing on a pier / bridge / deck over the water: no swimming or wading */
   PL.swim = w === 'water' && h0g < -D.WADE.deep && !deck; PL.wade = w === 'water' && !PL.swim && !deck; if (PL.wade && mv && now > (PL.wadeT || 0)) { PL.wadeT = now + D.WADE.ring * 1000; VF.ring(q.x, -.04, q.z, '#ffffff', .7, .35) }   /* v3.50 shallow = wade (no swimming / face-down at ankle depth) */
-  PL.climb = !PL.swim && mv && (ahead - h) / .4 > D.SLOPE;
+  const inAir = !PL.swim && q.y - h > .5 && !(now < jumpT);   /* v3.87 falling (no glider) = no ⚡ spent: no grabbing a cliff / walking uphill in mid-air */
+  PL.climb = !PL.swim && !inAir && mv && (ahead - h) / .4 > D.SLOPE;
   if (PL.swim) { const ty = DIVE && h + .45 < -.9 ? Math.max(h + .45, D.PETSKILL.diveY) : -.55 + Math.sin(now / 300) * .04; q.y += (ty - q.y) * Math.min(1, dt * (DIVE ? 2.5 : 6)); if (!DROWN && !wbOn() && !spendRunN(D.SWIM_EN * dt * (mv ? 1 : .35))) drown(now) }   /* v3.28 🐋 diving / no tiring inside the water barrier */          // exhausted while swimming → you sink and wash up on a shore nearby
   else { const tgt = h + (now < jumpT ? (k => 4 * D.JUMP.h * k * (1 - k))(1 - (jumpT - now) / (D.JUMP.t * 1000)) : 0);   /* v2.5 off a cliff you fall (not snap down) — press X in the air to open the glider */
     if (q.y - tgt > .5 && !PL.climb) { if (PL.fallTop == null) PL.fallTop = q.y; PL.fallV = Math.min(D.GLIDER.fallMax, (PL.fallV || 0) + 18 * dt); q.y = Math.max(tgt, q.y - PL.fallV * dt) }
@@ -584,7 +585,7 @@ function envTick(dt, now, mv) { if (GLIDE || LIFT || AIRAIM || RIDE || HORSE || 
       { const gx2 = groundH(q.x + .5, q.z) - groundH(q.x - .5, q.z), gz2 = groundH(q.x, q.z + .5) - groundH(q.x, q.z - .5); if (Math.hypot(gx2, gz2) > .3) PL.yawT = Math.atan2(gx2, gz2) }   /* face the slope */
       if (!S.climbTip) { S.climbTip = 1; hint('🧗 กำลังปีน · ใช้ ⚡ ระหว่างปีน · หน้าผาที่ชันมากปีนไม่ได้', 2200) } }
     else { PL.fallV = 0; q.y = tgt } if (w === 'land' && h > -.05) lastLand = [q.x, q.z];
-    if (PL.climb) spendRunN(D.CLIMB_EN * dt); else if (mv && !PL.swim && !RIDE && !GLIDE && !HORSE) { const up = (ahead - h) / .4; if (up > D.UPHILL.from) spendRunN(D.UPHILL.en * Math.min(1, (up - D.UPHILL.from) / (D.SLOPE - D.UPHILL.from)) * dt) }   /* v3.1 walking uphill tires you (rest to recover) */
+    if (PL.climb) spendRunN(D.CLIMB_EN * dt); else if (mv && !inAir && !PL.swim && !RIDE && !GLIDE && !HORSE) { const up = (ahead - h) / .4; if (up > D.UPHILL.from) spendRunN(D.UPHILL.en * Math.min(1, (up - D.UPHILL.from) / (D.SLOPE - D.UPHILL.from)) * dt) }   /* v3.1 walking uphill tires you (rest to recover) */
     const gx = groundH(q.x + .3, q.z) - groundH(q.x - .3, q.z), gz = groundH(q.x, q.z + .3) - groundH(q.x, q.z - .3), gl = Math.hypot(gx, gz);
     if (S.tired && gl > D.SLOPE * .6 * .6) { q.x -= gx / gl * 2.2 * dt; q.z -= gz / gl * 2.2 * dt; q.y = groundH(q.x, q.z) } }   // exhausted on a cliff → slide down
   if (PL.swim || PL.climb) { const a = PL.rig.armL, b = PL.rig.armR, base = PL.swim ? -1.6 : -2.6, sw = Math.sin(now / (PL.swim ? 200 : 150)) * (PL.swim ? .8 : .5); if (a && b) { a.rotation.x = base + sw; b.rotation.x = base - sw } }
