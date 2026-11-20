@@ -471,6 +471,8 @@ body.pad:not(.gamepad) .ov:not(.mapfs) .shb{padding-bottom:14px!important}
 .qsubc button{font-size:22px}
 /* v3.75 every window blurs the game behind it like the bag */
 .ov:not(.mapfs):not(.dlg){background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+/* v3.75 the whole window frame shows (a rim all round · it ends inside the screen) */
+.ov:not(.mapfs):not(.dlg):not(.inv) .sh{border:2px solid #ffffff2a;border-top:0;box-shadow:0 8px 24px #0008}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

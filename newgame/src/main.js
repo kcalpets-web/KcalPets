@@ -1575,7 +1575,7 @@ let atlasK = 'map';
 async function openAtlas(k) { closeSheets(); atlasK = ATLAS.some(t => t[0] === k) ? k : 'map'; const T = ATLAS.find(t => t[0] === atlasK); await T[3](); const ov = topOv(); if (!ov) return; ov.dataset.atlas = atlasK;
   const bar = document.createElement('div'); bar.className = 'atlasT'; bar.innerHTML = carBar(ATLAS, atlasK, 'data-at');
   bar.querySelectorAll('[data-at]').forEach(x => x.onclick = () => { if (x.dataset.at !== atlasK) { sfx('tap'); openAtlas(x.dataset.at) } }); (ov.querySelector('.sh') || ov.firstElementChild || ov).prepend(bar) }
-function winLine() { const port = innerHeight >= innerWidth, h = port ? Math.max(360, innerHeight - D.WIN.padRoom) : innerHeight; document.documentElement.style.setProperty('--winH', h + 'px') }
+function winLine() { const port = innerHeight >= innerWidth, h = port ? Math.max(360, innerHeight - D.WIN.padRoom) : innerHeight - D.WIN.landGap; document.documentElement.style.setProperty('--winH', h + 'px') }
 winLine(); addEventListener('resize', () => setTimeout(winLine, 100));
 function atlasStep(d) { const i = ATLAS.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(ATLAS[(i + d + ATLAS.length) % ATLAS.length][0]) }
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
