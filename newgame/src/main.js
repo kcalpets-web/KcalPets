@@ -1592,12 +1592,13 @@ let atlasK = 'map';
 /* v3.80 two groups: the minimap opens 🗺️ แผนที่ · 📸 อัลบั้ม · 👤 โปรไฟล์ · the ☰ button opens 📜 เควส · 📖 สมุดผจญภัย · ⚙️ ตั้งค่า */
 const AT_MAP = ['map', 'album', 'me'], AT_MENU = ['quest', 'adv', 'set'], atGroup = k => (AT_MENU.includes(k) ? AT_MENU : AT_MAP).map(id => ATLAS.find(t => t[0] === id));
 async function openAtlas(k) { closeSheets(); atlasK = ATLAS.some(t => t[0] === k) ? k : 'map'; const T = ATLAS.find(t => t[0] === atlasK); await T[3](); const ov = topOv(); if (!ov) return; ov.dataset.atlas = atlasK;
+  if (AT_MENU.includes(atlasK)) { ov.dataset.solo = 1; return }   /* v3.81 a page picked from ☰ stands alone (no row of pages on top) */
   const bar = document.createElement('div'); bar.className = 'atlasT'; bar.innerHTML = carBar(atGroup(atlasK), atlasK, 'data-at');
   bar.querySelectorAll('[data-at]').forEach(x => x.onclick = () => { if (x.dataset.at !== atlasK) { sfx('tap'); openAtlas(x.dataset.at) } }); (ov.querySelector('.sh') || ov.firstElementChild || ov).prepend(bar) }
 function winLine() { const port = innerHeight >= innerWidth, avail = port ? Math.max(360, innerHeight - D.WIN.padRoom) : innerHeight, H = Math.min(D.WIN.h, avail - 2 * D.WIN.landGap), top = Math.max(D.WIN.landGap, Math.round((avail - H) / 2)), st = document.documentElement.style;   /* v3.75 one window height in both orientations · portrait: in the middle of the space above the pad (eye level) */
   st.setProperty('--winTop', top + 'px'); st.setProperty('--winH', (top + H) + 'px'); st.setProperty('--bagH', (port ? avail : innerHeight) + 'px') }
 winLine(); addEventListener('resize', () => setTimeout(winLine, 100));
-function atlasStep(d) { const G = atGroup(atlasK), i = G.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(G[(i + d + G.length) % G.length][0]) }
+function atlasStep(d) { if (AT_MENU.includes(atlasK)) return; const G = atGroup(atlasK), i = G.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(G[(i + d + G.length) % G.length][0]) }
 /* v3.80 ☰ the menu: pick a section first (big tiles like the bag) */
 function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, close) => { b.innerHTML = `<div class="mpick">${AT_MENU.map(k => { const T = ATLAS.find(t => t[0] === k); return `<button class="mpt" data-mp="${k}"><b>${T[1]}</b><span>${T[2]}</span></button>` }).join('')}</div>`;
   b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); openAtlas(x.dataset.mp) }) }, { cls: 'menuPick dlg' }) }
@@ -3782,7 +3783,7 @@ function idleTick(now) { const q = me(); if (!IDLE) return;
       if (!nearT && (W2.wait -= dt) <= 0) { const dd = stepTo(A, W2.t[0], W2.t[1], .85, dt, walkLand); if (dd < .15) { W2.wait = 1.5 + Math.random() * 5; const a = Math.random() * 6.28, r = .8 + Math.random() * W2.r; W2.t = [W2.home[0] + Math.cos(a) * r, W2.home[1] + Math.sin(a) * r] } else mv = true }
       if (nearT) A.yawT = Math.atan2(q.x - p.x, q.z - p.z); animate(A, mv, dt, now, 9); if (A.pick) { A.pick.position.x = p.x; A.pick.position.z = p.z } }
     A.body.scale.y = 1 + Math.sin(now / 650 + A.ph) * .018; const hd = A.rig.head;
-    if (hd) { const want = d < 5.5 ? Math.max(-.9, Math.min(.9, ((Math.atan2(q.x - p.x, q.z - p.z) - A.root.rotation.y - (A.body.rotation.y || 0) + Math.PI * 3) % (Math.PI * 2)) - Math.PI)) : Math.sin(now / 2600 + A.ph) * .45; hd.rotation.y += (want - hd.rotation.y) * .08 }
+    if (hd) { const rel = Math.atan2(q.x - p.x, q.z - p.z) - A.root.rotation.y - (A.body.rotation.y || 0), want = d < 5.5 ? Math.max(-.9, Math.min(.9, Math.atan2(Math.sin(rel), Math.cos(rel)))) : Math.sin(now / 2600 + A.ph) * .45;   /* v3.82 a true wrap (the old % broke once the body had turned past a full circle → the head snapped ±0.9 every frame) */ hd.rotation.y += (want - hd.rotation.y) * .08 }
     if (d < 4 && !A.near) { A.near = true; if (now > (A.waveNext || 0)) { A.waveT = now + 1700; A.waveNext = now + 12000 } } else if (d > 7) A.near = false;
     const ar = A.rig.armR; if (ar) { if (now < (A.waveT || 0)) { ar.rotation.x = -2.7; ar.rotation.z = .35 + Math.sin(now / 110) * .35 } else if (A.waveT) { A.waveT = 0; ar.rotation.x = 0; ar.rotation.z = 0 } } } }
 const FLY = []; { const wm = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: .6, emissive: '#222' }), wg = new THREE.CircleGeometry(.09, 10);
