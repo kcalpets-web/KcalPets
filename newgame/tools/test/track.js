@@ -31,7 +31,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8814, OUT = process.arg
     await pg.screenshot({ path: OUT + '/map-fill.png' }); await close(); await E(() => { window.__ng.revealAll(); window.__ng.S.kseen = { navalee: 1, luminia: 1, sylvaren: 1 } }); await wait(3000); await E(() => window.__ng.openMap()); await wait(1500); await pg.screenshot({ path: OUT + '/map-all.png' }); await close();
     // 👤 the profile (atlas)
     await E(() => window.__ng.openAtlas('me')); await wait(800);   /* v3.74 👤 profile = an atlas page */
-    const me = await E(() => ({ card: !!document.querySelector('.ov .card'), tab: (document.querySelector('.atlasT .on') || {}).dataset?.at })); log('profile page', JSON.stringify(me)); if (!me.card || me.tab !== 'me') errs.push('the 👤 profile page is empty'); await pg.screenshot({ path: OUT + '/bag-me.png' }); await close();
+    const me = await E(() => ({ card: !!document.querySelector('.ov .card'), tab: (document.querySelector('.atlasT .on') || {}).dataset?.at })); log('profile page', JSON.stringify(me)); if (!me.card) errs.push('the 👤 profile page is empty');   /* v3.91 a ☰ page alone (no page row) */ await pg.screenshot({ path: OUT + '/bag-me.png' }); await close();
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();

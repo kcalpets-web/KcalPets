@@ -42,7 +42,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8889, OUT = process.argv[2] || '/tmp/
       while (performance.now() - t0 < 16000 && !on) { await new Promise(r => setTimeout(r, 200)); on = !!N.RUNON } en0 = N.pEn ? N.pEn() : S.en; const at = performance.now() - t0; await new Promise(r => setTimeout(r, 3000)); const en1 = S.en; N.actA(); const dashed = (N.sprintT || 0) > sp0 + 1; j.on = false; await new Promise(r => setTimeout(r, 1500)); return { on, at: Math.round(at), en0, en1, after: !!N.RUNON, dashed } });
     log('v3.86 no running on foot', JSON.stringify(RN)); if (RN.on) errs.push('v3.86 holding the stick should not run on foot'); if (RN.dashed) errs.push('A should not dash');
     // ☰ = เควส · สมุดผจญภัย · ตั้งค่า
-    await E(() => document.getElementById('mMap').click()); await wait(800); const mp = await E(() => [...document.querySelectorAll('.ov [data-mp]')].map(x => x.dataset.mp).join(',')); log('☰', mp); if (mp !== 'quest,adv,set,howto') errs.push('☰ should offer the three sections'); await pg.screenshot({ path: OUT + '/menu.png' });
+    await E(() => document.getElementById('mMap').click()); await wait(800); const mp = await E(() => [...document.querySelectorAll('.ov [data-mp]')].map(x => x.dataset.mp).join(',')); log('☰', mp); if (mp !== 'quest,journey,mats,craft,build,album,me,set,howto') errs.push('v3.91 ☰ should offer all 9'); await pg.screenshot({ path: OUT + '/menu.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

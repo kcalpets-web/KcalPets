@@ -16,15 +16,18 @@ const ROOT = '/home/user/KcalPets', PORT = 8896, OUT = process.argv[2] || '/tmp/
     const id = await E(() => { const N = window.__ng, q = N.me, b = { id: 'st1', k: 'storage', x: q.x + 2, z: q.z, r: 0, done: 1, fix: Date.now() }; N.S.builds.push(b); return b.id });
     await E(id => window.__ng.openBuilt(id), id); await wait(700); const title = await E(() => (document.querySelector('.ov h2') || {}).textContent); log('opened', title); if (!/หีบเก็บของ/.test(title || '')) errs.push('A at the chest should open it');
     await pg.screenshot({ path: OUT + '/store.png' });
-    // wood in (all) · 1 stone in · the knight sword in (not the one in hand)
+    // v3.91 a grid like the bag: 🎒 side → tap wood → 🗃️ ใส่หีบทั้งหมด · 1 stone · the spare sword (not the one in hand)
     const clk = sel => E(s => { const x = document.querySelector(s); if (x) { x.click(); return 1 } return 0 }, sel);
-    if (!await clk('.ov [data-sp="mats:wood:all"]')) errs.push('no "put in" for wood'); await wait(300); await clk('.ov [data-sp="mats:stone:1"]'); await wait(300);
-    const eqBtn = await E(() => !!document.querySelector('.ov [data-gp="5"]')); if (eqBtn) errs.push('the sword in hand should not go in'); if (!await clk('.ov [data-gp="6"]')) errs.push('no "put in" for the spare sword'); await wait(300);
+    const pick = async (tile, q) => { if (!await clk('.ov.store [data-sk="' + tile + '"]')) return 0; await wait(300); const ok = await clk('.ov.dlg [data-q="' + q + '"]'); await wait(400); return ok };
+    const grid = await E(() => ({ tiles: document.querySelectorAll('.ov.store .invgrid .tile').length, slots: (document.querySelector('.ov.store .invslots b') || {}).textContent })); log('chest grid', JSON.stringify(grid)); if (grid.tiles !== 25 || !/0\/60/.test(grid.slots || '')) errs.push('v3.91 the chest should show a 5×5 grid like the bag (0/60)');
+    await clk('.ov.store [data-bt="bag"]'); await wait(400);
+    if (!await pick('mats:wood', 'all')) errs.push('no wood in the 🎒 side'); if (!await pick('mats:stone', '1')) errs.push('no "1" for stone');
+    const eqBtn = await E(() => !!document.querySelector('.ov.store [data-sk="b5"]')); if (eqBtn) errs.push('the sword in hand should not be offered'); if (!await pick('b6', 'all')) errs.push('no spare sword to put in');
     let r = await E(id => { const N = window.__ng, b = N.bOf(id); return { wood: N.S.mats.wood, stone: N.S.mats.stone, st: b.st, used: N.storeUsed(b), bag: N.S.bag.map(i => i.id) } }, id); log('after putting in', JSON.stringify(r));
     if (r.wood || r.stone !== 19 || r.st.mats.wood !== 50 || r.st.mats.stone !== 1 || r.used !== 3 || r.bag.includes(6)) errs.push('things did not go into the chest');
-    await pg.screenshot({ path: OUT + '/store-in.png' });
+    await clk('.ov.store [data-bt="st"]'); await wait(400); await pg.screenshot({ path: OUT + '/store-in.png' });
     // take back
-    await clk('.ov [data-st="mats:wood:all"]'); await wait(300); await clk('.ov [data-gt="0"]'); await wait(300);
+    await pick('mats:wood', 'all'); await pick('g0', 'all');
     r = await E(id => { const N = window.__ng, b = N.bOf(id); return { wood: N.S.mats.wood, used: N.storeUsed(b), bag: N.S.bag.map(i => i.id) } }, id); log('after taking out', JSON.stringify(r)); if (r.wood !== 50 || r.used !== 1 || !r.bag.includes(6)) errs.push('things did not come back out');
     // 60 slots: full → no more · can't knock it down while it holds things
     const full = await E(id => { const N = window.__ng, b = N.bOf(id); b.st.gear = []; for (let i = 0; i < 59; i++) b.st.gear.push({ id: 900 + i, t: 'travelerSword', r: 'B' }); const before = N.storeUsed(b), n = N.storePut(b, 'mats', 'wood', 5); N.demolish(b); return { before, n, still: !!N.bOf(id) } }, id);

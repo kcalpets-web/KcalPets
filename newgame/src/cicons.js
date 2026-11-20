@@ -209,3 +209,9 @@ export function clayEmoji(g, e) { const N = 64, cv = document.createElement('can
   for (let y = 0; y < N - 1; y++) for (let xx = 0; xx < N - 1; xx++) { const a = vi[y * N + xx], b = vi[y * N + xx + 1], c = vi[(y + 1) * N + xx], f = vi[(y + 1) * N + xx + 1]; if (a >= 0 && c >= 0 && b >= 0) idx.push(a, c, b); if (b >= 0 && c >= 0 && f >= 0) idx.push(b, c, f) }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, MAT), back = new THREE.Mesh(geo, MAT); back.scale.z = -.35; g.add(m, back); return g }
+
+/* v3.91 a garment in any colour (the bag's trousers / skirts) */
+export function garment(g, kind, col) { const c = new THREE.Color(col), lo = '#' + c.clone().multiplyScalar(.55).getHexString(), hi = '#' + c.clone().lerp(new THREE.Color('#ffffff'), .35).getHexString();
+  if (kind === 'skirt') ext(g, 'skirt|' + col, s => { s.moveTo(-.22, .3); s.lineTo(.22, .3); s.lineTo(.46, -.32); s.lineTo(-.46, -.32); s.lineTo(-.22, .3) }, lo, hi);
+  else ext(g, kind + '|' + col, kind === 'shorts' ? SHORTS : PANTS, lo, hi);
+  ext(g, 'band|' + col, s => { s.moveTo(kind === 'skirt' ? -.23 : -.36, kind === 'shorts' ? .3 : kind === 'skirt' ? .3 : .48); s.lineTo(kind === 'skirt' ? .23 : .36, kind === 'shorts' ? .3 : kind === 'skirt' ? .3 : .48); s.lineTo(kind === 'skirt' ? .23 : .36, kind === 'shorts' ? .22 : kind === 'skirt' ? .22 : .4); s.lineTo(kind === 'skirt' ? -.23 : -.36, kind === 'shorts' ? .22 : kind === 'skirt' ? .22 : .4) }, '#5a3a20', '#a8703e', [0, 0, .08], 1, [0, 0, 0], .03); return g }
