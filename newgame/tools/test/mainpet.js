@@ -38,7 +38,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
     // B = get off · it stays by you
     await E(() => window.__ng.dismount()); await wait(1500); P = await pet(); log('B → off', JSON.stringify(P)); if (P.horse) errs.push('still riding after getting off'); if (P.d > 4) errs.push('the pet went away after you got off');
     // it helps you fight
-    await E(() => { const N = window.__ng, m = window.__m; if (N.mons.includes(m)) { m.stunT = 0; m.hit = true } }); let fought = false; for (let i = 0; i < 30 && !fought; i++) { await wait(500); fought = (await pet()).mode === 'fight' } log('helps fight', fought); if (!fought) errs.push('the pet does not help with what you hit');
+    await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 3, q.z + 1, { area: 'wild' }); m.hit = true; window.__m = m });   /* a fresh one (the ram may have killed the last) */ let fought = false; for (let i = 0; i < 30 && !fought; i++) { await wait(500); fought = (await pet()).mode === 'fight' } log('helps fight', fought); if (!fought) errs.push('the pet does not help with what you hit');
     await pg.screenshot({ path: OUT + '/fight.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
