@@ -28,7 +28,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     const s2 = await st(); log('sailed', JSON.stringify(s2)); if (!btn || s2.side !== 'main' || s2.x < 170) errs.push('the boat did not sail to the harbour');
     const hs2 = await E(() => { const p = window.__ng.HS.root.position; return [+p.x.toFixed(1), +p.z.toFixed(1)] }); log('howsif at the harbour', hs2); if (Math.abs(hs2[0] - 178) > 4) errs.push('Uncle Howsif did not come along');
     await pg.screenshot({ path: OUT + '/harbour.png' }); await E(() => { window.__ng.CAM.yaw = -Math.PI / 2 }); await wait(1500); await pg.screenshot({ path: OUT + '/harbour2.png' });
-    const w2 = await E(() => window.__ng.WARPS().map(w => w.id)); log('warps on the mainland', w2); if (w2.some(id => w1.includes(id))) errs.push('island warps are offered on the mainland');
+    const w2 = await E(() => window.__ng.WARPS().map(w => w.id)); log('warps on the mainland', w2); if (w2.some(id => w1.includes(id) && id !== 'c:home')) errs.push('island warps are offered on the mainland');   /* v3.86 the farm island (home camp) is a warp once the boat is fixed */
     // a harbour shop opens
     await E(() => window.__ng.openShopBuilding(3)); await wait(500); const sm = await E(() => (document.querySelector('.ov h2') || {}).textContent || ''); log('smith', sm); if (!/ช่าง/.test(sm)) errs.push('the harbour smith did not open'); await close();
     // swimming back west is pushed back too
