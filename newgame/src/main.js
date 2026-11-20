@@ -3234,9 +3234,9 @@ const CIC_ALIAS = { '📒': '📖', '📓': '📖', '📕': '📖', '❤️': '�
 const cicMake = k => k.startsWith('auto:') ? thumb('a:' + k, g => clayEmoji(g, k.slice(5)), [-.18, .28, 0]) : thumb('c:' + k, g => CICON[k](g), [-.12, .32, 0]);
 /* v3.91 a clay icon is drawn in the background (one every few ms, never inside a game frame) · until it is ready the emoji stays as text, then the page is swapped once */
 const CIC_Q = new Set(); let cicBusy = false;
-const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 1500 }) : f => setTimeout(f, 80);
+const idle = window.requestIdleCallback ? f => requestIdleCallback(f) : f => setTimeout(f, 250);   /* only when the page has nothing else to do */
 function cicPump() { if (cicBusy) return; cicBusy = true; const step = () => { if (CUT || $('loadScr').style.display === 'flex') { setTimeout(step, 400); return }   /* not during a loading screen / a cutscene */ const k = CIC_Q.values().next().value; if (k == null) { cicBusy = false; cicSwap(document.body); return } CIC_Q.delete(k); cicMake(k); idle(step) }; idle(step) }
-const cicUrl = e => { const k = cicKey(e); if (!k) return ''; const tk = (k.startsWith('auto:') ? 'a:' : 'c:') + k; if (THUMB.has(tk)) return THUMB.get(tk); if (CUT || (typeof gamePaused === 'function' && gamePaused())) return cicMake(k);   /* a window is open (the game waits): draw it now */
+const cicUrl = e => { const k = cicKey(e); if (!k) return ''; const tk = (k.startsWith('auto:') ? 'a:' : 'c:') + k; if (THUMB.has(tk)) return THUMB.get(tk); if (CUT || (typeof gamePaused === 'function' && gamePaused())) { for (const q of [...CIC_Q]) { CIC_Q.delete(q); cicMake(q) } return cicMake(k) }   /* a window is open (the game waits): draw it now, and whatever was waiting */
   CIC_Q.add(k); cicPump(); return '' };   /* playing: draw it when the page is idle */
 const CIC_RE = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/gu;   /* v3.90 every emoji (the clay ones + the clay reliefs) */
 let cicOn = (() => { try { return localStorage.getItem('ng_cic') !== '0' } catch (e) { return true } })();
