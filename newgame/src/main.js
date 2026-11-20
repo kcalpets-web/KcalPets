@@ -473,7 +473,7 @@ function autoGoTick() { const A = AUTOGO; if (!A) return; if (joy.on || CUT || R
   if (A.path && A.path.pts.length) { const pd = dist(q.x, q.z, A.path.pts[0][0], A.path.pts[0][1]); if (A.lp == null || pd < A.lp - .3 || A.path.pts.length !== A.ln) { A.lp = pd; A.ln = A.path.pts.length; A.stuck = 0 } else if (++A.stuck > 8) { A.path = null; A.lp = null; A.stuck = 0; A.stuckN = (A.stuckN || 0) + 1; if (A.stuckN > 6) A.stuck = 13 } }
   else if (d < A.best - 1) { A.best = d; A.stuck = 0; A.det = 0 } else { A.stuck++; A.det = (A.stuck % 2 ? 1 : -1) * Math.ceil(A.stuck / 2) * .7 } if (A.stuck > 12) { AUTOGO = null; RUNON = false; hint('🚶 ไปต่อไม่ได้ · ลองเดินเองสักหน่อยแล้วกดใหม่', 2200); return }
   const straight = A.label && A.label.startsWith('🌉');
-  if (!straight && (!A.path || !A.path.pts.length) && (!A.planT || performance.now() > A.planT)) { A.planT = performance.now() + 1500; A.path = planPath(q.x, q.z, A.x, A.z) }
+  { const t = performance.now(), touch = !!solHit(q.x, q.z, .3); if (!straight && ((!A.path || !A.path.pts.length) && (!A.planT || t > A.planT) || t > (A.replanT || 0) || touch && t > (A.touchT || 0))) { A.planT = t + 1500; A.replanT = t + 3000; if (touch) A.touchT = t + 700; A.path = planPath(q.x, q.z, A.x, A.z) } }   /* v3.90 plan again every 3 s (walls appear as towns build in) and at once when touching something */
   if (!straight && A.path && A.path.pts.length) { while (A.path.pts.length > 1 && dist(q.x, q.z, A.path.pts[0][0], A.path.pts[0][1]) < 1.1) A.path.pts.shift(); { let k = 0; for (let j = Math.min(A.path.pts.length - 1, 14); j > 0; j--) if (pathSee(q.x, q.z, A.path.pts[j][0], A.path.pts[j][1])) { k = j; break } if (k) A.path.pts.splice(0, k) }   /* v3.90 the farthest point in a clear line */ const [px, pz] = A.path.pts[0]; if (dist(q.x, q.z, px, pz) < .8 && A.path.pts.length > 1) A.path.pts.shift(); RUNON = false;   /* v3.89 the auto-walk walks (running costs ⚡) */ walkTo(px, pz, () => { }, .6); return }   /* v3.66 along the safe path */
   const a = Math.atan2(A.x - q.x, A.z - q.z) + (straight ? 0 : A.det), L = Math.min(12, d); RUNON = false;   /* v3.89 the auto-walk walks (running costs ⚡) */ walkTo(q.x + Math.sin(a) * L, q.z + Math.cos(a) * L, () => { }, .8) }
 /* ================= v3.56 🤖 the quest plays itself: tap the quest card · walk there (boat too) · fight / gather / turn in · stops for ❤️ low, drawing, fishing, bosses · 🕹️ = take over ================= */
@@ -2706,7 +2706,9 @@ function actA() {
   if (!RIDE && PL.swim && hasAbility('swim')) { rideWhale(); return }
   /* v3.77 the hawk no longer carries you off a cliff (its skill lifts you up instead) */
   if (RIDE && catchFor && mons.includes(catchFor)) { startCatch(catchFor); return }   /* v2.4.1 catch (the whale) from the raft */
-  if (RIDE) { const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (!landNear() && S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz); return } if (!unboard()) { if (S.has.rod && wetAt(fx, fz)) { setTool('rod'); castAt(fx, fz) } else hint('🛶 พายเข้าใกล้ฝั่ง แล้วกด A เพื่อขึ้นฝั่ง') } return }
+  if (RIDE) { const d0 = nearDrop(3.2); if (d0) { pickDrop(d0); return }   /* v3.90 A on the raft = pick up what floats by · fishing only with the rod chosen (Y) · landing = the 🏝️ button */
+    const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (tool === 'rod' && S.has.rod && wetAt(fx, fz)) { castAt(fx, fz); return }
+    hint(landNear() ? '🏝️ กดปุ่ม <b>ขึ้นฝั่ง</b> เพื่อขึ้นฝั่ง · 🎣 ตกปลา: เลือกเบ็ดที่ปุ่มสลับเครื่องมือ แล้วกด Y' : '🎣 ตกปลา: เลือกเบ็ดที่ปุ่มสลับเครื่องมือ แล้วกด Y · ✋ A = เก็บของที่ลอยอยู่ใกล้ๆ', 1800); return }
   if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
@@ -2811,7 +2813,7 @@ function throwTick(dt) { const q = me();
     if (p.y <= groundH(p.x, p.z) + .1 || P.t > 4) throwLand(P) } }
 for (const it of S.bag) if (it.away && D.ITEMS[it.t]) { const g = new THREE.Group(); itemMesh(g, it.t); g.scale.setScalar(1.3); g.position.set(it.away.x, groundH(it.away.x, it.away.z) + .12, it.away.z); g.rotation.x = Math.PI / 2; scene.add(g); THROWN.push({ it, g, landed: true, mk: lootMark(it.away.x, it.away.z) }) }   /* where you left them */
 function aimStart0(kind = 'bow') {
-  if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; if (kind === 'bow' && safeHere()) { safeHint(); return } const b = bowOf();
+  if (AIM || PL.swim || (RIDE && kind !== 'rod') || GLIDE || F || BM) return; if (kind === 'bow' && safeHere())   /* v3.90 the rod aims from the raft too */ { safeHint(); return } const b = bowOf();
   if (kind === 'draw') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: .05, tgt: null, draw: 1 }; document.body.classList.add('aim', 'drawaim'); $('xN').textContent = '🖍️ จัดกรอบภาพ'; gearView(); return }
   if (kind === 'net') { walkT = null; work = null; stopAuto(); let yaw = camTP() ? CAM.yaw : PL.yaw; AIM = { t0: performance.now(), p: .08, tgt: null, net: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = '🕸️ ตาข่าย'; gearView(); airAim(); return }   /* v3.8.1 🕸️ aim the net like the bow */
   if (kind === 'rod' || kind === 'dig') { walkT = null; work = null; stopAuto(); AIM = { t0: performance.now(), p: kind === 'dig' ? .62 : .14, tgt: null, rod: 1, dig: kind === 'dig' ? 1 : 0 }; document.body.classList.add('aim', 'rodaim'); $('xN').textContent = ''; gearView(); return }
@@ -2855,7 +2857,7 @@ function aimFollow(dt) { const M = AIM && AIM.lockM; if (!M) return; if (!mons.i
   const p = M.A.root.position, o = camTP() ? cam.position : _aO.set(me().x, me().y + 1.3, me().z), dx = p.x - o.x, dz = p.z - o.z, dy = p.y + .6 * (MSCALE[M.kind] || .85) - o.y, yaw = Math.atan2(dx, dz), pit = -Math.atan2(dy, Math.hypot(dx, dz)), k = Math.min(1, dt * D.AIMLOCK.snap);
   if (camTP()) { CAM.yaw += angDiff(CAM.yaw, yaw) * k; AIM.p += (Math.max(-.8, Math.min(.9, pit)) - AIM.p) * k } else PL.yawT = yaw }
 function aimTick(now) { qaimLock(); zoomTick(now); { const dt = Math.min(.05, (now - (AIM.ft || now)) / 1000); AIM.ft = now; aimFollow(dt) }
-  if (AIM.rod) { if (PL.swim || RIDE || GLIDE) { aimEnd(false); return } aimRay(); const c = AIM.cast = castPoint(); if (AIM.dig) { CASTR.visible = false; const on = !!(c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R); DIGSQ.visible = on; if (on) { const [cx, cz] = cellOf(c.x, c.z), okc = tillable(cx, cz); DIGSQ.position.set(cx, groundH(cx, cz) + .06, cz); DIGSQ.material.color.set(okc ? '#7aff8a' : '#ff6a5a') } } else { DIGSQ.visible = false; CASTR.visible = !!(c && c.wet); if (c) CASTR.position.set(c.x, Math.max(groundH(c.x, c.z), -.02) + .05, c.z) }
+  if (AIM.rod) { if (PL.swim || (RIDE && AIM.dig) || GLIDE) { aimEnd(false); return }   /* v3.90 fishing from the raft: aim the rod there too */ aimRay(); const c = AIM.cast = castPoint(); if (AIM.dig) { CASTR.visible = false; const on = !!(c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R); DIGSQ.visible = on; if (on) { const [cx, cz] = cellOf(c.x, c.z), okc = tillable(cx, cz); DIGSQ.position.set(cx, groundH(cx, cz) + .06, cz); DIGSQ.material.color.set(okc ? '#7aff8a' : '#ff6a5a') } } else { DIGSQ.visible = false; CASTR.visible = !!(c && c.wet); if (c) CASTR.position.set(c.x, Math.max(groundH(c.x, c.z), -.02) + .05, c.z) }
     $('xhair').classList.toggle('on', !!(c && c.wet)); $('xhair').classList.add('rod'); return }
   if (AIM.draw) { $('xhair').classList.remove('on'); return }
   if (AIM.net) { if (PL.swim || RIDE || GLIDE) { aimEnd(false); return } AIM.tgt = aimRay(M => !!D.CATCH[M.kind] && !M.chief); $('xhair').classList.toggle('on', !!AIM.tgt); return }
@@ -3006,6 +3008,7 @@ function ctxTick(now, dt, mv) {
     const ee = eelCtx(q); if (ee) CTX = ee;
     else if (carryN()) CTX = pk ? { k: 'pot', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: carryA } : { k: 'eat', h: 2.2, go: carryA };   /* v3.55 ✋ A puts one in */
     else if (pk && pin.length >= 2 && !S.jobs['cook:' + pk]) CTX = { k: 'cook', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: () => potCook(pk) };   /* empty hands: A = cook */
+    else if (nearDrop()) { const d = nearDrop(); CTX = { k: 'loot', at: d.g.position, h: 1, go: () => pickDrop(d) } }   /* v3.90 picking up comes before climbing on the raft */
     else if (rf) CTX = { k: 'raft', go: () => board(rf) };
     /* v3.28 no whale ride from the water (the whale is a water barrier now) */
     else if (PL.swim && !RIDE) CTX = { k: 'swim', go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
@@ -4415,7 +4418,7 @@ function landNear(r = 2.6) { const q = me(); let best = null, bs = 1e9;
 function board(b) {
   if (BM) exitBuild(); fishEnd(); RIDE = b; S.ride = b.id; walkT = null; work = null; setTool(''); placeMe(b.x, b.z); PL.yaw = PL.yawT = b.r || 0;
   document.body.classList.add('ride'); sfx('splash'); save();
-  toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>🎣 หันไปทางน้ำแล้วกด A = ตกปลา · ใกล้ฝั่งกด 🏝️ ขึ้นฝั่ง', 3400);
+  toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>✋ A = เก็บของที่ลอยอยู่ · 🎣 ตกปลา: เลือกเบ็ดแล้วกด Y · 🏝️ ขึ้นฝั่ง = ปุ่มขึ้นฝั่ง', 3600);
 }
 function leaveRaft() { const b = RIDE; if (!b) return; if (b.whale) { const wp = S.pets.find(p => petAb(p) === 'swim' && formOf(p) >= 1); if (wp) PSK[wp.id] = PSK.whale = Date.now() + D.PETSKILL.whaleCd; scene.remove(WH.root); RIDE = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); return } b.x = me().x; b.z = me().z; b.r = PL.yaw; RIDE = null; S.ride = null; document.body.classList.remove('ride'); $('bRide').classList.remove('on'); bView(b) }
 function unboard() { if (!RIDE) return false; const sp = landNear(); if (!sp) return false; fishEnd(); leaveRaft(); placeMe(sp[0], sp[1]); sfx('tap');
