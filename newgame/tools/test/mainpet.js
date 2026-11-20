@@ -16,17 +16,20 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
     const sk = await E(() => window.__ng.S.sk); log('skill slots', JSON.stringify(sk)); if (sk.X === 'shiba') errs.push('the old ride skill is still in the skill wheel');
     // it follows you far from home
     await E(() => window.__ng.placeMe(60, 10)); await wait(5000); let P = await pet(); log('after a warp', JSON.stringify(P)); if (P.d > 12) errs.push('the main pet did not catch up after a warp');
-    await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 60 && (await pet()).d > 10.5; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 11) errs.push('the main pet does not follow (5–10 m)');
+    await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 80 && (await pet()).d > 3.5; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 4) errs.push('the main pet does not come close after a while');
     // stand still > 3 s → it plays
     let seen = new Set(); for (let i = 0; i < 80 && seen.size < 2; i++) { await wait(500); const p = await pet(); if (p.play) seen.add(p.play) } log('plays seen', [...seen]); if (!seen.size) errs.push('the pet never plays while you stand still');
     await E(() => { const N = window.__ng, e = N.PA.get('p1'); N.placeMe(N.me.x + 3, N.me.z) }); await wait(1500); P = await pet(); log('you moved', JSON.stringify(P)); if (P.play) errs.push('the pet kept playing after you moved');
     await pg.screenshot({ path: OUT + '/follow.png' });
-    // v3.82 it keeps its distance: 5–10 m (not under your feet)
-    await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z + 1) }); let far = 0; for (let i = 0; i < 40; i++) { await wait(500); far = (await pet()).d; if (far >= 4.6) break } log('steps back to', far.toFixed(1)); if (far < 4.5) errs.push('v3.82 the pet should step back to 5–10 m');
+    // v3.83 it lags: you step 3 m away → it stays a moment (does not rush in at once)
+    for (let i = 0; i < 40 && await E(() => { const e = window.__ng.PA.get('p1'); return !!(e.fol || e.play) }); i++) await wait(500);   /* let it settle first */
+    await E(() => { window.__ng.joy.on = false });
+    const lg = await E(async () => { const N = window.__ng, e = N.PA.get('p1'), r = e.A.root.position, x0 = r.x, z0 = r.z; N.placeMe(N.me.x + 3, N.me.z); await new Promise(res => setTimeout(res, 120)); let mx = 0; const t0 = performance.now(); while (performance.now() - t0 < 900) { mx = Math.max(mx, Math.hypot(r.x - x0, r.z - z0)); await new Promise(res => requestAnimationFrame(res)) } return mx });
+    log('moved in the first moment', lg.toFixed(2)); if (lg > .4) errs.push('v3.83 the pet should wait a moment before following');
     // A near it = ride
-    await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z) }); await wait(3000);   /* stand still: A = call the pet */
+    await E(() => { const N = window.__ng, e = N.PA.get('p1'); N.placeMe(300, 300); e.A.root.position.set(301, N.groundH(301, 300), 300); e.fol = false; e.play = null }); await wait(2500);   /* an open field: A = the nearest thing (a rock beats the pet) */
     const near = await E(() => !!window.__ng.nearMainPet()); log('near the pet', near); if (!near) errs.push('the teen pet is not offered for a ride when near');
-    await E(() => window.__ng.actA()); await wait(800); P = await pet(); log('A → ride', JSON.stringify(P)); if (!P.horse) errs.push('A near the pet did not mount it');
+    log('ctx before A', await E(() => { const N = window.__ng, c = N.CTX; return JSON.stringify({ k: c && c.k, go: !!(c && c.go), walkS: N.walkS }) })); await E(() => window.__ng.actA()); await wait(800); P = await pet(); log('A → ride', JSON.stringify(P)); if (!P.horse) errs.push('A near the pet did not mount it');
     await E(() => { window.__ng.CAM.yaw = window.__ng.PL.yaw + Math.PI / 2 }); await wait(1200); await pg.screenshot({ path: OUT + '/ride.png' });
     // X = the pet jumps with you
     const y0 = await E(() => window.__ng.PA.get('p1').A.root.position.y); const JR = await E(() => new Promise(res => { const N = window.__ng, e = N.PA.get('p1'); let m = -9, mm = -9, f = 0; N.doJump(); const t0 = performance.now(); const L = () => { f++; m = Math.max(m, e.A.root.position.y); mm = Math.max(mm, N.me.y); if (performance.now() - t0 < 1200) requestAnimationFrame(L); else res([m, mm, f]) }; L() })); const ymax = JR[0]; log('jump frames', JSON.stringify(JR)); log('jump', y0.toFixed(2), '→', ymax.toFixed(2)); if (ymax < y0 + .2) errs.push('X while riding: the pet did not jump');

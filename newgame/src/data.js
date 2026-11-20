@@ -332,7 +332,7 @@ export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20
 export const FALL = { safe: 10, perM: 5 };   // v3.81 💥 falls: no harm up to 10 m · then −5 HP (¼ heart) per metre
 export const MOUNT = { knock: .3, big: .2 };   // v3.81 a hit knocks you off your mount: 30% chance · always if it takes ≥ 20% of max HP
 export const AUTORUN = 3;   // v3.83 🏃 seconds of holding the stick before you run by yourself
-export const MPET = { near: 2.4, call: 11, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back: 7, side: 1.5, close: 5, far: 10, help: 9, idle: 3,
+export const MPET = { near: 2.4, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back: 1.4, side: .9, lag: [5, 10], wait: [1.5, 3.5], help: 9, idle: 3,
   play: { wander: 3, fly: 3, animal: 2, bone: 3, sit: 2, lie: 2, roll: 2, sleep: 1 }, len: { wander: 6, fly: 8, animal: 7, bone: 14, sit: 6, lie: 7, roll: 3.5, sleep: 12 },
   biteCd: 650, biteR: 3.4, biteMul: 1.3, clawMul: .9, ramMul: 1.1, ramR: 1.8, push: 1.8, lunge: 7, lungeT: 260 };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
