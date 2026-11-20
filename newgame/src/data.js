@@ -678,9 +678,15 @@ export const LOOK_LEGS = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5
 Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 0, col: '#f4f0e8', look: 'tank', starter: 1 },
   s_shorts: { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 0, legs: 'shorts', legCol: '#4a6aa8', starter: 1 },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
+/* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
+export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
+const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: ['def', 'cool'], o_cape: ['warm', 'cool'], a_knight: ['def', 'warm'], k_navalee: ['swim', 'cool'], k_sylvaren: ['def', 'warm'], k_valkara: ['def', 'cool'], k_deadgar: ['air', 'warm'] };
+const LEGS_AB = {};
+for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.gone) continue; const has = AB_KEYS.filter(a => X[a]); if (has.length < 2) { if (X.slot === 'body' && has[0] && has[0] !== 'def') LEGS_AB[k] = [has[0], X[has[0]]]; continue }
+  const [top, leg] = SPLIT[k] || has; LEGS_AB[k] = leg ? [leg, X[leg]] : null; for (const a of has) if (a !== top) X[a] = 0 }
 for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.slot !== 'body' || !X.look || X.gone || k === 's_tank') continue;
   const L = { slot: 'legs', icon: '👖', name: 'กางเกง' + X.name.replace(/^(ชุด|เสื้อ|เกราะ|ผ้าคลุม)/, ''), legs: 'pants', legCol: LOOK_LEGS[X.look] || '#3a3f58', of: k };
-  for (const a of ['warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison']) if (X[a]) L[a] = X[a]; for (const a of ['src', 'k', 'price']) if (X[a] != null) L[a] = X[a]; WEAR['L_' + k] = L }
+  if (LEGS_AB[k]) L[LEGS_AB[k][0]] = LEGS_AB[k][1];   /* v3.91 one ability: the second of a split outfit / the same as a single-ability top */ for (const a of ['src', 'k', 'price']) if (X[a] != null) L[a] = X[a]; WEAR['L_' + k] = L }
 export const MASK_HAIR = { veil: 'bob', scarf: 'bob', furmask: 'messy', mask: 'bob' };   // the hair under face-wear
 
 export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
