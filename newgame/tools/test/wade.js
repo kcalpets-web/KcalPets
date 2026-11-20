@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8902, OUT = process.arg
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const at = async (x, z) => { await E(([x, z]) => window.__ng.placeMe(x, z), [x, z]); await wait(1800); return E(() => { const N = window.__ng, q = N.me; return { g: +N.groundH(q.x, q.z).toFixed(2), y: +q.y.toFixed(2), swim: N.krigWhy().swim, w: N.walkWorld(q.x, q.z) } }) };
-    const shallow = await at(-3.4, 0), deep = await at(-8, 0); log('shallow', JSON.stringify(shallow), 'deep', JSON.stringify(deep)); await pg.screenshot({ path: OUT + '/deep.png' });
+    const shallow = await at(-4, 0), deep = await at(-8, 0);   /* v3.91 -3.4 sat exactly on the shore line (−0.08 = land) */ log('shallow', JSON.stringify(shallow), 'deep', JSON.stringify(deep)); await pg.screenshot({ path: OUT + '/deep.png' });
     if (shallow.w !== 'water' || shallow.swim) errs.push('ankle-deep sea at the farm should be waded, not swum'); if (!deep.swim) errs.push('deep sea should be swum');
     await at(-3.4, 0); await pg.screenshot({ path: OUT + '/wade.png' });
   } catch (e) { errs.push('X ' + e.stack) }
