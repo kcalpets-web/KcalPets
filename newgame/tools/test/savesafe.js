@@ -39,7 +39,7 @@ const BASE = { v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true
     // 7. the creator: every closed one gives its GL context back (17 open ones used to black out the game)
     { const { ctx, pg, E } = await boot({ ng_save_v3: JSON.stringify(BASE) }, 'creator');
       await E(() => { const C = window.__ctxs = []; const g0 = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, o) { const c = g0.call(this, t, o); if (c && /webgl/.test(t) && !C.includes(c) && this.id === 'mkCv') C.push(c); return c } });
-      for (let i = 0; i < 3; i++) { await E(() => window.__ng.openCreator(false)); await wait(1500); await E(() => { const x = document.querySelector('#mkX') || document.querySelector('#mkX0'); x && x.click() }); await wait(800) }
+      for (let i = 0; i < 3; i++) { await E(() => { window.__ng.openCreator(false); return 1 }); await wait(1500); await E(() => { const x = document.querySelector('#mkX') || document.querySelector('#mkX0'); x && x.click() }); await wait(800) }
       const r = await E(() => ({ n: window.__ctxs.length, lost: window.__ctxs.filter(c => c.isContextLost()).length, main: !document.getElementById('glLost') })); log('creator contexts', JSON.stringify(r)); if (!r.n) errs.push('no creator context seen'); else if (r.lost < r.n) errs.push('a closed creator kept its GL context'); await ctx.close() }
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
