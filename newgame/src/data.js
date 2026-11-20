@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '3.77';
+export const APP_VER = '3.78';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -327,7 +327,11 @@ export const PET_SPECIAL = {                                                  //
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
-export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .62, seat: [.9, 1.06, 1.3] };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
+export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
+// v3.78 🐶🐱 the main pet: always with you · A near it = ride (teen+) · riding: X jump · Y bite + claw · A dash (rams) · B get off
+export const MPET = { near: 2.4, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back: 1.4, side: .9, help: 9, idle: 3,
+  play: { wander: 3, fly: 3, animal: 2, bone: 3, sit: 2, lie: 2, roll: 2, sleep: 1 }, len: { wander: 6, fly: 8, animal: 7, bone: 14, sit: 6, lie: 7, roll: 3.5, sleep: 12 },
+  biteCd: 650, biteR: 3.4, biteMul: 1.3, clawMul: .9, ramMul: 1.1, ramR: 1.8, push: 1.8, lunge: 7, lungeT: 260 };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
   { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },

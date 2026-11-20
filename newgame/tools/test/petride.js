@@ -1,4 +1,4 @@
-/* v3.54 🐶 ride the starter pet (teen+) · A = dash in bursts (rider and on foot) · cooldown after you get off
+/* v3.54 🐶 ride the starter pet (teen+) · A = dash in bursts (rider and on foot) · v3.78 A near it = ride (no skill · no cooldown)
    NODE_PATH=$(npm root -g) node newgame/tools/test/petride.js outDir   (~1 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright'); const fs = require('fs'); const { spawn } = require('child_process'); const OUT = process.argv[2] || '/tmp/ng_petride', wait = ms => new Promise(r => setTimeout(r, ms));
 (async () => { fs.mkdirSync(OUT, { recursive: true }); const srv = spawn('python3', ['-m', 'http.server', '8945', '--bind', '127.0.0.1'], { cwd: '/home/user/KcalPets', stdio: 'ignore' }); await wait(900);
@@ -8,15 +8,15 @@ const { chromium } = require('playwright'); const fs = require('fs'); const { sp
     localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, freed: 1, pet: 1, rideAsk: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, pets: [{ id: 'p1', kind: 'shiba', name: 'โมจิ', rar: 'B', el: '🪨', lv: 6, exp: 0, hp: null, mp: null, down: 0 }], team: ['p1'], sk: { X: 'shiba', A: 'boar', Y: 'whale' }, time: 640, quest: 99 })) });
   await pg.goto('http://127.0.0.1:8945/newgame/index.html'); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
   const E = f => pg.evaluate(f); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-  await E(() => window.__ng.petSkillKind('shiba')); await wait(1500);
-  const rk = await E(() => !!window.__ng.HORSE && window.__ng.HORSE.p.kind); console.log('ride', rk); if (rk !== 'shiba') errs.push('the teen dog skill should mount you');
+  await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z) }); await wait(1200); await E(() => window.__ng.actA()); await wait(1500);
+  const rk = await E(() => !!window.__ng.HORSE && window.__ng.HORSE.p.kind); console.log('ride', rk); if (rk !== 'shiba') errs.push('v3.78 A near the teen dog should mount you');
   await pg.screenshot({ path: `${OUT}/ride-stand.png` });
   const x0 = await E(() => window.__ng.me.x); await E(() => { const j = window.__ng.joy; j.on = true; j.x = 1; j.z = 0 }); await wait(1500); const x1 = await E(() => window.__ng.me.x);
   await E(() => window.__ng.dash()); await wait(700); await pg.screenshot({ path: `${OUT}/ride-dash.png` }); const x2 = await E(() => window.__ng.me.x); await wait(800); const x3 = await E(() => window.__ng.me.x);
   console.log('walk m/s', ((x1 - x0) / 1.5).toFixed(1), 'dash moved', Math.abs(x3 - x1).toFixed(1)); if (!(Math.abs(x1 - x0) > .3)) errs.push('riding should move');
   await E(() => { const j = window.__ng.joy; j.on = false }); await E(() => window.__ng.dismount()); await wait(800);
-  const off = await E(() => [!!window.__ng.HORSE, Math.round((window.__ng.PSK.p1 - Date.now()) / 1000)]); console.log('off', off); if (off[0] || !(off[1] > 10)) errs.push('getting off should start the cooldown');
-  await E(() => window.__ng.petSkillKind('shiba')); await wait(300); if (await E(() => !!window.__ng.HORSE)) errs.push('the skill should wait for its cooldown');
+  const off = await E(() => !!window.__ng.HORSE); console.log('off', off); if (off) errs.push('B should get you off');
+  await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z) }); await wait(800); await E(() => window.__ng.actA()); await wait(600); if (!await E(() => !!window.__ng.HORSE)) errs.push('v3.78 no cooldown: A should mount again at once'); await E(() => window.__ng.dismount()); await wait(400);
   // the player on foot: dash
   await E(() => { const N = window.__ng; N.placeMe(N.POT.home.x + 3, N.POT.home.z + 2); const j = N.joy; j.on = true; j.x = 1; j.z = 0 });   /* inland: a dash only counts on land */ await wait(1200); const a0 = await E(() => window.__ng.me.x); await wait(1000); const a1 = await E(() => window.__ng.me.x);
   const sp0 = await E(() => window.__ng.SPD); const en0 = await E(() => window.__ng.S.en); const sp1 = await E(async () => { const N = window.__ng; N.dash(); let mx = 0; const t0 = performance.now(); await new Promise(r => { const f = () => { mx = Math.max(mx, N.SPD); if (performance.now() - t0 < 1600) requestAnimationFrame(f); else r() }; f() }); return mx });   /* the fastest frame during the dash (slow machines skip frames) */ console.log('spd walk/dash', sp0, sp1, await E(() => JSON.stringify({ st: Math.round(window.__ng.sprintT - performance.now()), tired: window.__ng.S.tired, swim: window.__ng.PL.swim, joy: window.__ng.joy.on, horse: !!window.__ng.HORSE }))); if (!(sp1 > sp0 * 1.6)) errs.push('A while walking should dash'); await wait(300); const a2 = await E(() => window.__ng.me.x);
