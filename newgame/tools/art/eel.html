@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE eel</title><style>body{margin:0}</style></head><body>
+<script type="module">
+/* v3.88 ⚡ Electropic eel: ?v=boss | shrine | reef  (shot by shoot-eel.js) */
+import { THREE, HUMANS } from '../../src/clay.js';
+import { eel, seaShrine, SEA } from '../../src/eel.js';
+const V = new URLSearchParams(location.search).get('v') || 'boss', W = 1000, H = 700;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, W / H, .1, 200);
+const sun = new THREE.DirectionalLight('#fff1dc', 2); sun.position.set(-5, 12, 8); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); S.add(sun);
+const at = (fn, x, y, z, ry = 0, s = 1) => { const g = new THREE.Group(); fn(g); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } }); S.add(g); return g };
+if (V === 'boss') { S.background = new THREE.Color('#0e2a4a'); S.fog = new THREE.Fog('#0e2a4a', 14, 40); S.add(new THREE.HemisphereLight('#bfe8ff', '#1a3a5a', 1.1));
+  const fl = new THREE.Mesh(new THREE.CircleGeometry(14, 40), new THREE.MeshStandardMaterial({ color: '#2a5a7a' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+  at(g => eel(g, { sparks: 1 }), 0, 0, -1.5, -.35, 1.25); at(HUMANS.kealee, 2.6, 0, 3.2, -2.6, .82);
+  const pl = new THREE.PointLight('#fff27a', 6, 10); pl.position.set(0, 3, 0); S.add(pl);
+  cam.position.set(8, 4, 7); cam.lookAt(0, 1.6, -2) }
+else if (V === 'shrine') { S.background = new THREE.Color('#9ad4ec'); S.add(new THREE.HemisphereLight('#fff6ec', '#3a7aa0', 1));
+  const sea = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.MeshStandardMaterial({ color: '#2a8ac0', roughness: .2, transparent: true, opacity: .85 })); sea.rotation.x = -Math.PI / 2; sea.position.y = .55; S.add(sea);
+  at(seaShrine, 0, 0, 0, .25); at(HUMANS.kealee, 2.6, .55, 4.2, -2.4, .82);
+  cam.position.set(7, 5, 12); cam.lookAt(0, 2, 0) }
+else { S.background = new THREE.Color('#1a6a9a'); S.fog = new THREE.Fog('#1a6a9a', 10, 34); S.add(new THREE.HemisphereLight('#d0f4ff', '#2a5a6a', 1.1));
+  const fl = new THREE.Mesh(new THREE.CircleGeometry(20, 40), new THREE.MeshStandardMaterial({ color: '#d8c89a' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+  at(g => eel(g, { sleep: 1, n: 26 }), 0, 0, 0, .5, 1.2);
+  const C = [['#c84a6a', '#ff9ab0'], ['#e0702a', '#ffb070'], ['#7a4ac0', '#c8a0ff'], ['#2a9a8a', '#8ae8d0']];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * 6.28 + Math.random() * .3, rr = 4 + Math.random() * 3; at(g => (i % 3 ? SEA.coral(g, C[i % 4]) : SEA.weed(g)), Math.cos(a) * rr, 0, Math.sin(a) * rr, a, .9 + Math.random() * .8) }
+  const FC = [['#e06a2a', '#ffb070'], ['#e0c02a', '#fff07a'], ['#2a8ae0', '#8ad0ff'], ['#e04a8a', '#ffa0c8']];
+  for (let i = 0; i < 14; i++) { const a = Math.random() * 6.28, rr = 3.6 + Math.random() * 3.5; at(g => SEA.fish(g, FC[i % 4]), Math.cos(a) * rr, 1 + Math.random() * 2.5, Math.sin(a) * rr, a + 1.6, 1.4) }
+  at(SEA.turtle, -3, 2.2, 2, .8, 1.3); at(SEA.turtle, 3.5, 3, -1, -2, 1); at(g => SEA.jelly(g), -1.5, 3.4, -3); at(g => SEA.jelly(g, ['#3a8ad8', '#a0d8ff']), 2.2, 3.8, 1.5, 0, .8);
+  const shaft = new THREE.Mesh(new THREE.ConeGeometry(4, 14, 24, 1, true), new THREE.MeshBasicMaterial({ color: '#e8fbff', transparent: true, opacity: .08, depthWrite: false })); shaft.position.set(0, 7, 0); S.add(shaft);
+  cam.position.set(6, 6.5, 10); cam.lookAt(0, 1.2, 0) }
+r.render(S, cam); window.__done = 1;
+</script></body></html>
