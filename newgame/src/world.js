@@ -422,6 +422,10 @@ const onCloud = (x, z) => Math.abs(x - CLOUD.x) < 60 && Math.hypot(x - CLOUD.x, 
 /* v3.2 🎓 the training ground: a square of grass far out at sea (own little map) · a pond · a ledge to climb and glide from */
 export const TRAIN = { x: -420, z: 0, hw: 15, pond: [-428, 7, 4, 3], ledge: [-409, 8, 3.4, 3.4, 4] };
 const inTr = (x, z) => Math.abs(x - TRAIN.x) < 70 && Math.abs(z - TRAIN.z) < 70;
+/* v3.88 ⚡ the eel's sea shrine inside: a round sandy floor far out at sea (own little map like the training ground) */
+export const EELA = { x: -420, z: 420, r: 14 };
+export const inEelA = (x, z) => Math.abs(x - EELA.x) < 70 && Math.abs(z - EELA.z) < 70;
+const eelIn = (x, z) => Math.hypot(x - EELA.x, z - EELA.z) < EELA.r;
 export function trainH(x, z) { const T = TRAIN, dx = Math.abs(x - T.x), dz = Math.abs(z - T.z); if (dx > T.hw + .5 || dz > T.hw + .5) return -2;
   const [px, pz, pw, pd] = T.pond, wx = Math.max(Math.abs(x - px) - pw, Math.abs(z - pz) - pd); if (wx < .8) return wx < 0 ? -1.1 : .15 - (.8 - wx) * .5;
   const [lx, lz, lw, ld, lh] = T.ledge, e = Math.max(Math.abs(x - lx) - lw, Math.abs(z - lz) - ld); if (e < .6) return e < 0 ? lh : lh * (1 - e / .6) + .15 * (e / .6);
@@ -429,6 +433,7 @@ export function trainH(x, z) { const T = TRAIN, dx = Math.abs(x - T.x), dz = Mat
 export function groundH(x, z) {
   if (onCloud(x, z)) return .6;
   if (inTr(x, z)) return trainH(x, z);
+  if (inEelA(x, z)) return eelIn(x, z) ? .15 : -3;
   if (coreDist(x, z) > 0) return wildH(x, z);
   const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
 }
@@ -443,6 +448,7 @@ function coreH(x, z) {
   return 0;
 }
 export function waterAt(x, z) {
+  if (inEelA(x, z)) return null;
   if (inTr(x, z)) { const [px, pz, pw, pd] = TRAIN.pond; return Math.abs(x - px) < pw && Math.abs(z - pz) < pd ? 'fresh' : trainH(x, z) < -1.5 ? 'sea' : null }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
@@ -454,6 +460,7 @@ export function waterAt(x, z) {
 }
 export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
+  if (inEelA(x, z)) return eelIn(x, z) ? 'land' : false;
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
