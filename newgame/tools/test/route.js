@@ -12,7 +12,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8885, OUT = process.argv[2] || '/tmp/
     const routes = await E(() => { const N = window.__ng, c = Object.values(N.CAPS)[0], L = [['harbour town', [38, -10], [54, 9]], ['woods', [86, -14], [118, 12]], ['meadow', [12, -8], [30, 10]]]; if (c) L.push(['capital', [c.x + 34, c.z + 6], [c.x + 4, c.z - 3]]); return L });
     let bumps = 0, steps = 0, fails = 0;
     for (const [name, a, z] of routes) {
-      await E(a => window.__ng.placeMe(a[0], a[1]), a); await wait(2500);   /* let the place build */
+      await E(a => window.__ng.placeMe(a[0], a[1]), a); await wait(name === 'capital' ? 7000 : 2500);   /* let the place build (a capital builds its walls when you come near) */
       const r = await E(async ([z]) => { const N = window.__ng, q = N.me; N.S.en = null; N.S.tired = false; N.autoGo(z[0], z[1], 'test'); let n = 0, hit = 0, last = [q.x, q.z], stall = 0, trail = []; const t0 = performance.now();
         while (N.AUTOGO2 && performance.now() - t0 < 200000) { await new Promise(res => requestAnimationFrame(res)); n++; if (N.solHit(q.x, q.z, .3)) { hit++; if (hit % 25 === 1) trail.push([+q.x.toFixed(1), +q.z.toFixed(1)]) } }
         const left = Math.hypot(q.x - z[0], q.z - z[1]); N.stopGo(); return { n, hit, left: +left.toFixed(1), at: [+q.x.toFixed(1), +q.z.toFixed(1)], trail, secs: Math.round((performance.now() - t0) / 1000) } }, [z]);
