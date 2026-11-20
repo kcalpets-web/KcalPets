@@ -4527,7 +4527,12 @@ function WARPS() {
   for (const c of WC) if ((S.wcamps[c.id] || {}).c) L.push({ id: 'w:' + c.id, icon: '🏕️', name: campName(c), x: c.x + 2.5, z: c.z + 2.5 });
   for (const k in S.restored || {}) if (KINGDOMS[k]) L.push({ id: 'k:' + k, icon: k === 'luminia' ? '🏰' : '🏘️', name: 'ใจกลาง' + KINGDOMS[k].name, x: KINGDOMS[k].x + 3, z: KINGDOMS[k].z + 9 });   /* v3.15 restored kingdoms: warp to the town centre */
   for (const Ls of LSTONES) if (lsAwake(Ls.k)) L.push({ id: 'l:' + Ls.k, icon: '💠', name: 'ศิลาแห่งแสง ' + KINGDOMS[Ls.k].name, x: Ls.x + 2.2, z: Ls.z + 2.2 });   /* v3.14 */
-  const isl = (S.side || 'isle') === 'isle'; return L.filter(w => inIsle(w.x, w.z) === isl);   /* v3.13 no warping across the sea (Vaneya ⇄ mainland = the boat) */
+  /* v3.87 🏘️ towns + the farm isle are warp points: every kingdom town you have reached · the harbour town · home on the isle (across the sea too, once the boat is fixed) */
+  const near = (x, z) => L.some(w => dist(w.x, w.z, x, z) < 14), spot = (x, z) => { for (let r = 0; r < 12; r += 1) for (let a = 0; a < 6.28; a += .8) { const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (walkLand(px, pz) && !solBlock(px, pz, groundH(px, pz))) return [px, pz] } return [x, z] };
+  if (S.avatar && !near(HOUSE.x, HOUSE.z)) { const [x, z] = spot(HOUSE.x + 2.5, HOUSE.z + 2.5); L.push({ id: 'f:home', icon: '🏡', name: 'เกาะฟาร์ม · บ้านต้นไม้', x, z }) }
+  if ((S.story.town || S.story.boatFixed) && !near(HB.x, HB.z)) L.push({ id: 't:harbour', icon: '⚓', name: 'เมืองท่า', x: HB.x + 1.6, z: HB.z - .8 });
+  for (const k in S.kseen || {}) { const K = KINGDOMS[k]; if (!K || (S.restored || {})[k] || near(K.x, K.z)) continue; const [x, z] = spot(K.x + 3, K.z + 9); L.push({ id: 't:' + k, icon: '🏘️', name: 'เมือง' + K.name, x, z }) }
+  const isl = (S.side || 'isle') === 'isle'; return L.filter(w => S.story.boatFixed || inIsle(w.x, w.z) === isl);   /* v3.13 no warping across the sea before the boat is fixed · v3.87 after that, anywhere */
 }
 /* v3.12.1 map stick: the nearest warp point roughly in the pushed direction (repeats while held) */
 function mapNavOn() { if (MAPNAV && !MAPNAV.el.isConnected) { MAPNAV = null; document.body.classList.remove('mapOn') } return !!MAPNAV }   /* the map can be closed by closeSheets (no onClose) */
