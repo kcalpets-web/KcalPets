@@ -15,14 +15,16 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
     // the ride left the skill wheel
     const sk = await E(() => window.__ng.S.sk); log('skill slots', JSON.stringify(sk)); if (sk.X === 'shiba') errs.push('the old ride skill is still in the skill wheel');
     // it follows you far from home
-    await E(() => window.__ng.placeMe(60, 10)); await wait(5000); let P = await pet(); log('after a warp', JSON.stringify(P)); if (P.d > 6) errs.push('the main pet did not catch up after a warp');
-    await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 40 && (await pet()).d > 4; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 5) errs.push('the main pet does not follow');
+    await E(() => window.__ng.placeMe(60, 10)); await wait(5000); let P = await pet(); log('after a warp', JSON.stringify(P)); if (P.d > 12) errs.push('the main pet did not catch up after a warp');
+    await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 60 && (await pet()).d > 10.5; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 11) errs.push('the main pet does not follow (5–10 m)');
     // stand still > 3 s → it plays
     let seen = new Set(); for (let i = 0; i < 80 && seen.size < 2; i++) { await wait(500); const p = await pet(); if (p.play) seen.add(p.play) } log('plays seen', [...seen]); if (!seen.size) errs.push('the pet never plays while you stand still');
     await E(() => { const N = window.__ng, e = N.PA.get('p1'); N.placeMe(N.me.x + 3, N.me.z) }); await wait(1500); P = await pet(); log('you moved', JSON.stringify(P)); if (P.play) errs.push('the pet kept playing after you moved');
     await pg.screenshot({ path: OUT + '/follow.png' });
+    // v3.82 it keeps its distance: 5–10 m (not under your feet)
+    await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z + 1) }); let far = 0; for (let i = 0; i < 40; i++) { await wait(500); far = (await pet()).d; if (far >= 4.6) break } log('steps back to', far.toFixed(1)); if (far < 4.5) errs.push('v3.82 the pet should step back to 5–10 m');
     // A near it = ride
-    await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z) }); await wait(1200);
+    await E(() => { const N = window.__ng, r = N.PA.get('p1').A.root.position; N.placeMe(r.x + 1, r.z) }); await wait(3000);   /* stand still: A = call the pet */
     const near = await E(() => !!window.__ng.nearMainPet()); log('near the pet', near); if (!near) errs.push('the teen pet is not offered for a ride when near');
     await E(() => window.__ng.actA()); await wait(800); P = await pet(); log('A → ride', JSON.stringify(P)); if (!P.horse) errs.push('A near the pet did not mount it');
     await E(() => { window.__ng.CAM.yaw = window.__ng.PL.yaw + Math.PI / 2 }); await wait(1200); await pg.screenshot({ path: OUT + '/ride.png' });
@@ -33,10 +35,10 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
     await wait(400); await E(() => window.__ng.petBite()); await wait(1000); const hpA = await E(() => window.__m.hp); log('bite', hpB, '→', hpA); if (!(hpA < hpB)) errs.push('Y while riding: the bite did no damage');
     // A = dash that rams
     await E(() => { const N = window.__ng, m = window.__m; if (N.mons.includes(m)) N.hurtMon(m, 99999, 'dmg') }); await wait(600);
-    const hpR = await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + Math.sin(N.PL.yaw) * 2.2, q.z + Math.cos(N.PL.yaw) * 2.2, { area: 'wild' }); m.stunT = performance.now() + 20000; window.__m = m; return m.hp });
+    const hpR = await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + Math.sin(N.PL.yaw) * 1.9, q.z + Math.cos(N.PL.yaw) * 1.9, { area: 'wild' }); m.stunT = performance.now() + 20000; window.__m = m; return m.hp });
     await wait(300); log('ram run', JSON.stringify(await E(() => new Promise(res => { const N = window.__ng, e = N.PA.get('p1'), m = window.__m, out = []; N.actA(); const t0 = performance.now(); out.push(['lunge', e.lungeT ? +(e.lungeT - t0).toFixed(0) : null, N.mons.includes(m), m.ramK]); const L = () => { const r = e.A.root.position, mp = m.A.root.position; out.push([+(performance.now() - t0).toFixed(0), +Math.hypot(r.x - mp.x, r.z - mp.z).toFixed(2), m.hp, m.ramK]); if (performance.now() - t0 < 1600) requestAnimationFrame(L); else res(out) }; L() })))); const hpR2 = await E(() => window.__m.hp); log('ram', hpR, '→', hpR2); if (!(hpR2 < hpR)) errs.push('A while riding: the dash did not ram the slime');
     // B = get off · it stays by you
-    await E(() => window.__ng.dismount()); await wait(1500); P = await pet(); log('B → off', JSON.stringify(P)); if (P.horse) errs.push('still riding after getting off'); if (P.d > 4) errs.push('the pet went away after you got off');
+    await E(() => window.__ng.dismount()); await wait(1500); P = await pet(); log('B → off', JSON.stringify(P)); if (P.horse) errs.push('still riding after getting off'); if (P.d > 12) errs.push('the pet went away after you got off');
     // it helps you fight
     await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 3, q.z + 1, { area: 'wild' }); m.hit = true; window.__m = m });   /* a fresh one (the ram may have killed the last) */ let fought = false; for (let i = 0; i < 30 && !fought; i++) { await wait(500); fought = (await pet()).mode === 'fight' } log('helps fight', fought); if (!fought) errs.push('the pet does not help with what you hit');
     await pg.screenshot({ path: OUT + '/fight.png' });

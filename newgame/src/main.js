@@ -2985,7 +2985,6 @@ function ctxTick(now, dt, mv) {
     else if (nearThrown()) { const P = nearThrown(); CTX = { k: 'loot', at: P.g.position, h: 1, go: () => pickThrown(P) } }
     else if (nearGL()) { const L = nearGL(); CTX = { k: 'loot', at: L.g.position, h: 1, go: () => pickGL(L) } }   /* v3.54 */
     else if (catchFor && mons.includes(catchFor) && !(t && t.m && !catchFor.T.animal)) { const M = catchFor; CTX = { k: 'catch', at: M.A.root.position, go: () => startCatch(M) } }
-    else if (!RIDE && !HORSE && !PL.swim && !PL.climb && nearMainPet()) { const E2 = nearMainPet(); CTX = { k: 'pet', at: E2.A.root.position, h: 1.3, go: () => mountPet(E2.p) } }   /* v3.78 A near the teen pet = ride */
     else if (!RIDE && !HORSE && !PL.swim && (hz = nearHorse())) { const H = hz; CTX = { k: 'horse', at: H.A.root.position, h: 1.6, go: () => mountHorse(H) } }
     else if (t && t.k) { const k = t.k.kind, ic = TALK.has(k) ? 'talk' : CTX_ICO[k] ? k : 'use'; CTX = { k: ic, at: t.p ? t.p.position : null, h: 1.2, go: null } }
     else if (t && t.o) { const o = t.o, T = D.CLEAR[o.t];
@@ -2996,6 +2995,7 @@ function ctxTick(now, dt, mv) {
           if (dist(me().x, me().z, o.x, o.z) > D.REACH_TOOL) walkTo(o.x, o.z, hit, 1.1); else hit() } } } }
     else if (t && t.m && !farm) CTX = { k: 'fight', at: t.m.A.root.position, h: 1.8, go: null };
     else if (!farm && walkS > .15 && !RUNON && !S.tired && !CROUCH) CTX = { k: 'run', go: dash };
+    else if (!RIDE && !HORSE && !PL.swim && !PL.climb && nearMainPet()) { const E2 = nearMainPet(); CTX = { k: 'pet', at: E2.A.root.position, h: 1.3, go: () => mountPet(E2.p) } }   /* v3.82 standing still with nothing else at hand: A calls the pet (≤ 11 m) and you ride */
   }
   /* v2.4.1 the A button keeps its label (no switching) · a bubble floats over the thing once you have stood near it for a while */
   const a = $('bA').querySelector('span'), want = S.mode === 'farm' ? '<b class="fi">🪏</b>' : 'A'; if (a.innerHTML !== want) a.innerHTML = want;
@@ -4661,7 +4661,7 @@ function dismount() { if (!HORSE) return; const M = HORSE; HORSE = null; const q
   if (M.p) { M.A.root.scale.setScalar(1); M.A.body.rotation.z = 0; const r = M.A.root.position; r.y = groundH(r.x, r.z); M.play = null; M.pclip = null; M.wait = 0; sfx('tap'); hud(); return }   /* v3.78 the main pet stays by you · no cooldown */   /* v3.54 the pet trots home · its skill cools down from now */ M.home = [M.A.root.position.x, M.A.root.position.z]; M.t = M.home.slice(); M.wait = 3; sfx('tap') }
 /* ================= v3.78 🐶🐱 the main pet: always with you · plays when you stand still · helps you fight · ride it (teen+) ================= */
 const MAINP = () => S.pets.find(p => p.id === 'p1' && D.PET_RIDE.kinds.includes(p.kind)) || S.pets.find(p => D.PET_RIDE.kinds.includes(p.kind)) || null;
-function nearMainPet() { const p = MAINP(), e = p && PA.get(p.id); if (!e || formOf(p) < 1 || e.mode === 'down' || e === HORSE) return null; const q = me(), r = e.A.root.position; return dist(q.x, q.z, r.x, r.z) < D.MPET.near ? e : null }
+function nearMainPet() { const p = MAINP(), e = p && PA.get(p.id); if (!e || formOf(p) < 1 || e.mode === 'down' || e === HORSE) return null; const q = me(), r = e.A.root.position; return dist(q.x, q.z, r.x, r.z) < D.MPET.call ? e : null }
 let PIDLE = 0, PIDLEP = null; const _hv = new THREE.Vector3();
 const PBF = (() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: '#ffb0d8', side: THREE.DoubleSide, roughness: .6, emissive: '#3a1a28' }), wg = new THREE.CircleGeometry(.1, 10); for (const sd of [-1, 1]) { const w = new THREE.Mesh(wg, m); w.position.x = sd * .075; w.name = 'w' + sd; g.add(w) } g.visible = false; scene.add(g); return g })();   /* a butterfly to chase */
 const PBONE = (() => { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: '#f4ecd8', roughness: .7 }), c = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .34, 8), m); c.rotation.z = Math.PI / 2; g.add(c); for (const sx of [-.17, .17]) for (const sz of [-.045, .045]) { const k = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), m); k.position.set(sx, 0, sz); g.add(k) } g.visible = false; scene.add(g); return g })();   /* a bone to fetch */
@@ -4670,13 +4670,13 @@ function playNext(e, now, force) { playEnd(e); const W2 = D.MPET.play, L = []; f
   let an = null; if (k === 'animal') { let bd = 16; for (const m of mons) if (m.T.animal && !m.T.charge && !m.T.horse) { const d = dist(q.x, q.z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; an = m } } if (!an) k = 'fly' }
   const P = e.play = { k, end: now + D.MPET.len[k] * 1000, t0: now, ph: 0, an };
   const spot = (r0, r1) => { for (let i = 0; i < 12; i++) { const a = Math.random() * 6.28, d = r0 + Math.random() * (r1 - r0), x = q.x + Math.cos(a) * d, z = q.z + Math.sin(a) * d; if (ok(x, z)) return [x, z] } return [r.x, r.z] };
-  if (k === 'wander') P.t = spot(1.5, 4.5);
-  if (k === 'fly') { const [x, z] = spot(2, 4); P.b = [x, z]; PBF.position.set(x, groundH(x, z) + .8, z); PBF.visible = true }
-  if (k === 'bone') { const [x, z] = spot(4.5, 7); P.b = [x, z]; PBONE.position.set(x, groundH(x, z) + .06, z); PBONE.rotation.set(0, Math.random() * 6, 0); PBONE.visible = true }
+  if (k === 'wander') P.t = spot(5, 9);   /* v3.82 it plays 5–10 m away */
+  if (k === 'fly') { const [x, z] = spot(5, 8); P.b = [x, z]; PBF.position.set(x, groundH(x, z) + .8, z); PBF.visible = true }
+  if (k === 'bone') { const [x, z] = spot(7, 10); P.b = [x, z]; PBONE.position.set(x, groundH(x, z) + .06, z); PBONE.rotation.set(0, Math.random() * 6, 0); PBONE.visible = true }
   e.pclip = { sit: 'sit', lie: 'lie', roll: 'lie', sleep: 'lie' }[k] || 'idle'; e.proll = k === 'roll' }
 function playTick(e, dt, now) { const P = e.play, r = e.A.root.position, q = me(), ok = walkHere; let mv = false;
   const go = (x, z, sp, near = .4) => { const d = stepTo(e.A, x, z, sp, dt, ok); if (d > near) { mv = true; e.prun = sp > D.MPET.walk * 1.5 } return d };
-  if (P.k === 'wander') { if (go(P.t[0], P.t[1], D.MPET.walk) <= .4 && now > P.t0 + 2500) { P.t = [q.x + (Math.random() - .5) * 8, q.z + (Math.random() - .5) * 8]; if (!ok(P.t[0], P.t[1])) P.t = [r.x, r.z]; P.t0 = now } }
+  if (P.k === 'wander') { if (go(P.t[0], P.t[1], D.MPET.walk) <= .4 && now > P.t0 + 2500) { const a2 = Math.random() * 6.28, r2 = 5 + Math.random() * 4; P.t = [q.x + Math.cos(a2) * r2, q.z + Math.sin(a2) * r2]; if (!ok(P.t[0], P.t[1])) P.t = [r.x, r.z]; P.t0 = now } }
   else if (P.k === 'fly') { const t = now / 1000; P.b[0] += Math.sin(t * 1.3 + P.t0) * dt * 1.6; P.b[1] += Math.cos(t * 1.1 + P.t0) * dt * 1.6; if (!ok(P.b[0], P.b[1])) { P.b[0] = r.x + (Math.random() - .5) * 3; P.b[1] = r.z + (Math.random() - .5) * 3 }
     PBF.position.set(P.b[0], groundH(P.b[0], P.b[1]) + .7 + Math.sin(t * 3) * .25, P.b[1]); PBF.getObjectByName('w-1').rotation.y = Math.sin(t * 22) * .9; PBF.getObjectByName('w1').rotation.y = -Math.sin(t * 22) * .9;
     if (go(P.b[0], P.b[1], D.MPET.trot, .9) <= .9) { e.pclip = 'happy'; e.A.yawT = Math.atan2(P.b[0] - r.x, P.b[1] - r.z) } else e.pclip = 'idle' }
@@ -4692,9 +4692,11 @@ function mainPetTick(e, dt, now) { const r = e.A.root.position, q = me(), d = di
   const moved = !PIDLEP || Math.hypot(q.x - PIDLEP[0], q.z - PIDLEP[1]) > .02; PIDLEP = [q.x, q.z]; PIDLE = moved || joy.on ? 0 : PIDLE + dt;
   if (d > D.MPET.tele && !PL.swim && walkLand(q.x, q.z)) { const bx = q.x - Math.sin(PL.yaw) * 1.6, bz = q.z - Math.cos(PL.yaw) * 1.6, [x, z] = walkLand(bx, bz) ? [bx, bz] : [q.x, q.z]; r.set(x, groundH(x, z), z); playEnd(e); VF.burst(x, r.y + .4, z, '#ffffff', 8, 2); return false }   /* fell far behind (a warp · a boat) → it catches up */
   { let foe = null, fd = D.MPET.help; for (const M of mons) { if (M === HORSE || M.T.horse || (M.T.animal && !M.T.charge) || !(M.hit || M.aggro) || M.born + 800 > now) continue; const md = dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z); if (md < fd) { fd = md; foe = M } } if (foe) { playEnd(e); e.mode = 'fight'; e.foe = foe; return false } }   /* it helps: what you hit or what comes at you */
-  if (PIDLE < D.MPET.idle || PL.swim || PL.climb || GLIDE || RIDE) { playEnd(e);
-    const tx = q.x - Math.sin(PL.yaw) * D.MPET.back + Math.cos(PL.yaw) * D.MPET.side, tz = q.z - Math.cos(PL.yaw) * D.MPET.back - Math.sin(PL.yaw) * D.MPET.side, dd = dist(r.x, r.z, tx, tz);
-    if (dd > (e.fol ? .5 : 1.3)) { e.fol = true; const sp = dd > 5 ? D.MPET.run : dd > 2.2 ? D.MPET.trot : D.MPET.walk; stepTo(e.A, tx, tz, sp, dt, walkHere); e.prun = sp > D.MPET.walk; e.pclip = 'idle'; return true } e.fol = false; e.pclip = null; return false }
+  if (PIDLE < D.MPET.idle || PL.swim || PL.climb || GLIDE || RIDE) { playEnd(e);   /* v3.82 it keeps 5–10 m away (close by, it was in the way of picking things up) */
+    const M2 = D.MPET, tx = q.x - Math.sin(PL.yaw) * M2.back + Math.cos(PL.yaw) * M2.side, tz = q.z - Math.cos(PL.yaw) * M2.back - Math.sin(PL.yaw) * M2.side;
+    if (d > M2.far || d < M2.close) e.fol = true; else if (d <= M2.far - 2 && d >= M2.close + 1) e.fol = false;   /* catch up past 10 m · step back under 5 m · then rest in between */
+    if (e.fol) { const dd = dist(r.x, r.z, tx, tz); if (dd > .6) { const sp = d > 16 ? M2.run : d > M2.far || d < M2.close ? M2.trot : M2.walk; stepTo(e.A, tx, tz, sp, dt, walkHere); e.prun = sp > M2.walk; e.pclip = 'idle'; return true } e.fol = false }
+    e.pclip = null; return false }
   if (!e.play || now > e.play.end) playNext(e, now); return playTick(e, dt, now) }
 function petDash() { const M = HORSE; if (!M || !M.p) return; const was = dash.at; dash(); if (dash.at === was) return; if (!joy.on && !walkT) M.lungeT = sprintT; sfx('splash') }
 function petRam(M, now) { const r = M.A.root.position; for (const m of mons) { if (m === M || m.T.horse || m.ramK === dash.at) continue; const mp = m.A.root.position, d = dist(r.x, r.z, mp.x, mp.z); if (d > D.MPET.ramR) continue; m.ramK = dash.at;
