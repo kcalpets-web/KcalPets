@@ -49,9 +49,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     await E(() => window.__ng.placeMe(2, 2)); await wait(1200);
     await E(() => window.__ng.openCraft('mats')); await wait(400); await E(async () => { const D = await import('/newgame/src/data.js'); window.__ng.craftMake(D.CRAFT.findIndex(r => r.k === 'torch2'), () => {}) });   /* v3.38 the craft book */ await wait(400); await close();
     const tc = await E(() => window.__ng.S.mats.torch || 0); log('torches crafted', tc); if (tc !== 2) errs.push('crafting torches failed');
-    const w0 = await E(() => window.__ng.climate().warm); await E(() => { window.__ng.S.hand = 'torch'; window.__ng.torchLight(); window.__ng.gearView() }); await wait(800);
-    const tw = await E(() => ({ on: window.__ng.torchOn(), left: window.__ng.S.mats.torch, warm: window.__ng.climate().warm, light: window.__ng.TORCHL.intensity })); log('torch', JSON.stringify(tw), 'warm before', w0);
-    if (!tw.on || tw.left !== 1 || tw.warm !== w0 + 1 || !(tw.light > 1)) errs.push('the torch did not light / warm / glow');
+    const w0 = await E(() => { window.__ng.WXS.rain = 0; window.__ng.WXS.type = 'clear'; return window.__ng.climate().warm }); await E(() => { window.__ng.WXS.rain = 0; window.__ng.S.hand = 'torch'; window.__ng.torchLight(); window.__ng.gearView() }); await wait(800);
+    await E(() => new Promise(r => { const t0 = performance.now(), f = () => { window.__ng.WXS.rain = 0; if (performance.now() - t0 < 1500) requestAnimationFrame(f); else r() }; f() }));   /* hold the weather dry while the light settles */
+    const tw = await E(() => ({ on: (window.__ng.WXS.rain = 0, window.__ng.torchOn()), left: window.__ng.S.mats.torch, warm: window.__ng.climate().warm, light: window.__ng.TORCHL.intensity })); log('torch', JSON.stringify(tw), 'warm before', w0);
+    if (!tw.on || tw.left !== 1 || tw.warm !== 2 || !(tw.light > 1)) errs.push('the torch did not light / warm (v3.82: a lit torch = ❄️ 2) / glow');   /* the test forces dry weather (rain puts it out) */
     await pg.screenshot({ path: OUT + '/torch.png' });
     await E(() => { window.__ng.S.torchT = .5 }); for (let i = 0; i < 40 && await E(() => window.__ng.S.mats.torch !== 0); i++) await wait(300); const t2 = await E(() => ({ on: window.__ng.torchOn(), left: window.__ng.S.mats.torch }));
     log('burnt → next', JSON.stringify(t2)); if (!t2.on || t2.left !== 0) errs.push('the next torch did not light');
