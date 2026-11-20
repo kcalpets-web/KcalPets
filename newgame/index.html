@@ -499,6 +499,7 @@ body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.
 /* v3.81 🎯 a slim goal line under the minimap (2 lines at most · tap = the quest page) */
 #goal{display:block;margin:6px 0 0 auto;max-width:150px;padding:3px 7px;border-radius:10px;border:2px solid #2a2030;background:#fff8eee0;color:#2a2030;font:700 11px/1.3 system-ui;text-align:left;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:auto}#goal:empty{display:none}body.wheel #goal,body.mapOn #goal{display:none}
 @media (orientation:landscape) and (max-height:500px){#goal{position:fixed;top:calc(env(safe-area-inset-top) + 36px);left:50%;transform:translateX(-50%);margin:0;max-width:240px;-webkit-line-clamp:1;z-index:6}}   /* landscape: top middle (the side is full of buttons) */
+.shb{-webkit-overflow-scrolling:touch;touch-action:pan-y}   /* v3.85 a finger always scrolls a window's page */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
