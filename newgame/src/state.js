@@ -1,6 +1,6 @@
 /* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
    The player has ⚡ energy (tools), not Mana. Pets have their own level / HP / Mana / Exp and grow by eating. */
-import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, HEART, EN_STEP, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, WEAR, RAR_MUL, RAR_BONUS, KIND, OLD_ITEM, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX } from './data.js';
+import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, HEART, EN_STEP, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, WEAR, RAR_MUL, RAR_BONUS, KIND, OLD_ITEM, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX, BEAR } from './data.js';
 
 export let S = null;
 export function fresh() {
@@ -79,6 +79,7 @@ export const shieldOn = () => kindOf().shield && !!S.eq.shield;
 /* player = base + growth per level + equipment */
 export function pStats() {
   const sp = S.spirit || { hp: 0, en: 0 }, s = { hp: PLAYER_BASE.hp + HEART * sp.hp, en: Math.round(PLAYER_BASE.en * (1 + EN_STEP * sp.en)), atk: PLAYER_BASE.atk, def: PLAYER_BASE.def };   // v1.4: ✨ spirits + gear
+  if (S.bearUntil > Date.now()) { s.atk += BEAR.buff; s.def += BEAR.buff }   /* v3.99 🐻 the bear's power */
   if (S.buff && S.buff.until > Date.now()) { s.atk += S.buff.atk || 0; s.def += S.buff.def || 0; s.hp += HEART * (S.buff.heart || 0) }   /* v2.6 💛 extra hearts while the meal lasts */
   for (const sl in S.wear || {}) { const W = WEAR[S.wear[sl]]; if (W && W.def) s.def += W.def }   /* v3.43 armour */
   for (const slot in S.eq) { if (slot === 'bow' || slot === 'shield' && !kindOf().shield) continue;   /* the bow only counts for arrows */ const it = S.bag.find(x => x.id === S.eq[slot]); if (it) { const st = itemStats(it); s.atk += st.atk; s.def += st.def } }

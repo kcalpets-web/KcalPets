@@ -589,7 +589,8 @@ export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = 
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
-export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar'], water: ['duck', 'duck', 'rabbit'] };
+export const BEAR = { angry: 6, buff: 100, ms: 60000, cd: 240000 };   // v3.99 🐻 charges inside 6 m · its skill: ⚔️🛡️ +100 for 1 min · cool-down 4 min
+export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar', 'bear'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar', 'bear'], water: ['duck', 'duck', 'rabbit'] };
 export const WCAMP = { count: 40, spacing: 95, ring: 8, ringR: 58 };   // v3.14 ~40 camps over the mainland + a ring of fortress camps round the castle (Luminia)              // monster camps scattered over the big world
 export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down
   { name: 'แคมป์สไลม์', col: '#3fa860', mons: ['slime', 'slime', 'grassSprite'], chief: 'slimeKing', gem: [30, 60], coin: [300, 500] },
@@ -629,7 +630,7 @@ export const LV_POTION_REFUND = { hpS: 300, hpL: 900 };         // old HP potion
 /* ================= v1.5 catching pets · pet abilities ================= */
 export const CATCH = {                     // diff: harder = smaller zone, wilder struggle · ability: what the pet lets you do
   rabbit:  { el: '🌱', diff: .7 }, chicken: { el: '🔥', diff: .8 }, duck: { el: '💧', diff: .8 }, deer: { el: '❄️', diff: 1.15 }, boar: { el: '🪨', diff: 1.3 },
-  whale:   { el: '💧', diff: 1.4, ability: 'swim' }, hawk: { el: '⚡', diff: 1.3, ability: 'glide' },
+  whale:   { el: '💧', diff: 1.4, ability: 'swim' }, hawk: { el: '⚡', diff: 1.3, ability: 'glide' }, bear: { el: '🪨', diff: 1.55, ability: 'power' },   /* v3.99 🐻 */
 };
 export const CATCH_RANGE = 4.2, PET_MAX = 9999;   // v3.16.4 no limit on pets   // v2.4: a longer reach
 export const WHALE_SP = 7.5;                                   // riding the whale (m/s) · the raft is 5.2
