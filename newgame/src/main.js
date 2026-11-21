@@ -1700,7 +1700,8 @@ const SKW = { on: false, el: (() => { const e = document.createElement('div'); e
 function skwShow(on) { SKW.on = on; SKW.el.classList.toggle('on', on); document.body.classList.toggle('skwOn', on); if (!on) return; SKW.t = performance.now(); joy.on = false; walkT = null; stopAuto(); sfx('tap');
   SKW.el.innerHTML = '<i data-skw="close" class="down close"><b class="kb">B</b>✖️<small>ปิด</small></i>' + [['X', 'up'], ['A', 'right'], ['Y', 'left']].map(([sl, pos]) => { const k = skSlot(sl), has = k && (k === 'eel' ? !!S.has.bolt : S.pets.some(p => p.kind === k)), left = has ? Math.max(0, (PSK[k] || 0) - Date.now()) : 0;
     return `<i data-skw="${sl}" class="${pos}${has ? '' : ' empty'}${left ? ' cd' : ''}"><b class="k${sl.toLowerCase()}">${sl}</b>${has ? SKILLS[k].icon : '➕'}<small>${has ? (left ? Math.ceil(left / 1000) + ' วิ' : SKILLS[k].name) : 'ว่าง'}</small></i>` }).join('') + '<p>กดปุ่มนั้นเพื่อใช้สกิล · B = ปิด</p>';
-  SKW.el.querySelectorAll('[data-skw]').forEach(x => x.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); skwUse(x.dataset.skw) })) }
+  SKW.el.querySelectorAll('[data-skw]').forEach(x => x.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); skwUse(x.dataset.skw) }));
+  if (OPT.ctrl === 'pad') { SKW.el.classList.add('onbtn'); for (const [k, id] of [['X', 'bX'], ['A', 'bA'], ['Y', 'bY'], ['close', 'bB']]) { const i = SKW.el.querySelector(`[data-skw="${k}"]`), r = $(id).getBoundingClientRect(); if (i && r.width) { i.style.left = Math.round(r.left + r.width / 2) + 'px'; i.style.top = Math.round(r.top + r.height / 2) + 'px' } } if (SKW.el.querySelector('[data-skw="close"]')) SKW.el.querySelector('[data-skw="close"]').innerHTML = '↩️<small>ยกเลิก</small>'; SKW.el.querySelectorAll('i small').forEach(x => { x.textContent = x.textContent.replace(/\s*\(.*$/, '') }) } }   /* v4.04 the three skill circles sit on the X · Y · A buttons (blue · yellow · red) · B = cancel */
 function skwUse(sl) { skwShow(false); if (sl === 'B' || sl === 'close') { sfx('tap'); return } slotSkill(sl) }   /* B closes */
 document.addEventListener('pointerdown', e => { if (SKW.on && !e.target.closest('#skw,#bA,#bB,#bX,#bY,#bSwap,#bFarm,#stick') && performance.now() - SKW.t > 250) skwShow(false) }, true);
 /* the card's line: also in both modes */
@@ -3070,11 +3071,35 @@ function ctxTick(now, dt, mv) {
   ctxPos(now);
 }
 const CTX_NOW = new Set(['eat', 'run', 'swim', 'whale', 'catch', 'loot', 'raft']);
+/* ================= v4.04 🎮 icon buttons (designer + player feedback): each button shows what it does now · a hold action alternates slowly with the tap one (dashed ring) ·
+   a faint blinking word under it · the letters X Y A B only in the bag / menus · hold X = the skills as three coloured circles on the buttons ================= */
+const CTX_LB = { place: 'วาง', altar: 'แท่นบูชา', gemspot: 'เก็บหิน', pet: 'น้อง', eat: 'กิน', cook: 'ทำอาหาร', capdoor: 'ประตู', lstone: 'ศิลา', sign: 'ป้าย', raft: 'ขึ้นแพ', horse: 'ขี่ม้า', tower: 'ปีน', wchest: 'เปิดหีบ', note: 'อ่าน', talk: 'คุย', pot: 'หม้อ', house: 'บ้าน', shop: 'ร้าน', ruin: 'ซ่อม', shrine: 'ศาล', chest: 'เปิดหีบ', scroll: 'เก็บ', boat: 'เรือ', catch: 'จับ', fruit: 'เก็บ', axe: 'ตัด', hammer: 'ทุบ', sickle: 'เกี่ยว', sword: 'ฟัน', fight: 'ฟัน', run: 'วิ่ง', swim: 'ว่าย', whale: 'ขี่วาฬ', loot: 'เก็บ', use: 'ใช้' };
+const BTNS = {}; for (const id of ['bA', 'bB', 'bX', 'bY']) { const el = $(id), letter = id[1]; const sp = el.querySelector('span') || (() => { el.textContent = ''; const x = document.createElement('span'); x.textContent = letter; el.prepend(x); return x })(); sp.classList.add('bk');
+  const ic = document.createElement('span'); ic.className = 'bic'; ic.innerHTML = '<i class="t"></i><i class="h"></i><em class="t"></em><em class="h"></em>'; el.appendChild(ic); BTNS[id] = { el, ic, key: '' } }
+function btnSet(id, tap, hold, dim) { const B = BTNS[id], k = tap.join() + '|' + (hold ? hold.join() : '') + (dim ? 'd' : ''); if (k === B.key) return; B.key = k; const [it, ih, et, eh] = B.ic.children;
+  it.textContent = tap[0]; et.textContent = tap[1]; ih.textContent = hold ? hold[0] : ''; eh.textContent = hold ? hold[1] : ''; B.ic.classList.toggle('dual', !!hold); B.ic.classList.toggle('dim', !!dim) }
+let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; if (!PL) return;
+  document.body.classList.toggle('lettered', !!(topOv() || SMENU.on || PICK || wheelOn || OPT.ctrl !== 'pad'));
+  const air = PL && me().y - groundH(me().x, me().z) > .6 && !PL.swim, sk = ['X', 'A', 'Y'].some(sl => { const k = skSlot(sl); return k && (k === 'eel' ? !!S.has.bolt : S.pets.some(p => p.kind === k)) });
+  /* X: jump · in the air with the leaf glider = open it · crouching = stand · hold = the skills */
+  btnSet('bX', GLIDE ? ['🪂', 'ร่อนอยู่'] : air && S.has.glider ? ['🪂', 'กางร่ม'] : CROUCH ? ['🧍', 'ลุกขึ้น'] : AIM ? ['🔍', 'ซูมออก'] : ['🏃🏻', 'กระโดด'], sk && !AIM && !GLIDE ? ['✨', 'ค้าง = สกิล'] : null);
+  /* B: guard · back / fold / get off */
+  btnSet('bB', AIM ? ['↩️', 'ยกเลิก'] : GLIDE ? ['🪂', 'หุบร่ม'] : HORSE ? ['⬇️', 'ลง'] : RIDE ? ['🛡️', 'ป้องกัน'] : carryN() ? ['🎒', 'เก็บของ'] : shieldOn() ? ['🛡️', 'ป้องกัน'] : ['⚔️', 'ปัด']);
+  /* A: what is in front of you */
+  { const show = $('bA').classList.contains('ctx') && CTX; btnSet('bA', show ? [CTX_ICO[CTX.k] || '✋', CTX_LB[CTX.k] || 'ใช้'] : HORSE && HORSE.p ? ['🐾', 'ขี่อยู่'] : ['✋', 'ใช้'], null, !show) }
+  /* Y: hit / shoot / the farm tool */
+  { const f = gFarm(), r = gRange(), w = weaponOf(), wi = w && D.ITEMS[w.t]; let tap, hold = null;
+    if (HORSE && HORSE.p) tap = ['🐾', 'กัด'];
+    else if (!r) { tap = wi ? [wi.icon, f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; if (!f && wi) hold = ['🎯', 'ค้าง = ปา'] }
+    else if (!f) { tap = ['🏹', 'ค้าง = เล็ง']; hold = ['🎯', 'ปล่อย = ยิง'] }
+    else { const k = yTool(), T = D.YTOOL[k] || {}; tap = [T.icon || '🧰', k === 'rope' ? 'ดึงของ' : k === 'net' ? 'ตาข่าย' : k === 'rod' ? 'ตกปลา' : k === 'draw' ? 'วาดภาพ' : k === 'flute' ? 'ขลุ่ย' : 'ใช้']; if (k === 'rope' || k === 'net') hold = ['🎯', 'ค้าง = เล็ง'] }
+    btnSet('bY', tap, hold) } }
 function ctxPos(now = performance.now()) {
   const c = CTX; let p = null; if (c && c.at) p = [c.at.x, (c.at.y || 0) + (c.h || 1.8), c.at.z]; else if (c && c.xz) p = [c.xz[0], groundH(c.xz[0], c.xz[1]) + (c.h || 1.6), c.xz[1]];
   if (c && CTX_NOW.has(c.k) && !c.at) { const q = me(); p = [q.x, q.y + 2.1, q.z] }
   const show = c && (CTX_NOW.has(c.k) || now - Math.max(ctxStill, ctxKeyT) > D.CTX_WAIT * 1000); $('bA').classList.toggle('ctx', !!show);
   if (!p || !show) { ctxEl.style.display = 'none'; return } const s = project(p[0], p[1], p[2]); if (s.z > 1) { ctxEl.style.display = 'none'; return }
+  if (OPT.ctrl === 'pad') { ctxEl.style.display = 'none'; return }   /* v4.04 the icon is on the A button now */
   ctxEl.style.display = 'block'; ctxEl.textContent = CTX_ICO[c.k]; ctxEl.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
 }
 /* 🪏 farm mode: a frame on the ground where the shovel will dig (green = ok · red = can't) */
@@ -3092,7 +3117,7 @@ function ropePull(d) { const p = d.g.position; ROPEP = { d, t0: performance.now(
 function ropeTick(now) { if (!ROPEP) return; const { d } = ROPEP; if (!drops.includes(d)) { ROPEP = null; ROPEL.visible = false; return } const q = me(), k = Math.min(1, (now - ROPEP.t0) / (D.ROPE.pull * 1000)), e = k * k * (3 - 2 * k), x = ROPEP.x0 + (q.x - ROPEP.x0) * e * .92, z = ROPEP.z0 + (q.z - ROPEP.z0) * e * .92;
   d.g.position.set(x, groundH(x, z) + Math.sin(k * Math.PI) * .8, z); const P = ROPEL.geometry.attributes.position; P.setXYZ(0, q.x, q.y + 1.1, q.z); P.setXYZ(1, x, d.g.position.y + .3, z); P.needsUpdate = true;
   if (k >= 1) { ROPEP = null; ROPEL.visible = false; pickDrop(d) } }
-function tillTick() { placeTick(performance.now()); ropeTick(performance.now());
+function tillTick() { placeTick(performance.now()); ropeTick(performance.now()); btnTick(performance.now());
   const on = S.hand === 'hoe' && !!weaponOf() && PL && !PL.swim && !RIDE && !AIM && !CUT; TILLM.visible = !!on; if (!on) return;   /* v3.24 always shown with the hoe */
   const [cx, cz, ok] = hoeCell(); TILLM.position.set(cx, groundH(cx, cz) + .05, cz); TILLM.material.color.set(ok ? '#7aff8a' : '#ff6a5a');
 }
@@ -3101,7 +3126,7 @@ const FARM_BTN = { A: ['🪏', 'พลั่ว'], B: ['🎣', 'เบ็ด'], 
 function setMode(m, quiet) {
   if (m === S.mode && !quiet) return; S.mode = m; if (!quiet) tutEv(m); const farm = m === 'farm'; document.body.classList.toggle('farm', farm);
   $('mFight').classList.toggle('on', !farm); $('mFarm').classList.toggle('on', farm);
-  for (const k of ['A', 'B', 'X', 'Y']) { const el = k === 'A' ? $('bA').querySelector('span') : $('b' + k); el.innerHTML = farm ? `<b class="fi">${FARM_BTN[k][0]}</b>` : k }
+  for (const k of ['A', 'B', 'X', 'Y']) { const el = $('b' + k).querySelector('.bk') || $('b' + k).querySelector('span') || $('b' + k); el.innerHTML = farm ? `<b class="fi">${FARM_BTN[k][0]}</b>` : k }   /* v4.04 only the letter (the icon layer stays) */
   if (!quiet) { aimEnd(false); CROUCH = false; stopAuto(); if (farm) { if (DRAWN || guardTog) stowAll(); toast('🪏 โหมดฟาร์ม<br>🪏 ขุดแปลง · 🎣 ตกปลา · ⛏️ ทุบหิน · 🖍️ วาดภาพ', 2200) } else { if (tool && tool !== 'sword') setTool(''); toast('⚔️ โหมดดาบ<br>A โจมตี/ตัด · B ป้องกัน · X กระโดด · Y ธนู', 2200) } sfx('tap'); save() }
 }
 function farmA(t) {   /* 🪏 shovel: talk / use things · plots (plant, water, harvest) · dig new soil in front */
