@@ -24,13 +24,13 @@ const ROOT = '/home/user/KcalPets', PORT = 8853, OUT = process.argv[2] || '/tmp/
       const f45 = N.D ? N.D.FALL.safe : null; S.hp = 200; N.fallHurt(8); const f8 = 200 - S.hp; S.hp = 40; return { bare, bareHit: h0 - h1, sword: sw, f45, f8 } });
     log('real damage', JSON.stringify(rd)); if (rd.bare !== 0 || rd.bareHit) errs.push('bare hands should do 0'); if (rd.f45 !== undefined && rd.f45 !== null && rd.f45 !== 5) errs.push('safe fall height should be 5 m'); if (rd.f8 !== 15) errs.push('a fall of 8 m should cost 15 HP (¾ ❤️)');
     // eat: meat ❤️ · apple ⚡ · no hunger
-    const et = await E(async () => { const N = window.__ng, S = N.S; S.hp = 20; N.carryTake('rabbitmeat'); N.carryA(); const a = S.hp; S.en = 10; N.carryTake('apple'); N.carryA(); return { hpAfterRabbit: a, enAfterApple: S.en, full: S.full } });
+    const et = await E(async () => { const N = window.__ng, S = N.S; S.hp = 20; N.carryTake('rabbitmeat'); N.carryEat(); const a = S.hp; S.en = 10; N.carryTake('apple'); N.carryEat();   /* v3.98 A puts it down · eating = 😋 กิน in the bag */ return { hpAfterRabbit: a, enAfterApple: S.en, full: S.full } });
     log('eat', JSON.stringify(et)); if (et.hpAfterRabbit !== 80) errs.push('raw rabbit meat should give +3 ❤️ (20 → 80)'); if (!(et.enAfterApple >= 30)) errs.push('an apple should give ⚡'); 
     await E(() => window.__ng.needsTick(5)); const fl = await E(() => window.__ng.S.full); log('full', fl); if (fl !== 100) errs.push('no hunger: full should stay 100');
     // bag text shows +3❤️
     await E(() => window.__ng.openBag('mats')); await wait(800); const txt = await E(() => document.querySelector('.ov').innerText); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     // faint → 1 heart
-    await E(() => window.__ng.faint('test')); await wait(6000); const fh = await E(() => window.__ng.S.hp); log('after fainting', fh); if (fh !== 20) errs.push('waking after going down should leave 1 ❤️');
+    await E(() => { const N = window.__ng; for (const m of [...N.mons]) N.hurtMon(m, 99999, 'dmg'); N.faint('test') }); let fh = 0; for (let i = 0; i < 60 && fh !== 20; i++) { await wait(200); fh = await E(() => window.__ng.S.hp) }   /* poll: under load a stray hit can land after waking */ log('after fainting', fh); if (fh !== 20) errs.push('waking after going down should leave 1 ❤️');
     // hunt: horse · hawk · whale leave their meat
     const hunt = await E(async () => { const N = window.__ng, q = N.me, out = {}; for (const k of ['horse', 'hawk', 'whale', 'boar', 'duck']) { const ing0 = JSON.stringify(N.S.ingr), d0 = N.drops.length; const m = N.monSpawn(k, q.x + 3, q.z, { area: 'wild' }); await new Promise(r => setTimeout(r, 300)); for (let i = 0; i < 30 && N.mons.includes(m); i++) N.hurtMon(m, 999, 'dmg'); await new Promise(r => setTimeout(r, 300));
         const drop = N.drops.slice(d0).map(d => d.ingr || (d.g && d.g.userData && d.g.userData.ingr) || '?'); out[k] = { dead: !N.mons.includes(m), drops: N.drops.length - d0, bag: JSON.stringify(N.S.ingr) !== ing0 } } return out });
