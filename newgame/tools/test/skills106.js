@@ -1,4 +1,4 @@
-/* v4.06 ✨ the bag's skill page · a pet's skill works only from Lv 5 · reaching Lv 5 pops up "you got a skill" (once) · skills you already had: no pop-up
+/* v4.06 (v4.07: only the skills you have · the pet explains its own) ✨ the bag's skill page · a pet's skill works only from Lv 5 · reaching Lv 5 pops up "you got a skill" (once) · skills you already had: no pop-up
    NODE_PATH=$(npm root -g) node newgame/tools/test/skills106.js outDir   (~1 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const fs = require('fs');
 const ROOT = '/home/user/KcalPets', PORT = 8858, OUT = process.argv[2] || '/tmp/ng_skills', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
@@ -16,11 +16,11 @@ const ROOT = '/home/user/KcalPets', PORT = 8858, OUT = process.argv[2] || '/tmp/
     log('start', JSON.stringify(r));
     if (!r.got0.bear || r.got0.hawk) errs.push('a skill you already had should be marked got (no pop-up) · a locked one not');
     if (!r.on.bear || r.on.hawk) errs.push('bear Lv6 = on · hawk Lv4 = locked'); if (r.lift) errs.push('a Lv 4 hawk should not lift you');
-    if (r.L.length !== 5) errs.push('the ✨ page should list the 5 skills');
+    if (JSON.stringify(r.L) !== '["kbear"]') errs.push('v4.07 the ✨ page lists only the skills you have');
     await E(() => window.__ng.openBag('skill')); await wait(1200); await pg.screenshot({ path: OUT + '/page.png' });
-    const pageOk = await E(() => !!document.querySelector('.ov .invgrid [data-k="khawk"]') && /สกิล/.test(document.querySelector('.ov').textContent)); if (!pageOk) errs.push('the bag should open on the ✨ page');
-    await E(() => window.__ng.bagA('khawk', () => { })); await wait(800); await pg.screenshot({ path: OUT + '/hawk-locked.png' });
-    const why = await E(() => [...document.querySelectorAll('.ov')].pop().textContent); log('locked text', why.slice(0, 160)); if (!/Lv 5/.test(why)) errs.push('a locked skill should say what it takes (Lv 5)');
+    const pageOk = await E(() => !!document.querySelector('.ov .invgrid [data-k="kbear"]') && !document.querySelector('.ov .invgrid [data-k="khawk"]')); if (!pageOk) errs.push('the bag should open on the ✨ page');
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag('pets') }); await wait(1000); await E(() => window.__ng.bagA('pph', () => { })); await wait(800); await pg.screenshot({ path: OUT + '/hawk-locked.png' });
+    const why = await E(() => [...document.querySelectorAll('.ov')].pop().textContent); log('locked text', why.slice(0, 160)); if (!/Lv 5/.test(why)) errs.push('v4.07 the pet should explain its skill and the Lv 5 lock');
     await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await E(() => { const N = window.__ng, p = N.S.pets.find(x => x.id === 'ph'); N.petExp(p, 99999) }); await wait(4500);
     const pop = await E(() => { const o = [...document.querySelectorAll('.ov')].pop(); return o ? o.textContent : '' }); await pg.screenshot({ path: OUT + '/gain.png' });
