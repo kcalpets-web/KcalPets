@@ -285,10 +285,10 @@ export const RAR_BONUS = { B: [[0, 0], [0, 0]], R: [[2, 4], [0, 4]], E: [[5, 9],
 export const OLD_ITEM = { leafBlade: [6], branchSword: [10], stoneClub: [14, 1], leafVest: [0, 3], barkArmor: [0, 5], stoneArmor: [0, 8] };   // v1.x stats (× RAR_MUL) → bonus on upgrade
 
 /* ---- the player (no body on screen: the finger is the player) ---- */
-export const PLAYER_BASE = { hp: 100, en: 100, atk: 4, def: 2 };   /* v2.0: atk 4 = bare fists · the weapon adds the rest */       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
+export const PLAYER_BASE = { hp: 100, en: 100, atk: 0, def: 2 };   /* v3.97 real damage: bare hands = 0 · a sword hits for what it says */   /* v2.0: atk 4 = bare fists · the weapon adds the rest */       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
 export const PLAYER_GROW = { hp: 0, en: 0, atk: 0, def: 0 };   // v1.4: no levels → ✨ Spirits of Luthonia instead
 /* v1.4 ✨ Spirit of Luthonia: one per main NPC quest · choose ❤️ +1 heart or ⚡ +20 % energy (Zelda-like) */
-export const QHIT = 8;   // v3.97 a hit on the player: ¼ ❤️ per this much raw damage (min ¼) · goblin ~¼ · ghoul ~½ · shade knight ~¾
+export const QHIT = 5;   // v3.97 real damage (designer): 1 ❤️ = 20 HP · a hit rounds to ¼ ❤️ (5 HP) steps, at least ¼
 export const HEART = 20, HEARTS_MAX = 20, EN_STEP = .2, EN_MAX_MUL = 3;      // 1 heart = 20 HP · start 5 hearts · max 20 · energy up to 3× the start
 export const SPIRIT_QUESTS = ['s2', 's3d', 's4e', 's5c', 's6e'];              // repair Howsif's boat · Slime King · free Sberh · cure Howsif · first home-grown meal
 export const LV_REFUND = 150;                                                 // old saves: 🪙 per old player level
@@ -332,7 +332,7 @@ export const PET_SPECIAL_CD = 25000;
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, boarHits: 3, boarPop: 350, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
 export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
 // v3.78 🐶🐱 the main pet: always with you · A near it = ride (teen+) · riding: X jump · Y bite + claw · A dash (rams) · B get off
-export const FALL = { safe: 10, perM: 5 };   // v3.81 💥 falls: no harm up to 10 m · then −5 HP (¼ heart) per metre
+export const FALL = { safe: 5, perM: 5 };   // v3.97 over 5 m hurts · −5 HP (¼ ❤️) per metre more   // v3.81 💥 falls: no harm up to 10 m · then −5 HP (¼ heart) per metre
 export const MOUNT = { knock: .3, big: .2 };   // v3.81 a hit knocks you off your mount: 30% chance · always if it takes ≥ 20% of max HP
 export const AUTORUN = 3;   // v3.83 🏃 seconds of holding the stick before you run by yourself
 export const MPET = { near: 2.4, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back: 1.4, side: .9, lag: [5, 10], wait: [1.5, 3.5], help: 9, idle: 3,
