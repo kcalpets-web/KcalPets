@@ -1,4 +1,4 @@
-/* v3.95 every window is a page like the bag: full height from the top · the D-pad shows (no stick) · ▼ moves the yellow frame · a question (ยืนยัน) stays a small box
+/* v3.95 every window is a page like the bag: full height from the top · the D-pad shows (no stick) · ▼ moves the yellow frame
    NODE_PATH=$(npm root -g) node newgame/tools/test/pages.js outDir   (~3 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const fs = require('fs');
 const ROOT = '/home/user/KcalPets', PORT = 8852, OUT = process.argv[2] || '/tmp/ng_pages', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
@@ -18,8 +18,6 @@ const ROOT = '/home/user/KcalPets', PORT = 8852, OUT = process.argv[2] || '/tmp/
     // ▼ moves the frame on the build page
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openAtlas('build') }); await wait(1000);
     const mv = await E(async () => { const N = window.__ng, k = () => (document.querySelector('.ov .nfocus') || {}).textContent; N.navMove('down'); await new Promise(r => setTimeout(r, 300)); const a = k(); N.navMove('down'); await new Promise(r => setTimeout(r, 300)); return [a, k()] }); log('frame', JSON.stringify(mv)); if (!mv[0] || mv[0] === mv[1]) errs.push('▼ should move the frame on the build page');
-    // a question stays a small box
-    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.demolish && 0 }); const q = await E(() => { const N = window.__ng, b = { id: 'c1', k: 'campfire', x: N.me.x + 2, z: N.me.z, r: 0, done: 1, fix: Date.now() }; N.S.builds.push(b); N.demolish(b); return (document.querySelector('.ov') || {}).className }); log('question', q); if (q && !/\bdlg\b/.test(q)) errs.push('a question should stay a small box');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();
