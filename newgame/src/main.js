@@ -1165,7 +1165,7 @@ $('tBox').onclick = () => { $('tools').classList.toggle('open'); sfx('tap') };
 document.querySelectorAll('#tools [data-tool]').forEach(b => b.onclick = () => { const k = b.dataset.tool, fm = farmMon(); if (fm && k !== 'sword') { hint(`⚔️ จัดการ ${fm.T.name} ก่อน`); return } setTool(k);
   const tips = { hoe: '🪏 แตะ/ลากผ่านพื้นหญ้าใกล้บ้านต้นไม้เพื่อขุดแปลงผัก', sketch: '✏️ แตะมอนสเตอร์ ผู้คน หรือน้อง เพื่อวาดลงสมุดบันทึก 📓', sickle: '🌾 ลากนิ้วผ่านหญ้า/พุ่มเล็ก', axe: '🪓 ลากนิ้วผ่านต้นไม้/พุ่มไม้ = ได้ไม้', hammer: '⛏️ ลากนิ้วผ่านหิน = ได้หิน', sword: '⚔️ ลากนิ้วผ่านมอนสเตอร์เพื่อฟัน', rod: '🎣 แตะที่น้ำทะเลเพื่อเหวี่ยงเบ็ด' };
   if (k && !S.stat['tip_' + k]) { S.stat['tip_' + k] = 1; toast(tips[k] + (k !== 'rod' && k !== 'sword' ? '<br>ลากผ่าน 1 ครั้ง = 1 ที · ของใหญ่ลากหลายรอบ' : ''), 3000) } });
-cv.addEventListener('pointerdown', e => {
+cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId) } catch (_) { }   /* v3.97.1 the lift always comes back to the canvas */
   if (CUT) return; $('tools').classList.remove('open'); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
   if (ptrs.size === 2) { const a = [...ptrs.values()]; pinch = { d: Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]), z: zoom, cx: (a[0][0] + a[1][0]) / 2, cy: (a[0][1] + a[1][1]) / 2 }; stroke = null; down = null; trail.length = 0; return }
   down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), moved: false };
@@ -1191,6 +1191,8 @@ function joyMove(ox, oy, x, y) { stopAuto(); const dx = x - ox, dy = y - oy, d =
 function joyEnd() { joy.on = false; joy.run = false; $('joy').style.display = 'none' }
 const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!camTP() || OPT.ctrl !== 'pad') joyEnd();   /* v3.16.3 lifting the camera-drag finger never stops the stick */ if (!down) return; if (!down.moved && performance.now() - down.t < 500) tap(e.clientX, e.clientY); stroke = null; down = null };
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+/* v3.97.1 bug fix (designer: after a mid-air shot the screen would not turn): a finger lifted over a button / the aim overlay never reached the canvas · it stayed counted, so one finger = a two-finger pinch · catch every lift on the window too */
+addEventListener('pointerup', e => { if (ptrs.has(e.pointerId)) { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { down = null; stroke = null } } }); addEventListener('pointercancel', e => { if (ptrs.has(e.pointerId)) { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { down = null; stroke = null } } });
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(.55, Math.min(1.7, zoom * (e.deltaY > 0 ? 1.1 : 1 / 1.1))); localStorage.setItem('ng_zoom', zoom) }, { passive: false });
 const fx = $('fx'), fxc = fx.getContext('2d'), trail = [];
 function fxResize() { fx.width = innerWidth * devicePixelRatio; fx.height = innerHeight * devicePixelRatio; fxc.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0) }
