@@ -17,10 +17,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8851, OUT = process.arg
     await wait(800); await pg.screenshot({ path: OUT + '/carry.png' });
     // B = back in the bag
     await E(() => window.__ng.carryBack()); const back = await E(() => ({ n: window.__ng.S.hold.length, apple: window.__ng.S.ingr.apple })); log('back', JSON.stringify(back)); if (back.n || back.apple !== 3) errs.push('B should put the food back in the bag');
-    // far from a pot: A eats the last piece (v3.68) · X/Y put it all away
-    await E(() => { const N = window.__ng; N.carryTake('banana'); N.carryTake('coconut'); N.carryTake('apple'); N.S.enB = 0; N.placeMe(N.POT.home.x + 9, N.POT.home.z + 9) }); await wait(500); await E(() => window.__ng.carryA());
-    const ate = await E(() => ({ n: window.__ng.S.hold.length, en: window.__ng.S.enB, apple: window.__ng.S.ingr.apple, ctx: window.__ng.CTX && window.__ng.CTX.k })); log('ate', JSON.stringify(ate)); if (ate.n !== 2 || !(ate.en > 0) || ate.apple !== 2) errs.push('A away from a pot should eat the apple');
-    await wait(400); if ((await E(() => window.__ng.CTX && window.__ng.CTX.k)) !== 'eat') errs.push('the A hint should be 😋 while holding food');
+    // far from a pot: v3.98 A puts the last piece down on the white circle (eating = 😋 in the bag) · X/Y put it all away
+    await E(() => { const N = window.__ng; N.carryTake('banana'); N.carryTake('coconut'); N.carryTake('apple'); N.S.enB = 0; N.placeMe(N.POT.home.x + 9, N.POT.home.z + 9) }); await wait(500); await E(() => window.__ng.carryA()); await wait(300);
+    const ate = await E(() => ({ n: window.__ng.S.hold.length, apple: window.__ng.S.ingr.apple, onGround: window.__ng.drops.some(d => d.ingr === 'apple'), ctx: window.__ng.CTX && window.__ng.CTX.k })); log('put down', JSON.stringify(ate)); if (ate.n !== 2 || ate.apple !== 2 || !ate.onGround) errs.push('v3.98 A away from a pot should put the apple down');
+    await wait(400); if ((await E(() => window.__ng.CTX && window.__ng.CTX.k)) !== 'place') errs.push('v3.98 the A hint should be 🫳 while holding something');
     // at the pot: A puts each in · empty hands: cook
     await E(() => { const N = window.__ng; N.placeMe(N.POT.home.x + 1.3, N.POT.home.z + .4) }); await wait(600); const pin = await E(() => { const W = window.__ng.WXS; W.type = 'clear'; W.rain = 0; W.at = performance.now() + 1e7; window.__ng.carryA(); return { hold: window.__ng.S.hold.length, job: !!window.__ng.S.jobs['cook:home'], what: (window.__ng.S.cooking || {}).home } });   /* v3.90 one A = all in + it cooks (read at once: a short cook can finish before a slow frame) */ log('v3.90 one A at the pot', JSON.stringify(pin)); if (pin.hold) errs.push('A at the pot should put all the food in'); if (!pin.job) errs.push('v3.90 one A at the pot should cook at once');
     await wait(1500); await pg.screenshot({ path: OUT + '/cooking.png' });
