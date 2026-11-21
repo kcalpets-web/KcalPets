@@ -802,7 +802,7 @@ async function runFlashback() {
   document.body.classList.remove('cut'); CUT = false; last = performance.now(); ambience();
   for (const k in D.CURE_GIFT) S.potions[k] = (S.potions[k] || 0) + D.CURE_GIFT[k]; S.story.medicine = 1; save(); hud();
   talk([['🧑‍🔬 Sberh', 'นั่นแหละ… ผมถูกจับไปแบบนั้น ขอบคุณที่ช่วยผมออกมานะ'], ['🧑‍🔬 Sberh', `นี่ยาสำหรับคุณ 🧴 ยาแก้พิษ ×${D.CURE_GIFT.antidote} · 🍵 ชาสมุนไพร ×${D.CURE_GIFT.mpS}<br>และนี่ 💊 ยารักษาที่ทำจากสมุนไพรเรืองแสง เอาไปให้ลุงฮาวซิฟนะ`],
-    ['💡 วิธีใช้ยา', 'ติดพิษ หนาว ไหม้ หรือมึน → ไอคอนจะขึ้นใต้หัวใจ · แตะไอคอนเพื่อดื่มยาแก้ · ❤️ ฟื้นด้วยอาหาร การนอน และน้องธาตุน้ำ/ใบไม้']], questCheck);
+    ['💡 วิธีใช้ยา', 'ติดพิษ หนาว ไหม้ หรือมึน → ไอคอนจะขึ้นใต้หัวใจ · แตะไอคอนเพื่อดื่มยาแก้ · ❤️ ฟื้นด้วยการกินเท่านั้น (เนื้อสัตว์ อาหาร) · ⚡ ฟื้นด้วยผลไม้ การนอน และน้องธาตุน้ำ/ใบไม้']], questCheck);
 }
 function cureHowsif() {
   S.story.cured = 1; storyProps(); sfx('level'); questCheck(); save();
@@ -2039,7 +2039,7 @@ $('debs').onclick = e => { const b = e.target.closest('[data-deb]'); if (!b) ret
 const bestMeal = () => D.RECIPES.filter(r => S.meals[r.k] > 0 && r.eff.hp).sort((a, b) => b.eff.hp - a.eff.hp)[0];
 function quickEat() { const r = bestMeal(); if (!r) { toast('🍲 ไม่มีอาหารที่เพิ่ม ❤️ · ทำอาหารที่หม้อหรือกองไฟ', 2000); return } if (pHp() >= pStats().hp) { toast('❤️ หัวใจเต็มอยู่แล้ว', 1200); return } closeSheets(); eatMeal(r.k) }
 if (S.potions.hpS || S.potions.hpL) { const c = (S.potions.hpS || 0) * D.LV_POTION_REFUND.hpS + (S.potions.hpL || 0) * D.LV_POTION_REFUND.hpL; S.coin += c; delete S.potions.hpS; delete S.potions.hpL; S.autoPot = false; save();
-  if (S.story.intro) setTimeout(() => toast(`🧪 ยา HP ถูกยกเลิกแล้ว · คืนเป็น 🪙 ${fmt(c)}<br>❤️ ฟื้นด้วยอาหาร การนอน และน้อง · ร้านยามียารักษาอาการแทน`, 4000), 8000) }
+  if (S.story.intro) setTimeout(() => toast(`🧪 ยา HP ถูกยกเลิกแล้ว · คืนเป็น 🪙 ${fmt(c)}<br>❤️ ฟื้นด้วยการกินเท่านั้น · ร้านยามียารักษาอาการแทน`, 4000), 8000) }
 /* ================= v1.5 🫳 catching pets (a tug-of-war like fishing · the animal struggles: the screen and the phone shake) · 🐋 ride · 🦅 glide ================= */
 const swimOk = (x, z) => sailable(x, z) && !walkLand(x, z);
 const hasAbility = a => S.team.some(id => { const p = S.pets.find(x => x.id === id); return p && D.CATCH[p.kind] && D.CATCH[p.kind].ability === a && (a !== 'swim' || formOf(p) >= 1) });   /* v3.54 the whale carries you once it is a teen (Lv 5) */
@@ -2265,7 +2265,7 @@ const specTxt = p => `${petEl(p) ? D.PET_SPECIAL[p.el].name : 'พิเศษ�
 function cdPct(id, k, cd) { const e = PA.get(id); if (!e || !e[k]) return 100; return Math.max(0, Math.min(100, 100 - (e[k] - performance.now()) / cd * 100)) }
 function petSpecial(e, M, now) {
   const p = e.p, el = petEl(p) || Object.keys(D.PET_SPECIAL)[Math.floor(Math.random() * 6)], X = D.PET_SPECIAL[el], st = petStats(p), q = e.A.root.position, mq = M.A.root.position, mx = p.rar === 'B' ? D.PET_SKILL.basicMul : 1;
-  if (X.kind === 'heal') { if (pHp() >= pStats().hp - 1) return false; S.hp = Math.min(pStats().hp, pHp() + X.hearts * D.HEART); VF.ring(me().x, me().y, me().z, VF.ELEM_COL[el], 1.6, .6); VF.rise(me().x, me().y, me().z, VF.ELEM_COL[el], 16); floater(`${el} ${X.name} ❤️+${X.hearts}`, 'heal', me().x, 2.2, me().z) }
+  if (X.kind === 'heal') { const en = Math.round(X.hearts * 20); if (pEn() >= pStats().en - 1) return false; S.en = Math.min(pStats().en, pEn() + en); S.tired = false;   /* v3.97 ❤️ comes from eating only: the pets' healing skill gives ⚡ back instead */ VF.ring(me().x, me().y, me().z, VF.ELEM_COL[el], 1.6, .6); VF.rise(me().x, me().y, me().z, VF.ELEM_COL[el], 16); floater(`${el} ${X.name} ⚡+${en}`, 'heal', me().x, 2.2, me().z) }
   else if (X.kind === 'guard') { petGuardT = now + X.ms; VF.ring(me().x, me().y, me().z, VF.ELEM_COL[el], 1.4, .7); VF.rise(me().x, me().y, me().z, '#e8d8b0', 10); floater(`${el} ${X.name}`, 'heal', me().x, 2.2, me().z) }
   else if (X.kind === 'stun') { VF.ring(mq.x, mq.y, mq.z, VF.ELEM_COL[el], X.r, .55); VF.burst(mq.x, mq.y + .8, mq.z, VF.ELEM_COL[el], 18, 4); for (const m of mons) if (!m.T.animal && dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) { m.stunT = now + X.ms; floater('💫', 'tool', m.A.root.position.x, 1.9, m.A.root.position.z) } floater(`${el} ${X.name}`, 'crit', mq.x, 2.3, mq.z) }
   else { VF.ring(mq.x, mq.y, mq.z, VF.ELEM_COL[el], X.r, .5); VF.ring(mq.x, mq.y, mq.z, '#ffffff', X.r * .6, .35); VF.burst(mq.x, mq.y + .6, mq.z, VF.ELEM_COL[el], 26, 5); shakeT = .25; for (const m of [...mons]) if (dist(m.A.root.position.x, m.A.root.position.z, mq.x, mq.z) < X.r) hurtMon(m, dmgCalc(st.atk, m.T.def, X.mul * mx).d, 'crit', `${el} ${X.name}`) }
