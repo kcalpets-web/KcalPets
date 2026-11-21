@@ -123,3 +123,40 @@ export function demonTree(g, o = {}) {
   for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; part(g, ...MOSS, [Math.cos(a) * .9, .9, Math.sin(a) * .85], [.3, .1, .25], [0, a, 0], { A: .15 }) }
   g.userData.armL = armL; g.userData.armR = armR; g.userData.head = head; g.userData.mouth = mouth; return g;
 }
+
+/* v4.13 💀 deadgar: the skeleton giant (kingdom boss) · a towering skeleton warrior: a skull with glowing green eye sockets under a horned rusty helm,
+   an open ribcage with a ghostly heart-glow, rusty shoulder plates, a torn purple cape, bony limbs, and a huge rusty greatsword
+   g.userData = { armR, armL, sword, head } so the game can swing / slam */
+export function boneGiant(g, o = {}) {
+  const BONE = ['#a89878', '#f4ecd8'], RUST = ['#4a2a1a', '#b0703a'], CLOTH = ['#2a1a34', '#6a4a80'], IRON = ['#3a3a44', '#8a8a98'];
+  const GLOW = new THREE.MeshBasicMaterial({ color: '#7aff6a' }), SOUL = new THREE.MeshStandardMaterial({ color: '#4aff8a', emissive: '#2aff6a', emissiveIntensity: 1.2, transparent: true, opacity: .75 });
+  const bone = (p, a, b, r) => { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A), L = d.length(), m = part(p, ...BONE, [0, 0, 0], [r, L / 2, r], [0, 0, 0], { A: .03 }); m.position.copy(A.clone().add(B).multiplyScalar(.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    for (const e of [A, B]) { const k = part(p, ...BONE, [0, 0, 0], [r * 1.5, r * 1.3, r * 1.5]); k.position.copy(e) } return m };
+  /* legs: thigh + shin bones, iron boots */
+  for (const s of [-1, 1]) { bone(g, [s * .42, 2.0, 0], [s * .5, 1.05, .05], .13); bone(g, [s * .5, 1.05, .05], [s * .52, .3, 0], .11); part(g, ...IRON, [s * .54, .2, .1], [.28, .2, .38]); part(g, ...RUST, [s * .5, 1.75, .05], [.3, .32, .26], [0, 0, s * .1]) }
+  /* pelvis + spine + ribcage (curved ribs) with a soul glowing inside */
+  part(g, ...BONE, [0, 2.1, 0], [.55, .22, .32]); for (let i = 0; i < 6; i++) part(g, ...BONE, [0, 2.3 + i * .2, -.25], [.11, .1, .11]);
+  for (let i = 0; i < 5; i++) { const y = 2.75 + i * .2, w = .62 - Math.abs(i - 2) * .06; for (const s of [-1, 1]) { const rib = new THREE.Mesh(new THREE.TorusGeometry(w, .045, 8, 20, Math.PI * .9)); rib.position.set(0, y, -.2); rib.rotation.set(Math.PI / 2, 0, s > 0 ? -Math.PI * .45 : Math.PI * .55); rib.scale.set(1, .75, 1); const col = new THREE.Color('#e8dcc0'); rib.material = new THREE.MeshStandardMaterial({ color: col, roughness: .8 }); g.add(rib) } }
+  part(g, ...BONE, [0, 3.2, .38], [.08, .5, .05]);   /* sternum */
+  const soul = new THREE.Mesh(new THREE.SphereGeometry(.22, 16, 12), SOUL); soul.position.set(0, 3.1, -.15); g.add(soul); g.userData.soul = soul;
+  /* shoulders: rusty plates with spikes · a torn cape */
+  for (const s of [-1, 1]) { part(g, ...RUST, [s * .8, 3.75, 0], [.42, .26, .4], [0, 0, s * -.3]); for (let k = 0; k < 2; k++) cone(g, ...IRON, [s * (.8 + k * .18), 4.0, -.05 + k * .1], [.06, .26, .06], [0, 0, s * -.4], .95) }
+  const cape = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.6, 6, 8), new THREE.MeshStandardMaterial({ color: '#3a2448', roughness: .9, side: THREE.DoubleSide })); { const P = cape.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i); P.setZ(i, Math.sin(x * 2) * .08 + (y < -.9 ? Math.sin(x * 9) * .1 : 0)); if (y < -1.1 && Math.abs(Math.sin(x * 7)) > .6) P.setY(i, y + .35) } cape.geometry.computeVertexNormals() } cape.position.set(0, 2.55, -.55); cape.rotation.x = .12; g.add(cape);
+  /* arms: the left hangs, the right holds the greatsword up */
+  const armL = new THREE.Group(); armL.position.set(-.95, 3.6, 0); armL.rotation.z = .2; g.add(armL); bone(armL, [0, 0, 0], [0, -.95, .05], .1); bone(armL, [0, -.95, .05], [.02, -1.8, .12], .09); for (let k = 0; k < 3; k++) cone(armL, ...BONE, [-.05 + k * .05, -1.98, .15], [.03, .16, .03], [Math.PI, 0, 0], .9);
+  const armR = new THREE.Group(); armR.position.set(.95, 3.6, 0); armR.rotation.set(.1, 0, 2.2); g.add(armR); bone(armR, [0, 0, 0], [0, -.95, .05], .1); bone(armR, [0, -.95, .05], [.02, -1.75, .12], .09); part(armR, ...BONE, [.02, -1.85, .12], [.13, .11, .12]);
+  const sword = new THREE.Group(); sword.position.set(.02, -1.85, .12); sword.rotation.set(.3, 0, Math.PI + .15); armR.add(sword);
+  part(sword, ...RUST, [0, .25, 0], [.07, .3, .07]); part(sword, ...IRON, [0, .58, 0], [.42, .07, .1]); part(sword, '#5a5a64', '#c8c8d4', [0, 1.5, 0], [.22, .9, .045], [0, 0, 0], { A: .05 }); cone(sword, '#5a5a64', '#c8c8d4', [0, 2.55, 0], [.22, .3, .045], [0, 0, 0], .99); part(sword, '#3a2a20', '#6a4a30', [0, 1.5, .03], [.04, .8, .02], [0, 0, 0], { A: 0 });
+  for (let k = 0; k < 4; k++) part(sword, '#6a3a1a', '#b0602a', [(k % 2 - .5) * .16, .9 + k * .42, .04], [.07, .08, .012]);   /* rust nicks */
+  /* the head: a big skull, dark sockets with green fire, a broken jaw, a horned rusty helm */
+  const head = new THREE.Group(); head.position.set(0, 4.4, .05); head.scale.setScalar(1.25); g.add(head);
+  part(head, ...BONE, [0, 0, 0], [.48, .46, .5]); part(head, ...BONE, [0, -.32, .18], [.32, .16, .3]);   /* cranium + jaw */
+  for (const s of [-1, 1]) { part(head, '#0a0a0a', '#2a2a2a', [s * .19, .02, .38], [.14, .13, .1], [0, 0, 0], { A: 0 }); const e = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), GLOW); e.position.set(s * .19, .02, .45); head.add(e) }
+  part(head, '#1a1a1a', '#3a3a3a', [0, -.12, .45], [.06, .07, .04], [0, 0, 0], { A: 0 }); for (let k = 0; k < 6; k++) part(head, '#e8e0cc', '#fffaf0', [(k - 2.5) * .085, -.26, .44], [.035, .05, .03]);   /* nose hole + teeth */
+  part(head, ...RUST, [0, .26, -.02], [.54, .3, .54]); part(head, ...IRON, [0, .14, .02], [.56, .07, .56]);   /* the helm */
+  for (const s of [-1, 1]) { const cv = new THREE.CatmullRomCurve3([[.45, .3, 0], [.75, .42, -.05], [.85, .75, -.1], [.7, 1.0, -.15]].map(([x, y, z]) => new THREE.Vector3(s * x, y, z))); const hm = new THREE.Mesh(new THREE.TubeGeometry(cv, 20, .08, 8), new THREE.MeshStandardMaterial({ color: '#d8ccb0', roughness: .7 })); head.add(hm); const tip = new THREE.Mesh(new THREE.ConeGeometry(.08, .2, 8), hm.material); tip.position.set(s * .66, 1.08, -.16); tip.rotation.z = s * .5; head.add(tip) }
+  /* bones and a green mist on the ground */
+  for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + .4; part(g, ...BONE, [Math.cos(a) * 1.8, .06, Math.sin(a) * 1.8], [.05, .05, .22], [0, a, 0]) }
+  const mist = new THREE.Mesh(new THREE.CircleGeometry(2.2, 32), new THREE.MeshBasicMaterial({ color: '#4aff8a', transparent: true, opacity: .18 })); mist.rotation.x = -Math.PI / 2; mist.position.y = .03; g.add(mist);
+  g.userData.armL = armL; g.userData.armR = armR; g.userData.sword = sword; g.userData.head = head; return g;
+}
