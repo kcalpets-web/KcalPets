@@ -288,6 +288,7 @@ export const OLD_ITEM = { leafBlade: [6], branchSword: [10], stoneClub: [14, 1],
 export const PLAYER_BASE = { hp: 100, en: 100, atk: 4, def: 2 };   /* v2.0: atk 4 = bare fists · the weapon adds the rest */       // en = ⚡ energy (tools use it, like Stardew) · the player has no skills, so no Mana
 export const PLAYER_GROW = { hp: 0, en: 0, atk: 0, def: 0 };   // v1.4: no levels → ✨ Spirits of Luthonia instead
 /* v1.4 ✨ Spirit of Luthonia: one per main NPC quest · choose ❤️ +1 heart or ⚡ +20 % energy (Zelda-like) */
+export const QHIT = 8;   // v3.97 a hit on the player: ¼ ❤️ per this much raw damage (min ¼) · goblin ~¼ · ghoul ~½ · shade knight ~¾
 export const HEART = 20, HEARTS_MAX = 20, EN_STEP = .2, EN_MAX_MUL = 3;      // 1 heart = 20 HP · start 5 hearts · max 20 · energy up to 3× the start
 export const SPIRIT_QUESTS = ['s2', 's3d', 's4e', 's5c', 's6e'];              // repair Howsif's boat · Slime King · free Sberh · cure Howsif · first home-grown meal
 export const LV_REFUND = 150;                                                 // old saves: 🪙 per old player level
