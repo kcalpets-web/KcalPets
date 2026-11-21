@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.12';
+export const APP_VER = '4.13';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -107,6 +107,7 @@ export const MON = {
   iceGiant: { boss: 1, giant: 1, mini: 1, name: '❄️ ยักษ์น้ำแข็ง', lv: 20, hp: 1700, atk: 34, def: 16, exp: 650, coin: [2400, 3400], mat: { ore: 5 }, loot: ['frostClub', 'crystalBlade'], tier: 'boss', scale: 1, tagH: 5 },   // v4.11 ❄️ frosthelm's boss (main quest)
   mbWolf:   { base: 'rockGolem', tint: '#e8f4ff', mini: 1, scale: 2, name: '🐺 ฮาวล์ จ่าฝูงน้ำแข็ง', lv: 18, hp: 1300, atk: 32, def: 16, exp: 560, coin: [2200, 3200], mat: { ore: 5 }, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
   mbMagma:  { base: 'rockGolem', tint: '#ff4a1a', mini: 1, scale: 2.6, name: '🗿 มักม่า โกเลมลาวา', lv: 20, hp: 1600, atk: 36, def: 20, exp: 700, coin: [2600, 3800], mat: { ore: 8 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
+  boneGiant: { boss: 1, bone: 1, mini: 1, name: '💀 ยักษ์โครงกระดูก', lv: 22, hp: 2000, atk: 38, def: 18, exp: 800, coin: [3000, 4500], mat: { bone: 6 }, loot: ['boneBlade', 'kingSword'], tier: 'boss', scale: 1, tagH: 6.8 },   // v4.13 💀 deadgar's boss (main quest)
   mbLich:   { base: 'goblinChief', tint: '#3a2a4a', mini: 1, scale: 2.2, name: '🧟 มอร์กัส ราชันผีดิบ', lv: 22, hp: 1800, atk: 40, def: 20, exp: 800, coin: [3000, 4500], mat: { ore: 8 }, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
 };
 /* drop rarity: base 70/20/9/1 — farm monsters can only drop Basic/Rare → renormalised 77.8 / 22.2 */
@@ -130,6 +131,7 @@ export const ITEMS = {
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
   boneClub:      { slot: 'sword', kind: 'one', name: 'กระบองกระดูก', icon: '🦴', atk: 14, dur: 16, tier: 2 },
   stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
+  boneBlade:     { slot: 'sword', kind: 'two', name: 'ดาบยักษ์โครงกระดูก', icon: '🦴', atk: 48, dur: 45, tier: 4 },   // v4.13 💀 the skeleton giant's reward
   rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
   wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
@@ -221,7 +223,7 @@ export const HUNT = { chance: .35, r: 7 };                         // v2.6 monst
 export const DROP_LIFE = 300;
 /* v2.7 the seven kingdoms: wild monsters · mini-boss spot · cycle (every CYCLE_DAYS game days the dark cloud brings every monster back) */
 export const K_MONS = { navalee: ['marshSprite', 'slime', 'marshSprite', 'grassSprite'], sylvaren: ['witherImp', 'branchImp', 'witherImp', 'grassSprite'], luminia: ['shadeKnight', 'goblin', 'rockGolem', 'shadeKnight'], frosthelm: ['iceSlime', 'frostGolem', 'iceSlime', 'iceSlime'], deadgar: ['ghoul', 'ghoul', 'shadeKnight', 'ghoul'], asrah: ['sandSlime', 'sandSlime', 'goblin', 'sandSlime'], valkara: ['lavaSlime', 'magmaGolem', 'lavaSlime', 'lavaSlime'] };
-export const MINIB = { sylvaren: ['demonTree', -30, 20], asrah: ['sandWorm', 30, -40], frosthelm: ['iceGiant', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
+export const MINIB = { sylvaren: ['demonTree', -30, 20], asrah: ['sandWorm', 30, -40], frosthelm: ['iceGiant', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['boneGiant', 20, 30] };   // kind, offset from the kingdom centre
 export const CYCLE_DAYS = 3;
 /* v3.0 🗿 the seven golems: a pile of rocks that wakes up when you come close · a ring arena (no leaving) · hit the glowing core when it's stunned after a slam */
 export const GOLEMS = {
@@ -603,6 +605,7 @@ export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = 
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
+export const BGIANT = { sp: 2, reach: 3.6, leash: 40, sweep: { r: 3.2, d: 2.6, wind: 1.2 }, thrust: { n: 4, r: 1.4, step: 2.4, wind: 1.3 }, summon: { n: 2, max: 3 }, weak: 1.5, cd: [2700, 1900] };   // v4.13 💀 walk · reach · leash · sword sweep (radius · in front · warning) · thrust line (circles · radius · spacing · warning) · phase-2 skeletons (each time · most at once) · hit while it winds up ×1.5 · ms between
 export const DTREE = { reach: 18, leash: 30, slap: { r: 3, side: 2.6, wind: 1.1 }, roots: { n: 3, r: 1.6, gap: .45, wind: 1.0 }, spores: { r: 5.5, wind: 1.5 }, cd: [2600, 1900] };   // v4.12 🌳 attacks reach · you ran off · branch slap (radius · beside it) · roots under your feet (count · radius · s between · warning) · phase-2 poison spores · ms between
 export const GIANT = { sp: 2.2, reach: 3.4, leash: 40, slam: { r: 2.8, d: 3.2, wind: 1.2 }, breath: { n: 3, r: 1.7, step: 2.2, wind: 1.3 }, ring: { r: 6.5, wind: 1.5 }, cd: [2700, 1900] };   // v4.11 ❄️ walk speed · reach · leash from home · slam (radius · in front · warning s) · breath (circles in a line) · phase-2 spike ring · ms between attacks
 export const WORM = { r: 3.2, under: [3.2, 2.4, 1.8], warn: 1.1, up: [4, 3.4, 3], speed: [4.2, 5.4, 6.6], spit: { n: 5, r: 1.6, t: 1.2 }, hitR: 2.6 };   // v4.03 🪱 burst radius · seconds under the sand per phase · warning · seconds up (open to hits) · mound speed · phase 3 spit (balls · radius · flight s)
