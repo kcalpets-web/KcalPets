@@ -2,12 +2,14 @@
 <script type="module">
 /* v4.03 preview: the kingdom bosses next to the hero for size · #worm */
 import { THREE, HUMANS } from '../../src/clay.js';
-import { sandWorm } from '../../src/bosses.js';
+import { sandWorm, serpentDemon } from '../../src/bosses.js';
 const W = 1200, H = 620, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
 const S = new THREE.Scene(); S.background = new THREE.Color('#f2d9a8'); S.fog = new THREE.Fog('#f2d9a8', 18, 40); S.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', 1.1)); const sun = new THREE.DirectionalLight('#fff1dc', 2.2); sun.position.set(-6, 12, 8); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -8 }); sun.shadow.mapSize.set(2048, 2048); S.add(sun);
 const fl = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: '#e4c47a' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
 const at = (fn, x, z, ry, s) => { const g = new THREE.Group(); fn(g); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(s); g.traverse(o => { if (o.isMesh) o.castShadow = true }); S.add(g); return g };
-at(HUMANS.kealee, -4.2, 2.5, .5, .82); at(g => sandWorm(g), 1.4, 0, -.55, 1); at(g => sandWorm(g), 7.5, -3, -2.2, .8);
-const cam = new THREE.PerspectiveCamera(34, W / H, .1, 100); cam.position.set(-.5, 3.6, 15); cam.lookAt(1, 2.6, 0); r.render(S, cam); window.__done = 1;
+const SNAKE = location.hash === '#snake';
+if (SNAKE) { S.background = new THREE.Color('#4a4458'); S.fog = new THREE.Fog('#4a4458', 20, 44); fl.material.color.set('#3a3442'); at(HUMANS.kealee, -4.6, 3.2, .6, .82); at(g => serpentDemon(g), 1.2, -1, -.35, 1); }
+else { at(HUMANS.kealee, -4.2, 2.5, .5, .82); at(g => sandWorm(g), 1.4, 0, -.55, 1); at(g => sandWorm(g), 7.5, -3, -2.2, .8) }
+const cam = new THREE.PerspectiveCamera(34, W / H, .1, 100); if (SNAKE) { cam.position.set(-1.8, 5.2, 21); cam.lookAt(.8, 4.9, 0) } else { cam.position.set(-.5, 3.6, 15); cam.lookAt(1, 2.6, 0) } r.render(S, cam); window.__done = 1;
 </script></body></html>
