@@ -66,6 +66,7 @@ export const MON = {
   horse:   { animal: 1, legs: 1, horse: 1, flee: 0, run: 0, name: '🐴 ม้าป่า', lv: 2, hp: 50, atk: 0, def: 1, exp: 14, coin: [0, 0], mat: { hide: 2 }, ingr: ['horsemeat', 1, 2], loot: [], tier: 'animal' },   // v3.2 can't be hurt · press A to ride
   deer:    { animal: 1, legs: 1, flee: 9, run: 5.6, name: '🦌 กวาง', lv: 2, hp: 30, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { hide: 1 }, ingr: ['venison', 1, 2], loot: [], tier: 'animal' },
   boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['boarmeat', 1, 2], loot: [], tier: 'animal' },
+  bear:    { animal: 1, charge: 1, angry: 1, legs: 1, flee: 0, run: 4.2, name: '🐻 หมีป่า', lv: 8, hp: 160, atk: 18, def: 5, exp: 60, coin: [0, 0], mat: { hide: 3 }, ingr: ['bearmeat', 1, 2], loot: [], tier: 'animal' },   // v3.99 a fierce bear: attacks when you come close · catch it with the net → its skill 💪
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 20, coin: [0, 0], mat: {}, ingr: ['whalemeat', 1, 2], loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { feather: 2 }, ingr: ['hawkmeat', 1], loot: [], tier: 'animal' },   // v1.5 (high ground)
   eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2200, atk: 30, def: 12, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
@@ -259,7 +260,7 @@ export const SEASON_DAYS = 10;   // v3.60 🍂 game days per season (spring → 
 export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
 export const PLACE = { d: 1.1 };   // v3.98 🫳 the white circle sits this far in front of you
 export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 20, nut: 20, veg: 5, meat: 0, other: 4 }, full: 6 };   // v3.97 fruit = ⚡ (bigger) · meat = ❤️ (MEAT_HEART)
-export const MEAT_HEART = { meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
+export const MEAT_HEART = { meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, bearmeat: 7, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
@@ -468,6 +469,7 @@ export const INGR = {
   horsemeat: { icon: '🥩', name: 'เนื้อม้า', tag: 'meat', price: 60 },
   whalemeat: { icon: '🍣', name: 'เนื้อวาฬ', tag: 'meat', price: 90 },
   hawkmeat: { icon: '🍗', name: 'เนื้อเหยี่ยว', tag: 'meat', price: 25 },
+  bearmeat: { icon: '🥩', name: 'เนื้อหมี', tag: 'meat', price: 80 },
   rocksalt: { icon: '🧂', name: 'เกลือหิน', tag: 'salt', price: 20 },   /* v3.98 mined from salt veins · for cooking */
   /* v1.0 farm crops */
   carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },

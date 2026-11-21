@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE gems</title><style>body{margin:0;background:#222}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.00 preview: the seven gems (their cuts) · the altars with the carved cut · three placed and glowing · and the ring around the tree of seasons */
+import { THREE } from '../../src/clay.js';
+import { GEMS, GEM_ORDER, gemMesh, altar } from '../../src/gems.js';
+import { greatTree } from '../../src/greattree.js';
+const W = 1200, H = 520, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H * 2); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.autoClear = false;
+const lit = S => { S.add(new THREE.HemisphereLight('#fff6ec', '#7a8a6a', 1.1)); const sun = new THREE.DirectionalLight('#fff1dc', 2); sun.position.set(-5, 10, 8); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 10, bottom: -10 }); S.add(sun) };
+// 1) close-up line-up
+const A = new THREE.Scene(); A.background = new THREE.Color('#bfe3f2'); lit(A); { const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.MeshStandardMaterial({ color: '#7cc060' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; A.add(fl) }
+GEM_ORDER.forEach((k, i) => { const x = (i - 3) * 1.25, g = new THREE.Group(); altar(g, k); g.position.set(x, 0, 0); g.traverse(o => { if (o.isMesh) o.castShadow = true }); A.add(g);
+  const on = i % 3 === 0, gm = new THREE.Group(); gemMesh(gm, k, on); gm.position.set(x, on ? 1.24 : .18, on ? 0 : 1.1); if (!on) gm.rotation.y = .5; A.add(gm);
+  if (on) { const L = new THREE.PointLight(GEMS[k].glow, 3, 2.4); L.position.set(x, 1.3, .35); A.add(L); const beam = new THREE.Mesh(new THREE.CylinderGeometry(.05, .14, 2.4, 12, 1, true), new THREE.MeshBasicMaterial({ color: GEMS[k].glow, transparent: true, opacity: .28, depthWrite: false })); beam.position.set(x, 2.4, 0); A.add(beam) } });
+const ca = new THREE.PerspectiveCamera(30, W / H, .1, 100); ca.position.set(0, 2.2, 9.5); ca.lookAt(0, .7, 0);
+r.setViewport(0, H, W, H); r.setScissor(0, H, W, H); r.setScissorTest(true); r.render(A, ca);
+// 2) the ring around the tree
+const B = new THREE.Scene(); B.background = new THREE.Color('#bfe3f2'); lit(B); { const fl = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: '#7cc060' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; B.add(fl) }
+const T = greatTree({ season: 'summer' }); B.add(T.g);
+GEM_ORDER.forEach((k, i) => { const a = i / 7 * Math.PI * 2 + .3, R = 9, x = Math.sin(a) * R, z = Math.cos(a) * R, g = new THREE.Group(); altar(g, k); g.position.set(x, 0, z); g.rotation.y = a; g.scale.setScalar(1.6); B.add(g);
+  if (i % 3 === 0) { const gm = new THREE.Group(); gemMesh(gm, k, true, .5); gm.position.set(x, 1.98, z); gm.rotation.y = a; B.add(gm); const L = new THREE.PointLight(GEMS[k].glow, 6, 4); L.position.set(x, 1.8, z); B.add(L) } });
+const cb = new THREE.PerspectiveCamera(42, W / H, .1, 300); cb.position.set(4, 9, 27); cb.lookAt(0, 3.5, 0);
+r.setViewport(0, 0, W, H); r.setScissor(0, 0, W, H); r.render(B, cb); window.__done = 1;
+</script></body></html>
