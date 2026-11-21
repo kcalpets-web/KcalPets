@@ -3727,7 +3727,7 @@ function qVal(id) { const Q = KQUEST[id], k = kingOfQ(id);
   switch (Q.t) { case 'kill': return (S.journal.mons[Q.kind] || {}).kills || 0; case 'killK': return S.stat['kk_' + k] || 0; case 'chest': return S.stat['kc_' + k] || 0; case 'cook': return S.journal.recipes[Q.k] || 0; case 'catch': return S.pets.length; default: return 0 } }
 function qProg(id) { const Q = KQUEST[id], st = KQS()[id] || {};
   switch (Q.t) { case 'bring': { const ks = Object.keys(Q.need); return { cur: ks.map(k => `${(D.MATS[k] ? D.MATS[k][0] : k === 'fish' ? '🐟' : (D.INGR[k] || {}).icon || '')} ${Math.min(haveOf(k), Q.need[k])}/${Q.need[k]}`).join(' · '), ok: ks.every(k => haveOf(k) >= Q.need[k]) } }
-    case 'minib': return { cur: (S.minib || {})[Q.k] ? '✅' : '0/1', ok: !!(S.minib || {})[Q.k] }; case 'restored': return { cur: (S.restored || {})[Q.k] ? '✅' : '0/1', ok: !!(S.restored || {})[Q.k] };
+    case 'minib': return { cur: bossDone(Q.k) ? '✅' : '0/1', ok: bossDone(Q.k) };   /* v4.15 the kingdom boss (navalee = the eel · it was waiting for the old crab that no longer spawns) */ case 'restored': return { cur: (S.restored || {})[Q.k] ? '✅' : '0/1', ok: !!(S.restored || {})[Q.k] };
     case 'draw': return { cur: st.drawn ? '✅' : '0/1', ok: !!st.drawn }; case 'notes': { const n = Object.keys(S.notes || {}).length; return { cur: `${Math.min(n, Q.n)}/${Q.n}`, ok: n >= Q.n } }
     default: { const n = qVal(id) - (st.b || 0), g = Q.n || 1; return { cur: `${Math.min(n, g)}/${g}`, ok: n >= g } } } }
 /* v3.5.1 one NPC quest at a time: no choosing · finish it and hand it in before the next one */
