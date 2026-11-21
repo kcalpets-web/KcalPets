@@ -41,12 +41,13 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
 export const ORE_BY = { home: 'copper', navalee: 'copper', sylvaren: 'copper', luminia: 'ore', frosthelm: 'silver', deadgar: 'ore', asrah: 'goldOre', valkara: 'coal' };   // which vein a rock carries, by kingdom
-export const ORE_CHANCE = .35, ORE_COL = { copper: '#e07a3a', ore: '#8a96a8', silver: '#e8eef6', goldOre: '#ffd23f', coal: '#2a2228', gemstone: '#6ae0ff' };  // [icon, name, sell price]
+export const ORE_CHANCE = .35, ORE_COL = { copper: '#e07a3a', ore: '#8a96a8', silver: '#e8eef6', goldOre: '#ffd23f', coal: '#2a2228', gemstone: '#6ae0ff', flint: '#3a3a4a', rocksalt: '#f4c8cc' };
+export const FLINT_P = .15, SALT_P = .12, SALT_LANDS = ['asrah', 'navalee', 'frosthelm'];   // v3.98 🔥 flint in plain rocks anywhere · 🧂 rock salt in the desert / sea coast / snow lands  // [icon, name, sell price]
 
 /* ---- farm tools: tier 0 wood · 1 stone · 2 iron · 3 crystal ---- */
 export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'อีเต้อ'], rod: ['🎣', 'เบ็ด'] };
@@ -173,7 +174,7 @@ export const ITEMS = {
 /* v3.8 ⚒️ forging (like the cooking pot): 2–5 materials · the most specific recipe that fits wins · nothing fits = 🔩 scrap
    tags: metal = copper · ore · silver · goldOre · rarity from the value of what went in (MATS price): ≥ FORGE_RAR[i] → R / E / L (+ a small lucky roll) */
 export const FORGE = [
-  { t: 'stoneKnife', need: { stone: 2, grass: 1 } }, { t: 'sickle1', need: { stone: 1, grass: 2, wood: 1 } }, { t: 'axe1', need: { stone: 2, wood: 2 } }, { t: 'pick1', need: { stone: 3, wood: 2 } }, { t: 'mallet0', need: { wood: 3, stone: 1 } }, { t: 'hoe0', need: { wood: 2, stone: 1 } },   /* v3.22 tools */
+  { t: 'stoneKnife', need: { flint: 2, grass: 1 } }, { t: 'sickle1', need: { stone: 1, grass: 2, wood: 1 } }, { t: 'axe1', need: { stone: 2, wood: 2 } }, { t: 'pick1', need: { stone: 3, wood: 2 } }, { t: 'mallet0', need: { wood: 3, stone: 1 } }, { t: 'hoe0', need: { wood: 2, stone: 1 } },   /* v3.22 tools */
   { t: 'woodSpear', need: { wood: 3 } }, { t: 'leafBlade', need: { grass: 3, wood: 1 } }, { t: 'hunterBow', need: { wood: 2, feather: 2 } }, { t: 'woodShield', need: { wood: 2, hide: 1 } },
   { t: 'stoneClub', need: { stone: 3, wood: 1 } }, { t: 'boneClub', need: { bone: 1, wood: 1 } }, { t: 'travelerSword', need: { copper: 2, wood: 1 } }, { t: 'harpoon', need: { copper: 2, wood: 2 } },
   { t: 'stoneArmor', need: { stone: 3, hide: 1 } }, { t: 'soldierSpear', need: { ore: 2, wood: 2 } }, { t: 'greatsword', need: { ore: 3, coal: 1 } }, { t: 'soldierBow', need: { ore: 1, wood: 2, feather: 2 } },
@@ -256,6 +257,7 @@ export const STAM_FADE = 1.2;                                    // v2.4.2 secon
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
 export const SEASON_DAYS = 10;   // v3.60 🍂 game days per season (spring → summer → autumn → winter)
 export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
+export const PLACE = { d: 1.1 };   // v3.98 🫳 the white circle sits this far in front of you
 export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 20, nut: 20, veg: 5, meat: 0, other: 4 }, full: 6 };   // v3.97 fruit = ⚡ (bigger) · meat = ❤️ (MEAT_HEART)
 export const MEAT_HEART = { meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
@@ -275,7 +277,7 @@ export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { s
 export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
 export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 };
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
-export const MON_GEAR = { goblin: ['stoneKnife', 'axe1', 'mallet0'], goblinChief: ['axe2'], shadeKnight: ['ironKnife', 'mallet1'], ghoul: ['pick1', 'sickle1'], branchImp: ['sickle0', 'axe0'], witherImp: ['sickle1', 'pick0'] }, GEAR_DROP = .2;
+export const MON_GEAR = { goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .2;   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
 export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' } };
 export const NET = { range: 14, en: 6, cd: 1.2, fly: .45, base: .4, weak: .5, sneak: .12, min: .08, max: .95 };   // v3.8.1 🕸️ throw: reach (m) · energy · cooldown (s) · flight (s) · catch chance = base ÷ diff + weak × (lost HP) + sneak (crouching), clamped   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
@@ -466,6 +468,7 @@ export const INGR = {
   horsemeat: { icon: '🥩', name: 'เนื้อม้า', tag: 'meat', price: 60 },
   whalemeat: { icon: '🍣', name: 'เนื้อวาฬ', tag: 'meat', price: 90 },
   hawkmeat: { icon: '🍗', name: 'เนื้อเหยี่ยว', tag: 'meat', price: 25 },
+  rocksalt: { icon: '🧂', name: 'เกลือหิน', tag: 'salt', price: 20 },   /* v3.98 mined from salt veins · for cooking */
   /* v1.0 farm crops */
   carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },
   cabbage:  { icon: '🥬', name: 'กะหล่ำปลี', tag: 'veg', price: 30 },
@@ -496,6 +499,8 @@ export const RECIPES = [
   { k: 'veggiesoup', desc: 'ซุปผักรวมร้อนๆ ใส่ผักหลายอย่าง', icon: '🍜', name: 'ซุปผักรวม', need: { veg: 3 }, eff: { hp: 95, en: 30 }, hint: 'ผัก 3 อย่างขึ้นไปในหม้อเดียว' },
   { k: 'pumpkinstew', desc: 'แกงฟักทองกับเนื้อ เข้มข้น อิ่มนาน', icon: '🎃', name: 'แกงฟักทองเนื้อ', need: { pumpkin: 1, meat: 1 }, eff: { hp: 120, buff: { def: 3, min: 8 } }, hint: 'ผลใหญ่สีส้มจากแปลง + เนื้อ', secret: 1 },
   { k: 'fruitbake', desc: 'ผลไม้อบจนหวานฉ่ำ ราดน้ำผึ้งป่า', icon: '🍎', name: 'ผลไม้อบน้ำผึ้ง', need: { fruit: 2 }, only: 1, eff: { hp: 25, en: 25 }, hint: 'ผลไม้ล้วน 2 อย่างขึ้นไป' },
+  { k: 'saltfish', desc: 'ปลาคลุกเกลือหินย่างไฟ เค็มกำลังดี', icon: '🐟', name: 'ปลาเค็มย่าง', need: { fish: 1, salt: 1 }, eff: { hp: 60, en: 10 }, hint: 'ปลา + เกลือ' },   /* v3.98 🧂 */
+  { k: 'jerky', desc: 'เนื้อหมักเกลือตากแห้ง พกไปได้ไกล', icon: '🥓', name: 'เนื้อเค็มตากแห้ง', need: { meat: 1, salt: 1 }, eff: { hp: 80, en: 20 }, hint: 'เนื้อ + เกลือ' },
   { k: 'grillmeat', desc: 'เนื้อย่างถ่านไม้ ไหม้นิดๆ กำลังดี', icon: '🍖', name: 'เนื้อย่างถ่าน', need: { meat: 2 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อล้วนๆ' },
   { k: 'mushsoup', desc: 'ซุปเห็ดป่าข้นหอม อุ่นท้อง เติมแรงได้ดี', icon: '🫕', name: 'ซุปเห็ด', need: { mushroom: 2 }, only: 1, eff: { hp: 30, en: 40 }, hint: 'เห็ดล้วน' },
   { k: 'fishstew', desc: 'ปลาตุ๋นกับเห็ดหอม น้ำซุปกลมกล่อม', icon: '🍲', name: 'สตูว์ปลาเห็ดหอม', need: { fish: 1, mushroom: 1 }, eff: { hp: 80, en: 20 }, hint: 'ของจากทะเล + ของจากป่า' },
@@ -592,7 +597,7 @@ export const CAMP_TIERS = [                                    // by distance fr
 ];
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
-  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น)', cost: { wood: 6, stone: 4 }, start: 1, t: 20, w: 1.6, d: 1.6 },
+  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
   raft:      { icon: '🛶', name: 'เรือแพ', desc: 'วางที่น้ำริมฝั่ง · ขึ้นพายข้ามทะเลได้ไม่เสียพลังงาน · ตกปลากลางทะเลได้', cost: { wood: 16, grass: 8 }, start: 1, t: 40, w: 1.6, d: 2.3, water: 1 },
@@ -730,9 +735,9 @@ export const CHARGE = { cycle: 1.5, rodMin: 3, rodMax: 16, netMin: .3, zoom: 2.6
 export const STRUG = { zone: .3, up: 2.4, grav: 2.0, fill: .26, drain: .2, start: .35, horseEn: 25, horseZone: .26 };
 export const TORCH = { burn: 180, warm: 1, camp: [1, 3], light: 2.6, night: 7, range: 9, upArm: [-1.6, -1.8], upRot: [2.4, 0], upK: 1.4 };   // v3.68 up*: the torch held up (hold A · B lowers it) · upK = brighter
 export const CRAFT = [
-  { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, stone: 1 }, give: { arrows: 5 } },
-  { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, stone: 3 }, give: { arrows: 20 } },
-  { k: 'torch2', icon: '🔥', name: 'คบเพลิง ×2', need: { wood: 2, grass: 3 }, give: { mats: { torch: 2 } } },   /* v3.12.1 */
+  { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, flint: 1 }, give: { arrows: 5 } },   /* v3.98 flint arrowheads */
+  { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, flint: 3 }, give: { arrows: 20 } },
+  { k: 'torch2', icon: '🔥', name: 'คบเพลิง ×2', need: { wood: 2, grass: 3, flint: 1 }, give: { mats: { torch: 2 } } },   /* v3.98 flint lights it */   /* v3.12.1 */
   { k: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน (ให้แสงแม้ฝนตก · ไม่อุ่น)', need: { copper: 2, wood: 2, ore: 1 }, give: { has: 'lamp' } },   /* v3.82 a farm light */
   { k: 'glider', icon: '🍃', name: 'ใบไม้ร่อน', need: { wood: 12, hide: 3, feather: 6 }, give: { has: 'glider' } },
   /* v3.0 gear from ores + golem materials (unlimited) */

@@ -3,7 +3,7 @@
    sand near the sea  w = 1 − smoothstep(1.6, 3.6, d + .35n)  (d = distance from the shoreline)
    sea colour by depth from the shore · instanced grass tufts / flowers / pebbles / foam / sparkles. */
 import { THREE, C, part, cone, PROPS, MAT, Q, HUMANS, rbox, rboxGeo, VILLAGE } from './clay.js';
-import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL, FIELDS } from './data.js';
+import { CLEAR, ORE_BY, ORE_CHANCE, ORE_COL, FIELDS, FLINT_P, SALT_P, SALT_LANDS } from './data.js';
 import { WMAT, addWind, addWaves } from './life.js';
 import { lushPlace, lushKind, G as LG } from './lush.js';
 import { paintGround } from './scenery.js';
@@ -235,7 +235,7 @@ export function cookPot(W, key, x, z) {
 /* v3.0 ore veins: a rock may carry the ore of its land (copper at home and the coast, iron in the capital/Deadgar, silver in the snow, gold in the desert, coal in the volcano · rare raw gems anywhere) — you can see the coloured streaks */
 const VEINM = {};
 export function veinOf(o) { if (o.t !== 'rock' && o.t !== 'pebble') return ''; if (o.vein !== undefined) return o.vein; const h = Math.abs(Math.sin(o.x * 12.9898 + o.z * 78.233) * 43758.5453) % 1;
-  if (h > ORE_CHANCE * (o.t === 'pebble' ? .5 : 1)) return o.vein = ''; if (h < .02) return o.vein = 'gemstone'; const B = kingdomAt(o.x, o.z); return o.vein = ORE_BY[B.home > .5 || B.w < .5 ? 'home' : B.k] || 'copper' }
+  if (h > ORE_CHANCE * (o.t === 'pebble' ? .5 : 1)) { const B0 = kingdomAt(o.x, o.z), h2 = (h - ORE_CHANCE) / (1 - ORE_CHANCE); return o.vein = h2 < FLINT_P ? 'flint' : h2 < FLINT_P + SALT_P && B0.w > .5 && SALT_LANDS.includes(B0.k) ? 'rocksalt' : '' }   /* v3.98 🔥 flint · 🧂 rock salt */ if (h < .02) return o.vein = 'gemstone'; const B = kingdomAt(o.x, o.z); return o.vein = ORE_BY[B.home > .5 || B.w < .5 ? 'home' : B.k] || 'copper' }
 function veins(g, o, s) { const v = veinOf(o); if (!v) return; const c = ORE_COL[v], M = VEINM[v] || (VEINM[v] = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: v === 'coal' ? 0 : .25, roughness: v === 'coal' ? .9 : .3, metalness: v === 'coal' ? 0 : .4, flatShading: v === 'gemstone' }));
   const G = v === 'gemstone' ? new THREE.OctahedronGeometry(1, 0) : new THREE.IcosahedronGeometry(1, 1), n = o.t === 'rock' ? 5 : 3;
   for (let i = 0; i < n; i++) { const a = .4 + i * 2.1 + (o.x % 1), e = .25 + (i % 3) * .28, x0 = .45 * s * Math.cos(e) * Math.cos(a), z0 = .38 * s * Math.cos(e) * Math.sin(a), y = .25 * s + .3 * s * Math.sin(e) * .95, ca = Math.cos(.4), sa = Math.sin(.4);
