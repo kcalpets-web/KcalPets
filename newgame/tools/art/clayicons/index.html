@@ -1,0 +1,18 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · clay button icons</title><style>body{margin:0;background:#a8a05a}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from '../../../lib/three.module.min.js';
+import { BICON, BICON_N } from './bicons.js';
+const K = Object.keys(BICON), COLS = 6, CW = 190, CH = 220, W = COLS * CW, H = Math.ceil(K.length / COLS) * CH + 80, BG = ['#4e86d6', '#e2b444', '#dd6a50', '#5aa86a'];
+const R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); R.setPixelRatio(1); R.setSize(260, 260); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.6)); const l = new THREE.DirectionalLight('#ffffff', 2.4); l.position.set(-1.5, 3, 4); S.add(l); const rim = new THREE.DirectionalLight('#ffe8c8', 1.0); rim.position.set(3, 1, -2); S.add(rim);
+const cam = new THREE.PerspectiveCamera(24, 1, .05, 30);
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#a8a05a'; x.fillRect(0, 0, W, H);
+x.font = '900 28px system-ui'; x.fillStyle = '#fff'; x.fillText('KEALEE · ไอคอนปุ่มแบบดินปั้น (ชุดแรก 12 ตัว)', 20, 48);
+K.forEach((k, i) => { const g = new THREE.Group(), w = new THREE.Group(); BICON[k](w); g.add(w); g.rotation.set(-.1, .25, 0); S.add(g); g.updateMatrixWorld(true);
+  const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.45 + sz.z / 2;
+  cam.position.set(c.x, c.y, c.z + d); cam.lookAt(c); R.setClearColor(0, 0); R.clear(); R.render(S, cam); S.remove(g);
+  const cx = (i % COLS) * CW + CW / 2, cy = 80 + Math.floor(i / COLS) * CH + 90;
+  x.fillStyle = '#0004'; x.beginPath(); x.arc(cx, cy + 8, 74, 0, 7); x.fill(); x.fillStyle = '#241a2a'; x.beginPath(); x.arc(cx, cy, 74, 0, 7); x.fill(); x.fillStyle = BG[i % 4]; x.beginPath(); x.arc(cx, cy, 66, 0, 7); x.fill();
+  x.drawImage(R.domElement, cx - 62, cy - 62, 124, 124); x.font = '800 18px system-ui'; x.fillStyle = '#fff'; x.textAlign = 'center'; x.shadowColor = '#000a'; x.shadowBlur = 3; x.fillText(BICON_N[k], cx, cy + 102); x.shadowBlur = 0; x.textAlign = 'left' });
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
