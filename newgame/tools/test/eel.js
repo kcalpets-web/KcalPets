@@ -11,11 +11,10 @@ const ROOT = '/home/user/KcalPets', PORT = 8894, OUT = process.argv[2] || '/tmp/
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const talkAll = async () => { for (let i = 0; i < 12; i++) { const n = await E(() => { const t = document.querySelector('#tN'); if (t) { t.click(); return 1 } const y = document.querySelector('#cfY'); if (y) { y.click(); return 1 } return 0 }); if (!n) break; await wait(500) } };
-    // a sea spot near the island
-    const W = await E(() => { const N = window.__ng; for (let x = 0; x > -40; x -= 1) if (N.walkWorld(x, 0) === 'water' && N.groundH(x, 0) < -1) return [x, 0]; return null }); log('water', W); if (!W) throw new Error('no water near the island');
-    // 9 fish: no shrine yet · 10: it rises
-    await E(w => { const N = window.__ng; N.S.stat.fish = 9; N.eelFish(w[0], w[1]) }, W); await wait(500); if (await E(() => !!window.__ng.S.eel)) errs.push('the shrine came before 10 fish');
-    await E(w => { const N = window.__ng; N.placeMe(w[0] + 3, w[1]); N.S.stat.fish = 10; N.eelFish(w[0], w[1]) }, W); const e0 = await E(() => window.__ng.S.eel); log('shrine at', JSON.stringify(e0)); if (!e0) throw new Error('10 fish did not raise the shrine');
+    // v4.02 a main quest: the shrine rises in navalee's sea when you come near (no fishing needed)
+    const W = await E(() => { const p = window.__ng.eelHome(); return p && [p.x, p.z] }); log('eel home', W); if (!W) throw new Error('no eel spot in navalee');
+    await E(w => { const N = window.__ng; N.S.stat.fish = 0; N.eelFish(w[0], w[1]) }, W); await wait(500); if (await E(() => !!window.__ng.S.eel)) errs.push('fishing should not raise the shrine any more');
+    await E(w => { const N = window.__ng; N.placeMe(w[0] + 3, w[1]) }, W); await wait(3500); const e0 = await E(() => window.__ng.S.eel); log('shrine at', JSON.stringify(e0)); if (!e0) throw new Error('coming near did not raise the shrine');
     await wait(4500); const cs = await E(() => window.__ng.EELCS && window.__ng.EELCS.k); log('scene', cs); if (cs !== 'rise') errs.push('the shrine rising should be a little scene'); await pg.screenshot({ path: OUT + '/1-rise.png' });
     for (let i = 0; i < 30 && await E(() => !!window.__ng.EELCS); i++) await wait(500); await talkAll();
     const okSpot = await E(() => { const N = window.__ng, e = N.S.eel; return { w: N.walkWorld(e.x, e.z), h: +N.groundH(e.x, e.z).toFixed(2), lw: N.walkWorld(e.lx, e.lz), y: +N.EELW.sh.position.y.toFixed(2) } }); log('shrine spot', JSON.stringify(okSpot)); if (okSpot.w !== 'water' || okSpot.lw !== 'water') errs.push('the shrine / reef should be in the water'); if (okSpot.y < -1) errs.push('the shrine did not finish rising');

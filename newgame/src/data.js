@@ -213,7 +213,7 @@ export const HUNT = { chance: .35, r: 7 };                         // v2.6 monst
 export const DROP_LIFE = 300;
 /* v2.7 the seven kingdoms: wild monsters · mini-boss spot · cycle (every CYCLE_DAYS game days the dark cloud brings every monster back) */
 export const K_MONS = { navalee: ['marshSprite', 'slime', 'marshSprite', 'grassSprite'], sylvaren: ['witherImp', 'branchImp', 'witherImp', 'grassSprite'], luminia: ['shadeKnight', 'goblin', 'rockGolem', 'shadeKnight'], frosthelm: ['iceSlime', 'frostGolem', 'iceSlime', 'iceSlime'], deadgar: ['ghoul', 'ghoul', 'shadeKnight', 'ghoul'], asrah: ['sandSlime', 'sandSlime', 'goblin', 'sandSlime'], valkara: ['lavaSlime', 'magmaGolem', 'lavaSlime', 'lavaSlime'] };
-export const MINIB = { navalee: ['mbCrab', 40, 30], sylvaren: ['mbTreant', -30, 20], asrah: ['mbScorp', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
+export const MINIB = { sylvaren: ['mbTreant', -30, 20], asrah: ['mbScorp', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
 export const CYCLE_DAYS = 3;
 /* v3.0 🗿 the seven golems: a pile of rocks that wakes up when you come close · a ring arena (no leaving) · hit the glowing core when it's stunned after a slam */
 export const GOLEMS = {
