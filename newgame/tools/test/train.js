@@ -1,4 +1,4 @@
-/* v3.2: 🎓 the training ground (tutorial card ▶ → a square at sea with a dummy, pond, rocks, ledge · ◀ back) · 🐴 ride a horse (fast, can't be hurt) · 🪨 stand on a rock.
+/* v3.2: 🎓 the training ground (tutorial card ▶ → a square at sea with a dummy, pond, rocks, ledge · ◀ back) · 🐴 ride a horse (fast · the one you ride can't be hurt · v3.97 wild ones can be hunted) · 🪨 stand on a rock.
    NODE_PATH=$(npm root -g) node newgame/tools/test/train.js outDir   (~3 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -36,7 +36,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; let best = null; for (let x = 12; x < 32 && !best; x += 1.5) for (let z = -12; z < 0 && !best; z += 1.5) { let ok = N.walkWorld(x, z) === 'land'; for (let k = 0; k <= 16 && ok; k += .5) if (N.solHit(x, z + k, .4) || N.waterAt(x, z + k) || N.walkWorld(x, z + k) !== 'land') ok = false; if (ok) best = [x, z] } window.__lane = best || [14, -10]; N.placeMe(...window.__lane); N.S.en = null; N.S.tired = false });
     await wait(800); const leg = () => E(async () => { const N = window.__ng, q = N.me; N.placeMe(...window.__lane); await new Promise(r => setTimeout(r, 300)); const z0 = q.z; N.walkTo(q.x, q.z + 15); await new Promise(r => setTimeout(r, 1200)); const sp = N.SPD; await new Promise(r => setTimeout(r, 800)); N.walkTo(q.x, q.z); return sp });   // the speed the game uses (fps-proof)
     const dw = await leg();
-    const hr = await E(async () => { const N = window.__ng, q = N.me, m = N.monSpawn('horse', q.x + 1.5, q.z); await new Promise(r => setTimeout(r, 800)); N.hurtMon(m, 999, 'dmg'); const alive = N.mons.includes(m); m.tame = 1; N.mountHorse(m);   /* v3.12.4 a tame horse (no bucking) */ return { alive, on: N.HORSE === m } });
+    const hr = await E(async () => { const N = window.__ng, q = N.me, m = N.monSpawn('horse', q.x + 1.5, q.z); await new Promise(r => setTimeout(r, 800)); m.tame = 1; N.mountHorse(m);   /* v3.12.4 a tame horse (no bucking) */ N.hurtMon(m, 999, 'dmg'); const alive = N.mons.includes(m);   /* v3.97 wild horses can be hunted · the one you ride is safe */ return { alive, on: N.HORSE === m } });
     log('horse', JSON.stringify(hr)); if (!hr.alive || !hr.on) errs.push('horse ride / immortal failed ' + JSON.stringify(hr));
     const dr = await leg(); const fol = await N(() => { const N = window.__ng, h = N.HORSE && N.HORSE.A.root.position; return h ? +Math.hypot(h.x - N.me.x, h.z - N.me.z).toFixed(2) : -1 });
     log('walk vs ride', dw, dr, 'under rider', fol); if (!(dr > dw * 1.2) || fol < 0 || fol > .5) errs.push('horse not faster / not under the rider ' + JSON.stringify({ dw, dr, fol }));
