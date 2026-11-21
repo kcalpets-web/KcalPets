@@ -509,6 +509,10 @@ body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.
 .hpill .hbar i{display:block;height:100%;background:linear-gradient(#ff7a8a,#e8283e);border-radius:7px;transition:width .3s}
 .hpill b{color:#fff;font:800 14px inherit;font-family:inherit;text-shadow:0 1px 0 #000a}.hpill small{opacity:.7;font-weight:700;font-size:11px}
 @media (orientation:landscape){#miniW{margin-right:max(14px,env(safe-area-inset-right))!important}}
+
+/* v3.94 one icon on the two swap buttons · 🎒 ☰ beside the minimap */
+#bSwap .one,#bFarm .one{font-size:22px;line-height:1;display:grid;place-items:center;width:100%;height:100%}
+#mBtns.side{position:fixed!important;right:auto!important;flex-direction:column!important;gap:8px;margin:0!important;z-index:6}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
