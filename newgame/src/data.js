@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.08';
+export const APP_VER = '4.09';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -70,6 +70,7 @@ export const MON = {
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 20, coin: [0, 0], mat: {}, ingr: ['whalemeat', 1, 2], loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { feather: 2 }, ingr: ['hawkmeat', 1], loot: [], tier: 'animal' },   // v1.5 (high ground)
   eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2200, atk: 30, def: 12, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
+  serpent:   { boss: 1, snake: 1, name: '🐍 ปีศาจงูยักษ์', lv: 70, hp: 7000, atk: 70, def: 32, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss', scale: .85 },   // v4.09 the dark cloud's true form (phase 2)
   stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 6000, atk: 60, def: 30, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
   shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
@@ -337,6 +338,8 @@ export const PET_SPECIAL = {                                                  //
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
 export const SKILL_LV = 5;
+// v4.09 🏰 the dungeon under the dark cloud: the 6 kingdom bosses you have not beaten (random order) → the dark cloud → its true form (the serpent) → the ending · nothing inside is saved
+export const DUNGEON = { gap: 3.5, r: 14, snake: { strike: [3, 1.1], rain: [5, 2.2, 1.4], sweep: [7.5, 1.4], cd: [2600, 1900] } };   // gap: seconds between bosses · r: the eel's ring · strike [r, wind s] · rain [n, r, wind] · sweep [r, wind] · cd [phase 1, 2] ms
 // v4.08 🐾 main quest: catch the skill pets and raise each to Lv 5 · [kind, 'c' catch | 'l' Lv 5, reward] · 'ride' = your dog / cat
 export const PETQ = [['bear', 'c', { coin: 300 }], ['bear', 'l', { gem: 3 }], ['whale', 'c', { coin: 300 }], ['whale', 'l', { gem: 3 }], ['hawk', 'c', { coin: 300 }], ['hawk', 'l', { gem: 3 }], ['boar', 'c', { coin: 300 }], ['boar', 'l', { gem: 3 }], ['ride', 'l', { gem: 5 }]];   // v4.06 a pet's skill works only once that pet reaches Lv 5 (raise it to earn it)
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, boarHits: 3, boarPop: 350, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power

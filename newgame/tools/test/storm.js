@@ -1,4 +1,5 @@
-/* v1.7 test: the cloud on the horizon · sail in (loading screen) · the storm lord: telegraphed slam / bolts / minions · phases · win → the sky clears.
+/* v4.09: sailing in = the dungeon · all 6 kingdom bosses beaten → the dark cloud at once · beating it → its true form (the serpent) comes next (dungeon109.js tests the rest)
+   v1.7 test: the cloud on the horizon · sail in (loading screen) · the storm lord: telegraphed slam / bolts / minions · phases · win → the sky clears.
    NODE_PATH=$(npm root -g) node newgame/tools/test/storm.js outDir   (~3 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -15,7 +16,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1 }, time: 600, spirit: { hp: 10, en: 3, free: 0 }, spiritV: 1, ruins: { r0: { seen: 1, done: [1, 1, 1], fin: 1 }, r1: { seen: 1, done: [1, 1, 1], fin: 1 } } })) });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1, bolt: 1 }, minib: { asrah: 1, frosthelm: 1, sylvaren: 1, deadgar: 1, valkara: 1 }, time: 600, spirit: { hp: 10, en: 3, free: 0 }, spiritV: 1, ruins: { r0: { seen: 1, done: [1, 1, 1], fin: 1 }, r1: { seen: 1, done: [1, 1, 1], fin: 1 } } })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
@@ -31,8 +32,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await wait(3500); await shot('04-boss'); await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, Math.round(B.T.hp * .45), 'dmg') }); await wait(6000); await shot('05-phase2');
     log('hp after hits', await N(() => window.__ng.S.hp)); await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, Math.round(B.T.hp * .3), 'dmg') }); await wait(5000); await shot('06-phase3');
     await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, 99999, 'dmg') }); await wait(3500); await shot('07-win');
-    const won = await N(() => ({ gone: window.__ng.S.story.cloudGone, sp: window.__ng.S.spirit.free })); log('won', JSON.stringify(won)); if (!won.gone) errs.push('beating the boss did not clear the cloud');
-    await E(() => { document.querySelectorAll('#tN').forEach(b => b.click()) }); await wait(400);
+    const won = await N(() => ({ ph: window.__ng.DG && window.__ng.DG.ph, gone: window.__ng.S.story.cloudGone })); log('won', JSON.stringify(won)); if (won.ph !== 'snake' || won.gone) errs.push('v4.09 beating the dark cloud should bring its true form (not clear the sky yet)');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
