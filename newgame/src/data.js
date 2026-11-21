@@ -282,7 +282,8 @@ export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 }
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
 export const MON_GEAR = { goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .2;   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
-export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' } };
+export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' }, rope: { icon: '🪢', name: 'เชือกดึงของ (15 ม.)' } };
+export const ROPE = { r: 15, pull: .7 };   // v4.03 🪢 reach (m) · seconds to pull a drop to you
 export const NET = { range: 14, en: 6, cd: 1.2, fly: .45, base: .4, weak: .5, sneak: .12, min: .08, max: .95 };   // v3.8.1 🕸️ throw: reach (m) · energy · cooldown (s) · flight (s) · catch chance = base ÷ diff + weak × (lost HP) + sneak (crouching), clamped   // v2.1: hold A 3 s = AUTO attack · hold X 3 s = crouch
 /* v2.1.1 crouch: walk speed × · monster sight × · animals bolt at × distance · hitting / shooting an unaware monster = damage × */
 export const SNEAK = { sp: .5, sight: .45, flee: .45, dmg: 2 };
