@@ -10,15 +10,16 @@ const ROOT = '/home/user/KcalPets', PORT = 8859, OUT = process.argv[2] || '/tmp/
         pets: [{ id: 'p1', kind: 'shiba', name: 'โมจิ', rar: 'R', el: '🌱', lv: 6, exp: 0 }, { id: 'pb', kind: 'bear', name: 'หมี', rar: 'R', el: '🪨', lv: 5, exp: 0 }, { id: 'pw', kind: 'whale', name: 'วาฬ', rar: 'R', el: '💧', lv: 2, exp: 0 }], team: ['p1', 'pb', 'pw'], sk: { X: 'shiba', A: null, Y: null }, coin: 0, gem: 0 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-    await wait(2500); const r = await E(() => { const N = window.__ng; N.petQuestTick(); const t = N.trackList().find(x => x.id === 'petq'); return { petq: N.S.petq, coin: N.S.coin, gem: N.S.gem, t: t && t.text, sub: t && t.sub, sk: N.invItems('skill').map(x => x.key), got: N.skGotS } });
+    await wait(2500); const r = await E(() => { const N = window.__ng; N.petQuestTick(); const L = N.trackList(), ids = L.map(x => x.id); return { done: Object.keys(N.pqDone()).sort().join(), coin: N.S.coin, gem: N.S.gem, pq: ids.filter(i => i.startsWith('pq:')), rs: ids.filter(i => i.startsWith('rs:')).length, bs: ids.filter(i => i.startsWith('bs:')).length, t3: (L.find(x => x.id === 'pq:3') || {}).text, sk: N.invItems('skill').map(x => x.key), got: N.skGotS } });
     log('petq', JSON.stringify(r));
-    if (r.petq !== 3 || r.coin !== 600 || r.gem !== 3) errs.push('bear caught + Lv 5 + whale caught = 3 steps (🪙 600 · 💎 3)');
-    if (!/3\/9/.test(r.t || '') || !/วาฬ/.test(r.sub || '')) errs.push('the quest row should show 3/9 and the whale Lv 5 step next');
+    if (r.done !== '0,1,2,8' || r.coin !== 600 || r.gem !== 8) errs.push('any order: bear caught + Lv 5 + whale caught + dog Lv 6 = 4 quests done (🪙 600 · 💎 8)');
+    if (r.pq.length !== 5 || !/วาฬ/.test(r.t3 || '')) errs.push('v4.08 each pet step is its own row (5 left · whale Lv 5 among them)');
+    if (r.rs < 5 || r.bs !== 6) errs.push('v4.08 one row per kingdom to restore and per boss');
     if (!r.sk.includes('kshiba') || !r.sk.includes('kbear')) errs.push('riding the dog should be on the ✨ page'); if (!r.got.shiba) errs.push('a dog already Lv 6: no pop-up');
     await E(() => window.__ng.openQuests()); await wait(1000); await pg.screenshot({ path: OUT + '/quests.png' }); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const ride = await E(async () => { const N = window.__ng; N.skwUse('X'); await new Promise(r => setTimeout(r, 600)); const on = !!(N.HORSE && N.HORSE.p); N.skwUse('X'); await new Promise(r => setTimeout(r, 600)); return [on, !!N.HORSE] }); log('ride', JSON.stringify(ride));
     if (!ride[0] || ride[1]) errs.push('the skill wheel should mount / dismount the dog');
-    await E(() => { const N = window.__ng, p = N.S.pets.find(x => x.id === 'pw'); p.lv = 5 }); await wait(1500); const r2 = await E(() => { const N = window.__ng; N.petQuestTick(); return N.S.petq }); log('dbg', JSON.stringify(await E(() => { const N = window.__ng; return { pets: N.S.pets.map(p => p.kind + p.lv), cut: N.cut, petq: N.S.petq } }))); log('after whale Lv5', r2); if (r2 !== 4) errs.push('whale Lv 5 should finish step 4');
+    await E(() => { const N = window.__ng, p = N.S.pets.find(x => x.id === 'pw'); p.lv = 5 }); await wait(1500); const r2 = await E(() => { const N = window.__ng; N.petQuestTick(); return Object.keys(N.pqDone()).length }); log('dbg', JSON.stringify(await E(() => { const N = window.__ng; return { pets: N.S.pets.map(p => p.kind + p.lv), cut: N.cut, petq: N.pqDone() } }))); log('after whale Lv5', r2); if (r2 !== 5) errs.push('whale Lv 5 should finish its quest too');
     await pg.screenshot({ path: OUT + '/toast.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
