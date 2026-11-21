@@ -24,6 +24,8 @@ export const WEAPON_MESH = {
   branchSword(g) { grip(g, .15, WOODD, WOODD, .14, WOOD); blade(g, 'bBranch', .032, .55, '#b89060'); for (let i = 0; i < 3; i++) ico(g, .02, LEAF, [.03, .2 + i * .14, 0]) },
   boneClub(g) { cyl(g, .022, .022, .2, WOODD, [0, -.04, 0]); cyl(g, .03, .065, .45, BONE, [0, .3, 0], [0, 0, 0], 7); ico(g, .07, BONE, [0, .54, 0], [1.1, .8, 1]); for (const s of [-1, 1]) add(g, G('spk', () => new THREE.ConeGeometry(.018, .08, 4)), '#a89878', [s * .07, .45, 0], [0, 0, -s * 1.3]) },
   stoneClub(g) { cyl(g, .022, .022, .22, WOODD, [0, -.05, 0]); cyl(g, .028, .04, .3, WOOD, [0, .2, 0]); ico(g, .1, '#8a8478', [0, .44, 0], [1, 1.3, .9]); ico(g, .06, '#9a9488', [.06, .36, .04]) },
+  /* v4.03 🪱 the worm-fang blade: a long curved tooth on a sand-wrapped grip */
+  wormFang(g) { grip(g, .15, '#a87a3a', '#e0b070', .15, '#6a4a2a'); for (let i = 0; i < 5; i++) add(g, G('wf' + i, () => new THREE.ConeGeometry(.05 - i * .007, .14, 6)), i % 2 ? '#e8e0cc' : '#fff8e8', [i * .012, .14 + i * .11, 0], [0, 0, -.06 - i * .05]); add(g, G('wfTip', () => new THREE.ConeGeometry(.02, .12, 6)), '#fffaf0', [.07, .7, 0], [0, 0, -.35]) },
   scimitar(g) { grip(g, .15, '#3a2a5a', GOLD, .16, GOLD); blade(g, 'bScim', .034, .56, STEEL, .06, .09); box(g, .018, .04, .018, GOLD, [0, .09, .02]) },
   knightSword(g) { grip(g, .17, '#2a3a6a', GOLD, .26, GOLD); blade(g, 'bKnight', .036, .66, '#dde2ee'); box(g, .012, .5, .02, '#a8b0c4', [0, .34, 0]); for (const s of [-1, 1]) ico(g, .022, '#3a6ad8', [s * .13, .045, 0]) },
   crystalBlade(g) { grip(g, .15, '#2a3a5a', '#7ad8ff', .18, '#8a9ab8'); add(g, shape('bCry', [[-.04, 0], [.04, 0], [.055, .3], [0, .64], [-.055, .3]], .03, .01), '#8ae0ff', [0, .06, 0]) },

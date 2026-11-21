@@ -100,6 +100,7 @@ export const MON = {
   /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
   mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
   mbTreant: { base: 'branchImp', tint: '#3a2a1a', mini: 1, scale: 2.4, name: '🌳 รากดำ', lv: 15, hp: 1000, atk: 26, def: 12, exp: 450, coin: [1600, 2600], mat: { wood: 20 }, loot: ['crystalBow', 'dragonBlade'], tier: 'boss' },
+  sandWorm: { boss: 1, worm: 1, mini: 1, name: '🪱 หนอนยักษ์ทะเลทราย', lv: 18, hp: 1500, atk: 32, def: 12, exp: 600, coin: [2200, 3200], mat: { ore: 4 }, loot: ['wormFang', 'scimitar'], tier: 'boss' },   // v4.03 🏜️ asrah's boss (main quest)
   mbScorp:  { base: 'goblinChief', tint: '#c8902a', mini: 1, scale: 1.9, name: '🦂 ราชาแมงป่อง ซาบัค', lv: 17, hp: 1200, atk: 30, def: 15, exp: 520, coin: [2000, 3000], mat: { ore: 5 }, loot: ['scimitar', 'kingSword'], tier: 'boss' },
   mbWolf:   { base: 'rockGolem', tint: '#e8f4ff', mini: 1, scale: 2, name: '🐺 ฮาวล์ จ่าฝูงน้ำแข็ง', lv: 18, hp: 1300, atk: 32, def: 16, exp: 560, coin: [2200, 3200], mat: { ore: 5 }, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
   mbMagma:  { base: 'rockGolem', tint: '#ff4a1a', mini: 1, scale: 2.6, name: '🗿 มักม่า โกเลมลาวา', lv: 20, hp: 1600, atk: 36, def: 20, exp: 700, coin: [2600, 3800], mat: { ore: 8 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
@@ -126,6 +127,7 @@ export const ITEMS = {
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
   boneClub:      { slot: 'sword', kind: 'one', name: 'กระบองกระดูก', icon: '🦴', atk: 14, dur: 16, tier: 2 },
   stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
+  wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
   scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3 },
   knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
   crystalBlade:  { slot: 'sword', kind: 'one', name: 'ดาบคริสตัล', icon: '💎', atk: 32, dur: 26, tier: 4 },
@@ -213,7 +215,7 @@ export const HUNT = { chance: .35, r: 7 };                         // v2.6 monst
 export const DROP_LIFE = 300;
 /* v2.7 the seven kingdoms: wild monsters · mini-boss spot · cycle (every CYCLE_DAYS game days the dark cloud brings every monster back) */
 export const K_MONS = { navalee: ['marshSprite', 'slime', 'marshSprite', 'grassSprite'], sylvaren: ['witherImp', 'branchImp', 'witherImp', 'grassSprite'], luminia: ['shadeKnight', 'goblin', 'rockGolem', 'shadeKnight'], frosthelm: ['iceSlime', 'frostGolem', 'iceSlime', 'iceSlime'], deadgar: ['ghoul', 'ghoul', 'shadeKnight', 'ghoul'], asrah: ['sandSlime', 'sandSlime', 'goblin', 'sandSlime'], valkara: ['lavaSlime', 'magmaGolem', 'lavaSlime', 'lavaSlime'] };
-export const MINIB = { sylvaren: ['mbTreant', -30, 20], asrah: ['mbScorp', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
+export const MINIB = { sylvaren: ['mbTreant', -30, 20], asrah: ['sandWorm', 30, -40], frosthelm: ['mbWolf', -40, 30], valkara: ['mbMagma', 0, -60], deadgar: ['mbLich', 20, 30] };   // kind, offset from the kingdom centre
 export const CYCLE_DAYS = 3;
 /* v3.0 🗿 the seven golems: a pile of rocks that wakes up when you come close · a ring arena (no leaving) · hit the glowing core when it's stunned after a slam */
 export const GOLEMS = {
@@ -589,6 +591,7 @@ export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = 
 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
+export const WORM = { r: 3.2, under: [3.2, 2.4, 1.8], warn: 1.1, up: [4, 3.4, 3], speed: [4.2, 5.4, 6.6], spit: { n: 5, r: 1.6, t: 1.2 }, hitR: 2.6 };   // v4.03 🪱 burst radius · seconds under the sand per phase · warning · seconds up (open to hits) · mound speed · phase 3 spit (balls · radius · flight s)
 export const GEMQ = { home: { amber: 'sylvaren', opal: 'asrah', topaz: 'luminia', ruby: 'valkara', sapphire: 'frosthelm', diamond: 'deadgar', aquamarine: 'navalee' }, ring: 18, reviveCd: 360000 };   // v4.00 💎 one offering hidden in each kingdom · the altars ring the tree of seasons · the blessing: back to full ❤️ at 0 (cool-down 6 min)
 export const BEAR = { angry: 6, buff: 100, ms: 60000, cd: 240000 };   // v3.99 🐻 charges inside 6 m · its skill: ⚔️🛡️ +100 for 1 min · cool-down 4 min
 export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar', 'bear'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar', 'bear'], water: ['duck', 'duck', 'rabbit'] };
