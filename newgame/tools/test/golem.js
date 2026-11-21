@@ -58,7 +58,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* 🍖 / 💤 */
     const nd = await E(async () => { const N = window.__ng, S = N.S; S.full = 30; S.awake = 1400; for (let i = 0; i < 60; i++) N.needsTick(20); const a = { full: Math.round(S.full), awake: S.awake, pills: document.querySelectorAll('#needs button').length };
       N.eatMeal('boneBroth'); await new Promise(r => setTimeout(r, 2600)); a.full2 = Math.round(S.full); N.needSleep(); a.awake2 = S.awake; await new Promise(r => setTimeout(r, 100)); a.pills2 = document.querySelectorAll('#needs button').length; return a });
-    log('needs', JSON.stringify(nd)); if (!(nd.full < 20 && nd.pills === 1 && nd.full2 > nd.full + 20)) errs.push('hunger meter wrong (v3.11: no sleepiness) ' + JSON.stringify(nd));
+    log('needs', JSON.stringify(nd)); if (nd.full !== 100 || nd.pills) errs.push('v3.97 no hunger: the belly stays full and no 🍖 meter shows ' + JSON.stringify(nd));
     await shot('06-needs');
   } catch (e) { errs.push('EX ' + e.message) } finally { await b.close(); srv.kill() }
   console.log(errs.length ? 'FAIL\n' + errs.join('\n') : 'OK'); process.exit(errs.length ? 1 : 0);
