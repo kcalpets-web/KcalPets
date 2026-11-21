@@ -187,7 +187,7 @@ export const FORGE = [
   { t: 'kingSword', need: { goldBar: 2, diamond: 1 } }, { t: 'kingShield', need: { goldBar: 2, emerald: 1 } }];
 export const BAG = { page: 25, cols: 5, stack: 999,   // v3.72 every section is pages of 5×5 · a stack of one kind holds up to 999 (more = another slot) · no upgrades
   cap: { sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25 },   // slots per section
-  cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], tools: ['🧰', 'เครื่องมือ'], wear: ['👕', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'] } };
+  cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], tools: ['🧰', 'เครื่องมือ'], wear: ['👕', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'], skill: ['✨', 'สกิล'] } };   // v4.06 ✨ the skills page (no slots)
 export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
 export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
@@ -336,6 +336,7 @@ export const PET_SPECIAL = {                                                  //
   '💧': { name: 'สายน้ำชโลม', kind: 'heal', hearts: 1.5 }, '❄️': { name: 'ลมหนาวแช่แข็ง', kind: 'stun', ms: 3500, r: 3.5 }, '🪨': { name: 'โล่หิน', kind: 'guard', ms: 6000 } };
 export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
+export const SKILL_LV = 5;   // v4.06 a pet's skill works only once that pet reaches Lv 5 (raise it to earn it)
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, boarHits: 3, boarPop: 350, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
 export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
 // v3.78 🐶🐱 the main pet: always with you · A near it = ride (teen+) · riding: X jump · Y bite + claw · A dash (rams) · B get off

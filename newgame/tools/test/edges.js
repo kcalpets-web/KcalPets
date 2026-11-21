@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8827, OUT = process.arg
     await pg.addInitScript(([now, day]) => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, fishGiven: 1, boatFixed: 1, town: 1, spiritTip: 1, horseTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1, glider: 1 }, time: 640, quest: 99, side: 'isle', mats: { wood: 30, stone: 30 },
         builds: [{ id: 'b1', k: 'campfire', x: 20, z: 6, ry: 0, done: 1, fix: now - 3.5 * day }, { id: 'b2', k: 'campfire', x: 24, z: 6, ry: 0, done: 1, fix: now - 5 * day }],
-        pets: [{ id: 'p1', kind: 'boar', name: 'หมู', lv: 5, rar: 'R', el: '🪨', exp: 0, hp: 50 }, { id: 'p2', kind: 'hawk', name: 'อินทรี', lv: 3, rar: 'R', el: '🌪️', exp: 0, hp: 40 }], team: ['p1', 'p2'] })) }, [now, day]);
+        pets: [{ id: 'p1', kind: 'boar', name: 'หมู', lv: 5, rar: 'R', el: '🪨', exp: 0, hp: 50 }, { id: 'p2', kind: 'hawk', name: 'อินทรี', lv: 5, rar: 'R', el: '🌪️', exp: 0, hp: 40 }], team: ['p1', 'p2'] })) }, [now, day]);
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     // decay: b2 (5 days, campfire lasts 4) falls · b1 is shabby and can be repaired

@@ -14,7 +14,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8856, OUT = process.argv[2] || '/tmp/
       far.A.root.position.set(q.x + 4, far.A.root.position.y, q.z); await new Promise(r => setTimeout(r, 1500)); const aggroNear = !!far.aggro; const ing = N.S.ingr.bearmeat || 0, d0 = N.drops.length; for (let i = 0; i < 10 && N.mons.includes(far); i++) N.hurtMon(far, 9999, 'dmg'); await new Promise(r => setTimeout(r, 300));
       const meat = N.drops.slice(d0).some(d => d.ingr === 'bearmeat');
       // a caught bear
-      N.S.pets.push({ id: 'pb1', kind: 'bear', name: 'หมี', rar: 'R', el: '🪨', lv: 1, exp: 0, hp: null, mp: null, down: 0 }); const a0 = N.pStats().atk, d00 = N.pStats().def; N.petSkillKind('bear'); const a1 = N.pStats().atk, d1 = N.pStats().def, until = N.S.bearUntil - Date.now();
+      N.S.pets.push({ id: 'pb1', kind: 'bear', name: 'หมี', rar: 'R', el: '🪨', lv: 5, exp: 0, hp: null, mp: null, down: 0 }); const a0 = N.pStats().atk, d00 = N.pStats().def; N.petSkillKind('bear'); const a1 = N.pStats().atk, d1 = N.pStats().def, until = N.S.bearUntil - Date.now();
       N.petSkillKind('bear'); const twice = N.pStats().atk;
       // the horse on the rig, rideable
       const h = N.monSpawn('horse', q.x + 1.5, q.z, { area: 'wild' }); await new Promise(r => setTimeout(r, 400)); const hq = !!h.A.body.userData.quad; N.mountHorse(h); await new Promise(r => setTimeout(r, 600)); const riding = N.HORSE === h; N.dismount();
