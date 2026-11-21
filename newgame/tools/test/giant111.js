@@ -14,7 +14,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8861, OUT = process.argv[2] || '/tmp/
       window.__keep = setInterval(() => { N.S.hp = 99999 }, 100);
       const M = window.__m = N.monSpawn('iceGiant', q.x + Math.sin(c.yaw) * 7, q.z + Math.cos(c.yaw) * 7, { area: 'wild' }); M.home = [M.A.root.position.x, M.A.root.position.z];
       const acts = new Set(), p0 = [M.A.root.position.x, M.A.root.position.z]; let warned = 0;
-      for (let i = 0; i < 70; i++) { await new Promise(r => setTimeout(r, 200)); if (M.act) acts.add(M.act.k); if (i === 35) M.hp = M.T.hp * .4 }
+      for (let i = 0; i < 160 && !(i > 70 && acts.has('ring')); i++) { await new Promise(r => setTimeout(r, 200));   /* phase 2 attacks are random: watch until it shows (or 32 s) */ if (M.act) acts.add(M.act.k); if (i === 35) M.hp = M.T.hp * .4 }
       const moved = Math.hypot(M.A.root.position.x - p0[0], M.A.root.position.z - p0[1]);
       return { acts: [...acts], moved: +moved.toFixed(1), arm: !!M.A.body.userData.armR, cold: N.S.deb && N.S.deb.cold > Date.now() } });
     log('giant', JSON.stringify(r)); await pg.screenshot({ path: OUT + '/giant.png' });
