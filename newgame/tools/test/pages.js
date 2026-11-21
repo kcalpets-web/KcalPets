@@ -10,11 +10,13 @@ const ROOT = '/home/user/KcalPets', PORT = 8852, OUT = process.argv[2] || '/tmp/
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const st = () => E(() => { const v = id => getComputedStyle(document.getElementById(id)).display !== 'none'; const o = document.querySelector('.ov'), r = o && o.querySelector('.sh').getBoundingClientRect(); return { cls: o && o.className, top: r && Math.round(r.top), stick: v('stick'), dpad: v('dpad') } });
-    for (const p of ['menu', 'quest', 'journey', 'craft', 'build', 'album', 'me', 'set']) {
+    for (const p of ['quest', 'journey', 'craft', 'build', 'album', 'me', 'set']) {
       await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await wait(300);
       await E(p => p === 'menu' ? document.getElementById('mMap').click() : window.__ng.openAtlas(p), p); await wait(1200); const s = await st(); log(p, JSON.stringify(s));
       if (!/\bpg\b/.test(s.cls || '') || s.top > 4 || s.stick || !s.dpad) errs.push(p + ' is not a page like the bag (' + JSON.stringify(s) + ')') }
     await pg.screenshot({ path: OUT + '/set.png' });
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); document.getElementById('mMap').click() }); await wait(1000); const m = await st(); log('☰', JSON.stringify(m)); if (!/\bdlg\b/.test(m.cls || '') || /\bpg\b/.test(m.cls)) errs.push('☰ should stay the small box');
+    await E(() => document.querySelector('[data-mp="album"]').click()); await wait(1200); const m2 = await st(); log('☰ → album', JSON.stringify(m2)); if (!/\bpg\b/.test(m2.cls || '')) errs.push('a page from ☰ should be like the bag');
     // ▼ moves the frame on the build page
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openAtlas('build') }); await wait(1000);
     const mv = await E(async () => { const N = window.__ng, k = () => (document.querySelector('.ov .nfocus') || {}).textContent; N.navMove('down'); await new Promise(r => setTimeout(r, 300)); const a = k(); N.navMove('down'); await new Promise(r => setTimeout(r, 300)); return [a, k()] }); log('frame', JSON.stringify(mv)); if (!mv[0] || mv[0] === mv[1]) errs.push('▼ should move the frame on the build page');

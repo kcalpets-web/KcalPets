@@ -1634,7 +1634,7 @@ winLine(); addEventListener('resize', () => setTimeout(winLine, 100));
 function atlasStep(d) { if (AT_MENU.includes(atlasK)) return; const G = atGroup(atlasK), i = G.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(G[(i + d + G.length) % G.length][0]) }
 /* v3.80 ☰ the menu: pick a section first (big tiles like the bag) */
 function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, close) => { b.innerHTML = `<div class="mpick">${AT_MENU.map(k => { const T = ATLAS.find(t => t[0] === k); return `<button class="mpt" data-mp="${k}"><b>${T[1]}</b><span>${T[2]}</span></button>` }).join('')}<button class="mpt" data-mp="howto"><b>🎬</b><span>วิธีเล่น</span></button></div>`;   /* v3.86 🎬 วิธีเล่น lives in the menu */
-  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); if (x.dataset.mp === 'howto') { closeSheets(); openHowto(); return } openAtlas(x.dataset.mp) }) }, { cls: 'menuPick' }) }   /* v3.95 a page like the bag */
+  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); if (x.dataset.mp === 'howto') { closeSheets(); openHowto(); return } openAtlas(x.dataset.mp) }) }, { cls: 'menuPick dlg' }) }   /* v3.95 ☰ stays the small box (the pages it opens are like the bag) */
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
 $('mMap').onclick = () => { if (CUT) return; sfx('tap'); openMenuPick() };   /* v3.80 ☰ (the minimap is the map) */
 $('goal').onclick = () => { if (CUT) return; sfx('tap'); questNav() };
