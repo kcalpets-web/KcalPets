@@ -51,3 +51,38 @@ export function serpentDemon(g, o = {}) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(3.4, .08, 8, 48), new THREE.MeshBasicMaterial({ color: '#b06aff' })); ring.rotation.x = Math.PI / 2; ring.position.y = .06; g.add(ring);
   g.userData.segs = segs; return g;
 }
+
+/* v4.11 ❄️ frosthelm: the ice giant (kingdom boss) · a hulking frost giant: pale blue skin, ice crystals on the shoulders and back, an icicle beard,
+   a horned ice helm, glowing eyes, a fur pelt, and a huge ice club · g.userData = { armR, armL, club, head } so the game can swing / slam */
+export function iceGiant(g, o = {}) {
+  const SKIN = ['#2e5a8a', '#86bce6'], ICE = ['#5ab0e0', '#e8faff'], FUR = ['#4a3a2e', '#b8a48a'], DARK = ['#2a3a5a', '#5a7aa0'], BOOT = ['#4a3a30', '#8a7060'];
+  const GLOW = new THREE.MeshBasicMaterial({ color: '#7affff' }), ICEM = new THREE.MeshPhysicalMaterial({ color: '#a8e8ff', roughness: .15, metalness: 0, transmission: .35, thickness: .6, clearcoat: 1, emissive: '#2a7aa0', emissiveIntensity: .35 });
+  const shard = (p, x, y, z, h, rx = 0, rz = 0) => { const m = new THREE.Mesh(new THREE.ConeGeometry(h * .28, h, 5), ICEM); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); p.add(m); return m };
+  /* legs + boots */
+  for (const s of [-1, 1]) { part(g, ...SKIN, [s * .55, 1.0, 0], [.34, .62, .36]); part(g, ...BOOT, [s * .58, .3, .08], [.42, .34, .5]); part(g, ...FUR, [s * .56, .62, .02], [.44, .14, .42]) }
+  /* body: a big belly + chest, a fur pelt over one shoulder */
+  part(g, ...SKIN, [0, 2.2, 0], [1.05, .95, .78]); part(g, ...SKIN, [0, 2.95, -.05], [1.15, .62, .72]);
+  part(g, ...FUR, [0, 1.55, .02], [.98, .36, .8]); part(g, ...FUR, [-.42, 2.7, .3], [.55, .9, .3], [0, 0, .55]);
+  part(g, '#3a2a20', '#6a5040', [0, 1.78, .5], [.92, .09, .38]);   /* a belt */
+  /* shoulders: ice crystal clusters · the back: a ridge of shards */
+  for (const s of [-1, 1]) { part(g, ...SKIN, [s * 1.2, 3.1, 0], [.42, .38, .42]); for (let i = 0; i < 4; i++) shard(g, s * (1.15 + (i % 2) * .22), 3.35 + i * .06, -.1 + (i - 1.5) * .18, .45 + (i % 3) * .2, -.2 + i * .1, -s * (.3 + i * .12)) }
+  for (let i = 0; i < 5; i++) shard(g, (i - 2) * .32, 3.0 - Math.abs(i - 2) * .2, -.65, .6 + (2 - Math.abs(i - 2)) * .25, -.6, (i - 2) * .2);
+  /* arms: the left hangs with a fist, the right holds the club over the shoulder */
+  const armL = new THREE.Group(); armL.position.set(-1.3, 3.0, 0); armL.rotation.z = .18; g.add(armL); part(armL, ...SKIN, [0, -.55, 0], [.3, .62, .32]); part(armL, ...SKIN, [-.05, -1.3, .05], [.28, .5, .3]); part(armL, ...SKIN, [-.06, -1.85, .08], [.3, .28, .3]); part(armL, ...FUR, [0, -.95, 0], [.33, .12, .35]);
+  const armR = new THREE.Group(); armR.position.set(1.3, 3.0, 0); armR.rotation.set(.2, 0, 2.3); g.add(armR); part(armR, ...SKIN, [0, -.55, 0], [.3, .62, .32]); part(armR, ...SKIN, [.05, -1.25, .1], [.28, .5, .3]); part(armR, ...SKIN, [.06, -1.78, .14], [.3, .28, .3]);
+  const club = new THREE.Group(); club.position.set(.06, -1.8, .14); club.rotation.set(.35, 0, Math.PI + .5); armR.add(club);
+  part(club, ...DARK, [0, .4, 0], [.13, .55, .13]); part(club, ...ICE, [0, 1.35, 0], [.42, .6, .42], [0, 0, 0], { A: .08, mat: ICEM });
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28; shard(club, Math.cos(a) * .36, 1.35 + (i % 3 - 1) * .25, Math.sin(a) * .36, .4, Math.sin(a) * 1.4, -Math.cos(a) * 1.4) } shard(club, 0, 2.0, 0, .55);
+  /* head: a broad face, glowing eyes, an icicle beard, a horned ice helm */
+  const head = new THREE.Group(); head.position.set(0, 3.75, .1); g.add(head);
+  part(head, ...SKIN, [0, 0, 0], [.55, .52, .5]); part(head, ...SKIN, [0, -.02, .42], [.16, .2, .14]);   /* a big nose */
+  for (const s of [-1, 1]) { part(head, '#0a2a3a', '#7affff', [s * .22, .12, .43], [.12, .08, .05], [0, 0, s * -.2], { A: 0, mat: GLOW }); part(head, ...DARK, [s * .24, .24, .44], [.17, .05, .06], [0, 0, s * .35]) }   /* glowing eyes + a heavy brow */
+  part(head, ...ICE, [0, -.3, .3], [.48, .2, .25], [0, 0, 0], { A: .05 }); for (let i = 0; i < 7; i++) { const m = shard(head, (i - 3) * .12, -.5 - (3 - Math.abs(i - 3)) * .06, .34 + (3 - Math.abs(i - 3)) * .02, .3 + (3 - Math.abs(i - 3)) * .1, 0, 0); m.rotation.x = Math.PI }   /* icicle beard */
+  part(head, ...DARK, [0, .36, -.02], [.6, .3, .55]); part(head, ...ICE, [0, .52, 0], [.5, .16, .48], [0, 0, 0], { A: .05, mat: ICEM });   /* the helm */
+  for (const s of [-1, 1]) { const cv = new THREE.CatmullRomCurve3([[.45, .42, 0], [.72, .5, -.02], [.9, .72, -.04], [.92, 1.02, -.02]].map(([x, y, z]) => new THREE.Vector3(s * x, y, z))), hm = new THREE.Mesh(new THREE.TubeGeometry(cv, 24, .1, 10), ICEM); head.add(hm);   /* curved ice horns */
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(.1, .28, 10), ICEM); tip.position.set(s * .92, 1.15, -.02); head.add(tip); const base = new THREE.Mesh(new THREE.SphereGeometry(.15, 12, 10), ICEM); base.position.set(s * .46, .42, 0); head.add(base) }
+  /* frost on the ground around it */
+  const fr = new THREE.Mesh(new THREE.CircleGeometry(2.6, 40), new THREE.MeshStandardMaterial({ color: '#e8f6ff', roughness: .5, transparent: true, opacity: .85 })); fr.rotation.x = -Math.PI / 2; fr.position.y = .02; g.add(fr);
+  for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + .3; shard(g, Math.cos(a) * 2.1, .15, Math.sin(a) * 2.1, .35 + (i % 3) * .15, Math.sin(a) * .4, -Math.cos(a) * .4) }
+  g.userData.armL = armL; g.userData.armR = armR; g.userData.club = club; g.userData.head = head; return g;
+}
