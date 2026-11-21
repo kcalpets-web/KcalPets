@@ -45,7 +45,7 @@
   - ล็อกทุกทาง: `slotSkill` · `petSkillKind` · วงล้อ · ม่านหมูป่า · ไอคอนทีม · `hasAbility` (ยกเว้นขี่หมา/แมว)
   - `skGain` หน้าต่างครั้งเดียว (`S.skGot`) · `petExp` เรียก `skCheck` · จับน้องใหม่ Lv<5 = toast บอกว่าต้องเลี้ยงถึง Lv 5 · เซฟเก่าที่มีสกิลอยู่แล้ว (`S.skGotV`) ไม่เด้ง
   - ⚠️ เซฟเก่า: น้องสกิลที่ยังไม่ถึง Lv 5 จะใช้สกิลไม่ได้จนกว่าจะเลี้ยงถึง (ตามที่ผู้ออกแบบต้องการ)
-- ทดสอบ: `tools/test/hpbar.js` · `tools/test/skills106.js` ใหม่ · fight · bear99 · worm103 · storm · pets · edges · whale · spirit · airshot · bag · pages · golem · eel (เทสต์ที่ใช้น้อง Lv ต่ำ ปรับเป็น Lv 5)
+- ทดสอบ: `tools/test/hpbar.js` · `tools/test/skills106.js` ใหม่ · fight · bear99 · worm103 · storm · pets · edges · whale · spirit · airshot · bag · pages · eel ผ่าน (เทสต์ที่ใช้น้อง Lv ต่ำ ปรับเป็น Lv 5) · golem ล้มเรื่องจังหวะเวลา (v4.05 ก็ล้ม จุดอื่น)
 - ขึ้นเว็บ: ✅
 
 ### v4.05 — 🎮 ปรับปุ่มไอคอน (21 พ.ย. 2026)
