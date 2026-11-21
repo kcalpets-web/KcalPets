@@ -16,7 +16,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8873, OUT = process.arg
     await E(() => { const N = window.__ng, S = N.S; for (const t of ['knightSword', 'crystalBlade', 'woodSpear', 'axe0', 'pick0']) S.bag.push(N.newItem(t, 'R')); S.mats = { wood: 12, stone: 5 }; S.ingr = { apple: 3, berry: 2 }; N.hud() });
     // sizes
     const cap = await E(() => { const N = window.__ng; return Object.fromEntries(N.INV_TABS().map(t => [t[0], N.bagCap(t[0])])) }); log('caps', JSON.stringify(cap));
-    if (JSON.stringify(cap) !== JSON.stringify({ sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25 })) errs.push('the section sizes are wrong');
+    if (JSON.stringify(cap) !== JSON.stringify({ sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25, skill: null })) errs.push('the section sizes are wrong');
     // open = ⚔️ first slot · 25 tiles · tools not among the swords
     await E(() => window.__ng.openBag()); await wait(700); const s0 = await st(); log('open', JSON.stringify(s0)); await pg.screenshot({ path: OUT + '/1-sword.png' });
     const first = await E(() => (document.querySelector('.ov.inv .invgrid [data-k]') || {}).dataset?.k); if (s0.tab !== 'sword' || s0.sel !== first || s0.tiles !== 25 || !/\/25/.test(s0.slots)) errs.push('the bag should open on ⚔️ with the frame on the first of 25 slots');
