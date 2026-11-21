@@ -1894,7 +1894,7 @@ function invPreview(cv, tab, sel) {
 function bagFlip(d, redraw) { const L0 = invItems(bagTab), PG = D.BAG.page, cap = bagCap(bagTab), np = Math.max(1, Math.ceil(Math.max(L0.length, cap === Infinity ? 0 : cap) / PG)), pg = (bagPage[bagTab] || 0) + d; if (pg < 0 || pg >= np) { sfx('knock'); return false }
   bagPage[bagTab] = pg; const L = L0.slice(pg * PG, pg * PG + PG), x = d > 0 ? L[0] : L[L.length - 1]; if (x) { bagSel[bagTab] = x.key; NAV.key = 'data-k=' + x.key; NAV.el = null } sfx('tap'); (redraw || (() => { const ov = topOv(); ov && ov._redraw && ov._redraw() }))(); return true }
 /* v3.38 in the bag (pages) and the craft book: Y = previous page · X = next page */
-function winFlip(d) { const ov = topOv(); if (!ov) return false; if (ov.dataset.atlas) { if (d > 0 && ov.dataset.atlas === 'quest' && qAuto()) return true; atlasStep(d); return true }   /* v3.74 X → · Y ← the next / previous page (the quest page: X = walk there by itself) */ if (ov.classList.contains('cbook') && CBOOK) { CBOOK.flip(d); return true } if (ov.classList.contains('inv')) { if (d > 0) bagX(); return true } return !!ov }
+function winFlip(d) { const ov = topOv(); if (!ov) return false; if (ov.dataset.atlas === 'map' || ov.classList.contains('mapfs')) { const b = ov.querySelector(`[data-z="${d > 0 ? 1 : -1}"]`); if (b) b.click(); return true }   /* v4.05 the map: X = zoom in · Y = zoom out */ if (ov.dataset.atlas) { if (d > 0 && ov.dataset.atlas === 'quest' && qAuto()) return true; atlasStep(d); return true }   /* v3.74 X → · Y ← the next / previous page (the quest page: X = walk there by itself) */ if (ov.classList.contains('cbook') && CBOOK) { CBOOK.flip(d); return true } if (ov.classList.contains('inv')) { if (d > 0) bagX(); return true } return !!ov }
 let bagSellMode = false;   /* v3.12.3 selling gear only from a shop (the smith) — never by a stray tap in the bag */
 function openBag(tab, sell) {
   document.querySelectorAll('.ov.inv').forEach(o => { const bk = o.querySelector('.back'); if (bk) bk.click(); else o.remove() });   /* v3.72 one bag at a time · v3.80 through its own close (its stack entry + onClose) */
@@ -3075,14 +3075,24 @@ const CTX_NOW = new Set(['eat', 'run', 'swim', 'whale', 'catch', 'loot', 'raft']
    a faint blinking word under it · the letters X Y A B only in the bag / menus · hold X = the skills as three coloured circles on the buttons ================= */
 const CTX_LB = { place: 'วาง', altar: 'แท่นบูชา', gemspot: 'เก็บหิน', pet: 'น้อง', eat: 'กิน', cook: 'ทำอาหาร', capdoor: 'ประตู', lstone: 'ศิลา', sign: 'ป้าย', raft: 'ขึ้นแพ', horse: 'ขี่ม้า', tower: 'ปีน', wchest: 'เปิดหีบ', note: 'อ่าน', talk: 'คุย', pot: 'หม้อ', house: 'บ้าน', shop: 'ร้าน', ruin: 'ซ่อม', shrine: 'ศาล', chest: 'เปิดหีบ', scroll: 'เก็บ', boat: 'เรือ', catch: 'จับ', fruit: 'เก็บ', axe: 'ตัด', hammer: 'ทุบ', sickle: 'เกี่ยว', sword: 'ฟัน', fight: 'ฟัน', run: 'วิ่ง', swim: 'ว่าย', whale: 'ขี่วาฬ', loot: 'เก็บ', use: 'ใช้' };
 const BTNS = {}; for (const id of ['bA', 'bB', 'bX', 'bY']) { const el = $(id), letter = id[1]; const sp = el.querySelector('span') || (() => { el.textContent = ''; const x = document.createElement('span'); x.textContent = letter; el.prepend(x); return x })(); sp.classList.add('bk');
+  const ml = document.createElement('em'); ml.className = 'mlb'; el.appendChild(ml);   /* v4.05 a word under the letter in windows / menus */
   const ic = document.createElement('span'); ic.className = 'bic'; ic.innerHTML = '<i class="t"></i><i class="h"></i><em class="t"></em><em class="h"></em>'; el.appendChild(ic); BTNS[id] = { el, ic, key: '' } }
 function btnSet(id, tap, hold, dim) { const B = BTNS[id], k = tap.join() + '|' + (hold ? hold.join() : '') + (dim ? 'd' : ''); if (k === B.key) return; B.key = k; const [it, ih, et, eh] = B.ic.children;
   it.textContent = tap[0]; et.textContent = tap[1]; ih.textContent = hold ? hold[0] : ''; eh.textContent = hold ? hold[1] : ''; B.ic.classList.toggle('dual', !!hold); B.ic.classList.toggle('dim', !!dim) }
+/* v4.05 in a window the letters come back with what each one does there (the game loop pauses in windows, so a timer does it) */
+setInterval(() => { const ov = topOv(), L = { A: '', B: '', X: '', Y: '' }; if (ov) { const c = ov.className, at = ov.dataset.atlas;
+    if (c.includes('mapfs') || at === 'map') Object.assign(L, { A: 'ปักหมุด', B: 'ปิด', X: 'ซูมเข้า', Y: 'ซูมออก' });
+    else if (c.includes('inv')) Object.assign(L, { A: 'เลือก', B: 'กลับ', X: bagTab === 'mats' ? 'ถือ' : '' });
+    else if (c.includes('cbook')) Object.assign(L, { A: 'เลือก', B: 'กลับ', X: 'หน้าถัดไป', Y: 'หน้าก่อน' });
+    else if (at === 'quest') Object.assign(L, { A: 'ติดตาม', B: 'กลับ', X: 'เดินไปเอง' });
+    else if (ov.querySelector('#tN')) Object.assign(L, { A: 'ต่อไป', B: 'ปิด' });
+    else Object.assign(L, { A: 'เลือก', B: 'กลับ' }) }
+  for (const k of 'ABXY') { const e = BTNS['b' + k] && BTNS['b' + k].el.querySelector('.mlb'); if (e && e.textContent !== L[k]) e.textContent = L[k] } }, 300);
 let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; if (!PL) return;
   document.body.classList.toggle('lettered', !!(topOv() || SMENU.on || PICK || wheelOn || OPT.ctrl !== 'pad'));
   const air = PL && me().y - groundH(me().x, me().z) > .6 && !PL.swim, sk = ['X', 'A', 'Y'].some(sl => { const k = skSlot(sl); return k && (k === 'eel' ? !!S.has.bolt : S.pets.some(p => p.kind === k)) });
   /* X: jump · in the air with the leaf glider = open it · crouching = stand · hold = the skills */
-  btnSet('bX', GLIDE ? ['🪂', 'ร่อนอยู่'] : air && S.has.glider ? ['🪂', 'กางร่ม'] : CROUCH ? ['🧍', 'ลุกขึ้น'] : AIM ? ['🔍', 'ซูมออก'] : ['🏃🏻', 'กระโดด'], sk && !AIM && !GLIDE ? ['✨', 'ค้าง = สกิล'] : null);
+  btnSet('bX', GLIDE ? ['🪂', 'ร่อนอยู่'] : air && S.has.glider ? ['🪂', 'กางร่ม'] : CROUCH ? ['🧍', 'ลุกขึ้น'] : AIM ? ['🔍', 'ซูมออก'] : ['🏃', 'กระโดด'], sk && !AIM && !GLIDE ? ['✨', 'ค้าง = สกิล'] : null);
   /* B: guard · back / fold / get off */
   btnSet('bB', AIM ? ['↩️', 'ยกเลิก'] : GLIDE ? ['🪂', 'หุบร่ม'] : HORSE ? ['⬇️', 'ลง'] : RIDE ? ['🛡️', 'ป้องกัน'] : carryN() ? ['🎒', 'เก็บของ'] : shieldOn() ? ['🛡️', 'ป้องกัน'] : ['⚔️', 'ปัด']);
   /* A: what is in front of you */

@@ -530,10 +530,10 @@ body:has(.ov.menuPick) #bX,body:has(.ov.menuPick) #bY{z-index:6!important;box-sh
 /* v4.04 🎮 icon buttons: the icon (tap) and the hold icon (dashed ring) take turns slowly · a faint blinking word under it · letters only in the bag / menus */
 #bA .bic,#bB .bic,#bX .bic,#bY .bic{position:absolute;inset:0;pointer-events:none}
 .bic i{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:28px;line-height:1}
-.bic i.h{opacity:0;border-radius:50%}.bic.dual i.t{animation:bicT 4.4s ease-in-out infinite}.bic.dual i.h{animation:bicH 4.4s ease-in-out infinite;box-shadow:inset 0 0 0 3px #fff;outline:3px dashed #fffc;outline-offset:3px}
-@keyframes bicT{0%,40%{opacity:1}50%,90%{opacity:0}100%{opacity:1}}@keyframes bicH{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
-.bic em{position:absolute;left:50%;top:100%;margin-top:3px;transform:translateX(-50%);white-space:nowrap;font:800 11px system-ui;font-style:normal;color:#fff;text-shadow:0 1px 2px #000,0 0 5px #000;animation:bicL 2.6s ease-in-out infinite}
-.bic em.h{opacity:0}.bic.dual em.t{animation:bicT 4.4s ease-in-out infinite,bicL 2.6s ease-in-out infinite}.bic.dual em.h{animation:bicH 4.4s ease-in-out infinite}
+.bic i.h{opacity:0;border-radius:50%}.bic.dual i.t{animation:bicT 10s ease-in-out infinite}.bic.dual i.h{animation:bicH 10s ease-in-out infinite;box-shadow:inset 0 0 0 3px #fff;outline:3px dashed #fffc;outline-offset:3px}
+@keyframes bicT{0%,84%{opacity:1}87%,97%{opacity:0}100%{opacity:1}}@keyframes bicH{0%,84%{opacity:0}87%,97%{opacity:1}100%{opacity:0}}   /* v4.05 the hold icon shows briefly every 10 s (designer) */
+.bic em{position:absolute;left:50%;top:100%;margin-top:3px;transform:translateX(-50%);white-space:nowrap;font:800 11px system-ui;font-style:normal;color:#fff;text-shadow:0 1px 2px #000,0 0 5px #000;animation:bicL 4s ease-in-out infinite}
+.bic em.h{opacity:0}.bic.dual em.t{animation:bicT 10s ease-in-out infinite,bicL 4s ease-in-out infinite}.bic.dual em.h{animation:bicH 10s ease-in-out infinite}
 @keyframes bicL{0%,100%{filter:opacity(.45)}50%{filter:opacity(.9)}}
 .bic.dim i{opacity:.45}.bic.dim em{display:none}
 body:not(.lettered) #bA .bk,body:not(.lettered) #bB .bk,body:not(.lettered) #bX .bk,body:not(.lettered) #bY .bk{display:none!important}body.lettered .bic{display:none}
@@ -544,6 +544,8 @@ body.pad:not(.lettered) #bA.ctx{background-color:#3fae6a;animation:none}
 #skw.onbtn i{position:fixed;width:80px;height:80px;margin:-40px 0 0 -40px;color:#fff;font-size:34px;border-width:4px;box-shadow:0 0 0 3px #fff8,0 6px 14px #0008}
 #skw.onbtn i small{position:absolute;top:100%;margin-top:5px;color:#fff;font-size:11px;text-shadow:0 1px 2px #000;max-width:none;overflow:visible}#skw.onbtn i b{display:none}
 #skw.onbtn i.up{background:#3a7ae0}#skw.onbtn i.left{background:#f0c020}#skw.onbtn i.right{background:#e8402a}#skw.onbtn i.down{background:#e05a4a;width:64px;height:64px;margin:-32px 0 0 -32px;font-size:24px}#skw.onbtn i.cd{filter:grayscale(.7) brightness(.6)}
+.mlb{display:none;position:absolute;left:50%;top:100%;margin-top:3px;transform:translateX(-50%);white-space:nowrap;font:800 11px system-ui;font-style:normal;color:#fff;text-shadow:0 1px 2px #000,0 0 5px #000;pointer-events:none}
+body:has(.ov) .mlb{display:block}   /* v4.05 windows: the letter + what it does */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
