@@ -18,6 +18,11 @@ const ROOT = '/home/user/KcalPets', PORT = 8860, OUT = process.argv[2] || '/tmp/
       const got = await E(() => window.__ng.S.ingr.apple || 0); log(far + ' m', JSON.stringify(aim), 'apple', got);
       if (!aim.rope) errs.push('holding Y with the rope should aim it'); if (want && (!aim.lock || got !== 1)) errs.push('a drop 10 m away should lock and be pulled into the bag'); if (!want && (aim.lock || got)) errs.push('a drop 20 m away is out of reach');
       await E(() => { const N = window.__ng; for (const d of [...N.drops]) N.pickDrop(d) }) }
+    /* v4.15 ground loot (a weapon lying on a light disc) locks too · designer: the rope did not lock the sword on the ground */
+    { await E(async () => { const N = window.__ng; N.placeMe(300, 300); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .35; await new Promise(r => setTimeout(r, 800)); const q = N.me; window.__bag0 = N.S.bag.length; window.__gl0 = N.GL.size; N.glSpawn('knightSword', q.x, q.z + 8); await new Promise(r => setTimeout(r, 600)) });
+      await btn('bY', 'pointerdown'); await wait(1500); const lk = await E(() => { const A = window.__ng.AIMR; return A && A.lockD ? A.lockD.k : null }); await btn('bY', 'pointerup'); await wait(2500);
+      const g2 = await E(() => ({ bag: window.__ng.S.bag.length - window.__bag0, gl: window.__ng.GL.size - window.__gl0 })); log('ground loot', lk, JSON.stringify(g2)); await pg.screenshot({ path: OUT + '/loot.png' });
+      if (lk !== 'gl' || g2.bag !== 1) errs.push('v4.15 a weapon lying on the ground should lock and be pulled into the bag') }
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

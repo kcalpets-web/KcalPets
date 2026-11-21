@@ -160,3 +160,36 @@ export function boneGiant(g, o = {}) {
   const mist = new THREE.Mesh(new THREE.CircleGeometry(2.2, 32), new THREE.MeshBasicMaterial({ color: '#4aff8a', transparent: true, opacity: .18 })); mist.rotation.x = -Math.PI / 2; mist.position.y = .03; g.add(mist);
   g.userData.armL = armL; g.userData.armR = armR; g.userData.sword = sword; g.userData.head = head; return g;
 }
+
+/* v4.15 🌋 valkara: the lava demon (kingdom boss) · a hulking demon of cooled black rock with glowing magma cracks, curved horns, a burning mane,
+   glowing eyes and mouth, huge clawed fists, standing in a pool of lava · g.userData = { armL, armR, head, glow[] } so the game can slam / pulse */
+export function lavaDemon(g, o = {}) {
+  const ROCK = ['#120c0e', '#3a2e30'], ROCK2 = ['#1e1414', '#4a3a38'], HORN = ['#2a1a14', '#8a6a50'];
+  const LAVA = new THREE.MeshStandardMaterial({ color: '#ff6a1a', emissive: '#ff4a0a', emissiveIntensity: 1.4, roughness: .5 }), FIRE = new THREE.MeshBasicMaterial({ color: '#ff5a14', transparent: true, opacity: .88 }), FIRE2 = new THREE.MeshBasicMaterial({ color: '#ffb02a', transparent: true, opacity: .95 }), EYE = new THREE.MeshBasicMaterial({ color: '#fff27a' });
+  const glow = [], crack = (p, pts, r = .05) => { const cv = new THREE.CatmullRomCurve3(pts.map(v => new THREE.Vector3(...v))); const m = new THREE.Mesh(new THREE.TubeGeometry(cv, 12, r, 6), LAVA); p.add(m); glow.push(m); return m };
+  const flame = (p, x, y, z, h, s = 1) => { const f = new THREE.Mesh(new THREE.ConeGeometry(.16 * s, h, 8), FIRE); f.position.set(x, y + h / 2, z); p.add(f); const c = new THREE.Mesh(new THREE.ConeGeometry(.11 * s, h * .7, 8), FIRE2); c.position.set(x, y + h * .35, z + .03); p.add(c); const c2 = new THREE.Mesh(new THREE.ConeGeometry(.05 * s, h * .4, 6), EYE); c2.position.set(x, y + h * .2, z + .06); p.add(c2); glow.push(f); return f };
+  /* legs: thick rock, hoof-like feet */
+  for (const s of [-1, 1]) { part(g, ...ROCK, [s * .6, 1.0, 0], [.4, .7, .42]); part(g, ...ROCK2, [s * .64, .3, .1], [.42, .3, .5]); crack(g, [[s * .5, 1.5, .38], [s * .62, 1.1, .4], [s * .55, .7, .36]]) }
+  /* body: a broad chest and belly with glowing cracks · a lava heart */
+  part(g, ...ROCK, [0, 2.2, 0], [1.1, .95, .8]); part(g, ...ROCK2, [0, 3.0, -.05], [1.25, .7, .78]);
+  crack(g, [[-.5, 3.2, .7], [-.2, 2.8, .82], [.1, 2.4, .82], [.4, 2.0, .74]], .06); crack(g, [[.5, 3.25, .68], [.3, 2.9, .8]]); crack(g, [[-.6, 2.2, .7], [-.3, 1.8, .74]]); crack(g, [[.7, 2.6, .6], [.55, 2.3, .72], [.75, 2.0, .62], [.6, 1.7, .6]], .045); crack(g, [[-.85, 3.0, .55], [-.6, 3.35, .6], [-.3, 3.45, .62]], .045); crack(g, [[.2, 1.6, .72], [-.05, 1.45, .7], [.1, 1.3, .66]], .04);
+  const heart = new THREE.Mesh(new THREE.SphereGeometry(.22, 16, 12), LAVA); heart.position.set(.05, 2.65, .82); heart.scale.z = .4; g.add(heart); glow.push(heart);
+  /* shoulders: big rock pads with flames */
+  for (const s of [-1, 1]) { part(g, ...ROCK2, [s * 1.25, 3.25, 0], [.5, .42, .5]); for (let k = 0; k < 3; k++) flame(g, s * (1.1 + k * .16), 3.55, -.1 + k * .08, .5 + (k % 2) * .25, 1.2) }
+  /* arms: huge, hanging fists with claws · cracks along them */
+  const arm = s => { const A = new THREE.Group(); A.position.set(s * 1.4, 3.1, 0); A.rotation.z = s * .12; g.add(A); part(A, ...ROCK, [0, -.6, 0], [.36, .65, .38]); part(A, ...ROCK2, [0, -1.4, .05], [.34, .55, .36]); part(A, ...ROCK, [0, -2.05, .1], [.48, .4, .45]);
+    crack(A, [[s * .2, -.3, .3], [s * .25, -.9, .32], [s * .15, -1.5, .32]]); for (let k = 0; k < 3; k++) cone(A, ...HORN, [(k - 1) * .2, -2.45, .3], [.08, .22, .08], [Math.PI + .3, 0, 0], .9); return A };
+  const armL = arm(-1), armR = arm(1);
+  /* head: a heavy brow, glowing eyes and mouth, curved horns, a burning mane */
+  const head = new THREE.Group(); head.position.set(0, 3.85, .25); g.add(head);
+  part(head, ...ROCK, [0, 0, 0], [.55, .5, .52]); part(head, ...ROCK2, [0, .18, .3], [.5, .12, .25]);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.09, 12, 10), EYE); e.position.set(s * .2, .06, .47); e.scale.set(1.3, .7, .5); head.add(e); glow.push(e) }
+  const mo = new THREE.Mesh(new THREE.SphereGeometry(.22, 14, 10), LAVA); mo.position.set(0, -.2, .45); mo.scale.set(1.2, .45, .3); head.add(mo); glow.push(mo); for (let k = 0; k < 5; k++) cone(head, '#d8c8a8', '#fff4d8', [(k - 2) * .08, -.12, .5], [.03, .08, .03], [Math.PI, 0, 0], .9);
+  for (const s of [-1, 1]) { const cv = new THREE.CatmullRomCurve3([[.42, .25, 0], [.75, .35, -.1], [.95, .7, -.2], [.85, 1.05, -.3]].map(([x, y, z]) => new THREE.Vector3(s * x, y, z))); const hm = new THREE.Mesh(new THREE.TubeGeometry(cv, 20, .1, 8), new THREE.MeshStandardMaterial({ color: '#3a2418', roughness: .6 })); head.add(hm); const tip = new THREE.Mesh(new THREE.ConeGeometry(.1, .25, 8), new THREE.MeshStandardMaterial({ color: '#c8a880', roughness: .5 })); tip.position.set(s * .83, 1.18, -.32); tip.rotation.z = s * .4; head.add(tip) }
+  for (let k = 0; k < 7; k++) { const a = (k / 6 - .5) * 2.4; flame(head, Math.sin(a) * .42, .3 + Math.cos(a) * .12, -.2 - Math.cos(a) * .12, .6 + (k % 3) * .2, 1.3) }
+  /* the lava pool at its feet + a few rocks */
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(2.3, 36), new THREE.MeshStandardMaterial({ color: '#ff5a10', emissive: '#ff3a00', emissiveIntensity: .9, roughness: .6 })); pool.rotation.x = -Math.PI / 2; pool.position.y = .03; g.add(pool); glow.push(pool);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.7, 36), new THREE.MeshStandardMaterial({ color: '#2a1a14', roughness: 1 })); ring.rotation.x = -Math.PI / 2; ring.position.y = .04; g.add(ring);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + .3; part(g, ...ROCK2, [Math.cos(a) * 2.5, .12, Math.sin(a) * 2.5], [.25, .16, .22], [0, a, 0]) }
+  g.userData.armL = armL; g.userData.armR = armR; g.userData.head = head; g.userData.glow = glow; return g;
+}
