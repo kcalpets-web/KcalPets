@@ -59,14 +59,14 @@ export const MON = {
   slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['branch', 'leafBlade', 'potLid', 'leafVest'], tier: 'normal' },
   slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['travelerSword', 'woodAxe', 'woodSpear', 'woodShield', 'woodBow'], tier: 'mini' },
   /* v1.2 wild animals (tier 'animal'): run away when you come close (hold B to sneak) · the boar charges back when hit */
-  rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['meat', 1], loot: [], tier: 'animal' },
+  rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['rabbitmeat', 1], loot: [], tier: 'animal' },
   chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
-  duck:    { animal: 1, legs: 1, flee: 5, run: 3.2, name: '🦆 เป็ดป่า', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: { feather: 2 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
-  horse:   { animal: 1, legs: 1, horse: 1, flee: 0, run: 0, name: '🐴 ม้าป่า', lv: 1, hp: 9999, atk: 0, def: 99, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v3.2 can't be hurt · press A to ride
+  duck:    { animal: 1, legs: 1, flee: 5, run: 3.2, name: '🦆 เป็ดป่า', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: { feather: 2 }, ingr: ['duckmeat', 1], loot: [], tier: 'animal' },
+  horse:   { animal: 1, legs: 1, horse: 1, flee: 0, run: 0, name: '🐴 ม้าป่า', lv: 2, hp: 50, atk: 0, def: 1, exp: 14, coin: [0, 0], mat: { hide: 2 }, ingr: ['horsemeat', 1, 2], loot: [], tier: 'animal' },   // v3.2 can't be hurt · press A to ride
   deer:    { animal: 1, legs: 1, flee: 9, run: 5.6, name: '🦌 กวาง', lv: 2, hp: 30, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { hide: 1 }, ingr: ['venison', 1, 2], loot: [], tier: 'animal' },
-  boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
-  whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
-  hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 0, coin: [0, 0], mat: { feather: 2 }, loot: [], tier: 'animal' },   // v1.5 (high ground)
+  boar:    { animal: 1, charge: 1, legs: 1, flee: 3.5, run: 3.6, name: '🐗 หมูป่า', lv: 3, hp: 44, atk: 7, def: 2, exp: 18, coin: [0, 0], mat: { hide: 1 }, ingr: ['boarmeat', 1, 2], loot: [], tier: 'animal' },
+  whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 20, coin: [0, 0], mat: {}, ingr: ['whalemeat', 1, 2], loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
+  hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { feather: 2 }, ingr: ['hawkmeat', 1], loot: [], tier: 'animal' },   // v1.5 (high ground)
   eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2200, atk: 30, def: 12, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
   stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 6000, atk: 60, def: 30, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
   shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
@@ -256,7 +256,8 @@ export const STAM_FADE = 1.2;                                    // v2.4.2 secon
 export const CTX_WAIT = 3;                                       // v2.4.1 seconds standing still near a thing before its 🪓/⛏️/✋ bubble shows
 export const SEASON_DAYS = 10;   // v3.60 🍂 game days per season (spring → summer → autumn → winter)
 export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
-export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 8, veg: 5, meat: 3, other: 4 }, full: 6 };   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
+export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 20, nut: 20, veg: 5, meat: 0, other: 4 }, full: 6 };   // v3.97 fruit = ⚡ (bigger) · meat = ❤️ (MEAT_HEART)
+export const MEAT_HEART = { meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
@@ -457,6 +458,13 @@ export const INGR = {
   glowherb: { icon: '🌿', name: 'สมุนไพรเรืองแสง', tag: 'herb', price: 120 },
   poultry:  { icon: '🍗', name: 'เนื้อไก่', tag: 'meat', price: 25 },
   venison:  { icon: '🥩', name: 'เนื้อกวาง', tag: 'meat', price: 45 },
+  /* v3.97 every animal leaves its own meat (any meat still counts as 🍖 เนื้อ in recipes and quests) */
+  rabbitmeat: { icon: '🍖', name: 'เนื้อกระต่าย', tag: 'meat', price: 25 },
+  duckmeat: { icon: '🍗', name: 'เนื้อเป็ด', tag: 'meat', price: 25 },
+  boarmeat: { icon: '🥓', name: 'เนื้อหมูป่า', tag: 'meat', price: 50 },
+  horsemeat: { icon: '🥩', name: 'เนื้อม้า', tag: 'meat', price: 60 },
+  whalemeat: { icon: '🍣', name: 'เนื้อวาฬ', tag: 'meat', price: 90 },
+  hawkmeat: { icon: '🍗', name: 'เนื้อเหยี่ยว', tag: 'meat', price: 25 },
   /* v1.0 farm crops */
   carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },
   cabbage:  { icon: '🥬', name: 'กะหล่ำปลี', tag: 'veg', price: 30 },
@@ -583,13 +591,13 @@ export const CAMP_TIERS = [                                    // by distance fr
 ];
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
-  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารและนอนพักได้ทุกที่', cost: { wood: 6, stone: 4 }, start: 1, t: 20, w: 1.6, d: 1.6 },
+  campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น)', cost: { wood: 6, stone: 4 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
   raft:      { icon: '🛶', name: 'เรือแพ', desc: 'วางที่น้ำริมฝั่ง · ขึ้นพายข้ามทะเลได้ไม่เสียพลังงาน · ตกปลากลางทะเลได้', cost: { wood: 16, grass: 8 }, start: 1, t: 40, w: 1.6, d: 2.3, water: 1 },
   fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์และสัตว์เดินผ่านไม่ได้', cost: { wood: 4 }, t: 8, w: 2, d: .3, solid: 1 },
   path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, t: 6, w: 2, d: 2 },
-  bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'นอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
+  bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'วางในบ้าน/ข้างบ้าน แล้วนอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
   stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, t: 15, w: 2, d: .6, solid: 1 },
   kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'หม้อในระยะ 8 ม. ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 }, t: 45, w: 1.9, d: 1, solid: 1 },
   scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, t: 25, w: .8, d: .8, solid: 1 },

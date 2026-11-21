@@ -631,8 +631,8 @@ function carryTake(k, src, inBag) { const b = src === true || src === 1 ? 'f' : 
   if (inBag) toast(`✋ ถือ ${S.hold.map(carryIco).join('')} (${S.hold.length}/${D.CARRY.max})`, 1200); else hint(`✋ ถือ ${carryIco(S.hold[S.hold.length - 1])} (${S.hold.length}/${D.CARRY.max}) · A = กิน (ใกล้หม้อ = วาง) · B = เก็บ`, 2400); return true }
 function carryBack(quiet) { if (!carryN()) return; for (const h of S.hold) { const st = holdBox(h); st[h.k] = (st[h.k] || 0) + 1 } S.hold = []; if (!quiet) { sfx('tap'); hint('🎒 เก็บวัตถุดิบเข้ากระเป๋าแล้ว', 1200) } else hint('🎒 เก็บวัตถุดิบเข้ากระเป๋า', 1200); save(); hud(); if (PL) PL.gearK = null; setTimeout(() => gearView()) }
 /* v3.68 ✋ A away from a pot = eat the last piece held raw (a little ⚡ + 🍖) */
-function carryEat() { const h0 = S.hold[S.hold.length - 1]; if (!h0) return; if (!edible(h0)) { hint(`🚫 ${carryIco(h0)} ${carryName(h0)} กินไม่ได้ · เดินไปที่หม้อ/กระทะแล้วกด A วาง · B = เก็บ`, 1800); return } const h = S.hold.pop(), n = h.fish ? D.FISH_EN[D.FISH[h.k].r] : (D.CARRY.eat[(D.INGR[h.k] || {}).tag] ?? D.CARRY.eat.other);
-  addEn(n); S.full = Math.min(100, (S.full ?? 100) + D.CARRY.full); S.starveT = 0; needsHud(); cheer(); sfx('coin'); const q = me(); floater(`😋 ${carryIco(h)} ⚡+${n}`, 'item', q.x, 2, q.z); save(); hud(); if (PL) PL.gearK = null; gearView() }
+function carryEat() { const h0 = S.hold[S.hold.length - 1]; if (!h0) return; if (!edible(h0)) { hint(`🚫 ${carryIco(h0)} ${carryName(h0)} กินไม่ได้ · เดินไปที่หม้อ/กระทะแล้วกด A วาง · B = เก็บ`, 1800); return } const h = S.hold.pop(), hh = !h.fish && D.MEAT_HEART[h.k] || 0, n = h.fish ? D.FISH_EN[D.FISH[h.k].r] : hh ? 0 : (D.CARRY.eat[(D.INGR[h.k] || {}).tag] ?? D.CARRY.eat.other);
+  if (hh) S.hp = Math.min(pStats().hp, pHp() + hh * D.HEART); if (n) { const mx = pStats().en, c = pEn(), f = Math.max(0, Math.min(n, mx - c)); S.en = c + f; S.tired = false; if (n > f) addEn(n - f) }   /* v3.97 ⚡ refills your energy first, the rest is extra (yellow) */ cheer(); sfx('coin'); const q = me(); floater(`😋 ${carryIco(h)} ${hh ? '❤️+' + hh : '⚡+' + n}`, hh ? 'heal' : 'item', q.x, 2, q.z);   /* v3.97 meat = ❤️ · fruit = ⚡ · no hunger */ save(); hud(); if (PL) PL.gearK = null; gearView() }
 function nearPot(r = D.CARRY.reach) { const q = me(); let best = null, bd = r; for (const k in POT) { const P = POT[k]; if (!P || !P.x && P.x !== 0) continue; const d = dist(q.x, q.z, P.x, P.z); if (d < bd) { bd = d; best = k } } return best }
 function carryA() { const k = nearPot(); if (!k) { carryEat(); return }
   if (key0Blocked(k)) return; const pin = (S.potIn = S.potIn || {})[k] || (S.potIn[k] = []); if (pin.length >= 5) { hint('🍲 หม้อเต็มแล้ว (5 ชิ้น) · มือว่างแล้วกด A = ปรุง', 1600); return }
@@ -724,7 +724,7 @@ function callPets(m) { const q = m.A.root.position; for (const e of PA.values())
 function monGone(m) { scene.remove(m.A.root); freeTree(m.A.root); IDLE && IDLE.delete(m.A); m.tag.remove(); removePick(W, m.pick); mons.splice(mons.indexOf(m), 1); for (const e of PA.values()) if (e.foe === m) { e.mode = 'wander'; e.foe = null }
   if (m.farm) { S.mon = null; setTool(prevTool) } }
 const farmMon = () => mons.find(m => m.farm);
-function hurtMon(m, d, cls, label) { m.qHurtT = performance.now() + 400; if (m.T.horse) { const q0 = m.A.root.position; floater('🐴 💛', 'tool', q0.x, 1.8, q0.z); return } if (m.T.golem) { const g = golemDmg(m, d); if (!g[0]) return; d = g[0]; if (g[1]) label = g[1] } const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
+function hurtMon(m, d, cls, label) { m.qHurtT = performance.now() + 400; if (m === HORSE) {   /* v3.97 wild horses can be hunted · only the one you ride is safe */ const q0 = m.A.root.position; floater('🐴 💛', 'tool', q0.x, 1.8, q0.z); return } if (m.T.golem) { const g = golemDmg(m, d); if (!g[0]) return; d = g[0]; if (g[1]) label = g[1] } const q = m.A.root.position; sfx(cls === 'pet' ? 'hit' : 'slash'); m.hp -= d; m.hitT = performance.now(); m.flash = .15; m.aggro = true; if (m.farm) S.mon.hp = m.hp; floater((label ? label + ' ' : '') + '-' + d, cls, q.x + (Math.random() - .5) * .4, 1.5, q.z); if (m.hp <= 0) monDie(m) }
 function monDie(m) {
   if (m.occ) setTimeout(() => occKill(m)); if (m.lstone) setTimeout(() => lsKill(m));   /* v3.14 a light-stone guardian */   /* v3.8 one of the squatters at your camp fire */
   { const q = m.A.root.position, big = (MSCALE[m.kind] || .85) > 1; VF.burst(q.x, q.y + .6, q.z, m.T.animal ? '#ffffff' : '#c8a0ff', big ? 30 : 16, big ? 5 : 3.5); VF.ring(q.x, q.y, q.z, '#ffffff', big ? 3.2 : 1.8, .45) }
@@ -734,7 +734,7 @@ function monDie(m) {
   for (const e of PA.values()) if (e.foe === m) petExp(e.p, Math.round(T.exp * .6));
   const forced = !S.stat.itemDrops && (m.farm || m.kind === 'slimeKing');
   if (!T.animal && S.bowGiven && Math.random() < D.ARROW.drop && bagFits('bow', { arw: S.arrows || 0 }, 'arw', 3)) { const n = 1 + Math.floor(Math.random() * 3); S.arrows = (S.arrows || 0) + n; floater(`🏹 +${n}`, 'coin', x, 2.3, z) }
-  if (T.ingr && Math.random() < T.ingr[1]) dropIngr(T.ingr[0], T.ingr[2] || 1, x, z); if (isNight()) bump('nightKills'); { const B = kingdomAt(x, z); if (B.home < .5 && B.w > .55) bump('kk_' + B.k) } (S.journal.mons[m.kind] = S.journal.mons[m.kind] || { seen: 1, kills: 0 }).kills++;
+  if (T.ingr && Math.random() < T.ingr[1]) { if (T.swim) { const k = T.ingr[0], n = T.ingr[2] || 1; S.ingr[k] = (S.ingr[k] || 0) + n; floater(`${D.INGR[k].icon} ${D.INGR[k].name} +${n}`, 'item', x, 1.6, z) } else dropIngr(T.ingr[0], T.ingr[2] || 1, x, z) }   /* v3.97 a sea animal's meat goes straight to the bag (it would sink) */ if (isNight()) bump('nightKills'); { const B = kingdomAt(x, z); if (B.home < .5 && B.w > .55) bump('kk_' + B.k) } (S.journal.mons[m.kind] = S.journal.mons[m.kind] || { seen: 1, kills: 0 }).kills++;
   if (m.gear && D.ITEMS[m.gear] && Math.random() < D.GEAR_DROP) dropItem({ t: m.gear, r: rollRarity(D.RAR_OK[T.tier]) }, x + .6, z - .3);   /* v3.22 what it held */
   if (T.loot.length && (forced || Math.random() < D.ITEM_DROP * (isNight() ? D.NIGHT.drop : 1))) { const r = forced ? 'R' : rollRarity(D.RAR_OK[T.tier]), t = T.loot[Math.floor(Math.random() * T.loot.length)]; dropItem({ t, r }, x, z) } if (T.animal) bump('hunt');
   for (const [w, p] of D.WEAR_DROP[m.kind] || []) if (!(S.clothes || {})[w] && Math.random() < p * (isNight() ? D.NIGHT.drop : 1)) { giveWear(w, `${T.name} ทิ้งของไว้!`); break }   /* v3.43 ⚔️ armour + helmets */
@@ -1030,7 +1030,7 @@ function openSite() {
 }
 function sleepNight() {
   const f = $('sleep'); f.style.display = 'flex'; f.style.opacity = 0; requestAnimationFrame(() => f.style.opacity = 1);
-  setTimeout(() => { S.story.slept = 1; S.time = D.DAY.dawn; S.hp = null; S.en = null; storyProps(); save(); f.querySelector('b').textContent = '☀️ เช้าวันใหม่'; setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 700); toast('…ได้ยินเสียงครางมาจาก<b>ซากเรือริมหาด</b>!', 3400); look(WRECK.x, WRECK.z); questCheck() }, 1400) }, 1600);
+  setTimeout(() => { S.story.slept = 1; S.time = D.DAY.dawn; pHp(); S.en = null;   /* v3.97 sleeping does not heal ❤️ */ storyProps(); save(); f.querySelector('b').textContent = '☀️ เช้าวันใหม่'; setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 700); toast('…ได้ยินเสียงครางมาจาก<b>ซากเรือริมหาด</b>!', 3400); look(WRECK.x, WRECK.z); questCheck() }, 1400) }, 1600);
 }
 function goTown(after) { if (!S.story.boatFixed) { talk([['💭', 'ยังไปไม่ได้… ช่วยลุงที่ซากเรือก่อนดีกว่า']]); return } travel('town', after) }
 function goFarm(after) { travel('farm', after) }
@@ -1365,7 +1365,7 @@ function frame(now) {
   fishTick(dt, now); eelWorldTick(dt, now); struggleTick(dt); windTick(); torchUpTick(); chgTick(); wxTick(dt, now); trainTick(now); timberTick(dt / speed); bTick(dt, now); airTick(dt, now); stormTick(dt, now); catchTick(dt, now); VF.tick(dt); bossHud(); jobsTick(now); potTick(now); torchLightTick(); bubTick(now); isleTick(now); decayTick(now); edgeTick(now); farmTick(now); farmAnim(now); timeTick(dt); autoGoTick(); aqTick(now); walkTick(dt, now); autoTick(now);
   { const z = zoneOf(me().x, me().z); if (z !== S.area && S.story.intro) enterZone(z) } padTick(dt / speed); mapTick(now); if (now > miniT && !CUT) { miniT = now + 33; drawMini() } chunkTick(now); actorCull(now); FW.fire.scale.y = .85 + Math.sin(now / 70) * .15;
   debTick(now);
-  if (now - lastHurt > 4000 && !debOn('poison') && !debOn('burn')) { const st = pStats(); S.hp = Math.min(st.hp, pHp() + st.hp * D.REGEN.perSec * dt) }
+  /* v3.97 ❤️ no healing by itself any more: only eating brings hearts back */
   if (now - enT > D.EN_DELAY * 1000) { const mx = pStats().en; S.en = Math.min(mx, pEn() + mx * dt / D.EN_FULL_S * (debOn('cold') ? .5 : 1) * (TEMPV > D.TEMP.hotAt ? D.TEMP.hotRegen : 1) * (hungry() ? .6 : 1) * ((S.awake || 0) > D.NEEDS.wornAt ? .6 : 1)); if (S.tired && S.en >= mx) { S.tired = false; toast('⚡ หายเหนื่อยแล้ว!', 1400) } }
   camP.x += (camT.x - camP.x) * Math.min(1, dt / speed * 8); camP.z += (camT.z - camP.z) * Math.min(1, dt / speed * 8);
   if (Math.abs(camT.x - camP.x) > 20) { camP.x = camT.x; camP.z = camT.z }
@@ -1816,14 +1816,15 @@ function openBoatOld() {
 }
 function openHouse() {
   sheet('🏠 บ้านต้นไม้', (b, redraw, close) => {
-    b.innerHTML = `<div class="card"><b>😴 พักผ่อน</b><p class="mut">ผู้เล่น HP + ⚡ พลังงานเต็ม · น้อง HP / Mana เต็ม · น้องที่หมดแรงฟื้นทันที</p><button class="btn go wide" id="hR">พักผ่อน</button></div>
+    b.innerHTML = `<div class="card"><b>😴 นอนพัก</b><p class="mut">⚡ พลังงานเต็ม · น้องฟื้นตัว · ตื่นมาเช้าวันใหม่ · ❤️ ไม่เพิ่ม (กินเท่านั้น)</p><button class="btn go wide" id="hR">😴 นอน → 🌅 เช้าวันใหม่</button></div>
       <div class="card"><b>💞 ผสมพันธุ์</b><p class="mut">เร็วๆ นี้</p></div><div class="card"><b>💎 พักจอ = ขุดเหมืองเพชร</b><p class="mut">เร็วๆ นี้ (1,000 💎/ชม. สูงสุด 8 ชม.)</p></div>`;
-    b.querySelector('#hR').onclick = () => { restAll(); toast('😴 พักผ่อนเต็มที่! ทุกคน HP/Mana เต็ม'); save(); hud(); close() };
+    b.querySelector('#hR').onclick = () => { close(); sleepTo(D.DAY.dawn) };
   });
 }
 let bagTab = 'sword', bagSel = {};
 /* v1.9.2 inventory, console-style: icon tabs · a grid of tiles (count / power badge, rarity frame, equipped = blue) · details of the selected tile · a 3D preview wearing the gear */
 const INV_TABS = () => Object.entries(D.BAG.cats).map(([k, [ic, nm]]) => [k, ic, nm]);   /* v3.72 the seven sections: ดาบ · ธนู · โล่ · ชุดเกราะ · วัตถุดิบ · อาหารและยา · สัตว์เลี้ยง */   /* v3.40 making things lives in 📖 the adventure journal (and the makers) */   /* v3.27 🛠️ crafting is a bag section */   /* v3.12 the six bag sections (+ pets until v3.14) · quests / achievements / settings live under 📜 */
+const rawEff = k => { const h = D.MEAT_HEART[k]; if (h) return `+${h}❤️ · `; const t = (D.INGR[k] || {}).tag; return t === 'fruit' || t === 'nut' ? `+${D.CARRY.eat[t]}⚡ · ` : '' };   /* v3.97 what eating it raw gives */
 function invItems(tab) {
   const L = [], st = pStats();
   if (['sword', 'shield', 'bow', 'tools'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t] && itemCat(it.t) === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
@@ -1839,7 +1840,7 @@ function invItems(tab) {
   if (tab === 'mats') {
     if (false) L.push({ key: 'arw', icon: '🏹', n: S.arrows, name: 'ลูกธนู', sub: 'ใช้กับธนู (ปุ่ม 🏹)', desc: 'คราฟเองได้ (🎒 → 🛠️ คราฟ) · ซื้อที่ร้านช่าง · เก็บจากมอนสเตอร์', act: '<button class="btn go" data-go="craft">🛠️ คราฟเพิ่ม</button>' });
     for (const k of Object.keys(S.mats).filter(k => S.mats[k] > 0)) L.push({ key: 'm' + k, icon: D.MATS[k][0], n: S.mats[k], name: D.MATS[k][1], sub: 'วัตถุดิบ / ชิ้นส่วน', desc: 'ใช้สร้าง ซ่อม และอัปเกรด', act: `${bagSellMode ? `<button class="btn ghost" data-sm="${k}">ขาย 1 · 🪙${Math.round(D.MATS[k][2] * D.SELL_RATE)}</button>` : ''}` });
-    for (const k of Object.keys(D.INGR).filter(k => S.ingr[k] > 0)) L.push({ key: 'g' + k, icon: D.INGR[k].icon, n: S.ingr[k], name: D.INGR[k].name, sub: 'วัตถุดิบทำอาหาร', desc: 'ถือไปวางในหม้อ/กระทะที่ติดไฟ แล้วปรุง 🍲', act: `<button class="btn go" data-hold="${k}">✋ ถือ</button>` });
+    for (const k of Object.keys(D.INGR).filter(k => S.ingr[k] > 0)) L.push({ key: 'g' + k, icon: D.INGR[k].icon, n: S.ingr[k], name: D.INGR[k].name, sub: rawEff(k) + 'วัตถุดิบทำอาหาร', desc: (rawEff(k) ? `กินดิบ ${rawEff(k).slice(0, -3)} · ` : '') + 'ถือไปวางในหม้อ/กระทะที่ติดไฟ แล้วปรุง 🍲', act: `<button class="btn go" data-hold="${k}">✋ ถือ</button>` });
     for (const k of Object.keys(S.fish).filter(k => S.fish[k] > 0)) L.push({ key: 'f' + k, icon: '🐟', n: S.fish[k], col: D.RAR_COL[D.FISH[k].r], name: D.FISH[k].name, sub: 'ปลา', desc: 'กินได้ หรือถือไปวางในหม้อทำอาหาร', act: `<button class="btn go" data-hold="f:${k}">✋ ถือ</button><button class="btn" data-ef="${k}">กิน ⚡+${D.FISH_EN[D.FISH[k].r]}</button>${bagSellMode ? `<button class="btn ghost" data-sf="${k}">ขาย 🪙${Math.round(D.FISH[k].price * D.SELL_RATE)}</button>` : ''}` });
     for (const k of Object.keys(S.seeds || {}).filter(k => S.seeds[k] > 0)) L.push({ key: 's' + k, icon: '🌱', n: S.seeds[k], name: 'เมล็ด ' + k, sub: 'เมล็ดผัก', desc: 'ปลูกที่แปลงผักใกล้บ้าน', act: '' }) }
   if (tab === 'bow') { if (S.arrows > 0) L.push({ key: 'arw', icon: '➶', n: S.arrows, name: 'ลูกธนู', sub: `ใช้กับธนู (ปุ่ม 🏹) · ${stackN(S.arrows)} ช่อง`, desc: 'ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์ · 999 ดอก/ช่อง' });   /* v3.12 arrows live with the bows */
@@ -2005,7 +2006,7 @@ const bindAch = (b, redraw) => b.querySelectorAll('[data-a]').forEach(x => x.onc
 /* ---------- v1.4.2 lock-on: in a fight you always face the monster (so the shield works) until you get out of range ---------- */
 let LOCK = null; const lockMark = new THREE.Mesh(new THREE.ConeGeometry(.3, .55, 4), new THREE.MeshBasicMaterial({ color: '#ff4a3a', depthTest: false })); lockMark.rotation.x = Math.PI; lockMark.renderOrder = 9; lockMark.visible = false; scene.add(lockMark);
 const hostile = M => !M.T.animal || (M.T.charge && M.aggro);
-const lockable = M => hostile(M) || (M.T.animal && M.kind !== 'horse' && !M.T.boss);   /* v3.28 A locks animals too (hunting) */
+const lockable = M => hostile(M) || (M.T.animal && M !== HORSE && !M.T.boss);   /* v3.97 horses too */   /* v3.28 A locks animals too (hunting) */
 function lockTick(now) {
   const q = me(), dm = M => dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z);
   if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > D.LOCK_OFF || !(hostile(LOCK) || (ALOCK && lockable(LOCK))) || !(LOCK.aggro || LOCK.hit || ALOCK || guard))) LOCK = null;
@@ -2195,8 +2196,8 @@ function climateTick() { const now = performance.now(), step = climLast ? Math.m
 let fainting = false;
 function faint(why) { if (fainting) return; fainting = true; closePara(); if (RIDE) try { unboard() } catch (e) { } walkT = null; work = null; toast(why, 2400);
   for (const m of [...mons]) if (m.aggro || m.hit) { m.aggro = false; m.hit = false; m.alert = 0 } if (LOCK) LOCK = null; BUB.on = false; BUB.visible = false;
-  loading('😵 หมดสติ', 'ตื่นขึ้นมาที่จุดพักใกล้ที่สุด… พักฟื้นก่อนออกไปใหม่นะ', () => { const q = me(), L = WARPS(); let best = null, bd = 1e9; for (const w of L) { const d = dist(q.x, q.z, w.x, w.z); if (d < bd) { bd = d; best = w } }   /* v3.17 the nearest camp / warp point on this side (the island's home camp, or the harbour) */
-    const p = best || ((S.side || 'isle') === 'isle' ? { x: CAMPS.home.x + 1.2, z: CAMPS.home.z + 1 } : { x: HB.x + 1.6, z: HB.z - .8 }); placeMe(p.x, p.z); S.hp = Math.max(D.HEART * 2, Math.round(pStats().hp / 2)); S.en = null; S.tired = false; fainting = false; bump('faints'); save(); hud() }) }
+  loading('😵 หมดสติ', 'ตื่นขึ้นมาที่จุดพักใกล้ที่สุด… เหลือ ❤️ 1 ดวง · หาอะไรกินก่อนออกไปใหม่นะ', () => { const q = me(), L = WARPS(); let best = null, bd = 1e9; for (const w of L) { const d = dist(q.x, q.z, w.x, w.z); if (d < bd) { bd = d; best = w } }   /* v3.17 the nearest camp / warp point on this side (the island's home camp, or the harbour) */
+    const p = best || ((S.side || 'isle') === 'isle' ? { x: CAMPS.home.x + 1.2, z: CAMPS.home.z + 1 } : { x: HB.x + 1.6, z: HB.z - .8 }); placeMe(p.x, p.z); S.hp = D.HEART;   /* v3.97 wake with 1 ❤️ */ S.en = null; S.tired = false; fainting = false; bump('faints'); save(); hud() }) }
 const cheer = (ms = 1600) => { cheerT = performance.now() + ms };
 const smw01 = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) };
 function tempTick() {
@@ -2220,8 +2221,8 @@ function drown(now) {
   setTimeout(() => { const f = $('sleep'); f.querySelector('b').textContent = '🌊 จมน้ำ…'; f.style.display = 'flex'; f.style.opacity = 1;
     setTimeout(() => { const q = me(); let sp = null;                                           // wash up on the nearest shore
       for (let r = 2; r < 90 && !sp; r += 2) for (let a = 0; a < 24; a++) { const x = q.x + Math.cos(a * .26) * r, z = q.z + Math.sin(a * .26) * r; if (walkLand(x, z) && !waterAt(x, z) && groundH(x, z) > -.05) { sp = [x, z]; break } }
-      sp = sp || lastLand; DROWN = 0; placeMe(sp[0], sp[1]); S.hp = Math.max(1, pHp() - D.HEART); S.en = pStats().en * .3; S.tired = false; lastHurt = performance.now(); save(); hud();
-      f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('🏝️ ลอยมาติดฝั่ง… ❤️ −1 ดวง', 2600) }, 900) }, 1600);
+      sp = sp || lastLand; DROWN = 0; placeMe(sp[0], sp[1]); S.hp = D.HEART; S.en = pStats().en * .3;   /* v3.97 drowning = down: 1 ❤️ */ S.tired = false; lastHurt = performance.now(); save(); hud();
+      f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('🏝️ ลอยมาติดฝั่ง… เหลือ ❤️ 1 ดวง · หาอะไรกิน', 2600) }, 900) }, 1600);
 }
 function eatAnim(icon, done) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 96; const g = cv.getContext('2d'); g.font = '78px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(icon, 48, 54);
@@ -2245,7 +2246,7 @@ function spiritCard() { const sp = S.spirit;
     ${sp.free > 0 ? `<div class="row2"><button class="btn go" data-sp="hp" ${spiritOk('hp') ? '' : 'disabled'}>❤️ หัวใจ +1</button><button class="btn go" data-sp="en" ${spiritOk('en') ? '' : 'disabled'}>⚡ พลังงาน +20%</button></div>` : ''}</div>` }
 function bindSpirit(b, redraw) { b.querySelectorAll('[data-sp]').forEach(x => x.onclick = () => { spiritUp(x.dataset.sp); redraw() }) }
 function spiritUp(k) { cheer();
-  if (!(S.spirit.free > 0) || !spiritOk(k)) return false; S.spirit.free--; S.spirit[k]++; S.hp = null; S.en = null; sfx('level');
+  if (!(S.spirit.free > 0) || !spiritOk(k)) return false; const h0 = pHp(); S.spirit.free--; S.spirit[k]++; S.hp = k === 'hp' ? h0 + D.HEART : h0; S.en = null; sfx('level');   /* v3.97 a new heart comes filled · the others stay as they are */
   floater(k === 'hp' ? '❤️ +1' : '⚡ +20%', 'heal', me().x, 2.2, me().z); toast(k === 'hp' ? `❤️ หัวใจเพิ่มเป็น ${hearts()} ดวง!` : `⚡ พลังงานเพิ่มเป็น ×${enMul().toFixed(1)}!`, 2200); save(); hud(); return true }
 function openSpirit(isNew) {
   if (!(S.spirit.free > 0)) return; sfx('level');
@@ -2255,7 +2256,7 @@ function openSpirit(isNew) {
 /* hearts on the HUD: 1 heart = 20 HP, quarters shown */
 let heartsK = '';
 function heartsHud(st) { const n = Math.round(st.hp / D.HEART), cur = pHp() / D.HEART, k = n + ':' + Math.ceil(cur * 4); if (k === heartsK) return; heartsK = k;
-  if (n > 10) { const k2 = Math.max(0, Math.min(1, cur / n)); $('hearts').innerHTML = `<div class="hpill"><i class="hr big" style="--f:100%"></i><div class="hbar"><i style="width:${k2 * 100}%"></i></div><b>${Math.round(cur * 10) / 10}<small>/${n}</small></b></div>`; return }   /* v3.91 many hearts → one tidy heart bar (no rows of hearts) */
+  /* v3.97 hearts again (no bar): up to 20 in two rows of ten */
   let h = ''; for (let i = 0; i < n; i++) { const f = Math.max(0, Math.min(1, cur - i)); h += `<i class="hr" style="--f:${Math.ceil(f * 4) * 25}%"></i>` } $('hearts').innerHTML = h }
 /* pets (v1.4): no HP / MP · 🟠 element skill every 8 s · 🔵 special every 25 s (by element) · cast by themselves */
 const petEl = p => (p.rar === 'B' || p.rar === 'L') ? null : p.el;
@@ -2358,17 +2359,18 @@ function openPot(key) {
     const pin = (S.potIn || {})[key] || [];   /* v3.55 what you put in by hand */
     b.innerHTML = `<p class="mut">${isNight() ? '🌙' : '☀️'} ตอนนี้ ${hhmm(S.time)}</p>${pin.length ? `<div class="card"><b>🍲 ในหม้อ (${pin.length}/5)</b><p style="font-size:26px;margin:6px 0">${pin.map(carryIco).join(' ')}</p><div class="row2"><button class="btn go" id="pIn" ${pin.length >= 2 ? '' : 'disabled'}>🔥 ปรุงเลย</button><button class="btn ghost" id="pOut">↩️ เอาออก</button></div></div>` : ''}
       <div class="card"><b>🍳 ทำอาหาร</b><p class="mut">ถือวัตถุดิบมาวางในหม้อ (กด A) หรือเลือกจากกระเป๋าที่นี่ · 2–5 อย่าง · ลองผสมแบบใหม่ๆ เพื่อค้นพบสูตรลับในสมุดบันทึก 📓</p><button class="btn go wide" id="pC">🍳 ทำอาหาร</button></div>
-      <div class="card"><b>😴 นอนพัก</b><p class="mut">HP + ⚡ เต็ม · น้องฟื้นตัว · หายง่วง · ตื่นมาเช้าวันใหม่</p><button class="btn go wide" id="pM">😴 นอน → 🌅 เช้าวันใหม่</button></div>`;
+${key === 'home' ? `<div class="card"><b>😴 นอนพัก</b><p class="mut">⚡ เต็ม · น้องฟื้นตัว · หายง่วง · ตื่นมาเช้าวันใหม่ · ❤️ ไม่เพิ่ม (กินเท่านั้น)</p><button class="btn go wide" id="pM">😴 นอน → 🌅 เช้าวันใหม่</button></div>` : '<p class="mut">😴 นอนได้ที่บ้านเท่านั้น</p>'}`;   /* v3.97 sleep at home only */
     b.querySelector('#pC').onclick = () => { if (!jobLeft('cook:' + key)) openCook(key) };
     const bi = b.querySelector('#pIn'), bo = b.querySelector('#pOut'); if (bi) bi.onclick = () => { close(); potCook(key) }; if (bo) bo.onclick = () => { for (const h of pin) { const st = holdBox(h); st[h.k] = (st[h.k] || 0) + 1 } S.potIn[key] = []; potView(key); save(); hud(); redraw() };
-    b.querySelector('#pM').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(D.DAY.dawn) };
+    if (b.querySelector('#pM')) b.querySelector('#pM').onclick = () => { close(); if (!S.story.slept) return sleepNight(); sleepTo(D.DAY.dawn) };
   });
 }
-function restAll() { S.hp = null; S.en = null; for (const p of S.pets) { p.hp = null; p.mp = null; if (p.down) { p.down = 0; const e = PA.get(p.id); if (e) e.mode = 'wander' } } }
+const atHome = (x, z) => (S.builds || []).some(o => o.k === 'cabin' && o.done && dist(x, z, o.x, o.z) < 6) || (!!S.story.built && dist(x, z, CAMPS.home.x, CAMPS.home.z) < 10);
+function restAll() { pHp(); S.en = null;   /* v3.97 rest does not heal ❤️ (only eating) */ for (const p of S.pets) { p.hp = null; p.mp = null; if (p.down) { p.down = 0; const e = PA.get(p.id); if (e) e.mode = 'wander' } } }
 function sleepTo(min) {
   const f = $('sleep'); f.querySelector('b').textContent = '😴 Zzz…'; f.style.display = 'flex'; f.style.opacity = 0; requestAnimationFrame(() => f.style.opacity = 1);
   setTimeout(() => { if (min === D.DAY.dawn) { S.dayN = (S.dayN || 0) + 1; S.lastT = min } S.time = min; restAll(); needSleep();   /* v3.2 sleeping = the next day */ addEn(50); setTime(); save(); hud(); f.querySelector('b').textContent = min === D.DAY.dawn ? '🌅 เช้าแล้ว' : '🌙 ตกค่ำแล้ว';
-    setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 700); toast('😴 พักผ่อนเต็มที่! HP และ ⚡ เต็ม', 2200) }, 1200) }, 1400);
+    setTimeout(() => { f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 700); toast('😴 พักผ่อนเต็มที่! ⚡ เต็ม', 2200) }, 1200) }, 1400);
 }
 /* cooking: pick 2–5 ingredients · the most specific recipe that matches wins · new recipes go into the journal */
 const ingrList = () => [...Object.keys(D.INGR).filter(k => S.ingr[k] > 0).map(k => ({ k, icon: D.INGR[k].icon, name: D.INGR[k].name, n: S.ingr[k] })), ...Object.keys(S.fish).filter(k => S.fish[k] > 0).map(k => ({ k, fish: 1, icon: '🐟', name: D.FISH[k].name, n: S.fish[k] }))];
@@ -3596,8 +3598,9 @@ function darkCloud() { const f = document.createElement('div'); f.className = 'c
 /* ================= v2.8 📜 the kingdoms' quests (src/quests.js): talk to people · bring / hunt / draw / find · the leader's 3 steps restore the kingdom → a memory · 6 restored → the Light Tower ================= */
 const restoredN = () => Object.keys(S.restored || {}).length;
 const KQS = () => S.kq || (S.kq = {});
-const haveOf = k => k === 'fish' ? Object.values(S.fish || {}).reduce((a, b) => a + b, 0) : D.MATS[k] ? S.mats[k] || 0 : S.ingr[k] || 0;
-function takeOf(k, n) { if (k === 'fish') { for (const f in S.fish) { const t = Math.min(n, S.fish[f]); S.fish[f] -= t; n -= t; if (!n) break } return } if (D.MATS[k]) S.mats[k] -= n; else S.ingr[k] -= n }
+const meatKs = () => Object.keys(D.INGR).filter(k => D.INGR[k].tag === 'meat');   /* v3.97 any meat counts as 🍖 เนื้อ */
+const haveOf = k => k === 'fish' ? Object.values(S.fish || {}).reduce((a, b) => a + b, 0) : k === 'meat' ? meatKs().reduce((a, m) => a + (S.ingr[m] || 0), 0) : D.MATS[k] ? S.mats[k] || 0 : S.ingr[k] || 0;
+function takeOf(k, n) { if (k === 'meat') { for (const m of ['meat', ...meatKs().filter(x => x !== 'meat')]) { const t = Math.min(n, S.ingr[m] || 0); S.ingr[m] = (S.ingr[m] || 0) - t; n -= t; if (!n) break } return } if (k === 'fish') { for (const f in S.fish) { const t = Math.min(n, S.fish[f]); S.fish[f] -= t; n -= t; if (!n) break } return } if (D.MATS[k]) S.mats[k] -= n; else S.ingr[k] -= n }
 const kingOfQ = id => Object.keys(KQ).find(k => KQ[k].restore.includes(id) || KQ[k].npcs.some(n => n.q.includes(id)));
 function qVal(id) { const Q = KQUEST[id], k = kingOfQ(id);
   switch (Q.t) { case 'kill': return (S.journal.mons[Q.kind] || {}).kills || 0; case 'killK': return S.stat['kk_' + k] || 0; case 'chest': return S.stat['kc_' + k] || 0; case 'cook': return S.journal.recipes[Q.k] || 0; case 'catch': return S.pets.length; default: return 0 } }
@@ -4431,7 +4434,7 @@ function openBuilt(id) {
   if (b.k === 'forge') return openForge();
   if (b.k === 'storage') return openStore(b);
   sheet(`${B.icon} ${B.name}`, (bx, redraw, close) => {
-    const sleepy = b.k === 'bed' || b.k === 'cabin';
+    const sleepy = b.k === 'cabin' || (b.k === 'bed' && atHome(b.x, b.z));   /* v3.97 sleep at home only: a cabin · a bed inside / beside one (or by the tree house) */
     const cnd = bCond(b), rc = repairCost(b);
     bx.innerHTML = `<p>${B.desc}</p><div class="card"><div class="row"><b>🔧 สภาพ ${Math.round(cnd * 100)}%</b><span class="mut">${cnd < D.DECAY.worn ? '🏚️ ทรุดโทรม' : 'ใช้ได้ดี'}</span></div><div class="dbar"><i style="width:${cnd * 100}%;background:${cnd < D.DECAY.worn ? '#ff8a3a' : '#7ac850'}"></i></div><p class="mut">ผุพังหมดใน ~${Math.max(0, Math.ceil(cnd * bLife(b) / 864e5))} วัน</p>${cnd < .95 ? `<button class="btn wide${hasCost(rc) ? ' go' : ''}" id="bFix" ${hasCost(rc) ? '' : 'disabled'}>🔨 ซ่อม (${Object.entries(rc).map(([k, n]) => costName(k) + ' ' + n).join(' · ')})</button>` : ''}</div>` + (b.k === 'chest' ? `<p class="mut">เก็บผักให้แล้ว ${b.n || 0} ครั้ง</p>` : '') +
       (sleepy ? `<div class="row2"><button class="btn go" id="slM">🌅 นอนถึงเช้า</button><button class="btn" id="slN">🌙 นอนถึงค่ำ</button></div>` : '') +
@@ -4950,8 +4953,8 @@ function golemNear(q) { if (GOL && (!mons.includes(GOL.M) || dist(q.x, q.z, GOL.
 var GOL_HINT = 0;
 /* ---------- v3.0 🍖 fullness + 💤 sleepiness ---------- */
 const hungerK = () => hungry() ? D.NEEDS.enMul : 1;   /* v3.28 🍖 hungry = ⚡ goes faster */
-const hungry = () => (S.full ?? 100) < D.NEEDS.hungryAt, sleepy = () => false,   /* v3.11 no more sleepiness (hunger stays) */ needSlow = () => (hungry() ? D.NEEDS.slow : 1) * (sleepy() ? D.NEEDS.slow : 1);
-function needsTick(dm) { if (!(dm > 0) || dm > 30) return; const N = D.NEEDS, f0 = S.full ?? 100, a0 = S.awake || 0; S.full = Math.max(0, f0 - dm * N.fullPerMin); S.awake = a0 + dm;
+const hungry = () => false,   /* v3.97 no hunger any more */ sleepy = () => false,   /* v3.11 no more sleepiness (hunger stays) */ needSlow = () => (hungry() ? D.NEEDS.slow : 1) * (sleepy() ? D.NEEDS.slow : 1);
+function needsTick(dm) { if (!(dm > 0) || dm > 30) return; const N = D.NEEDS, f0 = S.full ?? 100, a0 = S.awake || 0; S.full = 100; S.awake = a0 + dm; needsHud(); return;   /* v3.97 no hunger: the belly is always full */
   if (f0 >= N.hungryAt && S.full < N.hungryAt) toast('🍖 หิวแล้ว! เดินช้าลงมาก ⚡ ใช้หมดเร็วขึ้น · รีบหาอะไรกิน', 3400);
   if (f0 > 0 && S.full <= 0) toast('😫 หิวมาก! ❤️ จะค่อยๆ ลดลง · รีบหาอะไรกิน', 3000);
   /* v3.28 hungry = everything costs more ⚡ (D.NEEDS.enMul) · no more passing out to the next morning */
@@ -5012,7 +5015,7 @@ function bossTick(M, dt, now) {
     else { warnAt(m.x, m.z, D.STORM_ATK.slam.r, D.STORM_ATK.slam.wind); bossAct = { kind: 'slam', at: now + D.STORM_ATK.slam.wind * 1000 / (ph === 3 ? 1.25 : 1) }; M.A.body.position.y += .5 } }
 }
 function stormLose() { if (!inStorm()) return; bossAct = null; const f = $('sleep'); f.querySelector('b').textContent = '⛈️ พ่ายแพ้… ลมพายุพัดกลับฝั่ง'; f.style.display = 'flex'; f.style.opacity = 1;
-  setTimeout(() => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; placeMe(SPAWN.x, SPAWN.z); S.hp = pStats().hp * .5; S.en = null; S.tired = false; enterZone('farm'); save(); hud();
+  setTimeout(() => { if (BOSS && mons.includes(BOSS)) monGone(BOSS); BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; placeMe(SPAWN.x, SPAWN.z); S.hp = D.HEART;   /* v3.97 down = 1 ❤️ */ S.en = null; S.tired = false; enterZone('farm'); save(); hud();
     f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('💪 ลองฟื้นฟูเมือง เพิ่มหัวใจ และหาอุปกรณ์ที่ดีกว่า แล้วกลับไปใหม่!', 3600) }, 1600) }
 function stormWin() { cheer(3000);
   S.story.cloudGone = 1; capCloud(); bossAct = null; BOSS = null; for (const m of [...mons]) if (m.kind === 'shade') monGone(m); for (const w of warns) scene.remove(w.m); warns.length = 0; S.coin += D.STORM_REWARD.coin; S.gem += D.STORM_REWARD.gem; S.spirit.free++; spiritNew = true; bump('stormWin');
@@ -5153,7 +5156,7 @@ function eelHit(dmg, label) { if (bubBlock()) return; const r = { d: Math.max(1,
   if (now0() < petGuardT) r.d = Math.ceil(r.d * .5); S.hp = Math.max(0, pHp() - r.d); lastHurt = performance.now(); shakeT = .3; sfx('hurt'); floater(`${label} -${r.d}`, 'hurt', me().x, 2.1, me().z); VF.burst(me().x, me().y + 1, me().z, '#fff27a', 10, 3); if (S.hp <= 0) eelLose() }
 function eelClear() { if (EELB && mons.includes(EELB)) monGone(EELB); EELB = null; for (const w of warns) scene.remove(w.m); warns.length = 0; if (LOCK && !mons.includes(LOCK)) LOCK = null }
 function eelLose() { if (!inEelA(me().x, me().z)) return; const f = $('sleep'); f.querySelector('b').textContent = '⚡ พ่ายแพ้… กระแสน้ำพัดกลับขึ้นฝั่ง'; f.style.display = 'flex'; f.style.opacity = 1;
-  setTimeout(() => { eelClear(); const b = S.eelFrom || [S.eel.x + 6, S.eel.z]; placeMe(b[0], b[1]); enterZone(zoneOf(b[0], b[1])); S.hp = pStats().hp * .5; S.en = null; S.tired = false; save(); hud(); ambience && ambience();
+  setTimeout(() => { eelClear(); const b = S.eelFrom || [S.eel.x + 6, S.eel.z]; placeMe(b[0], b[1]); enterZone(zoneOf(b[0], b[1])); S.hp = D.HEART;   /* v3.97 down = 1 ❤️ */ S.en = null; S.tired = false; save(); hud(); ambience && ambience();
     f.style.opacity = 0; setTimeout(() => { f.style.display = 'none'; f.querySelector('b').textContent = '😴 ราตรีสวัสดิ์…' }, 600); toast('💪 กินอาหารเพิ่มหัวใจ อัปเกรดอาวุธ แล้วกลับไปท้าใหม่!', 3200) }, 1600) }
 function eelWin() { S.eel.won = 1; EELB = null; for (const w of warns) scene.remove(w.m); warns.length = 0; cheer(3000); sfx('level'); bump('eelWin'); const q = me(); VF.ring(q.x, q.y, q.z, '#fff27a', 12, 1.2); VF.rise(q.x, q.y, q.z, '#fff6a0', 30);
   if (EELAR && !EELAR.chest) { const c = new THREE.Group(); CAMP.chest(c); c.scale.setScalar(1.8); c.position.set(EELAR.cx, .15, EELAR.cz); EELAR.g.add(c); EELAR.chest = c; VF.burst(EELAR.cx, 1, EELAR.cz, '#fff27a', 24, 4) } if (EELAR) EELAR.out.visible = true; save(); hud(); ambience && ambience();
