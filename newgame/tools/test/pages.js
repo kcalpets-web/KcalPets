@@ -21,7 +21,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8852, OUT = process.argv[2] || '/tmp/
     await E(() => document.querySelector('[data-mp="album"]').click()); await wait(1200); const m2 = await st(); log('☰ → album', JSON.stringify(m2)); if (!/\bpg\b/.test(m2.cls || '')) errs.push('a page from ☰ should be like the bag');
     // ▼ moves the frame on the build page
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openAtlas('build') }); await wait(1000);
-    const mv = await E(async () => { const N = window.__ng, k = () => (document.querySelector('.ov .nfocus') || {}).textContent; N.navMove('down'); await new Promise(r => setTimeout(r, 300)); const a = k(); N.navMove('down'); await new Promise(r => setTimeout(r, 300)); return [a, k()] }); log('frame', JSON.stringify(mv)); if (!mv[0] || mv[0] === mv[1]) errs.push('▼ should move the frame on the build page');
+    const mv = await E(async () => { const N = window.__ng, k = () => (document.querySelector('.ov .nfocus') || {}).textContent; N.navMove('down'); await new Promise(r => setTimeout(r, 300)); const a = k(); N.navMove('right');   /* v3.97 the build page is a row of tiles (like 🛠️ คราฟ): ▼ into it · ▶ along it */ await new Promise(r => setTimeout(r, 300)); return [a, k()] }); log('frame', JSON.stringify(mv)); if (!mv[0] || mv[0] === mv[1]) errs.push('▼ then ▶ should move the frame on the build page');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();
