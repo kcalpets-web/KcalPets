@@ -55,11 +55,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     /* drowning: energy gone in the water → sink, wash up nearby, −1 heart */
     const hp0 = await N(() => window.__ng.S.hp); await E(() => { const N = window.__ng; N.placeMe(-9, 0); N.S.en = .3; N.S.enB = 0; N.S.tired = false }); await wait(1200); await shot('08-drowning'); await wait(5000); await closeAll();
     const dr = await N(() => ({ x: window.__ng.me.x, swim: window.__ng.envState().swim, hp: window.__ng.S.hp })); log('drowned', JSON.stringify(dr), 'hp before', hp0); if (dr.swim || !(dr.hp < hp0)) errs.push('drowning did not wash the player up with −1 heart'); await shot('09-washed-up');
-    /* pets: no HP/MP, skills on cooldown, the water pet heals you */
+    /* pets: no HP/MP, skills on cooldown, the water pet gives ⚡ back (v3.97 ❤️ only from eating) */
     await E(() => { const N = window.__ng; N.S.hp = 40; const q = N.me; N.monSpawn('slime', q.x + 2.5, q.z + 1, { area: 'farm', aggro: true }) }); await wait(9000);
-    await E(() => { const N = window.__ng; N.S.hp = 40; N.petSkill(N.S.pets.find(p => p.id === 'p1')) }); await wait(800);   /* v3.16 pets stay home: the team icon casts the skill */
-    const pt = await N(() => { const N = window.__ng; return { cd: (N.PSK.p1 || 0) > Date.now(), hp: N.S.hp, petHp: N.S.pets[0].hp } }); log('pet', JSON.stringify(pt)); await shot('05-pet-fight');
-    if (!pt.cd) errs.push('pet skill (heal) never cast'); if (!(pt.hp > 40)) errs.push('water pet did not heal the player');
+    await E(() => { const N = window.__ng; N.S.hp = 40; N.S.en = 10; N.S.tired = false; N.petSkill(N.S.pets.find(p => p.id === 'p1')) }); await wait(800);   /* v3.16 pets stay home: the team icon casts the skill */
+    const pt = await N(() => { const N = window.__ng; return { cd: (N.PSK.p1 || 0) > Date.now(), hp: N.S.hp, en: N.S.en, petHp: N.S.pets[0].hp } }); log('pet', JSON.stringify(pt)); await shot('05-pet-fight');
+    if (!pt.cd) errs.push('pet skill (heal) never cast'); if (pt.hp > 40) errs.push('v3.97 a pet must not give ❤️ back (eating only)'); if (!(pt.en > 10)) errs.push('v3.97 the water pet should give ⚡ back');
     await E(() => window.__ng.openPet ? 0 : 0); await E(() => document.querySelector('#team [data-pet]') && document.querySelector('#team [data-pet]').click()); await wait(600); await shot('06-pet-card'); await closeAll();
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
