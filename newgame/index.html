@@ -521,6 +521,10 @@ body.pad:not(.gamepad):has(.ov.pg) #dpad{display:grid;z-index:46}body.pad:not(.g
 body.pad:not(.gamepad) .ov.pg .shb{padding-bottom:190px}
 body:has(.ov.pg) #bX,body:has(.ov.pg) #bY{z-index:6!important;box-shadow:0 4px 0 #0004!important}
 .agrid img.nfocus{outline-offset:-3px}
+/* v3.96 ☰ the small box sits at the same place in portrait and landscape (top, where every page's title is) · the game behind is blurred like the pages · X Y stay under */
+.ov.menuPick{top:0!important;bottom:0!important;height:auto!important;align-items:flex-start!important;background:#0a0c18a8!important;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+.ov.menuPick .sh{margin:calc((env(safe-area-inset-top) + 8px) / .82) auto 0!important;width:calc(100% - 16px)!important}
+body:has(.ov.menuPick) #bX,body:has(.ov.menuPick) #bY{z-index:6!important;box-shadow:0 4px 0 #0004!important}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

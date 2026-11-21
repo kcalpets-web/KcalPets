@@ -16,6 +16,8 @@ const ROOT = '/home/user/KcalPets', PORT = 8852, OUT = process.argv[2] || '/tmp/
       if (!/\bpg\b/.test(s.cls || '') || s.top > 4 || s.stick || !s.dpad) errs.push(p + ' is not a page like the bag (' + JSON.stringify(s) + ')') }
     await pg.screenshot({ path: OUT + '/set.png' });
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); document.getElementById('mMap').click() }); await wait(1000); const m = await st(); log('☰', JSON.stringify(m)); if (!/\bdlg\b/.test(m.cls || '') || /\bpg\b/.test(m.cls)) errs.push('☰ should stay the small box');
+    { const r = await E(() => document.querySelector('.ov.menuPick .sh').getBoundingClientRect().top); await pg.setViewportSize({ width: 844, height: 390 }); await wait(800); const r2 = await E(() => document.querySelector('.ov.menuPick .sh').getBoundingClientRect().top); await pg.setViewportSize({ width: 390, height: 844 }); await wait(800);
+      log('☰ top portrait / landscape', r, r2); if (Math.abs(r - r2) > 2 || r > 20) errs.push('v3.96 ☰ should sit at the top in both orientations') }
     await E(() => document.querySelector('[data-mp="album"]').click()); await wait(1200); const m2 = await st(); log('☰ → album', JSON.stringify(m2)); if (!/\bpg\b/.test(m2.cls || '')) errs.push('a page from ☰ should be like the bag');
     // ▼ moves the frame on the build page
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openAtlas('build') }); await wait(1000);
