@@ -27,7 +27,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8845, OUT = process.arg
     const al = await E(async () => { const N = window.__ng, q = N.me; N.stowAll(); N.monSpawn('rabbit', q.x + 3, q.z + 1); const m = N.mons[N.mons.length - 1]; m.stunT = performance.now() + 20000; N.drawWeapon(); N.actHit(); await new Promise(r => setTimeout(r, 600)); return { lock: N.LOCK === m, a: N.ALOCK, animal: !!m.T.animal } }); log('A lock animal', JSON.stringify(al)); if (!al.animal || !al.lock || !al.a) errs.push('A should lock on an animal');
     // 🍖 hungry: ⚡ costs more, no passing out
     const h0 = await E(() => { const N = window.__ng, S = N.S; S.full = 5; S.en = 1.2; S.tired = false; return { day: S.dayN, k: N.hungerK() } }); await wait(9000); const h1 = await E(() => ({ day: window.__ng.S.dayN, paused: window.__ng.paused() })); log('hungry', JSON.stringify(h0), '→', JSON.stringify(h1));
-    if (!(h0.k > 1)) errs.push('hungry should make ⚡ cost more'); if (h1.day !== h0.day) errs.push('hungry should no longer pass out to the next day');
+    if (h0.k !== 1) errs.push('v3.97 no hunger: ⚡ costs the same even with an empty belly'); if (h1.day !== h0.day) errs.push('hungry should no longer pass out to the next day');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
 })();
