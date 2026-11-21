@@ -15,7 +15,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, itemV: 2, bowGiven: 1, arrows: 0, profile: { name: 'ทดสอบ', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1 }, avatar: { hair: 'pony', top: '#4a8ad8' }, has: { sword: 1, rod: 1, hoe: 1 }, time: 600,
-        mats: { wood: 40, stone: 40, feather: 10 }, bag: [{ id: 1, t: 'travelerSword', r: 'R' }], eq: { sword: 1 }, nextItem: 3, spiritV: 1 })) });
+        mats: { wood: 40, stone: 40, feather: 10, flint: 10 }, bag: [{ id: 1, t: 'travelerSword', r: 'R' }], eq: { sword: 1 }, nextItem: 3, spiritV: 1 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3500);
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f), shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const closeAll = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
