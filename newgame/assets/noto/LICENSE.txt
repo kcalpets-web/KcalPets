@@ -1,0 +1,4 @@
+Noto Emoji (Google) — the emoji images in this folder.
+https://github.com/googlefonts/noto-emoji
+Images licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+Used for KEALEE's button icons (v4.10) at the designer's request.
