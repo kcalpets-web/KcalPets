@@ -86,3 +86,40 @@ export function iceGiant(g, o = {}) {
   for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + .3; shard(g, Math.cos(a) * 2.1, .15, Math.sin(a) * 2.1, .35 + (i % 3) * .15, Math.sin(a) * .4, -Math.cos(a) * .4) }
   g.userData.armL = armL; g.userData.armR = armR; g.userData.club = club; g.userData.head = head; return g;
 }
+
+/* v4.12 🌳 sylvaren: the demon tree (kingdom boss) · a gnarled old tree that woke up wrong: dark twisted bark, a face in the trunk (glowing eyes · a jagged mouth),
+   two branch arms with twig claws, roots spread like legs, a crown of thorny branches with dark purple leaves, glowing mushrooms at its feet
+   g.userData = { armL, armR, head (the crown), mouth } so the game can swing / roar */
+export function demonTree(g, o = {}) {
+  const BARK = ['#2a1a14', '#6a4a34'], BARK2 = ['#3a2418', '#8a6040'], LEAF = ['#2a1438', '#7a3aa0'], MOSS = ['#2a4a1a', '#6a9a3a'];
+  const GLOW = new THREE.MeshBasicMaterial({ color: '#ffb02a' }), MOUTH = new THREE.MeshBasicMaterial({ color: '#ff5a1a' });
+  const limb = (p, pts, r0, r1, col = '#4a2e1e') => { const cv = new THREE.CatmullRomCurve3(pts.map(v => new THREE.Vector3(...v))), N = 18, geo = new THREE.TubeGeometry(cv, N, 1, 10), P = geo.attributes.position, nrm = geo.attributes.normal;
+    for (let i = 0; i < P.count; i++) { const seg = Math.floor(i / 11), t = seg / N, c = cv.getPointAt(Math.min(1, t)), r = r0 + (r1 - r0) * t; P.setXYZ(i, c.x + (P.getX(i) - c.x) * r, c.y + (P.getY(i) - c.y) * r, c.z + (P.getZ(i) - c.z) * r) }
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: .95 })); m.castShadow = true; p.add(m); return m };
+  /* roots spread like legs */
+  for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + .3, L = 1.6 + (i % 2) * .5; limb(g, [[Math.cos(a) * .4, 1.0, Math.sin(a) * .4], [Math.cos(a) * L * .6, .45, Math.sin(a) * L * .6], [Math.cos(a) * L, .08, Math.sin(a) * L]], .38, .08) }
+  /* the trunk: thick, leaning a little, knots and bark plates */
+  part(g, ...BARK, [0, 1.4, 0], [.95, .9, .85]); part(g, ...BARK, [0, 2.6, 0], [.85, 1.1, .78]); part(g, ...BARK2, [.05, 3.6, -.05], [.72, .7, .66]);
+  for (const [x, y, z, s] of [[-.7, 1.9, .4, .2], [.6, 2.9, .45, .16], [-.45, 3.3, .5, .13]]) part(g, '#1a100a', '#4a3020', [x, y, z], [s, s * .8, s * .5]);
+  for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28; if (Math.sin(a) > .5) continue; part(g, ...BARK2, [Math.cos(a) * .78, 1.6 + (i % 3) * .7, Math.sin(a) * .7], [.16, .55, .1], [0, -a, 0]) }
+  /* the face: two glowing eyes under a heavy brow, a jagged mouth */
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.15, 14, 10), GLOW); e.position.set(s * .3, 2.95, .74); e.scale.set(1.2, .8, .5); g.add(e); part(g, '#1a100a', '#5a3a24', [s * .33, 3.15, .76], [.26, .08, .1], [0, 0, s * .4]) }
+  const mouth = new THREE.Group(); mouth.position.set(0, 2.25, .78); g.add(mouth); const mo = new THREE.Mesh(new THREE.SphereGeometry(.38, 18, 12), new THREE.MeshBasicMaterial({ color: '#2a0a04' })); mo.scale.set(1.2, .55, .3); mouth.add(mo);
+  const fire = new THREE.Mesh(new THREE.SphereGeometry(.22, 14, 10), MOUTH); fire.scale.set(1.5, .5, .2); fire.position.z = .1; mouth.add(fire);
+  for (let i = 0; i < 6; i++) { const x = (i - 2.5) * .13; cone(mouth, '#c8b890', '#f4ecd0', [x, .17, .1], [.05, .14, .04], [Math.PI, 0, 0], .9); cone(mouth, '#c8b890', '#f4ecd0', [x + .06, -.17, .1], [.05, .12, .04], [0, 0, 0], .9) }
+  /* branch arms with twig claws */
+  const arm = (s) => { const A = new THREE.Group(); A.position.set(s * .7, 3.1, 0); A.rotation.z = s * -.15; g.add(A); limb(A, [[0, 0, 0], [s * .9, .2, .2], [s * 1.6, -.4, .5], [s * 1.9, -1.2, .7]], .3, .12);
+    for (const [dx, dz, a] of [[-.15, .05, -.4], [0, .15, 0], [.15, .05, .4]]) limb(A, [[s * 1.9, -1.2, .7], [s * (1.95 + dx), -1.55, .75 + dz], [s * (2.05 + dx * 2), -1.8, .85 + dz * 2]], .07, .015, '#2a1a10');
+    part(A, ...MOSS, [s * 1.0, .16, .22], [.28, .1, .2]); return A };
+  const armL = arm(-1), armR = arm(1);
+  /* the crown: thorny branches with dark purple leaf clumps */
+  const head = new THREE.Group(); head.position.set(0, 4.1, 0); g.add(head);
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28, R = .9 + (i % 2) * .4; limb(head, [[0, 0, 0], [Math.cos(a) * R * .5, .7, Math.sin(a) * R * .5], [Math.cos(a) * R, 1.2 + (i % 3) * .3, Math.sin(a) * R]], .18, .04);
+    for (let k = 0; k < 5; k++) { const b = k / 5 * 6.28 + i; part(head, ...LEAF, [Math.cos(a) * R + Math.cos(b) * .28, 1.3 + (i % 3) * .3 + (k % 2) * .18, Math.sin(a) * R + Math.sin(b) * .28], [.26, .2, .24], [b, a, k], { A: .25, f: 2.2 }) }
+    for (let k = 0; k < 2; k++) cone(head, '#1a0a10', '#5a2a3a', [Math.cos(a) * R * (.6 + k * .2), .9 + k * .3, Math.sin(a) * R * (.6 + k * .2)], [.04, .18, .04], [Math.sin(a) * .9, 0, -Math.cos(a) * .9], .95) }
+  for (let k = 0; k < 6; k++) { const b = k / 6 * 6.28; part(head, ...LEAF, [Math.cos(b) * .35, 1.7 + (k % 2) * .2, Math.sin(b) * .35], [.3, .24, .28], [b, k, 0], { A: .25, f: 2.2 }) }
+  /* glowing mushrooms + moss at its feet */
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + .5, R = 1.2 + (i % 3) * .35, x = Math.cos(a) * R, z = Math.sin(a) * R; part(g, '#d8c8b0', '#fff4e0', [x, .12, z], [.04, .12, .04]); const c = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 8, 0, 6.28, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#7a2aa0', emissive: '#c060ff', emissiveIntensity: .7 })); c.position.set(x, .22, z); c.scale.y = .7; g.add(c) }
+  for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; part(g, ...MOSS, [Math.cos(a) * .9, .9, Math.sin(a) * .85], [.3, .1, .25], [0, a, 0], { A: .15 }) }
+  g.userData.armL = armL; g.userData.armR = armR; g.userData.head = head; g.userData.mouth = mouth; return g;
+}
