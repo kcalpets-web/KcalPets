@@ -1611,6 +1611,8 @@ function padExtras() { const x = $('bX').getBoundingClientRect(), y = $('bY').ge
   const sw = $('bSwap'), tb = $('bFarm'); sw.innerHTML = `<b class="one">${gFarm() ? (gRange() ? '🪓' : '🎣') : (gRange() ? '⚔️' : '🏹')}</b>`;   /* v3.94 one icon: what this button switches to */   /* v3.80 the two 🔄 look different: this one = near ↔ far */ sw.classList.toggle('farm', gFarm());
   put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.innerHTML = `<b class="one">${gFarm() ? '⚔️' : '🧰'}</b>`;   /* v3.94 one icon: 🧰 = to the farm tools · ⚔️ = back to fighting */   /* this one = fight ↔ farm */ tb.classList.toggle('farm', gFarm()) }
 addEventListener('resize', () => setTimeout(padExtras, 200));
+/* v3.95 every window opens as a page like the bag (full height · D-pad + A + B) · small boxes (.dlg) · the map · the bag itself · the craft book stay as they are */
+new MutationObserver(L => { for (const m of L) for (const o of m.addedNodes) if (o.nodeType === 1 && o.classList.contains('ov') && !/\b(dlg|mapfs|inv|cbook)\b/.test(o.className)) o.classList.add('pg') }).observe(document.body, { childList: true });
 /* v3.94 🎒 ☰ stand in a column on the left of the minimap (portrait and landscape) */
 function topBtns() { const m = $('miniW'), b = $('mBtns'); if (!m || !b) return; const r = m.getBoundingClientRect(); if (!r.width) return; b.classList.add('side'); const w = b.offsetWidth, h = b.offsetHeight; b.style.left = Math.round(r.left - w - 10) + 'px'; b.style.top = Math.round(r.top + (r.height - h) / 2) + 'px' }
 addEventListener('resize', () => setTimeout(topBtns, 250)); setTimeout(topBtns, 300); setInterval(topBtns, 2000);
@@ -1632,7 +1634,7 @@ winLine(); addEventListener('resize', () => setTimeout(winLine, 100));
 function atlasStep(d) { if (AT_MENU.includes(atlasK)) return; const G = atGroup(atlasK), i = G.findIndex(t => t[0] === atlasK); sfx('tap'); openAtlas(G[(i + d + G.length) % G.length][0]) }
 /* v3.80 ☰ the menu: pick a section first (big tiles like the bag) */
 function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, close) => { b.innerHTML = `<div class="mpick">${AT_MENU.map(k => { const T = ATLAS.find(t => t[0] === k); return `<button class="mpt" data-mp="${k}"><b>${T[1]}</b><span>${T[2]}</span></button>` }).join('')}<button class="mpt" data-mp="howto"><b>🎬</b><span>วิธีเล่น</span></button></div>`;   /* v3.86 🎬 วิธีเล่น lives in the menu */
-  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); if (x.dataset.mp === 'howto') { closeSheets(); openHowto(); return } openAtlas(x.dataset.mp) }) }, { cls: 'menuPick dlg' }) }
+  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); if (x.dataset.mp === 'howto') { closeSheets(); openHowto(); return } openAtlas(x.dataset.mp) }) }, { cls: 'menuPick' }) }   /* v3.95 a page like the bag */
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
 $('mMap').onclick = () => { if (CUT) return; sfx('tap'); openMenuPick() };   /* v3.80 ☰ (the minimap is the map) */
 $('goal').onclick = () => { if (CUT) return; sfx('tap'); questNav() };
@@ -2656,7 +2658,7 @@ const NAV = { el: null, key: '', dir: null, rep: 0, on: false, a: null, zone: 't
 const topOv = () => { const L = document.querySelectorAll('.ov'); return L.length ? L[L.length - 1] : null };
 const twoZ = ov => ov.classList.contains('inv') || ov.classList.contains('tabz') || !!ov.querySelector('.qsubc');   /* v3.85 the quest page's section row too */
 const isTab = e => !!(e.dataset.bt || e.dataset.qs), tabOn = ov => ov.querySelector('[data-bt].on,[data-qs].on') || ov.querySelector('[data-bt],[data-qs]');   /* v3.49 windows with a row of sections (bag · adventure journal) */
-const navAll = ov => { const inv = twoZ(ov); return [...ov.querySelectorAll('button, [data-k], [data-bt]')].filter(e => !e.classList.contains('back') && !e.disabled && e.offsetParent !== null && e.getBoundingClientRect().width > 4 && (!inv || (NAV.zone === 'tabs') === isTab(e))) };
+const navAll = ov => { const inv = twoZ(ov); return [...ov.querySelectorAll('button, [data-k], [data-bt], img[data-a]')].filter(e => !e.classList.contains('back') && !e.disabled && e.offsetParent !== null && e.getBoundingClientRect().width > 4 && (!inv || (NAV.zone === 'tabs') === isTab(e))) };
 function navBack() { const ov = topOv(); if (ov && twoZ(ov) && !ov.classList.contains('inv') && NAV.zone === 'items') {   /* v3.72 the bag has no section row to step back to: B closes it */ NAV.zone = 'tabs'; NAV.key = ''; navSet(tabOn(ov)); { const sc = ov.querySelector('.shb'); if (sc) sc.scrollTop = 0 } sfx('tap'); return true } return false }   /* v3.85 B: the page → its section row · B again closes */
 const navKeyOf = e => { for (const a of e.attributes) if (a.name.startsWith('data-') || a.name === 'id') return a.name + '=' + a.value; return 'txt=' + e.textContent.trim().slice(0, 24) };
 function navSet(e) { if (NAV.el && NAV.el !== e) NAV.el.classList.remove('nfocus'); NAV.el = e; if (!e) return; NAV.key = navKeyOf(e); e.classList.add('nfocus'); try { e.scrollIntoView({ block: 'nearest', inline: 'nearest' }) } catch (_) { } }

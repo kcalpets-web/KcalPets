@@ -472,9 +472,9 @@ body.pad:not(.gamepad) .ov:not(.mapfs) .shb{padding-bottom:14px!important}
 /* v3.75 every window blurs the game behind it like the bag */
 .ov:not(.mapfs):not(.dlg){background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
 /* v3.75 the whole window frame shows (a rim all round · it ends inside the screen) */
-.ov:not(.mapfs):not(.dlg):not(.inv) .sh{border:2px solid #ffffff2a;border-top:0;box-shadow:0 8px 24px #0008}
+.ov:not(.mapfs):not(.dlg):not(.inv):not(.pg) .sh{border:2px solid #ffffff2a;border-top:0;box-shadow:0 8px 24px #0008}
 /* v3.75 a gap + round corners at the top too */
-.ov:not(.mapfs):not(.dlg):not(.inv) .sh{margin-top:calc(var(--winTop,12px) / .82)!important;height:calc((var(--winH,100vh) - var(--winTop,12px)) / .82)!important;border-radius:18px!important;border-top:2px solid #ffffff2a}
+.ov:not(.mapfs):not(.dlg):not(.inv):not(.pg) .sh{margin-top:calc(var(--winTop,12px) / .82)!important;height:calc((var(--winH,100vh) - var(--winTop,12px)) / .82)!important;border-radius:18px!important;border-top:2px solid #ffffff2a}
 /* v3.77 the map = the standard window (same size as the album) · every window keeps the stick / A / B on top */
 .ov.mapfs{background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);align-items:flex-start}
 .ov.mapfs .sh{width:calc(100% - 24px)!important;max-width:352px!important;height:calc(var(--winH,100vh) - var(--winTop,12px))!important;max-height:none!important;margin:var(--winTop,12px) auto 0!important;padding-top:0!important;border:2px solid #ffffff2a!important;border-radius:18px!important;overflow:hidden;box-shadow:0 8px 24px #0008;background:#0a0c18}
@@ -513,6 +513,14 @@ body.pad:not(.gamepad):has(.ov) #stick,body.pad:not(.gamepad):has(.ov) #bA,body.
 /* v3.94 one icon on the two swap buttons · 🎒 ☰ beside the minimap */
 #bSwap .one,#bFarm .one{font-size:22px;line-height:1;display:grid;place-items:center;width:100%;height:100%}
 #mBtns.side{position:fixed!important;right:auto!important;flex-direction:column!important;gap:8px;margin:0!important;z-index:6}
+/* v3.95 every window is a page like the bag: full height from the top · blurred game behind · D-pad + A + B (no stick · X Y stay under) */
+.ov.pg{background:#0a0c18a8;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);align-items:flex-start}
+.ov.pg .sh{background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;color:#fff;animation:none;padding-top:env(safe-area-inset-top);margin:0 auto!important}
+.ov.pg .shh{background:none;border:0}.ov.pg .shh h2{color:#fff;text-shadow:0 2px 0 #000}.ov.pg .back{background:#ffffff22;color:#fff;border-color:#fff8}
+body.pad:not(.gamepad):has(.ov.pg) #dpad{display:grid;z-index:46}body.pad:not(.gamepad):has(.ov.pg) #stick{display:none}body.pad:not(.gamepad):has(.ov.pg) #bA,body.pad:not(.gamepad):has(.ov.pg) #bB{z-index:46}
+body.pad:not(.gamepad) .ov.pg .shb{padding-bottom:190px}
+body:has(.ov.pg) #bX,body:has(.ov.pg) #bY{z-index:6!important;box-shadow:0 4px 0 #0004!important}
+.agrid img.nfocus{outline-offset:-3px}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

@@ -25,7 +25,7 @@ export function confirmBox(text, yes, yesLabel = 'ตกลง', noLabel = 'ย�
   const s = sheet('ยืนยัน', (b, r, close) => {
     b.innerHTML = `<p class="cf">${text}</p><div class="row2"><button class="btn ghost" id="cfN">${noLabel}</button><button class="btn go" id="cfY">${yesLabel}</button></div>`;
     b.querySelector('#cfN').onclick = close; let done = false; b.querySelector('#cfY').onclick = () => { if (done) return; done = true; close(); yes() };   /* v3.79 once only */
-  });
+  }, { cls: 'dlg' });   /* v3.95 a question stays a small box (not a page) */
   return s;
 }
 /* floating numbers / words above a world point (screen position is set by the caller every frame) */
