@@ -2741,9 +2741,9 @@ function actA() {
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
-  if (HORSE && HORSE.p) { petDash(); return }   /* v3.78 riding the pet: A = a dash that rams */
   if (carryN()) { carryA(); return }   /* v3.55 ✋ hands full: A places into a pot */
   const t = nearTarget(), c = CTX;
+  if (HORSE && HORSE.p) { const dr = nearDrop(3.2); if (dr) { pickDrop(dr); return } if (c && c.go && !['eat', 'pet', 'place'].includes(c.k)) { c.go(); return } if (t && t.k && t.k.kind !== 'pet') { useThing(t.k); return } hint('🐾 ขี่อยู่ · Y = กัด/ตะปบ · B = ลง', 1100); return }   /* v4.03 riding the pet: A does what is in front of you (pick up · talk · open) like on foot · no more dash (designer) */
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (t && t.k) { useThing(t.k); return }
   if (RIDE || PL.swim) return; if (!(t && t.m)) sfx('tap') }   /* v3.73 nothing to use: A does nothing else */
