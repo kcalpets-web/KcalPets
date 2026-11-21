@@ -665,7 +665,7 @@ let stamFullT = 0;
 function stamTick() { const el = $('stam'); if (!PL || !S.avatar) return; const now = performance.now(), mx = pStats().en, e = pEn(), full = e >= mx - .01 && !S.tired;
   if (!full) stamFullT = now; const on = !CUT && (!full || now - stamFullT < D.STAM_FADE * 1000); el.classList.toggle('on', on); el.classList.toggle('tired', !!S.tired); if (!on && now - stamFullT > D.STAM_FADE * 1000 + 700) return;
   const q = me(), p = project(q.x, q.y + 1.25, q.z); el.style.transform = `translate(${p.x + 30}px,${p.y - 20}px) translate(-50%,-50%)`;
-  $('stamF').style.strokeDasharray = `${Math.max(0, Math.min(100, e / mx * 100))} 100`; $('stamX').style.strokeDasharray = `${Math.max(0, Math.min(100, (S.enB || 0) / mx * 100))} 100` }
+  { const U = D.PLAYER_BASE.en, L = i => Math.max(0, Math.min(100, (e - U * i) / U * 100)); ['stamF', 'stamF2', 'stamF3'].forEach((id, i) => { const v = L(i), c = $(id); c.style.strokeDasharray = `${v} 100`; c.style.opacity = v > .5 ? 1 : 0 }) }   /* an empty layer hides (no dot from the round cap) */   /* v3.97 one lap = one bar (100 ⚡) · the 2nd and 3rd bars wrap over it in their own colours */ { const v = Math.max(0, Math.min(100, (S.enB || 0) / D.PLAYER_BASE.en * 100)), c = $('stamX'); c.style.strokeDasharray = `${v} 100`; c.style.opacity = v > .5 ? 1 : 0 } }
 function spendEn(n) {                                          // stamina: yellow bonus first, then the bar · empty = exhausted until full again
   if (S.tired) { hint('💦 เหนื่อยแล้ว… หยุดพักสักครู่ให้หลอด ⚡ เต็มก่อน', 1800); return false }
   n *= (1 - buffOn('stam')) * hungerK(); const b = Math.min(S.enB || 0, n); S.enB = (S.enB || 0) - b; n -= b; S.en = pEn() - n; enT = performance.now();
