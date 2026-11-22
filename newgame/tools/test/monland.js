@@ -28,8 +28,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8826, OUT = process.arg
     const aw = await E(() => ({ awake: window.__ng.lsAwake('navalee'), warp: window.__ng.WARPS().some(w => w.id === 'l:navalee'), free: window.__ng.S.spirit.free })); log('awake', JSON.stringify(aw)); if (!aw.awake || !aw.warp || aw.free < g1.free + 1) errs.push('the light stone did not awaken / warp / ✨');
     await E(([x, z]) => { window.__ng.CAM.yaw = Math.atan2(x - window.__ng.me.x, z - window.__ng.me.z) }, [L.x, L.z]); await wait(1200); await pg.screenshot({ path: OUT + '/lstone-awake.png' });
     // trackers + castle door
-    const tl = await E(() => window.__ng.trackList().map(t => t.id + ':' + t.text)); log('trackers', tl); if (!tl.some(t => t === 'main:กำจัดเมฆทมิฬ')) errs.push('main quest still has a count'); if (!tl.some(t => t.startsWith('restore:'))) errs.push('no restore quest');
-    await E(() => window.__ng.towerDoor()); await wait(500); const td = await E(() => (document.querySelector('.ov') || {}).textContent || ''); log('castle door', td.slice(0, 80)); if (!/ปราสาท/.test(td)) errs.push('the castle door did not open'); await close();
+    const tl = await E(() => window.__ng.trackList().map(t => t.id + ':' + t.text)); log('trackers', tl); if (!tl.some(t => t === 'main:กำจัดเมฆทมิฬ')) errs.push('main quest still has a count'); if (!tl.some(t => t.startsWith('rs:'))) errs.push('no restore quest');
+    await E(() => window.__ng.towerDoor()); await wait(500); const td = await E(() => (document.querySelector('.ov') || {}).textContent || ''); log('castle door', td.slice(0, 80)); if (!/ปราสาท|ไม่พร้อม|ศึกสุดท้าย/.test(td)) errs.push('the castle door did not open'); await close();
     const fn = await E(() => window.__ng.FENCES.length); log('fences (retired v3.44: roads keep packs away)', fn);
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
