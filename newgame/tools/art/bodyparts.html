@@ -1,0 +1,26 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE body parts</title><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.17 the player's body split at its joints (designer's sketch: how is our character divided?) · left: as in the game · right: each joint pulled apart + its own colour */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1100, H = 760, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color('#f4ead8'); S.add(new THREE.HemisphereLight('#fff', '#c8b8a0', 1.7)); const sun = new THREE.DirectionalLight('#fff4e0', 2); sun.position.set(1, 3, 4); S.add(sun);
+const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'spiky', hairCol: '#2a2228', wear: 'traveler', top: '#3a8ad8', legs: 'shorts', legCol: '#4a6aa8', eyes: 'round' };
+const A = new THREE.Group(); vinyl(A, look); A.position.x = -1.0; S.add(A);
+const B = new THREE.Group(); vinyl(B, look); B.position.x = .45; S.add(B);
+const J = {}; B.traverse(o => { const k = o.userData.role || (/^hand[LR]$/.test(o.name) ? o.name : null); if (k && !J[k]) J[k] = o });
+const COL = { head: '#e86a5a', chest: '#4a9ad8', waist: '#f0b030', armL: '#6ac04a', armR: '#6ac04a', elL: '#2a9a8a', elR: '#2a9a8a', handL: '#a86ad8', handR: '#a86ad8', hipL: '#d84a9a', hipR: '#d84a9a', kneeL: '#8a6a4a', kneeR: '#8a6a4a', footL: '#5a5a68', footR: '#5a5a68' };
+const owner = o => { let p = o; while (p && p !== B) { const k = p.userData.role || (/^hand[LR]$/.test(p.name) ? p.name : null); if (k && COL[k]) return k; p = p.parent } return null };
+B.traverse(o => { if (!o.isMesh) return; const k = owner(o); if (k) o.material = new THREE.MeshStandardMaterial({ color: COL[k], roughness: .7, side: THREE.DoubleSide }) });
+const OFF = { head: [0, .1, 0], chest: [0, .06, 0], armL: [.09, 0, 0], armR: [-.09, 0, 0], elL: [0, -.05, 0], elR: [0, -.05, 0], handL: [0, -.05, 0], handR: [0, -.05, 0], hipL: [.035, -.07, 0], hipR: [-.035, -.07, 0], kneeL: [0, -.06, 0], kneeR: [0, -.06, 0], footL: [0, -.05, 0], footR: [0, -.05, 0] };
+for (const k in OFF) if (J[k]) J[k].position.add(new THREE.Vector3(...OFF[k]));
+S.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(A).union(new THREE.Box3().setFromObject(B)), bc = bb.getCenter(new THREE.Vector3()), bs = bb.getSize(new THREE.Vector3()); const cam = new THREE.PerspectiveCamera(24, W / H, .1, 50); cam.position.set(bc.x + .35, bc.y, bc.z + bs.y * 2.6); cam.lookAt(bc.x + .35, bc.y - .02, 0); R.render(S, cam);
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.drawImage(R.domElement, 0, 0);
+const LB = { head: 'หัว', chest: 'อก + ไหล่', waist: 'เอว / สะโพก', armL: 'ต้นแขน', elL: 'แขนท่อนล่าง', handL: 'มือ', hipL: 'ต้นขา', kneeL: 'หน้าแข้ง', footL: 'เท้า' };
+x.font = '800 20px system-ui'; S.updateMatrixWorld(true);
+const PTS = []; for (const k in LB) { const o = J[k]; if (!o) continue; const b = new THREE.Box3(); o.traverse(m => { if (m.isMesh && owner(m) === k) b.expandByObject(m) }); const c = b.getCenter(new THREE.Vector3()), p = c.clone().project(cam); PTS.push({ k, px: (p.x + 1) / 2 * W, py: (1 - p.y) / 2 * H }) }
+PTS.sort((a, b) => a.py - b.py); let last = -99; for (const P of PTS) { P.ty = Math.max(P.py, last + 34); last = P.ty }
+for (const { k, px, py, ty } of PTS) { const tx = W - 210; x.strokeStyle = COL[k]; x.lineWidth = 3; x.beginPath(); x.moveTo(px + 8, py); x.lineTo(tx - 40, ty); x.lineTo(tx - 8, ty); x.stroke(); x.fillStyle = COL[k]; x.beginPath(); x.arc(px, py, 6, 0, 7); x.fill(); x.fillStyle = '#2a2030'; x.fillText(LB[k], tx, ty + 7) }
+x.font = '900 24px system-ui'; x.fillStyle = '#2a2030'; x.fillText('ตัวละครในเกม', 120, 40); x.fillText('แยกตามข้อต่อ (ซ้าย/ขวาเหมือนกัน)', 480, 40);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
