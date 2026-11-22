@@ -21,6 +21,8 @@ export const WEAPON_MESH = {
   travelerSword(g) { grip(g, .15, '#6a4a2a', DARK, .17, DARK); blade(g, 'bTrav', .028, .58, STEEL) },
   woodClub(g) { cyl(g, .022, .024, .22, WOODD, [0, -.05, 0]); cyl(g, .03, .058, .42, WOOD, [0, .25, 0], [0, 0, .04], 7); ico(g, .062, WOOD, [.005, .47, 0], [1, .9, 1]); for (const [x, y] of [[.05, .3], [-.05, .38], [.04, .43]]) ico(g, .016, WOODD, [x, y, .02]) },   /* v3.54 a knotty wooden club */
   boneBit(g) { cyl(g, .02, .024, .5, BONE, [0, .15, 0], [0, 0, .05], 7); for (const y of [-.1, .4]) for (const s of [-1, 1]) ico(g, .035, BONE, [s * .028, y, 0], [1, .85, .85]) },   /* v3.54 a big bone (knobs both ends) */
+  woodSword(g) { grip(g, .16, '#c8a070', WOODD, 0, WOODD); for (let i = 0; i < 4; i++) cyl(g, .022, .022, .014, '#e8d8b0', [0, -.02 - i * .035, 0], [0, 0, .25]); add(g, G('wsGd', () => new THREE.CylinderGeometry(.075, .075, .03, 10)), WOODD, [0, .045, 0], [Math.PI / 2, 0, 0], [1, 1, .55]);   /* v4.28 🪵 a hardwood sword: rope grip · a round wooden guard · a wide oak blade with a dark grain line (no metal: safe in the rain) */
+    blade(g, 'bWood', .04, .6, '#c89a5e', .06); box(g, .012, .44, .032, '#8a5e34', [0, .3, 0]); for (const y of [.18, .36]) box(g, .07, .008, .03, '#9a6a3c', [0, y, 0], [0, 0, .15]) },
   branchSword(g) { grip(g, .15, WOODD, WOODD, .14, WOOD); blade(g, 'bBranch', .032, .55, '#b89060'); for (let i = 0; i < 3; i++) ico(g, .02, LEAF, [.03, .2 + i * .14, 0]) },
   boneClub(g) { cyl(g, .022, .022, .2, WOODD, [0, -.04, 0]); cyl(g, .03, .065, .45, BONE, [0, .3, 0], [0, 0, 0], 7); ico(g, .07, BONE, [0, .54, 0], [1.1, .8, 1]); for (const s of [-1, 1]) add(g, G('spk', () => new THREE.ConeGeometry(.018, .08, 4)), '#a89878', [s * .07, .45, 0], [0, 0, -s * 1.3]) },
   stoneClub(g) { cyl(g, .022, .022, .22, WOODD, [0, -.05, 0]); cyl(g, .028, .04, .3, WOOD, [0, .2, 0]); ico(g, .1, '#8a8478', [0, .44, 0], [1, 1.3, .9]); ico(g, .06, '#9a9488', [.06, .36, .04]) },
@@ -57,6 +59,8 @@ export const SHIELD_MESH = {
   potLid(g) { add(g, disc('pl', .17, 10, .025), '#5a5a62'); ico(g, .03, '#3a3a40', [0, 0, .03], [1.4, .6, 1]) },
   leafVest(g) { add(g, disc('lv', .18, 7, .03), '#5aa848'); add(g, disc('lv2', .1, 7, .035), '#3a8a30'); ico(g, .03, WOODD, [0, 0, .03]) },
   woodShield(g) { add(g, disc('ws', .2, 12, .035), WOOD); for (const x of [-.08, 0, .08]) box(g, .006, .38, .04, WOODD, [x, 0, .004]); add(g, G('wsr', () => new THREE.TorusGeometry(.2, .015, 4, 12)), DARK, [0, 0, 0]); ico(g, .04, DARK, [0, 0, .03]) },
+  oakShield(g) { add(g, heater('oak', .19, .5), '#a8763e'); for (const x of [-.09, -.03, .03, .09]) box(g, .006, .44, .03, '#6a4424', [x, .01, .01]); add(g, heater('oak2', .19, .5, .012), '#5a3a20', [0, 0, -.01], [0, 0, 0], [1.08, 1.06, 1]);   /* v4.28 🪵 an oak shield: planks · a dark wood rim · leather bands · a carved leaf (no metal) */
+    for (const y of [.12, -.1]) box(g, .34, .035, .012, '#6a3a2a', [0, y, .035]); ico(g, .05, LEAF, [0, .01, .045], [1, 1.5, .4]); box(g, .006, .08, .01, '#3a7a30', [0, .01, .06]) },
   barkArmor(g) { add(g, heater('bk', .17, .46), '#7a5a3a'); add(g, heater('bk2', .12, .32, .02), '#9a7a4a', [0, .01, .015]); ico(g, .035, '#5a3a20', [0, .03, .035]) },
   stoneArmor(g) { add(g, disc('st', .2, 8, .05), '#8a8478'); add(g, disc('st2', .12, 6, .055), '#a8a298'); ico(g, .05, '#6a645a', [0, 0, .04]) },
   knightShield(g) { add(g, heater('kn', .19, .52), '#c8ccd8'); add(g, heater('kn2', .15, .42, .02), '#2a4a9a', [0, 0, .015]); box(g, .03, .34, .01, GOLD, [0, -.01, .05]); box(g, .26, .03, .01, GOLD, [0, .1, .05]) },

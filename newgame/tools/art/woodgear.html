@@ -1,0 +1,21 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE · wood gear</title>
+<style>body{margin:0;background:#f4efe6}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.28 preview: the new 🪵 hardwood sword + oak shield beside the old wooden ones and the knight's (metal) · shot by shoot-woodgear.js */
+import * as THREE from '../../lib/three.module.min.js';
+import { WEAPON_MESH, SHIELD_MESH } from '../../src/weapons.js';
+const L = [['w', 'branchSword', 'ดาบกิ่งไม้ (เดิม)', '⚔️ 12'], ['w', 'woodSword', '🆕 ดาบไม้เนื้อแข็ง', '⚔️ 18 · ไม่ล่อฟ้า'], ['w', 'knightSword', 'ดาบอัศวิน (โลหะ)', '⚔️ 26 · ⚡ล่อฟ้า'],
+  ['s', 'woodShield', 'โล่ไม้ (เดิม)', '🛡️ 4'], ['s', 'oakShield', '🆕 โล่ไม้โอ๊ก', '🛡️ 8 · ไม่ล่อฟ้า'], ['s', 'knightShield', 'โล่อัศวิน (โลหะ)', '🛡️ 11 · ⚡ล่อฟ้า']];
+const CW = 330, CH = 420, W = CW * 3, H = CH * 2 + 70;
+const R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); R.setSize(300, 330); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.6)); const l = new THREE.DirectionalLight('#ffffff', 2.4); l.position.set(-1, 3, 4); S.add(l);
+const cam = new THREE.PerspectiveCamera(24, 300 / 330, .05, 30);
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#f4efe6'; x.fillRect(0, 0, W, H);
+x.font = '800 28px system-ui'; x.fillStyle = '#3a2a30'; x.fillText('🪵 ของไม้ใหม่ (กลาง) · เทียบของเดิม (ซ้าย) และของโลหะ (ขวา)', 18, 44);
+L.forEach(([t, k, n, st], i) => { const g = new THREE.Group(); (t === 'w' ? WEAPON_MESH : SHIELD_MESH)[k](g); if (t === 'w') g.rotation.set(0, .5, -.25); else g.rotation.set(-.1, .35, 0); S.add(g); g.updateMatrixWorld(true);
+  const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.6 + .3;
+  cam.position.set(c.x, c.y + .05, c.z + d); cam.lookAt(c); R.setClearColor(0, 0); R.clear(); R.render(S, cam); S.remove(g);
+  const cx = (i % 3) * CW, cy = 64 + Math.floor(i / 3) * CH; x.fillStyle = i % 3 === 1 ? '#fff4d8' : '#fffaf2'; x.beginPath(); x.roundRect(cx + 10, cy, CW - 20, CH - 14, 20); x.fill();
+  x.drawImage(R.domElement, cx + 15, cy + 6); x.textAlign = 'center'; x.fillStyle = '#3a2a30'; x.font = '800 22px system-ui'; x.fillText(n, cx + CW / 2, cy + CH - 52); x.font = '600 18px system-ui'; x.fillStyle = '#6a5a60'; x.fillText(st, cx + CW / 2, cy + CH - 26); x.textAlign = 'left' });
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
