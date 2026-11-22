@@ -583,6 +583,10 @@ img.emo{width:1.15em;height:1.15em;vertical-align:-.18em;pointer-events:none;-we
 .up2f{display:flex;gap:5px;overflow-x:auto;margin:0 0 6px;padding-bottom:2px}.up2f button{flex:none;background:#fff8ee;border:2px solid var(--ink);border-radius:12px;padding:3px 8px;font:800 12px system-ui;color:#3a2a30}.up2f button.on{background:#ffd23f}
 .up2row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}.up2row .btn{margin:0}
 .ov.inv.up2 .up2g{max-height:calc(100vh - 430px)}.ov.inv.up2 .up2t{max-height:calc(100vh - 330px)}
+/* v4.52 landscape (a short wide screen): the details sheet moves to the right side · the cards keep the full height on the left */
+@media (orientation:landscape) and (max-height:620px){.ov.up2 .up2d{left:auto;right:0;top:0;bottom:0;width:min(42vw,420px);max-width:none;margin:0;border-top:0;border-left:4px solid var(--ink);border-radius:22px 0 0 22px;overflow-y:auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
+  .ov.up2 .up2d .up2grab{display:none}.ov.up2 .up2d .up2btn{margin-top:auto;padding:9px;font-size:17px}.ov.up2 .up2d .up2m{margin:8px 0}.ov.up2 .up2p.big img,.ov.up2 .up2p.big img.ipic,.ov.up2 .up2p.big .cbig{width:64px;height:64px;font-size:40px}.ov.up2 .up2dh h3{font-size:16px}
+  .ov.up2:has(.up2d) .sh{max-width:none!important;width:calc((100vw - min(42vw,420px)) / .82)!important;margin-left:0!important;margin-right:auto!important;align-self:flex-start}.ov.up2 .up2g,.ov.inv.up2 .up2g{max-height:calc(100vh / .82 - 150px)}.ov.up2 .up2t,.ov.inv.up2 .up2t{max-height:calc(100vh / .82 - 90px)}.ov.up2 .up2hint{margin-top:4px}}
 body:has(.ov.up2):not(.gamepad) #dpad,body:has(.ov.up2):not(.gamepad) #bA,body:has(.ov.up2):not(.gamepad) #bB{display:none!important}   /* no buttons over the page (a game pad brings them back) */
 </style></head>
 <body>
