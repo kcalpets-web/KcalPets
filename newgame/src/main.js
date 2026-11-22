@@ -1672,7 +1672,7 @@ function swapPic(farm, range) { const fits = x => x && D.ITEMS[x.t] && D.ITEMS[x
   const keep = S.eqKeep || {}, cur = farm === gFarm() ? weaponOf() : null, it = (cur && fits(cur) ? cur : null) || S.bag.find(x => x.id === keep[farm ? 'farm' : 'fight'] && fits(x)) || S.bag.filter(fits).sort((p, q) => (D.ITEMS[q.t].tier || 1) - (D.ITEMS[p.t].tier || 1))[0];
   return it ? pic(it.t, D.ITEMS[it.t].icon) : emo(farm ? '🧰' : '⚔️') }
 /* v4.36 (designer) the 🎒 button shows both slots of the set you hold: Y's thing on the left | X's thing on the right */
-function gearPair() { const f = gFarm(), r = gRange(), ip = it => it ? picTag(itemPic(it.t), emo(D.ITEMS[it.t].icon), ' hpic') : '', sh = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), at = arwT();
+function gearPair() { const f = gFarm(), r = gRange(), ip = it => it ? picTag(thumb('iu:' + it.t, g => itemMesh(g, it.t), [.12, .45, 0]), emo(D.ITEMS[it.t].icon), ' hpic') : '',   /* upright, to fit the half */ sh = S.eq.shield && S.bag.find(x => x.id === S.eq.shield), at = arwT();
   const L = r ? (f ? (YMESH[yTool()] ? picTag(yPic(yTool()), emo(D.YTOOL[yTool()].icon), ' hpic') : emo(D.YTOOL[yTool()].icon)) : ip(bowOf()) || emo('🏹')) : ip(weaponOf()) || emo(f ? '🧰' : '✊'), R = f ? '' : r ? emo(at ? D.ARROWX[at].icon : '➶') : ip(sh) || emo('🛡️');
   return R ? `<b class="two"><span>${L}</span><span>${R}</span></b>` : `<b class="one">${L}</b>` }
 function padExtras() { const x = $('bX').getBoundingClientRect(), y = $('bY').getBoundingClientRect(); if (!x.width || !y.width) return; const k = x.width / 64, put = (el, cx, cy) => { const w = el.offsetWidth || 34; el.style.left = Math.round(cx - w / 2) + 'px'; el.style.top = Math.round(cy - w / 2) + 'px'; el.style.right = el.style.bottom = 'auto' };
