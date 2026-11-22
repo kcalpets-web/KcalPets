@@ -8,9 +8,10 @@ import { WEAPON_MESH, SHIELD_MESH } from '../../src/weapons.js';
 const W = 1200, H = 760, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true;
 const S = new THREE.Scene(); S.background = new THREE.Color('#f4ead8'); S.add(new THREE.HemisphereLight('#fff', '#c8b8a0', 1.5)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 5, 4); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -2 }); S.add(sun);
 const fl = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), new THREE.MeshStandardMaterial({ color: '#d8c8a0' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const NECK0 = .18;   /* chest joint → top of the shoulders */
 const JOINT = o => !!(o.userData.role || /^(hand[LR]|arm[LR]2|head)$/.test(o.name));
 function stretch(g, P) { const F = { armL: P.arm, armR: P.arm, elL: P.fore, elR: P.fore, hipL: P.thigh, hipR: P.thigh, kneeL: P.shin, kneeR: P.shin, chest: P.torso, waist: P.waist };
-  g.traverse(J => { const f = F[J.userData.role]; if (!f || f === 1) return; for (const c of J.children) { c.position.y *= f; if (!JOINT(c)) c.scale.y *= f } });
+  g.traverse(J => { const f = F[J.userData.role]; if (!f || f === 1) return; for (const c of J.children) { if (J.userData.role === 'chest' && (c.name === 'head' || c.userData.role === 'head')) { c.position.y += NECK0 * (f - 1); continue } c.position.y *= f; if (!JOINT(c)) c.scale.y *= f } });   /* the head rises only by the trunk's growth (to the shoulders): the neck keeps its length (its top sinks into the head) */
   /* the hips sit higher when the legs are longer · the feet stay on the ground */
   g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); g.position.y -= b.min.y }
 const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#2a2228', wear: 'traveler', top: '#3a8ad8', legs: 'pants', legCol: '#5a3a2a', eyes: 'round', hat: 'straw' };
