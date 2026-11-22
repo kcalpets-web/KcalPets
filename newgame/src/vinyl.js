@@ -63,10 +63,18 @@ function hatPiece(h, kind, col, hairC) { if (!kind || kind === 'none') return; c
   else if (kind === 'beret') { const C = M(col || '#c83a3a'); const b = ball(H, .34, C, [.04, .27, -.01], [1, .38, 1], 24); b.rotation.z = -.18; ball(H, .025, C, [.06, .4, -.01]) }
   else if (kind === 'headband') band(.285, .02, M(col || '#f07aa8'), .06, Math.PI * 1.0);   /* v3.87 sits on the hair */
   else if (kind === 'ribbon') { const C = M(col || '#d83a3a'); for (const s2 of [-1, 1]) { const w = ball(H, .08, C, [.16 + s2 * .08, .27, .04], [1.1, .7, .45], 16); w.rotation.z = s2 * .4 } ball(H, .04, C, [.16, .27, .05]) }   /* v3.87 pinned on the hair */
-  else if (kind === 'leafhood') { const C = M(col || '#4a8a3a'), L1 = M('#7ac04a'), L2 = M('#3a7a2a'), St = M('#6a4a2a');   /* v4.30 🌿 sylvaren: a green hood covered in leaves */
-    add(H, new THREE.SphereGeometry(.4, 32, 20, Math.PI / 2 + .95, Math.PI * 2 - 1.9, 0, Math.PI * .8), C, [0, 0, -.05]);
-    for (const [x, y, z, rx, rz, m, k] of [[0, .43, -.04, .35, 0, L1, 1.15], [.19, .37, -.1, .25, -.65, L2, 1], [-.19, .37, -.1, .25, .65, L2, 1], [.32, .2, -.12, 0, -1.15, L1, .9], [-.32, .2, -.12, 0, 1.15, L1, .9], [0, .3, -.33, -.75, 0, L2, 1.1], [.17, .2, -.34, -.5, -.5, L1, .85], [-.17, .2, -.34, -.5, .5, L1, .85]]) { const l = ball(H, .11 * k, m, [x, y, z], [.55, 1, .16]); l.rotation.set(rx, 0, rz) }
-    add(H, new THREE.CylinderGeometry(.012, .016, .09, 6), St, [0, .55, -.02]) }
+  else if (kind === 'leafhood') { const C = M(col || '#4a8a3a'), L1 = M('#7ac04a'), L2 = M('#3a7a2a'), St = M('#6a4a2a');   /* v4.30 🌿 sylvaren: a snug leaf hood · it replaces the hair (a kingdom costume: no floating head) */
+    const g2 = new THREE.SphereGeometry(1, 56, 40), p = g2.attributes.position, dv = V(0, 0, 0);
+    for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, face = sst(.2, .5, dv.z) * sst(.36, .24, y), back = sst(.35, -.55, dv.z);
+      let o = .05 + .014 * Math.max(0, Math.sin(az * 7 + dv.y * 5)) * sst(-.2, .6, dv.y); o = -.03 + (o + .03) * (1 - face); const q = surf(dv, o);
+      if (back > 0) { const k = back * sst(.15, -.75, dv.y); q.y -= .12 * k; q.z -= .05 * k; q.x *= 1 + .1 * k }   /* it falls to the neck at the back */
+      p.setXYZ(i, q.x * .96, q.y * .96, q.z * .96) }
+    g2.computeVertexNormals(); add(H, g2, C);
+    const leaf = (d, off, k, m, tilt) => { const q = surf(d.clone().normalize(), off).multiplyScalar(.96), l = ball(H, .085 * k, m, q.toArray(), [.6, 1, .18], 12); l.quaternion.setFromUnitVectors(V(0, 0, 1), q.clone().normalize()); l.rotateZ(tilt); l.rotateX(-.35); return l };   /* lies on the hood, its tip lifted a little */
+    for (let i = -3; i <= 3; i++) leaf(V(i * .2, .5 - Math.abs(i) * .05, .85), .06, 1 - Math.abs(i) * .06, i % 2 ? L2 : L1, i * .25);   /* a fringe of leaves over the brow */
+    for (const s2 of [-1, 1]) { leaf(V(s2 * .85, .15, .45), .06, 1, L1, s2 * .5); leaf(V(s2 * .8, -.15, .3), .055, .9, L2, s2 * .8); leaf(V(s2 * .6, .7, -.2), .06, 1, L2, s2 * 1) }
+    for (const [x, z, m] of [[0, -.5, L1], [.3, -.8, L2], [-.3, -.8, L1]]) leaf(V(x, .55, z), .06, 1.1, m, x * 2);
+    const top = surf(V(0, 1, -.05), .06).multiplyScalar(.96); add(H, new THREE.CylinderGeometry(.012, .018, .1, 6), St, [top.x, top.y + .04, top.z]); for (const s2 of [-1, 1]) { const l = ball(H, .07, L1, [top.x + s2 * .06, top.y + .09, top.z], [1, .35, .55], 12); l.rotation.z = s2 * .5 } }
   else if (kind === 'divemask') { const St = M('#1a2a3a'), Fr = M('#ffd040', { r: .4 }), G = M('#bfefff', { m: .1, r: .05 }), T = M('#ff7a2a', { r: .4 }); { const st = add(H, new THREE.TorusGeometry(.33, .026, 8, 40), St, [0, .04, -.02]); st.rotation.x = Math.PI / 2 - .12 }   /* v4.17 🤿 a dive mask (one wide glass) + a snorkel */
     const fr = add(H, new THREE.TorusGeometry(.13, .03, 10, 30), Fr, [0, .03, .33]); fr.scale.set(1.35, .85, 1); fr.rotation.x = -.1; const gl = add(H, new THREE.CircleGeometry(.13, 24), G, [0, .03, .345]); gl.scale.set(1.35, .85, 1); gl.rotation.x = -.1; gl.material.transparent = true; gl.material.opacity = .55;
     const sn = add(H, new THREE.CylinderGeometry(.022, .022, .46, 10), T, [.31, .14, .14]); sn.rotation.z = -.08; const tp = add(H, new THREE.CylinderGeometry(.03, .03, .05, 10), M('#1a2a3a'), [.33, .38, .14]) }
@@ -79,7 +87,7 @@ function hatPiece(h, kind, col, hairC) { if (!kind || kind === 'none') return; c
   else if (kind === 'helmet') { const M2 = M('#a8acb8', { m: .7, r: .3 }); dome(.325, .02, .43, M2); add(H, lathe([[.335, .0], [.34, .05], [.335, .08]], 28), M('#7a7e8a', { m: .7, r: .35 })); add(H, new THREE.BoxGeometry(.035, .08, .05), M2, [0, .4, .1]) }
   H.position.set(0, .02, -.02); LY(H, 2) }
 /* v3.87 the hair style under each head item (the player's own style comes back when it is taken off) */
-export const HAT_HAIR = { cap: 'messy', baseball: 'messy', wizard: 'messy', crown: 'bob', sailor: 'messy', knight: 'messy', straw: 'bob', catEars: 'bob', bunnyEars: 'bob', beret: 'bob', headband: 'bob', ribbon: 'bob', goggles: 'messy', hood: 'messy', flower: 'bob', starClip: 'bob', beanie: 'messy', helmet: 'messy' };
+export const HAT_HAIR = { cap: 'messy', baseball: 'messy', wizard: 'messy', crown: 'bob', sailor: 'messy', knight: 'messy', straw: 'bob', catEars: 'bob', bunnyEars: 'bob', beret: 'bob', headband: 'bob', ribbon: 'bob', goggles: 'messy', hood: 'messy', flower: 'bob', starClip: 'bob', beanie: 'messy', helmet: 'messy', leafhood: 'none' };   // 'none' = the head item is the hair (a kingdom costume)
 export function vinylHat(root, kind, col) { const h = root.getObjectByName('head'); if (!h) return; const o = h.getObjectByName('hat'); if (o) h.remove(o); hatPiece(h, kind, col) }                     // base units → the body group (≈ 1.5 tall before the actor scale)
 /* old avatars (v1) → the new options */
 export function vinylFrom(a = {}) {
@@ -354,7 +362,7 @@ export function vinylLayered(root, a0 = {}) {
   const hm = add(skull, headGeo(), [VIN, new THREE.MeshStandardMaterial({ map: faceTex(skin, a.eyes || 'round', a.eyeCol || '#d0802a', a.sex || 'm', a.cheek || '', a.mouth || 'smile', a.expr || ''), roughness: .5 })]); hm.userData.noFacet = 1;
   if (!['long', 'bob'].includes(a.hair)) for (const s of [-1, 1]) ball(skull, .085, VIN, [s * .262, -.065, -.035], [.42, .92, .72], 12);
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
-  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); const hd = a.hatHair || (a.hat && a.hat !== 'none' ? HAT_HAIR[a.hat] || 'messy' : null); hairPiece(hg, hd || a.hair || 'messy', a.hairCol || '#7a4428', !!hd || a.hat === 'hood'); LY(hg, 1) }   /* v3.87 a head item brings its own (tucked) hair: nothing pokes through */
+  { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); const hd = a.hatHair || (a.hat && a.hat !== 'none' ? HAT_HAIR[a.hat] || 'messy' : null); if (hd !== 'none') hairPiece(hg, hd || a.hair || 'messy', a.hairCol || '#7a4428', !!hd || a.hat === 'hood'); LY(hg, 1) }   /* v3.87 a head item brings its own (tucked) hair: nothing pokes through */
   hatPiece(head, a.hat, a.hatCol, a.hairCol);
   vinylProp(g, a0.prop || VPROP);   /* v4.21 the longer body (designer picked B) */
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
