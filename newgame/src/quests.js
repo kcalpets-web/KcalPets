@@ -17,10 +17,11 @@ export const KQ = {
   },
   sylvaren: {
     npcs: [
-      { id: 'baitong', name: 'ยายใบตอง', icon: '👵', v: 0, dx: 5, dz: -5, hello: 'ป่าเหี่ยวแบบนี้ สมุนไพรหายากขึ้นทุกวัน…', q: ['sv1', 'sv2'] },
-      { id: 'boonma', name: 'ช่างไม้บุญมา', icon: '🪵', v: 2, dx: -6, dz: 3, hello: 'ไม้ดีๆ เหลือน้อยเต็มที ถ้าได้ไม้มาข้าจะสร้างสะพานข้ามลำธาร', q: ['sv3', 'sv4'] },
-      { id: 'leo', name: 'นักเดินทางลีโอ', icon: '🎨', v: 1, dx: 4, dz: 7, hello: 'ผมเดินทางวาดภาพไปทั่วโลก ป่านี้ยังสวยแม้จะเหี่ยวเฉา', q: ['sv5', 'sv6'] },
-      { id: 'svLead', name: 'ผู้เฒ่าวนา', icon: '🧙', v: 0, dx: 0, dz: 0, lead: 1, hello: 'ต้นไม้แม่กำลังจะตาย… ถ้ามันตาย ป่าทั้งป่าจะตายตาม', q: [] },
+      { id: 'baitong', name: 'ยายใบตอง', icon: '👵', v: 0, dx: 5, dz: -5, hello: 'ป่าเหี่ยวแบบนี้ สมุนไพรหายากขึ้นทุกวัน…', q: ['sv1', 'sv2', 'svW1', 'svF1'] },
+      { id: 'boonma', name: 'ช่างไม้บุญมา', icon: '🪵', v: 2, dx: -6, dz: 3, hello: 'ไม้ดีๆ เหลือน้อยเต็มที ถ้าได้ไม้มาข้าจะสร้างสะพานข้ามลำธาร', q: ['sv3', 'sv4', 'svW2', 'svW4'] },
+      { id: 'leo', name: 'นักเดินทางลีโอ', icon: '🎨', v: 1, dx: 4, dz: 7, hello: 'ผมเดินทางวาดภาพไปทั่วโลก ป่านี้ยังสวยแม้จะเหี่ยวเฉา', q: ['sv5', 'sv6', 'svW5'] },
+      { id: 'svLead', name: 'ผู้เฒ่าวนา', icon: '🧙', v: 0, dx: 0, dz: 0, lead: 1, hello: 'ต้นไม้แม่กำลังจะตาย… ถ้ามันตาย ป่าทั้งป่าจะตายตาม', q: ['svF3'] },   /* v4.30 after the kingdom is restored */
+      { id: 'mali', name: 'พรานมาลี', icon: '🏹', v: 1, dx: -8, dz: -5, hello: 'ข้าล่าสัตว์ในป่านี้มาตั้งแต่เด็ก ฝนฟ้าที่นี่แรงนัก ต้องแต่งตัวให้ถูก', q: ['svW3', 'svW6', 'svF2'], look: { sex: 'f', skin: '#d8a878', hair: 'pony', hairCol: '#3a2418', wear: 'traveler', top: '#5a7a3a', bottom: 'pants', legCol: '#5a4a32', hat: 'headband', hatCol: '#5aa848', expr: 'smile' } },   // v4.30 the hunter
     ],
     restore: ['svR1', 'svR2', 'svR3'],
     memory: ['💭 ความทรงจำของซิลวาเรน…', 'วันเก็บเกี่ยว เด็กๆ ปีนต้นไม้แม่ แข่งกันเก็บผลไม้ทองคำ', 'ฝนดำจากเมฆทมิฬตกลงมาเจ็ดวันเจ็ดคืน', 'รากของต้นไม้แม่ดำลงทีละน้อย ใบไม้ร่วงจนหมดป่า', 'ตอนนี้ ต้นกล้าใหม่ผลิใบแล้ว — ป่ากำลังหายใจอีกครั้ง'],
@@ -87,6 +88,16 @@ export const KQUEST = {
   nvF1: { t: 'bring', need: { fish: 3 }, text: 'ส่งปลา 3 ตัวให้ราชินีชลา', done: 'ข้าจะสอนสูตรต้มยำปลาของนาวาลีให้เจ้า', reward: { coin: 500, recipe: 'tomyumfish' } },
   nvF2: { t: 'bring', need: { seaweed: 5 }, text: 'หาสาหร่าย 5 กำให้มิรา (ตกปลาในนาวาลี)', done: 'ข้าวห่อสาหร่ายแบบนักดำน้ำ! กินแล้วดำน้ำได้ทั้งวัน', reward: { coin: 400, recipe: 'riceball' } },
   nvF3: { t: 'bring', need: { squid: 3 }, text: 'ตกปลาหมึก 3 ตัวให้กัปตันมาริน (กลางคืนในนาวาลี)', done: 'หมึกสดๆ! ข้าจะสอนสูตรหมึกย่างซอสระฆังให้', reward: { coin: 500, recipe: 'squidgrill' } },
+  /* v4.30 🏙️ sylvaren town quests: the leaf hunter set (⚡) · 3 weapons · 3 recipes */
+  svW1: { t: 'bring', need: { glowherb: 5 }, text: 'หาสมุนไพรเรืองแสง 5 ต้นให้ยายใบตอง', done: 'ยายถักฮู้ดใบไม้ให้แล้ว ใส่แล้วฟ้าไม่ค่อยกล้าผ่าลงมาหรอก', reward: { coin: 600, wear: 'h_leafhood' } },
+  svW2: { t: 'bring', need: { wood: 20, hide: 3 }, text: 'หาไม้ 20 ท่อน + หนังสัตว์ 3 ผืนให้ช่างไม้บุญมา', done: 'เสื้อคลุมเปลือกไม้เสร็จแล้ว ฝนตกหนักแค่ไหนก็ไม่กลัว', reward: { coin: 700, wear: 'b_bark' } },
+  svW3: { t: 'bring', need: { venison: 5 }, text: 'ล่ากวางให้พรานมาลี (เนื้อกวาง 5 ชิ้น)', done: 'ฝีมือดีนี่! เอากางเกงเถาวัลย์ของข้าไป ใส่ครบชุดแล้วฟ้าจะเป็นมิตรกับเจ้า', reward: { coin: 800, wear: 'l_vine' } },
+  svW4: { t: 'bring', need: { wood: 30 }, text: 'หาไม้ 30 ท่อนให้ช่างไม้บุญมา', done: 'ข้าแกะดาบจากรากต้นไม้แม่ให้เจ้า มันยังมีชีวิตอยู่นะ ระวังมันพันศัตรูล่ะ', reward: { coin: 900, item: { t: 'rootSword', r: 'R' } } },
+  svW5: { t: 'draw', text: 'วาดภาพต้นไม้แม่ให้นักเดินทางลีโอ', done: 'ภาพนี้มีชีวิตจริงๆ! รับธนูเถาดอกไม้ของผมไปนะ', reward: { coin: 800, item: { t: 'flowerBow', r: 'R' } } },
+  svW6: { t: 'killK', n: 10, text: 'ปราบมอนสเตอร์ในซิลวาเรน 10 ตัว', done: 'ป่าสงบลงแล้ว รับหอกเขากวางของข้าไป มันไม่ล่อฟ้าด้วยนะ', reward: { coin: 1000, item: { t: 'antlerSpear', r: 'R' } } },
+  svF1: { t: 'bring', need: { mushroom: 5 }, text: 'หาเห็ดป่า 5 ดอกให้ยายใบตอง', done: 'ยายจะสอนวิธีย่างเห็ดเสียบไม้ให้', reward: { coin: 400, recipe: 'mushskewer' } },
+  svF2: { t: 'bring', need: { venison: 2, honey: 1 }, text: 'เนื้อกวาง 2 ชิ้น + น้ำผึ้ง 1 ให้พรานมาลี', done: 'กวางตุ๋นน้ำผึ้งสูตรพรานป่า ลองทำดูสิ', reward: { coin: 500, recipe: 'venisonhoney' } },
+  svF3: { t: 'bring', need: { berry: 6 }, text: 'เก็บเบอร์รี่ 6 ลูกให้ผู้เฒ่าวนา', done: 'คัพเค้กเบอร์รี่ป่าของซิลวาเรน กินแล้วพิษไม่ระคายเจ้า', reward: { coin: 500, recipe: 'berrycake' } },
   /* 🌿 Sylvaren */
   sv1: { t: 'bring', need: { flower: 4 }, text: 'เก็บดอกไม้ป่า 4 ดอกให้ยายใบตอง', done: 'ดอกไม้หอมจริงๆ จะทำชาให้ผู้คนดื่ม', reward: { coin: 500, recipe: 'flowertea' } },
   sv2: { t: 'bring', need: { mushroom: 3 }, text: 'หาเห็ดป่า 3 ดอก', done: 'เห็ดพวกนี้ทำยาได้ดีนัก', reward: { coin: 600, gem: 15 } },

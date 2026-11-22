@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.29';
+export const APP_VER = '4.30';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -138,6 +138,8 @@ export const ITEMS = {
   rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
   paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
+  rootSword:     { slot: 'sword', kind: 'one', name: 'ดาบรากไม้', icon: '🌱', atk: 22, dur: 30, tier: 3, only: 1, root: 1.5 },   // v4.30 sylvaren quest · no metal · a hit roots the foe in place (s)
+  antlerSpear:   { slot: 'sword', kind: 'spear', name: 'หอกเขากวาง', icon: '🦌', atk: 28, dur: 32, tier: 3, only: 1 },   // v4.30 sylvaren quest · no metal
   coralHarpoon:  { slot: 'sword', kind: 'spear', name: 'ฉมวกปะการัง', icon: '🔱', atk: 36, dur: 40, tier: 3, only: 1, water: 1.5 },   // water: ×1.5 when you swim or it stands in water   // v4.24 navalee quest
   wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
   scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3, metal: 1 },
@@ -173,6 +175,7 @@ export const ITEMS = {
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3, metal: 1 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
+  flowerBow:     { slot: 'bow', kind: 'bow', name: 'ธนูเถาดอกไม้', icon: '🏹', atk: 18, dur: 34, tier: 3, only: 1, bloom: { n: 5, hp: 5 } },   // v4.30 sylvaren · every 5 hits = ❤️ +¼
   bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1, bell: { r: 4, t: 2.5 } },   // bell: monsters within r m of a hit are dazed t s   // v4.24 navalee quest
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
   soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
@@ -523,6 +526,9 @@ export const SPOIL = { poison: .4 };   // v3.55 a wrong mix: chance it is poison
 export const RECIPES = [
   { k: 'tomyumfish', desc: 'ต้มยำปลาสดจากทะเลสาบนาวาลี เผ็ดร้อน อุ่นถึงใจ', icon: '🥣', name: 'ต้มยำปลานาวาลี', need: { fish: 2, spice: 1 }, eff: { hp: 40, buff: { warm: 1, min: 5 } }, hint: 'ปลา 2 ตัว + พริก' },   // v4.24 navalee
   { k: 'riceball', desc: 'ข้าวปั้นห่อสาหร่าย พกง่าย กินแล้วกระปรี้กระเปร่า', icon: '🍙', name: 'ข้าวห่อสาหร่าย', need: { seaweed: 2 }, only: 1, eff: { en: 100, buff: { stam: .35, min: 5 } }, hint: 'สาหร่ายล้วน' },
+  { k: 'mushskewer', desc: 'เห็ดป่าเสียบไม้ย่างกับสมุนไพรเรืองแสง สูตรยายใบตอง', icon: '🍡', name: 'เห็ดเสียบไม้ย่าง', need: { mushroom: 2, glowherb: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'เห็ด 2 + สมุนไพรเรืองแสง 1' },   // v4.30 sylvaren
+  { k: 'venisonhoney', desc: 'เนื้อกวางตุ๋นน้ำผึ้งป่า สูตรพรานมาลี', icon: '🥙', name: 'กวางตุ๋นน้ำผึ้ง', need: { venison: 1, honey: 1 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อกวาง + น้ำผึ้ง' },
+  { k: 'berrycake', desc: 'คัพเค้กเบอร์รี่ป่า กินแล้วกันพิษได้ 3 นาที', icon: '🧁', name: 'คัพเค้กเบอร์รี่ป่า', need: { berry: 3 }, only: 1, eff: { hp: 20, buff: { antidote: 1, min: 3 } }, hint: 'เบอร์รี่ 3 ลูก' },
   { k: 'squidgrill', desc: 'หมึกย่างซอสระฆัง สูตรกัปตันมาริน', icon: '🦑', name: 'หมึกย่างซอสระฆัง', need: { squid: 2 }, only: 1, eff: { hp: 60 }, hint: 'ปลาหมึกล้วน' },
   { k: 'grillfish', desc: 'ปลาเสียบไม้ย่างไฟอ่อนๆ หอมกลิ่นทะเล', icon: '🍢', name: 'ปลาย่าง', need: { fish: 2 }, only: 1, eff: { hp: 45 }, hint: 'ปลาล้วนๆ ย่างไฟ' },
   { k: 'berrytart', desc: 'ทาร์ตกรอบๆ ใส่สตรอว์เบอร์รีจากแปลงของเราเอง', icon: '🥧', name: 'ทาร์ตสตรอว์เบอร์รี', need: { strawberry: 2 }, only: 1, eff: { hp: 40, en: 60 }, hint: 'ผลไม้สีแดงจากแปลงผัก ล้วนๆ' },
@@ -734,9 +740,13 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   h_divemask: { slot: 'head', icon: '🤿', name: 'หน้ากากดำน้ำ', warm: 0, cool: 0, air: 1, hatK: 'divemask', src: 'quest', k: 'navalee' },   // v4.24 🤿 the navalee diver set
   b_swimsuit: { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำนาวาลี', warm: 0, cool: 0, swim: 1, col: '#1aa0c8', look: 'swim', noLegs: 1, src: 'quest', k: 'navalee' },
   l_diver: { slot: 'legs', icon: '🩳', name: 'กางเกงนักดำน้ำ', warm: 0, cool: 0, swim: 1, legs: 'shorts', legCol: '#1a3a6a', src: 'quest', k: 'navalee' },
+  h_leafhood: { slot: 'head', icon: '🍃', name: 'ฮู้ดใบไม้', warm: 0, cool: 0, zap: 1, hatK: 'leafhood', src: 'quest', k: 'sylvaren' },   // v4.30 🌿 the sylvaren leaf hunter set (⚡ each)
+  b_bark: { slot: 'body', icon: '🧥', name: 'เสื้อคลุมเปลือกไม้', warm: 0, cool: 0, zap: 1, col: '#5a8a42', look: 'bark', src: 'quest', k: 'sylvaren' },
+  l_vine: { slot: 'legs', icon: '👖', name: 'กางเกงเถาวัลย์', warm: 0, cool: 0, zap: 1, legs: 'vine', legCol: '#6a5a3a', src: 'quest', k: 'sylvaren' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
-export const WEAR_SETS = { diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5 } };   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
+export const WEAR_SETS = { diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
+  leafhunter: { name: 'เซ็ตพรานใบไม้', parts: ['h_leafhood', 'b_bark', 'l_vine'], glow: '#a8ff6a', bounce: { dmg: 30, r: 9, stun: 2 }, bonus: '⚡ ฝนตก/พายุ: ฟ้าผ่าเด้งไปโดนมอนสเตอร์รอบตัวแทน' } };   // v4.30   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
 const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: ['def', 'cool'], o_cape: ['warm', 'cool'], a_knight: ['def', 'warm'], k_navalee: ['swim', 'cool'], k_sylvaren: ['def', 'warm'], k_valkara: ['def', 'cool'], k_deadgar: ['air', 'warm'] };
 const LEGS_AB = {};

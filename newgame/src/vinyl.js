@@ -24,7 +24,7 @@ export const VLOOK = {
 export const VSCALE = 1.45;
 /* v4.21 body proportions (designer: B · arms / legs / trunk longer so weapons sit right · the head and the neck stay) · each joint's children move out along it and its own pieces stretch
    the hips + waist rise by the legs' extra length so the feet stay on the ground (the KRIG Hips track moves the body group, not these) */
-export const VPROP = { arm: 1.35, fore: 1.35, thigh: 1.5, shin: 1.5, torso: 1.2, waist: 1.15 };
+export const VPROP = { arm: 1.35, fore: 1.35, thigh: 1.5, shin: 1.5, torso: 1.2, waist: 1.15, headTop: .7, hatKeep: true };   // v4.30 head C (designer): a lower crown · hats keep their size, the brim on the brow
 const PJOINT = o => !!(o.userData.role || /^(hand[LR]|arm[LR]2|head|Hand_[LR])$/.test(o.name));
 export function vinylProp(g, P) { if (!P) return; const F = { armL: P.arm, armR: P.arm, elL: P.fore, elR: P.fore, hipL: P.thigh, hipR: P.thigh, kneeL: P.shin, kneeR: P.shin, chest: P.torso, waist: P.waist }, J = {};
   g.traverse(o => { if (o.userData.role) J[o.userData.role] = o });
