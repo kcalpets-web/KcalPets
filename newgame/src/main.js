@@ -1730,8 +1730,18 @@ function openCollect() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('
     b.querySelectorAll('[data-ck]').forEach(x => x.onclick = () => { colK = x.dataset.ck; colSel = null; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-ck=' + colK; NAV.el = null; redraw() });
     b.querySelectorAll('[data-cc]').forEach(x => x.onclick = () => { colSel = x.dataset.cc; sfx('tap'); redraw() });
     const g = b.querySelector('#colGo'); if (g) g.onclick = () => colGo(colK, sel.ni) }, { cls: 'adv tabz up2' }) }
-function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, close) => { b.innerHTML = `<div class="mpick">${AT_MENU.map(k => { const T = ATLAS.find(t => t[0] === k); return `<button class="mpt" data-mp="${k}"><b>${T[1]}</b><span>${T[2]}</span></button>` }).join('')}<button class="mpt" data-mp="howto"><b>🎬</b><span>วิธีเล่น</span></button></div>`;   /* v3.86 🎬 วิธีเล่น lives in the menu */
-  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); if (x.dataset.mp === 'howto') { closeSheets(); openHowto(); return } openAtlas(x.dataset.mp) }) }, { cls: 'menuPick dlg' }) }   /* v3.95 ☰ stays the small box (the pages it opens are like the bag) */
+/* v4.64 ☰ the menu in 6 big tiles by what you want to do (designer: docs/art/menu-plan-mock.png) + 🗺️ the map · a red badge = something waiting */
+const MENU6 = [['quest', '📜', 'ภารกิจ', 'เรื่องหลัก · ฝึกหัด · คนในเมือง · ความสำเร็จ'], ['bag', '🎒', 'กระเป๋า', 'อาวุธ · ชุด · วัตถุดิบ · อาหาร · สกิล'], ['pets', '🐾', 'น้อง', 'ทีม · ให้อาหาร · สกิล · ขี่'], ['make', '🛠️', 'สร้างของ', 'คราฟ · สูตรอาหาร · ก่อสร้าง'], ['book', '📖', 'สมุด', 'ชุดสะสม · สิ่งที่พบ · อัลบั้ม · การเดินทาง'], ['set', '⚙️', 'ตั้งค่า', 'ตัวละคร · ✨ จิตวิญญาณ · ควบคุม · เสียง · วิธีเล่น']];
+const MENU_GO = { quest: () => openAtlas('quest'), bag: () => { closeSheets(); openBag() }, pets: () => { closeSheets(); openPetsPage() }, make: () => openAtlas('craft'), book: () => openSub('book'), set: () => openSub('set'), map: () => openAtlas('map'), howto: () => { closeSheets(); openHowto() } };
+const menuBadge = k => { try { if (k === 'quest') { const n = D.STARTER.filter(sqReady).length; return n ? '🎁' + n : '' } if (k === 'set') return S.spirit && S.spirit.free > 0 ? '✨' + S.spirit.free : '' } catch (e) { } return '' };
+function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, close) => { b.innerHTML = `<div class="mpick6">${MENU6.map(([k, ic, nm, sub]) => { const bd = menuBadge(k); return `<button class="mpt6" data-mp="${k}"><i>${ic}</i><b>${nm}</b><small>${sub}</small>${bd ? `<em>${bd}</em>` : ''}</button>` }).join('')}<button class="mpt6 wide" data-mp="map"><i>🗺️</i><b>แผนที่</b><small>แตะแผนที่เล็กมุมขวาบนได้เหมือนเดิม</small></button></div>`;
+  b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); (MENU_GO[x.dataset.mp] || (() => openAtlas(x.dataset.mp)))() }) }, { cls: 'menuPick dlg' }) }   /* v3.95 ☰ stays the small box (the pages it opens are like the bag) */
+const openPetsPage = () => openBag('pets');
+/* v4.64 📖 สมุด and ⚙️ ตั้งค่า: a second set of big tiles (each opens its page) */
+const SUBM = { book: ['📖 สมุด', [['collect', '📖', 'ชุดสะสม', 'ชุด อาวุธ อาหารจากเควสแต่ละอาณาจักร', () => openAtlas('collect')], ['found', '🔍', 'สิ่งที่พบ', 'สัตว์ มอนสเตอร์ ปลาที่วาดไว้', () => { closeSheets(); openJournal() }], ['album', '📸', 'อัลบั้ม', 'ภาพที่วาดไว้', () => openAtlas('album')], ['journey', '🧭', 'การเดินทาง', 'สถิติการผจญภัย', () => openAtlas('journey')], ['src', '🪵', 'แหล่งวัตถุดิบ', 'หาวัตถุดิบได้ที่ไหน', () => { closeSheets(); openAdv('mats', 1) }], ['notes', '📝', 'โน้ต', 'โน้ตที่เก็บได้', () => { closeSheets(); openNotes() }]]],
+  set: ['⚙️ ตั้งค่า', [['me', '👤', 'ตัวละคร', 'ชื่อ หน้าตา ✨ จิตวิญญาณ', () => openAtlas('me')], ['opt', '🎮', 'ตั้งค่าเกม', 'ควบคุม ภาพ กล้อง เสียง', () => openAtlas('set')], ['howto', '🎬', 'วิธีเล่น', 'คลิปสอนเล่น', () => { closeSheets(); openHowto() }]]] };
+function openSub(k) { const [title, L] = SUBM[k]; closeSheets(); sheet(title, (b) => { b.innerHTML = `<div class="mpick6">${L.map(([id, ic, nm, sub]) => { const bd = id === 'me' ? menuBadge('set') : ''; return `<button class="mpt6" data-sm2="${id}"><i>${ic}</i><b>${nm}</b><small>${sub}</small>${bd ? `<em>${bd}</em>` : ''}</button>` }).join('')}</div>`;
+  b.querySelectorAll('[data-sm2]').forEach(x => x.onclick = () => { sfx('tap'); L.find(t => t[0] === x.dataset.sm2)[4]() }) }, { cls: 'menuPick dlg' }) }   /* v4.64 for now the 🐾 page is the bag's pet section (its own page comes next) */
 $('mBag').onclick = () => { if (CUT) return; sfx('tap'); if (document.querySelector('.ov')) closeSheets(); openBag() };
 $('mMap').onclick = () => { if (CUT) return; sfx('tap'); openMenuPick() };   /* v3.80 ☰ (the minimap is the map) */
 $('goal').onclick = () => { if (CUT) return; sfx('tap'); questNav() };
@@ -1764,7 +1774,7 @@ function beaconsView() { for (const m of BEAMS.splice(0)) scene.remove(m); (S.be
 beaconsView();
 function miniBeacons(g, P, c0, dpr) { for (const bc of S.beacons || []) { if (!bc) continue; let [x, y] = P(bc.x, bc.z); const dx = x - c0, dy = y - c0, d = Math.hypot(dx, dy), rr = c0 * .86; if (d > rr) { x = c0 + dx / d * rr; y = c0 + dy / d * rr } g.fillStyle = D.PINS.beam[bc.c]; g.strokeStyle = '#fff'; g.lineWidth = 2 * dpr; g.beginPath(); g.arc(x, y, 4.5 * dpr, 0, 7); g.fill(); g.stroke() } }
 /* ================= v3.74 📜 the quest page: sections (◀▶): เควสหลัก · เควส NPC · Memories · ความสำเร็จ · ▲▼ pick · A = follow it (blinks on the map) · X = walk there by itself · B = back ================= */
-const QSUB = [['main', '⭐', 'เรื่องหลัก'], ['starter', '🌱', 'ฝึกหัด'], ['npc', '📜', 'คนในเมือง'], ['mem', '🎬', 'ความทรงจำ'], ['ach', '🏆', 'ความสำเร็จ']];
+const QSUB = [['main', '⭐', 'เรื่องหลัก'], ['starter', '🌱', 'ฝึกหัด'], ['npc', '📜', 'คนในเมือง'], ['paths', '🧭', 'เส้นทาง'], ['mem', '🎬', 'ความทรงจำ'], ['ach', '🏆', 'ความสำเร็จ']];
 let qSub = 'main';
 const MEMS = [['intro', '🌅', 'คืนที่ทุกอย่างหายไป', () => S.story.intro, () => startIntro(true)], ['title', '⛵', 'ข้ามทะเลสู่แผ่นดินใหญ่', () => S.story.titleSeen, () => memPlay(playTitle)], ['pet', '🐾', 'เงาดำในป่า', () => S.story.freed, () => memPlay(playPetRescue)], ['flash', '🎞️', 'ความทรงจำของ Sberh', () => S.story.flashback, () => memPlay(playFlashback)]];
 async function memPlay(fn) { if (CUT) return; CUT = true; closeSheets(); document.body.classList.add('cut'); try { await fn(R, S.profile.name) } catch (e) { console.warn(e) } document.body.classList.remove('cut'); CUT = false; last = performance.now(); ambience() }
@@ -1772,12 +1782,14 @@ function openQuests() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('�
     let h = '';   /* v4.61 the side tabs (designer: like the mock) */
     if (qSub === 'main' || qSub === 'npc') { const M = L.filter(t => !t.id.startsWith('sq:') && (qSub === 'npc') === t.id.startsWith('kq:')).concat(qSub === 'main' ? trackDone() : []); h += M.length ? M.map(t => t.done ? `<button class="card trk qdone" data-qd="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span class="qok">✅ เสร็จสิ้น</span></div></button>` : `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div><small class="mut">${t.sub || ''}</small></button>`).join('') : '<p class="mut">ยังไม่มีเควสในหัวข้อนี้</p>'; h += '<p class="mut qhelp"><b class="ka">A</b> ติดตาม (กะพริบบนแผนที่) · <b class="kx">X</b> เดินไปอัตโนมัติ · <b class="kb">B</b> กลับ · ◀▶ หัวข้อ</p>' }
     else if (qSub === 'starter') h += sqBody();
+    else if (qSub === 'paths') h += D.PATHS.map(P => `<button class="card trk" data-pth="${P.k}"><div class="row"><b>${P.icon} ${P.name}</b><span>${pathDone(P) === 5 ? '✅' : pathDone(P) + '/5'}</span></div><small class="mut">${P.desc || ''}</small></button>`).join('') + '<p class="mut qhelp">แตะเพื่อดูภารกิจของเส้นทางนั้น</p>';   /* v4.64 🧭 the life paths live with the quests */
     else if (qSub === 'mem') { const M = MEMS.filter(m => m[3]()); h += M.length ? M.map(m => `<button class="card trk" data-mem="${m[0]}"><b>${m[1]} ${m[2]}</b><small class="mut"> · แตะเพื่อดูอีกครั้ง</small></button>`).join('') : '<p class="mut">ยังไม่มีความทรงจำ</p>' }
     else h += `<div class="invtext">${bagText('ach')}</div>`;
     const nSq = D.STARTER.filter(sqReady).length; b.innerHTML = `<div class="up2b"><div class="up2t">${QSUB.map(([k, ic, nm]) => `<button class="up2tab${k === qSub ? ' on' : ''}" data-qs="${k}"><i>${ic}</i><span>${nm}</span>${k === 'starter' ? `<b class="up2n">${nSq ? '🎁' + nSq : D.STARTER.reduce((a, T) => a + sqStep(T), 0) + '/' + D.STARTER.length * 3}</b>` : ''}</button>`).join('')}</div><div class="up2r qbody">${h}</div></div>`;
     b.querySelectorAll('[data-qs]').forEach(x => x.onclick = () => { qSub = x.dataset.qs; sfx('tap'); NAV.key = ''; NAV.el = null; redraw() });
     b.querySelectorAll('[data-tr]').forEach(x => x.onclick = () => { S.track = x.dataset.tr; trkC = null; sfx('coin'); save(); hud(); hint('⭐ ติดตามเควสนี้แล้ว · ดูบนแผนที่', 1000); openAtlas('map') });
     b.querySelectorAll('[data-qd]').forEach(x => x.onclick = () => { sfx('tap'); hint('✅ เควสนี้เสร็จสิ้นแล้ว', 1000) });
+    b.querySelectorAll('[data-pth]').forEach(x => x.onclick = () => { sfx('tap'); closeSheets(); openPaths(x.dataset.pth) });
     b.querySelectorAll('[data-mem]').forEach(x => x.onclick = () => { const m = MEMS.find(q => q[0] === x.dataset.mem); if (m) m[4]() });
     if (qSub === 'ach') bindAch(b, redraw); if (qSub === 'starter') sqBind(b, redraw); else upDock(b); { const ov = b.closest('.ov'); if (ov) ov.classList.toggle('sqon', qSub === 'starter') } }, { cls: 'qbook qatl up2 tabz' }) }
 /* ================= v4.54 🌱 starter quest chains: 10 everyday things × 3 steps · counted from the first time the game sees them · each step = 🎁 a reward to claim ================= */
@@ -4669,7 +4681,7 @@ const upTag = (ok, txt) => `<span class="up2s ${ok ? 'ok' : 'no'}">${txt}</span>
 const upMats = cost => `<div class="up2m">${Object.entries(cost).map(([m, n]) => { const h = costHave(m), src = msKnown(m); return `<span class="up2mat${h >= n ? '' : ' lack'}">${costName(m)} <b>${h}/${n}</b>${h < n && src ? ` <button class="btn sm" data-mg="${m}">🧭</button>` : ''}</span>` }).join('')}</div>`;
 let buildSel = null;
 function openBuild(cat) { if (cat) buildTab = cat; NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null;
-  sheet('🔨 ก่อสร้าง', (b, redraw) => { const T = BCAT.filter(c => bcatList(c[0]).length).map(([k, ic, nm]) => [k, ic, nm]); if (!T.some(t => t[0] === buildTab)) buildTab = T[0][0];
+  sheet('🛠️ สร้างของ · 🔨 ก่อสร้าง', (b, redraw) => { const T = BCAT.filter(c => bcatList(c[0]).length).map(([k, ic, nm]) => [k, ic, nm]); if (!T.some(t => t[0] === buildTab)) buildTab = T[0][0]; T.unshift(['craft', '🛠️', 'คราฟ · อาหาร']);   /* v4.64 back to คราฟ / สูตรอาหาร */
     const L = bcatList(buildTab); if (buildSel && !L.includes(buildSel)) buildSel = null;
     const cards = L.map(k => { const has = !!S.bp[k], B = BP[k], c = bCost(k), miss = Object.entries(c).find(([m, n]) => costHave(m) < n);
       return { k, pic: has ? picTag(bpPic(k), `<span class="cbig">${B.icon}</span>`) : '<span class="cbig">❔</span>', name: has ? B.name : '???', miss: !has, tag: !has ? upTag(0, '🔒 ยังไม่มีแบบ') : !miss ? upTag(1, '✅ สร้างได้') : upTag(0, `${costName(miss[0]).split(' ')[0]} ขาด ${miss[1] - costHave(miss[0])}`) } });
@@ -4677,7 +4689,7 @@ function openBuild(cat) { if (cat) buildTab = cat; NAV.zone = 'tabs'; NAV.key = 
       detail = { pic: has ? picTag(bpPic(k), `<span class="cbig">${B.icon}</span>`) : '<span class="cbig">❔</span>', title: has ? `${B.icon} ${B.name}` : '❔ แบบแปลนที่ยังไม่มี', desc: has ? B.desc : '📜 หาได้จากลุงฮาวซิฟ · หีบในแคมป์มอนสเตอร์ ⛺ · ม้วนแบบแปลนเรืองแสงที่ซ่อนอยู่',
         mid: has ? upMats(c) : '', btn: has ? `<button class="up2btn${ok ? '' : ' off'}" id="bMake"${ok ? '' : ' disabled'}>${ok ? '🔨 สร้างเลย' : '🔒 วัสดุยังไม่ครบ'}</button>` : '' } }
     upPage(b, { tabs: T, cur: buildTab, tabAttr: 'data-bt', cards, cardAttr: 'data-bk', sel: buildSel, detail, hint: 'แตะสิ่งที่อยากสร้าง · สร้างได้ทุกที่บนพื้นดิน (ยกเว้นในเมือง)' });
-    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { buildTab = x.dataset.bt; buildSel = null; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-bt=' + buildTab; NAV.el = null; redraw() });
+    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { if (x.dataset.bt === 'craft') { sfx('tap'); closeSheets(); openCraftTabs(); return } buildTab = x.dataset.bt; buildSel = null; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-bt=' + buildTab; NAV.el = null; redraw() });
     b.querySelectorAll('[data-bk]').forEach(x => x.onclick = () => { sfx('tap'); buildSel = x.dataset.bk; redraw() });
     b.querySelectorAll('[data-mg]').forEach(x => x.onclick = e => { e.stopPropagation(); msGo(x.dataset.mg) });
     const mk = b.querySelector('#bMake'); if (mk) mk.onclick = () => { const k = buildSel; closeSheets(); buildSel = null; enterBuild(k) } }, { cls: 'adv tabz up2' }) }
@@ -5035,7 +5047,8 @@ function openAdv(tab, solo) { if (tab) advTab = tab; const SOLO = !!solo; NAV.zo
 let craftTab = null;
 let craftSel = null;
 function openCraftTabs(cat) { if (cat) craftTab = cat; NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null;   /* v4.51 the side-tab craft page: sections on the left · a card per recipe (✅ ทำได้ / ขาด n) · tap = what it needs + one big button */
-  sheet('🛠️ คราฟ', (b, redraw) => { const T = Object.entries(D.BAG.cats).filter(([k]) => D.CRAFT.some(r => craftCat(r) === k)).map(([k, [ic, nm]]) => [k, ic, nm]); if (!T.some(t => t[0] === craftTab)) craftTab = T[0][0];
+  sheet('🛠️ สร้างของ', (b, redraw) => { const T = Object.entries(D.BAG.cats).filter(([k]) => D.CRAFT.some(r => craftCat(r) === k)).map(([k, [ic, nm]]) => k === 'food' ? [k, '🧪', 'ยา'] : [k, ic, nm]).concat([['recipes', '🍲', 'สูตรอาหาร'], ['build', '🔨', 'ก่อสร้าง']]); if (!T.some(t => t[0] === craftTab) || craftTab === 'build') craftTab = T[0][0];   /* v4.64 🛠️ สร้างของ = คราฟ + 🍲 สูตรอาหาร + 🔨 ก่อสร้าง */
+    if (craftTab === 'recipes') { recipesBody(b, redraw, T); return }
     const L = craftList(craftTab), ids = L.map(r => D.CRAFT.indexOf(r)); if (craftSel != null && !ids.includes(craftSel)) craftSel = null;
     const verb = r => r.give.item ? 'หลอมได้' : r.give.wear ? 'ตัดได้' : 'ทำได้';
     const cards = L.map(r => { const ci = D.CRAFT.indexOf(r), miss = Object.entries(r.need).find(([m, n]) => costHave(m) < n);
@@ -5046,10 +5059,33 @@ function openCraftTabs(cat) { if (cat) craftTab = cat; NAV.zone = 'tabs'; NAV.ke
       detail = { pic: craftPic(r), title: `${r.icon} ${r.name}`, desc: eff + (mk !== 'self' ? `<br>🧑‍🔧 ${D.MAKER[mk].name} รับทำ · ค่าแรง 🪙 ${fmt(makeFee(r))}` : ''), mid: upMats(r.need),
         btn: mk === 'self' ? `<button class="up2btn${ok ? '' : ' off'}" id="cMake"${ok ? '' : ' disabled'}>${ok ? '🛠️ ทำเลย' : '🔒 วัสดุยังไม่ครบ'}</button>` : `<button class="up2btn blue" data-mk="${mk}">🧭 ไปหา${D.MAKER[mk].name}${ok ? '' : ' (วัสดุยังไม่ครบ)'}</button>` } }
     upPage(b, { tabs: T, cur: craftTab, tabAttr: 'data-bt', cards, cardAttr: 'data-cb', sel: craftSel, detail, hint: `แตะของที่อยากทำ · 🏹 มีลูกธนู ${S.arrows || 0} ดอก` });
-    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { craftTab = x.dataset.bt; craftSel = null; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-bt=' + craftTab; NAV.el = null; redraw() });
+    craftTabsBind(b, redraw);
     b.querySelectorAll('[data-cb]').forEach(x => x.onclick = () => { sfx('tap'); craftSel = +x.dataset.cb; redraw() });
     b.querySelectorAll('[data-mg]').forEach(x => x.onclick = e => { e.stopPropagation(); msGo(x.dataset.mg) }); b.querySelectorAll('[data-mk]').forEach(x => x.onclick = () => makerGo(x.dataset.mk));
     const m = b.querySelector('#cMake'); if (m) m.onclick = () => craftMake(craftSel, redraw) }, { cls: 'adv tabz up2' }) }
+/* v4.64 the side tabs of 🛠️ สร้างของ (🔨 ก่อสร้าง opens the build page) */
+function craftTabsBind(b, redraw) { b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { const k = x.dataset.bt; sfx('tap'); if (k === 'build') { closeSheets(); openBuild(); return } craftTab = k; craftSel = null; NAV.zone = 'tabs'; NAV.key = 'data-bt=' + craftTab; NAV.el = null; redraw() }) }
+/* v4.64 🍲 สูตรอาหาร: every cooking recipe · cooked before = its ingredients (have / need) · not yet = a shadow + a hint · cook at a pot (designer: docs/art/recipes-mock.png) */
+const ING_TAG = { fish: '🐟 ปลา', veg: '🥬 ผัก', fruit: '🍎 ผลไม้', meat: '🥩 เนื้อ', spice: '🌶️ เครื่องเทศ', salt: '🧂 เกลือ', cool: '🧊 ของเย็น', sweet: '🍯 ของหวาน', wrap: '🌿 ใบห่อ', flower: '🌼 ดอกไม้', herb: '🌿 สมุนไพร', nut: '🥜 ถั่ว', monster: '👾 ของมอนสเตอร์' };
+const ingName = k => D.INGR[k] ? `${D.INGR[k].icon} ${D.INGR[k].name}` : ING_TAG[k] || k;
+const ingHave = k => k === 'fish' ? Object.values(S.fish || {}).reduce((a, v) => a + v, 0) : D.INGR[k] ? (S.ingr[k] || 0) + (D.INGR[k].tag ? 0 : 0) : Object.keys(D.INGR).filter(i => D.INGR[i].tag === k).reduce((a, i) => a + (S.ingr[i] || 0), 0);
+let recSel = null, recF = 'all';
+const recKnown = r => !!((S.journal || {}).recipes || {})[r.k];
+function potGo() { const P = POT.home || Object.values(POT).find(x => x && x.x != null); if (!P) { hint('ยังไม่มีหม้อ · สร้างกองไฟ/หม้อก่อน', 1600); return } S.matGo = { k: 'pot', x: P.x, z: P.z, name: '🍲 ไปที่หม้อ', sub: 'ถือวัตถุดิบไปวางแล้วกด A ปรุง' }; S.track = 'mat'; trkC = null; save(); hud(); closeSheets(); sfx('coin'); toast('🧭 ไปที่หม้อ<br><small>⭐ เป้าหมายขึ้นบนแผนที่แล้ว</small>', 2000); openMap() }
+function recipesBody(b, redraw, T) { const all = D.RECIPES, f = recF, L = all.slice().sort((a, b) => recKnown(b) - recKnown(a)).filter(r => f === 'all' || (f === 'hp' ? r.eff && r.eff.hp : f === 'en' ? r.eff && r.eff.en : r.eff && r.eff.buff)), kn = all.filter(recKnown).length;
+  if (recSel && !L.some(r => r.k === recSel)) recSel = null;
+  const head = `<div class="up2hd"><b>🍲 สูตรอาหาร ${kn}/${all.length} สูตร</b></div><div class="up2f">${[['all', 'ทั้งหมด'], ['hp', '❤️ เลือด'], ['en', '⚡ พลัง'], ['buff', '💪 บัพ']].map(([k, n]) => `<button class="${f === k ? 'on' : ''}" data-rf="${k}">${n}</button>`).join('')}</div>`;
+  const cards = L.map(r => { const k = recKnown(r); return { k: r.k, pic: `<span class="cbig">${emo(r.icon)}</span>`, name: k ? r.name : '❔ ???', miss: !k, tag: k ? upTag(1, '✅ เคยทำ') : upTag(0, '❔ ยังไม่รู้') } });
+  let detail = null; const r = recSel && all.find(x => x.k === recSel);
+  if (r) { const k = recKnown(r), need = Object.entries(r.need).filter(([i]) => !/Only$/.test(i)), ok = need.every(([i, n]) => ingHave(i) >= n), eff = r.eff ? effTxt(r.eff) : '';
+    detail = k ? { pic: `<span class="cbig">${emo(r.icon)}</span>`, title: `${r.icon} ${r.name}`, desc: r.desc || '', mid: `<div class="up2m">${need.map(([i, n]) => `<span class="up2mat${ingHave(i) >= n ? '' : ' lack'}">${ingName(i)} <b>${ingHave(i)}/${n}</b></span>`).join('')}${eff ? `<span class="up2mat eff">${eff}</span>` : ''}</div>`,
+        btn: ok ? '<button class="up2btn" id="recGo">🍲 ไปปรุงที่หม้อ</button>' : '<button class="up2btn off" disabled>🔒 วัตถุดิบยังไม่ครบ · ออกไปหาก่อน</button>' }
+      : { pic: `<span class="up2shd"><span class="cbig">${emo(r.icon)}</span></span>`, title: '❔ สูตรที่ยังไม่รู้', desc: 'ลองผสมวัตถุดิบในหม้อเพื่อค้นพบ', mid: `<div class="sqhow">💡 คำใบ้: ${r.hint || 'ลองดูเอง'}</div>${eff ? `<div class="up2m"><span class="up2mat eff">${eff}</span></div>` : ''}`, btn: '<button class="up2btn blue" id="recGo">🍲 ไปลองที่หม้อ</button>' } }
+  upPage(b, { tabs: T, cur: 'recipes', tabAttr: 'data-bt', head, cards, cardAttr: 'data-rc', sel: recSel, detail, hint: 'แตะสูตรเพื่อดูวัตถุดิบ · ปรุงที่หม้อหรือกระทะที่ติดไฟ' });
+  craftTabsBind(b, redraw);
+  b.querySelectorAll('[data-rf]').forEach(x => x.onclick = () => { recF = x.dataset.rf; sfx('tap'); redraw() });
+  b.querySelectorAll('[data-rc]').forEach(x => x.onclick = () => { recSel = x.dataset.rc; sfx('tap'); redraw() });
+  const g = b.querySelector('#recGo'); if (g) g.onclick = potGo }
 function craftBody(b, redraw, cat) { const L = craftList(cat);
   b.innerHTML = `<p class="mut">📖 สมุดคราฟ · ● = วัตถุดิบครบ · A / แตะ = เปิดหน้าสูตร · 🖍️ วาดภาพแหล่งวัตถุดิบเพื่อรู้ว่าหาได้ที่ไหน</p><div class="cgrid">${L.map(r => { const ci = D.CRAFT.indexOf(r), k = knowsCraft(r); return `<button class="ctile${k ? '' : ' lock'}" data-cb="${ci}">${k ? craftPic(r) : '<span class="cbig">❔</span>'}${k && hasCost(r.need) ? `<i class="cok${r.give.item ? ' smith' : ''}"></i>` : ''}<small>${k ? r.name.replace(/\s*\(.*\)$/, '') : '???'}</small></button>` }).join('')}</div><p class="mut">🏹 มีลูกธนู ${S.arrows || 0} ดอก</p>`;
   b.querySelectorAll('[data-cb]').forEach(x => x.onclick = () => { sfx('tap'); craftPage(L.map(r => D.CRAFT.indexOf(r)), +x.dataset.cb, redraw) }) }
