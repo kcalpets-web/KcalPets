@@ -4420,6 +4420,7 @@ function debrisDay(n) { const F = D.FARMLAND.debris; S.debris = (S.debris || [])
     const o = { id: 'db' + Date.now().toString(36) + t, t: k, x: x + (Math.random() - .5) * .4, z: z + (Math.random() - .5) * .4, ry: Math.random() * 6.28, g: null, pick: null, left: 0 }; S.debris.push({ id: o.id, t: k, x: o.x, z: o.z, ry: o.ry }); debrisAdd(o); add-- } }
 for (const d of S.debris || []) if (!S.cleared[d.id]) debrisAdd({ ...d, g: null, pick: null, left: 0 });
 /* ================= v4.72 🏠 inside the house (designer: like Stardew · as real as the outside): A at the cabin = in · a clay room seen from above with its front wall cut away · the world is hidden meanwhile · the door (bottom) = out ================= */
+const houseOn = () => { try { return !!D.HOUSE || localStorage.getItem('ng_house') === '1' || /[?&]house=1/.test(location.search) } catch (e) { return !!D.HOUSE } };
 const HIN = { dark: Object.assign(new THREE.Color('#1c1612'), { __hin: 1 }), on: false, g: null, b: null, Y: 60, w: 6, d: 6, out: null, hid: [], keep: new Set(), bg: null, fog: null, yaw: 0, sols: [], bed: null };
 function hinBuild(b) { const g = new THREE.Group(), W = HIN.w, Dd = HIN.d, hw = W / 2, hd = Dd / 2, H = 2.7, WL = ['#cdb894', '#f0e2c2'], WD = ['#5a3420', '#9a6238'];
   for (let i = 0; i < 12; i++) rbox(g, i % 2 ? '#7e5230' : '#8e603a', i % 2 ? '#b07a4a' : '#c08a56', [-hw + .25 + i * .5, -.06, 0], [.49, .12, Dd], [0, 0, 0], .03);   // floor planks
@@ -4817,7 +4818,7 @@ function buildDone(id) {
 function openBuilt(id, menu) {
   const b = bOf(id); if (!b) return; const B = BP[b.k];
   if (!b.done) { jobLeft('bld:' + id); return }
-  if (b.k === 'cabin' && !menu && !HIN.on) return hinEnter(b);   /* v4.72 🏠 A at the cabin = go inside (its menu: the bed inside) */
+  if (b.k === 'cabin' && !menu && !HIN.on && houseOn()) return hinEnter(b);   /* 🏠 in development: off for players (D.HOUSE) · ?house=1 or localStorage ng_house=1 to try it */   /* v4.72 🏠 A at the cabin = go inside (its menu: the bed inside) */
   if (b.k === 'raft') { if (RIDE) return; if (dist(me().x, me().z, b.x, b.z) > 3.4) { walkTo(b.x, b.z, () => board(b), 2.6); return } return board(b) }
   if (b.k === 'tower') return climbTower(b);
   if (b.k === 'forge') return openForge();
