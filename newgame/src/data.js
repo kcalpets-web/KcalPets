@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.26';
+export const APP_VER = '4.27';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -128,7 +128,7 @@ export const ITEMS = {
   woodClub:      { slot: 'sword', kind: 'one', name: 'กระบองไม้', icon: '🪵', atk: 8, dur: 14, tier: 1 },   // v3.54 found on the ground · from felled trees
   boneBit:       { slot: 'sword', kind: 'one', name: 'กระดูก', icon: '🦴', atk: 7, dur: 12, tier: 1 },   // v3.54 from medium / large animals · on the ground
   leafBlade:     { slot: 'sword', kind: 'one', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 7, dur: 12, tier: 1 },
-  travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1 },
+  travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1, metal: 1 },
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
   boneClub:      { slot: 'sword', kind: 'one', name: 'กระบองกระดูก', icon: '🦴', atk: 14, dur: 16, tier: 2 },
   stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
@@ -139,52 +139,52 @@ export const ITEMS = {
   paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
   coralHarpoon:  { slot: 'sword', kind: 'spear', name: 'ฉมวกปะการัง', icon: '🔱', atk: 36, dur: 40, tier: 3, only: 1, water: 1.5 },   // water: ×1.5 when you swim or it stands in water   // v4.24 navalee quest
   wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
-  scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3 },
-  knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
+  scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3, metal: 1 },
+  knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3, metal: 1 },
   crystalBlade:  { slot: 'sword', kind: 'one', name: 'ดาบคริสตัล', icon: '💎', atk: 32, dur: 26, tier: 4 },
-  kingSword:     { slot: 'sword', kind: 'one', name: 'ดาบราชันย์', icon: '👑', atk: 40, dur: 36, tier: 4 },
-  woodAxe:       { slot: 'sword', kind: 'two', name: 'ขวานตัดไม้', icon: '🪓', atk: 14, dur: 25, tier: 1, eff: { wood: 1.3, grass: .8, stone: 0 } },
-  greatsword:    { slot: 'sword', kind: 'two', name: 'ดาบใหญ่นักรบ', icon: '⚔️', atk: 26, dur: 28, tier: 2 },
+  kingSword:     { slot: 'sword', kind: 'one', name: 'ดาบราชันย์', icon: '👑', atk: 40, dur: 36, tier: 4, metal: 1 },
+  woodAxe:       { slot: 'sword', kind: 'two', name: 'ขวานตัดไม้', icon: '🪓', atk: 14, dur: 25, tier: 1, eff: { wood: 1.3, grass: .8, stone: 0 }, metal: 1 },
+  greatsword:    { slot: 'sword', kind: 'two', name: 'ดาบใหญ่นักรบ', icon: '⚔️', atk: 26, dur: 28, tier: 2, metal: 1 },
   stoneHammer:   { slot: 'sword', kind: 'two', name: 'ค้อนหินยักษ์', icon: '🔨', atk: 32, dur: 36, tier: 3, eff: { wood: 0, grass: .6, stone: 1.3 } },
   golemCrusher:  { slot: 'sword', kind: 'two', name: 'ค้อนอสูรหิน', icon: '🔨', atk: 44, dur: 34, tier: 4, eff: { wood: 0, grass: .6, stone: 1.5 } },
-  dragonBlade:   { slot: 'sword', kind: 'two', name: 'ดาบมังกร', icon: '🐉', atk: 56, dur: 40, tier: 4 },
-  pitchfork:     { slot: 'sword', kind: 'spear', name: 'คราดชาวนา', icon: '🔱', atk: 8, dur: 14, tier: 1 },
+  dragonBlade:   { slot: 'sword', kind: 'two', name: 'ดาบมังกร', icon: '🐉', atk: 56, dur: 40, tier: 4, metal: 1 },
+  pitchfork:     { slot: 'sword', kind: 'spear', name: 'คราดชาวนา', icon: '🔱', atk: 8, dur: 14, tier: 1, metal: 1 },
   woodSpear:     { slot: 'sword', kind: 'spear', name: 'หอกไม้', icon: '🔱', atk: 11, dur: 20, tier: 1 },
-  harpoon:       { slot: 'sword', kind: 'spear', name: 'ฉมวกจับปลา', icon: '🔱', atk: 13, dur: 22, tier: 2 },
-  soldierSpear:  { slot: 'sword', kind: 'spear', name: 'หอกทหาร', icon: '🔱', atk: 19, dur: 30, tier: 3 },
-  trident:       { slot: 'sword', kind: 'spear', name: 'หอกสามง่ามทะเล', icon: '🔱', atk: 27, dur: 34, tier: 4 },
+  harpoon:       { slot: 'sword', kind: 'spear', name: 'ฉมวกจับปลา', icon: '🔱', atk: 13, dur: 22, tier: 2, metal: 1 },
+  soldierSpear:  { slot: 'sword', kind: 'spear', name: 'หอกทหาร', icon: '🔱', atk: 19, dur: 30, tier: 3, metal: 1 },
+  trident:       { slot: 'sword', kind: 'spear', name: 'หอกสามง่ามทะเล', icon: '🔱', atk: 27, dur: 34, tier: 4, metal: 1 },
   /* v3.22 tools are bag items too (durability · break · repair) · tm = the hand model · tool = cheaper to repair */
   sickle0: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, starter: 1, name: 'เคียวไม้', icon: '🌾', atk: 1, dur: 60, tier: 1 },
   sickle1: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวหิน', icon: '🌾', atk: 5, dur: 90, tier: 2 },
-  sickle2: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวเหล็ก', icon: '🌾', atk: 8, dur: 130, tier: 3 },
+  sickle2: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวเหล็ก', icon: '🌾', atk: 8, dur: 130, tier: 3, metal: 1 },
   sickle3: { slot: 'sword', kind: 'sickle', tm: 'sickle', tool: 1, name: 'เคียวคริสตัล', icon: '🌾', atk: 12, dur: 180, tier: 4 },
   axe0: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, starter: 1, name: 'ขวานไม้', icon: '🪓', atk: 1, dur: 60, tier: 1 },
   axe1: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานหิน', icon: '🪓', atk: 8, dur: 90, tier: 2 },
-  axe2: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานเหล็ก', icon: '🪓', atk: 12, dur: 130, tier: 3 },
+  axe2: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานเหล็ก', icon: '🪓', atk: 12, dur: 130, tier: 3, metal: 1 },
   axe3: { slot: 'sword', kind: 'axe', tm: 'axe', tool: 1, name: 'ขวานคริสตัล', icon: '🪓', atk: 17, dur: 180, tier: 4 },
   pick0: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, starter: 1, name: 'อีเต้อไม้', icon: '⛏️', atk: 1, dur: 60, tier: 1 },
   pick1: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อหิน', icon: '⛏️', atk: 8, dur: 90, tier: 2 },
-  pick2: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อเหล็ก', icon: '⛏️', atk: 12, dur: 130, tier: 3 },
+  pick2: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อเหล็ก', icon: '⛏️', atk: 12, dur: 130, tier: 3, metal: 1 },
   pick3: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อคริสตัล', icon: '⛏️', atk: 17, dur: 180, tier: 4 },
   mallet0: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนไม้', icon: '🔨', atk: 7, dur: 50, tier: 1 },
-  mallet1: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3 },
-  hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, starter: 1, name: 'จอบ', icon: '🪏', atk: 1, dur: 120, tier: 1 },
+  mallet1: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3, metal: 1 },
+  hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, starter: 1, name: 'จอบ', icon: '🪏', atk: 1, dur: 120, tier: 1, metal: 1 },
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
-  ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3 },
+  ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3, metal: 1 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
   bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1, bell: { r: 4, t: 2.5 } },   // bell: monsters within r m of a hit are dazed t s   // v4.24 navalee quest
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
   soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
   knightBow:     { slot: 'bow', kind: 'bow', name: 'ธนูอัศวิน', icon: '🏹', atk: 22, dur: 36, tier: 3 },
   crystalBow:    { slot: 'bow', kind: 'bow', name: 'ธนูคริสตัล', icon: '🏹', atk: 30, dur: 32, tier: 4 },
-  potLid:        { slot: 'shield', name: 'ฝาหม้อ', icon: '🛡️', def: 1, dur: 8, tier: 1 },
+  potLid:        { slot: 'shield', name: 'ฝาหม้อ', icon: '🛡️', def: 1, dur: 8, tier: 1, metal: 1 },
   leafVest:      { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3, dur: 12, tier: 1 },
   woodShield:    { slot: 'shield', name: 'โล่ไม้', icon: '🛡️', def: 4, dur: 16, tier: 1 },
   barkArmor:     { slot: 'shield', name: 'โล่เปลือกไม้', icon: '🛡️', def: 5, dur: 18, tier: 2 },
   stoneArmor:    { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8, dur: 26, tier: 2 },
-  knightShield:  { slot: 'shield', name: 'โล่อัศวิน', icon: '🛡️', def: 11, dur: 30, tier: 3 },
+  knightShield:  { slot: 'shield', name: 'โล่อัศวิน', icon: '🛡️', def: 11, dur: 30, tier: 3, metal: 1 },
   crystalShield: { slot: 'shield', name: 'โล่คริสตัล', icon: '🛡️', def: 14, dur: 30, tier: 4 },
-  kingShield:    { slot: 'shield', name: 'โล่ราชันย์', icon: '🛡️', def: 18, dur: 40, tier: 4 },
+  kingShield:    { slot: 'shield', name: 'โล่ราชันย์', icon: '🛡️', def: 18, dur: 40, tier: 4, metal: 1 },
 };
 /* v3.8 ⚒️ forging (like the cooking pot): 2–5 materials · the most specific recipe that fits wins · nothing fits = 🔩 scrap
    tags: metal = copper · ore · silver · goldOre · rarity from the value of what went in (MATS price): ≥ FORGE_RAR[i] → R / E / L (+ a small lucky roll) */
@@ -745,7 +745,7 @@ for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.slot !== 'body' ||
   if (LEGS_AB[k]) L[LEGS_AB[k][0]] = LEGS_AB[k][1];   /* v3.91 one ability: the second of a split outfit / the same as a single-ability top */ for (const a of ['src', 'k', 'price']) if (X[a] != null) L[a] = X[a]; WEAR['L_' + k] = L }
 export const MASK_HAIR = { veil: 'bob', scarf: 'bob', furmask: 'messy', mask: 'bob' };   // the hair under face-wear
 
-export const CLIMATE = { lv: [.6, .85], per: .5, tick: 4, dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
+export const CLIMATE = { lv: [.6, .85], per: .5, tick: 3, lvDmg: [5, 10], slow: [.85, .7], dmg: 4, fire: 2, swimCool: 2, swimK: .25, swimMax: 2, warn: 'ชุดยังกันอากาศได้ไม่เต็มที่' };   // v3.5 TEMPV beyond ±lv[i] = level i+1 (2 levels) · each piece protects `per` (2 = 100%) · every tick s: −dmg × level × (1 − protection) · swim pieces: +swimK speed each, up to swimMax
 /* v3.12.1 🔥 torch: held in the A hand · lights the dark · counts as 1 warm piece (50%) · burns `burn` game minutes, then the next one lights
    · goblin camps drop some · camps / kingdom roads have torches standing (light only, not pick-up) */
 export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the sky (pitch below 0 = from low, looking up)
@@ -857,6 +857,9 @@ export const STORM_REWARD = { coin: 10000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 /* v3.2 🌦️ weather: every 6 game hours each land rolls its sky (weights) · temp = added to TEMPV outdoors */
+/* v4.27 ⛈️ rain 1 (🌦️🌧️) / 2 (⛈️): anything metal you carry (weapon · shield · bow slot, in hand or on the back) draws the lightning · each bolt −dmg + stunned stun s (stacks) · ⚡ clothes stop it · ☠️ smog: Deadgar edge 1 / core 2 (🫁 pieces protect) */
+export const ZAP = { lv: { drizzle: 1, rain: 1, storm: 2 }, every: [7, 12], warn: 1.1, dmg: 5, stun: 1.5, chain: 3, gap: .8, r: 1.8 };
+export const SMOG = { deadgar: [.62, .85] };   // kingdom → weight w for level 1 / level 2
 export const WX = { types: { clear: { icon: '☀️', name: 'ฟ้าใส', rain: 0, snow: 0, cloud: 0, temp: 0 }, cloud: { icon: '☁️', name: 'ครึ้ม', rain: 0, snow: 0, cloud: .65, temp: -.05 }, drizzle: { icon: '🌦️', name: 'ฝนปรอย', rain: .35, snow: 0, cloud: .6, temp: -.1 },
     rain: { icon: '🌧️', name: 'ฝนตก', rain: .8, snow: 0, cloud: .85, temp: -.18 }, storm: { icon: '⛈️', name: 'พายุฝนฟ้าคะนอง', rain: 1, snow: 0, cloud: 1, temp: -.24, bolt: 1 }, snow: { icon: '🌨️', name: 'หิมะตก', rain: 0, snow: .7, cloud: .7, temp: -.22 }, blizzard: { icon: '❄️', name: 'พายุหิมะ', rain: 0, snow: 1.4, cloud: .95, temp: -.4 } },
   odds: { home: { clear: 5, cloud: 3, drizzle: 2, rain: 2, storm: 1 }, navalee: { clear: 4, cloud: 3, drizzle: 2, rain: 3, storm: 2 }, sylvaren: { clear: 3, cloud: 3, drizzle: 3, rain: 3, storm: 1 }, luminia: { clear: 6, cloud: 3, drizzle: 2, rain: 1, storm: 1 },
