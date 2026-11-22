@@ -1,0 +1,20 @@
+/* v4.51 🛠️ the side-tab craft page: sections on the left · a card per recipe (✅ ทำได้ / ขาด n) · tap = materials + one big button (🛠️ ทำเลย by yourself · 🧭 ไปหาช่าง for a maker)
+   NODE_PATH=$(npm root -g) node newgame/tools/test/craft151.js outDir   (~1 min) */
+const { chromium } = require('playwright'); const { spawn } = require('child_process'); const fs = require('fs');
+const ROOT = require('path').resolve(__dirname, '../../..'), PORT = 8916, OUT = process.argv[2] || '/tmp/ng_craft151', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
+(async () => { const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
+  try { const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on('pageerror', e => errs.push('PE ' + e.stack.slice(0, 500)));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: {}, has: { sword: 1 }, gear2: 1, itemV: 2, wearV: 3, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 600 })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
+    const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    await E(() => { const N = window.__ng, S = N.S; S.mats.wood = 40; S.mats.stone = 10; S.mats.feather = 3; S.mats.ore = 2; S.mats.flint = 2; N.openAtlasCraft ? 0 : 0; document.querySelectorAll('.ov').forEach(o => o.remove()) });
+    await E(() => window.__ng.openCraftTabs ? window.__ng.openCraftTabs('sword') : null); await wait(1200); await pg.screenshot({ path: OUT + '/c1.png' }); if (await E(() => document.querySelectorAll('.ov.up2 .up2tab').length) < 4 || !(await E(() => document.querySelector('.up2g [data-cb] .up2s')))) errs.push('side tabs + recipe cards with a tag');
+    await E(() => document.querySelectorAll('.up2g [data-cb]')[0].click()); await wait(700); await pg.screenshot({ path: OUT + '/c2.png' });
+    await E(() => document.querySelector('[data-bt="bow"]').click()); await wait(600); await E(() => document.querySelectorAll('.up2g [data-cb]')[0].click()); await wait(600); await pg.screenshot({ path: OUT + '/c3.png' }); if (!(await E(() => document.querySelector('.up2c.sel .up2s.ok')))) errs.push('arrows with everything should say ✅ ทำได้');
+    const a0 = await E(() => window.__ng.S.arrows); const mk = await E(() => { const b = document.getElementById('cMake'); if (b && !b.disabled) { b.click(); return 1 } return 0 }); await wait(500); const a1 = await E(() => window.__ng.S.arrows); log('arrows', a0, '→', a1, 'clicked', mk); if (!mk || !(a1 > a0)) errs.push('🛠️ ทำเลย should make the arrows');
+    await E(() => document.querySelector('[data-bt="wear"]').click()); await wait(600); await E(() => document.querySelectorAll('.up2g [data-cb]')[0].click()); await wait(600); await pg.screenshot({ path: OUT + '/c4.png' }); if (!(await E(() => document.querySelector('.up2d .up2btn.blue[data-mk]')))) errs.push('a tailor recipe should offer 🧭 ไปหาช่าง');
+  } catch (e) { errs.push('X ' + e.stack) }
+  await b.close(); srv.kill();
+  if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();
