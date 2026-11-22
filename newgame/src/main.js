@@ -2478,14 +2478,16 @@ function openTools() {
     b.querySelectorAll('[data-up]').forEach(x => x.onclick = () => { const k = x.dataset.up, up = D.TOOL_UP[S.tools[k] + 1]; if (!up) return; for (const m in up) if ((m === 'coin' ? S.coin : (S.mats[m] || 0)) < up[m]) return;   /* v3.79 */ for (const m in up) { if (m === 'coin') S.coin -= up.coin; else S.mats[m] -= up[m] } S.tools[k]++; bump('toolUp'); toast(`⬆️ ${D.TOOLS[k][1]}${D.TIER[S.tools[k]]}!`); questCheck(); save(); hud(); redraw() });
   });
 }
-function openMenu() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('☰ เมนู', menuBody, { cls: 'tabz' }) }
+function openMenu() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('⚙️ ตั้งค่าเกม', menuBody, { cls: 'tabz up2 setpg' }) }
 /* v3.53 the settings in sections (the carousel on top): 🎮 controls · 📷 view · 🔊 sound · 👤 me & more */
 let mSec = 'ctrl'; const MSECS = [['ctrl', '🎮', 'การควบคุม'], ['view', '📷', 'ภาพ · กล้อง'], ['sound', '🔊', 'เสียง'], ['me', '👤', 'ตัวละคร · อื่นๆ']];
 const secOf = t => /การควบคุม|จอยเกม|เล็งธนู|จัดปุ่ม/.test(t) ? 'ctrl' : /มุมกล้อง|กราฟิก|ภาพ/.test(t) ? 'view' : /เสียง|เพลง/.test(t) ? 'sound' : 'me';
 function menuBody(b, redraw) { menuBody0(b, redraw); const inBag = !!b.closest('.ov.inv'), at = inBag ? 'ms' : 'bt';
   b.insertAdjacentHTML('beforeend', `<div class="card"><b>🕹️ จัดปุ่มเอง</b><p class="mut">ลากย้ายจอยกับปุ่ม A B X Y · ปรับขนาด · ความทึบ · สีปุ่ม (สีเดิม / เทาล้วน / ขาวดำ)</p><button class="btn go wide" id="layGo">เริ่มจัดปุ่ม</button></div>`); b.querySelector('#layGo').onclick = layEdit;
   for (const c of [...b.children]) if (c.classList.contains('card')) c.style.display = secOf((c.querySelector('b') || {}).textContent || '') === mSec ? '' : 'none';
-  b.insertAdjacentHTML('afterbegin', tabCar(MSECS, mSec, at, !inBag)); tabBind(b, at, v => mSec = v, redraw) }
+  if (inBag) { b.insertAdjacentHTML('afterbegin', tabCar(MSECS, mSec, at, !inBag)); tabBind(b, at, v => mSec = v, redraw); return }
+  { const kids = [...b.childNodes], wrap = document.createElement('div'); wrap.className = 'up2b'; wrap.innerHTML = `<div class="up2t">${MSECS.map(([k, ic, nm]) => `<button class="up2tab${k === mSec ? ' on' : ''}" data-bt="${k}"><i>${ic}</i><span>${nm}</span></button>`).join('')}</div><div class="up2r qbody setbody"></div>`; const r = wrap.querySelector('.up2r'); kids.forEach(k => r.appendChild(k)); b.appendChild(wrap) }   /* v4.67 side tabs like every new page */
+  tabBind(b, at, v => mSec = v, redraw) }
 function menuBody0(b, redraw) { {
     setTimeout(() => { const h = b.querySelector('#mHow'); if (h) h.onclick = () => { sfx('tap'); openHowto() } });   /* v3.80 🎬 easy to find */
     const padBind = () => { b.querySelectorAll('[data-pm]').forEach(x => x.onclick = () => { PADLEARN = { act: x.dataset.pm, cb: () => redraw() }; sfx('tap'); redraw() }); const r = b.querySelector('#pmR'); if (r) r.onclick = () => { PADM = Object.assign({}, PAD_DEF); padSave(); PADLEARN = null; sfx('tap'); redraw() } }; setTimeout(padBind);   /* v3.12.8 */
