@@ -306,6 +306,7 @@ export function vinylLayered(root, a0 = {}) {
   const chest = new THREE.Group(); chest.position.y = .12; waist.add(chest); role(chest, 'chest'); const ci = new THREE.Group(); ci.position.y = -.28; chest.add(ci);
   LY(add(ci, lathe([[.001, .28], [.122, .28], [.12, .3], [.118, .36], [.11, .41], [.075, .44], [.05, .46], [.048, .53], [.001, .53]], 24), VIN, [0, 0, 0], [K, 1, .9 * K]), 0);
   { const cw = new THREE.Group(); ci.add(cw); torsoWear(cw, w, top); LY(cw, 1) }
+  if (!skirt) LY(add(wi, lathe([[.001, .093], [.06, .097], [.1, .112], [.124, .145], [.13, .19], [.13, .238]], 24), pant, [0, 0, 0], [1, 1, .93]), 1);   /* v4.17 the trousers / shorts cover the hips (the designer saw skin between the two legs) */
   if (skirt) { const SK = mat(a.legCol || (w === 'farmer' ? '#4a6aa8' : shade(top, .78)), { ds: 1 }); LY(add(wi, lathe([[.138, .23], [.15, .17], [.18, .1], [.205, .06], [.2, .055]], 24), SK, [0, 0, 0], [1, 1, .95]), 1) }
   /* legs: thigh → shin → foot */
   for (const s of [-1, 1]) {

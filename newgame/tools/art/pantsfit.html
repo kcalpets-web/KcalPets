@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body><script type="module">
+import * as THREE from '../../lib/three.module.min.js'; import { vinyl } from '../../src/vinyl.js';
+const CW = 170, CH = 230, L = [['swim', 'shorts', '#1a3a6a'], ['tank', 'shorts', '#4a6aa8'], ['traveler', 'pants', '#5a4a3a'], ['sailor', 'shorts', '#2a2a40'], ['farmer', 'pants', '#4a6aa8'], ['vest', 'shorts', '#6a4a2a']], cells = [];
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(CW, CH); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.background = new THREE.Color('#fff8ee'); S.add(new THREE.HemisphereLight('#fff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 3); S.add(sun);
+const cv = document.createElement('canvas'); cv.width = CW * L.length; cv.height = CH * 2; const x = cv.getContext('2d');
+L.forEach(([w, lg, lc], i) => [.35, Math.PI + .35].forEach((ry, j) => { const g = new THREE.Group(); vinyl(g, { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'spiky', hairCol: '#2a2228', wear: w, top: '#1aa0c8', legs: lg, legCol: lc }); g.rotation.y = ry; S.add(g); const c = new THREE.PerspectiveCamera(26, CW / CH, .1, 50); c.position.set(0, .55, 2.6); c.lookAt(0, .45, 0); R.render(S, c); S.remove(g); x.drawImage(R.domElement, i * CW, j * CH) }));
+document.body.replaceChildren(cv); window.__done = 1;
+</script></body></html>
