@@ -1777,7 +1777,7 @@ function openQuests() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('�
     b.querySelectorAll('[data-tr]').forEach(x => x.onclick = () => { S.track = x.dataset.tr; trkC = null; sfx('coin'); save(); hud(); hint('⭐ ติดตามเควสนี้แล้ว · ดูบนแผนที่', 1000); openAtlas('map') });
     b.querySelectorAll('[data-qd]').forEach(x => x.onclick = () => { sfx('tap'); hint('✅ เควสนี้เสร็จสิ้นแล้ว', 1000) });
     b.querySelectorAll('[data-mem]').forEach(x => x.onclick = () => { const m = MEMS.find(q => q[0] === x.dataset.mem); if (m) m[4]() });
-    if (qSub === 'ach') bindAch(b, redraw); if (qSub === 'starter') sqBind(b, redraw); { const ov = b.closest('.ov'); if (ov) { ov.classList.toggle('sqon', qSub === 'starter'); ov.classList.toggle('up2', qSub === 'starter') } } }, { cls: 'qbook qatl' }) }
+    if (qSub === 'ach') bindAch(b, redraw); if (qSub === 'starter') sqBind(b, redraw); else upDock(b); { const ov = b.closest('.ov'); if (ov) { ov.classList.toggle('sqon', qSub === 'starter'); ov.classList.toggle('up2', qSub === 'starter') } } }, { cls: 'qbook qatl' }) }
 /* ================= v4.54 🌱 starter quest chains: 10 everyday things × 3 steps · counted from the first time the game sees them · each step = 🎁 a reward to claim ================= */
 const sqRaw = T => T.f ? T.f(S) : T.stats.reduce((a, k) => a + ((S.stat || {})[k] || 0), 0);   /* v4.55 T.f = counted some other way · T.abs = no starting point (what you own now) */
 const SQ = () => { const Q = S.sq || (S.sq = { b: {}, c: {}, n: {} }); for (const T of D.STARTER) if (Q.b[T.k] == null) Q.b[T.k] = T.abs ? 0 : sqRaw(T); return Q };
@@ -1806,7 +1806,7 @@ function sqBody() { const L = D.STARTER, done = L.reduce((a, T) => a + sqStep(T)
     ${st < 3 ? `<div class="sqhow">${T.how}</div>` : ''}<div class="up2m">${T.rew.map((R, i) => `<span class="up2mat${i < st ? '' : i === st ? ' now' : ' later'}">ขั้น ${i + 1} (${T.goals[i]}) · ${rewTxt(R)}${i === 2 && D.STARTER_SPIRIT ? ` + ✨ ${D.STARTER_SPIRIT}` : ''}${i < st ? ' ✅' : ''}</span>`).join('')}</div>
     ${rd ? `<button class="up2btn gold" id="sqGet">🎁 รับรางวัล ${rewTxt(T.rew[st])}${st === 2 && D.STARTER_SPIRIT ? ' + ✨' : ''}</button>` : st === 3 ? '<button class="up2btn off" disabled>🏆 ครบทุกขั้นแล้ว</button>' : T.go ? `<button class="up2btn blue" id="sqGo">🧭 ${SQ_GO[T.go][0]}</button>` : ''}</div>`;
   return h }
-function sqBind(b, redraw) { b.querySelectorAll('[data-sq]').forEach(x => x.onclick = () => { sqSel = x.dataset.sq; sfx('tap'); redraw() });
+function sqBind(b, redraw) { queueMicrotask(() => upDock(b)); b.querySelectorAll('[data-sq]').forEach(x => x.onclick = () => { sqSel = x.dataset.sq; sfx('tap'); redraw() });
   const g = b.querySelector('#sqGet'); if (g) g.onclick = () => { if (sqClaim(sqSel)) redraw() }; const o = b.querySelector('#sqGo'); if (o) o.onclick = () => sqGo(D.STARTER.find(t => t.k === sqSel)) }
 /* v4.58 🌱 the small card under the hearts: a step to claim (🎁 pulses) · else the chain closest to its next step · tap = the 🌱 page */
 let sqCardK = '';
@@ -4649,7 +4649,9 @@ const bcatOf = k => (BCAT.find(c => c[3].includes(k)) || BCAT[BCAT.length - 1])[
 const bpPic = k => thumb('bp:' + k, w => w.add(bModel(k)), [.45, .7, 0]);
 let buildTab = null;
 /* v4.49 📐 the new menu page (designer): tabs down the left · cards on the right (3 small columns when many) · tap a card = its details + one big button in the bottom half · no D-pad / A / B over it (only with a game pad) */
-function upPage(b, o) { const many = o.cards.length > 6;
+/* v4.59 the details sheet lives outside the zoomed window (.sh zoom .82): iPhone Safari put a fixed sheet inside it off the screen (designer: the pet page showed no feed button) */
+function upDock(b) { const ov = b && b.closest('.ov'); if (!ov) return; for (const x of [...ov.children]) if (x.classList.contains('up2d')) x.remove(); const d = b.querySelector('.up2d'); if (d) ov.appendChild(d) }
+function upPage(b, o) { queueMicrotask(() => upDock(b)); const many = o.cards.length > 6;
   b.innerHTML = `<div class="up2b"><div class="up2t">${o.tabs.map(([k, ic, nm]) => `<button class="up2tab${k === o.cur ? ' on' : ''}" ${o.tabAttr}="${k}"><i>${ic}</i><span>${nm}</span></button>`).join('')}</div>
     <div class="up2r">${o.head || ''}<div class="up2g${many ? ' many' : ''}">${o.cards.map(c => `<button class="up2c${c.k === o.sel ? ' sel' : ''}${c.miss ? ' miss' : ''}${c.dim ? ' dim' : ''}" ${o.cardAttr}="${c.k}">${c.mark || ''}<span class="up2p">${c.pic}</span><b>${c.name}</b>${c.tag || ''}</button>`).join('') || '<p class="mut">ยังไม่มีอะไรในหมวดนี้</p>'}</div></div></div>
     ${o.detail ? `<div class="up2d"><div class="up2grab"></div><div class="up2dh"><span class="up2p big">${o.detail.pic}</span><div><h3>${o.detail.title}</h3><p>${o.detail.desc || ''}</p></div></div>${o.detail.mid || ''}${o.detail.btn || ''}</div>` : `<div class="up2hint">${o.hint || 'แตะการ์ดเพื่อดูรายละเอียด'}</div>`}` }
