@@ -23,7 +23,7 @@ V.forEach(([t, P], i) => { const root = new THREE.Group(), g = new THREE.Group()
   stretch(g, P);
   const hand = g.getObjectByName('handR'), arm2 = g.getObjectByName('armL2');
   if (hand) { const s = new THREE.Group(); WEAPON_MESH.knightSword(s); s.scale.setScalar(1.25 * VBACK.held / VSCALE * 1.45); s.rotation.set(2.2, -Math.PI / 2, 0); s.position.set(0, -.02, .02); hand.add(s) }
-  if (arm2) { const sh = new THREE.Group(); SHIELD_MESH.knightShield(sh); sh.scale.setScalar(1.35 * VBACK.held); sh.rotation.set(Math.PI / 2, 0, -.7); sh.position.set(.03, -.03, .05); arm2.add(sh) }
+  if (arm2) { const sh = new THREE.Group(); SHIELD_MESH.knightShield(sh); sh.scale.setScalar(1.35 * VBACK.held); sh.rotation.set(Math.PI / 2, 0, -.7); sh.position.set(.0, -.1, .03); arm2.add(sh) }
   root.traverse(o => { if (o.isMesh) o.castShadow = true }); root.position.x = (i - 1) * 1.9; root.rotation.y = .45; S.add(root) });
 const cam = new THREE.PerspectiveCamera(26, W / H, .1, 50); cam.position.set(0, 1.5, 9.2); cam.lookAt(0, 1.2, 0); R.render(S, cam);
 const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.drawImage(R.domElement, 0, 0); x.font = '900 24px system-ui'; x.fillStyle = '#2a2030'; x.textAlign = 'center';
