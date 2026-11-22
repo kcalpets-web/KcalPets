@@ -13,10 +13,11 @@ const ROOT = '/home/user/KcalPets', PORT = 8899, OUT = process.argv[2] || '/tmp/
     const r = await E(async () => { const N = window.__ng, sl = ms => new Promise(r => setTimeout(r, ms)), S = N.S; N.placeMe(300, 300); await sl(1200);
       const counts = N.COLK.map(k => { const c = N.colRows(k); return [c.wear.length, c.item.length, c.recipe.length].join('') });
       S.clothes.h_leafhood = S.clothes.b_bark = S.clothes.l_vine = 1; N.openCollect(); await sl(300); document.querySelector('[data-ck="sylvaren"]').click(); await sl(400);
-      const ov = [...document.querySelectorAll('.ov')].pop(), html = ov ? ov.innerHTML : '', own = (html.match(/class="colc"/g) || []).length, miss = (html.match(/class="colc miss"/g) || []).length, stamp = /เซ็ตครบ/.test(html);
-      return { counts, own, miss, stamp } });
-    log('collect', JSON.stringify(r)); await pg.screenshot({ path: OUT + '/book.png' });
-    if (r.counts.some(c => c !== '333')) errs.push('each kingdom: 3 wear · 3 weapons · 3 recipes (' + r.counts + ')'); if (r.own !== 3 || r.miss !== 6 || !r.stamp) errs.push('sylvaren: the 3 worn pieces in colour + ✨ · 6 shadows');
+      const ov = [...document.querySelectorAll('.ov')].pop(), html = ov ? ov.innerHTML : '', own = ov.querySelectorAll('.up2g .up2c:not(.miss)').length, miss = ov.querySelectorAll('.up2g .up2c.miss').length, stamp = /เซ็ตครบ/.test(html);
+      ov.querySelector('.up2c.miss').click(); await sl(400); const go = document.getElementById('colGo'); const goTxt = go ? go.textContent : ''; if (go) go.click(); await sl(600); const trk = S.matGo && S.matGo.k;
+      return { counts, own, miss, stamp, goTxt, trk } });
+    log('collect', JSON.stringify(r)); 
+    if (r.counts.some(c => c !== '333')) errs.push('each kingdom: 3 wear · 3 weapons · 3 recipes (' + r.counts + ')'); if (r.own !== 3 || r.miss !== 6 || !r.stamp) errs.push('sylvaren: the 3 worn pieces in colour + ✨ · 6 shadows'); if (!/นำทางไปหา/.test(r.goTxt || '') || !/^npc:sylvaren/.test(r.trk || '')) errs.push('v4.53 a missing piece should offer 🧭 นำทางไปหา + set the target');
     await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const tip = await E(async () => { const N = window.__ng, K = N.KINGDOMS.frosthelm, sl = ms => new Promise(r => setTimeout(r, ms)); N.placeMe(K.x + 30, K.z + 30); let t = ''; for (let i = 0; i < 30 && !/ฟรอสต์เฮล์ม/.test(t); i++) { await sl(300); t = [...document.querySelectorAll('#toast, .toast')].map(e => e.innerText).join(' ') } return { t: t.slice(0, 120), seen: !!(N.S.ktip || {}).frosthelm } });
     log('tip', JSON.stringify(tip)); if (!tip.seen || !/หนาว/.test(tip.t)) errs.push('the first visit should show a tip card (' + tip.t + ')');
