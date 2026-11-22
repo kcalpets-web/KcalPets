@@ -14,7 +14,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8901, OUT = process.argv[2] || '/tmp/
       N.placeMe(T.x, T.z); await sl(3000); const a = { me: [N.me.x.toFixed(1), N.me.y.toFixed(1), N.me.z.toFixed(1)], door: L.door, track: [T.x, T.z], ctx: N.CTX && N.CTX.k, near: (() => { const t = N.nearTarget && N.nearTarget(); return t && t.k && t.k.kind })() };
       N.placeMe(L.door.x, L.door.z + 1.2); await sl(3000); const b = { me: [N.me.x.toFixed(1), N.me.y.toFixed(1), N.me.z.toFixed(1)], ctx: N.CTX && N.CTX.k, near: (() => { const t = N.nearTarget && N.nearTarget(); return t && t.k && t.k.kind })() };
       N.actA && N.actA(); await sl(800); const ov = [...document.querySelectorAll('.ov')].pop(); return { a, b, box: ov ? ov.innerText.slice(0, 80) : null } });
-    console.log(JSON.stringify(r)); if (r.a.ctx !== 'tower' || !/ดันเจี้ยน/.test(r.box || '')) errs.push('at the quest spot, A should be the tower door → the dungeon'); await pg.screenshot({ path: OUT + '/tower.png' });
+    console.log(JSON.stringify(r)); if (r.a.ctx !== 'tower' || !/ยังไม่พร้อม|ศึกสุดท้าย/.test(r.box || '')) errs.push('at the quest spot, A should be the tower door → the dungeon'); await pg.screenshot({ path: OUT + '/tower.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

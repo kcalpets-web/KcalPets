@@ -5272,8 +5272,8 @@ function stormWin() { cheer(3000);
    The save from before the door is kept aside (…_dg): win, lose, give up or close the app = back to it (nothing inside is saved · the dark cloud comes back) ================= */
 var DG = null;
 const dgKind = k => k === 'navalee' ? 'eelBoss' : D.MINIB[k][0];
-function dgAsk(from) { const L = BOSSK.some(k => !bossDone(k)) ? BOSSK.slice() : [],   /* v4.44 (designer) not all six beaten = all six come back */ h = Math.round(pStats().hp / D.HEART);
-  confirmBox(`🏰 เข้าสู่ <b>ดันเจี้ยนใต้เมฆทมิฬ</b>?<br><small>${L.length ? `⚔️ ยังกำจัดบอสอาณาจักรไม่ครบ · บอสทั้ง ${L.length} ตัวจะออกมาทีละตัว แล้วตามด้วย ⛈️ เมฆทมิฬ` : '⛈️ เมฆทมิฬรออยู่ข้างใน'} · ❤️ ${h} ดวง<br>⚠️ เข้าแล้วต้องสู้จนจบ · ทุกอย่างในดันเจี้ยนจะไม่ถูกบันทึก</small>`, () => dgEnter(from), '⚔️ เข้าไป') }
+function dgAsk(from) { const L = BOSSK.some(k => !bossDone(k)) ? BOSSK.slice() : [], h = Math.round(pStats().hp / D.HEART);   /* v4.44 (designer) not all six beaten = all six come back */
+  confirmBox(`${L.length ? '🏰 <b>ข้าว่าเจ้ายังไม่พร้อม…</b>' : '⛈️ <b>ศึกสุดท้ายกำลังจะเริ่มขึ้น</b>'}<br><small>${L.length ? `ยังกำจัดบอสอาณาจักรไม่ครบ · ข้างในบอสทั้ง ${L.length} ตัวจะออกมาทีละตัว แล้วตามด้วย ⛈️ เมฆทมิฬ` : 'เมฆทมิฬรออยู่ข้างใน'} · ❤️ ${h} ดวง<br>⚠️ เข้าแล้วต้องสู้จนจบ · ทุกอย่างในดันเจี้ยนจะไม่ถูกบันทึก</small>`, () => dgEnter(from), '⚔️ เข้าไป') }   /* v4.45 (designer) the words at the door */
 function dgEnter(from) { save(); try { localStorage.setItem(D.SAVE_KEY + '_dg', localStorage.getItem(D.SAVE_KEY)) } catch (e) { toast('💾 เก็บเซฟก่อนเข้าไม่ได้ · ลองใหม่', 2000); return }
   if (HORSE) dismount(); try { leaveRaft() } catch (e) { } closePara(); closeSheets();
   const q = BOSSK.some(k => !bossDone(k)) ? BOSSK.slice() : []; for (let i = q.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [q[i], q[j]] = [q[j], q[i]] }
