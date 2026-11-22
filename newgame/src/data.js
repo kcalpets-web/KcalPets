@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.55';
+export const APP_VER = '4.56';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -834,6 +834,7 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
 /* v3.15 things you build wear out (real days until they fall down · below `worn` they look shabby and you can repair them for `fix` × the build cost) */
 export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 10, kitchen: 10, chest: 12, scarecrow: 6, fence: 8, stonewall: 20, path: 30 }, def: 8, worn: .35, fix: .3 };
 export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
+export const PEBBLE = { sp: .85 };   // v4.56 🪨 walking speed while holding a small stone
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 /* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
 export const FIELDS = [{ x0: 10, x1: 19, z0: -9, z1: -1 }, { x0: 10, x1: 19, z0: 5, z1: 12 }];   // v3.49 the soil fields beside the tree house (integer cell centres, inclusive) · only these (and the fenced bed) can be dug
