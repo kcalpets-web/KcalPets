@@ -2814,14 +2814,14 @@ function actA() {
   if (RIDE && catchFor && mons.includes(catchFor)) { startCatch(catchFor); return }   /* v2.4.1 catch (the whale) from the raft */
   if (RIDE) { const d0 = nearDrop(3.2); if (d0) { pickDrop(d0); return }   /* v3.90 A on the raft = pick up what floats by · fishing only with the rod chosen (Y) · landing = the 🏝️ button */
     const fx = me().x + Math.sin(PL.yaw) * 3, fz = me().z + Math.cos(PL.yaw) * 3; if (tool === 'rod' && S.has.rod && wetAt(fx, fz)) { castAt(fx, fz); return }
-    raftStand(); return }   /* v4.29 A on the raft (nothing to pick up / no rod) = stand on it */
+    hint('🛶 B = ลงยืนบนแพ · 🏝️ = ขึ้นฝั่ง', 1100); return }   /* v4.38 A on the raft picks up / fishes · B stands on it */
   if (tool === 'sketch') { let best = null, bd = 5; for (const m of mons) { const d = dist(me().x, me().z, m.A.root.position.x, m.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'mon', m } } }
     for (const [k, A] of [['howsif', HS], ['sberh', SB]]) { const d = dist(me().x, me().z, A.root.position.x, A.root.position.z); if (d < bd) { bd = d; best = { kind: k } } }
     for (const e of PA.values()) { const d = dist(me().x, me().z, e.A.root.position.x, e.A.root.position.z); if (d < bd) { bd = d; best = { kind: 'pet', id: e.p.id } } }
     sketchPick(best); return }
   if (carryN()) { carryA(); return }   /* v3.55 ✋ hands full: A places into a pot */
   const t = nearTarget(), c = CTX;
-  if (HORSE && HORSE.p) { const dr = nearDrop(3.2); if (dr) { pickDrop(dr); return } if (c && c.go && !['eat', 'pet', 'place'].includes(c.k)) { c.go(); return } if (t && t.k && t.k.kind !== 'pet') { useThing(t.k); return } dismount(); return }   /* v4.29 A (nothing in front) = get off */   /* v4.03 riding the pet: A does what is in front of you (pick up · talk · open) like on foot · no more dash (designer) */
+  if (HORSE && HORSE.p) { const dr = nearDrop(3.2); if (dr) { pickDrop(dr); return } if (c && c.go && !['eat', 'pet', 'place'].includes(c.k)) { c.go(); return } if (t && t.k && t.k.kind !== 'pet') { useThing(t.k); return } hint('🐾 B = ลงจากน้อง', 900); return }   /* v4.38 A only picks up / talks while riding (B gets off) */   /* v4.03 riding the pet: A does what is in front of you (pick up · talk · open) like on foot · no more dash (designer) */
   if (c && c.go) { c.go(); return }   /* v2.4 the prompt over the A button decides */
   if (t && t.k) { useThing(t.k); return }
   if (RIDE || PL.swim) return; if (!(t && t.m)) sfx('tap') }   /* v3.73 nothing to use: A does nothing else */
@@ -3130,7 +3130,6 @@ function ctxTick(now, dt, mv) {
     else if (carryN()) CTX = pk ? { k: 'pot', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: carryA } : { k: 'place', h: 2.2, go: carryA };   /* v3.55 ✋ A puts one in */
     else if (pk && pin.length >= 2 && !S.jobs['cook:' + pk]) CTX = { k: 'cook', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: () => potCook(pk) };   /* empty hands: A = cook */
     else if (nearDrop()) { const d = nearDrop(); CTX = { k: 'loot', at: d.g.position, h: 1, go: () => pickDrop(d) } }   /* v3.90 picking up comes before climbing on the raft */
-    else if (RIDE && !RIDE.whale && !nearDrop(3.2) && tool !== 'rod') CTX = { k: 'rstand', go: raftStand };   /* v4.29 */
     else if (rf) CTX = { k: 'raft', go: () => board(rf) };
     /* v3.28 no whale ride from the water (the whale is a water barrier now) */
     else if (PL.swim && !RIDE) CTX = { k: 'swim', go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
@@ -3182,9 +3181,9 @@ let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; 
   /* X: jump · in the air with the leaf glider = open it · crouching = stand · hold = the skills */
   btnSet('bX', GLIDE ? ['🪂', 'ร่อนอยู่'] : air && S.has.glider ? ['🪂', 'กางร่ม'] : CROUCH ? ['🧍', 'ลุกขึ้น'] : AIM ? ['🔍', 'ซูมออก'] : ['🏃', 'กระโดด'], sk && !AIM && !GLIDE ? ['✨', 'ค้าง = สกิล'] : null);
   /* B: guard · back / fold / get off */
-  btnSet('bB', AIM ? ['↩️', 'ยกเลิก'] : GLIDE ? ['🪂', 'หุบร่ม'] : HORSE && !HORSE.p ? ['⬇️', 'ลง'] : RIDE ? ['🛡️', 'ป้องกัน'] : carryN() ? ['🎒', 'เก็บของ'] : shieldOn() ? [gearIco('shield', '🛡️'), 'ป้องกัน'] : [gearIco('sword', '⚔️'), 'ปัด']);   /* v4.25 the shield / weapon you hold (designer) */
+  btnSet('bB', AIM ? ['↩️', 'ยกเลิก'] : GLIDE ? ['🪂', 'หุบร่ม'] : HORSE ? ['⬇️', HORSE.p ? 'ลงจากน้อง' : 'ลง'] : RIDE && !RIDE.whale ? ['🧍', 'ลงยืนบนแพ'] : RIDE ? ['🛡️', 'ป้องกัน'] : carryN() ? ['🎒', 'เก็บของ'] : shieldOn() ? [gearIco('shield', '🛡️'), 'ป้องกัน'] : [gearIco('sword', '⚔️'), 'ปัด']);   /* v4.25 the shield / weapon you hold (designer) */
   /* A: what is in front of you */
-  { const show = $('bA').classList.contains('ctx') && CTX; btnSet('bA', show ? [CTX_ICO[CTX.k] || '✋', CTX_LB[CTX.k] || 'ใช้'] : HORSE && HORSE.p ? ['⬇️', 'ลงจากน้อง'] : ['✋', 'ใช้'], null, !show && !(HORSE && HORSE.p)) }
+  { const show = $('bA').classList.contains('ctx') && CTX; btnSet('bA', show ? [CTX_ICO[CTX.k] || '✋', CTX_LB[CTX.k] || 'ใช้'] : ['✋', 'ใช้'], null, !show) }
   /* Y: hit / shoot / the farm tool */
   { const f = gFarm(), r = gRange(), w = weaponOf(), wi = w && D.ITEMS[w.t]; let tap, hold = null;
     if (!r) { tap = wi ? [f ? wi.icon : gearIco('sword', wi.icon), f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; if (!f && wi) hold = ['🎯', 'ค้าง = ปา'] }
@@ -3478,7 +3477,7 @@ let guard = false, guardTog = false, guardHold = false, bTap = 0;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0, bstop = null;   /* v3.18.2 B = 🛡️ only while held (shield · or parry with the weapon) · a window / menu / aim open → back */
   B.addEventListener('pointerdown', e => { e.preventDefault(); if (SKW.on) { skwUse('B'); return } if (SMENU.on) { if (smenuBack()) return; smenuShow(false); sfx('tap'); return } if (AIM && !document.querySelector('.ov')) { aimEnd(false); sfx('tap'); t0 = 0; return } if (PICK) { pickClose(); return } if (GLIDE && GLIDE.para) { closePara(); hint('🍃 พับใบไม้แล้ว · ยังไม่ถึงพื้น กด X เพื่อร่อนใหม่', 1500); return }   /* v3.43 B folds the glider again (X in the air re-opens it) */
-    if (TORCHUP && !document.querySelector('.ov')) { torchUp(false); return } if (HORSE && !HORSE.p && !document.querySelector('.ov')) { dismount(); return } if (carryN() && !document.querySelector('.ov')) { carryBack(); return } if (RUNON) { RUNON = false; sprintT = 0 } t0 = performance.now(); if (wheelOn) { closeWheel(); return }
+    if (TORCHUP && !document.querySelector('.ov')) { torchUp(false); return } if (HORSE && !document.querySelector('.ov')) { dismount(); return } if (RIDE && !RIDE.whale && !document.querySelector('.ov')) { raftStand(); return }   /* v4.38 (designer) riding the pet / a horse / the raft: B = get off (no guard) */ if (carryN() && !document.querySelector('.ov')) { carryBack(); return } if (RUNON) { RUNON = false; sprintT = 0 } t0 = performance.now(); if (wheelOn) { closeWheel(); return }
     if (document.querySelector('.ov') || BM || PL.swim || RIDE || GLIDE) return; unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { }
     if (shieldOn() || weaponOf()) { guardHold = true; walkT = null; work = null; stopAuto(); updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ ยังไม่มีอาวุธ' : '🛡️ ยังไม่ได้สวมโล่ · ไม่มีอาวุธปัด', 1200) });
   const up = () => { if (bstop) { bstop(); bstop = null; return } if (PICK && PICK.hold && PICK.slot === 'b') { pickChoose(); return } if (guardHold) { const short = t0 && performance.now() - t0 < 350; guardHold = false; updGuard(); t0 = 0; if (short) stowAll(); return }   /* let go = the shield goes down · v3.73 a short tap = put the weapon away */
@@ -4671,7 +4670,7 @@ function landNear(r = 2.6) { const q = me(); let best = null, bs = 1e9;
 function board(b) {
   if (BM) exitBuild(); fishEnd(); raftDeck(b, false); RIDE = b; S.ride = b.id; walkT = null; work = null; setTool(''); placeMe(b.x, b.z); PL.yaw = PL.yawT = b.r || 0;
   document.body.classList.add('ride'); sfx('splash'); save();
-  toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>✋ A = เก็บของที่ลอยอยู่ · 🎣 ตกปลา: เลือกเบ็ดแล้วกด Y · 🏝️ ขึ้นฝั่ง = ปุ่มขึ้นฝั่ง', 3600);
+  toast('🛶 ขึ้นแพแล้ว! ใช้จอยพาย (ไม่เสียพลังงาน)<br>✋ A = เก็บของที่ลอยอยู่ · 🎣 ตกปลา: เลือกเบ็ดแล้วกด Y · B = ลงยืนบนแพ · 🏝️ = ขึ้นฝั่ง', 3600);
 }
 /* v4.29 🛶 get off the raft = stand on it (fish · rope · bow · anything) · A by it = paddle again · the raft is a deck you stand on (like a pier) */
 const DECKS = new Map();
@@ -4978,7 +4977,7 @@ function mountHorse(M) { if (HORSE || !mons.includes(M)) return; HORSE = M; M.ag
   horseTip() }
 function mountPet(p) { if (inTown(me().x, me().z)) { hint('🏘️ ในเมืองขี่น้องไม่ได้', 1500); return } const e = PA.get(p.id) || buildPet(p, me().x, me().z); const q = me(); e.mode = 'wander'; e.foe = null; e.A.root.position.set(q.x, groundH(q.x, q.z), q.z); VF.ring(q.x, q.y, q.z, '#ffffff', 1.6, .4); VF.burst(q.x, q.y + .5, q.z, '#ffe8b8', 14, 3);
   HORSE = e; walkT = null; work = null; RUNON = false; DRAWN = false; setTool(''); sfx('level'); bump('petRide');
-  if (!S.story.petRideTip3) { S.story.petRideTip3 = 1; save(); toast(`${PET_ICO[p.kind]} ขี่ ${esc(p.name)} แล้ว! วิ่งเร็ว ไม่เสียพลังงาน<br><small>X กระโดด · Y ฟัน · B ป้องกัน · A ลง</small>`, 3400) } }   /* v3.54 🐶🐱 ride your pet like the horse */
+  if (!S.story.petRideTip4) { S.story.petRideTip4 = 1; save(); toast(`${PET_ICO[p.kind]} ขี่ ${esc(p.name)} แล้ว! วิ่งเร็ว ไม่เสียพลังงาน<br><small>X กระโดด · Y ฟัน · A เก็บของ/คุย · B ลง</small>`, 3400) } }   /* v3.54 🐶🐱 ride your pet like the horse */
 function horseTip() { if (!S.story.horseTip) { S.story.horseTip = 1; toast('🐴 ขี่ม้าแล้ว! เร็ว ไม่เสียพลังงาน · เดินค้าง 3 วิ = ควบ · B = ลงจากม้า', 3200); save() } }
 function dismount() { if (!HORSE) return; const M = HORSE; HORSE = null; const q = me(), sx = q.x + Math.cos(PL.yaw) * .9, sz = q.z - Math.sin(PL.yaw) * .9; if (walkLand(sx, sz)) placeMe(sx, sz);
   if (M.p) { M.A.root.scale.setScalar(1); M.A.body.rotation.z = 0; const r = M.A.root.position; r.y = groundH(r.x, r.z); M.play = null; M.pclip = null; M.wait = 0; sfx('tap'); hud(); return }   /* v3.78 the main pet stays by you · no cooldown */   /* v3.54 the pet trots home · its skill cools down from now */ M.home = [M.A.root.position.x, M.A.root.position.z]; M.t = M.home.slice(); M.wait = 3; sfx('tap') }

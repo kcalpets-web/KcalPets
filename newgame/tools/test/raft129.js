@@ -16,16 +16,16 @@ const ROOT = '/home/user/KcalPets', PORT = 8883, OUT = process.argv[2] || '/tmp/
     for (let i = 0; i < 4; i++) { await pad('bY'); await wait(700) }
     const r2 = await E(() => ({ hp: window.__m.hp, horse: !!window.__ng.HORSE, bA: document.querySelector('#bA .bic em.t') && document.querySelector('#bA .bic em.t').textContent }));
     await E(() => { const N = window.__ng; if (window.__m && window.__m.hp > 0) N.hurtMon(window.__m, 1e6, 'dmg') }); await wait(600); await E(() => { const N = window.__ng; for (const d of [...N.drops]) N.pickDrop(d); for (const g of [...(N.GL || [])]) try { N.pickGL(g) } catch (e) { } }); await wait(400);
-    let off = false; for (let i = 0; i < 4 && !off; i++) { await pad('bA'); await wait(500); off = await E(() => !window.__ng.HORSE) }
+    let off = false; for (let i = 0; i < 4 && !off; i++) { await pad('bB'); await wait(500); off = await E(() => !window.__ng.HORSE) }   /* v4.38 B gets off */
     log('ride', JSON.stringify(r1), JSON.stringify(r2), 'A off', off);
-    if (!r1.horse || !(r2.hp < r1.hp) || !r2.horse) errs.push('riding: Y should swing your weapon and hit'); if (!off) errs.push('riding: A should get you off');
+    if (!r1.horse || !(r2.hp < r1.hp) || !r2.horse) errs.push('riding: Y should swing your weapon and hit'); if (!off) errs.push('riding: B should get you off');
     if (r1.items.some(x => !x) || r1.forge !== 2) errs.push('the hardwood sword + oak shield: in the game, no metal, forgeable');
     // the raft: board → A = stand on it → no swimming · A by it = paddle again
     const r3 = await E(async () => { const N = window.__ng, sl = ms => new Promise(r => setTimeout(r, ms)); let spot = null;
       for (let x = -40; x < 600 && !spot; x += 3) for (let z = -400; z < 400 && !spot; z += 3) if (N.walkWorld(x, z) === 'water' && N.groundH(x, z) < -1.6 && N.walkWorld(x + 3, z) === 'water' && N.walkWorld(x - 3, z) === 'water' && N.walkWorld(x, z + 3) === 'water' && N.walkWorld(x, z - 3) === 'water') spot = [x, z];
       if (spot) { N.placeMe(spot[0], spot[1]); await sl(1500) }
       if (!spot) return { spot: null }; const b = { id: 'rt1', k: 'raft', done: true, x: spot[0], z: spot[1], r: 0, t0: Date.now() }; N.S.builds.push(b); N.bView(b); N.board(b); await sl(800);
-      const on = !!N.RIDE; N.raftStand(); await sl(1500); const st = { ride: !!N.RIDE, swim: N.PL.swim, wade: N.PL.wade, y: +N.me.y.toFixed(2), deck: N.DECKS.has('rt1'), ctx: N.CTX && N.CTX.k }; return { spot, on, st } });
+      const on = !!N.RIDE; { const b = document.getElementById('bB'), r = b.getBoundingClientRect(), o = { bubbles: true, cancelable: true, pointerId: 78, pointerType: 'touch', clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 }; b.dispatchEvent(new PointerEvent('pointerdown', o)); b.dispatchEvent(new PointerEvent('pointerup', o)) } await sl(1500);   /* v4.38 B on the raft = stand on it */ const st = { ride: !!N.RIDE, swim: N.PL.swim, wade: N.PL.wade, y: +N.me.y.toFixed(2), deck: N.DECKS.has('rt1'), ctx: N.CTX && N.CTX.k }; return { spot, on, st } });
     log('raft', JSON.stringify(r3)); await pg.screenshot({ path: OUT + '/raft-stand.png' });
     if (!r3.spot) errs.push('no deep water found'); else { if (!r3.on) errs.push('boarding the raft'); if (r3.st.ride || r3.st.swim || r3.st.wade || !r3.st.deck || r3.st.y < -.1) errs.push('standing on the raft: on its deck, not swimming'); if (r3.st.ctx !== 'raft') errs.push('A by the raft should paddle again') }
     if (r3.spot) { await pad('bA'); await wait(600); const back = await E(() => !!window.__ng.RIDE && !window.__ng.DECKS.has('rt1')); log('paddle again', back); if (!back) errs.push('A by the raft: back on it, paddling') }
