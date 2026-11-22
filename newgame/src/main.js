@@ -1768,8 +1768,8 @@ const MEMS = [['intro', '🌅', 'คืนที่ทุกอย่างห�
 async function memPlay(fn) { if (CUT) return; CUT = true; closeSheets(); document.body.classList.add('cut'); try { await fn(R, S.profile.name) } catch (e) { console.warn(e) } document.body.classList.remove('cut'); CUT = false; last = performance.now(); ambience() }
 function openQuests() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('📜 เควส', (b, redraw, close) => { const L = trackList(), cur = trackNow(), i = QSUB.findIndex(t => t[0] === qSub);
     let h = carBar(QSUB, qSub, 'data-qs', 'qsubc');
-    if (qSub === 'main' || qSub === 'npc') { const M = L.filter(t => (qSub === 'npc') === t.id.startsWith('kq:')).concat(qSub === 'main' ? trackDone() : []); h += M.length ? M.map(t => t.done ? `<button class="card trk qdone" data-qd="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span class="qok">✅ เสร็จสิ้น</span></div></button>` : `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div><small class="mut">${t.sub || ''}</small></button>`).join('') : '<p class="mut">ยังไม่มีเควสในหัวข้อนี้</p>'; h += '<p class="mut qhelp"><b class="ka">A</b> ติดตาม (กะพริบบนแผนที่) · <b class="kx">X</b> เดินไปอัตโนมัติ · <b class="kb">B</b> กลับ · ◀▶ หัวข้อ</p>' }
-    else if (qSub === 'starter') h += sqBody();
+    if (qSub === 'main' || qSub === 'npc') { const M = L.filter(t => !t.id.startsWith('sq:') && (qSub === 'npc') === t.id.startsWith('kq:')).concat(qSub === 'main' ? trackDone() : []); h += M.length ? M.map(t => t.done ? `<button class="card trk qdone" data-qd="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span class="qok">✅ เสร็จสิ้น</span></div></button>` : `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div><small class="mut">${t.sub || ''}</small></button>`).join('') : '<p class="mut">ยังไม่มีเควสในหัวข้อนี้</p>'; h += '<p class="mut qhelp"><b class="ka">A</b> ติดตาม (กะพริบบนแผนที่) · <b class="kx">X</b> เดินไปอัตโนมัติ · <b class="kb">B</b> กลับ · ◀▶ หัวข้อ</p>' }
+    else if (qSub === 'starter') { const M = sqRows(), Dn = sqDoneRows(), n = D.STARTER.reduce((a, T) => a + sqStep(T), 0); h += `<p class="mut">🌱 ทำเรื่องไหนก่อนก็ได้ · เรื่องละ 3 ขั้น · ครบขั้นได้รางวัลทันที (ขั้น 3 ได้ ✨) · ${n}/${D.STARTER.length * 3} ขั้น</p>` + M.map(t => `<button class="card trk${t.id === cur.id ? ' on' : ''}" data-tr="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span>${t.id === cur.id ? '⭐' : ''}</span></div><small class="mut">${t.sub}</small></button>`).join('') + Dn.map(t => `<button class="card trk qdone" data-qd="${t.id}"><div class="row"><b>${t.icon} ${t.text}</b><span class="qok">✅ เสร็จสิ้น</span></div></button>`).join('') + '<p class="mut qhelp"><b class="ka">A</b> ติดตาม (กระพริบบนแผนที่) · <b class="kb">B</b> กลับ · ◀▶ หัวข้อ</p>' }
     else if (qSub === 'mem') { const M = MEMS.filter(m => m[3]()); h += M.length ? M.map(m => `<button class="card trk" data-mem="${m[0]}"><b>${m[1]} ${m[2]}</b><small class="mut"> · แตะเพื่อดูอีกครั้ง</small></button>`).join('') : '<p class="mut">ยังไม่มีความทรงจำ</p>' }
     else h += `<div class="invtext">${bagText('ach')}</div>`;
     b.innerHTML = h;
@@ -1777,7 +1777,7 @@ function openQuests() { NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null; sheet('�
     b.querySelectorAll('[data-tr]').forEach(x => x.onclick = () => { S.track = x.dataset.tr; trkC = null; sfx('coin'); save(); hud(); hint('⭐ ติดตามเควสนี้แล้ว · ดูบนแผนที่', 1000); openAtlas('map') });
     b.querySelectorAll('[data-qd]').forEach(x => x.onclick = () => { sfx('tap'); hint('✅ เควสนี้เสร็จสิ้นแล้ว', 1000) });
     b.querySelectorAll('[data-mem]').forEach(x => x.onclick = () => { const m = MEMS.find(q => q[0] === x.dataset.mem); if (m) m[4]() });
-    if (qSub === 'ach') bindAch(b, redraw); if (qSub === 'starter') sqBind(b, redraw); else upDock(b); { const ov = b.closest('.ov'); if (ov) { ov.classList.toggle('sqon', qSub === 'starter'); ov.classList.toggle('up2', qSub === 'starter') } } }, { cls: 'qbook qatl' }) }
+    if (qSub === 'ach') bindAch(b, redraw) }, { cls: 'qbook qatl' }) }
 /* ================= v4.54 🌱 starter quest chains: 10 everyday things × 3 steps · counted from the first time the game sees them · each step = 🎁 a reward to claim ================= */
 const sqRaw = T => T.f ? T.f(S) : T.stats.reduce((a, k) => a + ((S.stat || {})[k] || 0), 0);   /* v4.55 T.f = counted some other way · T.abs = no starting point (what you own now) */
 const SQ = () => { const Q = S.sq || (S.sq = { b: {}, c: {}, n: {} }); for (const T of D.STARTER) if (Q.b[T.k] == null) Q.b[T.k] = T.abs ? 0 : sqRaw(T); return Q };
@@ -1797,30 +1797,19 @@ function sqGo(T) { const g = T.go, q = me(); let p = null;
   else if (g === 'animal') { let bd = 1e9; for (const m of mons) { if (!m.T.animal || m.dead || m.hp <= 0 || !m.A) continue; const r = m.A.root.position, d = dist(q.x, q.z, r.x, r.z); if (d < bd) { bd = d; p = { x: r.x, z: r.z } } } }
   if (!p) { hint('ยังไม่เจอใกล้ๆ · ลองเดินสำรวจดูก่อน', 1600); return }
   S.matGo = { k: 'sq:' + T.k, x: p.x, z: p.z, name: `${T.icon} ${T.name}`, sub: '🌱 เควสฝึกหัด' }; S.track = 'mat'; trkC = null; save(); hud(); closeSheets(); sfx('coin'); toast(`🧭 ${T.icon} ${T.name}<br><small>⭐ เป้าหมายขึ้นบนแผนที่แล้ว</small>`, 2000); openMap() }
-function sqBody() { const L = D.STARTER, done = L.reduce((a, T) => a + sqStep(T), 0), N = L.length * 3; if (!L.some(T => T.k === sqSel)) sqSel = (L.find(T => sqReady(T)) || L.find(T => sqStep(T) < 3) || L[0]).k;
-  const star = n => `<small class="sqst">${'<i>★</i>'.repeat(n)}${'★'.repeat(3 - n)}</small>`;
-  let h = `<div class="sqhd"><b>🌱 ฝึกหัด ${done}/${N} ขั้น</b><small>ทำเรื่องไหนก่อนก็ได้ · เรื่องละ 3 ขั้น ขั้นต่อไปทำมากขึ้น รางวัลมากขึ้น · ขั้น 3 ได้ ✨ จิตวิญญาณ · ครบทุกขั้น = 🎁 ${rewTxt(D.STARTER_ALL)}</small><div class="sqbar"><i style="width:${done / N * 100}%"></i></div></div>`;
-  h += `<div class="up2g many sqg">${L.map(T => { const st = sqStep(T), rd = sqReady(T), g = T.goals[Math.min(st, 2)]; return `<button class="up2c${T.k === sqSel ? ' sel' : ''}${rd ? ' claim' : ''}${st === 3 ? ' dim' : ''}" data-sq="${T.k}"><span class="up2p">${emo(T.icon)}</span><b>${T.name}${star(st)}</b>${st === 3 ? upTag(1, '🏆 ครบ') : rd ? '<span class="up2s gift">🎁 รับรางวัล</span>' : `<span class="up2s prog">${Math.min(sqHave(T), g)}/${g}</span>`}</button>` }).join('')}</div>`;
-  const T = L.find(t => t.k === sqSel), st = sqStep(T), rd = sqReady(T), g = T.goals[Math.min(st, 2)];
-  h += `<div class="up2d"><div class="up2grab"></div><div class="up2dh"><span class="up2p big"><span class="cbig">${emo(T.icon)}</span></span><div><h3>${T.icon} ${T.name} · ขั้น ${Math.min(st + 1, 3)}/3</h3><p>${st === 3 ? 'ครบ 3 ขั้นแล้ว เก่งมาก! 🏆' : `${T.lvl ? `${T.name} ถึง Lv ${g}` : `${T.name} ${g} ${T.unit}`} · ตอนนี้ ${Math.min(sqHave(T), g)}/${g}`}</p></div></div>
-    ${st < 3 ? `<div class="sqhow">${T.how}</div>` : ''}<div class="up2m">${T.rew.map((R, i) => `<span class="up2mat${i < st ? '' : i === st ? ' now' : ' later'}">ขั้น ${i + 1} (${T.goals[i]}) · ${rewTxt(R)}${i === 2 && D.STARTER_SPIRIT ? ` + ✨ ${D.STARTER_SPIRIT}` : ''}${i < st ? ' ✅' : ''}</span>`).join('')}</div>
-    ${rd ? `<button class="up2btn gold" id="sqGet">🎁 รับรางวัล ${rewTxt(T.rew[st])}${st === 2 && D.STARTER_SPIRIT ? ' + ✨' : ''}</button>` : st === 3 ? '<button class="up2btn off" disabled>🏆 ครบทุกขั้นแล้ว</button>' : T.go ? `<button class="up2btn blue" id="sqGo">🧭 ${SQ_GO[T.go][0]}</button>` : ''}</div>`;
-  return h }
-function sqBind(b, redraw) { queueMicrotask(() => upDock(b)); b.querySelectorAll('[data-sq]').forEach(x => x.onclick = () => { sqSel = x.dataset.sq; sfx('tap'); redraw() });
-  const g = b.querySelector('#sqGet'); if (g) g.onclick = () => { if (sqClaim(sqSel)) redraw() }; const o = b.querySelector('#sqGo'); if (o) o.onclick = () => sqGo(D.STARTER.find(t => t.k === sqSel)) }
-/* v4.58 🌱 the small card under the hearts: a step to claim (🎁 pulses) · else the chain closest to its next step · tap = the 🌱 page */
-let sqCardK = '';
-function sqCardTick() { const el = $('sqCard'); if (!el) return; const hide = CUT || !S.story || !S.story.intro || !S.avatar || BM || document.querySelector('.ov') || D.STARTER.every(T => sqStep(T) === 3);
-  if (hide) { if (el.style.display !== 'none') { el.style.display = 'none'; sqCardK = '' } return }
-  const rd = D.STARTER.filter(sqReady); let h, gift = rd.length > 0;
-  if (gift) { const T = rd[0]; h = `🎁 ${T.icon} ${T.name} ✅${rd.length > 1 ? ` +${rd.length - 1}` : ''}<small>ขั้น ${sqStep(T) + 1} สำเร็จ · แตะเพื่อรับรางวัล</small>` }
-  else { const L = D.STARTER.filter(T => sqStep(T) < 3).map(T => { const g = T.goals[sqStep(T)], v = Math.min(sqHave(T), g); return { T, g, v, r: v / g } }).sort((a, b) => b.r - a.r); const x = L[0];
-    h = `🌱 ${x.T.icon} ${x.T.name} <b>${x.v}/${x.g}</b><small>ฝึกหัด ขั้น ${sqStep(x.T) + 1}/3</small><i><b style="width:${Math.round(x.r * 100)}%"></b></i>` }
-  const k = h + gift; if (k === sqCardK && el.style.display !== 'none') return; sqCardK = k; el.innerHTML = h; el.classList.toggle('gift', gift); el.style.display = 'block' }
-$('sqCard').onclick = () => { if (CUT) return; sfx('tap'); const r = D.STARTER.find(sqReady); if (r) sqSel = r.k; qSub = 'starter'; openAtlas('quest') };
-setInterval(sqCardTick, 700);
-/* a step done → a pop-up once (claim it on the 🌱 page) */
-setInterval(() => { if (CUT || !S.story || !S.story.intro) return; const Q = SQ(); for (const T of D.STARTER) { const st = sqStep(T); if (sqReady(T) && Q.n[T.k] !== st + 1) { Q.n[T.k] = st + 1; save(); sfx('done'); toast(`✅ ${T.icon} ${T.name} ขั้น ${st + 1} สำเร็จ!<br><small>🎁 รับรางวัลได้ที่ 📜 เควส → 🌱 ฝึกหัด</small>`, 2600); break } } }, 1500);
+/* v4.60 🌱 shown like the other quests (designer: the card grid confused players): a row per chain · tap = ⭐ follow it (the arrow + the map) · a step done = its reward at once · the chain goes on to its next step */
+const SQPT = {};
+function sqSpot(T) { const g = T.go, now = performance.now(), c = SQPT[T.k]; if (c && now < c.t) return c.p; let p = null; const q = me();
+  if (SQ_GO[g] && SQ_GO[g][1]) { let bd = 1e9; for (const o of W.clear.values()) { if (!o.g || !SQ_GO[g][1].test(o.t)) continue; const d = dist(q.x, q.z, o.x, o.z); if (d < bd) { bd = d; p = { x: o.x, z: o.z } } } }
+  else if (g === 'water') { for (let r = 4; r < 200 && !p; r += 4) for (let a = 0; a < 16; a++) { const x = q.x + Math.cos(a / 16 * 6.283) * r, z = q.z + Math.sin(a / 16 * 6.283) * r; if (waterAt(x, z)) { p = { x, z }; break } } }
+  else if (g === 'farm') { const k = Object.keys(S.plots || {})[0]; if (k) { const [x, z] = k.split(',').map(Number); p = { x, z } } else if (POT.home) p = { x: POT.home.x, z: POT.home.z } }
+  else if (g === 'pot') { const P = POT.home || Object.values(POT).find(x => x && x.x != null); if (P) p = { x: P.x, z: P.z } }
+  else if (g === 'animal') { let bd = 1e9; for (const m of mons) { if (!m.T.animal || m.dead || m.hp <= 0 || !m.A) continue; const r = m.A.root.position, d = dist(q.x, q.z, r.x, r.z); if (d < bd) { bd = d; p = { x: r.x, z: r.z } } } }
+  SQPT[T.k] = { t: now + 4000, p }; return p }
+const sqRow = T => { const st = sqStep(T), g = T.goals[Math.min(st, 2)], v = Math.min(sqHave(T), g), p = sqSpot(T); return { id: 'sq:' + T.k, icon: T.icon, text: `${T.name} (${v}/${g})`, sub: `🌱 ขั้น ${st + 1}/3 · 🎁 ${rewTxt(T.rew[st])}${st === 2 && D.STARTER_SPIRIT ? ' + ✨' : ''} · ${T.how.replace(/<[^>]+>/g, '')}`, x: p && p.x, z: p && p.z } };
+const sqRows = () => D.STARTER.filter(T => sqStep(T) < 3).map(sqRow), sqDoneRows = () => D.STARTER.filter(T => sqStep(T) === 3).map(T => ({ id: 'sq:' + T.k, icon: T.icon, text: `${T.name} · ครบ 3 ขั้น`, done: 1 }));
+/* a step done → its reward right away (no claiming) */
+setInterval(() => { if (CUT || !S.story || !S.story.intro || !S.avatar) return; SQ(); const T = D.STARTER.find(sqReady); if (!T) return; const k = T.k; sqClaim(k); if (S.track === 'sq:' + k && sqStep(T) === 3) { S.track = null; trkC = null } hud() }, 1500);
 function qSubStep(d) { const i = QSUB.findIndex(t => t[0] === qSub); qSub = QSUB[(i + d + QSUB.length) % QSUB.length][0]; sfx('tap'); NAV.key = ''; NAV.el = null; const ov = topOv(); ov && ov._redraw ? ov._redraw() : openAtlas('quest') }
 /* X on a quest row = walk there by itself */
 function qAuto() { const e = NAV.el; if (!e || !e.dataset.tr) return false; const t = trackList().find(x => x.id === e.dataset.tr); if (!t || t.x == null) { hint('ไม่มีตำแหน่งให้เดินไป', 1000); return true } closeSheets(); S.track = t.id; trkC = null; save(); autoGo(t.x, t.z, t.text); return true }
@@ -1855,6 +1844,7 @@ function trackList() { const L = [{ id: 'main', icon: MAIN_Q.icon, text: 'กำ
   const q = D.QUESTS[S.quest]; if (q) { const prog = q.stat ? ` (${Math.min(q.goal, q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0)}/${q.goal})` : q.id === 's0a' ? ` (🪵${Math.min(10, S.mats.wood || 0)}/10 🪨${Math.min(5, S.mats.stone || 0)}/5)` : q.id === 's1b' ? ` (${Math.min(D.HOWSIF_FISH, Object.values(S.fish).reduce((a, v) => a + v, 0))}/${D.HOWSIF_FISH})` : '', p = (STORY_AT[q.go] || (() => null))();
     L.push({ id: 'story', icon: q.icon, text: q.text + prog, sub: `📖 บทนำ ${S.quest + 1}/${D.QUESTS.length}`, x: p && p.x, z: p && p.z, story: q }) }
   for (const id of Object.keys(KQS())) { if (KQS()[id].st !== 'on' || !KQUEST[id]) continue; const g = kqGiver(id), pr = qProg(id); L.push({ id: 'kq:' + id, icon: '📜', text: `${KQUEST[id].text} (${pr.cur})`, sub: g ? `${g.n.icon} ${g.n.name} · ${KINGDOMS[g.k].name}${pr.ok ? ' · ✅ กลับไปส่งได้แล้ว' : ''}` : '', x: g && g.x, z: g && g.z }) }
+  try { for (const r of sqRows()) L.push(r) } catch (e) { }   /* v4.60 🌱 (not ready during start-up) */
   if (S.matGo && (S.matGo.name || (MSRC && MSRC[S.matGo.k]))) L.push({ id: 'mat', icon: '🧭', text: S.matGo.name || `หา ${costName(S.matGo.k)}`, sub: S.matGo.sub || MSRC[S.matGo.k][0], x: S.matGo.x, z: S.matGo.z });   /* v3.38 from the craft book */
   return L }
 let trkC = null, trkT = 0;
