@@ -2694,7 +2694,7 @@ function openJournal(tab) {
   sheet('📓 สมุดบันทึก', (b, redraw) => {
     if (['mons', 'people', 'gear'].includes(jTab)) jTab = { mons: 'mon', people: 'people', gear: 'gear' }[jTab];
     const tabs = [...JCAT.map(([k, ic, n]) => { const R = jRewards(k); return [k, ic, `${n} ${R.n}/${R.all}${R.out.some(r => r.ok && !r.got) ? ' 🎁' : ''}`] }), ['recipes', '🍳', 'สูตร'], ['bp', '📐', 'แบบแปลน'], ['ach', '🏆', 'สำเร็จ']];
-    let h = tabCar(tabs, jTab);   /* v3.53 */
+    let h = '';   /* v4.66 side tabs like every new page (was a carousel row) */
     const sk = key => { const im = skImg(key); return im ? `<img class="sk" src="${im}" alt="">` : '<div class="sk e">✏️<small>ยังไม่ได้วาด</small></div>' };
     if (jTab === 'recipes') { const found = D.RECIPES.filter(r => S.journal.recipes[r.k]).length;
       h += `<p class="mut">ค้นพบ ${found}/${D.RECIPES.length} สูตร · ทำอาหารที่หม้อในแคมป์</p>` + D.RECIPES.map(r => S.journal.recipes[r.k]
@@ -2714,13 +2714,13 @@ function openJournal(tab) {
       h += `<p class="mut">สะสมแล้ว ${n}/${Object.keys(D.ITEMS).length * 4} แบบ (อุปกรณ์ × ระดับ)</p><div class="card">` + Object.keys(D.ITEMS).map(t => `<div class="row"><span>${D.ITEMS[t].icon} ${D.ITEMS[t].name}</span><span>${D.RAR.map(r => `<span class="gem" style="background:${S.journal.gear[t + '_' + r] ? D.RAR_COL[r] : '#0001'}" title="${D.RAR_NAME[r]}">${S.journal.gear[t + '_' + r] ? r : '·'}</span>`).join('')}</span></div>`).join('') + '</div>' }
     if (jTab === 'ach') h += D.ACH.map(a => { const v = Math.min(a.goal, achVal(a)), done = v >= a.goal, got = S.ach[a.k];
       return `<div class="card"><div class="row"><b>${a.icon} ${a.name}</b>${got ? '<span class="up">✅ รับแล้ว</span>' : done ? `<button class="btn sm go" data-a="${a.k}">รับรางวัล</button>` : `<span class="mut">${v}/${a.goal}</span>`}</div><div class="mut">${a.text} · รางวัล ${a.reward.coin ? '🪙 ' + fmt(a.reward.coin) : ''}${a.reward.gem ? '💎 ' + a.reward.gem : ''}</div><div class="bar s"><i style="width:${v / a.goal * 100}%;background:var(--xp)"></i></div></div>` }).join('');
-    b.innerHTML = h;
+    b.innerHTML = `<div class="up2b"><div class="up2t">${tabs.map(([k, ic, nm]) => `<button class="up2tab${k === jTab ? ' on' : ''}" data-bt="${k}"><i>${ic}</i><span>${nm}</span></button>`).join('')}</div><div class="up2r qbody jbody">${h}</div></div>`;
     tabBind(b, 'bt', v => jTab = v, redraw);
     b.querySelectorAll('[data-show]').forEach(x => x.onclick = () => showDraw(x.dataset.show));
     b.querySelectorAll('[data-jr]').forEach(x => x.onclick = () => { const cat = JCAT.find(c => x.dataset.jr.startsWith(c[0]))[0], r = jRewards(cat).out.find(y => y.id === x.dataset.jr); if (!r || !r.ok || r.got) return; S.jRew[r.id] = Date.now(); S.coin += r.coin; S.gem += r.gem; sfx('level'); toast(`📓 รางวัลวาดภาพ ${r.m} ภาพ!<br>🪙 +${r.coin}${r.gem ? ' · 💎 +' + r.gem : ''}`, 2200); save(); hud(); redraw() });
     b.querySelectorAll('[data-bb]').forEach(x => x.onclick = () => { closeSheets(); enterBuild(x.dataset.bb) });
     b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => { const a = D.ACH.find(y => y.k === x.dataset.a); S.ach[a.k] = Date.now(); if (a.reward.coin) S.coin += a.reward.coin; if (a.reward.gem) S.gem += a.reward.gem; sfx('level'); toast(`🏆 ${a.name}!`, 2000); save(); hud(); redraw() });
-  }, { cls: 'tabz' });
+  }, { cls: 'tabz up2 jbook' });
 }
 const achVal = a => a.f ? a.f(S) : (S.stat[a.stat] || 0);
 /* v3.63 🧭 the paths page: a carousel of the six · its steps with progress · claim each reward · the last step = the path's title */
