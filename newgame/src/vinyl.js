@@ -36,15 +36,15 @@ export function vinylProp(g, P) { if (!P) return; const F = { armL: P.arm, armR:
   if (J.head && P.headTop && P.headTop !== 1) headWarp(J.head, P.headYc ?? .02, P.headTop, P.hatKeep, g.userData.hatKind);
   g.userData.prop = P }
 /* v4.30 (preview) a lower crown: every mesh of the head (skull · hair · hat · glasses) squeezed above yc (head-local) by k · the face below stays as it is */
-const HAT_HUG = new Set(['headband', 'ribbon', 'flower', 'starClip', 'catEars', 'bunnyEars', 'hood', 'leafhood', 'goggles', 'divemask']);   /* things that hug the head: they follow its new shape */
-export const HEAD_TOP = .494;   /* v4.30 the designer's frame: nothing on the head goes higher than the beanie (pompom included) on the lower head */
+const HAT_HUG = new Set(['crown', 'headband', 'ribbon', 'flower', 'starClip', 'catEars', 'bunnyEars', 'hood', 'leafhood', 'goggles', 'divemask']);   /* things that hug the head: they follow its new shape */
+export const HEAD_TOP = .494, HEAD_BROW = -.006;   /* v4.30 the designer's frame: nothing on the head goes higher than the beanie (pompom included) on the lower head */
 export function headWarp(head, yc, k, keepHat, kind) { head.updateMatrixWorld(true); const HI = head.matrixWorld.clone().invert(), v = new THREE.Vector3(), hat = head.getObjectByName('hat'), keep = keepHat && hat && !HAT_HUG.has(kind), inHat = o => { for (let p = o; p; p = p.parent) if (p === hat) return true; return false };
-  if (keep) hat.position.y -= (.14 - yc) * (1 - k);   /* the hat keeps its size: it sinks to where the head now is at the brim line */
   head.traverse(o => { if (!o.isMesh || (keep && inHat(o))) return; const M = HI.clone().multiply(o.matrixWorld), MI = M.clone().invert(), g = o.geometry.clone(), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(M); if (v.y > yc) v.y = yc + (v.y - yc) * k; v.applyMatrix4(MI); p.setXYZ(i, v.x, v.y, v.z) }
     p.needsUpdate = true; g.computeVertexNormals(); o.geometry = g });
-  if (hat && keepHat) { head.updateMatrixWorld(true); let top = -9; hat.traverse(o => { if (!o.isMesh) return; const M = HI.clone().multiply(o.matrixWorld), p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) top = Math.max(top, v.fromBufferAttribute(p, i).applyMatrix4(M).y) });
-    if (top > HEAD_TOP + .005) { const base = .1, f = (HEAD_TOP - base) / (top - base); hat.position.y = base + (hat.position.y - base) * f; hat.scale.y *= f } } }   /* too tall (wizard · ears · a sprout): squeezed down into the frame */
+  if (hat && keepHat) { const ext = () => { head.updateMatrixWorld(true); let lo = 9, hi = -9; hat.traverse(o => { if (!o.isMesh) return; const M = HI.clone().multiply(o.matrixWorld), p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) { const y = v.fromBufferAttribute(p, i).applyMatrix4(M).y; lo = Math.min(lo, y); hi = Math.max(hi, y) } }); return [lo, hi] };
+    if (keep) { const [lo] = ext(); hat.position.y += HEAD_BROW - lo }   /* v4.30 (designer) a hat's lowest edge sits on the brow line */
+    const [lo, top] = ext(); if (top > HEAD_TOP + .005) { const base = lo, f = (HEAD_TOP - base) / (top - base); hat.position.y = base + (hat.position.y - base) * f; hat.scale.y *= f } } }   /* too tall (wizard · ears · a sprout): squeezed down, not too high */   /* too tall (wizard · ears · a sprout): squeezed down into the frame */
 /* v3.9 (preview) layered build: every part is a joint group (R15-like: chest · waist · upper arm · fore arm · hand · thigh · shin · foot · head)
    and every joint carries up to 3 layers: userData.layer 0 = the body (a little slimmer) · 1 = clothes · 2 = gear (hats now, armour later)
    head: skull (smaller) → hair (bigger) → hat (biggest) */
