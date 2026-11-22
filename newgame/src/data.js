@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.41';
+export const APP_VER = '4.42';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -912,6 +912,14 @@ export const STORM_REWARD = { coin: 10000, gem: 500 };
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 /* v3.2 🌦️ weather: every 6 game hours each land rolls its sky (weights) · temp = added to TEMPV outdoors */
 /* v4.27 ⛈️ rain 1 (🌦️🌧️) / 2 (⛈️): anything metal you carry (weapon · shield · bow slot, in hand or on the back) draws the lightning · each bolt −dmg + stunned stun s (stacks) · ⚡ clothes stop it · ☠️ smog: Deadgar edge 1 / core 2 (🫁 pieces protect) */
+export const KTIPS = {   // v4.42 the first visit to each kingdom: its weather + what helps
+  navalee: ['🌧️ ฝนบ่อย มีพายุ · อาวุธ/โล่โลหะล่อฟ้า', '🏊 ทะเลสาบกว้าง · ชุด 💧 ว่ายเร็ว · 🤿 เซ็ตนักดำน้ำจากในเมือง'],
+  sylvaren: ['⛈️ ฝนตกบ่อยที่สุด · โลหะล่อฟ้า → ใช้ของไม้ หรือชุด ⚡', '🌿 เซ็ตพรานใบไม้ (⚡) หาได้ในเมือง'],
+  frosthelm: ['❄️ หนาวระดับ 2 · หิมะ/พายุหิมะ · ต้องมีชุด ❄️ 2 ชิ้น', '🔥 คบเพลิงที่ติดไฟ / กองไฟ = อุ่น 2 ระดับ · 🐺 เซ็ตหมาป่าหิมะในเมือง'],
+  asrah: ['☀️ กลางวันร้อนระดับ 2 · กลางคืนเย็นลง · ต้องมีชุด ☀️ 2 ชิ้น', '🔥 ร้อนจัด: อาวุธ/โล่โลหะร้อนจนถือไม่ได้ · 🧣 เซ็ตผ้าคลุมทะเลทรายในเมือง'],
+  valkara: ['🌋 ร้อน · ใกล้ปล่องภูเขาไฟร้อนจัด · มีพายุ', '☀️ ชุดกันร้อน 2 ชิ้น · 🔥 เซ็ตช่างหลอมลาวา (ไม่ติดไหม้) ในเมือง'],
+  deadgar: ['☠️ มลพิษ: ขอบ = ระดับ 1 · ใจกลาง = ระดับ 2 · ต้องมี 🫁 2 ชิ้น', '🌧️ ฝนบ่อย · 🐦‍⬛ เซ็ตนักล่าหมอก (กันพิษ) ในเมือง'],
+};
 export const HEATMETAL = { t: 8, lock: 15 };   // v4.36 heat level 2: metal in hand → dropped after t s · too hot to hold for lock s
 export const ZAP = { lv: { drizzle: 1, rain: 1, storm: 2 }, every: [7, 12], warn: 1.1, dmg: 5, stun: 1.5, chain: 3, gap: .8, r: 1.8 };
 export const SMOG = { deadgar: [.62, .85] };   // kingdom → weight w for level 1 / level 2
