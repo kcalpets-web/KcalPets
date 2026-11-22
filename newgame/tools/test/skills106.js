@@ -18,7 +18,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8858, OUT = process.argv[2] || '/tmp/
     if (!r.on.bear || r.on.hawk) errs.push('bear Lv6 = on · hawk Lv4 = locked'); if (r.lift) errs.push('a Lv 4 hawk should not lift you');
     if (JSON.stringify(r.L.filter(k => k !== 'kglider')) !== '["kbear"]') errs.push('v4.07 the ✨ page lists only the skills you have');
     await E(() => window.__ng.openBag('skill')); await wait(1200); await pg.screenshot({ path: OUT + '/page.png' });
-    const pageOk = await E(() => !!document.querySelector('.ov .invgrid [data-k="kbear"]') && !document.querySelector('.ov .invgrid [data-k="khawk"]')); if (!pageOk) errs.push('the bag should open on the ✨ page');
+    const pageOk = await E(() => !!document.querySelector('.ov .up2g [data-k="kbear"]') && !document.querySelector('.ov .up2g [data-k="khawk"]')); if (!pageOk) errs.push('the bag should open on the ✨ page');
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openBag('pets') }); await wait(1000); await E(() => window.__ng.bagA('pph', () => { })); await wait(800); await pg.screenshot({ path: OUT + '/hawk-locked.png' });
     const why = await E(() => [...document.querySelectorAll('.ov')].pop().textContent); log('locked text', why.slice(0, 160)); if (!/Lv 5/.test(why)) errs.push('v4.07 the pet should explain its skill and the Lv 5 lock');
     await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
