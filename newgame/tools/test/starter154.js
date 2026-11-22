@@ -12,6 +12,11 @@ const ROOT = require('path').resolve(__dirname, '../../..'), PORT = 8921, OUT = 
     const b0 = await E(() => { const N = window.__ng; N.SQ(); return JSON.stringify(N.S.sq.b) }); log('base', b0);
     await E(() => { const N = window.__ng, S = N.S; S.stat.clr_tree = (S.stat.clr_tree || 0) + 4; S.stat.clr_grass = (S.stat.clr_grass || 0) + 2; S.stat.drawings = (S.stat.drawings || 0) + 1 }); await wait(2000);
     await wait(1600); const t1 = await E(() => ({ n: window.__ng.S.sq.n, t: document.getElementById('toast').innerHTML })); log('toast', JSON.stringify(t1)); if (t1.n.tree !== 1 || t1.n.draw !== 1 || t1.n.grass || !/ขั้น 1 สำเร็จ/.test(t1.t)) errs.push('a finished step should pop up (once each)');
+    /* v4.58 the small card under the hearts: 🎁 when a step is done · tap = the 🌱 page */
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await wait(1000); await pg.screenshot({ path: OUT + '/card.png' });
+    const cd = await E(() => { const e = document.getElementById('sqCard'); return { on: e.style.display !== 'none', gift: e.classList.contains('gift'), t: e.innerText } }); log('card', JSON.stringify(cd)); if (!cd.on || !cd.gift || !/แตะเพื่อรับรางวัล/.test(cd.t)) errs.push('v4.58 the 🌱 card should show 🎁 when a step is done');
+    await E(() => document.getElementById('sqCard').click()); await wait(1000); const pgq = await E(() => !!document.querySelector('.ov.sqon #sqGet')); if (!pgq) errs.push('tapping the 🌱 card should open the 🌱 page on the step to claim');
+    await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     await E(() => { window.__ng.qSub = 'starter'; window.__ng.openQuests() }); await wait(1200); await pg.screenshot({ path: OUT + '/q1.png' });
     const c0 = await E(() => window.__ng.S.coin); await E(() => document.querySelector('[data-sq="tree"]').click()); await wait(400); await E(() => document.getElementById('sqGet').click()); await wait(500);
     const c1 = await E(() => ({ coin: window.__ng.S.coin, st: window.__ng.sqStep(window.__ng.D.STARTER[0]) })); log('claim', c0, JSON.stringify(c1)); if (c1.coin !== c0 + 50 || c1.st !== 1) errs.push('claiming step 1 should give 🪙 50 and move to step 2');

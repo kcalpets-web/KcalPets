@@ -1808,6 +1808,17 @@ function sqBody() { const L = D.STARTER, done = L.reduce((a, T) => a + sqStep(T)
   return h }
 function sqBind(b, redraw) { b.querySelectorAll('[data-sq]').forEach(x => x.onclick = () => { sqSel = x.dataset.sq; sfx('tap'); redraw() });
   const g = b.querySelector('#sqGet'); if (g) g.onclick = () => { if (sqClaim(sqSel)) redraw() }; const o = b.querySelector('#sqGo'); if (o) o.onclick = () => sqGo(D.STARTER.find(t => t.k === sqSel)) }
+/* v4.58 🌱 the small card under the hearts: a step to claim (🎁 pulses) · else the chain closest to its next step · tap = the 🌱 page */
+let sqCardK = '';
+function sqCardTick() { const el = $('sqCard'); if (!el) return; const hide = CUT || !S.story || !S.story.intro || !S.avatar || BM || document.querySelector('.ov') || D.STARTER.every(T => sqStep(T) === 3);
+  if (hide) { if (el.style.display !== 'none') { el.style.display = 'none'; sqCardK = '' } return }
+  const rd = D.STARTER.filter(sqReady); let h, gift = rd.length > 0;
+  if (gift) { const T = rd[0]; h = `🎁 ${T.icon} ${T.name} ✅${rd.length > 1 ? ` +${rd.length - 1}` : ''}<small>ขั้น ${sqStep(T) + 1} สำเร็จ · แตะเพื่อรับรางวัล</small>` }
+  else { const L = D.STARTER.filter(T => sqStep(T) < 3).map(T => { const g = T.goals[sqStep(T)], v = Math.min(sqHave(T), g); return { T, g, v, r: v / g } }).sort((a, b) => b.r - a.r); const x = L[0];
+    h = `🌱 ${x.T.icon} ${x.T.name} <b>${x.v}/${x.g}</b><small>ฝึกหัด ขั้น ${sqStep(x.T) + 1}/3</small><i><b style="width:${Math.round(x.r * 100)}%"></b></i>` }
+  const k = h + gift; if (k === sqCardK && el.style.display !== 'none') return; sqCardK = k; el.innerHTML = h; el.classList.toggle('gift', gift); el.style.display = 'block' }
+$('sqCard').onclick = () => { if (CUT) return; sfx('tap'); const r = D.STARTER.find(sqReady); if (r) sqSel = r.k; qSub = 'starter'; openAtlas('quest') };
+setInterval(sqCardTick, 700);
 /* a step done → a pop-up once (claim it on the 🌱 page) */
 setInterval(() => { if (CUT || !S.story || !S.story.intro) return; const Q = SQ(); for (const T of D.STARTER) { const st = sqStep(T); if (sqReady(T) && Q.n[T.k] !== st + 1) { Q.n[T.k] = st + 1; save(); sfx('done'); toast(`✅ ${T.icon} ${T.name} ขั้น ${st + 1} สำเร็จ!<br><small>🎁 รับรางวัลได้ที่ 📜 เควส → 🌱 ฝึกหัด</small>`, 2600); break } } }, 1500);
 function qSubStep(d) { const i = QSUB.findIndex(t => t[0] === qSub); qSub = QSUB[(i + d + QSUB.length) % QSUB.length][0]; sfx('tap'); NAV.key = ''; NAV.el = null; const ov = topOv(); ov && ov._redraw ? ov._redraw() : openAtlas('quest') }
