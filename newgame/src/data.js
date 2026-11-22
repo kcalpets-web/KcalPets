@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.54';
+export const APP_VER = '4.55';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -608,8 +608,15 @@ export const STARTER = [
   { k: 'harvest', icon: '🥕', name: 'เก็บผัก', unit: 'ครั้ง', stats: ['harvested'], goals: [1, 8, 24], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'รดน้ำทุกวันจนผักโต แล้วกด <b>A</b> ที่แปลงเพื่อเก็บ', go: 'farm' },
   { k: 'feed', icon: '🍖', name: 'ให้อาหารสัตว์', unit: 'ครั้ง', stats: ['feeds'], goals: [1, 5, 15], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: '🎒 กระเป๋า → 🐾 สัตว์เลี้ยง → เลือกน้อง → 🍖 ให้อาหาร', go: 'pets' },
   { k: 'catch', icon: '🕸️', name: 'จับสัตว์', unit: 'ตัว', stats: ['catches'], goals: [1, 3, 6], rew: [{ gem: 10 }, { gem: 20 }, { gem: 40 }], how: 'โหมดฟาร์ม → เลือก 🕸️ ตาข่าย → ค้าง <b>Y</b> เล็งที่สัตว์ ปล่อยโยน', go: 'animal' },
+  { k: 'petlv', icon: '🐾', name: 'เลี้ยงน้องให้โต', unit: '', lvl: 1, abs: 1, f: S => Math.max(0, ...(S.pets || []).map(p => p.lv || 1)), goals: [3, 5, 10], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'ให้อาหารน้อง 🍖 และพาน้องออกไปสู้ด้วยกัน · นับน้องที่เลเวลสูงสุด', go: 'pets' },
+  { k: 'kinds', icon: '🦌', name: 'จับสัตว์ต่างชนิด', unit: 'ชนิด', abs: 1, f: S => new Set((S.pets || []).map(p => p.kind)).size, goals: [2, 4, 7], rew: [{ gem: 10 }, { gem: 25 }, { gem: 50 }], how: 'ออกไปหาสัตว์ชนิดใหม่ๆ ในแต่ละอาณาจักร แล้วจับด้วย 🕸️ ตาข่าย', go: 'animal' },
+  { k: 'cook', icon: '🍲', name: 'ปรุงอาหาร', unit: 'ครั้ง', stats: ['cooked'], goals: [1, 5, 15], rew: [{ coin: 100 }, { coin: 300 }, { gem: 15 }], how: 'ถือวัตถุดิบ (A ที่ของ) ไปวางในหม้อ/กระทะที่ติดไฟ 2–5 ชิ้น แล้วมือว่างกด <b>A</b> = ปรุง', go: 'pot' },
+  { k: 'recipes', icon: '📖', name: 'ปรุงอาหารคนละสูตร', unit: 'สูตร', f: S => Object.keys((S.journal || {}).recipes || {}).length, goals: [2, 5, 10], rew: [{ coin: 150 }, { coin: 400 }, { gem: 25 }], how: 'ลองวัตถุดิบหลายแบบ · สูตรใหม่ดูได้ที่เควสคนในเมือง 📜 และ 📖 สมุดสะสม · ออกล่า เก็บ ตกปลา หาวัตถุดิบ', go: 'pot' },
+  { k: 'eatheal', icon: '❤️', name: 'กินอาหารเพิ่มเลือด', unit: 'ครั้ง', stats: ['ateHeal'], goals: [1, 5, 15], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เลือดไม่ฟื้นเอง ต้องกินเท่านั้น · เนื้อสัตว์ ❤️ หรืออาหารที่มี ❤️ · ถือแล้วกด <b>A</b> ค้าง/🎒 → 🍲 กิน', go: 'food' },
+  { k: 'eatbuff', icon: '💪', name: 'กินอาหารบัพ', unit: 'ครั้ง', stats: ['ateBuff'], goals: [1, 3, 8], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'อาหารกันหนาว ❄️ กันร้อน ☀️ กันพิษ ☠️ หรือเพิ่มพลังโจมตี ⚔️ · กินก่อนเข้าอาณาจักรที่อากาศโหด', go: 'food' },
   { k: 'craft', icon: '🛠️', name: 'สร้างอุปกรณ์', unit: 'ชิ้น', stats: ['crafts', 'forged'], goals: [1, 3, 8], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: '☰ เมนู → 🛠️ คราฟ → เลือกลูกธนู/คบไฟแล้วกด 🛠️ ทำเลย · อาวุธให้ช่างตีเหล็กหลอม', go: 'craft' }];
-export const STARTER_ALL = { gem: 50 };   // every step of all ten
+export const STARTER_ALL = { gem: 50 };   // every step of every chain
+export const STARTER_SPIRIT = 1;          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
 export const PATHS = [
   { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเมิร์จแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
     { text: 'วาปไปยังจุดพักครั้งแรก', stat: 'warps', goal: 1, reward: { coin: 200 } }, { text: 'เปิดหีบสมบัติ 5 ใบ', stat: 'chests', goal: 5, reward: { coin: 600 } },
