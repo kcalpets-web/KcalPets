@@ -1916,7 +1916,7 @@ function openHouse() {
     b.querySelector('#hR').onclick = () => { close(); sleepTo(D.DAY.dawn) };
   });
 }
-let bagTab = 'sword', bagSel = {};
+let bagTab = 'sword', bagSel = {}, bagSort = {};
 /* v1.9.2 inventory, console-style: icon tabs · a grid of tiles (count / power badge, rarity frame, equipped = blue) · details of the selected tile · a 3D preview wearing the gear */
 const INV_TABS = () => Object.entries(D.BAG.cats).map(([k, [ic, nm]]) => [k, ic, nm]);   /* v3.72 the seven sections: ดาบ · ธนู · โล่ · ชุดเกราะ · วัตถุดิบ · อาหารและยา · สัตว์เลี้ยง */   /* v3.40 making things lives in 📖 the adventure journal (and the makers) */   /* v3.27 🛠️ crafting is a bag section */   /* v3.12 the six bag sections (+ pets until v3.14) · quests / achievements / settings live under 📜 */
 const rawEff = k => { const h = D.MEAT_HEART[k]; if (h) return `+${h}❤️ · `; const t = (D.INGR[k] || {}).tag; return t === 'fruit' || t === 'nut' ? `+${D.CARRY.eat[t]}⚡ · ` : '' };   /* v3.97 what eating it raw gives */
@@ -1924,7 +1924,7 @@ function invItems(tab) {
   const L = [], st = pStats();
   if (['sword', 'shield', 'bow', 'tools'].includes(tab)) for (const it of S.bag.filter(it => D.ITEMS[it.t] && itemCat(it.t) === tab).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) {
     const T = D.ITEMS[it.t], x = itemStats(it), c = gearCmp(it), eq = S.eq[T.slot] === it.id, val = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)), dl = Math.ceil(durLeft(it));
-    L.push({ key: 'i' + it.id, icon: picTag(itemPic(it.t), T.icon) + (it.br ? '<b class="brk">💔</b>' : it.away ? '<b class="brk">🎯</b>' : ''), n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better, dur: dl / x.dur,
+    L.push({ key: 'i' + it.id, id: it.id, metal: !!T.metal, brk: !!it.br, away: !!it.away, pic: picTag(itemPic(it.t), T.icon), icon: picTag(itemPic(it.t), T.icon) + (it.br ? '<b class="brk">💔</b>' : it.away ? '<b class="brk">🎯</b>' : ''), n: tab === 'shield' ? x.def : x.atk, nIcon: tab === 'shield' ? '🛡️' : '⚔️', col: D.RAR_COL[it.r], eq, up: !eq && c.better, dur: dl / x.dur,
       name: T.name, sub: `<span class="tag" style="background:${D.RAR_COL[it.r]}">${D.RAR_NAME[it.r]}</span> ${c.stats}${it.ba ? ` <span class="up">✨+${it.ba}</span>` : ''} · ${T.starter ? '♾️ ไม่พัง · ตีมอนสเตอร์ได้ 1' : `🔧 ${dl}/${x.dur}`}${T.kind ? `<br>${D.KIND[T.kind].name}` : (tab === 'shield' && !kindOf().shield ? '<br><span class="dn">อาวุธในมือถือโล่ไม่ได้ (โล่อยู่ที่หลัง)</span>' : '')}`,
       desc: (eq ? 'กำลังสวมอยู่' : `${c.verdict} <span class="mut">${c.vs}</span>`) + `<div class="dbar"><i style="width:${dl / x.dur * 100}%;background:${dl / x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></i></div>`,
       act: it.away ? '<span class="mut">🎯 ปาไว้ · ไปเก็บคืนที่พื้น</span>' : it.br ? `<span class="dn">💔 พัง · ฟื้นเองใน ${mmss(Math.max(0, Math.ceil((it.br - Date.now()) / 1000)))} · หรือซ่อมทันทีที่ช่างตีเหล็ก</span>` : (eq ? `<button class="btn" data-un="${tab}">ถอด</button>` : `<button class="btn go" data-eq="${it.id}">สวม</button>`) + (eq || !bagSellMode || D.ITEMS[it.t].starter ? '' : `<button class="btn ghost" data-sell="${it.id}" data-v="${val}">ขาย 🪙${val}</button>`) }) }
@@ -1943,7 +1943,7 @@ function invItems(tab) {
   if (tab === 'bow') { if (S.arrows > 0) L.push({ key: 'arw', icon: '➶', n: S.arrows, name: 'ลูกธนู', sub: `ใช้กับธนู (ปุ่ม 🏹) · ${stackN(S.arrows)} ช่อง`, desc: 'ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์ · 999 ดอก/ช่อง' });   /* v3.12 arrows live with the bows */
     for (const k of Object.keys(S.arrowsX || {}).filter(k => S.arrowsX[k] > 0)) L.push({ key: 'ax' + k, icon: D.ARROWX[k].icon, n: S.arrowsX[k], name: D.ARROWX[k].name, sub: 'ลูกธนูพิเศษ', desc: 'เลือกใช้ด้วยปุ่ม 🏹 ข้างปุ่ม Y' }) }
   if (tab === 'wear') for (const k of Object.keys(S.clothes || {}).filter(k => S.clothes[k] && D.WEAR[k] && !D.WEAR[k].gone).sort((a, b) => WSL.indexOf(D.WEAR[a].slot) - WSL.indexOf(D.WEAR[b].slot))) {   /* v3.87 grouped head → body → legs */ const X = D.WEAR[k], on = S.wear[X.slot] === k;   /* v3.12 clothes are a bag section */
-    L.push({ key: 'w' + k, icon: wearPic(k) || X.icon, badge: wearAbil(X), n: X.def || null, nIcon: '🛡️', name: X.name, eq: on, sub: WEAR_AB.filter(([k2]) => X[k2]).map(a => a[1] + ' ' + a[2] + (a[0] === 'def' ? ' +' + X.def : '')).join(' · ') || 'แต่งสวย', desc: { head: '🎩 ใส่ที่หัว', body: '👕 ใส่ที่ตัว', legs: '👖 ใส่ที่ขา' }[X.slot] || '', act: `<button class="btn ${on ? '' : 'go'}" data-wr="${k}">${on ? 'ถอด' : 'สวม'}</button>` }) }
+    L.push({ key: 'w' + k, pic: (wearPic(k) || X.icon) + wearAbil(X), icon: wearPic(k) || X.icon, badge: wearAbil(X), n: X.def || null, nIcon: '🛡️', name: X.name, eq: on, sub: WEAR_AB.filter(([k2]) => X[k2]).map(a => a[1] + ' ' + a[2] + (a[0] === 'def' ? ' +' + X.def : '')).join(' · ') || 'แต่งสวย', desc: { head: '🎩 ใส่ที่หัว', body: '👕 ใส่ที่ตัว', legs: '👖 ใส่ที่ขา' }[X.slot] || '', act: `<button class="btn ${on ? '' : 'go'}" data-wr="${k}">${on ? 'ถอด' : 'สวม'}</button>` }) }
   if (tab === 'food') {
     for (const r of D.RECIPES.filter(r => S.meals[r.k] > 0)) L.push({ key: 'r' + r.k, icon: r.icon, n: S.meals[r.k], name: r.name, sub: effTxt(r.eff), desc: r.desc || '', act: `<button class="btn go" data-meal="${r.k}">😋 กิน</button>` });
     for (const x of D.SHOP.filter(x => S.potions[x.k] > 0)) L.push({ key: 'u' + x.k, icon: x.icon, n: S.potions[x.k], name: x.name, sub: x.cure ? `แก้ ${D.DEBUFF[x.cure].icon} ${D.DEBUFF[x.cure].name}` : `⚡ +${x.en}`, desc: '', act: `<button class="btn go" data-use="${x.k}">ใช้</button>` });
@@ -1982,43 +1982,43 @@ let bagSellMode = false;   /* v3.12.3 selling gear only from a shop (the smith) 
 function openBag(tab, sell) {
   document.querySelectorAll('.ov.inv').forEach(o => { const bk = o.querySelector('.back'); if (bk) bk.click(); else o.remove() });   /* v3.72 one bag at a time · v3.80 through its own close (its stack entry + onClose) */
   bagTab = tab && D.BAG.cats[tab] ? tab : 'sword'; bagSellMode = !!sell; bagPage[bagTab] = 0; { const f = invItems(bagTab)[0]; bagSel[bagTab] = f ? f.key : 'e0'; NAV.zone = 'items'; NAV.key = 'data-k=' + bagSel[bagTab]; NAV.el = null }   /* v3.72 the frame always starts on the first slot of the section (⚔️ ดาบ) */
-  sheet('🎒 กระเป๋า', (b, redraw) => {
+  sheet('🎒 กระเป๋า', (b, redraw) => {   /* v4.50 the side-tab bag: sections on the left · one card per piece (duplicates too) · tap = the detail sheet + one big button */
     const T = INV_TABS(), cur = T.find(t => t[0] === bagTab) || T[0]; bagTab = cur[0];
-    let h = `<div class="invtop"><div class="invh">${$('hearts').innerHTML}</div><div class="invc">🪙 ${fmt(S.coin)} · 💎 ${fmt(S.gem)}</div></div>
-      <div class="invtabs car">${(() => { const ci = T.findIndex(t => t[0] === bagTab), n = T.length, pos = j => { const d = (j - ci + n) % n; return d === 0 ? 1 : d === 1 ? 2 : d === n - 1 ? 0 : -1 };   /* v3.38 a carousel: the section you are on big in the middle, the one before / after at the sides · loops round */
-        return T.map(([k, ic, nm], j) => { const p = pos(j); return `<button class="${p === 1 ? 'on' : p < 0 ? 'hid' : 'nb'}" data-bt="${k}" style="order:${p < 0 ? 9 : p}">${p === 0 ? '<i class="ar">◀</i>' : ''}${ic}<small>${nm}</small>${p === 2 ? '<i class="ar">▶</i>' : ''}</button>` }).join('') })()}</div>` +
-      (bagTab === 'skill' ? `<div class="invslots"><b>✨ สกิล ${SK_ORDER.filter(skOn).length}</b></div><div class="invhint">${SK_ORDER.some(skOn) ? '<b class="ka">A</b> ดูวิธีใช้ · <b class="kb">B</b> กลับ' : `ยังไม่มีสกิล · เลี้ยงน้องที่มีสกิลให้ถึง Lv ${D.SKILL_LV} (ดูได้ที่ 🐾 สัตว์เลี้ยง)`}</div>` : '') + (D.BAG.cats[bagTab] && bagTab !== 'skill' ? `<div class="invslots"><b${bagUsed(bagTab) > bagCap(bagTab) ? ' class="over"' : ''}>🎒 ช่อง ${bagUsed(bagTab)}/${bagCap(bagTab)}</b>${bagNp(bagTab) > 1 ? `<small>หน้า ${(bagPage[bagTab] || 0) + 1}/${bagNp(bagTab)}</small>` : ''}${carryN() ? `<b class="hold">✋ ${S.hold.map(carryIco).join('')} ${carryN()}/${D.CARRY.max}</b>` : ''}</div><div class="invhint">${bagTab === 'mats' ? (carryN() ? '<b class="ka">A</b> เพิ่ม · <b class="kx">X</b> วางคืนทั้งหมด · <b class="kb">B</b> กลับเข้าเกม' : '<b class="ka">A</b> เลือก · <b class="kx">X</b> ถือ · <b class="kb">B</b> กลับ') : '<b class="ka">A</b> เลือก · <b class="kb">B</b> กลับ'} · ⬅️➡️ สุดแถว = หัวข้อถัดไป</div>` : '');   /* v3.72 the buttons line sits above the grid (the D-pad covers the bottom) */   /* v3.12 slots used / owned · buy more with ✨ */
-    if (bagTab === 'me') h += '<div class="invtext" id="bagMe"></div>';
-    else if (bagTab === 'craft') h += '<div class="invtext" id="bagCraft"></div>';
-    else if (['quest', 'ach', 'set'].includes(bagTab)) { h += `<div class="invtext">${bagText(bagTab)}</div><div class="tabs go2">${[['map', '🗺️ แผนที่'], ['book', '📓 สมุดบันทึก'], ...(S.story.town ? [['shop', '🛒 ร้าน']] : []), ...(S.shops.tools ? [['smith', '🛠️ ช่าง']] : []), ['craft', '🛠️ คราฟ'], ...(Object.keys(S.bp).length ? [['build', '🔨 ก่อสร้าง']] : []), ['me', '👤 โปรไฟล์']].map(([k, n]) => `<button data-go="${k}">${n}</button>`).join('')}</div>` }
-    else { const L0 = invItems(bagTab), PG = D.BAG.page, np = bagNp(bagTab);   /* v3.72 one page of 5×5 at a time */
-      let pg = bagPage[bagTab]; if (pg == null) { const i0 = L0.findIndex(x => x.key === bagSel[bagTab]); pg = i0 >= 0 ? Math.floor(i0 / PG) : 0 } pg = bagPage[bagTab] = Math.max(0, Math.min(np - 1, pg));
-      const L = L0.slice(pg * PG, pg * PG + PG); let sel = L.find(x => x.key === bagSel[bagTab]) || L.find(x => x.eq) || L[0]; if (sel) bagSel[bagTab] = sel.key; const st = pStats();
-      const empty = PG - L.length;
-      const pvw = false;   /* v3.72 the grid takes the whole width (5 columns) */   /* v3.32 the 3D preview only where it shows something (not for materials / food) */
-      h += `<div class="invmain${pvw ? '' : ' wide'}"><div class="invgrid">${L.map(x => `<button class="tile${x.eq ? ' eq' : ''}${sel && x.key === sel.key ? ' sel' : ''}" data-k="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.badge || ''}${x.n != null ? `<i>${x.nIcon === 'Lv' ? 'Lv' + x.n : x.n}</i>` : ''}${x.up ? '<u>▲</u>' : ''}${x.dur != null ? `<em style="width:${x.dur * 84}%;background:${x.dur < .25 ? '#ff5a4a' : '#7ac850'}"></em>` : ''}</button>`).join('') + Array.from({ length: empty }, (_, i) => `<button class="tile emp${bagSel[bagTab] === 'e' + (L.length + i) ? ' sel' : ''}" data-k="e${L.length + i}"></button>`).join('') || `<p class="mut" style="grid-column:1/-1">ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', pets: 'เข้าใกล้สัตว์ป่าแล้วกด 🫳 จับ', mats: 'ตัดต้นไม้ ทุบหิน ล่าสัตว์', food: 'ทำอาหารที่หม้อหรือกองไฟ' }[bagTab] || ''}</p>`}</div>
-        ${pvw ? `<div class="invside"><canvas class="invcv"></canvas><div class="mut invst">${bagTab === 'pets' ? `🐾 ${S.pets.length} ตัว · อยู่บนเกาะ` : `⚔️ ${st.atk} · 🛡️ ${st.def}`}</div></div>` : ''}</div>
-        `; bagSel._cur = sel }   /* v3.50 no always-on detail box: A / tap on a slot = a small menu (wear · details) */
-    b.innerHTML = h; { const ov = b.closest('.ov'); if (ov) ov._redraw = redraw }
-    const cv = b.querySelector('.invcv'); if (cv) invPreview(cv, bagTab, bagSel._cur);
-    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; sfx('tap'); redraw() });
-    b.querySelectorAll('[data-pg]').forEach(x => x.onclick = () => bagFlip(+x.dataset.pg, redraw));
-    b.querySelectorAll('[data-k]').forEach(x => x.onclick = e => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw(); if (e && e.isTrusted && x.closest('.invgrid')) bagA(x.dataset.k, redraw) });
-    bagSwipe(b.querySelector('.invgrid'));
-    bagFit(b);   /* a real tap opens the menu · the frame moving onto a slot only selects it */
-    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const k = x.dataset.go; closeSheets(); ({ map: openMap, book: () => openJournal(), shop: openTown, smith: () => $('bTool').click(), build: openBuild, craft: openCraft, me: openProfile })[k]() });
-    if (bagTab === 'set') menuBody(b.querySelector('#bagSet'), redraw);
-    if (bagTab === 'craft') craftBody(b.querySelector('#bagCraft'), redraw);
-    if (bagTab === 'me') profileBody(b.querySelector('#bagMe'), redraw, () => closeSheets());
-    if (bagTab === 'quest') { bindSpirit(b, redraw); const g = b.querySelector('#qGo'); if (g) g.onclick = () => { closeSheets(); questGo(D.QUESTS[S.quest]) } }
-    if (bagTab === 'ach') bindAch(b, redraw);
-    b.querySelectorAll('[data-craft]').forEach(x => x.onclick = () => { const c = x.dataset.craft; closeSheets(); openCraft(c) });   /* v3.12 crafting lives in each bag section */
-    if (0) b.querySelectorAll('[data-bu]').forEach(x => x.onclick = () => { const c = x.dataset.bu; if (S.spirit.free < D.BAG.cost) { hint('✨ จิตวิญญาณไม่พอ · ทำเควสเพื่อรับเพิ่ม', 1800); return } if (bagCap(c) >= D.BAG.max) return; S.spirit.free -= D.BAG.cost; (S.bagUp = S.bagUp || {})[c] = (S.bagUp[c] || 0) + 1; sfx('level'); toast(`🎒 ${D.BAG.cats[c][1]}: ${bagCap(c)} ช่อง`, 1600); save(); hud(); redraw() });
+    const gearT = ['sword', 'shield', 'bow', 'tools'].includes(bagTab), L0 = invItems(bagTab), f = bagSort[bagTab] || 'top';
+    let L = L0; if (gearT) { if (f === 'new') L = L0.slice().sort((p, q) => (q.id || 0) - (p.id || 0)); else if (f === 'wood') L = L0.filter(x => x.id && !x.metal); else if (f === 'brk') L = L0.filter(x => x.brk) }
+    let sel = L.find(x => x.key === bagSel[bagTab]); if (!sel && L.length && !bagSel._none) sel = L[0]; bagSel[bagTab] = sel ? sel.key : ''; bagSel._cur = sel;
+    const tag = x => x.key[0] === 'i' ? (x.eq ? '<span class="up2s hold">✋ ถืออยู่</span>' : x.brk ? upTag(false, '💔 พัง') : x.away ? upTag(false, '🎯 ปาไว้') : upTag(true, `${x.nIcon} ${x.n}`))
+      : x.key[0] === 'w' ? (x.eq ? '<span class="up2s hold">✔ ใส่อยู่</span>' : x.n ? upTag(true, '🛡️ ' + x.n) : '') : x.key[0] === 'p' ? (x.eq ? '<span class="up2s hold">🐾 ในทีม</span>' : upTag(true, 'Lv ' + x.n))
+      : x.key[0] === 'k' ? (x.eq ? `<span class="up2s hold">ช่อง ${x.n}</span>` : upTag(true, '✅ ได้แล้ว')) : x.n != null ? `<span class="up2s ok">×${fmt(x.n)}</span>` : '';
+    const cnt = gearT ? L0.filter(x => x.id).length : L0.length, used = bagUsed(bagTab), cap = bagCap(bagTab);
+    const head = `<div class="up2hd"><b>${cur[1]} ${cur[2]} ${cnt} ${bagTab === 'pets' ? 'ตัว' : 'ชิ้น'}</b>${bagTab !== 'skill' && cap !== Infinity ? ` · <b${used > cap ? ' class="over"' : ''}>🎒 ${used}/${cap}</b>` : ''}<small>🪙 ${fmt(S.coin)}</small>${carryN() ? `<b class="hold">✋ ${S.hold.map(carryIco).join('')} ${carryN()}/${D.CARRY.max}</b>` : ''}</div>`
+      + (gearT && L0.length > 1 ? `<div class="up2f">${[['top', '⬇️ แรงสุด'], ['new', '🆕 ใหม่สุด'], ['wood', '🪵 ไม่ล่อฟ้า'], ['brk', '💔 พัง']].map(([k, n]) => `<button class="${f === k ? 'on' : ''}" data-bs="${k}">${n}</button>`).join('')}</div>` : '');
+    let detail = null;
+    if (sel) { const c = sel.key[0], key = sel.key, it = c === 'i' && S.bag.find(x => x.id === sel.id), chips = [];
+      let btn = '', small = '';
+      const big = (a, txt, cls) => `<button class="up2btn${cls ? ' ' + cls : ''}" data-im="${a}">${txt}</button>`, off = txt => `<button class="up2btn off" disabled>${txt}</button>`;
+      if (it) { const T2 = D.ITEMS[it.t], x = itemStats(it), dl = Math.ceil(durLeft(it)), eqI = S.eq[T2.slot] != null && S.bag.find(q => q.id === S.eq[T2.slot] && q.id !== it.id), st = q => { const y = itemStats(q); return bagTab === 'shield' ? y.def : y.atk }, d = eqI ? sel.n - st(eqI) : sel.n;
+        chips.push(`${sel.nIcon} ${sel.n}`, T2.starter ? '♾️ ไม่พัง' : `🔧 ${dl}/${x.dur}`, T2.metal ? '⚡ โลหะ (ล่อฟ้า)' : '🪵 ไม่ล่อฟ้า'); if (!sel.eq && d > 0) chips.push(`<b class="up">⬆️ +${d} จากที่ถือ</b>`); else if (!sel.eq && d < 0) chips.push(`<b class="dn">⬇️ ${d} จากที่ถือ</b>`);
+        btn = sel.eq ? off('✔ ถืออยู่') : it.away ? off('🎯 ปาไว้ · ไปเก็บคืนที่พื้น') : it.br ? off(`💔 พัง · ฟื้นใน ${mmss(Math.max(0, Math.ceil((it.br - Date.now()) / 1000)))}`) : big('wear', bagTab === 'shield' ? `🛡️ ใช้โล่นี้` : `✋ ถือ${T2.name}`);
+        if (!T2.starter) small += '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>'; if (bagSellMode && !sel.eq && !T2.starter) { const v = Math.round((x.atk * 30 + x.def * 40) * D.SELL_RATE * (.4 + .6 * durLeft(it) / x.dur)); small += `<button class="btn" data-sell="${it.id}" data-v="${v}">🪙 ขาย ${fmt(v)}</button>` } }
+      else if (key === 'arw' || key.startsWith('ax')) { chips.push('×' + fmt(sel.n)); btn = (S.arrowT || '') === (key === 'arw' ? '' : key.slice(2)) ? off('✔ ใช้อยู่') : big('arrow', '🏹 ใช้ลูกธนูนี้'); small = '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>' }
+      else if (c === 'w') { const X = D.WEAR[key.slice(1)]; if (X.def) chips.push('🛡️ ' + X.def); chips.push({ head: '🎩 หัว', body: '👕 ตัว', legs: '👖 ขา' }[X.slot] || ''); btn = big('wearC', sel.eq ? '🔄 ถอด' : '👕 สวมใส่', sel.eq ? 'blue' : ''); small = '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>' }
+      else if ('gfms'.includes(c) && bagTab === 'mats') { chips.push('×' + fmt(sel.n)); const h = { k: key.slice(1), b: c }; btn = big('hold', carryN() ? `✋ ถือเพิ่ม (${carryN()}/${D.CARRY.max})` : '✋ ถือ'); if (edible(h)) small += '<button class="btn go" data-im="eat">😋 กิน</button>'; if (c === 'm' && bagSellMode) small += `<button class="btn ghost" data-sm="${key.slice(1)}">ขาย 1 · 🪙${Math.round(D.MATS[key.slice(1)][2] * D.SELL_RATE)}</button>`; if (carryN()) small += '<button class="btn" data-cb="1">↩️ คืนที่ถือทั้งหมด</button>'; small += '<button class="btn ghost" data-im="drop">🗑️ ทิ้ง</button>' }
+      else if (c === 'r' || c === 'u') { chips.push('×' + fmt(sel.n)); btn = big('use', c === 'r' ? '😋 กิน' : '🧪 ใช้') }
+      else if (c === 'o') chips.push('×' + fmt(sel.n), '🐾 ป้อนน้องที่หน้าสัตว์เลี้ยง');
+      else if (c === 'p') { btn = big('feed', '🍖 ให้อาหาร'); const p = sel.pet; if (p && SKILLS[p.kind] && p.kind !== 'boar' && p.lv >= D.SKILL_LV) small += ['X', 'A', 'Y'].map(sl => `<button class="btn sm${skSlot(sl) === p.kind ? ' go' : ''}" data-sks="${sl}:${p.kind}">${SKILLS[p.kind].icon} ${sl}</button>`).join(''); small += '<button class="btn ghost" data-im="free">🌿 ปล่อย</button>' }
+      else if (c === 'k') { const k = key.slice(1); if (skOn(k) && k !== 'boar') small = '<span class="mut">ใส่ในวงล้อ (ค้าง X):</span>' + ['X', 'A', 'Y'].map(sl => `<button class="btn sm${skSlot(sl) === k ? ' go' : ''}" data-sks="${sl}:${k}">${sl}</button>`).join('') }
+      detail = { pic: sel.pic || sel.icon, title: sel.name, desc: sel.sub || '', mid: (chips.filter(Boolean).length ? `<div class="up2m">${chips.filter(Boolean).map(t => `<span class="up2mat">${t}</span>`).join('')}</div>` : '') + (small ? `<div class="up2row">${small}</div>` : ''), btn } }
+    upPage(b, { tabs: T, cur: bagTab, tabAttr: 'data-bt', head, cardAttr: 'data-k', sel: sel && sel.key, cards: L.map(x => ({ k: x.key, pic: x.pic || x.icon, name: x.name, tag: tag(x), dim: x.brk || x.away, mark: x.eq && x.key[0] === 'i' ? '<i class="up2mk">✋</i>' : x.up && !x.eq && x.key[0] === 'i' ? '<i class="up2mk up">⬆️</i>' : '' })),
+      detail, hint: L0.length ? 'แตะการ์ดเพื่อดูรายละเอียด' : `ยังไม่มี${cur[2]} · ${{ sword: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', shield: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', bow: 'หาได้จากมอนสเตอร์และหีบสมบัติ ⛺', wear: 'ทำเควสในเมืองหรือซื้อที่ร้าน', mats: 'ตีต้นไม้ ทุบหิน เก็บของบนพื้น', food: 'ทำอาหารที่หม้อ 🍲', pets: 'จับน้องด้วยตาข่าย 🕸️', skill: `เลี้ยงน้องที่มีสกิลให้ถึง Lv ${D.SKILL_LV}` }[bagTab] || ''}` });
+    { const ov = b.closest('.ov'); if (ov) ov._redraw = redraw }
+    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { bagTab = x.dataset.bt; bagSel._none = 0; sfx('tap'); redraw() });
+    b.querySelectorAll('[data-bs]').forEach(x => x.onclick = () => { bagSort[bagTab] = x.dataset.bs; sfx('tap'); redraw() });
+    b.querySelectorAll('.up2g [data-k]').forEach(x => x.onclick = () => { bagSel[bagTab] = x.dataset.k; sfx('tap'); redraw() });
+    { const cb = b.querySelector('[data-cb]'); if (cb) cb.onclick = () => { carryBack(); redraw() } }
+    b.querySelectorAll('.up2d [data-im]').forEach(x => x.onclick = () => bagDo(x.dataset.im, bagTab, sel.key, sel, redraw, () => {}, redraw));
     bagBind(b, redraw);
-    /* v3.16.4 press and hold a slot = its own card: details · wear / equip / use · throw away */
-    if (0) b.querySelectorAll('[data-k]').forEach(x => { let t = 0; const go = () => { t = 0; bagSel[bagTab] = x.dataset.k; bagItem(bagTab, x.dataset.k, redraw) };
-      x.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(go, 450) }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) x.addEventListener(ev, () => { clearTimeout(t); t = 0 }); x.addEventListener('contextmenu', e => e.preventDefault()) });
-  }, { cls: 'inv', onClose: () => { bagSellMode = false } });
+  }, { cls: 'inv up2', onClose: () => { bagSellMode = false } });
 }
 /* ================= v3.72 🎒 the bag: 7 sections × pages of 5×5 · the frame starts on ⚔️'s first slot · ⬅️➡️ past the row's end = the next page / section (same row) · swipe = the same · A = a small menu · 🪵: X = hold (n/5) → A adds · X again = all back · B = back to the game ================= */
 /* v3.75 landscape (a short screen): the 5×5 grid shrinks so all five rows fit under the header */
@@ -2049,8 +2049,9 @@ function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key 
   sheet(`${sel.icon} ${sel.name}${sel.n > 1 && !/^[iwpk]/.test(key) ? ' ×' + sel.n : ''}`, (b, r2, close) => { b.innerHTML = `${sel.sub ? `<p class="mut">${sel.sub}</p>` : ''}<div class="row2 imenu">${btns}<button class="btn" data-im="cancel">✖️ ยกเลิก</button></div>${extra}`;
     const done = () => { close(); redraw() };
     bagBind(b, done);
-    b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { const a = x.dataset.im, k = key.slice(1);
-      if (a === 'cancel') { close(); return }
+    b.querySelectorAll('[data-im]').forEach(x => x.onclick = () => { if (x.dataset.im === 'cancel') { close(); return } bagDo(x.dataset.im, tab, key, sel, done, close, redraw) }) }, { cls: 'dlg', onClose: () => { NAV.zone = 'items'; NAV.key = k0; NAV.el = null } }) }
+/* v4.50 what a bag action does (the slot menu and the new bag's detail sheet share it) */
+function bagDo(a, tab, key, sel, done, close, redraw) { const k = key.slice(1), c = key[0];
       if (a === 'wear') { const it = S.bag.find(q => q.id === +k); if (D.ITEMS[it.t].slot === 'sword' && !!D.ITEMS[it.t].tool !== gFarm()) { (S.eqKeep = S.eqKeep || {})[gFarm() ? 'fight' : 'farm'] = it.id; hint(D.ITEMS[it.t].tool ? '🧰 ใช้ในโหมดฟาร์ม (🔄 ซ้ายของ X)' : '⚔️ ใช้ในโหมดต่อสู้ (🔄 ซ้ายของ X)', 1500); save(); done(); return } if (D.ITEMS[it.t].slot === 'sword') { equipA(it); DRAWN = false; setTool(S.hand === 'w' ? '' : S.hand) } else S.eq[D.ITEMS[it.t].slot] = it.id; bump('equips'); questCheck(); sfx('knock'); save(); hud(); gearView(); done(); return }
       if (a === 'wearC') { const X = D.WEAR[k]; S.wear[X.slot] = S.wear[X.slot] === k ? BARE(X.slot) : k; sfx('tap'); save(); wearView(); done(); return }
       if (a === 'arrow') { S.arrowT = key === 'arw' ? '' : key.slice(2); sfx('tap'); aimHud(); save(); done(); return }
@@ -2058,7 +2059,8 @@ function itemMenu(tab, key, redraw) { const sel = invItems(tab).find(o => o.key 
       if (a === 'feed') { close(); openPet(S.pets.find(p => p.id === k)); return }
       if (a === 'eat') { if (!bagTakeKey(key)) return; carryEat(); done(); return }
       if (a === 'hold') { bagTakeKey(key); done(); return }
-      if (a === 'use') { close(); if (c === 'r') { closeSheets(); eatMeal(k) } else { usePotion(k); redraw() } } }) }, { cls: 'dlg', onClose: () => { NAV.zone = 'items'; NAV.key = k0; NAV.el = null } }) }
+      if (a === 'use') { close(); if (c === 'r') { closeSheets(); eatMeal(k) } else { usePotion(k); redraw() } } }
+
 function bagBind(b, redraw) {
     b.querySelectorAll('[data-sks]').forEach(x => x.onclick = () => { const [sl, k] = x.dataset.sks.split(':'); setSkSlot(sl, k); redraw() });   /* v3.17 */
     b.querySelectorAll('[data-pf]').forEach(x => x.onclick = () => openPet(S.pets.find(p => p.id === x.dataset.pf)));
@@ -2772,9 +2774,10 @@ document.addEventListener('touchstart', e => { if (e.target.closest && e.target.
 const NAV = { el: null, key: '', dir: null, rep: 0, on: false, a: null, zone: 'tabs' };   /* v3.23 the bag has two levels: zone 'tabs' (pick a section) → A → 'items' · B steps back */
 const topOv = () => { const L = document.querySelectorAll('.ov'); return L.length ? L[L.length - 1] : null };
 const twoZ = ov => ov.classList.contains('inv') || ov.classList.contains('tabz') || !!ov.querySelector('.qsubc');   /* v3.85 the quest page's section row too */
+const invOld = ov => ov.classList.contains('inv') && !ov.classList.contains('up2');   /* v4.50 the old grid bag (the new one steps back to its side tabs like the other pages) */
 const isTab = e => !!(e.dataset.bt || e.dataset.qs), tabOn = ov => ov.querySelector('[data-bt].on,[data-qs].on') || ov.querySelector('[data-bt],[data-qs]');   /* v3.49 windows with a row of sections (bag · adventure journal) */
 const navAll = ov => { const inv = twoZ(ov); return [...ov.querySelectorAll('button, [data-k], [data-bt], img[data-a]')].filter(e => !e.classList.contains('back') && !e.disabled && e.offsetParent !== null && e.getBoundingClientRect().width > 4 && (!inv || (NAV.zone === 'tabs') === isTab(e))) };
-function navBack() { const ov = topOv(); if (ov && twoZ(ov) && !ov.classList.contains('inv') && NAV.zone === 'items') {   /* v3.72 the bag has no section row to step back to: B closes it */ NAV.zone = 'tabs'; NAV.key = ''; navSet(tabOn(ov)); { const sc = ov.querySelector('.shb'); if (sc) sc.scrollTop = 0 } sfx('tap'); return true } return false }   /* v3.85 B: the page → its section row · B again closes */
+function navBack() { const ov = topOv(); if (ov && twoZ(ov) && !invOld(ov) && NAV.zone === 'items') {   /* v3.72 the bag has no section row to step back to: B closes it */ NAV.zone = 'tabs'; NAV.key = ''; navSet(tabOn(ov)); { const sc = ov.querySelector('.shb'); if (sc) sc.scrollTop = 0 } sfx('tap'); return true } return false }   /* v3.85 B: the page → its section row · B again closes */
 const navKeyOf = e => { for (const a of e.attributes) if (a.name.startsWith('data-') || a.name === 'id') return a.name + '=' + a.value; return 'txt=' + e.textContent.trim().slice(0, 24) };
 function navSet(e) { if (NAV.el && NAV.el !== e) NAV.el.classList.remove('nfocus'); NAV.el = e; if (!e) return; NAV.key = navKeyOf(e); e.classList.add('nfocus'); try { e.scrollIntoView({ block: 'nearest', inline: 'nearest' }) } catch (_) { } }
 function navCur() { const ov = topOv(); if (!ov) { NAV.el = null; NAV.on = false; return null } if (NAV.el && NAV.el.isConnected && ov.contains(NAV.el)) { NAV.el.classList.add('nfocus'); return NAV.el }
@@ -2787,8 +2790,8 @@ function navMove(dir) { { const o = topOv(); if (o && o.classList.contains('qatl
     if (row.length) best = row[0]; else if (ov.classList.contains('inv')) { const g = cur.closest('.invgrid'), i = [...g.querySelectorAll('[data-k]')].indexOf(cur); bagEdge(dir === 'right' ? 1 : -1, Math.floor(i / D.BAG.cols)); return } else best = null }   /* v3.72 past the row's end = the next / previous page or section (same row) */   /* v3.38 past the grid's edge = the next / previous page */
   if (!best && twoZ(ov) && dir === 'down' && NAV.zone === 'tabs') { NAV.zone = 'items'; const L2 = navAll(ov); best = L2.find(x => x.getBoundingClientRect().top > r.bottom - 2) || L2[0]; if (best) { sfx('tap'); navSet(best); return } }   /* v3.67 ▼ from the section row goes into the page */
   if (!best && NAV.zone !== 'tabs' && (dir === 'down' || dir === 'up') && navScroll(ov, dir)) return;   /* v3.85 past the last button: scroll the rest into view */
-  if (!best && twoZ(ov) && dir === 'up' && NAV.zone !== 'tabs' && !ov.classList.contains('inv')) { NAV.zone = 'tabs'; const t2 = tabOn(ov) || navAll(ov)[0]; if (t2) { sfx('tap'); navSet(t2); const sc = ov.querySelector('.shb'); if (sc) sc.scrollTop = 0; return } }   /* ▲ at the top goes back to the sections */
-  if (!best) { sfx('knock'); return } sfx('tap'); navSet(best); if (best.dataset.k && best.closest('.invgrid')) best.click(); else if (best.dataset.bt && !best.classList.contains('on')) best.click() }   /* v3.27 moving onto a section shows it at once (A = go in) */   /* a bag slot: moving onto it shows it */
+  if (!best && twoZ(ov) && dir === 'up' && NAV.zone !== 'tabs' && !invOld(ov)) { NAV.zone = 'tabs'; const t2 = tabOn(ov) || navAll(ov)[0]; if (t2) { sfx('tap'); navSet(t2); const sc = ov.querySelector('.shb'); if (sc) sc.scrollTop = 0; return } }   /* ▲ at the top goes back to the sections */
+  if (!best) { sfx('knock'); return } sfx('tap'); navSet(best); if (best.dataset.k && best.closest('.invgrid, .ov.inv .up2g')) best.click(); else if (best.dataset.bt && !best.classList.contains('on')) best.click() }   /* v3.27 moving onto a section shows it at once (A = go in) */   /* a bag slot: moving onto it shows it */
 function navStick(x, y) { NAV.on = true; const d = Math.hypot(x, y), now = performance.now(); if (d < .5) { NAV.dir = null; return } const dir = Math.abs(x) > Math.abs(y) ? (x > 0 ? 'right' : 'left') : (y > 0 ? 'down' : 'up');
   if (dir !== NAV.dir) { NAV.dir = dir; NAV.rep = now + 420; navMove(dir) } else if (now > NAV.rep) { NAV.rep = now + 150; navMove(dir) } }
 function navADown() { const e = navCur(); if (!e) return; NAV.a = { e, t: performance.now() }; if (e.dataset.k && e.closest('.invgrid')) e.dispatchEvent(new PointerEvent('pointerdown')) }   /* a held slot opens its card (the slot's own long press) */
