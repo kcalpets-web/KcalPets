@@ -1,0 +1,31 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE proportions</title><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.18 proportions test (designer: longer arms, legs and body would move better and carry weapons nicer) · the same vinyl build, each segment stretched at its joint
+   A = now · B = a bit longer · C = longer · holding the knight sword + shield as in the game */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl, VBACK, VSCALE } from '../../src/vinyl.js';
+import { WEAPON_MESH, SHIELD_MESH } from '../../src/weapons.js';
+const W = 1200, H = 760, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#f4ead8'); S.add(new THREE.HemisphereLight('#fff', '#c8b8a0', 1.5)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 5, 4); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -2 }); S.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), new THREE.MeshStandardMaterial({ color: '#d8c8a0' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const JOINT = o => !!(o.userData.role || /^(hand[LR]|arm[LR]2|head)$/.test(o.name));
+function stretch(g, P) { const F = { armL: P.arm, armR: P.arm, elL: P.fore, elR: P.fore, hipL: P.thigh, hipR: P.thigh, kneeL: P.shin, kneeR: P.shin, chest: P.torso, waist: P.waist };
+  g.traverse(J => { const f = F[J.userData.role]; if (!f || f === 1) return; for (const c of J.children) { c.position.y *= f; if (!JOINT(c)) c.scale.y *= f } });
+  /* the hips sit higher when the legs are longer · the feet stay on the ground */
+  g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); g.position.y -= b.min.y }
+const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', hairCol: '#2a2228', wear: 'traveler', top: '#3a8ad8', legs: 'pants', legCol: '#5a3a2a', eyes: 'round', hat: 'straw' };
+const V = [['A · แบบตอนนี้', { arm: 1, fore: 1, thigh: 1, shin: 1, torso: 1, waist: 1 }], ['B · ยาวขึ้นเล็กน้อย', { arm: 1.35, fore: 1.35, thigh: 1.5, shin: 1.5, torso: 1.2, waist: 1.15 }], ['C · ยาวขึ้น', { arm: 1.7, fore: 1.7, thigh: 2, shin: 2, torso: 1.4, waist: 1.3 }]];
+V.forEach(([t, P], i) => { const root = new THREE.Group(), g = new THREE.Group(); root.add(g); vinyl(g, look); g.scale.setScalar(VSCALE * .82);
+  const R2 = {}; g.traverse(o => { if (o.userData.role) R2[o.userData.role] = o });
+  /* the ready pose + the shield arm (as the game does) */
+  if (R2.armR) { R2.armR.rotation.x = -.5; R2.elR.rotation.x = -.9 } if (R2.armL) { R2.armL.rotation.set(-.45, 0, .3); R2.elL.rotation.set(-1.45, -.5, 0) }
+  stretch(g, P);
+  const hand = g.getObjectByName('handR'), arm2 = g.getObjectByName('armL2');
+  if (hand) { const s = new THREE.Group(); WEAPON_MESH.knightSword(s); s.scale.setScalar(1.25 * VBACK.held / VSCALE * 1.45); s.rotation.set(2.2, -Math.PI / 2, 0); s.position.set(0, -.02, .02); hand.add(s) }
+  if (arm2) { const sh = new THREE.Group(); SHIELD_MESH.knightShield(sh); sh.scale.setScalar(1.35 * VBACK.held); sh.rotation.set(Math.PI / 2, 0, -.7); sh.position.set(.03, -.03, .05); arm2.add(sh) }
+  root.traverse(o => { if (o.isMesh) o.castShadow = true }); root.position.x = (i - 1) * 1.9; root.rotation.y = .45; S.add(root) });
+const cam = new THREE.PerspectiveCamera(26, W / H, .1, 50); cam.position.set(0, 1.5, 9.2); cam.lookAt(0, 1.2, 0); R.render(S, cam);
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.drawImage(R.domElement, 0, 0); x.font = '900 24px system-ui'; x.fillStyle = '#2a2030'; x.textAlign = 'center';
+V.forEach(([t], i) => x.fillText(t, W / 2 + (i - 1) * 385, 44)); x.font = '700 16px system-ui'; x.fillText('ถือดาบอัศวิน + โล่ ขนาดเท่าในเกม · หัวขนาดเดิมทุกแบบ', W / 2, H - 20);
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
