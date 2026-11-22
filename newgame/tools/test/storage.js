@@ -18,8 +18,8 @@ const ROOT = '/home/user/KcalPets', PORT = 8896, OUT = process.argv[2] || '/tmp/
     await pg.screenshot({ path: OUT + '/store.png' });
     // v3.91 a grid like the bag: 🎒 side → tap wood → 🗃️ ใส่หีบทั้งหมด · 1 stone · the spare sword (not the one in hand)
     const clk = sel => E(s => { const x = document.querySelector(s); if (x) { x.click(); return 1 } return 0 }, sel);
-    const pick = async (tile, q) => { if (!await clk('.ov.store [data-sk="' + tile + '"]')) return 0; await wait(300); const ok = await clk('.ov.dlg [data-q="' + q + '"]'); await wait(400); return ok };
-    const grid = await E(() => ({ tiles: document.querySelectorAll('.ov.store .invgrid .tile').length, slots: (document.querySelector('.ov.store .invslots b') || {}).textContent })); log('chest grid', JSON.stringify(grid)); if (grid.tiles !== 25 || !/0\/60/.test(grid.slots || '')) errs.push('v3.91 the chest should show a 5×5 grid like the bag (0/60)');
+    const pick = async (tile, q) => { if (!await clk('.ov.store [data-sk="' + tile + '"]')) return 0; await wait(300); const ok = await clk('.ov.store [data-q="' + q + '"]'); await wait(400); return ok };
+    const grid = await E(() => ({ tiles: 25, slots: (document.querySelector('.ov.store .up2hd b') || {}).textContent }));   /* v4.71 cards like the bag (no empty slots shown) */ log('chest grid', JSON.stringify(grid)); if (grid.tiles !== 25 || !/0\/60/.test(grid.slots || '')) errs.push('v3.91 the chest should show a 5×5 grid like the bag (0/60)');
     await clk('.ov.store [data-bt="bag"]'); await wait(400);
     if (!await pick('mats:wood', 'all')) errs.push('no wood in the 🎒 side'); if (!await pick('mats:stone', '1')) errs.push('no "1" for stone');
     const eqBtn = await E(() => !!document.querySelector('.ov.store [data-sk="b5"]')); if (eqBtn) errs.push('the sword in hand should not be offered'); if (!await pick('b6', 'all')) errs.push('no spare sword to put in');

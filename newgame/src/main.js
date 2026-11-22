@@ -4626,22 +4626,24 @@ function storeItems(b, side) { const st = storeOf(b), L = [], eqd = new Set(Obje
   else for (const it of S.bag.filter(it => D.ITEMS[it.t] && !D.ITEMS[it.t].starter && !eqd.has(it.id))) { const T = D.ITEMS[it.t]; L.push({ key: 'b' + it.id, id: it.id, icon: T.icon, name: T.name, col: D.RAR_COL[it.r], n: null }) }
   return L }
 /* v3.91 🗃️ the storage chest looks and works like the bag: a 5×5 grid (60 slots = 3 pages) · ◀▶ sections ในหีบ / ในกระเป๋า · tap a slot = a small menu (1 · all) */
-function openStore(b) { sfx('tap'); sheet('🗃️ หีบเก็บของ', (bx, redraw) => { const PG = D.BAG.page, side = storeTab, L0 = storeItems(b, side), slots = side === 'st' ? D.STORE : Math.max(PG, Math.ceil(L0.length / PG) * PG), np = Math.max(1, Math.ceil(slots / PG)), pg = storePg[side] = Math.min(np - 1, storePg[side] || 0);
-    const L = L0.slice(pg * PG, pg * PG + PG), empty = Math.max(0, Math.min(PG, slots - pg * PG) - L.length), T = [['st', '🗃️', 'ในหีบ'], ['bag', '🎒', 'ในกระเป๋า']];
-    bx.innerHTML = `<div class="invtabs">${T.map(([k, ic, nm]) => `<button class="${k === side ? 'on' : 'nb'}" data-bt="${k}">${ic}<small>${nm}</small></button>`).join('')}</div>
-      <div class="invslots"><b>🗃️ ช่อง ${storeUsed(b)}/${D.STORE}</b>${np > 1 ? `<small>หน้า ${pg + 1}/${np}</small>` : ''}</div><div class="invhint"><b class="ka">A</b> เลือก · <b class="kb">B</b> ปิด · แตะหัวข้อด้านบน = สลับ ในหีบ / ในกระเป๋า</div>
-      <div class="invmain wide"><div class="invgrid">${L.map(x => `<button class="tile" data-sk="${x.key}" style="--rc:${x.col || '#5a5060'}">${x.icon}${x.n != null ? `<i>${fmt(x.n)}</i>` : ''}</button>`).join('')}${Array.from({ length: empty }, () => '<button class="tile emp"></button>').join('')}</div></div>
-      ${np > 1 ? `<div class="cnav"><button class="btn" data-pg="-1"${pg ? '' : ' disabled'}>◀</button><b>${pg + 1}/${np}</b><button class="btn" data-pg="1"${pg < np - 1 ? '' : ' disabled'}>▶</button></div>` : ''}`;
+let storeSel = {};
+/* v4.71 🗃️ the storage chest like the bag (designer: the old grid showed only kind icons): ในหีบ / ในกระเป๋า side tabs · a card per thing (its picture · name · power / count) · tap = a sheet with the one big button (ใส่ / เอาออก) */
+function openStore(b) { sfx('tap'); sheet('🗃️ หีบเก็บของ', (bx, redraw) => { const side = storeTab, L0 = storeItems(b, side), T = [['st', '🗃️', 'ในหีบ'], ['bag', '🎒', 'ในกระเป๋า']];
+    const gearOf = it => it.gi != null ? (storeOf(b).gear || [])[it.gi] : it.id != null ? S.bag.find(q => q.id === it.id) : null;
+    const pic = it => { const g = gearOf(it); return g ? picTag(itemPic(g.t), D.ITEMS[g.t].icon) : `<span class="cbig">${emo(it.icon)}</span>` };
+    const tag = it => { const g = gearOf(it); if (!g) return `<span class="up2s ok">×${fmt(it.n)}</span>`; const x = itemStats(g), sh = itemCat(g.t) === 'shield'; return `<span class="up2s ok" style="background:${D.RAR_COL[g.r]}33">${sh ? '🛡️ ' + x.def : '⚔️ ' + x.atk}</span>` };
+    let sel = L0.find(x => x.key === storeSel[side]); if (!sel && L0.length) sel = L0[0]; storeSel[side] = sel && sel.key;
+    let detail = null; if (sel) { const g = gearOf(sel), put = side === 'bag', many = sel.n > 1, x = g && itemStats(g);
+      detail = { pic: pic(sel), title: sel.name, desc: g ? `<span class="tag" style="background:${D.RAR_COL[g.r]}">${D.RAR_NAME[g.r]}</span> ${itemCat(g.t) === 'shield' ? '🛡️ ' + x.def : '⚔️ ' + x.atk} · 🔧 ${Math.ceil(durLeft(g))}/${x.dur}${D.ITEMS[g.t].metal ? ' · ⚡ โลหะ' : ''}` : `มี ${fmt(sel.n)} ชิ้น`,
+        mid: many ? `<div class="up2row"><button class="btn" data-q="1">${put ? '🗃️ ใส่ 1' : '🎒 เอาออก 1'}</button></div>` : '', btn: `<button class="up2btn${put ? '' : ' blue'}" data-q="all">${put ? '🗃️ ใส่หีบ' + (many ? 'ทั้งหมด' : '') : '🎒 เอาออก' + (many ? 'ทั้งหมด' : '')}</button>` } }
+    upPage(bx, { tabs: T, cur: side, tabAttr: 'data-bt', head: `<div class="up2hd"><b>🗃️ ช่อง ${storeUsed(b)}/${D.STORE}</b><small>${side === 'st' ? 'ของในหีบ' : 'ของในกระเป๋า (ไม่รวมที่ถืออยู่)'}</small></div>`, cardAttr: 'data-sk', sel: sel && sel.key, cards: L0.map(it => ({ k: it.key, pic: pic(it), name: it.name, tag: tag(it) })), detail, hint: side === 'st' ? 'หีบยังว่าง · ไปที่ 🎒 ในกระเป๋า แล้วเลือกของที่จะใส่' : 'กระเป๋าไม่มีของที่ใส่หีบได้' });
     bx.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { storeTab = x.dataset.bt; sfx('tap'); redraw() });
-    bx.querySelectorAll('[data-pg]').forEach(x => x.onclick = () => { storePg[side] = pg + +x.dataset.pg; sfx('tap'); redraw() });
-    bx.querySelectorAll('[data-sk]').forEach(x => x.onclick = () => { const it = L0.find(q => q.key === x.dataset.sk); if (!it) return; sfx('tap');
-      sheet(`${it.icon} ${esc(it.name)}${it.n > 1 ? ' ×' + fmt(it.n) : ''}`, (d, r2, close) => { const put = side === 'bag', many = it.n > 1;
-        d.innerHTML = `<div class="row2">${many ? `<button class="btn" data-q="1">${put ? '🗃️ ใส่ 1' : '🎒 เอาออก 1'}</button>` : ''}<button class="btn go" data-q="all">${put ? '🗃️ ใส่หีบ' + (many ? 'ทั้งหมด' : '') : '🎒 เอาออก' + (many ? 'ทั้งหมด' : '')}</button></div>`;
-        d.querySelectorAll('[data-q]').forEach(y => y.onclick = () => { const n = y.dataset.q === 'all' ? 1e9 : 1, st = storeOf(b); let ok = 0;
-          if (it.bx) ok = put ? storePut(b, it.bx, it.k, n) : storeTake(b, it.bx, it.k, n);
-          else if (put) { const g = S.bag.find(q => q.id === it.id); if (g && storeUsed(b) < D.STORE) { S.bag.splice(S.bag.indexOf(g), 1); (st.gear = st.gear || []).push(g); ok = 1 } else hint(`🗃️ หีบเต็มแล้ว (${D.STORE} ช่อง)`, 1600) }
-          else { const g = st.gear[it.gi], c = g && itemCat(g.t); if (g && bagFits(c)) { st.gear.splice(it.gi, 1); S.bag.push(g); ok = 1 } else if (g) bagFullHint(c) }
-          close(); if (ok) { sfx('coin'); save(); hud() } redraw() }) }, { cls: 'dlg' }) }) }, { cls: 'inv store' }) }
+    bx.querySelectorAll('[data-sk]').forEach(x => x.onclick = () => { storeSel[side] = x.dataset.sk; sfx('tap'); redraw() });
+    bx.querySelectorAll('.up2d [data-q], [data-q]').forEach(y => y.onclick = () => { const it = sel; if (!it) return; const put = side === 'bag', n = y.dataset.q === 'all' ? 1e9 : 1, st = storeOf(b); let ok = 0;
+      if (it.bx) ok = put ? storePut(b, it.bx, it.k, n) : storeTake(b, it.bx, it.k, n);
+      else if (put) { const g = S.bag.find(q => q.id === it.id); if (g && storeUsed(b) < D.STORE) { S.bag.splice(S.bag.indexOf(g), 1); (st.gear = st.gear || []).push(g); ok = 1 } else hint(`🗃️ หีบเต็มแล้ว (${D.STORE} ช่อง)`, 1600) }
+      else { const g = st.gear[it.gi], c = g && itemCat(g.t); if (g && bagFits(c)) { st.gear.splice(it.gi, 1); S.bag.push(g); ok = 1 } else if (g) bagFullHint(c) }
+      if (ok) { sfx('coin'); save(); hud() } redraw() }) }, { cls: 'up2 tabz store' }) }
 function setHome(b) { HOUSE.x = b.x; HOUSE.z = b.z }   /* v3.50 'home' follows your first hut (sleep · respawn · the 🏠 warp · quest arrows) */
 function homeMigrate() { if (!BALD_ON) return; let h = S.home && bOf(S.home);
   if (!h && S.story.built) { let best = null; for (let r = 0; r < 40 && !best; r += 1) for (let a = 0; a < 6.28 && !best; a += .3) { const x = Math.round((8 + Math.cos(a) * r) * 2) / 2, z = Math.round((-4 + Math.sin(a) * r) * 2) / 2; if (!BM && !canBuild('cabin', x, z, Math.PI)) best = [x, z] }
