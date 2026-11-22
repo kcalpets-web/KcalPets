@@ -1,0 +1,19 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE head height</title><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.30 preview: the designer's sketch — a lower crown (the top of the head above the eyes squeezed) · A = now · B · C · D lower */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl, VPROP } from '../../src/vinyl.js';
+const KS = [[1, 'A ตอนนี้'], [.82, 'B'], [.7, 'C'], [.6, 'D']], LOOKS = [
+  { sex: 'f', skin: '#d8a878', hair: 'bob', hairCol: '#3a2418', wear: 'traveler', top: '#5a7a3a', bottom: 'pants', legCol: '#5a4a32', hat: 'headband', hatCol: '#5aa848', expr: 'smile' },
+  { sex: 'm', hair: 'spiky', hairCol: '#2a2228', hat: 'leafhood', wear: 'bark', top: '#5a8a42', legs: 'vine' },
+  { sex: 'm', hair: 'messy', hairCol: '#7a4428', hat: 'straw', wear: 'traveler', top: '#3a8ad8', legs: 'pants', legCol: '#5a3a2a' }];
+const CW = 260, CH = 330, R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); R.setSize(CW, CH - 40); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.4); sun.position.set(2, 4, 3); S.add(sun);
+const cv = document.createElement('canvas'); cv.width = CW * KS.length; cv.height = CH * LOOKS.length + 60; const x = cv.getContext('2d'); x.fillStyle = '#f4ead8'; x.fillRect(0, 0, cv.width, cv.height);
+x.font = '900 24px system-ui'; x.fillStyle = '#3a2a30'; x.fillText('ความสูงหัว: ลดส่วนบนของหัว (เหนือตา) · A = ตอนนี้', 16, 40);
+LOOKS.forEach((L, r) => KS.forEach(([k, t], c) => { const g = new THREE.Group(); vinyl(g, { v: 2, skin: '#f2cfa6', eyes: 'round', eyeCol: '#4a3020', ...L, prop: { ...VPROP, headTop: k } }); g.rotation.y = .3; S.add(g); g.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(g), ce = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3()), cam = new THREE.PerspectiveCamera(28, CW / (CH - 40), .05, 50); cam.position.set(ce.x, ce.y, ce.z + sz.y * 2.3); cam.lookAt(ce);
+  R.setClearColor(0, 0); R.clear(); R.render(S, cam); S.remove(g); const cx = c * CW, cy = 60 + r * CH; x.fillStyle = k === 1 ? '#efe6d6' : '#fffaf2'; x.beginPath(); x.roundRect(cx + 6, cy + 4, CW - 12, CH - 10, 16); x.fill(); x.drawImage(R.domElement, cx, cy + 4);
+  x.font = '800 18px system-ui'; x.fillStyle = '#3a2a30'; x.textAlign = 'center'; x.fillText(t + (k === 1 ? '' : ` (×${k})`), cx + CW / 2, cy + CH - 16); x.textAlign = 'left' }));
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
