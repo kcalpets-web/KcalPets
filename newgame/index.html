@@ -558,6 +558,22 @@ body:has(.ov) .mlb{display:block}   /* v4.05 windows: the letter + what it does 
 img.emo{width:1.15em;height:1.15em;vertical-align:-.18em;pointer-events:none;-webkit-user-drag:none}   /* v4.10 Noto icons */
 .card.trk.qdone{opacity:.62;filter:saturate(.5)}.card.trk.qdone .qok{color:#7ad870;font-weight:800;font-size:13px}   /* v4.10 finished quests */
 .bic i img.bpic{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 2px #0006)}   /* v4.25 the held weapon / shield on the button */
+
+/* v4.49 📐 the new menu page: side tabs · cards · a details sheet with one big button */
+.ov.up2 .up2b{display:flex;gap:8px;align-items:flex-start;min-height:0}
+.up2t{display:flex;flex-direction:column;gap:6px;width:72px;flex:none;max-height:calc(100vh - 380px);overflow-y:auto;padding:2px 6px 4px 1px}
+.up2tab{background:#fff8ee;border:3px solid var(--ink);border-radius:14px;padding:5px 2px;color:#3a2a30;opacity:.82;display:flex;flex-direction:column;align-items:center;font:inherit}.up2tab i{font-style:normal;font-size:21px;line-height:1.1}.up2tab span{font:800 11px system-ui;line-height:1.15}
+.up2tab.on{background:#ffd23f;opacity:1;transform:translateX(5px);box-shadow:3px 0 0 #0004}
+.up2r{flex:1;min-width:0}.up2g{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:calc(100vh - 380px);overflow-y:auto;padding:4px 2px 8px}.up2g.many{grid-template-columns:repeat(3,1fr);gap:6px}
+.up2c{position:relative;background:#fffaf0;border:3px solid var(--ink);border-radius:15px;display:flex;flex-direction:column;align-items:center;padding:5px 3px 7px;color:#3a2a30;font:inherit}.up2c .up2p img,.up2c .up2p .cbig{width:72px;height:72px;font-size:44px;display:grid;place-items:center}.up2g.many .up2c .up2p img,.up2g.many .up2c .up2p .cbig{width:52px;height:52px;font-size:32px}
+.up2c b{font:800 13px system-ui;text-align:center;line-height:1.15}.up2g.many .up2c b{font-size:10.5px}.up2c.sel{border-color:#e8a818;box-shadow:0 0 0 3px #ffd23f}.up2c.miss .up2p{filter:brightness(0) opacity(.3)}.up2c.miss{border-style:dashed;background:#f2ece0}.up2c.dim .up2p{opacity:.55}
+.up2s{margin-top:3px;border-radius:10px;padding:1px 7px;font:800 12px system-ui}.up2s.ok{background:#d8f4d0;color:#1a6a2a}.up2s.no{background:#ffe0d8;color:#a8301a}.up2g.many .up2s{font-size:10.5px;padding:0 5px}
+.up2hint{text-align:center;color:#fff;font:700 13px system-ui;opacity:.8;margin-top:10px}
+.up2d{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fffaf0;border-top:4px solid var(--ink);border-radius:22px 22px 0 0;padding:8px 14px calc(16px + env(safe-area-inset-bottom));color:#3a2a30;box-shadow:0 -6px 18px #0006;max-width:560px;margin:0 auto}
+.up2grab{width:50px;height:5px;border-radius:3px;background:#c8b8a0;margin:0 auto 8px}.up2dh{display:flex;gap:10px;align-items:center}.up2p.big img,.up2p.big .cbig{width:88px;height:88px;font-size:52px;display:grid;place-items:center;background:#f2ead8;border-radius:14px}.up2dh h3{margin:0;font:900 18px system-ui}.up2dh p{margin:3px 0 0;font:600 12.5px system-ui;color:#6a5a60}
+.up2m{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.up2mat{display:inline-flex;align-items:center;gap:4px;background:#eef8e8;border:2px solid #9ad08a;border-radius:12px;padding:3px 8px;font:700 13px system-ui}.up2mat.lack{background:#ffece6;border-color:#f0a090;color:#a8301a}.up2mat .btn.sm{padding:0 6px;min-height:0}
+.up2btn{display:block;width:100%;background:#3fae6a;color:#fff;border:3px solid var(--ink);border-radius:16px;padding:12px;font:900 19px system-ui;box-shadow:0 4px 0 #0005}.up2btn.off{background:#b8b0a8}.up2btn.blue{background:#3a7ad8}
+body:has(.ov.up2):not(.gamepad) #dpad,body:has(.ov.up2):not(.gamepad) #bA,body:has(.ov.up2):not(.gamepad) #bB{display:none!important}   /* no buttons over the page (a game pad brings them back) */
 </style></head>
 <body>
 <canvas id="cv"></canvas>

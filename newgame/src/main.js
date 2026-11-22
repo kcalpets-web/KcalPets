@@ -4577,12 +4577,27 @@ const BCAT = [['home', '🏠', 'ที่พัก', ['campfire', 'bed', 'cabin'
 const bcatOf = k => (BCAT.find(c => c[3].includes(k)) || BCAT[BCAT.length - 1])[0], bcatList = c => Object.keys(BP).filter(k => bcatOf(k) === c);
 const bpPic = k => thumb('bp:' + k, w => w.add(bModel(k)), [.45, .7, 0]);
 let buildTab = null;
+/* v4.49 📐 the new menu page (designer): tabs down the left · cards on the right (3 small columns when many) · tap a card = its details + one big button in the bottom half · no D-pad / A / B over it (only with a game pad) */
+function upPage(b, o) { const many = o.cards.length > 6;
+  b.innerHTML = `<div class="up2b"><div class="up2t">${o.tabs.map(([k, ic, nm]) => `<button class="up2tab${k === o.cur ? ' on' : ''}" ${o.tabAttr}="${k}"><i>${ic}</i><span>${nm}</span></button>`).join('')}</div>
+    <div class="up2r">${o.head || ''}<div class="up2g${many ? ' many' : ''}">${o.cards.map(c => `<button class="up2c${c.k === o.sel ? ' sel' : ''}${c.miss ? ' miss' : ''}${c.dim ? ' dim' : ''}" ${o.cardAttr}="${c.k}">${c.mark || ''}<span class="up2p">${c.pic}</span><b>${c.name}</b>${c.tag || ''}</button>`).join('') || '<p class="mut">ยังไม่มีอะไรในหมวดนี้</p>'}</div></div></div>
+    ${o.detail ? `<div class="up2d"><div class="up2grab"></div><div class="up2dh"><span class="up2p big">${o.detail.pic}</span><div><h3>${o.detail.title}</h3><p>${o.detail.desc || ''}</p></div></div>${o.detail.mid || ''}${o.detail.btn || ''}</div>` : `<div class="up2hint">${o.hint || 'แตะการ์ดเพื่อดูรายละเอียด'}</div>`}` }
+const upTag = (ok, txt) => `<span class="up2s ${ok ? 'ok' : 'no'}">${txt}</span>`;
+const upMats = cost => `<div class="up2m">${Object.entries(cost).map(([m, n]) => { const h = costHave(m), src = msKnown(m); return `<span class="up2mat${h >= n ? '' : ' lack'}">${costName(m)} <b>${h}/${n}</b>${h < n && src ? ` <button class="btn sm" data-mg="${m}">🧭</button>` : ''}</span>` }).join('')}</div>`;
+let buildSel = null;
 function openBuild(cat) { if (cat) buildTab = cat; NAV.zone = 'tabs'; NAV.key = ''; NAV.el = null;
-  sheet('🔨 ก่อสร้าง', (b, redraw) => { const T = BCAT.filter(c => bcatList(c[0]).length).map(([k, ic, nm]) => [k, ic, nm + ` (${bcatList(k).filter(x => S.bp[x]).length}/${bcatList(k).length})`]); if (!T.some(t => t[0] === buildTab)) buildTab = T[0][0];
-    const L = bcatList(buildTab);
-    b.innerHTML = carBar(T, buildTab, 'data-bt') + `<p class="mut">📐 แบบแปลน · ● = วัสดุครบ · A / แตะ = เปิดหน้าแบบแปลน · สร้างได้ทุกที่บนพื้นดิน (ยกเว้นในเมือง)</p><div class="cgrid">${L.map(k => { const has = !!S.bp[k], B = BP[k]; return `<button class="ctile${has ? '' : ' lock'}" data-bk="${k}">${has ? picTag(bpPic(k), `<span class="cbig">${B.icon}</span>`) : '<span class="cbig">❔</span>'}${has && hasCost(bCost(k)) ? '<i class="cok"></i>' : ''}<small>${has ? B.name : '???'}</small></button>` }).join('')}</div>`;
-    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { buildTab = x.dataset.bt; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-bt=' + buildTab; NAV.el = null; redraw() });
-    b.querySelectorAll('[data-bk]').forEach(x => x.onclick = () => { sfx('tap'); buildPage(L, x.dataset.bk, redraw) }) }, { cls: 'adv tabz' }) }
+  sheet('🔨 ก่อสร้าง', (b, redraw) => { const T = BCAT.filter(c => bcatList(c[0]).length).map(([k, ic, nm]) => [k, ic, nm]); if (!T.some(t => t[0] === buildTab)) buildTab = T[0][0];
+    const L = bcatList(buildTab); if (buildSel && !L.includes(buildSel)) buildSel = null;
+    const cards = L.map(k => { const has = !!S.bp[k], B = BP[k], c = bCost(k), miss = Object.entries(c).find(([m, n]) => costHave(m) < n);
+      return { k, pic: has ? picTag(bpPic(k), `<span class="cbig">${B.icon}</span>`) : '<span class="cbig">❔</span>', name: has ? B.name : '???', miss: !has, tag: !has ? upTag(0, '🔒 ยังไม่มีแบบ') : !miss ? upTag(1, '✅ สร้างได้') : upTag(0, `${costName(miss[0]).split(' ')[0]} ขาด ${miss[1] - costHave(miss[0])}`) } });
+    let detail = null; if (buildSel) { const k = buildSel, B = BP[k], has = !!S.bp[k], c = bCost(k), ok = has && hasCost(c);
+      detail = { pic: has ? picTag(bpPic(k), `<span class="cbig">${B.icon}</span>`) : '<span class="cbig">❔</span>', title: has ? `${B.icon} ${B.name}` : '❔ แบบแปลนที่ยังไม่มี', desc: has ? B.desc : '📜 หาได้จากลุงฮาวซิฟ · หีบในแคมป์มอนสเตอร์ ⛺ · ม้วนแบบแปลนเรืองแสงที่ซ่อนอยู่',
+        mid: has ? upMats(c) : '', btn: has ? `<button class="up2btn${ok ? '' : ' off'}" id="bMake"${ok ? '' : ' disabled'}>${ok ? '🔨 สร้างเลย' : '🔒 วัสดุยังไม่ครบ'}</button>` : '' } }
+    upPage(b, { tabs: T, cur: buildTab, tabAttr: 'data-bt', cards, cardAttr: 'data-bk', sel: buildSel, detail, hint: 'แตะสิ่งที่อยากสร้าง · สร้างได้ทุกที่บนพื้นดิน (ยกเว้นในเมือง)' });
+    b.querySelectorAll('[data-bt]').forEach(x => x.onclick = () => { buildTab = x.dataset.bt; buildSel = null; sfx('tap'); NAV.zone = 'tabs'; NAV.key = 'data-bt=' + buildTab; NAV.el = null; redraw() });
+    b.querySelectorAll('[data-bk]').forEach(x => x.onclick = () => { sfx('tap'); buildSel = x.dataset.bk; redraw() });
+    b.querySelectorAll('[data-mg]').forEach(x => x.onclick = e => { e.stopPropagation(); msGo(x.dataset.mg) });
+    const mk = b.querySelector('#bMake'); if (mk) mk.onclick = () => { const k = buildSel; closeSheets(); buildSel = null; enterBuild(k) } }, { cls: 'adv tabz up2' }) }
 function buildPage(list, k0, back) { let at = Math.max(0, list.indexOf(k0));
   sheet('📐 แบบแปลน', (b, redraw, close) => { const k = list[at], B = BP[k], has = !!S.bp[k], cost = bCost(k);
     CBOOK = { flip: d => { const n = at + d; if (n < 0 || n >= list.length) { sfx('knock'); return } at = n; sfx('tap'); NAV.key = ''; NAV.el = null; redraw() } };
