@@ -546,7 +546,7 @@ function walkTick(dt, now) {
   if (AIM) { aimTick(now); PL.yawT = camTP() ? CAM.yaw : PL.yawT }
   if (CROUCH && (PL.swim || RIDE || GLIDE || now < jumpT || CUT)) CROUCH = false;
   if ((DRAWN || guardTog) && (PL.swim || RIDE || GLIDE)) { DRAWN = false; guardTog = false; updGuard() }
-  PL.pose = { wind: WIND ? chgK(WIND) + .001 : 0, lift: !!TORCHUP, aim: AIM && !AIM.rod && !AIM.net ? (AIM.ch ? chgK() : .3) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !PL.swim && !RIDE, ready: !WIND && inHand() === 'sword' && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: CROUCH && !PL.swim, cold: TEMPV < D.TEMP.coldAt || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
+  PL.pose = { wind: WIND ? chgK(WIND) + .001 : 0, lift: !!TORCHUP, aim: AIM && !AIM.rod && !AIM.net ? (AIM.ch ? chgK() : .3) + .001 : 0, swim: PL.swim && !RIDE && !DROWN, cheer: now < cheerT, jump: now < jumpT ? 1 - (jumpT - now) / (D.JUMP.t * 1000) : 0, guard: guard && !PL.swim && !RIDE, ready: !WIND && inHand() === 'sword' && !S.tired && !PL.swim && !RIDE && !(swingT > 0) ? D.ITEMS[weaponOf().t].kind : '', sneak: CROUCH && !PL.swim, cold: coldNow() || debOn('cold'), hot: TEMPV > D.TEMP.hotAt, tired: S.tired };
   gearView(); animate(PL, mv && !RIDE && !GLIDE, dt, now, PL.swim ? 7 : (spd > D.WALK_SP * 1.2 ? 14 : 11)); if (D.KRIG_ON) krigTick(PL, dt, now, plState(now, mv && !RIDE && !GLIDE, spd)); PL.body.position.y = PL.bob + (HORSE ? (HORSE.p ? D.PET_RIDE.seat[formOf(HORSE.p)] : D.HORSE.seat) : 0);
   if (GLIDE && PL.rig.armL) { PL.rig.armL.rotation.x = PL.rig.armR.rotation.x = -3; if (GLIDE.para) paraPlace(now) }
   if (GLIDE) { const tr = angDiff(GLIDE.py ?? PL.yaw, PL.yaw) / Math.max(dt, 1e-3); GLIDE.py = PL.yaw; GLIDE.roll = (GLIDE.roll || 0) + (Math.max(-.55, Math.min(.55, -tr * .3)) - (GLIDE.roll || 0)) * Math.min(1, dt * 5);   /* v3.7 legs still · the body leans into the turn and a little forward */
@@ -2098,7 +2098,7 @@ function debTick(now) {
   if (debOn('burn') && (PL.swim || PL.wade)) { delete S.deb.burn; toast('💧 ดับไฟแล้ว!', 1400) }
   if (debOn('cold') && nearFire()) { delete S.deb.cold; toast('🔥 อุ่นขึ้นแล้ว!', 1400) }
   swimT = PL.swim ? swimT + step / 1000 : 0;
-  tempTick(); climateTick(step); if (!debOn('cold') && !nearFire() && !RIDE && (TEMPV < D.TEMP.coldAt - .05 || isNight() && swimT > D.COLD_SWIM_S)) addDeb('cold');
+  tempTick(); climateTick(step); if (debOn('cold') && warmOk(1)) { delete S.deb.cold; hud() } if (!debOn('cold') && !nearFire() && !RIDE && (coldNow(-.05) || isNight() && swimT > D.COLD_SWIM_S && !warmOk(1) && !setOn('diver'))) addDeb('cold');   /* v4.26 warm clothes stop the shivering */
 }
 function debHud() { const T = Date.now(), ks = Object.keys(S.deb || {}).filter(k => S.deb[k] > T), key = ks.map(k => k + Math.ceil((S.deb[k] - T) / 1000)).join();
   if (key === debK) return; debK = key; document.body.classList.toggle('hasdeb', ks.length > 0); $('debs').innerHTML = ks.map(k => `<button data-deb="${k}">${D.DEBUFF[k].icon}<small>${Math.ceil((S.deb[k] - T) / 1000)}</small></button>`).join('') }
@@ -2254,6 +2254,8 @@ function climate(tv0) { const L = D.CLIMATE.lv, tv = (tv0 ?? TEMPV) - (nearFire(
   const B = PL ? kingdomAt(me().x, me().z) : null, noAir = !!(B && B.k === 'deadgar' && B.home < .5 && B.w > .62 && !Object.values(S.wear || {}).some(k => D.WEAR[k] && D.WEAR[k].air) && !buffOn('air'));   /* v2.7 Deadgar has no air */
   const lv = cold || hot, have = cold ? warm : cool, prot = lv ? Math.min(1, have / lv) : 1;   /* v3.82 level 1 needs 1 piece · level 2 needs 2 */
   return { cold, hot, warm, cool, noAir, prot, short: Math.max(0, lv - have) + (noAir ? 2 : 0) } }
+const warmOk = (n = 0) => { const c = PL && PL.climate || climate(); return c.warm >= Math.max(n, c.cold) };   /* v4.26 the clothes (or a fire / torch) cover this cold */
+const coldNow = (dv = 0) => TEMPV < D.TEMP.coldAt + dv && !warmOk(1);
 let climT = 0, climHint = 0, climLast = 0;
 let resT = 0, resH = '';
 function resistView(c) { const now = performance.now(); if (now < resT) return; resT = now + 500; const el = $('resist'); if (!el) return; const lv = c.cold || c.hot, h = (lv ? `<span class="rs lv${c.short >= .01 ? ' bad' : ''}">${c.cold ? '🥶' : '🥵'}${lv}</span>` : '') + resistHtml(); if (h !== resH) { resH = h; el.innerHTML = h } }   /* v3.82 the status: the weather level + each kind of protection with ✔ ticks */
