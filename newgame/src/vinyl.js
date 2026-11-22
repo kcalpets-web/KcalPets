@@ -65,13 +65,13 @@ function hatPiece(h, kind, col, hairC) { if (!kind || kind === 'none') return; c
   else if (kind === 'ribbon') { const C = M(col || '#d83a3a'); for (const s2 of [-1, 1]) { const w = ball(H, .08, C, [.16 + s2 * .08, .27, .04], [1.1, .7, .45], 16); w.rotation.z = s2 * .4 } ball(H, .04, C, [.16, .27, .05]) }   /* v3.87 pinned on the hair */
   else if (kind === 'leafhood') { const C = M(col || '#4a8a3a'), L1 = M('#7ac04a'), L2 = M('#3a7a2a'), St = M('#6a4a2a');   /* v4.30 🌿 sylvaren: a snug leaf hood · it replaces the hair (a kingdom costume: no floating head) */
     const g2 = new THREE.SphereGeometry(1, 56, 40), p = g2.attributes.position, dv = V(0, 0, 0);
-    for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, face = sst(.2, .5, dv.z) * sst(.36, .24, y), back = sst(.35, -.55, dv.z);
+    for (let i = 0; i < p.count; i++) { dv.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const az = Math.atan2(dv.x, dv.z), base = surf(dv, 0), y = base.y, face = sst(.2, .5, dv.z) * sst(.2, .1, y), back = sst(.35, -.55, dv.z);
       let o = .05 + .014 * Math.max(0, Math.sin(az * 7 + dv.y * 5)) * sst(-.2, .6, dv.y); o = -.03 + (o + .03) * (1 - face); const q = surf(dv, o);
       if (back > 0) { const k = back * sst(.15, -.75, dv.y); q.y -= .12 * k; q.z -= .05 * k; q.x *= 1 + .1 * k }   /* it falls to the neck at the back */
       p.setXYZ(i, q.x * .96, q.y * .96, q.z * .96) }
     g2.computeVertexNormals(); add(H, g2, C);
     const leaf = (d, off, k, m, tilt) => { const q = surf(d.clone().normalize(), off).multiplyScalar(.96), l = ball(H, .085 * k, m, q.toArray(), [.6, 1, .18], 12); l.quaternion.setFromUnitVectors(V(0, 0, 1), q.clone().normalize()); l.rotateZ(tilt); l.rotateX(-.35); return l };   /* lies on the hood, its tip lifted a little */
-    for (let i = -3; i <= 3; i++) leaf(V(i * .2, .5 - Math.abs(i) * .05, .85), .06, 1 - Math.abs(i) * .06, i % 2 ? L2 : L1, i * .25);   /* a fringe of leaves over the brow */
+    for (let i = -3; i <= 3; i++) leaf(V(i * .21, .3 - Math.abs(i) * .035, .9), .06, .9 - Math.abs(i) * .05, i % 2 ? L2 : L1, i * .25);   /* a fringe of leaves over the brow */
     for (const s2 of [-1, 1]) { leaf(V(s2 * .85, .15, .45), .06, 1, L1, s2 * .5); leaf(V(s2 * .8, -.15, .3), .055, .9, L2, s2 * .8); leaf(V(s2 * .6, .7, -.2), .06, 1, L2, s2 * 1) }
     for (const [x, z, m] of [[0, -.5, L1], [.3, -.8, L2], [-.3, -.8, L1]]) leaf(V(x, .55, z), .06, 1.1, m, x * 2);
     const top = surf(V(0, 1, -.05), .06).multiplyScalar(.96); add(H, new THREE.CylinderGeometry(.012, .018, .1, 6), St, [top.x, top.y + .04, top.z]); for (const s2 of [-1, 1]) { const l = ball(H, .07, L1, [top.x + s2 * .06, top.y + .09, top.z], [1, .35, .55], 12); l.rotation.z = s2 * .5 } }
