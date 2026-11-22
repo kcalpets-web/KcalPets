@@ -6,14 +6,14 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
 (async () => { const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   try { const pg = await b.newPage({ viewport: { width: 390, height: 760 } }); pg.on('pageerror', e => errs.push('PE ' + e.stack.slice(0, 500)));
-    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, petRideTip: 1 }, avatar: {}, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [], eq: {}, time: 640, quest: 99,
         pets: [{ id: 'p1', kind: 'shiba', name: 'โบ้', rar: 'B', el: '🔥', lv: 6, exp: 0 }], team: ['p1'], sk: { X: 'shiba', A: null, Y: null } })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const pet = () => E(() => { const N = window.__ng, e = N.PA.get('p1'), r = e.A.root.position; return { d: Math.hypot(r.x - N.me.x, r.z - N.me.z), y: r.y, play: e.play && e.play.k, clip: e.clip, mode: e.mode, horse: N.HORSE === e } });
     // the ride left the skill wheel
-    const sk = await E(() => window.__ng.S.sk); log('skill slots', JSON.stringify(sk)); if (sk.X === 'shiba') errs.push('the old ride skill is still in the skill wheel');
+    const sk = await E(() => window.__ng.S.sk); log('skill slots', JSON.stringify(sk)); /* v4.08 the ride is a skill again: it may sit in a slot */
     // it follows you far from home
     await E(() => window.__ng.placeMe(60, 10)); await wait(5000); let P = await pet(); log('after a warp', JSON.stringify(P)); if (P.d > 12) errs.push('the main pet did not catch up after a warp');
     await E(() => window.__ng.placeMe(66, 12)); for (let i = 0; i < 80 && (await pet()).d > 3.5; i++) await wait(500); P = await pet(); log('after a walk', JSON.stringify(P)); if (P.d > 4) errs.push('the main pet does not come close after a while');
@@ -47,8 +47,8 @@ const ROOT = '/home/user/KcalPets', PORT = 8881, OUT = process.argv[2] || '/tmp/
       log('v4.03 A while riding', JSON.stringify(r)); if (r.lunge) errs.push('v4.03 A while riding should not dash any more'); if (r.apple !== 1) errs.push('v4.03 A while riding should pick up what is in front'); if (!r.riding) errs.push('picking up should not get you off') }
     // B = get off · it stays by you
     await E(() => window.__ng.dismount()); await wait(1500); P = await pet(); log('B → off', JSON.stringify(P)); if (P.horse) errs.push('still riding after getting off'); if (P.d > 12) errs.push('the pet went away after you got off');
-    // it helps you fight
-    await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 3, q.z + 1, { area: 'wild' }); m.hit = true; window.__m = m });   /* a fresh one (the ram may have killed the last) */ let fought = false; for (let i = 0; i < 30 && !fought; i++) { await wait(500); fought = (await pet()).mode === 'fight' } log('helps fight', fought); if (!fought) errs.push('the pet does not help with what you hit');
+    // v4.28 it no longer helps you fight (designer)
+    await E(() => { const N = window.__ng, q = N.me, m = N.monSpawn('slime', q.x + 3, q.z + 1, { area: 'wild' }); m.hit = true; window.__m = m });   /* a fresh one (the ram may have killed the last) */ let fought = false; for (let i = 0; i < 12 && !fought; i++) { await wait(500); fought = (await pet()).mode === 'fight' } log('helps fight', fought); if (fought) errs.push('v4.28 the dog / cat no longer fights');
     await pg.screenshot({ path: OUT + '/fight.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();

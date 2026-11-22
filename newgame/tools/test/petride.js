@@ -4,7 +4,7 @@ const { chromium } = require('playwright'); const fs = require('fs'); const { sp
 (async () => { fs.mkdirSync(OUT, { recursive: true }); const srv = spawn('python3', ['-m', 'http.server', '8945', '--bind', '127.0.0.1'], { cwd: '/home/user/KcalPets', stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const pg = await b.newPage({ viewport: { width: 390, height: 700 }, deviceScaleFactor: 2 }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.addInitScript(() => { localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_cam', 'tp');
+  await pg.addInitScript(() => { localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
     localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, freed: 1, pet: 1, rideAsk: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, pets: [{ id: 'p1', kind: 'shiba', name: 'โมจิ', rar: 'B', el: '🪨', lv: 6, exp: 0, hp: null, mp: null, down: 0 }], team: ['p1'], sk: { X: 'shiba', A: 'boar', Y: 'whale' }, time: 640, quest: 99 })) });
   await pg.goto('http://127.0.0.1:8945/newgame/index.html'); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
   const E = f => pg.evaluate(f); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));

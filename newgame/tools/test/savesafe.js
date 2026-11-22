@@ -6,7 +6,7 @@ const BASE = { v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true
 (async () => { const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   const boot = async (store, name) => { const ctx = await b.newContext({ viewport: { width: 390, height: 760 } }); const pg = await ctx.newPage(); const pe = []; pg.on('pageerror', e => pe.push(e.message));
-    await pg.addInitScript(st => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); for (const k in st) localStorage.setItem(k, st[k]) }, store);
+    await pg.addInitScript(st => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); for (const k in st) localStorage.setItem(k, st[k]) }, store);
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); let ok = true; try { await pg.waitForFunction(() => window.__ng && window.__ng.S, null, { timeout: 60000 }) } catch (e) { ok = false } await wait(1500);
     if (pe.length) errs.push(name + ': page errors ' + pe.join(' | ').slice(0, 300)); return { ctx, pg, ok, E: (f, a) => pg.evaluate(f, a) } };
   const keys = E => E(() => Object.keys(localStorage).sort());

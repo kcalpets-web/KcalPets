@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.27';
+export const APP_VER = '4.28';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -354,7 +354,7 @@ export const DUNGEON = { gap: 3.5, r: 14, snake: { strike: [3, 1.1], rain: [5, 2
 // v4.08 🐾 main quest: catch the skill pets and raise each to Lv 5 · [kind, 'c' catch | 'l' Lv 5, reward] · 'ride' = your dog / cat
 export const PETQ = [['bear', 'c', { coin: 300 }], ['bear', 'l', { gem: 3 }], ['whale', 'c', { coin: 300 }], ['whale', 'l', { gem: 3 }], ['hawk', 'c', { coin: 300 }], ['hawk', 'l', { gem: 3 }], ['boar', 'c', { coin: 300 }], ['boar', 'l', { gem: 3 }], ['ride', 'l', { gem: 5 }]];   // v4.06 a pet's skill works only once that pet reaches Lv 5 (raise it to earn it)
 export const PETSKILL = { cd: 25000, hawkCd: 60000, boarCd: 45000, boarHits: 3, boarPop: 350, lift: 16, range: 14, hold: .45, whaleT: 60000, whaleCd: 30000, whaleSwim: 1.8, diveY: -2.8 };   // v3.28 🐋 water barrier: 60 s · swim ×1.8 · no tiring · X = dive   // v3.17 two pet skills: 🦅 X hold = fly up · 🐗 A hold = a shield bubble (blocks one hit 100%) — once you have caught one       // Basic: any element at −60% · Legendary: any element at full power
-export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 6.2, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
+export const PET_RIDE = { kinds: ['shiba', 'cat'], sp: 7.4, gallop: 10.5, cd: 20000, big: 1.3, fwd: .3, seat: [.9, 1.06, 1.3] };
 // v3.78 🐶🐱 the main pet: always with you · A near it = ride (teen+) · riding: X jump · Y bite + claw · A dash (rams) · B get off
 export const FALL = { safe: 5, perM: 5 };   // v3.97 over 5 m hurts · −5 HP (¼ ❤️) per metre more   // v3.81 💥 falls: no harm up to 10 m · then −5 HP (¼ heart) per metre
 export const MOUNT = { knock: .3, big: .2 };   // v3.81 a hit knocks you off your mount: 30% chance · always if it takes ≥ 20% of max HP

@@ -537,13 +537,14 @@ body:has(.ov.menuPick) #bX,body:has(.ov.menuPick) #bY{z-index:6!important;box-sh
 @keyframes bicL{0%,100%{filter:opacity(.45)}50%{filter:opacity(.9)}}
 .bic.dim i{opacity:.45}.bic.dim em{display:none}
 body:not(.lettered) #bA .bk,body:not(.lettered) #bB .bk,body:not(.lettered) #bX .bk,body:not(.lettered) #bY .bk{display:none!important}body.lettered .bic{display:none}
-body:has(.ov) .bic,body.smenuOn .bic,body:has(#pick.on) .bic{display:none!important}body:has(.ov) #bA .bk,body:has(.ov) #bB .bk,body:has(.ov) #bX .bk,body:has(.ov) #bY .bk,body.smenuOn .bk,body:has(#pick.on) .bk{display:block!important}   /* a window / menu: letters (the game loop pauses there) */
+body:has(.ov) .bic,body.smenuOn .bic,body:has(#pick.on) .bic{display:none!important}body:has(.ov) #bA .bk,body:has(.ov) #bB .bk,body:has(.ov) #bX .bk,body:has(.ov) #bY .bk,body.smenuOn #bA .bk,body:has(#pick.on) #bA .bk,body.smenuOn #bB .bk,body:has(#pick.on) #bB .bk,body.smenuOn #bX .bk,body:has(#pick.on) #bX .bk,body.smenuOn #bY .bk,body:has(#pick.on) #bY .bk{display:block!important}   /* a window / menu: letters (the game loop pauses there) */
 body.skwOn .bic{opacity:0}
 body.pad:not(.lettered) #bA.ctx{background-color:#3fae6a;animation:none}
 #skw.onbtn{left:0;top:0;zoom:1!important;z-index:48}#skw.onbtn p{position:fixed;left:50%;top:36%;transform:translateX(-50%);width:280px}
 #skw.onbtn i{position:fixed;width:80px;height:80px;margin:-40px 0 0 -40px;color:#fff;font-size:34px;border-width:4px;box-shadow:0 0 0 3px #fff8,0 6px 14px #0008}
 #skw.onbtn i small{position:absolute;top:100%;margin-top:5px;color:#fff;font-size:11px;text-shadow:0 1px 2px #000;max-width:none;overflow:visible}#skw.onbtn i b{display:none}
 #skw.onbtn i.up{background:#3a7ae0}#skw.onbtn i.left{background:#f0c020}#skw.onbtn i.right{background:#e8402a}#skw.onbtn i.down{background:#e05a4a;width:64px;height:64px;margin:-32px 0 0 -32px;font-size:24px}#skw.onbtn i.cd{filter:grayscale(.7) brightness(.6)}
+.one img.spic{width:36px;height:36px;object-fit:contain;display:block}
 .mlb{display:none;position:absolute;left:50%;top:100%;margin-top:3px;transform:translateX(-50%);white-space:nowrap;font:800 11px system-ui;font-style:normal;color:#fff;text-shadow:0 1px 2px #000,0 0 5px #000;pointer-events:none}
 body:has(.ov) .mlb{display:block}   /* v4.05 windows: the letter + what it does */
 .skd{display:block;text-align:left;margin-top:6px}.skd span{display:block;margin:3px 0;line-height:1.35}.skgain{text-align:center}.skgain .skic{font-size:56px;line-height:1.1;margin:4px auto;animation:pop .5s ease-out}.skgain h3{margin:2px 0 4px}.skgain .skd{background:#fff6;border-radius:12px;padding:8px 10px}

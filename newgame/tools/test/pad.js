@@ -6,7 +6,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const pg=await b.newPage({viewport:{width:390,height:844}}); const errs=[]; pg.on('pageerror',e=>errs.push(e.message));
 await pg.addInitScript(()=>{ window.__pad={connected:false,axes:[0,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))}; navigator.getGamepads=()=>[window.__pad.connected?window.__pad:null];
- if(sessionStorage.getItem('seeded'))return; sessionStorage.setItem('seeded',1); localStorage.clear(); localStorage.setItem('ng_gfx','eco'); localStorage.setItem('ng_cam','tp');
+ if(sessionStorage.getItem('seeded'))return; sessionStorage.setItem('seeded',1); localStorage.clear(); localStorage.setItem('ng_gfx','eco'); localStorage.setItem('ng_nozap','1'); localStorage.setItem('ng_cam','tp');
  localStorage.setItem('ng_save_v3',JSON.stringify({v:3,profile:{name:'t',guest:true},story:{intro:1,built:1,slept:1,howsif:1},avatar:{hair:'pony',top:'#4a8ad8'},has:{sword:1},time:600}))});
 await pg.goto('http://127.0.0.1:8796/newgame/index.html'); await pg.waitForFunction(()=>window.__ng,null,{timeout:60000}); await wait(6000);
 await pg.evaluate(()=>document.querySelectorAll('.ov').forEach(o=>o.remove()));

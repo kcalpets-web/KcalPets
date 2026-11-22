@@ -17,7 +17,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => setInterval(() => { const b = document.querySelector('[data-sp="hp"]:not([disabled])'); if (b) b.click() }, 300));   /* v1.4: pick ❤️ whenever a ✨ spirit pops up */
-    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx); localStorage.setItem('ng_cam', 'top') }, process.env.GFX || 'eco'); await pg.reload();
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'top') }, process.env.GFX || 'eco'); await pg.reload();
     await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(1500);
     const shot = async n => { await pg.screenshot({ path: path.join(OUT, n + '.png') }); log('shot', n) };
     const E = (f, a) => pg.evaluate(f, a), N = f => E(f);
