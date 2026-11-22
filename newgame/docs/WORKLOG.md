@@ -36,6 +36,13 @@
 - ✅ กระท่อมหลังแรก = `cabin` วางเอง (`bCost` ราคา D.BUILD.house · 30 วิ) · `S.home` + `setHome` (HOUSE ตามกระท่อม) · `homeMigrate` เซฟเก่าได้กระท่อม · 🚚 ย้าย (`enterBuild(k, id)` ฟรี) · ขุด/สร้างได้เฉพาะ band 2 · เทสต์ `bald.js`
 - ✅ บท 1–2 ไปเมืองท่า (ทำแล้ว · play.js ผ่านครบ) · เดิม: บท 1–2 ไปเมืองท่า (สไลม์ในเมือง · ดาบ · ป่าก็อบลิน+กรง · ซุ้มฟาง Sberh · สมุนไพร) · ตอนนี้ townSpawn/forestSpawn ยังเกิดบนเกาะที่ TX/FOREST เดิม · แก้เทสต์ play.js/vaneya.js/build.js/walk.js/map.js ตามพิกัดใหม่
 
+### v4.34 — เควสเมืองวัลคาร่า (22 พ.ย.)
+- ผู้ออกแบบขอ: ภาพตัวอย่างผ่าน
+- ทำแล้ว: (NPC เดิม) `vkW1–6` `vkF1–3` · เซ็ตช่างหลอมลาวา `h_forgehood` (หัวใหม่ทั้งหัว · ฮู้ดหนัง + แถบเหล็ก + แว่นบนหน้าผาก) `b_apron` (look 'apron') `l_minepants` (legs 'mine') ☀️ ทุกชิ้น · `WEAR_SETS.lavasmith` ครบ = ไม่ติด 🔥 ไหม้ (บ่อลาวาของบอสก็ไม่ไหม้) · `forgeHammer` (โลหะ · ไฟลุก 3×4) · `salaWhip` (kind ใหม่ `whip` ระยะ 3.6 กวาดนิดหน่อย) · `diamondPick` (หิน ×2.6) · สูตร `lavapumpkin` `corncracker` `chilisauce` · แก้: kind ที่ไม่มีใน READY_DIR / มุมถือดาบ ใช้ค่าของ one (เดิม undefined)
+- ทดสอบ: ผ่าน valk134 (ใหม่) · fight · weapons
+- ขึ้นเว็บ: ✅
+- ค้าง: 💀 เดดการ์ (ภาพตัวอย่างก่อน)
+
 ### v4.33 — เควสเมืองอัสราห์ (22 พ.ย.)
 - ผู้ออกแบบขอ: ภาพตัวอย่างผ่าน
 - ทำแล้ว: พ่อค้าเร่ซาลิม · `asW1–6` `asF1–3` · เซ็ตผ้าคลุมทะเลทราย `h_turban` (หัวใหม่ทั้งหัว · snugHood + ผ้าพัน + ทับทิม) `b_linen` (look 'linen') `l_baggy` (legs 'baggy') ☀️ ทุกชิ้น · `WEAR_SETS.desert` ครบ = ร้อนไม่ช้า ไม่เหนื่อยเพิ่ม (`climSlow` · `hotRegen`) · 🌴 `INGR.dates` ดรอปจากมอนสเตอร์อัสราห์ 35% (`monDie`) · `moonBlade` (โลหะ · กลางคืน ×1.5 🌙) · `boomerang` (ไม้ · ค้าง Y ปา → บินกลับมาเข้ามือ · `throwTick` P.boom) · `hawkBow` (`far` 1.4 ลูกธนูไปไกล) · สูตร `kebab` (⚔️ บัฟ) `minttea` (☀️ กันร้อน) `datesweet`
