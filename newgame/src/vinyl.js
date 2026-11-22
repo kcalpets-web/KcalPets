@@ -33,11 +33,12 @@ export function vinylProp(g, P) { if (!P) return; const F = { armL: P.arm, armR:
   for (const k in F) { const Jn = J[k], f = F[k]; if (!Jn || !f || f === 1) continue; for (const c of Jn.children) { if (k === 'chest' && (c.userData.role === 'head' || c.name === 'head')) { c.position.y += NECK * (f - 1); continue } c.position.y *= f; if (!PJOINT(c)) c.scale.y *= f } }
   const dy = y0 - footY(); for (const k of ['hipL', 'hipR', 'waist']) if (J[k]) J[k].position.y += dy;
   if (J.head && J.head.parent === g) J.head.position.y += dy + .12 * (P.waist - 1) + NECK * (P.torso - 1);   /* the head sits on the body group: it rises with the hips + the trunk (to the shoulders), the neck keeps its length */
-  if (J.head && P.headTop && P.headTop !== 1) headWarp(J.head, P.headYc ?? .02, P.headTop);
+  if (J.head && P.headTop && P.headTop !== 1) headWarp(J.head, P.headYc ?? .02, P.headTop, P.hatKeep);
   g.userData.prop = P }
 /* v4.30 (preview) a lower crown: every mesh of the head (skull · hair · hat · glasses) squeezed above yc (head-local) by k · the face below stays as it is */
-export function headWarp(head, yc, k) { head.updateMatrixWorld(true); const HI = head.matrixWorld.clone().invert(), v = new THREE.Vector3();
-  head.traverse(o => { if (!o.isMesh) return; const M = HI.clone().multiply(o.matrixWorld), MI = M.clone().invert(), g = o.geometry.clone(), p = g.attributes.position;
+export function headWarp(head, yc, k, keepHat) { head.updateMatrixWorld(true); const HI = head.matrixWorld.clone().invert(), v = new THREE.Vector3(), hat = keepHat && head.getObjectByName('hat'), inHat = o => { for (let p = o; p; p = p.parent) if (p === hat) return true; return false };
+  if (hat) hat.position.y -= (.14 - yc) * (1 - k);   /* the hat keeps its size: it sinks to where the head now is at the brim line */
+  head.traverse(o => { if (!o.isMesh || (hat && inHat(o))) return; const M = HI.clone().multiply(o.matrixWorld), MI = M.clone().invert(), g = o.geometry.clone(), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(M); if (v.y > yc) v.y = yc + (v.y - yc) * k; v.applyMatrix4(MI); p.setXYZ(i, v.x, v.y, v.z) }
     p.needsUpdate = true; g.computeVertexNormals(); o.geometry = g }) }
 /* v3.9 (preview) layered build: every part is a joint group (R15-like: chest · waist · upper arm · fore arm · hand · thigh · shin · foot · head)
