@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.24';
+export const APP_VER = '4.25';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -137,7 +137,7 @@ export const ITEMS = {
   rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
   paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
-  coralHarpoon:  { slot: 'sword', kind: 'spear', name: 'ฉมวกปะการัง', icon: '🔱', atk: 36, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
+  coralHarpoon:  { slot: 'sword', kind: 'spear', name: 'ฉมวกปะการัง', icon: '🔱', atk: 36, dur: 40, tier: 3, only: 1, water: 1.5 },   // water: ×1.5 when you swim or it stands in water   // v4.24 navalee quest
   wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
   scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3 },
   knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
@@ -172,7 +172,7 @@ export const ITEMS = {
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
-  bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1 },   // v4.24 navalee quest
+  bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1, bell: { r: 4, t: 2.5 } },   // bell: monsters within r m of a hit are dazed t s   // v4.24 navalee quest
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
   soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
   knightBow:     { slot: 'bow', kind: 'bow', name: 'ธนูอัศวิน', icon: '🏹', atk: 22, dur: 36, tier: 3 },
@@ -734,6 +734,7 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   l_diver: { slot: 'legs', icon: '🩳', name: 'กางเกงนักดำน้ำ', warm: 0, cool: 0, swim: 1, legs: 'shorts', legCol: '#1a3a6a', src: 'quest', k: 'navalee' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
+export const WEAR_SETS = { diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5 } };   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
 const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: ['def', 'cool'], o_cape: ['warm', 'cool'], a_knight: ['def', 'warm'], k_navalee: ['swim', 'cool'], k_sylvaren: ['def', 'warm'], k_valkara: ['def', 'cool'], k_deadgar: ['air', 'warm'] };
 const LEGS_AB = {};
