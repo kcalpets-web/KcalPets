@@ -354,7 +354,7 @@ function wornLook() { const W = S.wear || {}, body = D.WEAR[W.body], top = body 
 function buildPlayer() {
   const at = PL ? PL.root.position.clone() : null; if (PL) scene.remove(PL.root);
   if (S.avatar && S.avatar.v !== 2) { S.avatar = vinylFrom(S.avatar); save() }   /* v2.3 everyone becomes the vinyl chibi (old looks are converted) */
-  PL = rigOf(makeActor(g => { vinyl(g, wornLook()); hatOn(g) }, .82)); PL.vin = 1; const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], 0, p[1]); PL.root.visible = !!S.avatar; PL.gearK = ''; setTimeout(() => gearView());
+  PL = rigOf(makeActor(g => { vinyl(g, wornLook()); hatOn(g) }, .82)); PL.vin = 1; const p = at ? [at.x, at.z] : S.pos || [SPAWN.x, SPAWN.z]; PL.root.position.set(p[0], at ? at.y : 0, p[1]); if (!at) setTimeout(liftOnTop, 1200); PL.root.visible = !!S.avatar; PL.gearK = ''; setTimeout(() => gearView());
 }
 /* v1.8 gear you can see: the tool / sword in the right hand · the shield on the left arm · a backpack (+ the sword on the back when not in hand) */
 function gearView() {
@@ -519,6 +519,8 @@ function aqTick(now) { if (!AQ || now < aqT) return; aqT = now + 450; if (CUT ||
   if (t.x != null && far > 3) { aqGo(t.x, t.z, t.text); return }
   aqStop(why ? `📍 ถึงแล้ว · ${why} ต้องทำเองนะ!` : '📍 ถึงที่หมายแล้ว · ทำต่อเองได้เลย', 2600) }
 function walkTo(x, z, then, near = .15) { walkT = { x, z, then, near, best: 1e9, stuck: 0 }; ring.position.set(x, .04, z); ring.visible = !then; ring.scale.setScalar(1) }
+/* v4.48 a loaded game that left you on a deck / the tower stairs (the save keeps x, z only): stand on top again, never under it */
+function liftOnTop() { if (!PL) return; const q = me(), st = solTop(q.x, q.z); if (st != null && st > groundH(q.x, q.z) + .3 && q.y < st - .3) { q.y = st; PL.fallTop = null; PL.fallV = 0 } }
 function placeMe(x, z) { me().set(x, 0, z); if (PL) PL.fallTop = null; walkT = null; ring.visible = false; S.pos = [x, z]; camT.x = camP.x = x; camT.z = camP.z = z + 1; peekT = 0 }
 /* v3.28 🌾 grass clumps · flowers · pebbles on the ground around you (not on dug plots, roads or water) */
 const DECOR = decor(scene, (x, z, c, peb) => { if (inEelA(x, z)) return null; if (S.plots && S.plots[Math.round(x) + ',' + Math.round(z)]) return null; return decorLook(x, z, c, peb) }, eco);
