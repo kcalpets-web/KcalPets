@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.28';
+export const APP_VER = '4.29';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -76,7 +76,7 @@ export const MON = {
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
   goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor', 'soldierBow'], tier: 'mini', legs: 1 },
   grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['branch', 'leafBlade', 'pitchfork', 'leafVest'], tier: 'normal' },
-  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor'], tier: 'normal' },
+  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor', 'woodSword', 'oakShield'], tier: 'normal' },
   rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'greatsword', 'stoneHammer', 'stoneArmor', 'soldierBow'], tier: 'normal' },
   /* v2.7 kingdom monsters (a base model, recoloured) */
   sandSlime:  { base: 'slime', cols: ['#c89a3a', '#ffe08a'], ingr: ['jelly', .6], name: '🟡 สไลม์ทราย', lv: 6, hp: 70, atk: 11, def: 3, exp: 40, coin: [120, 220], mat: { stone: 1 }, loot: ['scimitar', 'soldierSpear', 'hunterBow'], tier: 'normal' },
@@ -130,6 +130,7 @@ export const ITEMS = {
   leafBlade:     { slot: 'sword', kind: 'one', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 7, dur: 12, tier: 1 },
   travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1, metal: 1 },
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
+  woodSword:     { slot: 'sword', kind: 'one', name: 'ดาบไม้เนื้อแข็ง', icon: '🗡️', atk: 18, dur: 26, tier: 2 },   // v4.29 🪵 no metal: safe in the rain · weaker than the metal blades
   boneClub:      { slot: 'sword', kind: 'one', name: 'กระบองกระดูก', icon: '🦴', atk: 14, dur: 16, tier: 2 },
   stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
   magmaAxe:      { slot: 'sword', kind: 'two', name: 'ขวานปีศาจลาวา', icon: '🪓', atk: 52, dur: 50, tier: 4 },   // v4.15 🌋 the lava demon's reward
@@ -180,6 +181,7 @@ export const ITEMS = {
   potLid:        { slot: 'shield', name: 'ฝาหม้อ', icon: '🛡️', def: 1, dur: 8, tier: 1, metal: 1 },
   leafVest:      { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3, dur: 12, tier: 1 },
   woodShield:    { slot: 'shield', name: 'โล่ไม้', icon: '🛡️', def: 4, dur: 16, tier: 1 },
+  oakShield:     { slot: 'shield', name: 'โล่ไม้โอ๊ก', icon: '🛡️', def: 8, dur: 24, tier: 2 },   // v4.29 🪵 no metal
   barkArmor:     { slot: 'shield', name: 'โล่เปลือกไม้', icon: '🛡️', def: 5, dur: 18, tier: 2 },
   stoneArmor:    { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8, dur: 26, tier: 2 },
   knightShield:  { slot: 'shield', name: 'โล่อัศวิน', icon: '🛡️', def: 11, dur: 30, tier: 3, metal: 1 },
@@ -190,7 +192,7 @@ export const ITEMS = {
    tags: metal = copper · ore · silver · goldOre · rarity from the value of what went in (MATS price): ≥ FORGE_RAR[i] → R / E / L (+ a small lucky roll) */
 export const FORGE = [
   { t: 'stoneKnife', need: { flint: 2, grass: 1 } }, { t: 'sickle1', need: { stone: 1, grass: 2, wood: 1 } }, { t: 'axe1', need: { stone: 2, wood: 2 } }, { t: 'pick1', need: { stone: 3, wood: 2 } }, { t: 'mallet0', need: { wood: 3, stone: 1 } }, { t: 'hoe0', need: { wood: 2, stone: 1 } },   /* v3.22 tools */
-  { t: 'woodSpear', need: { wood: 3 } }, { t: 'leafBlade', need: { grass: 3, wood: 1 } }, { t: 'hunterBow', need: { wood: 2, feather: 2 } }, { t: 'woodShield', need: { wood: 2, hide: 1 } },
+  { t: 'woodSpear', need: { wood: 3 } }, { t: 'leafBlade', need: { grass: 3, wood: 1 } }, { t: 'hunterBow', need: { wood: 2, feather: 2 } }, { t: 'woodShield', need: { wood: 2, hide: 1 } }, { t: 'woodSword', need: { wood: 5, flint: 1 } }, { t: 'oakShield', need: { wood: 4, hide: 2 } },
   { t: 'stoneClub', need: { stone: 3, wood: 1 } }, { t: 'boneClub', need: { bone: 1, wood: 1 } }, { t: 'travelerSword', need: { copper: 2, wood: 1 } }, { t: 'harpoon', need: { copper: 2, wood: 2 } },
   { t: 'stoneArmor', need: { stone: 3, hide: 1 } }, { t: 'soldierSpear', need: { ore: 2, wood: 2 } }, { t: 'greatsword', need: { ore: 3, coal: 1 } }, { t: 'soldierBow', need: { ore: 1, wood: 2, feather: 2 } },
   { t: 'stoneHammer', need: { stone: 4, ore: 2 } }, { t: 'knightSword', need: { silver: 2, ore: 1, coal: 1 } }, { t: 'knightShield', need: { silver: 2, hide: 2 } }, { t: 'knightBow', need: { silver: 1, wood: 2, feather: 3 } },
@@ -437,7 +439,7 @@ export const SHOPS = [
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
 export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
 export const MAKE_FEE = { wear: 150, potion: 60, meal: 120, has: 500 };
-export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 250 }, { t: 'axe1', r: 'B', price: 700 }, { t: 'pick1', r: 'B', price: 700 }, { t: 'sickle1', r: 'B', price: 500 }, { t: 'mallet0', r: 'B', price: 450 }, { t: 'hoe0', r: 'B', price: 300 }, { t: 'woodBow', r: 'B', price: 500 }, { t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'barkArmor', r: 'B', price: 1000 }];
+export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 250 }, { t: 'axe1', r: 'B', price: 700 }, { t: 'pick1', r: 'B', price: 700 }, { t: 'sickle1', r: 'B', price: 500 }, { t: 'mallet0', r: 'B', price: 450 }, { t: 'hoe0', r: 'B', price: 300 }, { t: 'woodBow', r: 'B', price: 500 }, { t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'woodSword', r: 'B', price: 1200 }, { t: 'oakShield', r: 'B', price: 1300 }, { t: 'barkArmor', r: 'B', price: 1000 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
   { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },
