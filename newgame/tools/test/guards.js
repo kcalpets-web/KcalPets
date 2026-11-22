@@ -10,7 +10,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8871, OUT = process.arg
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const home = await E(() => { const P = window.__ng.POT.home; return P ? [P.x, P.z] : null }); log('home pot', home); if (!home) throw new Error('no home pot');
-    await E(() => { window.__ng.S.restored = {} }); const tw = await E(() => window.__ng.guardTowns().map(t => t.k)); log('towns', tw.join(' ')); if (tw.length !== 8) errs.push('7 capitals + the harbour town should have guards');
+    await E(() => { window.__ng.S.restored = {} }); const tw = await E(() => window.__ng.guardTowns().map(t => t.k)); log('towns', tw.join(' ')); if (tw.length !== 7 || tw.includes('luminia')) errs.push('6 capitals + the harbour town have guards (v4.63: none in Luminia while the dark cloud holds it)'); { const t2 = await E(() => { const N = window.__ng; N.S.story.cloudGone = 1; const r = N.guardTowns().map(t => t.k); N.S.story.cloudGone = 0; return r }); if (!t2.includes('luminia')) errs.push('Luminia gets its guards back once the dark cloud is gone') }
     // walk into Sylvaren's capital: the guards turn up
     const C = await E(() => { const N = window.__ng, T = N.guardTowns().find(t => t.k === 'sylvaren'); N.placeMe(T.x, T.z); return { x: T.x, z: T.z, r: T.r } }); log('capital', JSON.stringify(C));
     for (let i = 0; i < 30 && !(await E(() => !!window.__ng.GUARDS.sylvaren)); i++) await wait(500); await wait(2500); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));

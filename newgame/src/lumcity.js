@@ -57,7 +57,7 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   for (const sx of [-1, 1]) { box(sx * 7.5, FY, FZ - 15, .9, 9, 24, M.stone); for (let k = 0; k < 4; k++) add(new THREE.BoxGeometry(.2, 3.4, 1.6), M.void, sx * 7.98, FY + 4.5, FZ - 6 - k * 5.4); solB(sx * 7.5, FZ - 15, .6, 12) }
   box(0, FY, FZ - 28, 15, 15, 1.5, M.stone); cyl(0, FY, FZ - 29, 6, 6, 1, M.pave, 16); solB(0, FZ - 28, 7.6, 1);   // the apse
   for (let i = 0; i < 9; i++) box(-4 + R() * 8, FY, FZ - 5 - R() * 20, 1 + R() * 2, .6 + R(), 1 + R() * 2, R() < .5 ? M.dark : M.stone, R() * 3);   // fallen roof stones in the nave
-  box(0, -6, (FZ + 1.6 + CZ - 18) / 2, 16, FY + 6, FZ + 1.6 - CZ + 18, M.dark).userData.walk = 1;   /* reaches the top step: no gap at the door */   /* the base behind the facade (solid) · the stairs in front stay walkable */   // the cathedral stands on a raised base (deep: the back reaches the plateau's edge)
+  box(0, -20, (FZ + 1.6 + CZ - 30) / 2, 16, FY + 20, FZ + 1.6 - CZ + 30, M.dark).userData.walk = 1;   /* v4.63 deeper: the back hung in the air over the plateau's slope (designer) */   /* reaches the top step: no gap at the door */   /* the base behind the facade (solid) · the stairs in front stay walkable */   // the cathedral stands on a raised base (deep: the back reaches the plateau's edge)
   for (let i = 0; i < 6; i++) moss(-6 + R() * 12, FY + .02, FZ - 4 - R() * 22, 2 + R() * 3, 2 + R() * 3); tree(-3.5, FZ - 18, 1.2);
   { const kids = G.children.slice(g0), cg = new THREE.Group(); kids.forEach(o => { o.position.z -= CZ + 11.5; cg.add(o) }); cg.position.z = CZ + 11.5; cg.scale.setScalar(K); G.add(cg);
     SK = null }

@@ -1416,6 +1416,7 @@ function frame(now) {
   if (F && F.phase) fishCam(now);
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
   sunFollow();
+  if (window.__ngCam) { const C = window.__ngCam; cam.position.set(C.p[0], C.p[1], C.p[2]); cam.lookAt(C.l[0], C.l[1], C.l[2]) }   /* test hook: a free camera for scene checks */
   if (GR) { GR.auto(nightK(), Math.min(1, glowK()), S.area, inStorm() && !S.story.cloudGone); GR.render(dt / speed) } else R.render(scene, cam);
   if (SNAP) { const f = SNAP; SNAP = null; let u = ''; try { u = R.domElement.toDataURL('image/jpeg', .92) } catch (e) { } f(u) }
   tickFloaters(dt / speed, project); tickSwings(Math.min(.05, 1 / 60)); labels(); drawTrail(wall); stamTick();
@@ -3953,7 +3954,7 @@ function merchantRumor() { const sp = merchSpot(merchC()), q = me(), left = D.ME
 /* ================= v3.70 💂 town guards (D.GUARD): every town has them (restored or not) · 2 at the gate · 2 walk the square · a monster inside the walls → every guard of that town runs at it and cuts it down (no loot · they never fall) · the kingdom's monsters wait around the town, not in it ================= */
 const GUARDS = {}; let guardT = 0;
 function guardTowns() { const L = []; for (const k in CAPS) { const c = CAPS[k], cs = Math.cos(c.ry), sn = Math.sin(c.ry), W2 = (lx, lz) => [c.x + lx * cs + lz * sn, c.z - lx * sn + lz * cs]; L.push({ k, x: c.x, z: c.z, r: c.r, col: KINGDOMS[k].col, W: W2, gate: [W2(-3.6, 25.5), W2(3.6, 25.5)], walkR: 18 }) }
-  { const c = Math.cos(-Math.PI / 2), sn = Math.sin(-Math.PI / 2), W2 = (lx, lz) => [LUMC.x + lx * c + lz * sn, LUMC.z - lx * sn + lz * c], d = LUMCITY.door; L.push({ k: 'luminia', x: LUMC.x, z: LUMC.z, r: LUMC.r, col: '#4a5aa8', W: W2, gate: [[d.x + 3.5, d.z + 3], [d.x - 3.5, d.z + 3]], walkR: 24 }) }
+  if (S.story.cloudGone) { const c = Math.cos(-Math.PI / 2), sn = Math.sin(-Math.PI / 2), W2 = (lx, lz) => [LUMC.x + lx * c + lz * sn, LUMC.z - lx * sn + lz * c], d = LUMCITY.door; L.push({ k: 'luminia', x: LUMC.x, z: LUMC.z, r: LUMC.r, col: '#4a5aa8', W: W2, gate: [[d.x + 3.5, d.z + 3], [d.x - 3.5, d.z + 3]], walkR: 24 }) }   /* v4.63 the capital is held by the dark cloud's monsters: no soldiers there until it is gone (designer) */
   { const P = HARB.town && HARB.town.plaza; if (P) L.push({ k: 'harbour', x: P.x, z: P.z, r: D.TOWN_R.harbour, col: KINGDOMS.navalee.col, gate: [[P.x - 8, P.z + 6], [P.x + 8, P.z - 6]], walkR: 16 }) }
   return L }
 function guardOk(x, z) { return walkLand(x, z) && !waterAt(x, z) && !solHit(x, z, .45) }
@@ -4010,7 +4011,9 @@ function kqTick(q) { lampTick(q, performance.now()); const nt = isNight();
       if (d < 85 && !A) { const H = npcHome(k, n, idx), x = H.x, z = H.z;
         const a = rigOf(makeActor(g => HUMANS.villager(g, n.v, npcLook(k, n), KHAT[k] && (n.lead || idHash({ id: n.id }) % 2) ? KHAT[k] : null), .82)); a.root.position.set(x, groundH(x, z), z); a.yawT = a.yaw = Math.atan2(H.ax - x, H.az - z) + Math.PI; scene.add(a.root);
         const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('❗'), transparent: true, depthTest: false })); mk.scale.setScalar(.6); mk.position.y = 2.25; mk.renderOrder = 8; a.root.add(mk);
-        let house = null, hsol = null; if (!H.cap) { const dx = x - H.ax, dz = z - H.az, L = Math.hypot(dx, dz) || 1, hx = x + dx / L * 3.4, hz = z + dz / L * 3.4, ry = Math.atan2(-dx, -dz); house = new THREE.Group(); harbourShop(house, KROOF[k] || '#3a62b0', true); house.position.set(hx, groundH(hx, hz), hz); house.rotation.y = ry; house = mergeProp(house); scene.add(house);   /* one merged mesh per material (draw calls) */ hsol = addSol({ x: hx, z: hz, hw: 1.3, hd: 1, ry }) }
+        let house = null, hsol = null; if (!H.cap) { const dx = x - H.ax, dz = z - H.az, L = Math.hypot(dx, dz) || 1, hx = x + dx / L * 3.4, hz = z + dz / L * 3.4, ry = Math.atan2(-dx, -dz); house = new THREE.Group(); harbourShop(house, KROOF[k] || '#3a62b0', true); const gs = [[-1.6, -1.3], [1.6, -1.3], [-1.6, 1.3], [1.6, 1.3], [0, 0]].map(([a, b]) => groundH(hx + a * Math.cos(ry) + b * Math.sin(ry), hz - a * Math.sin(ry) + b * Math.cos(ry))), gHi = Math.max(...gs), gLo = Math.min(...gs);   /* v4.63 on a slope: the house sits on its high side + a stone footing down to the low side (it hung in the air) */
+          const gY = gLo + (gHi - gLo) * .45; if (gY - gLo > .1) { const fh = gY - gLo + .5, f = new THREE.Mesh(new THREE.BoxGeometry(3.2, fh, 2.6), new THREE.MeshStandardMaterial({ color: '#a39a8a', roughness: .95 })); f.position.y = -fh / 2 + .1; house.add(f) }
+          house.position.set(hx, gY, hz); house.rotation.y = ry; house = mergeProp(house); scene.add(house);   /* one merged mesh per material (draw calls) */ hsol = addSol({ x: hx, z: hz, hw: 1.3, hd: 1, ry }) }
         idleReg(a); KNPC[key] = { A: a, k, n, mk, house, hsol, cap: !!H.cap, pick: addPick(W, x, z, .7, 1.8, { kind: 'knpc', key }) }; a.wander = { home: [x, z], t: [x, z], wait: 1 + Math.random() * 4, r: 3 }; a.pick = KNPC[key].pick;   /* v3.2 they stroll around their spot */ KNPC[key].pick.position.y += Math.max(0, groundH(x, z)); kqMarks() }
       else if (d > 110 && A) { scene.remove(A.A.root); freeTree(A.A.root); IDLE && IDLE.delete(A.A); removePick(W, A.pick); if (A.house) { scene.remove(A.house); A.house.traverse(o => o.isMesh && o.geometry.dispose()); delSol(A.hsol) } delete KNPC[key] }
       else if (A && A.A.root.visible === nt) { A.A.root.visible = !nt; if (!nt) kqMarks() } }) }
@@ -4053,7 +4056,10 @@ const LUMG = { mons: [], next: 0 };
 function outRing(cx, cz, r, n, seed) { const R = seeded(seed * 17 + 5), o = []; for (let t = 0; t < n * 12 && o.length < n; t++) { const a = R() * 6.283, rr = r + R() * 8, x = cx + Math.cos(a) * rr, z = cz + Math.sin(a) * rr; if (walkLand(x, z) && !waterAt(x, z) && !inTown(x, z, 2)) o.push([x, z]) } return o }
 function lumTick(now) { const q = me(), d = dist(q.x, q.z, LUMC.x, LUMC.z); LUMG.mons = LUMG.mons.filter(m => mons.includes(m));
   if (d > 150 && LUMG.mons.length) { for (const m of LUMG.mons) if (!m.aggro) monGone(m); LUMG.mons = LUMG.mons.filter(m => mons.includes(m)) }
-  if (d < 80 && !LUMG.mons.length && now > LUMG.next && !CUT) { const L = D.K_MONS.luminia || ['shadeKnight']; for (const [x, z] of outRing(LUMC.x, LUMC.z, LUMC.r + 10, LUMCITY.guards.length, 3)) LUMG.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], x, z, { area: 'wild' })); LUMG.next = now + D.LUM_RESPAWN * 1000 }
+  if (d < 90 && !LUMG.mons.length && now > LUMG.next && !CUT) { const L = D.K_MONS.luminia || ['shadeKnight'], held = !S.story.cloudGone, pick = () => L[Math.floor(Math.random() * L.length)];   /* v4.63 while the dark cloud holds it: monsters inside the city too (by the tower) + more outside (designer: many enemies round the demon) */
+    for (const [x, z] of outRing(LUMC.x, LUMC.z, LUMC.r + 10, held ? D.LUM_MONS.out : LUMCITY.guards.length, 3)) LUMG.mons.push(monSpawn(pick(), x, z, { area: 'wild' }));
+    if (held) for (const [x, z] of LUMCITY.guards.slice(0, D.LUM_MONS.in)) { const p = guardSpot({ x, z, r: 99 }, x, z); LUMG.mons.push(monSpawn(pick(), p[0], p[1], { area: 'wild' })) }
+    LUMG.next = now + D.LUM_RESPAWN * 1000 }
   const t = now / 1000; LUMCITY.falls.forEach((f, i) => { f.material.opacity = .62 + Math.sin(t * 9 + i * 1.7) * .1 }) }
 /* v3.30 🏰 the six fallen capitals: built when you come near (one per tick), dropped when far · guarded by the kingdom's monsters until it is restored · then the evil glow turns gold */
 /* ================= v3.60 🌳 the Great Tree of Seasons (Sylvaren) · 🍂 seasons: D.SEASON_DAYS game days each (spring → summer → autumn → winter) ================= */

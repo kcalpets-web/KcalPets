@@ -844,6 +844,7 @@ export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: 
 export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = 1, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
+export const LUM_MONS = { out: 12, in: 10 };   // v4.63 the occupied capital (before the dark cloud falls): monsters outside the walls · inside by the tower
 export const LUM_RESPAWN = 300;   // v3.25 seconds before the ruins' guards come back once all are beaten
 export const AIMZOOM = { min: 1, max: 4, rate: 1.4 };   // v3.18.1 🎯 smooth zoom while aiming: hold Y in / X out · rate = how fast (×e per second)
 export const AIMSTICK = 220;          // v3.18 the stick turns the aim (like dragging this many px per second)
