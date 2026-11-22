@@ -3844,7 +3844,7 @@ function qProg(id) { const Q = KQUEST[id], st = KQS()[id] || {};
 /* v3.5.1 one NPC quest at a time: no choosing · finish it and hand it in before the next one */
 const qActive = () => Object.keys(KQS()).find(id => KQS()[id].st === 'on' && KQUEST[id]);
 const qNext = ids => { const T = KQS(); return ids.find(id => (T[id] || {}).st === 'on') || ids.find(id => !(T[id] || {}).st) };
-function qAccept(id) { const a = qActive(); if (a && a !== id) { hint(`📜 ทำเควส “${KQUEST[a].text}” ให้เสร็จแล้วส่งก่อน`, 2200); return } KQS()[id] = { st: 'on', b: qVal(id), t: Date.now() }; sfx('tap'); toast(`📜 รับเควส: ${KQUEST[id].text}`, 2200); save(); hud() }
+function qAccept(id) { if (KQS()[id]) return;   /* v4.57 quests are free: take as many as you like (designer) */ KQS()[id] = { st: 'on', b: qVal(id), t: Date.now() }; sfx('tap'); toast(`📜 รับเควส: ${KQUEST[id].text}`, 2200); save(); hud() }
 function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {}; S.spirit.free += D.QUEST_SPIRIT; spiritNew = true; setTimeout(() => floater(`✨ +${D.QUEST_SPIRIT}`, 'coin', me().x, 2.4, me().z), 300);   /* v3.11 ✨ for every quest */
   if (R.coin) S.coin += R.coin; if (R.gem) S.gem += R.gem; if (R.wear) (S.clothes = S.clothes || {})[R.wear] = 1; if (R.item) dropItem({ t: R.item.t, r: R.item.r }, me().x + .8, me().z); if (R.recipe) S.meals[R.recipe] = (S.meals[R.recipe] || 0) + 2;
   sfx('level'); cheer(1600); bump('kquests'); toast(`✅ ${npc ? npc.icon + ' ' + npc.name + ': ' : ''}${Q.done}<br>${[R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? (D.RECIPES.find(r => r.k === R.recipe) || {}).icon + ' ×2' : ''].filter(Boolean).join(' · ')}`, 3400);
@@ -4002,7 +4002,7 @@ function kqTick(q) { lampTick(q, performance.now()); const nt = isNight();
   merchTick(q);
   for (const sh of TW.shops || []) if (sh && sh.owner) sh.owner.root.visible = D.SHOPS[sh.i] && D.SHOPS[sh.i].k === 'bar' ? barOpen() : !nt }
 function npcState(k, n) { const ids = n.lead ? KQ[k].restore : n.q, T = KQS(); if (n.lead && (S.restored || {})[k]) return '';
-  const id = qNext(ids); if (!id) return ''; const st = T[id]; if (st) return qProg(id).ok ? '❓' : '…'; return qActive() ? '' : '❗' }   /* v3.5.1 ❗ only when no other quest is running */
+  const id = qNext(ids); if (!id) return ''; const st = T[id]; if (st) return qProg(id).ok ? '❓' : '…'; return '❗' }   /* v4.57 ❗ always (any number of quests at once) */
 function kqMarks() { for (const key in KNPC) { const N = KNPC[key], s2 = npcState(N.k, N.n); N.mk.visible = !!s2; if (s2 && N.mk.userData.s !== s2) { N.mk.material.map = emojiTex(s2); N.mk.material.needsUpdate = true; N.mk.userData.s = s2 } } }
 const qReward = R => [R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? '🍲 อาหาร' : ''].filter(Boolean).join(' · ');
 /* v3.27 💬 talking to people: a speech box (name + words) · they ask first → ✅ take it / ❌ not now (stick + A, or tap) · then the progress or 🎁 hand it in */
@@ -4012,7 +4012,6 @@ function talkNpc(key) { const N = KNPC[key]; if (!N) return; if (PL) PL.waveT = 
     if (say) { line = say; say = null }
     else if (done) line = 'ขอบคุณจากใจ… บ้านเมืองของเรากลับมามีชีวิตอีกครั้งเพราะเจ้า';
     else if (!Q) line = n.hello + ' …ตอนนี้ข้าไม่มีอะไรให้ช่วยแล้วล่ะ ขอบใจนะ';
-    else if (!st && busy) line = `${n.hello}<br><br>มีเรื่องอยากให้ช่วยอยู่… แต่เจ้ากำลังทำ “${KQUEST[busy].text}” อยู่ ทำให้เสร็จก่อนแล้วค่อยมาหาข้านะ`;
     else if (!st) { line = `${n.hello}<br><br>มีเรื่องอยากขอให้ช่วยหน่อย… รับไหม?<div class="dlgR">${n.lead ? '🌈' : '📜'} <b>${Q.text}</b><br>🎁 ${qReward(Q.reward || {})} · ✨ ${D.QUEST_SPIRIT}</div>`; ch = [['yes', '✅ รับเควส'], ['no', '❌ ไว้ก่อน']] }
     else if (p.ok) { line = `โอ้! ทำเสร็จแล้วเหรอ? เยี่ยมไปเลย!<div class="dlgR">📜 ${Q.text} ✅</div>`; ch = [['give', '🎁 ส่งเควส'], ['bye', '👋 ไว้ทีหลัง']] }
     else line = `เป็นยังไงบ้าง? ข้ายังรออยู่นะ<div class="dlgR">📜 ${Q.text}<br>ความคืบหน้า ${p.cur}</div>`;

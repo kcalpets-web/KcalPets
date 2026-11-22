@@ -1,4 +1,4 @@
-/* v3.5.1 NPC quests one at a time: an NPC offers only its next quest (no list) · while one quest runs no other can be taken (❗ hidden, no button) · hand it in → the next one opens.
+/* v4.57 NPC quests are free (any number at once) · v3.5.1 an NPC offers only its next quest: an NPC offers only its next quest (no list) · while one quest runs no other can be taken (❗ hidden, no button) · hand it in → the next one opens.
    NODE_PATH=$(npm root -g) node newgame/tools/test/quests.js   (~1 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path');
 const ROOT = path.resolve(__dirname, '../../..'), PORT = 8797, wait = ms => new Promise(r => setTimeout(r, ms));
@@ -20,7 +20,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8797, wait = ms => new 
       const id = out.active; N.S.kq[id].st = 'done'; out.markC2 = N.npcState(N.KNPC[c].k, N.KNPC[c].n); N.talkNpc(c); out.offerC2 = btns(); close(); return out });
     console.log(JSON.stringify(r));
     if (r.offerA !== 1 || r.cardsA !== 1) errs.push('NPC should offer exactly one quest');
-    if (!r.active) errs.push('quest not taken'); if (!r.declined) errs.push('❌ not now should leave the quest untaken'); if (r.track !== 'kq:' + r.active) errs.push('a taken quest should be followed'); if (r.offerC !== 0 || r.markC === '❗') errs.push('a second quest could be taken while one runs');
+    if (!r.active) errs.push('quest not taken'); if (!r.declined) errs.push('❌ not now should leave the quest untaken'); if (r.track !== 'kq:' + r.active) errs.push('a taken quest should be followed'); if (r.offerC !== 1 || r.markC !== '❗') errs.push('v4.57 quests are free: another NPC should still offer theirs while one runs');
     if (r.offerC2 !== 1 || r.markC2 !== '❗') errs.push('next quest did not open after hand-in');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors');
