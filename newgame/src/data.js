@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.18';
+export const APP_VER = '4.19';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -608,7 +608,7 @@ export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = 
 /* ================= v1.2 open world: monster camps (treasure chest when cleared) · wild animals · blueprints ================= */
 export const HORSE = { sp: 6.8, gallop: 11.5, near: 2.4, seat: .95 };   // v3.2 riding speeds · how close to mount · rider height
 export const LAVAD = { sp: 1.8, reach: 3.6, leash: 40, slam: { r: 3, d: 3, wind: 1.2 }, balls: { n: 3, r: 1.8, wind: 1.5 }, erupt: { n: 6, r: 1.6, R: 8, wind: 1.3 }, cd: [2800, 2000] };   // v4.15 🌋 walk · reach · leash · fist slam (radius · in front · warning) · fireballs where you stand (count · radius · warning) · phase-2 eruptions (count · radius · spread · warning) · ms between · every hit burns 🔥
-export const SHIELD_ARM = { pos: [0, -.1, .03], rot: [Math.PI / 2, 0, -.7], s: 1.35, pose: [-.45, .3, -1.45, -.5], guard: [-1.05, .15, -1.3, -.55] };   // v4.14 🛡️ on the forearm (armL2): position · rotation · size · the arm pose [upper arm x, z, elbow x, y] · raised while guarding
+export const SHIELD_ARM = { pos: [0, -.1, .03], rot: [0, Math.PI / 2, 1.6], s: 1.35, gRot: [Math.PI / 2, 0, -.7], guard: [-1.05, .15, -1.3, -.55] };   // v4.18 🛡️ on the forearm (armL2) · not guarding: the arm hangs straight, the shield faces out at the side (rot) · guarding: the arm lifts it in front (gRot · guard pose [upper arm x, z, elbow x, y])
 export const BGIANT = { sp: 2, reach: 3.6, leash: 40, sweep: { r: 3.2, d: 2.6, wind: 1.2 }, thrust: { n: 4, r: 1.4, step: 2.4, wind: 1.3 }, summon: { n: 2, max: 3 }, weak: 1.5, cd: [2700, 1900] };   // v4.13 💀 walk · reach · leash · sword sweep (radius · in front · warning) · thrust line (circles · radius · spacing · warning) · phase-2 skeletons (each time · most at once) · hit while it winds up ×1.5 · ms between
 export const DTREE = { reach: 18, leash: 30, slap: { r: 3, side: 2.6, wind: 1.1 }, roots: { n: 3, r: 1.6, gap: .45, wind: 1.0 }, spores: { r: 5.5, wind: 1.5 }, cd: [2600, 1900] };   // v4.12 🌳 attacks reach · you ran off · branch slap (radius · beside it) · roots under your feet (count · radius · s between · warning) · phase-2 poison spores · ms between
 export const GIANT = { sp: 2.2, reach: 3.4, leash: 40, slam: { r: 2.8, d: 3.2, wind: 1.2 }, breath: { n: 3, r: 1.7, step: 2.2, wind: 1.3 }, ring: { r: 6.5, wind: 1.5 }, cd: [2700, 1900] };   // v4.11 ❄️ walk speed · reach · leash from home · slam (radius · in front · warning s) · breath (circles in a line) · phase-2 spike ring · ms between attacks
