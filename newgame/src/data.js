@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.32';
+export const APP_VER = '4.33';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -138,6 +138,8 @@ export const ITEMS = {
   rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
   paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
+  moonBlade:     { slot: 'sword', kind: 'one', name: 'ดาบโค้งจันทร์เสี้ยว', icon: '🌙', atk: 32, dur: 36, tier: 3, only: 1, metal: 1, night: 1.5 },   // v4.33 asrah · ×1.5 at night
+  boomerang:     { slot: 'sword', kind: 'one', name: 'บูมเมอแรง', icon: '🪃', atk: 20, dur: 40, tier: 3, only: 1, boom: 1 },   // v4.33 asrah · wood · thrown (hold Y) it flies back to you
   dwarfHammer:   { slot: 'sword', kind: 'two', name: 'ค้อนคนแคระ', icon: '⚒️', atk: 36, dur: 40, tier: 3, only: 1, metal: 1, freeze: 1.5 },   // v4.32 frosthelm · a hit freezes the foe (s)
   northAxe:      { slot: 'sword', kind: 'one', name: 'ขวานเหนือ', icon: '🪓', atk: 30, dur: 36, tier: 3, only: 1, metal: 1, eff: { wood: 1.4 } },   // v4.32 frosthelm · chops trees fast too
   iceSword:      { slot: 'sword', kind: 'one', name: 'ดาบน้ำแข็งใส', icon: '🧊', atk: 30, dur: 30, tier: 3, only: 1, melt: 1 },   // v4.32 frosthelm · no metal · wears out faster where it is hot
@@ -178,6 +180,7 @@ export const ITEMS = {
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3, metal: 1 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
+  hawkBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเหยี่ยวทราย', icon: '🏹', atk: 22, dur: 36, tier: 3, only: 1, far: 1.4 },   // v4.33 asrah · arrows fly further
   flowerBow:     { slot: 'bow', kind: 'bow', name: 'ธนูเถาดอกไม้', icon: '🏹', atk: 18, dur: 34, tier: 3, only: 1, bloom: { n: 5, hp: 5 } },   // v4.30 sylvaren · every 5 hits = ❤️ +¼
   bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1, bell: { r: 4, t: 2.5 } },   // bell: monsters within r m of a hit are dazed t s   // v4.24 navalee quest
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
@@ -484,6 +487,7 @@ export const CHASE = 6;                                                        /
 export const AREA_TEMP = { wild: 0, farm: 0, meadow: 0, town: 0, hills: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
 /* cooking ingredients (fish come from S.fish) · tag = what recipes ask for */
 export const INGR = {
+  dates: { icon: '🌴', name: 'อินทผลัม', tag: 'fruit', price: 60 },   // v4.33 asrah's monsters drop them
   pearl:    { icon: '🦪', name: 'ไข่มุก', tag: 'gem', price: 80 },   // v4.24 navalee (a catch bonus in its waters)
   seaweed:  { icon: '🌊', name: 'สาหร่าย', tag: 'seaweed', price: 15 },
   squid:    { icon: '🦑', name: 'ปลาหมึก', tag: 'squid', price: 40 },   // night
@@ -532,6 +536,9 @@ export const RECIPES = [
   { k: 'mushskewer', desc: 'เห็ดป่าเสียบไม้ย่างกับสมุนไพรเรืองแสง สูตรยายใบตอง', icon: '🍡', name: 'เห็ดเสียบไม้ย่าง', need: { mushroom: 2, glowherb: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'เห็ด 2 + สมุนไพรเรืองแสง 1' },   // v4.30 sylvaren
   { k: 'venisonhoney', desc: 'เนื้อกวางตุ๋นน้ำผึ้งป่า สูตรพรานมาลี', icon: '🥙', name: 'กวางตุ๋นน้ำผึ้ง', need: { venison: 1, honey: 1 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อกวาง + น้ำผึ้ง' },
   { k: 'berrycake', desc: 'คัพเค้กเบอร์รี่ป่า กินแล้วกันพิษได้ 3 นาที', icon: '🧁', name: 'คัพเค้กเบอร์รี่ป่า', need: { berry: 3 }, only: 1, eff: { hp: 20, buff: { antidote: 1, min: 3 } }, hint: 'เบอร์รี่ 3 ลูก' },
+  { k: 'kebab', desc: 'เคบับเนื้อเผ็ดห่อแป้ง สูตรป้าพริก', icon: '🌯', name: 'เคบับเผ็ด', need: { meat: 1, chili: 1 }, only: 1, eff: { hp: 60, buff: { atk: 4, min: 5 } }, hint: 'เนื้อ + พริก' },   // v4.33 asrah
+  { k: 'minttea', desc: 'ชาเย็นใบมิ้นต์ เย็นชื่นใจกลางทะเลทราย', icon: '🫖', name: 'ชาเย็นมิ้นต์', need: { mint: 2 }, only: 1, eff: { en: 60, buff: { cool: 1, min: 8 } }, hint: 'ใบมิ้นต์ 2' },
+  { k: 'datesweet', desc: 'ขนมอินทผลัมราดน้ำผึ้ง ของกินระหว่างทางของคาราวาน', icon: '🥮', name: 'ขนมอินทผลัม', need: { dates: 2, honey: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'อินทผลัม 2 + น้ำผึ้ง' },
   { k: 'polarfish', desc: 'ปลาตากแห้งแบบขั้วโลก สูตรตูตู้', icon: '🍤', name: 'ปลาแห้งขั้วโลก', need: { fish: 3, rocksalt: 1 }, only: 1, eff: { hp: 40 }, hint: 'ปลา 3 + เกลือหิน' },   // v4.32 frosthelm
   { k: 'bearballs', desc: 'ลูกชิ้นเนื้อหมีในน้ำพริกร้อน กินแล้วอุ่นทั้งตัว', icon: '🧆', name: 'ลูกชิ้นหมีน้ำพริก', need: { bearmeat: 1, chili: 1 }, only: 1, eff: { hp: 40, buff: { warm: 1, min: 6 } }, hint: 'เนื้อหมี + พริก' },
   { k: 'cornpancake', desc: 'แพนเค้กข้าวโพดราดน้ำผึ้ง อาหารเช้าของโบสถ์ฟรอสต์เฮล์ม', icon: '🥞', name: 'แพนเค้กข้าวโพดน้ำผึ้ง', need: { corn: 2, honey: 1 }, only: 1, eff: { hp: 40, buff: { stam: .25, min: 5 } }, hint: 'ข้าวโพด 2 + น้ำผึ้ง' },
@@ -752,10 +759,14 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   h_wolfhood: { slot: 'head', icon: '🐺', name: 'หมวกหมาป่าหิมะ', warm: 1, cool: 0, hatK: 'wolfhood', src: 'quest', k: 'frosthelm' },   // v4.32 ❄️ the frosthelm snow wolf set
   b_wolfcoat: { slot: 'body', icon: '🧥', name: 'โค้ทขนหมาป่า', warm: 1, cool: 0, col: '#8a9ab8', look: 'wolfcoat', src: 'quest', k: 'frosthelm' },
   l_snowboots: { slot: 'legs', icon: '🥾', name: 'บู๊ตหิมะ', warm: 1, cool: 0, legs: 'boots', legCol: '#3a3f58', shoe: '#5a3a2a', src: 'quest', k: 'frosthelm' },
+  h_turban: { slot: 'head', icon: '🧣', name: 'ผ้าโพกหัวทะเลทราย', warm: 0, cool: 1, hatK: 'turban', src: 'quest', k: 'asrah' },   // v4.33 🏜️ the asrah desert cloth set
+  b_linen: { slot: 'body', icon: '👘', name: 'เสื้อคลุมลินิน', warm: 0, cool: 1, col: '#f4ead6', look: 'linen', src: 'quest', k: 'asrah' },
+  l_baggy: { slot: 'legs', icon: '👖', name: 'กางเกงคาราวาน', warm: 0, cool: 1, legs: 'baggy', legCol: '#e8c878', shoe: '#8a5a2a', src: 'quest', k: 'asrah' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
 export const WEAR_SETS = { diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
   leafhunter: { name: 'เซ็ตพรานใบไม้', parts: ['h_leafhood', 'b_bark', 'l_vine'], glow: '#a8ff6a', bounce: { dmg: 30, r: 9, stun: 2 }, bonus: '⚡ ฝนตก/พายุ: ฟ้าผ่าเด้งไปโดนมอนสเตอร์รอบตัวแทน' },
+  desert: { name: 'เซ็ตผ้าคลุมทะเลทราย', parts: ['h_turban', 'b_linen', 'l_baggy'], glow: '#ffe08a', bonus: '☀️ ร้อนแค่ไหนก็ไม่ช้า ไม่เหนื่อยเพิ่ม' },   // v4.33
   snowwolf: { name: 'เซ็ตหมาป่าหิมะ', parts: ['h_wolfhood', 'b_wolfcoat', 'l_snowboots'], glow: '#bfe8ff', bonus: '❄️ หนาวแค่ไหนก็ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' } };   // v4.32   // v4.30   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
 const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: ['def', 'cool'], o_cape: ['warm', 'cool'], a_knight: ['def', 'warm'], k_navalee: ['swim', 'cool'], k_sylvaren: ['def', 'warm'], k_valkara: ['def', 'cool'], k_deadgar: ['air', 'warm'] };
