@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.23';
+export const APP_VER = '4.24';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -136,6 +136,8 @@ export const ITEMS = {
   boneBlade:     { slot: 'sword', kind: 'two', name: 'ดาบยักษ์โครงกระดูก', icon: '🦴', atk: 48, dur: 45, tier: 4 },   // v4.13 💀 the skeleton giant's reward
   rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
+  paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
+  coralHarpoon:  { slot: 'sword', kind: 'spear', name: 'ฉมวกปะการัง', icon: '🔱', atk: 36, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
   wormFang:      { slot: 'sword', kind: 'one', name: 'ดาบเขี้ยวหนอนทราย', icon: '🦷', atk: 38, dur: 40, tier: 4 },   // v4.03 🪱 the sand worm's reward
   scimitar:      { slot: 'sword', kind: 'one', name: 'ดาบโค้งทะเลทราย', icon: '🗡️', atk: 20, dur: 24, tier: 3 },
   knightSword:   { slot: 'sword', kind: 'one', name: 'ดาบอัศวิน', icon: '⚔️', atk: 26, dur: 30, tier: 3 },
@@ -170,6 +172,7 @@ export const ITEMS = {
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
+  bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1 },   // v4.24 navalee quest
   hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
   soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
   knightBow:     { slot: 'bow', kind: 'bow', name: 'ธนูอัศวิน', icon: '🏹', atk: 22, dur: 36, tier: 3 },
@@ -382,6 +385,7 @@ export const FISH = {
   gourami: { name: 'ปลาแรด', r: 'R', sta: 80, pull: .8, price: 150, exp: 80 },
   giantcat:{ name: 'ปลาบึก', r: 'E', sta: 120, pull: 1.2, price: 700, exp: 280 },
   goldcarp:{ name: 'ปลาตะเพียนทอง', r: 'L', sta: 130, pull: 1.3, price: 2400, exp: 760 },
+  goldpuffer:{ name: 'ปลาปักเป้าทอง', r: 'L', sta: 125, pull: 1.25, price: 1800, exp: 600, navalee: 1 },   // v4.24 only in navalee's waters (a legendary catch)
 };
 export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'], E: ['tuna'], L: ['goldeel'] };
 export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
@@ -472,6 +476,9 @@ export const CHASE = 6;                                                        /
 export const AREA_TEMP = { wild: 0, farm: 0, meadow: 0, town: 0, hills: 0, forest: 0 };                      // -1 cold 🥶 · 0 mild 🙂 · 1 hot 🥵 (zones with heat/cold come later)
 /* cooking ingredients (fish come from S.fish) · tag = what recipes ask for */
 export const INGR = {
+  pearl:    { icon: '🦪', name: 'ไข่มุก', tag: 'gem', price: 80 },   // v4.24 navalee (a catch bonus in its waters)
+  seaweed:  { icon: '🌊', name: 'สาหร่าย', tag: 'seaweed', price: 15 },
+  squid:    { icon: '🦑', name: 'ปลาหมึก', tag: 'squid', price: 40 },   // night
   apple:    { icon: '🍎', name: 'แอปเปิ้ลป่า', tag: 'fruit', price: 15 },
   berry:    { icon: '🫐', name: 'เบอร์รี่', tag: 'fruit', price: 10 },
   mushroom: { icon: '🍄', name: 'เห็ดป่า', tag: 'veg', price: 15 },
@@ -512,6 +519,9 @@ export const SPOIL = { poison: .4 };   // v3.55 a wrong mix: chance it is poison
 /* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
    the most specific matching recipe wins · undiscovered recipes show as ??? with a hint in the journal */
 export const RECIPES = [
+  { k: 'tomyumfish', desc: 'ต้มยำปลาสดจากทะเลสาบนาวาลี เผ็ดร้อน อุ่นถึงใจ', icon: '🥣', name: 'ต้มยำปลานาวาลี', need: { fish: 2, spice: 1 }, eff: { hp: 40, buff: { warm: 1, min: 5 } }, hint: 'ปลา 2 ตัว + พริก' },   // v4.24 navalee
+  { k: 'riceball', desc: 'ข้าวปั้นห่อสาหร่าย พกง่าย กินแล้วกระปรี้กระเปร่า', icon: '🍙', name: 'ข้าวห่อสาหร่าย', need: { seaweed: 2 }, only: 1, eff: { en: 100, buff: { stam: .35, min: 5 } }, hint: 'สาหร่ายล้วน' },
+  { k: 'squidgrill', desc: 'หมึกย่างซอสระฆัง สูตรกัปตันมาริน', icon: '🦑', name: 'หมึกย่างซอสระฆัง', need: { squid: 2 }, only: 1, eff: { hp: 60 }, hint: 'ปลาหมึกล้วน' },
   { k: 'grillfish', desc: 'ปลาเสียบไม้ย่างไฟอ่อนๆ หอมกลิ่นทะเล', icon: '🍢', name: 'ปลาย่าง', need: { fish: 2 }, only: 1, eff: { hp: 45 }, hint: 'ปลาล้วนๆ ย่างไฟ' },
   { k: 'berrytart', desc: 'ทาร์ตกรอบๆ ใส่สตรอว์เบอร์รีจากแปลงของเราเอง', icon: '🥧', name: 'ทาร์ตสตรอว์เบอร์รี', need: { strawberry: 2 }, only: 1, eff: { hp: 40, en: 60 }, hint: 'ผลไม้สีแดงจากแปลงผัก ล้วนๆ' },
   { k: 'salad', desc: 'ผักสดกรอบๆ จากแปลง ราดน้ำสลัดง่ายๆ', icon: '🥗', name: 'สลัดผักสด', need: { veg: 2 }, only: 1, eff: { hp: 45, en: 35 }, hint: 'ผักล้วน 2 อย่างขึ้นไป' },
@@ -719,6 +729,9 @@ export const WEAR = {
 export const LOOK_LEGS = { traveler: '#3a3f58', farmer: '#4a6aa8', mage: '#2a2e5a', sailor: '#2a3a7a', kimono: '#f8f0f0', knight: '#5a6a8a', cape: '#3a3f58', vest: '#5a4a3a', robe: '#2a2e5a', tank: '#4a6aa8' };
 Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้อกล้าม', warm: 0, cool: 0, col: '#f4f0e8', look: 'tank', starter: 1 },
   s_shorts: { slot: 'legs', icon: '🩳', name: 'กางเกงขาสั้น', warm: 0, cool: 0, legs: 'shorts', legCol: '#4a6aa8', starter: 1 },
+  h_divemask: { slot: 'head', icon: '🤿', name: 'หน้ากากดำน้ำ', warm: 0, cool: 0, air: 1, hatK: 'divemask', src: 'quest', k: 'navalee' },   // v4.24 🤿 the navalee diver set
+  b_swimsuit: { slot: 'body', icon: '🩱', name: 'ชุดว่ายน้ำนาวาลี', warm: 0, cool: 0, swim: 1, col: '#1aa0c8', look: 'swim', noLegs: 1, src: 'quest', k: 'navalee' },
+  l_diver: { slot: 'legs', icon: '🩳', name: 'กางเกงนักดำน้ำ', warm: 0, cool: 0, swim: 1, legs: 'shorts', legCol: '#1a3a6a', src: 'quest', k: 'navalee' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
@@ -726,7 +739,7 @@ const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: 
 const LEGS_AB = {};
 for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.gone) continue; const has = AB_KEYS.filter(a => X[a]); if (has.length < 2) { if (X.slot === 'body' && has[0] && has[0] !== 'def') LEGS_AB[k] = [has[0], X[has[0]]]; continue }
   const [top, leg] = SPLIT[k] || has; LEGS_AB[k] = leg ? [leg, X[leg]] : null; for (const a of has) if (a !== top) X[a] = 0 }
-for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.slot !== 'body' || !X.look || X.gone || k === 's_tank') continue;
+for (const k of Object.keys(WEAR)) { const X = WEAR[k]; if (X.slot !== 'body' || !X.look || X.gone || X.noLegs || k === 's_tank') continue;
   const L = { slot: 'legs', icon: '👖', name: 'กางเกง' + X.name.replace(/^(ชุด|เสื้อ|เกราะ|ผ้าคลุม)/, ''), legs: 'pants', legCol: LOOK_LEGS[X.look] || '#3a3f58', of: k };
   if (LEGS_AB[k]) L[LEGS_AB[k][0]] = LEGS_AB[k][1];   /* v3.91 one ability: the second of a split outfit / the same as a single-ability top */ for (const a of ['src', 'k', 'price']) if (X[a] != null) L[a] = X[a]; WEAR['L_' + k] = L }
 export const MASK_HAIR = { veil: 'bob', scarf: 'bob', furmask: 'messy', mask: 'bob' };   // the hair under face-wear
