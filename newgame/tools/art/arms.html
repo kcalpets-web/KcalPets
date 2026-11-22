@@ -1,0 +1,23 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE arms</title><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.18 just the arm (designer): the right arm of A / B / C, hanging straight · top row = as in the game · bottom row = upper arm · forearm · hand coloured */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1200, H = 820, R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); R.setSize(W, H); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.background = new THREE.Color('#f4ead8'); S.add(new THREE.HemisphereLight('#fff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(2, 4, 5); S.add(sun);
+const JOINT = o => !!(o.userData.role || /^(hand[LR]|arm[LR]2|head)$/.test(o.name));
+const V = [['A · แบบตอนนี้', 1, 1], ['B · ยาวขึ้นเล็กน้อย', 1.35, 1.35], ['C · ยาวขึ้น', 1.7, 1.7]], COL = { armR: '#6ac04a', elR: '#2a9a8a', handR: '#a86ad8' };
+const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', wear: 'traveler', top: '#3a8ad8', legs: 'pants', eyes: 'round' };
+const arms = [];
+V.forEach(([t, fa, ff], i) => [0, 1].forEach(row => {
+  const g = new THREE.Group(); vinyl(g, look); let arm = null; g.traverse(o => { if (o.userData.role === 'armR') arm = o });
+  for (const [J, f] of [[arm, fa], [arm.children.find(c => c.userData.role === 'elR'), ff]]) if (J && f !== 1) for (const c of J.children) { c.position.y *= f; if (!JOINT(c)) c.scale.y *= f }
+  arm.parent.remove(arm); arm.position.set(0, 0, 0); arm.rotation.set(0, 0, 0);
+  if (row) arm.traverse(o => { if (!o.isMesh) return; let p = o, k = null; while (p && !k) { k = COL[p.userData.role] ? p.userData.role : COL[p.name] ? p.name : null; p = p.parent } if (k) o.material = new THREE.MeshStandardMaterial({ color: COL[k], roughness: .7 }) });
+  const w = new THREE.Group(); w.add(arm); w.scale.setScalar(3.2); w.position.set((i - 1) * 1.55 + (row ? .32 : -.32), 1.75, 0); w.rotation.y = -.3; S.add(w); arms.push(w) }));
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 50); cam.position.set(0, 1.3, 6.4); cam.lookAt(0, 1.3, 0); R.render(S, cam);
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.drawImage(R.domElement, 0, 0); x.font = '900 24px system-ui'; x.fillStyle = '#2a2030'; x.textAlign = 'center';
+V.forEach(([t], i) => x.fillText(t, W / 2 + (i - 1) * 370, 40)); x.font = '800 18px system-ui';
+[['ต้นแขน', '#6ac04a'], ['แขนท่อนล่าง', '#2a9a8a'], ['มือ', '#a86ad8']].forEach(([n, c], k) => { x.fillStyle = c; x.fillRect(40 + k * 180, H - 40, 22, 22); x.fillStyle = '#2a2030'; x.textAlign = 'left'; x.fillText(n, 70 + k * 180, H - 22) });
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
