@@ -22,6 +22,18 @@ export const VLOOK = {
   beard: [['none', 'ไม่มี'], ['stache', 'หนวด'], ['goatee', 'เคราแพะ'], ['full', 'เครายาว']],
 };
 export const VSCALE = 1.45;
+/* v4.21 body proportions (designer: B · arms / legs / trunk longer so weapons sit right · the head and the neck stay) · each joint's children move out along it and its own pieces stretch
+   the hips + waist rise by the legs' extra length so the feet stay on the ground (the KRIG Hips track moves the body group, not these) */
+export const VPROP = { arm: 1.35, fore: 1.35, thigh: 1.5, shin: 1.5, torso: 1.2, waist: 1.15 };
+const PJOINT = o => !!(o.userData.role || /^(hand[LR]|arm[LR]2|head|Hand_[LR])$/.test(o.name));
+export function vinylProp(g, P) { if (!P) return; const F = { armL: P.arm, armR: P.arm, elL: P.fore, elR: P.fore, hipL: P.thigh, hipR: P.thigh, kneeL: P.shin, kneeR: P.shin, chest: P.torso, waist: P.waist }, J = {};
+  g.traverse(o => { if (o.userData.role) J[o.userData.role] = o });
+  const footY = () => { g.updateMatrixWorld(true); const f = J.footL || J.footR; if (!f) return 0; const v = f.getWorldPosition(new THREE.Vector3()); g.worldToLocal(v); return v.y };
+  const y0 = footY(), NECK = .18;
+  for (const k in F) { const Jn = J[k], f = F[k]; if (!Jn || !f || f === 1) continue; for (const c of Jn.children) { if (k === 'chest' && (c.userData.role === 'head' || c.name === 'head')) { c.position.y += NECK * (f - 1); continue } c.position.y *= f; if (!PJOINT(c)) c.scale.y *= f } }
+  const dy = y0 - footY(); for (const k of ['hipL', 'hipR', 'waist']) if (J[k]) J[k].position.y += dy;
+  if (J.head && J.head.parent === g) J.head.position.y += dy + .12 * (P.waist - 1) + NECK * (P.torso - 1);   /* the head sits on the body group: it rises with the hips + the trunk (to the shoulders), the neck keeps its length */
+  g.userData.prop = P }
 /* v3.9 (preview) layered build: every part is a joint group (R15-like: chest · waist · upper arm · fore arm · hand · thigh · shin · foot · head)
    and every joint carries up to 3 layers: userData.layer 0 = the body (a little slimmer) · 1 = clothes · 2 = gear (hats now, armour later)
    head: skull (smaller) → hair (bigger) → hat (biggest) */
@@ -332,6 +344,7 @@ export function vinylLayered(root, a0 = {}) {
   if (a.beard && a.beard !== 'none') beardPiece(skull, a.beard, a.hairCol || '#7a4428'); if (a.glasses && a.glasses !== 'none') glasses(skull, a.glasses); LY(skull, 0);
   { const hg = new THREE.Group(); hg.scale.setScalar(.96); head.add(hg); const hd = a.hatHair || (a.hat && a.hat !== 'none' ? HAT_HAIR[a.hat] || 'messy' : null); hairPiece(hg, hd || a.hair || 'messy', a.hairCol || '#7a4428', !!hd || a.hat === 'hood'); LY(hg, 1) }   /* v3.87 a head item brings its own (tucked) hair: nothing pokes through */
   hatPiece(head, a.hat, a.hatCol, a.hairCol);
+  vinylProp(g, a0.prop || VPROP);   /* v4.21 the longer body (designer picked B) */
   root.traverse(o => { if (o.isMesh) o.userData.noFacet = 1 });
   return root;
 }
