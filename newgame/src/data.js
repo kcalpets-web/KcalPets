@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.53';
+export const APP_VER = '4.54';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -596,6 +596,20 @@ export const POTS = { meadow: 'แคมป์ริมธาร', mesa: 'แค
 /* journal achievements · check(S) → progress number · goal · reward */
 /* v3.63 🧭 the six paths: what you become by playing · 5 steps each (a stat or f(S) and a goal) · a reward per step · finishing a path = its title */
 const nRec = S => Object.keys(S.journal.recipes || {}).filter(k => !['mystery', 'rotten', 'poison'].includes(k)).length, nSk = S => Object.keys(S.journal.sketch || {}).length;
+/* v4.54 🌱 starter quests as chains: 10 everyday things × 3 steps (each step asks for more · gives more) · counted from when the player first sees them (old saves start at 0)
+   stats = S.stat keys added together · goals = how many since the start (step 1 → 2 → 3) · rew = each step's reward · all 30 steps = STARTER_ALL */
+export const STARTER = [
+  { k: 'tree', icon: '🪓', name: 'ตัดต้นไม้', unit: 'ต้น', stats: ['clr_tree'], goals: [3, 10, 30], rew: [{ coin: 50 }, { coin: 200 }, { gem: 10 }], how: 'แตะ 🔄 เข้าโหมดฟาร์ม → เลือก 🪓 ขวาน → เดินไปที่ต้นไม้แล้วกด <b>Y</b>', go: 'tree' },
+  { k: 'rock', icon: '⛏️', name: 'ทุบหิน', unit: 'ก้อน', stats: ['clr_rock', 'clr_pebble', 'clr_boulder', 'clr_bigrock'], goals: [3, 10, 30], rew: [{ coin: 50 }, { coin: 200 }, { gem: 10 }], how: 'โหมดฟาร์ม → เลือก ⛏️ อีเต้อ → เดินไปที่ก้อนหินแล้วกด <b>Y</b>', go: 'rock' },
+  { k: 'grass', icon: '🌾', name: 'ตัดหญ้า', unit: 'กอ', stats: ['clr_grass', 'clr_bush'], goals: [5, 20, 50], rew: [{ coin: 50 }, { coin: 200 }, { gem: 10 }], how: 'โหมดฟาร์ม → เลือก 🌾 เคียว → เดินไปที่หญ้า/พุ่มไม้แล้วกด <b>Y</b>', go: 'grass' },
+  { k: 'draw', icon: '🖍️', name: 'วาดภาพ', unit: 'ภาพ', stats: ['drawings'], goals: [1, 5, 15], rew: [{ coin: 100 }, { coin: 300 }, { gem: 15 }], how: 'โหมดฟาร์ม → เลือก 🖍️ สีไม้ → หันไปทางที่อยากวาดแล้วกด <b>Y</b>' },
+  { k: 'fish', icon: '🎣', name: 'ตกปลา', unit: 'ตัว', stats: ['fish'], goals: [1, 5, 15], rew: [{ coin: 100 }, { coin: 300 }, { gem: 15 }], how: 'โหมดฟาร์ม → เลือก 🎣 เบ็ด → ยืนริมน้ำ ค้าง <b>Y</b> เล็ง ปล่อยเหวี่ยง · ปลากินเบ็ดแล้วกดรัวๆ', go: 'water' },
+  { k: 'plant', icon: '🌱', name: 'ปลูกผัก', unit: 'แปลง', stats: ['planted'], goals: [1, 8, 24], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'ขุดดินด้วย 🪏 จอบ แล้วถือเมล็ดไปกด <b>A</b> ที่แปลง · ซื้อเมล็ดได้ที่ลุงฮาวซิฟ', go: 'farm' },
+  { k: 'harvest', icon: '🥕', name: 'เก็บผัก', unit: 'ครั้ง', stats: ['harvested'], goals: [1, 8, 24], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'รดน้ำทุกวันจนผักโต แล้วกด <b>A</b> ที่แปลงเพื่อเก็บ', go: 'farm' },
+  { k: 'feed', icon: '🍖', name: 'ให้อาหารสัตว์', unit: 'ครั้ง', stats: ['feeds'], goals: [1, 5, 15], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: '🎒 กระเป๋า → 🐾 สัตว์เลี้ยง → เลือกน้อง → 🍖 ให้อาหาร', go: 'pets' },
+  { k: 'catch', icon: '🕸️', name: 'จับสัตว์', unit: 'ตัว', stats: ['catches'], goals: [1, 3, 6], rew: [{ gem: 10 }, { gem: 20 }, { gem: 40 }], how: 'โหมดฟาร์ม → เลือก 🕸️ ตาข่าย → ค้าง <b>Y</b> เล็งที่สัตว์ ปล่อยโยน', go: 'animal' },
+  { k: 'craft', icon: '🛠️', name: 'สร้างอุปกรณ์', unit: 'ชิ้น', stats: ['crafts', 'forged'], goals: [1, 3, 8], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: '☰ เมนู → 🛠️ คราฟ → เลือกลูกธนู/คบไฟแล้วกด 🛠️ ทำเลย · อาวุธให้ช่างตีเหล็กหลอม', go: 'craft' }];
+export const STARTER_ALL = { gem: 50 };   // every step of all ten
 export const PATHS = [
   { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเมิร์จแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
     { text: 'วาปไปยังจุดพักครั้งแรก', stat: 'warps', goal: 1, reward: { coin: 200 } }, { text: 'เปิดหีบสมบัติ 5 ใบ', stat: 'chests', goal: 5, reward: { coin: 600 } },
