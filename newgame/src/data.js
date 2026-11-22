@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.35';
+export const APP_VER = '4.36';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -912,6 +912,7 @@ export const STORM_REWARD = { coin: 10000, gem: 500 };
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 /* v3.2 🌦️ weather: every 6 game hours each land rolls its sky (weights) · temp = added to TEMPV outdoors */
 /* v4.27 ⛈️ rain 1 (🌦️🌧️) / 2 (⛈️): anything metal you carry (weapon · shield · bow slot, in hand or on the back) draws the lightning · each bolt −dmg + stunned stun s (stacks) · ⚡ clothes stop it · ☠️ smog: Deadgar edge 1 / core 2 (🫁 pieces protect) */
+export const HEATMETAL = { t: 8, lock: 15 };   // v4.36 heat level 2: metal in hand → dropped after t s · too hot to hold for lock s
 export const ZAP = { lv: { drizzle: 1, rain: 1, storm: 2 }, every: [7, 12], warn: 1.1, dmg: 5, stun: 1.5, chain: 3, gap: .8, r: 1.8 };
 export const SMOG = { deadgar: [.62, .85] };   // kingdom → weight w for level 1 / level 2
 export const WX = { types: { clear: { icon: '☀️', name: 'ฟ้าใส', rain: 0, snow: 0, cloud: 0, temp: 0 }, cloud: { icon: '☁️', name: 'ครึ้ม', rain: 0, snow: 0, cloud: .65, temp: -.05 }, drizzle: { icon: '🌦️', name: 'ฝนปรอย', rain: .35, snow: 0, cloud: .6, temp: -.1 },
