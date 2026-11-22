@@ -18,7 +18,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8889, OUT = process.argv[2] || '/tmp/
       S.wear = { body: 'coat', head: 'woolCap' }; out.two2 = N.climate(c2).short; out.normal = N.climate(0).short;
       S.wear = { body: 'coat', head: 'strawHat' }; out.mix = N.wearN(); out.ticks = N.resistHtml(); return out });
     log('levels', JSON.stringify(L)); if (!(L.none1 > 0)) errs.push('cold 1 with no ❄️ piece should hurt'); if (L.one1 !== 0) errs.push('cold 1 with 1 ❄️ piece should be fine'); if (!(L.one2 > 0)) errs.push('cold 2 with 1 piece should hurt'); if (L.two2 !== 0) errs.push('cold 2 with 2 pieces should be fine'); if (L.normal !== 0) errs.push('level 0 should be fine');
-    if (L.mix.warm !== 1 || L.mix.cool !== 1) errs.push('a mixed outfit should count ❄️ 1 + ☀️ 1'); if (!/✔/.test(L.ticks)) errs.push('the status should show ✔ ticks');
+    if (L.mix.warm !== 1 || L.mix.cool !== 1) errs.push('a mixed outfit should count ❄️ 1 + ☀️ 1'); if (!/class="rs/.test(L.ticks)) errs.push('the status should show the resist icons')   /* v4.41 icons (glow at 2) instead of ✔ */;
     // a lit torch = level 2 against the cold · rain puts it out (still held) · the lamp gives light in the rain, no warmth
     const T = await E(() => { const N = window.__ng, S = N.S, lv = N.D.CLIMATE.lv, c2 = -(lv[1] + .2), out = {}; S.wear = { body: 'tunic' }; S.lampOn = 0; S.hand = 'torch'; S.torchT = 100; N.WXS.rain = 0;
       out.torchDry = N.climate(c2).short; out.onDry = N.torchOn(); N.WXS.rain = 1; out.onRain = N.torchOn(); out.torchRain = N.climate(c2).short; out.held = S.hand;

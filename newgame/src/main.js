@@ -291,7 +291,7 @@ function monQuad(M, spd, now, dt) { const R = M.A.body.userData.quad, A = M.A; A
   poseQ(R, clip, (now % per) / per); A.body.position.y = 0 }
 const QUAD_SC = 1.55; for (const k of ['shiba', 'cat']) PETS[k] = g => { const q = new THREE.Group(); q.scale.setScalar(QUAD_SC); g.add(q); const R = buildQuad(q, k); poseQ(R, 'idle', 0); g.userData.quad = R };
 function quadTick(e, mv, now, dt) { const R = e.A.body.userData.quad; if (!R) return false; const fight = e.mode === 'fight' && e.foe, atk = fight && now < e.atkT && e.atkT - now > D.PET_ATK_CD / speed - 450;
-  if (mv) e.stillT = 0; else e.stillT = (e.stillT || 0) + dt;
+  if (mv || e === HORSE) e.stillT = 0; else e.stillT = (e.stillT || 0) + dt;   /* v4.41 ridden: never sits or lies down under you */
   const st = e.stillT, q = e.A.root.position, pq = PL && me(), ouch = PL && now < (PL.hurtT || 0) + 250 && pq && Math.hypot(q.x - pq.x, q.z - pq.z) < 7;   /* v3.54 event poses: hop when it levels up, is fed or you cheer · flinch when you get hit nearby · look round, then stretch, before it sits */
   const glad = now < (e.happyT || 0) || (now < cheerT && !fight);
   const bite = now < (e.biteT || 0), air = e === HORSE && now < jumpT, pc = !bite && !air && e.mode !== 'down' && !atk && e.pclip ? (mv ? (e.prun || e === HORSE ? 'run' : 'walk') : e.pclip) : null;   /* v3.78 the ride's bite · the jump · what it plays at */
@@ -2259,7 +2259,7 @@ const swimMul = () => (1 + D.CLIMATE.swimK * Math.min(D.CLIMATE.swimMax, wearSum
 const pct = n => Math.round(Math.min(1, n * D.CLIMATE.per) * 100);   /* pieces → % protection */
 /* v3.82 🌡️ weather levels 0 · 1 · 2 · a piece showing ❄️ / ☀️ … = 1 level whatever its number · at most 2 per kind · cold 2: a lit torch or a fire = 2 */
 /* ✔ ticks per kind (green, at most 2) */
-const resistHtml = () => { const w = wearN(); return WEAR_AB.filter(([k]) => w[k]).map(([k, ic]) => `<span class="rs">${ic.replace('⬇️', '')}<i>${'✔'.repeat(w[k])}</i></span>`).join('') };
+const resistHtml = () => { const w = wearN(); return WEAR_AB.filter(([k]) => w[k]).map(([k, ic]) => `<span class="rs${w[k] >= 2 ? ' glow' : ''}">${ic.replace('⬇️', '')}</span>`).join('') };   /* v4.41 (designer) no ticks: 1 piece = the icon · 2 = the icon glows */
 const wearN = () => { const o = {}; for (const sl in S.wear || {}) { const W2 = D.WEAR[S.wear[sl]]; if (!W2) continue; for (const [k] of WEAR_AB) if (W2[k]) o[k] = Math.min(2, (o[k] || 0) + 1) } return o };
 function climate(tv0) { const L = D.CLIMATE.lv, tv = (tv0 ?? TEMPV) - (nearFire() ? D.TEMP.fire : 0), cold = tv < -L[0] ? L.filter(v => tv < -v).length : 0, hot = tv > L[0] ? L.filter(v => tv > v).length : 0, w = wearN();   /* a camp fire warms you, it never counts as heat */
   const warm = torchOn() || nearFire() ? 2 : Math.min(2, (w.warm || 0) + (buffOn('warm') ? 1 : 0)), cool = Math.min(2, (w.cool || 0) + (buffOn('cool') ? 1 : 0) + (PL && PL.swim ? 2 : 0));
@@ -4979,7 +4979,7 @@ function mountHorse(M) { if (HORSE || !mons.includes(M)) return; HORSE = M; M.ag
       win: () => { M.A.body.rotation.x = 0; M.A.body.position.y = 0; M.tame = 1; sfx('level'); toast('🐴 ม้าเชื่องแล้ว! ครั้งหน้าขึ้นขี่ได้เลย', 2200); horseTip() },
       lose: () => { M.A.body.rotation.x = 0; M.A.body.position.y = 0; dismount(); spendEn(D.STRUG.horseEn); shakeT = .35; sfx('hurt'); M.fleeT = performance.now() + 6000; toast(`💥 ตกม้า! ⚡ −${D.STRUG.horseEn} · ม้าวิ่งหนีไปแล้ว`, 2200) } }); return }
   horseTip() }
-function mountPet(p) { if (inTown(me().x, me().z)) { hint('🏘️ ในเมืองขี่น้องไม่ได้', 1500); return } const e = PA.get(p.id) || buildPet(p, me().x, me().z); const q = me(); e.mode = 'wander'; e.foe = null; e.A.root.position.set(q.x, groundH(q.x, q.z), q.z); VF.ring(q.x, q.y, q.z, '#ffffff', 1.6, .4); VF.burst(q.x, q.y + .5, q.z, '#ffe8b8', 14, 3);
+function mountPet(p) { { const e0 = PA.get(p.id); if (e0) playEnd(e0) } if (inTown(me().x, me().z)) { hint('🏘️ ในเมืองขี่น้องไม่ได้', 1500); return } const e = PA.get(p.id) || buildPet(p, me().x, me().z); const q = me(); e.mode = 'wander'; e.foe = null; e.A.root.position.set(q.x, groundH(q.x, q.z), q.z); VF.ring(q.x, q.y, q.z, '#ffffff', 1.6, .4); VF.burst(q.x, q.y + .5, q.z, '#ffe8b8', 14, 3);
   HORSE = e; walkT = null; work = null; RUNON = false; DRAWN = false; setTool(''); sfx('level'); bump('petRide');
   if (!S.story.petRideTip4) { S.story.petRideTip4 = 1; save(); toast(`${PET_ICO[p.kind]} ขี่ ${esc(p.name)} แล้ว! วิ่งเร็ว ไม่เสียพลังงาน<br><small>X กระโดด · Y ฟัน · A เก็บของ/คุย · B ลง</small>`, 3400) } }   /* v3.54 🐶🐱 ride your pet like the horse */
 function horseTip() { if (!S.story.horseTip) { S.story.horseTip = 1; toast('🐴 ขี่ม้าแล้ว! เร็ว ไม่เสียพลังงาน · เดินค้าง 3 วิ = ควบ · B = ลงจากม้า', 3200); save() } }
