@@ -1,0 +1,28 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><title>KEALEE frosthelm</title><style>body{margin:0;background:#f4ead8}canvas{display:block}</style></head><body>
+<script type="module">
+/* v4.31 preview: frosthelm town quests — Inka the furrier · the snow wolf set (wolf head · fur coat · snow boots) · 3 weapons · 3 dishes */
+import * as THREE from '../../lib/three.module.min.js';
+import { vinyl, VPROP } from '../../src/vinyl.js';
+import { WEAPON_MESH, BOW_MESH } from '../../src/weapons.js';
+import { CICON } from '../../src/cicons.js';
+const CW = 230, CH = 270, COLS = 4, cells = [];
+const R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); R.setSize(CW, CH - 40); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping;
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#ffffff', '#c8b8a0', 1.6)); const sun = new THREE.DirectionalLight('#fff4e0', 2.4); sun.position.set(2, 4, 3); S.add(sun);
+const shot = (build, title, frame) => { const g = new THREE.Group(); build(g); S.add(g); g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g.userData.focus || g), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y * .85) * (frame || 2.6) + sz.z / 2;
+  const cam = new THREE.PerspectiveCamera(28, CW / (CH - 40), .05, 50); cam.position.set(c.x, c.y + sz.y * .05, c.z + d); cam.lookAt(c); R.setClearColor(0, 0); R.clear(); R.render(S, cam); S.remove(g); const im = document.createElement('canvas'); im.width = CW; im.height = CH - 40; im.getContext('2d').drawImage(R.domElement, 0, 0); cells.push([im, title]) };
+const P = { v: 2, skin: '#f2cfa6', eyes: 'round', eyeCol: '#4a3020' };
+shot(g => { const v = new THREE.Group(); vinyl(v, { ...P, sex: 'f', skin: '#f4d8c0', hair: 'braids', hairCol: '#c86a3a', wear: 'traveler', top: '#8a3a3a', bottom: 'pants', legCol: '#4a3a3a', hat: 'beanie', hatCol: '#e8e8f0', expr: 'smile', prop: VPROP }); v.rotation.y = .35; g.add(v) }, '🧶 ช่างขนสัตว์อินกา (ใหม่)');
+shot(g => { const v = new THREE.Group(); vinyl(v, { ...P, sex: 'm', hair: 'spiky', hairCol: '#2a2228', hat: 'wolfhood', wear: 'wolfcoat', top: '#8a9ab8', legs: 'boots', legCol: '#3a3f58', prop: VPROP }); v.rotation.y = .4; g.add(v) }, '🐺 เซ็ตหมาป่าหิมะ (หน้า)');
+shot(g => { const v = new THREE.Group(); vinyl(v, { ...P, sex: 'f', hair: 'pony', hairCol: '#7a4428', hat: 'wolfhood', wear: 'wolfcoat', top: '#8a9ab8', legs: 'boots', legCol: '#3a3f58', prop: VPROP }); v.rotation.y = 2.5; g.add(v) }, '🐺 เซ็ตหมาป่าหิมะ (หลัง)');
+for (const [ry, t] of [[0, 'หัว (หน้า)'], [1.57, 'หัว (ข้าง)']]) shot(g => { const v = new THREE.Group(); vinyl(v, { ...P, sex: 'm', hair: 'afro', hairCol: '#c83a3a', hat: 'wolfhood', wear: 'wolfcoat', top: '#8a9ab8', legs: 'boots', legCol: '#3a3f58', prop: VPROP }); v.rotation.y = ry; g.add(v); g.userData.focus = v.getObjectByName('head') }, '🐺 หมวกหมาป่า ' + t, 1.1);
+shot(g => { const w = new THREE.Group(); WEAPON_MESH.dwarfHammer(w); w.rotation.z = -.7; g.add(w) }, '⚒️ ค้อนคนแคระ (โลหะ)', 2.6);
+shot(g => { const w = new THREE.Group(); WEAPON_MESH.northAxe(w); w.rotation.z = -.6; g.add(w) }, '🪓 ขวานเหนือ (โลหะ)', 2.8);
+shot(g => { const w = new THREE.Group(); WEAPON_MESH.iceSword(w); w.rotation.z = -.7; g.add(w) }, '🧊 ดาบน้ำแข็งใส', 3.0);
+shot(g => { const w = new THREE.Group(); CICON['🍤'](w); g.add(w) }, '🐟 ปลาแห้งขั้วโลก', 2.2);
+shot(g => { const w = new THREE.Group(); CICON['🧆'](w); g.add(w) }, '🧆 ลูกชิ้นหมีน้ำพริก', 2.2);
+shot(g => { const w = new THREE.Group(); CICON['🥞'](w); g.add(w) }, '🥞 แพนเค้กข้าวโพดน้ำผึ้ง', 2.2);
+const cv = document.createElement('canvas'), rows = Math.ceil(cells.length / COLS); cv.width = COLS * CW; cv.height = rows * CH + 60; const x = cv.getContext('2d'); x.fillStyle = '#f4ead8'; x.fillRect(0, 0, cv.width, cv.height);
+x.font = '900 26px system-ui'; x.fillStyle = '#3a2a30'; x.fillText('KEALEE · ฟรอสต์เฮล์ม: NPC ใหม่ · ชุด · อาวุธ · อาหาร (ภาพตัวอย่าง)', 16, 40);
+cells.forEach(([im, t], i) => { const cx = (i % COLS) * CW, cy = 60 + Math.floor(i / COLS) * CH; x.fillStyle = '#fffaf2'; x.beginPath(); x.roundRect(cx + 6, cy + 4, CW - 12, CH - 10, 16); x.fill(); x.drawImage(im, cx, cy + 4); x.font = '800 16px system-ui'; x.fillStyle = '#3a2a30'; x.textAlign = 'center'; x.fillText(t, cx + CW / 2, cy + CH - 18); x.textAlign = 'left' });
+document.body.replaceChildren(cv); window.__done = true;
+</script></body></html>
