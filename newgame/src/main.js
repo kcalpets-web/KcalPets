@@ -4707,7 +4707,7 @@ function hinFixed(g) { const lv = hLv(), hw = HIN.w / 2, hd = HIN.d / 2; HIN.fix
 function hinGrow(ow, od) { const H = HOUSE_S(), L = D.HOUSE_LV[hLv()], dx = (L.w - ow) / 2, dz = (L.d - od) / 2; HIN.w = L.w; HIN.d = L.d; HIN.fix = []; hinFixed(new THREE.Group()); let n = 0;
   for (const it of H.items.slice()) { if (HDEC[it.k].wall) { const w = dWallSpot(it.x + Math.sign(it.x) * (Math.abs(it.x) > .8 ? dx : 0), it.z < -.8 ? it.z - dz : it.z); Object.assign(it, w) } else { if (Math.abs(it.x) > .8) it.x += Math.sign(it.x) * dx; if (it.z < -.8) it.z -= dz; else if (it.z > .8) it.z += dz }
     if (!dFits(it, it.x, it.z, it.r, it.id)) { H.items.splice(H.items.indexOf(it), 1); H.own[it.k] = (H.own[it.k] || 0) + 1; n++ } } return n }
-function houseUpDone() { const H = HOUSE_S(), J = H.job; if (!J) return; const L0 = D.HOUSE_LV[hLv()]; H.lv = J.lv; H.job = null; const n = hinGrow(L0.w, L0.d), L = D.HOUSE_LV[H.lv]; carpProps(); sfx('level'); cheer && cheer(2000);
+function houseUpDone() { const H = HOUSE_S(), J = H.job; if (!J) return; const L0 = D.HOUSE_LV[hLv()]; H.lv = J.lv; H.job = null; { const hb = S.home && bOf(S.home); if (hb) bView(hb) }   /* v4.82 the outside follows the level */ const n = hinGrow(L0.w, L0.d), L = D.HOUSE_LV[H.lv]; carpProps(); sfx('level'); cheer && cheer(2000);
   toast(`🔨 <b>${D.CARP.name}</b> ต่อเติมบ้านเสร็จแล้ว!<br>${L.ic} ระดับ ${H.lv + 1} · ${L.n}${n ? `<br><small>ของ ${n} ชิ้นย้ายไม่ได้ เก็บไว้ในถาด 🪑 จัดห้อง</small>` : ''}`, 4200); save(); hud(); if (HIN.on) hinRebuild() }
 function houseUpTick() { const J = S.house && S.house.job; if (J && ((S.dayN || 0) >= J.day || Date.now() >= J.t)) houseUpDone() }
 const decorN = () => HOUSE_S().items.length, decorCap = () => D.HOUSE_LV[hLv()].cap;
@@ -4774,7 +4774,7 @@ function fUpCard(b) { const L = D.FARM_LV[b.k]; if (!L) return ''; const lv = fL
   if (b.up) return `<div class="card"><b>🔨 กำลังขยาย → Lv ${b.up.lv + 1}</b><p class="mut">เสร็จเมื่อนอนถึงเช้า หรืออีก ${Math.max(1, Math.ceil((b.up.t - Date.now()) / 60e3))} นาที</p></div>`;
   if (!N) return `<div class="card"><b>⭐ Lv 3 สูงสุดแล้ว</b><p class="mut">อยู่ได้ ${L[lv].cap} ตัว</p></div>`;
   return `<div class="card"><div class="row"><b>⬆️ ขยายเป็น Lv ${lv + 2}</b><span class="mut">${L[lv].cap} → ${N.cap} ตัว${N.trough ? ` · ราง ${N.trough}` : ''}</span></div>${upMats(N.cost)}<button class="btn go wide" id="fUp" ${hasCost(N.cost) ? '' : 'disabled'}>${hasCost(N.cost) ? '🔨 จ้างช่างไม้ตองขยาย' : '🔒 วัสดุยังไม่ครบ'}</button></div>` }
-function fUpTick() { for (const b of S.builds) if (b.up && ((S.dayN || 0) >= b.up.day || Date.now() >= b.up.t)) { b.lv = b.up.lv; b.up = null; bump('farmBuilt'); sfx('level'); toast(`⬆️ ${BP[b.k].icon} ${BP[b.k].name} ขยายเป็น <b>Lv ${b.lv + 1}</b> แล้ว!<br>อยู่ได้ ${fCap(b)} ตัว`, 3200); save() } }
+function fUpTick() { for (const b of S.builds) if (b.up && ((S.dayN || 0) >= b.up.day || Date.now() >= b.up.t)) { b.lv = b.up.lv; b.up = null; bView(b); bump('farmBuilt'); sfx('level'); toast(`⬆️ ${BP[b.k].icon} ${BP[b.k].name} ขยายเป็น <b>Lv ${b.lv + 1}</b> แล้ว!<br>อยู่ได้ ${fCap(b)} ตัว`, 3200); save() } }
 /* ================= v4.75b 🌾 hay by hand (designer): Lv 1–2 pens have a hay slot beside them · A = take an armful (from the 🌾 granaries, or your 🌿 grass) · carry it to the trough · A = put it in · only hay in the trough feeds them
    Lv 3 = an automatic feeder (tops the trough up from the granaries each dawn) · granaries are a store (any distance) ================= */
 const hayAll = () => S.builds.filter(g => g.done && g.k === 'granary').reduce((t, g) => t + (g.hay || 0), 0);
@@ -5252,7 +5252,21 @@ function homeMigrate() { if (!BALD_ON) return; let h = S.home && bOf(S.home);
   if (h) setHome(h) }
 const GHOK = new THREE.MeshBasicMaterial({ color: '#6aff8a', transparent: true, opacity: .5, depthWrite: false }), GHNO = new THREE.MeshBasicMaterial({ color: '#ff5a4a', transparent: true, opacity: .5, depthWrite: false });
 const GHBP = new THREE.MeshBasicMaterial({ color: '#8ac8ff', transparent: true, opacity: .32, depthWrite: false });
-function bModel(k) { const g = new THREE.Group();
+/* v4.82 designer: the player's house + farm buildings in the town's building language (new · unbroken · no repairs) · better materials with each level: boards → stone + half-timber → all stone (docs/art/farmhome-mock.png) */
+const PB_KIND = ['wood', 'half', 'stone'], PB = {
+  cabin:     { W: 3, D: 2.8, H: 2.1, roof: '#b0402e', rise: 1.15, door: [1.1, 0, .8, 1.25], win: [[.25, 1.05, .55, .55], [2.2, 1.05, .55, .55]] },
+  poultry:   { W: 2.6, D: 2, H: 1.5, roof: '#8a2a1a', rise: .8, door: [1.5, 0, .55, .85], win: [[.25, .75, .45, .35]], ramp: 1 },
+  livestock: { W: 4.4, D: 3, H: 2, roof: '#8a2a1a', rise: 1.15, door: [1.5, 0, 1.4, 1.5], win: [[.3, 1.05, .6, .45], [3.5, 1.05, .6, .45]], trough: 1 },
+  granary:   { W: 3, D: 2.6, H: 2.2, roof: '#8a2a1a', rise: 1.35, door: [.9, 0, 1.2, 1.5], win: [], hay: 1 } };
+function pbModel(k, lv) { const g = new THREE.Group(), P = PB[k], kind = PB_KIND[Math.max(0, Math.min(2, lv))];
+  oldShop(g, { kind, W: P.W, D: P.D, H: P.H, rise: P.rise, roof: P.roof, door: P.door, win: P.win, seed: k.length * 7 + lv, ruin: 0, moss: .15, planks: false, chimney: k === 'cabin' && lv >= 2, eco, winMat: k === 'cabin' ? M_WIN : null });
+  if (P.ramp) { rbox(g, '#6a4428', '#a8784a', [-P.W / 2 + P.door[0] + P.door[2] / 2, .14, P.D / 2 + .35], [.5, .04, .75], [.32, 0, 0], .02) }
+  if (P.trough) { rbox(g, '#5a3a22', '#9a6238', [-1.4, .2, P.D / 2 + .55], [1.1, .3, .4], [0, 0, 0], .04); rbox(g, '#3a6a9a', '#6ab0e0', [-1.4, .33, P.D / 2 + .55], [.95, .04, .28], [0, 0, 0], .01) }
+  if (P.hay || P.trough) for (const [x, y, z] of [[P.W / 2 + .45, 0, -.4], [P.W / 2 + .45, .42, -.4], [P.W / 2 + .45, 0, .35]]) rbox(g, '#c8a040', '#f0d878', [x, y + .2, z], [.6, .4, .5], [0, .2, 0], .08);
+  return g }
+const pbLv = (k, b) => k === 'cabin' ? (b && S.home === b.id ? hLv() : 0) : b ? fLv(b) : 0;
+function bModel(k, b) { const g = new THREE.Group();
+  if (PB[k]) { g.add(pbModel(k, pbLv(k, b))); return g }
   if (k === 'campfire') { for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28; part(g, '#6a6460', '#a8a098', [Math.cos(a) * .5, .1, Math.sin(a) * .5], [.16, .11, .14], [0, a, 0], { A: .2 }) } cone(g, '#e0402a', '#ffd23f', [0, .28, 0], [.18, .32, .18], [0, 0, 0], .95) }
   else BUILDS[k](g); return g }
 const tint = (g, m) => g.traverse(o => { if (o.isMesh) { o.material = m; o.castShadow = false } });
@@ -5366,7 +5380,7 @@ function repairCost(b) { const c = (BP[b.k] || {}).cost || {}, o = {}; for (cons
 function bView(b) {
   bDrop(b); const B = BP[b.k], y = B.water ? -.3 : groundH(b.x, b.z), v = { g: null, pick: null };
   if (b.done && b.k === 'campfire') { v.pot = 'bf_' + b.id; POT[v.pot] = cookPot(W, v.pot, b.x, b.z); potView(v.pot); v.g = new THREE.Group() }
-  else { const g = bModel(b.k); if (!b.done) { tint(g, GHBP); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) part(g, '#6a4024', '#a8703e', [sx * B.w / 2, .35, sz * B.d / 2], [.05, .35, .05], [0, 0, 0], { A: 0 }) }
+  else { const g = bModel(b.k, b); if (!b.done) { tint(g, GHBP); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) part(g, '#6a4024', '#a8703e', [sx * B.w / 2, .35, sz * B.d / 2], [.05, .35, .05], [0, 0, 0], { A: 0 }) }
     else g.traverse(o => { if (o.isMesh) { o.castShadow = !eco; o.receiveShadow = true } });
     g.position.set(b.x, y, b.z); g.rotation.y = b.r || 0; v.g = g;
     v.pick = addPick(W, b.x, b.z, Math.max(.6, Math.min(B.w, B.d) / 2 + .2), 1.4, { kind: 'build', id: b.id }); v.pick.position.y += Math.max(0, y) }
