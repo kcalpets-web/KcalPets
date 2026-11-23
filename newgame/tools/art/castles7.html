@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE seven castles</title><style>body{margin:0;background:#141016}</style></head><body>
+<script type="module">
+/* v4.77 each kingdom's castle: the hall + the throne room (their own decorations) */
+import { THREE, HUMANS } from '../../src/clay.js';
+import { buildFloor, LAYOUT, THEMES } from '../../src/castle2.js';
+const W = 1600, H = 900, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.3); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.autoClear = false;
+const seen = {}; for (const R of LAYOUT[0].rooms) seen[R.id] = 1;
+const K = ['luminia', 'navalee', 'sylvaren', 'frosthelm', 'deadgar', 'asrah', 'valkara', 'navalee'];
+K.forEach((k, n) => { const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff4e0', '#4a3a50', 1.05)); const sun = new THREE.DirectionalLight('#fff1dc', .7); sun.position.set(-4, 12, 6); S.add(sun);
+  const g = new THREE.Group(); buildFloor(g, LAYOUT[0], seen, 3.4, { T: THEMES[k] }); S.add(g); const kk = new THREE.Group(); HUMANS.kealee(kk); kk.scale.setScalar(.82); kk.position.set(.8, 0, 3); kk.rotation.y = Math.PI; S.add(kk);
+  const vw = W / 4, vh = H / 2, vp = [(n % 4) * vw, (1 - Math.floor(n / 4)) * vh, vw, vh]; const cam = new THREE.PerspectiveCamera(42, vw / vh, .1, 200);
+  if (n < 7) { cam.position.set(0, 15, 13); cam.lookAt(0, 0, -2.6) } else { cam.position.set(-1, 5, 6); cam.lookAt(-3, .8, -2) }
+  r.setViewport(...vp); r.setScissor(...vp); r.setScissorTest(true); r.setClearColor('#141016'); r.clear(); r.render(S, cam) });
+window.__done = 1;
+</script></body></html>
