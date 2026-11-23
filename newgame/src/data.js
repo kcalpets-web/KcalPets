@@ -861,7 +861,7 @@ export const LUMFIX = { secs: 45, spots: [
   { n: 'กำแพงเมือง', ic: '🧱', cost: { stone: 60, flint: 5 } },
   { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },
   { n: 'สะพานหิน', ic: '🌉', cost: { stone: 50, ore: 6 } },
-  { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 }, king: { coin: 10000, gem: 100, title: '👑 ผู้พิทักษ์ลูมิเนีย' } };
+  { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 }, king: { coin: 10000, gem: 100, title: '👑 ผู้พิทักษ์ลูมิเนีย' }, endTitle: '🏆 นักผจญภัยอันดับหนึ่ง' };
 export const OUTLAW = { respawn: 120, door: 4, sight: 12 };   // v4.75 ⚔️ wanted: camps respawn soldiers every 2 min · 4 at the castle door · how far they spot you
 export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
