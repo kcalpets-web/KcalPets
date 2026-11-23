@@ -9,14 +9,17 @@ export function toast(msg, ms = 2200) { const t = $('toast'); t.innerHTML = msg;
 
 const stack = [];
 /* sheet(title, render(body, redraw), opts) — render is called again by redraw() */
+/* v4.76 💰 the wallet on shop windows (designer: "you can't see how much you have") · main.js sets the text (🪙 · 💎) · hud() refreshes every open one */
+let WAL = null; export const setWallet = f => { WAL = f };
+export function walletRefresh() { if (WAL) for (const o of stack) { const w = o.querySelector('.wal'); if (w) w.innerHTML = WAL() } }
 export function sheet(title, render, opts = {}) {
   try { document.activeElement && document.activeElement.blur && document.activeElement.blur() } catch (e) { }
   try { window.dispatchEvent(new Event('ng-sheet')) } catch (e) { }   /* v3.79 a button pressed by Enter / the pad must not stay focused under the new window (Enter repeated a sale) */
   const ov = document.createElement('div'); ov.className = 'ov' + (opts.cls ? ' ' + opts.cls : '');
-  ov.innerHTML = `<div class="sh"><div class="shh"><button class="back" aria-label="กลับ">←</button><h2>${title}</h2></div><div class="shb"></div></div>`;
+  ov.innerHTML = `<div class="sh"><div class="shh"><button class="back" aria-label="กลับ">←</button><h2>${title}</h2>${opts.wallet && WAL ? `<span class="wal">${WAL()}</span>` : ''}</div><div class="shb"></div></div>`;
   const body = ov.querySelector('.shb'), close = () => { ov.remove(); const i = stack.indexOf(ov); if (i >= 0) stack.splice(i, 1); opts.onClose && opts.onClose() };
   ov.querySelector('.back').onclick = close;   /* v3.76 a tap on the blurred space around a window does nothing (close = ← or B, one step at a time) */
-  const redraw = () => { body.innerHTML = ''; render(body, redraw, close) };
+  const redraw = () => { body.innerHTML = ''; render(body, redraw, close); const w = ov.querySelector('.wal'); if (w && WAL) w.innerHTML = WAL() };
   document.body.appendChild(ov); stack.push(ov); redraw(); return { close, redraw };
 }
 export const sheetOpen = () => stack.length > 0;

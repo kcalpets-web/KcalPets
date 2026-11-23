@@ -20,7 +20,7 @@ import { ambient, landLife } from './ambient.js';
 import { buildCapital, CAP_GOLD, CAP_WIN, CAP_FIRE, CAP_FIRE2 } from './capitals.js';
 import { buildHarbour } from './harbour.js';
 import { GTREE, M_WIN, roadD, roadAt, ROADS, NODES, lamps, M_LAMP, M_HALO, M_POOL, LAMP_COL, solPush, CAPS, SOL_R, decorLook, solBlock, LUMC, mergeProp, harbourShop, FARM, inFarm, inField, fieldK, BALD_ON, isleBand, STC, GOBC, coreIn, CORE_BLEND, giantMesh, giantLog, GIANT_H, TRAIN, trainH, EELA, inEelA, solTop, FARC, veinOf, delSol, buildWorld, spawnClear, despawnClear, addPick, removePick, walkable, shore, SPAWN, HOUSE, BOAT, EXIT, WRECK, HOWSIF, buildTown, TOWN, TX, walkTown, buildForest, FX, FOREST, walkForest, cookPot, buildWild, groundH, waterAt, walkWorld, walkLand, zoneOf, roadZ, mapColor, GATE, ZONES, CAMPS, RIVER, LAKE, MESA, WORLD, CHUNK, coreDist, wildH, coastX, fbm, buildFarLand, buildChunk, dropChunk, addSol, solHit, remnant, KINGDOMS, kingdomAt, CLOUD } from './world.js';
-import { $, fmt, esc, toast, sheet, closeSheets, confirmBox, floater, tickFloaters } from './ui.js';
+import { $, fmt, esc, toast, sheet, closeSheets, setWallet, walletRefresh, confirmBox, floater, tickFloaters } from './ui.js';
 import { playIntro, playPetRescue, playFlashback, playTitle } from './cutscene.js';
 import { buildLumCity } from './lumcity.js';
 import { TIME, gulls, WMAT } from './life.js';
@@ -179,7 +179,7 @@ for (const k of D.VANEYA.shops) S.shops[k] = S.shops[k] || 1;
 if (S.wearMsg) { const [rf, it] = S.wearMsg; S.wearMsg = null; save(); setTimeout(() => toast(`👗 ชุดรวมเป็นชิ้นเดียวแล้ว${it ? `<br>ชุดที่คุณเลือกไว้ → ${D.WEAR[it].icon} ${D.WEAR[it].name} (ใส่อยู่)` : ''}${rf ? `<br>กางเกงเก่าแลกเป็น 🪙 ${rf}` : ''}`, 4200), 4000) }   /* v3.43 */   /* the harbour shops are open (no repairs) */
 function boatSide() { const at = S.boatAt || 'isle', fixed = !!S.story.boatFixed; W.boat.visible = fixed && at === 'isle'; HARB.boat.visible = fixed && at === 'main' }
 function openBoat() { if (!S.story.boatFixed) return; const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
-  sheet('⛵ เรือของลุงฮาวซิฟ', (b, redraw, close) => { const c = Math.floor(S.boat.c || 0);
+  shopSheet('⛵ เรือของลุงฮาวซิฟ', (b, redraw, close) => { const c = Math.floor(S.boat.c || 0);
     b.innerHTML = `<div class="card"><p>👴 <b>ลุงฮาวซิฟ:</b> ${to === 'main' ? '“จะข้ามไปแผ่นดินใหญ่เหรอ? ลุงพาไปส่งที่เมืองท่าเอง ร้านค้าอยู่ที่นั่นทั้งหมด”' : '“กลับเกาะวาเนย่ากันไหม? ทุ่งทานตะวันคิดถึงเราแล้ว”'}</p><p class="mut">🌊 ว่ายข้ามเองก็ได้ถ้า ⚡ พอ · วาปข้ามทะเลไม่ได้</p><button class="btn go wide" id="bSail">⛵ ${to === 'main' ? 'ล่องไปเมืองท่า (แผ่นดินใหญ่)' : 'กลับเกาะวาเนย่า'}</button></div>` + (c >= 1 ? `<div class="card"><b>🪙 เงินในเรือ ${fmt(c)}</b><button class="btn wide" id="bCoin">🪙 เก็บเข้ากระเป๋า</button></div>` : '');
     b.querySelector('#bSail').onclick = () => { close(); sail(to) }; const bc = b.querySelector('#bCoin'); if (bc) bc.onclick = () => { S.coin += c; S.boat.c = 0; sfx('coin'); save(); hud(); redraw() } }) }
 function sail(to) { if (RIDE) leaveRaft && leaveRaft(); if (HORSE) dismount(); aimEnd(false);
@@ -1091,13 +1091,13 @@ function openShopKind(k) {
   const def = D.SHOPS.find(s => s.k === k);
   if (k === 'tools') return openTools();
   if (k === 'bar') return openBar(def);
-  if (k === 'tailor') return sheet(`${def.icon} ${def.name}`, (b, redraw) => { b.innerHTML = `<p class="mut">${def.owner}: ชุดสวยๆ ใส่สบาย กันร้อน กันหนาว · เอาวัตถุดิบมา ป้าเย็บให้</p>${orderCard('tailor') || '<p class="mut">ยังไม่มีแบบชุด · เรียนแบบได้จากผู้คนทั่วแผนที่</p>'}`; b.querySelectorAll('[data-od]').forEach(x => x.onclick = () => { if (makerOrder(+x.dataset.od)) redraw() }) });
-  if (k === 'potion' || k === 'food') return sheet(`${def.icon} ${def.name}`, (b, redraw) => {
+  if (k === 'tailor') return shopSheet(`${def.icon} ${def.name}`, (b, redraw) => { b.innerHTML = `<p class="mut">${def.owner}: ชุดสวยๆ ใส่สบาย กันร้อน กันหนาว · เอาวัตถุดิบมา ป้าเย็บให้</p>${orderCard('tailor') || '<p class="mut">ยังไม่มีแบบชุด · เรียนแบบได้จากผู้คนทั่วแผนที่</p>'}`; b.querySelectorAll('[data-od]').forEach(x => x.onclick = () => { if (makerOrder(+x.dataset.od)) redraw() }) });
+  if (k === 'potion' || k === 'food') return shopSheet(`${def.icon} ${def.name}`, (b, redraw) => {
     const list = k === 'food' ? D.FOODS : D.SHOP, box = k === 'food' ? S.food : S.potions;
     b.innerHTML = `<p class="mut">${def.owner}: ${k === 'food' ? 'อาหารน้องช่วยให้น้องโตและพัฒนาร่าง' : 'ยารักษาอาการต่างๆ (พิษ หนาว ไหม้ มึน) และชาเพิ่มพลังงาน'}</p>${k === 'potion' ? orderCard('potion') : ''}` + list.map(x => `<div class="card"><div class="row"><b>${x.icon} ${x.name}</b><span class="mut">มี ${box[x.k] || 0}</span></div><div class="row"><span class="mut">${x.exp ? 'Exp น้อง +' + x.exp : x.cure ? `แก้ ${D.DEBUFF[x.cure].icon} ${D.DEBUFF[x.cure].name}` : '⚡ +' + x.en}</span><button class="btn sm go" data-buy="${x.k}" ${S.coin < x.price ? 'disabled' : ''}>ซื้อ 🪙 ${fmt(x.price)}</button></div></div>`).join('');
     b.querySelectorAll('[data-buy]').forEach(x => x.onclick = () => { const it = list.find(i => i.k === x.dataset.buy); if (!it || S.coin < it.price) return;   /* v3.79 money checked at the press, not only by the disabled look */ if (!bagFits('food', box, it.k)) { bagFullHint('food'); return } S.coin -= it.price; box[it.k] = (box[it.k] || 0) + 1; bump('buys'); save(); hud(); redraw() });
   });
-  if (k === 'smith') return sheet(`${def.icon} ${def.name}`, (b, redraw) => {
+  if (k === 'smith') return shopSheet(`${def.icon} ${def.name}`, (b, redraw) => {
     b.innerHTML = `<p class="mut">${def.owner}: อาวุธและชุดเกราะพื้นฐาน · ของหายากหาได้จากมอนสเตอร์</p><button class="btn wide" id="smSell">💰 ขายอาวุธ / โล่ / ธนูที่ไม่ใช้</button>${orderCard()}${forgeCard()}${repairCard()}<div class="card"><div class="row"><b>🏹 ลูกธนู ×${D.ARROW.shopN}</b><span class="mut">มีอยู่ ${S.arrows || 0} ดอก</span></div><div class="row2"><button class="btn go" id="buyArw" ${S.coin < D.ARROW.shopPrice ? 'disabled' : ''}>🪙 ${D.ARROW.shopPrice}</button></div></div>` + D.SMITH.map((x, i) => { const T = D.ITEMS[x.t], st = itemStats(x), c = gearCmp({ id: -1, t: x.t, r: x.r });
       return `<div class="card"><div class="row"><b style="color:${D.RAR_COL[x.r]}">${T.icon} ${T.name}</b><span class="mut">${D.SLOT_NAME[T.slot]} · ${st.atk ? '⚔️ +' + st.atk + ' ' : ''}${st.def ? '🛡️ +' + st.def + ' ' : ''}${st.hp ? '❤️ +' + st.hp : ''}</span></div><div class="cmp">${c.stats}<br>${c.verdict} <span class="mut">${c.vs}</span></div><div class="row2"><button class="btn sm go" data-sm="${i}" ${S.coin < x.price ? 'disabled' : ''}>ซื้อ 🪙 ${fmt(x.price)}</button></div></div>` }).join('');
     b.querySelectorAll('[data-od]').forEach(x => x.onclick = () => { if (makerOrder(+x.dataset.od)) redraw() });
@@ -1106,7 +1106,7 @@ function openShopKind(k) {
     b.querySelector('#buyArw').onclick = () => { if (S.coin < D.ARROW.shopPrice) return; if (!bagFits('bow', { arw: S.arrows || 0 }, 'arw', D.ARROW.shopN)) { bagFullHint('bow'); return } S.coin -= D.ARROW.shopPrice; S.arrows = (S.arrows || 0) + D.ARROW.shopN; sfx('coin'); save(); hud(); redraw() };
     b.querySelectorAll('[data-sm]').forEach(x => x.onclick = () => { const it = D.SMITH[+x.dataset.sm]; if (!it || S.coin < it.price) return; if (!bagFits(itemCat(it.t))) { bagFullHint(itemCat(it.t)); return } S.coin -= it.price; { const ni = newItem(it.t, it.r); S.bag.push(ni); autoEquip(ni) } S.journal.gear[it.t + '_' + it.r] = 1; toast(`🎒 ได้ ${D.ITEMS[it.t].icon} ${D.ITEMS[it.t].name} · เปิดกระเป๋าเพื่อสวม`); save(); hud(); redraw() });
   });
-  if (k === 'market') return sheet(`${def.icon} ${def.name}`, (b, redraw) => {
+  if (k === 'market') return shopSheet(`${def.icon} ${def.name}`, (b, redraw) => {
     const mats = Object.keys(S.mats).filter(m => S.mats[m]), fish = Object.keys(S.fish).filter(f => S.fish[f]);
     b.innerHTML = `<p class="mut">${def.owner}: รับซื้อวัตถุดิบและปลา (ครึ่งราคา)</p>` + (mats.map(m => `<div class="row"><span>${D.MATS[m][0]} ${D.MATS[m][1]} ×${S.mats[m]}</span><button class="btn sm ghost" data-m="${m}">ขาย 1 · 🪙${Math.round(D.MATS[m][2] * D.SELL_RATE)}</button></div>`).concat(fish.map(f => `<div class="row"><span>🐟 ${D.FISH[f].name} ×${S.fish[f]}</span><button class="btn sm ghost" data-f="${f}">ขาย 1 · 🪙${Math.round(D.FISH[f].price * D.SELL_RATE)}</button></div>`)).join('') || '<p class="mut">ยังไม่มีของจะขาย</p>');
     b.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { const m = x.dataset.m; if (!(S.mats[m] > 0)) return; S.mats[m]--; S.coin += Math.round(D.MATS[m][2] * D.SELL_RATE); save(); hud(); redraw() });
@@ -1457,7 +1457,9 @@ function regrow() { const now = Date.now(); for (const o of W.clear.values()) { 
 /* ---------- HUD + story quests ---------- */
 const PET_ICO = { cat: '🐱', shiba: '🐶', chick: '🐤', bunny: '🐰', penguin: '🐧', rabbit: '🐇', chicken: '🐔', duck: '🦆', deer: '🦌', boar: '🐗', whale: '🐋', hawk: '🦅', bear: '🐻', horse: '🐴' };
 const qDone = q => q.check ? q.check(S) : q.flag ? !!S.story[q.flag] : (q.stat.startsWith('story_') ? sk(q.stat.slice(6)) : S.stat[q.stat] || 0) >= q.goal;
-function hud() { try { petQuestTick() } catch (e) { } bowBtn();
+const shopSheet = (t, r, o = {}) => sheet(t, r, { ...o, wallet: 1 });   /* v4.76 💰 shop windows show what you have */
+setWallet(() => `<b>🪙 ${fmt(S.coin || 0)}</b><b>💎 ${fmt(S.gem || 0)}</b>`);
+function hud() { try { petQuestTick() } catch (e) { } try { walletRefresh() } catch (e) { } bowBtn();
   const st = pStats(); boatTick();
   if (S.profile && S.profile.pic && !$('pfAv').firstElementChild) $('pfAv').innerHTML = `<img src="${esc(S.profile.pic)}" alt="" referrerpolicy="no-referrer">`;
   $('hLv').textContent = S.spirit.free > 0 ? `✨ ×${S.spirit.free} แตะเพื่ออัป!` : `✨ ${S.spirit.hp + S.spirit.en}`; $('pf').classList.toggle('glow', S.spirit.free > 0); $('hName').textContent = S.profile ? S.profile.name : 'ผู้เล่น'; 
@@ -1991,7 +1993,7 @@ function openPets() {
 }
 /* v3.13 openBoat moved up: the boat is the ferry to the mainland (and still holds the coins) */
 function openBoatOld() {
-  boatTick(); sheet('⛵ เรือคลังเงิน', (b, redraw) => {
+  boatTick(); shopSheet('⛵ เรือคลังเงิน', (b, redraw) => {
     boatTick(); const B = S.boat, cap = D.BOAT_CAP(B.lv), next = B.lv < 10 ? D.BOAT_UP[B.lv] : null, rate = S.pets.length * D.COIN_PER_PET_H;
     b.innerHTML = `<p class="mut">น้องทุกตัวในฟาร์มหาเหรียญให้ ${fmt(D.COIN_PER_PET_H)} 🪙/ชม. ต่อตัว แม้ปิดเกม · เงินมาเก็บที่เรือ · เรือเต็มแล้วหยุดนับ</p>
       <div class="card"><div class="row"><b>🪙 ${fmt(B.c)} / ${fmt(cap)}</b><span class="mut">+${fmt(rate)}/ชม. (${S.pets.length} ตัว)</span></div><div class="bar big"><i style="width:${B.c / cap * 100}%;background:#ffd23f"></i></div>
@@ -2489,7 +2491,7 @@ if (!S.spiritV) { const n = D.SPIRIT_QUESTS.filter(id => D.QUESTS.findIndex(q =>
   S.spirit = { hp: 0, en: 0, free: n }; S.coin += refund; S.spiritV = 1; S.hp = null; S.en = null; for (const p of S.pets) { p.hp = null; p.mp = null; p.down = 0 } save();
   if (S.story.intro) setTimeout(() => { toast(`🆕 ระบบใหม่! เลเวลผู้เล่น → ✨ จิตวิญญาณแห่งลูโทเนีย${n ? ` ×${n}` : ''}${refund ? `<br>คืนเลเวลเดิมเป็น 🪙 ${fmt(refund)}` : ''}`, 4200); if (n) setTimeout(() => openSpirit(), 4400) }, 3500) }
 function openTools() {
-  sheet('🛠️ ช่าง · อัปเกรดอุปกรณ์', (b, redraw) => {
+  shopSheet('🛠️ ช่าง · อัปเกรดอุปกรณ์', (b, redraw) => {
     const has = c => Object.keys(c).every(k => k === 'coin' ? S.coin >= c.coin : (S.mats[k] || 0) >= c[k]), costTxt = c => Object.keys(c).map(k => k === 'coin' ? '🪙 ' + fmt(c.coin) : D.MATS[k][0] + ' ' + c[k]).join(' · ');
     b.innerHTML = orderCard('tools') + repairCard() + '<p class="mut">ขวาน เคียว อีเต้อ ค้อน จอบ เป็นของในกระเป๋าแล้ว (ซื้อ/ตีที่ช่างตีเหล็ก) · ที่นี่อัปเกรดเบ็ด: รอกแรงขึ้น เจอปลาหายากบ่อยขึ้น</p>' + Object.keys(D.TOOLS).filter(k => k === 'rod' && S.has.rod).map(k => { const t = S.tools[k], up = D.TOOL_UP[t + 1];
       return `<div class="card"><div class="row"><b>${D.TOOLS[k][0]} ${D.TOOLS[k][1]}${D.TIER[t]}</b><span class="mut">${k === 'rod' ? 'แรงรอก ' + (D.REEL.base + D.REEL.perTier * t) : `กลาง ${D.hitsFor('m', t)} ที · ใหญ่ ${D.hitsFor('l', t)} ที`}</span></div>${up ? `<div class="row"><span class="mut">→ ${D.TIER[t + 1]}: ${costTxt(up)}</span><button class="btn sm go" data-up="${k}" ${has(up) ? '' : 'disabled'}>อัปเกรด</button></div>` : '<p class="mut">ขั้นสูงสุดแล้ว</p>'}</div>` }).join('');
@@ -3961,7 +3963,7 @@ function songDone(sg) { const first = !(S.songs || {})[sg.k]; (S.songs = S.songs
   if (sg.eff === 'en') addEn(15); if (sg.eff === 'pets') { const now = performance.now(); for (const e of PA.values()) e.happyT = now + 3000 }
   if (nearBarOpen()) { const key = 'tipN_' + (S.dayN || 0); if ((S.stat[key] || 0) < D.FLUTE.tipsPerNight) { S.stat[key] = (S.stat[key] || 0) + 1; const [a, b] = D.FLUTE.tip, tip = Math.round((a + Math.random() * (b - a)) * (sg.eff === 'tip' ? 1.5 : 1)); S.coin += tip; S.stat.tips = (S.stat.tips || 0) + tip; bump('barPlays'); sfx('coin'); msg += `<br>🍹 แขกในบาร์ปรบมือ! ทิป 🪙 ${fmt(tip)}` } else msg += '<br><small>🍹 คืนนี้แขกให้ทิปครบแล้ว · พรุ่งนี้มาเล่นใหม่นะ</small>' }
   toast(msg, 3000); save(); hud(); pathCheck && pathCheck(); fluteUI() }
-function openBar(def) { sheet(`${def.icon} ${def.name}`, (b, redraw) => {
+function openBar(def) { shopSheet(`${def.icon} ${def.name}`, (b, redraw) => {
   b.innerHTML = `<p class="mut">${def.owner}: ดึกแล้วยังไม่นอนอีกเหรอ นักผจญภัย? นั่งก่อนสิ · เปิด ${hhmm(D.BAR.open)}–${hhmm(D.BAR.close)} น.</p>` + D.BAR.menu.map(x => `<div class="card"><div class="row"><b>${x.icon} ${x.name}</b></div><div class="row"><span class="mut">${effTxt(x.eff)}</span><button class="btn sm go" data-bar="${x.k}" ${S.coin < x.price ? 'disabled' : ''}>สั่ง 🪙 ${fmt(x.price)}</button></div></div>`).join('')
     + (S.has.flute ? '' : `<div class="card"><div class="row"><b>🎵 ขลุ่ยไม้ของลุงโจ้</b><button class="btn sm go" id="barFl" ${S.coin < D.FLUTE.price ? 'disabled' : ''}>🪙 ${fmt(D.FLUTE.price)}</button></div><p class="mut">เป่าได้ 7 โน้ต · เล่นเพลงในบาร์ตอนเปิด แขกจะให้ทิป</p></div>`) + `<div class="card"><div class="row"><b>👂 ฟังข่าวลือ</b><button class="btn sm" id="barRum" ${S.coin < D.BAR.rumor ? 'disabled' : ''}>เลี้ยงน้ำ 🪙 ${D.BAR.rumor}</button></div><p class="mut" id="barRumT">${S.barRum || 'คนในบาร์รู้เรื่องแปลกๆ ทั่วเอิร์ทแลน'}</p></div>`;
   b.querySelectorAll('[data-bar]').forEach(x => x.onclick = () => { const it = D.BAR.menu.find(i => i.k === x.dataset.bar); if (S.coin < it.price || EAT) return; S.coin -= it.price; bump('buys'); bump('barDrinks'); save(); hud(); redraw(); eatAnim(it.icon, () => eatDone(it)) });
@@ -4034,7 +4036,7 @@ function merchTick(q) { const c = merchC(); S.merch = S.merch && S.merch.c === c
       a.root.position.set(ax, groundH(ax, az), az); a.yawT = a.yaw = .4 + Math.PI / 2; scene.add(a.root); idleReg(a); MCH.A = a; MCH.pick = addPick(W, ax, az, .8, 1.9, { kind: 'merchant' }); MCH.pick.position.y += Math.max(0, groundH(ax, az)) }
   else if (d > D.MERCHANT.near + 30 && MCH.A) merchDrop() }
 function openMerchant() { if (!merchHere()) { toast('🎩 ไม่มีใครอยู่… พ่อค้าไปแล้ว', 1600); return } S.merch.met = 1; bump('merchMet');
-  sheet('🎩 พ่อค้าลึกลับ', (b, redraw) => { const L = merchStock(merchC()), left = D.MERCHANT.stay - merchDay();
+  shopSheet('🎩 พ่อค้าลึกลับ', (b, redraw) => { const L = merchStock(merchC()), left = D.MERCHANT.stay - merchDay();
     b.innerHTML = `<p class="mut">ฮึๆ… มาถึงที่นี่ได้ ก็ถือว่ามีวาสนา · ของที่มีป้าย 📍 หาได้เฉพาะเมือง ${KINGDOMS[merchSpot(merchC()).k].name} · อีก <b>${left} วัน</b> ข้าจะย้ายไปเมืองอื่น</p>` + L.map(x => { const sold = (S.merch.sold[x.id] || 0) >= 1, own = x.kind === 'wear' && (S.clothes || {})[x.t], ok = S.coin >= x.coin && (S.gem || 0) >= x.gem && !sold && !own;
       return `<div class="card"><div class="row"><b>${x.icon} ${x.name}${x.n > 1 ? ' ×' + x.n : ''}${x.town ? ' <small>📍</small>' : ''}</b><span class="mut">${x.kind === 'gear' ? (D.ITEMS[x.t].atk ? '⚔️ ' + D.ITEMS[x.t].atk : '🛡️ ' + (D.ITEMS[x.t].def || 0)) : x.kind === 'wear' ? '👗 ชุด' : '🪨 วัตถุดิบหายาก'}</span></div><div class="row"><span class="mut">${sold ? 'ขายแล้ว' : own ? 'มีแล้ว' : 'เหลือ 1'}</span><button class="btn sm go" data-mb="${x.id}" ${ok ? '' : 'disabled'}>🪙 ${fmt(x.coin)}${x.gem ? ' + 💎 ' + x.gem : ''}</button></div></div>` }).join('');
     b.querySelectorAll('[data-mb]').forEach(btn => btn.onclick = () => { const x = L.find(i => i.id === btn.dataset.mb); if (!x || S.coin < x.coin || (S.gem || 0) < x.gem || (S.merch.sold[x.id] || 0) >= 1) return;
@@ -4552,7 +4554,7 @@ function carpProps() { if (CARP.scaf) { scene.remove(CARP.scaf); CARP.scaf = nul
   for (const hy of [1, 2.2]) for (const s2 of [-1, 1]) { rbox(g, '#a8703e', '#d8a060', [0, hy, s2 * 2.15], [4, .06, .45], [0, 0, 0], .01); rbox(g, '#a8703e', '#d8a060', [s2 * 1.9, hy, 0], [.45, .06, 4], [0, 0, 0], .01) }
   g.position.set(b.x, y, b.z); g.rotation.y = b.r || 0; scene.add(g); CARP.scaf = g }
 function openCarp() { const H = HOUSE_S(), lv = hLv(), N = D.HOUSE_LV[lv + 1], J = H.job; sfx('tap');
-  sheet(`🔨 ${D.CARP.name} · ช่างไม้`, (b, redraw, close) => {
+  shopSheet(`🔨 ${D.CARP.name} · ช่างไม้`, (b, redraw, close) => {
     const row = (L, i) => `<div class="card${i === lv ? ' on' : ''}" style="${i < lv ? 'opacity:.55' : ''}"><div class="row"><b>${L.ic} ระดับ ${i + 1} · ${L.n}</b><span class="mut">${i < lv ? '✅' : i === lv ? '🏠 ตอนนี้' : ''}</span></div><p class="mut">${L.w}×${L.d} ม. · ${L.what}</p>${L.cost && i > lv ? `<p>${costTxt(L.cost)}</p>` : ''}</div>`;
     const hasHome = S.builds.some(b2 => b2.k === 'cabin' && b2.done);
     b.innerHTML = `<p>“บ้านหลังเล็กไปหรือเปล่า? เอาวัสดุมา ข้าต่อเติมให้ เข้านอนคืนเดียวก็เสร็จ!”</p>${D.HOUSE_LV.map(row).join('')}
@@ -4639,7 +4641,7 @@ function ashopBuild() { if (!houseOn() || ASHOP.g || !CARP.g) return; let x = CA
   ASHOP.pick = addPick(W, x, z, .8, 1.7, { kind: 'ashop' }); ASHOP.pick.position.y += Math.max(0, y) }
 const hayAt = (g, x, z) => rbox(g, '#b8902a', '#f0d070', [x, .22, z], [.7, .44, .45], [0, .3, 0], .08);
 function openAnimalShop() { sfx('tap');
-  sheet(`🐣 ${D.ANIMAL_SHOP.what} · ${D.ANIMAL_SHOP.name}`, (bx, redraw) => { const roomIn = k => S.builds.find(b => b.done && b.k === D.FARM_A[k].home && faIn(b).length < fCap(b));
+  shopSheet(`🐣 ${D.ANIMAL_SHOP.what} · ${D.ANIMAL_SHOP.name}`, (bx, redraw) => { const roomIn = k => S.builds.find(b => b.done && b.k === D.FARM_A[k].home && faIn(b).length < fCap(b));
     bx.innerHTML = `<p>“สัตว์ของป้าเลี้ยงง่าย ให้กินหญ้าทุกวัน ทุกเช้ามีของให้เก็บ!”</p><p class="mut">🪙 ${fmt(S.coin)}</p>` + Object.entries(D.FARM_A).map(([k, A]) => { const P = D.MATS[A.prod] ? D.MATS[A.prod].slice(0, 2).join(' ') : D.INGR[A.prod].icon + ' ' + D.INGR[A.prod].name, home = BP[A.home], r = roomIn(k), mine = FAN().filter(a => a.k === k).length;
       return `<div class="card"><div class="row"><b>${A.ic} ${A.n}</b><span>🪙 ${fmt(A.price)}</span></div><p class="mut">ให้ ${P} ทุกเช้า · อยู่ใน${home.icon} ${home.name}${mine ? ` · มีแล้ว ${mine}` : ''}</p><div class="row2"><button class="btn go" data-ab="${k}" ${r && S.coin >= A.price ? '' : 'disabled'}>${r ? '🪙 ซื้อ' : `ต้องมี${home.icon}ที่ว่าง`}</button><button class="btn" data-as="${k}" ${mine ? '' : 'disabled'}>ขายคืน 🪙${fmt(Math.floor(A.price / 2))}</button></div></div>` }).join('');
     bx.querySelectorAll('[data-ab]').forEach(x => x.onclick = () => { const k = x.dataset.ab, A = D.FARM_A[k], b = roomIn(k); if (!b || S.coin < A.price) return; S.coin -= A.price; S.faN = (S.faN || 0) + 1; FAN().push({ id: S.faN, k, b: b.id, p: 0, fed: true }); sfx('coin'); toast(`${A.ic} ซื้อ${A.n}แล้ว! พาไปไว้ที่${BP[A.home].icon} ${BP[A.home].name}`, 2200); save(); hud(); redraw() });
@@ -4860,7 +4862,7 @@ function howsifMenu() { sfx('tap'); const to = (S.side || 'isle') === 'isle' ? '
 /* ================= v3.65 🌉 the Vaneya bridge quest: bring Uncle Howsif wood · stone · ore (+ coins for rope and nails) → he builds it (a timer) → walk to the harbour ================= */
 function bridgeQuest() { const B = D.BRIDGE, have = k => S.mats[k] || 0, ok = Object.keys(B.cost).every(k => have(k) >= B.cost[k]) && S.coin >= B.coin;
   if (S.jobs.bridge) { jobLeft('bridge'); return }
-  sheet('🌉 สะพานแห่งวาเนย่า', (b, redraw, close) => { b.innerHTML = `<p>👴 “ลุงพายเรือข้ามไปมาจนแขนจะหลุดแล้ว… ถ้าเรามีสะพานจากเกาะไปเมืองท่า ใครๆ ก็เดินไปมาหากันได้ ช่วยหาของมาให้ลุงหน่อยนะ”</p>` +
+  shopSheet('🌉 สะพานแห่งวาเนย่า', (b, redraw, close) => { b.innerHTML = `<p>👴 “ลุงพายเรือข้ามไปมาจนแขนจะหลุดแล้ว… ถ้าเรามีสะพานจากเกาะไปเมืองท่า ใครๆ ก็เดินไปมาหากันได้ ช่วยหาของมาให้ลุงหน่อยนะ”</p>` +
     `<div class="card"><b>ของที่ต้องใช้</b>${Object.keys(B.cost).map(k => `<div class="row"><span>${costName(k)}</span><b>${Math.min(have(k), B.cost[k])}/${B.cost[k]}${have(k) >= B.cost[k] ? ' ✅' : ''}</b></div>`).join('')}<div class="row"><span>🪙 ค่าเชือกและตะปู</span><b>${fmt(Math.min(S.coin, B.coin))}/${fmt(B.coin)}${S.coin >= B.coin ? ' ✅' : ''}</b></div></div>
     <button class="btn go wide" id="brGo" ${ok ? '' : 'disabled'}>🔨 ส่งของ ให้ลุงสร้างสะพาน</button><p class="mut">ลุงใช้เวลาสร้างราว ${Math.round(B.secs / 60 * 10) / 10} นาที · ระหว่างนั้นเที่ยวเล่นได้ตามสบาย</p>`;
     b.querySelector('#brGo').onclick = () => { if (!ok) return; for (const k in B.cost) S.mats[k] -= B.cost[k]; S.coin -= B.coin; close(); sfx('level'); startJob('bridge', B.secs); bridgeView(); toast('🌉 ลุงฮาวซิฟเริ่มสร้างสะพานแล้ว!<br><small>ตอกเสาทีละต้น… เสร็จแล้วจะเดินข้ามไปเมืองท่าได้เลย</small>', 3600); save(); hud() } }) }
@@ -4877,7 +4879,7 @@ function bridgeView() { if (BRV) { scene.remove(BRV.g); for (const e of BRV.sols
   scene.add(g); BRV = { g, sols } }
 function bridgeDone() { S.story.bridge = 1; bump('bridge'); sfx('level'); cheer(2000); bridgeView(); look((D.BRIDGE.a[0] + D.BRIDGE.b[0]) / 2, (D.BRIDGE.a[1] + D.BRIDGE.b[1]) / 2); toast('🌉 <b>สะพานแห่งวาเนย่า</b> เสร็จแล้ว!<br><small>เดินข้ามไปเมืองท่าได้เลย ไม่ต้องรอเรือ · ลุงฮาวซิฟ: “ดีใจจริงๆ ที่ได้เห็นผู้คนเดินไปมาหากันอีก”</small>', 4600); save() }
 function seedShop() {
-  sheet('🌱 เมล็ดผักของลุงฮาวซิฟ', (b, redraw) => { b.innerHTML = '<p class="mut">ลุงเก็บเมล็ดไว้ตั้งแต่ก่อนเมฆดำมา…</p>' + Object.keys(D.CROPS).map(c => `<div class="card"><div class="row"><b>${D.INGR[c].icon} ${D.INGR[c].name}</b><span class="mut">มี ${S.seeds[c] || 0} · โต ${D.CROPS[c].min} นาที</span></div><div class="row2"><button class="btn sm go" data-b="${c}" ${S.coin < D.CROPS[c].seed ? 'disabled' : ''}>ซื้อ 🪙 ${D.CROPS[c].seed}</button><button class="btn sm" data-b5="${c}" ${S.coin < D.CROPS[c].seed * 5 ? 'disabled' : ''}>×5 🪙 ${D.CROPS[c].seed * 5}</button></div></div>`).join('');
+  shopSheet('🌱 เมล็ดผักของลุงฮาวซิฟ', (b, redraw) => { b.innerHTML = '<p class="mut">ลุงเก็บเมล็ดไว้ตั้งแต่ก่อนเมฆดำมา…</p>' + Object.keys(D.CROPS).map(c => `<div class="card"><div class="row"><b>${D.INGR[c].icon} ${D.INGR[c].name}</b><span class="mut">มี ${S.seeds[c] || 0} · โต ${D.CROPS[c].min} นาที</span></div><div class="row2"><button class="btn sm go" data-b="${c}" ${S.coin < D.CROPS[c].seed ? 'disabled' : ''}>ซื้อ 🪙 ${D.CROPS[c].seed}</button><button class="btn sm" data-b5="${c}" ${S.coin < D.CROPS[c].seed * 5 ? 'disabled' : ''}>×5 🪙 ${D.CROPS[c].seed * 5}</button></div></div>`).join('');
     const buy = (c, n) => { if (S.coin < D.CROPS[c].seed * n) return; if (!bagFits('mats', S.seeds, c, n)) { bagFullHint('mats'); return }   /* v3.79 */ S.coin -= D.CROPS[c].seed * n; S.seeds[c] = (S.seeds[c] || 0) + n; sfx('coin'); save(); hud(); redraw() };
     b.querySelectorAll('[data-b]').forEach(x => x.onclick = () => buy(x.dataset.b, 1)); b.querySelectorAll('[data-b5]').forEach(x => x.onclick = () => buy(x.dataset.b5, 5)) });
 }
