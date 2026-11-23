@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.72';
+export const APP_VER = '4.73';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -851,6 +851,13 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
 export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 10, kitchen: 10, chest: 12, scarecrow: 6, fence: 8, stonewall: 20, path: 30 }, def: 8, worn: .35, fix: .3 };
 export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
 /* v4.74 🏠 house levels (the carpenter in the harbour town builds 2 and 3 · done after you sleep once, or after `mins` real minutes) · cap = decor pieces placed */
+/* v4.73 🏰 chapter 2 (after the dark cloud): mend Luminia's capital at 5 spots (materials · a short job each) → the castle opens: throne room → cellar → golden door → the great hall (golden stone · black door → Mergeland, coming soon) */
+export const LUMFIX = { secs: 45, spots: [
+  { n: 'น้ำพุอัศวิน', ic: '⛲', cost: { stone: 40, wood: 10 } },
+  { n: 'กำแพงเมือง', ic: '🧱', cost: { stone: 60, flint: 5 } },
+  { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },
+  { n: 'สะพานหิน', ic: '🌉', cost: { stone: 50, ore: 6 } },
+  { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 } };
 export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
   { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
