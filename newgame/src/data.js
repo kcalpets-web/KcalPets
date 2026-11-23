@@ -449,7 +449,7 @@ export const SHOPS = [
   { k: 'smith', name: 'ช่างตีเหล็ก', icon: '⚒️', owner: 'ช่างเหล็ก', cost: { wood: 10, stone: 10, coin: 800 } },
   { k: 'market', name: 'ตลาด', icon: '🧺', owner: 'แม่ค้าส้ม', cost: { wood: 6, stone: 6, coin: 300 } },
   { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
-  { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: '', cost: null },
+  { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: 'ตู้กาชา', cost: null },
   { k: 'tailor', name: 'ร้านตัดเสื้อ', icon: '🪡', owner: 'ป้าเข็ม', cost: null },   // v3.40 clothes · hats
   { k: 'bar', name: 'บาร์นกนางนวล', icon: '🍹', owner: 'ลุงโจ้', cost: null },   // v3.43 open late (BAR.open → BAR.close)
 ];
@@ -902,7 +902,7 @@ export const FIELDS = [{ x0: 10, x1: 19, z0: -9, z1: -1 }, { x0: 10, x1: 19, z0:
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 /* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
-export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เอิร์ทแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
+export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เอิร์ทแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar', 'gacha'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = 1, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const LUM_MONS = { out: 12, in: 10 };   // v4.63 the occupied capital (before the dark cloud falls): monsters outside the walls · inside by the tower
@@ -1109,3 +1109,45 @@ export const DAILY = [
   { k: 'deliver', ic: '🧺', t: 'ส่งของให้ลุงฮาวซิฟ', n: 5, deliver: ['carrot', 'cabbage', 'egg', 'apple', 'meat'], d: 'm' },
   { k: 'chop', ic: '🪓', t: 'ตัดต้นไม้', n: 10, st: ['clr_tree'], d: 'e' }];
 export const DAILY_REW = { coin: { e: 300, m: 600, h: 1000 }, ticket: 1, all: 1, streak: 7, streakT: 5, swaps: 1 };
+/* ================= v4.80 🎟️ gacha (designer · docs/art/gacha-mock.png): 3 machines × 12 · looks only (no power) · spin with 🎟️ only · 💎 → 🎟️ · a repeat = ✨ stardust · ✨ buys a chosen piece ================= */
+Object.assign(WEAR, {   /* 👕 the fashion machine's pieces (src: 'gacha' · warm/cool 0: looks only) */
+  g_scarf:   { slot: 'head', icon: '🧣', name: 'ผ้าพันคอลายทาง', warm: 0, cool: 0, hat: 'scarf', src: 'gacha' },
+  g_cap:     { slot: 'head', icon: '🧢', name: 'หมวกแก๊ปพาสเทล', warm: 0, cool: 0, hatK: 'cap', hatCol: '#f4a8c8', src: 'gacha' },
+  g_band:    { slot: 'head', icon: '🌸', name: 'ที่คาดผมดอกไม้', warm: 0, cool: 0, hatK: 'headband', hatCol: '#f8d0e0', src: 'gacha' },
+  g_ribbon:  { slot: 'head', icon: '🎀', name: 'โบว์ผูกผม', warm: 0, cool: 0, hatK: 'ribbon', hatCol: '#e84a6a', src: 'gacha' },
+  g_magic:   { slot: 'head', icon: '🎩', name: 'หมวกนักมายากล', warm: 0, cool: 0, hatK: 'wizard', hatCol: '#3a2a5a', src: 'gacha' },
+  g_straw:   { slot: 'head', icon: '👒', name: 'หมวกฟางดอกไม้', warm: 0, cool: 0, hatK: 'straw', hatCol: '#f0d890', src: 'gacha' },
+  g_velvet:  { slot: 'body', icon: '🧥', name: 'เสื้อคลุมกำมะหยี่', warm: 0, cool: 0, col: '#8a2a5a', look: 'cape', src: 'gacha' },
+  g_meadow:  { slot: 'body', icon: '👗', name: 'ชุดยาวทุ่งหญ้า', warm: 0, cool: 0, col: '#8ad06a', look: 'robe', src: 'gacha' },
+  g_sakura:  { slot: 'body', icon: '👘', name: 'กิโมโนซากุระ', warm: 0, cool: 0, col: '#f4a0c0', look: 'kimono', src: 'gacha' },
+  g_star:    { slot: 'body', icon: '🔮', name: 'ชุดจอมเวทดวงดาว', warm: 0, cool: 0, col: '#2e3a8a', look: 'mage', src: 'gacha' },
+  g_gold:    { slot: 'body', icon: '🛡️', name: 'ชุดอัศวินทอง', warm: 0, cool: 0, col: '#e8b838', look: 'knight', src: 'gacha' },
+  g_dragon:  { slot: 'body', icon: '🐉', name: 'ชุดมังกรรุ้ง', warm: 0, cool: 0, col: '#ff6ab0', look: 'robe', src: 'gacha', aura: '#ffd060' } });
+/* 🐾 the pet machine: coats (QLOOK colour overrides for 🐶🐱 · v = bands/paw etc.) and things they wear (acc · on the head) */
+export const PET_SKIN = {
+  cream:   { n: 'ขนสีครีม', ic: '🍦', look: { fur: '#f4e2c0', dark: '#c8a878' } },
+  gray:    { n: 'ขนสีเทา', ic: '🩶', look: { fur: '#a8a8b4', dark: '#5e5e6a' } },
+  choco:   { n: 'ขนสีช็อกโกแลต', ic: '🍫', look: { fur: '#8a5432', dark: '#4e2c18' } },
+  peach:   { n: 'ขนสีส้มพีช', ic: '🍑', look: { fur: '#f8b890', dark: '#d07a50' } },
+  tiger:   { n: 'ลายเสือ', ic: '🐯', look: { fur: '#f0a040', dark: '#b8601a', bands: '#3a2418' } },
+  cow:     { n: 'ลายวัว (ขาวดำ)', ic: '🐄', look: { fur: '#f6f2ea', dark: '#2a2228', belly: '#ffffff' } },
+  tuxedo:  { n: 'ทักซิโด้', ic: '🤵', look: { fur: '#2e2a32', dark: '#16141a', belly: '#ffffff', bellyD: '#e8e8f0' } },
+  socks:   { n: 'ถุงเท้าขาว', ic: '🧦', look: { fur: '#5a3a2a', dark: '#2e1e16', paw: '#ffffff', pawD: '#e8e0d8' } },
+  rainbow: { n: 'ขนสีรุ้งเรืองแสง', ic: '🌈', look: { fur: '#ffa8d8', dark: '#a88aff', belly: '#a8fff0', bellyD: '#88e0d0', paw: '#fff4a0', pawD: '#f0d870', bands: '#8ad8ff' }, aura: '#ffffff' } };
+export const PET_ACC = { bow: { n: 'โบว์ใหญ่', ic: '🎀', col: '#e84a6a' }, scarf: { n: 'ผ้าพันคอน้อง', ic: '🧣', col: '#3a7ad8' }, hat: { n: 'หมวกจิ๋ว', ic: '🎩', col: '#3a2a4a' } };
+export const GACHA = {
+  r: { w: [60, 28, 10, 2], ten: 2, dust: [5, 15, 50, 200], buy: [50, 150, 500, 2000] },   // ⚪🔵🟣🟡 chances % · a ×10 always has 🟣+ (index ≥ ten) · ✨ for a repeat · ✨ to buy one
+  gemPerTicket: 30, ticket: 1,
+  machines: [
+    { k: 'fashion', n: '👕 ตู้แฟชั่น', what: 'ชุด หมวก ผ้าพันคอ ลายพิเศษ (ใส่สวย ไม่เพิ่มพลัง)', col: '#e85a9a',
+      items: [['wear', 'g_scarf', 0], ['wear', 'g_cap', 0], ['wear', 'g_band', 0], ['wear', 'g_ribbon', 0], ['wear', 'g_magic', 1], ['wear', 'g_straw', 1], ['wear', 'g_velvet', 1], ['wear', 'g_meadow', 1], ['wear', 'g_sakura', 2], ['wear', 'g_star', 2], ['wear', 'g_gold', 2], ['wear', 'g_dragon', 3]] },
+    { k: 'pet', n: '🐾 ตู้น้อง', what: 'สีขน ลายขน ของประดับน้อง (หมา แมว)', col: '#3fae6a',
+      items: [['skin', 'cream', 0], ['skin', 'gray', 0], ['skin', 'choco', 0], ['skin', 'peach', 0], ['skin', 'tiger', 1], ['skin', 'cow', 1], ['skin', 'tuxedo', 1], ['skin', 'socks', 1], ['acc', 'bow', 2], ['acc', 'scarf', 2], ['acc', 'hat', 2], ['skin', 'rainbow', 3]] },
+    { k: 'home', n: '🏡 ตู้บ้านและฟาร์ม', what: 'เฟอร์นิเจอร์ ของแต่งฟาร์ม สัตว์ลายพิเศษ', col: '#e8a030',
+      items: [['deco', 'g_lamp', 0], ['deco', 'g_rug', 0], ['deco', 'g_plant', 0], ['deco', 'g_bench', 0], ['deco', 'g_books', 1], ['deco', 'g_hearth', 1], ['bp', 'g_arch', 1], ['bp', 'g_fence', 1], ['bp', 'g_fountain', 2], ['animal', 'cow:choco', 2], ['animal', 'sheep:pink', 2], ['bp', 'g_windmill', 3]] }] };
+export const FARM_SKIN = { choco: { n: 'ลายช็อกโกแลต', tint: '#9a6a4a' }, pink: { n: 'สีชมพู', tint: '#ffb0d0' } };
+Object.assign(BLUEPRINTS, {   /* 🏡 the home machine's farm pieces (gacha: 1 = only from the gacha · free to build once you have it) */
+  g_arch:     { icon: '🌸', name: 'ซุ้มดอกไม้', desc: 'ซุ้มโค้งประดับดอกไม้ (จากกาชา)', cost: {}, gacha: 1, t: 5, w: 1.8, d: .6 },
+  g_fence:    { icon: '🪵', name: 'รั้วลายไม้', desc: 'รั้วไม้ทาสีลายสวย (จากกาชา)', cost: {}, gacha: 1, t: 3, w: 2.4, d: .4 },
+  g_fountain: { icon: '⛲', name: 'น้ำพุฟาร์ม', desc: 'น้ำพุหินเล็กๆ น้ำไหลตลอด (จากกาชา)', cost: {}, gacha: 1, t: 8, w: 2, d: 2, solid: 1 },
+  g_windmill: { icon: '🌈', name: 'กังหันลมสีรุ้ง', desc: 'กังหันลมใบสีรุ้ง หมุนตามลม (จากกาชา)', cost: {}, gacha: 1, t: 10, w: 1, d: 1, solid: 1 } });
