@@ -869,6 +869,7 @@ export const LUMFIX = { secs: 45, spots: [
   { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },
   { n: 'สะพานหิน', ic: '🌉', cost: { stone: 50, ore: 6 } },
   { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 }, king: { coin: 10000, gem: 100, title: '👑 ผู้พิทักษ์ลูมิเนีย' }, endTitle: '🏆 นักผจญภัยอันดับหนึ่ง' };
+export const CASTLE = { chest: { coin: 2000, gem: 20, ore: 5 }, lord: { coin: 3000, gem: 30 }, find: 15 };   // v4.77 🏰 the big castles: the treasury chest · the ruler's thanks · 🪙 for each room found
 export const MAP_FOG = .78;   // v4.76 how dark unexplored land is on the map (1 = black)
 export const OUTLAW = { respawn: 120, door: 4, sight: 12 };   // v4.75 ⚔️ wanted: camps respawn soldiers every 2 min · 4 at the castle door · how far they spot you
 export const HOUSE_LV = [
