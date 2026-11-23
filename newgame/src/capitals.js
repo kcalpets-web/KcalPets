@@ -52,7 +52,14 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   const KZ = -14, KW = 16, KD = 12, KH = 13;
   box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone).userData.roof = 1.4 + KH + 1.2;   /* v3.30.3 a roof you can stand on (landing from the sky never drops you inside) */ box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
   for (let i = 0; i < 7; i++) box(-KW / 2 + 1.2 + i * (KW - 2.4) / 6, 1.4 + KH + 1.2, KZ + KD / 2 + .2, 1, 1.2, 1, M.dark);   // battlements
-  add(new THREE.BoxGeometry(4.4, 7, .5), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .3); arch(0, 1.4 + 7, KZ + KD / 2 + .55, 2.3, .45, M.dark);   // the doorway (glows)
+  add(new THREE.BoxGeometry(4.4, 7, .2), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .02).userData.nosol = 1; arch(0, 1.4 + 7, KZ + KD / 2 + .55, 2.3, .45, M.dark);   // the doorway (the light inside)
+  { const half = add(new THREE.CircleGeometry(2.2, 20, 0, Math.PI), M.glow, 0, 1.4 + 7, KZ + KD / 2 + .13); half.userData.nosol = 1;   /* the arch above glows too */
+    /* v4.78 designer: "look more like a door" — two old plank leaves standing ajar (opened outwards), iron bands, the light spilling out between them */
+    const z0 = KZ + KD / 2 + .35, a = .62, LW = 2.15, LH = 6.9;
+    for (const sd of [-1, 1]) { const hx = sd * 2.2, dx = -sd * Math.cos(a), dz = Math.sin(a), ryy = sd * a;
+      for (let i = 0; i < 5; i++) { const t = (i + .5) / 5 * LW; const pl = add(new THREE.BoxGeometry(LW / 5 - .04, LH - (i % 2) * .12, .22), M.wood, hx + dx * t, 1.4 + LH / 2 - (i % 2) * .06, z0 + dz * t, 0, ryy, 0); pl.userData.nosol = 1 }
+      for (const yy of [1.2, 3.5, 5.8]) add(new THREE.BoxGeometry(LW, .2, .28), M.void, hx + dx * LW / 2, 1.4 + yy, z0 + dz * LW / 2, 0, ryy, 0).userData.nosol = 1;   // iron bands
+      add(new THREE.TorusGeometry(.22, .05, 6, 12), M.void, hx + dx * (LW - .35), 1.4 + 3.2, z0 + dz * (LW - .35) + .16, 0, ryy, 0).userData.nosol = 1 } }   // ring handles
   for (const [wx, wy] of [[-5.5, 4.6], [-3, 4.6], [3, 4.6], [5.5, 4.6], [-5.5, 9.6], [-2.6, 9.6], [0, 10.2], [2.6, 9.6], [5.5, 9.6]]) add(new THREE.BoxGeometry(1, 1.7, .12), CAP_WIN, wx, 1.4 + wy, KZ + KD / 2 + .06).userData.nosol = 1;   /* v3.45 the keep's windows */
   for (const sx of [-1, 1]) for (const wy of [4.6, 9.6]) for (const wz of [-3, 3]) add(new THREE.BoxGeometry(.12, 1.7, 1), CAP_WIN, sx * (KW / 2 + .06), 1.4 + wy, KZ + wz).userData.nosol = 1;
   for (let i = 0; i < 5; i++) box(0, 0, KZ + KD / 2 + 2.6 + i * .7, 6 - i * .3, 1.4 - i * .28, .7, M.dark).userData.walk = 1;   // steps you climb (v3.30.1: were picture-only, you sank into them)
