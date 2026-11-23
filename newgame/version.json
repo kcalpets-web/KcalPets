@@ -1,7 +1,7 @@
 {
- "v": "4.71",
+ "v": "4.72",
  "notes": [
-  "🗃️ หีบเก็บของแบบใหม่: เห็นภาพ ชื่อ และพลังของแต่ละชิ้น"
+  "🌍 โลกของเราเปลี่ยนชื่อเป็น เอิร์ทแลน"
  ],
  "files": [
   "index.html",
@@ -46,6 +46,7 @@
   "src/quests.js",
   "src/roaddata.js",
   "src/scenery.js",
+  "src/shopin.js",
   "src/state.js",
   "src/toon.js",
   "src/ui.js",

@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.71';
+export const APP_VER = '4.72';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -629,7 +629,7 @@ STARTER.push(
 export const STARTER_ALL = { gem: 50 };   // every step of every chain
 export const STARTER_SPIRIT = 1;          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
 export const PATHS = [
-  { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเมิร์จแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
+  { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเอิร์ทแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
     { text: 'วาปไปยังจุดพักครั้งแรก', stat: 'warps', goal: 1, reward: { coin: 200 } }, { text: 'เปิดหีบสมบัติ 5 ใบ', stat: 'chests', goal: 5, reward: { coin: 600 } },
     { text: 'ค้นพบต้นไม้แห่งฤดูกาล', f: S => S.story.gtree ? 1 : 0, goal: 1, reward: { gem: 40 } }, { text: 'ปลุกศิลาแห่งแสง 2 ก้อน', stat: 'lstones', goal: 2, reward: { gem: 60 } },
     { text: 'เปิดหีบสมบัติ 25 ใบ', stat: 'chests', goal: 25, reward: { gem: 120 } }] },
@@ -843,7 +843,7 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
 /* v3.12.4 hold-Y power: the bow draws up (stays full) · rod / net / drawing-zoom swing up and down while held — let go at the right moment */
 /* v3.12.6 holds: one press held = power (A charge-slash · Y draw/aim · B guard) and it costs ⚡ every second · run out before letting go = 💦 exhausted
    · double-tap then hold A/Y/B = the picker (stick slides · let go = take) · Y held in the air = Zelda slow motion (time ×airSlow, you hover and sink slowly) */
-/* v3.13 🌻 Vaneya, the sunflower isles (the start island) ⇄ the mainland of Mergeland: only by Uncle Howsif's boat
+/* v3.13 🌻 Vaneya, the sunflower isles (the start island) ⇄ the mainland of Earthland: only by Uncle Howsif's boat
    · isle = the box that counts as "the island side" (sea all round) · harbour = the mainland port town (shops) · dock = where the boat ties up */
 /* v3.14 the mainland is monster land: ~pct of each kingdom's chunks hold a pack (n monsters) · kept clear: kingdom villages (village m round a kingdom's centre), the harbour, light stones
    · 💠 light stones: one per kingdom · awaken = beat the guardians round it (guard) → a warp point + ✨ */
@@ -881,7 +881,7 @@ export const FIELDS = [{ x0: 10, x1: 19, z0: -9, z1: -1 }, { x0: 10, x1: 19, z0:
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 /* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
-export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เมิร์จแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
+export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เอิร์ทแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = 1, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const LUM_MONS = { out: 12, in: 10 };   // v4.63 the occupied capital (before the dark cloud falls): monsters outside the walls · inside by the tower

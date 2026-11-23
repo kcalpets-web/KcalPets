@@ -1,4 +1,4 @@
-/* v3.41 ⚓ the harbour town of Mergeland (the designer's painting is the guide, drawn in our own chunky clay style):
+/* v3.41 ⚓ the harbour town of Earthland (the designer's painting is the guide, drawn in our own chunky clay style):
    piers and a crane over the water · a tall ship and boats · a lighthouse on its rock · a paved plaza with a fountain and a hero statue · striped market stalls ·
    timber houses with blue roofs · a curtain wall with round towers, blue anchor banners and a gate to the east · a castle on the hill behind (scenery)
    buildHarbour(HB, groundH) → { G, sols, light, flags } · local x = east (inland), z = north/south · the plaza sits at (HB.x + 13, HB.z) */
