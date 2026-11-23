@@ -30,7 +30,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8825, OUT = process.arg
     await pg.screenshot({ path: OUT + '/harbour.png' }); await E(() => { window.__ng.CAM.yaw = -Math.PI / 2 }); await wait(1500); await pg.screenshot({ path: OUT + '/harbour2.png' });
     const w2 = await E(() => window.__ng.WARPS().map(w => w.id)); log('warps on the mainland', w2); if (w2.some(id => w1.includes(id) && id !== 'c:home' && id !== 't:harbour')) errs.push('island warps are offered on the mainland');   /* v3.86 the farm island (home camp) and the harbour town are warps on both sides once the boat is fixed */
     // a harbour shop opens
-    await E(() => window.__ng.openShopBuilding(3)); await wait(500); const sm = await E(() => (document.querySelector('.ov h2') || {}).textContent || ''); log('smith', sm); if (!/ช่าง/.test(sm)) errs.push('the harbour smith did not open'); await close();
+    await E(() => window.__ng.openShopBuilding(3)); await wait(500); const sm = await E(() => (document.querySelector('.ov h2') || {}).textContent || (window.__ng.HIN.on ? 'ช่าง (เดินเข้าร้าน)' : '')); log('smith', sm); if (!/ช่าง/.test(sm))   /* v4.76 a walk-in shop: you are inside */ errs.push('the harbour smith did not open'); await close();
     // swimming back west is pushed back too
     await E(() => window.__ng.placeMe(160, 20)); await wait(1200); await E(() => { const N = window.__ng; N.S.side = 'main'; N.placeMe(152, 20) }); await wait(600); await E(() => { const N = window.__ng; for (let i = 0; i < 10; i++) N.me.x -= .5 }); await wait(800); const s3 = await st(); log('push west', JSON.stringify(s3)); if (s3.side !== 'isle') errs.push('v3.16.2 swimming back should switch the side to the island');
     // sail home

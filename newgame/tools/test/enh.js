@@ -13,22 +13,22 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8877, OUT = process.arg
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const it = () => E(() => { const N = window.__ng, x = N.S.bag.find(i => i.id === 5); return x && { p: x.p || 0, n: N.S.bag.length, coin: N.S.coin, ore: N.S.mats.ore, auras: N.AURAS.length } });
     const a0 = await E(() => window.__ng.pStats().atk);
-    await E(() => window.__ng.openShopKind('smith')); await wait(600); const card = await E(() => !!document.querySelector('#enhGo') && !document.querySelector('#enhGo').disabled); log('smith card', card); if (!card) errs.push('the smith should have the 🔨 enhance card');
-    await E(() => document.querySelector('#enhGo').click()); await wait(500); await E(() => document.querySelector('[data-es="5"]').click()); await wait(400); await pg.screenshot({ path: OUT + '/1-enhance.png' });
-    for (let i = 0; i < 3; i++) { await E(() => document.querySelector('#enhDo').click()); await wait(300) }
+    await E(() => window.__ng.openShopKind('smith')); await wait(600); const card = await E(() => !!document.querySelector('[data-sbt="enh"]'));   /* v4.83 a tab of the smith */ log('smith card', card); if (!card) errs.push('the smith should have the 🔨 enhance card');
+    await E(() => document.querySelector('[data-sbt="enh"]').click()); await wait(500); await E(() => document.querySelector('[data-sbi="5"]').click()); await wait(400); await pg.screenshot({ path: OUT + '/1-enhance.png' });
+    for (let i = 0; i < 3; i++) { await E(() => document.querySelector('#sbGo').click()); await wait(300) }
     const s3 = await it(), a3 = await E(() => window.__ng.pStats().atk); log('+3', JSON.stringify(s3), 'atk', a0, '→', a3); if (s3.p !== 3) errs.push('+1…+3 should always work'); if (!(a3 > a0)) errs.push('⚔️ should grow with the +');
     await E(() => { window.__ng.setTool && window.__ng.setTool(''); document.querySelectorAll('.ov').forEach(o => o.remove()) }); await wait(800); const au = await it(); log('aura at +3', au.auras); if (!au.auras) errs.push('+3 should have an aura on the weapon');
     /* a miss: costs the materials only */
-    await E(() => window.__ng.openEnhance()); await wait(400); await E(() => document.querySelector('[data-es="5"]').click()); await wait(300);
-    const b4 = await it(); await E(() => { const r = Math.random; Math.random = () => .999; document.querySelector('#enhDo').click(); Math.random = r }); await wait(300); const m4 = await it();
+    await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); window.__ng.openShopKind('smith') }); await wait(400); await E(() => document.querySelector('[data-sbt="enh"]').click()); await wait(300); await E(() => document.querySelector('[data-sbi="5"]').click()); await wait(300);
+    const b4 = await it(); await E(() => { const r = Math.random; Math.random = () => .999; document.querySelector('#sbGo').click(); Math.random = r }); await wait(300); const m4 = await it();
     log('miss', JSON.stringify(b4), '→', JSON.stringify(m4)); if (m4.p !== 3 || m4.ore >= b4.ore || m4.coin >= b4.coin) errs.push('a miss should keep the +, and cost the coins + materials');
     /* a duplicate: +15%, used up */
-    const ch = await E(() => { const c = document.querySelector('#enhD'); if (!c) return null; c.checked = true; c.dispatchEvent(new Event('change')); return document.querySelector('.enhSel').textContent.match(/(\d+)%/)[1] }); await wait(300);
+    const ch = await E(() => { const c = document.querySelector('#enhD'); if (!c) return null; c.checked = true; c.dispatchEvent(new Event('change')); return null }).then(() => wait(300)).then(() => E(() => document.querySelector('.up2d').textContent.match(/(\d+)%/)[1]));
     log('dupe chance', ch); if (ch !== '100' && +ch !== 85 + 15) errs.push('a duplicate should add 15% (85 → 100)');
-    await E(() => document.querySelector('#enhDo').click()); await wait(300); const d4 = await it(); log('with a dupe', JSON.stringify(d4)); if (d4.p !== 4 || d4.n !== m4.n - 1) errs.push('the duplicate should be used up (and the +4 land at 100%)');
+    await E(() => document.querySelector('#sbGo').click()); await wait(300); const d4 = await it(); log('with a dupe', JSON.stringify(d4)); if (d4.p !== 4 || d4.n !== m4.n - 1) errs.push('the duplicate should be used up (and the +4 land at 100%)');
     /* +10 = the top · gold rays */
-    await E(() => { const N = window.__ng, x = N.S.bag.find(i => i.id === 5); x.p = 10; document.querySelectorAll('.ov').forEach(o => o.remove()); N.openEnhance() }); await wait(300); await E(() => document.querySelector('[data-es="5"]').click()); await wait(300);
-    const top = await E(() => ({ max: /สูงสุด/.test(document.querySelector('.enhSel').textContent), btn: !!document.querySelector('#enhDo') })); log('+10', JSON.stringify(top)); if (!top.max || top.btn) errs.push('+10 is the top');
+    await E(() => { const N = window.__ng, x = N.S.bag.find(i => i.id === 5); x.p = 10; document.querySelectorAll('.ov').forEach(o => o.remove()); N.openShopKind('smith') }); await wait(300); await E(() => document.querySelector('[data-sbt="enh"]').click()); await wait(300); await E(() => document.querySelector('[data-sbi="5"]').click()); await wait(300);
+    const top = await E(() => ({ max: /สูงสุด/.test(document.querySelector('.up2d').textContent), btn: !!document.querySelector('#sbGo:not([disabled])') })); log('+10', JSON.stringify(top)); if (!top.max || top.btn) errs.push('+10 is the top');
     await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.S.time = 1260 }); await wait(1500); await pg.screenshot({ path: OUT + '/2-aura10.png' });
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill(); if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

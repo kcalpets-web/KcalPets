@@ -14,8 +14,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8799, wait = ms => new 
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     // the blacksmith's quest
-    await E(() => window.__ng.openShopKind('smith')); await wait(400); const card = await E(() => !!document.querySelector('#fgQ')); log('quest card', card); if (!card) errs.push('no forge quest at the blacksmith');
-    if (card) { await E(() => document.querySelector('#fgQ').click()); await wait(300) } if (!(await E(() => /ตีอาวุธ/.test((document.querySelector('.ov h2') || {}).textContent || '')))) errs.push('the blacksmith did not open the anvil (v3.11: forging is in town)'); await close();
+    await E(() => { window.__ng.SB_TAB_()['⚒️ ช่างตีเหล็ก'] = 'forge'; window.__ng.openShopKind('smith') }); await wait(400); const card = await E(() => !!document.querySelector('#sbGo'));   /* v4.83 the anvil is a tab of the smith */ log('quest card', card); if (!card) errs.push('no forge quest at the blacksmith');
+    if (card) { await E(() => document.querySelector('#sbGo').click()); await wait(300) } if (!(await E(() => /ตีอาวุธ/.test((document.querySelector('.ov h2') || {}).textContent || '')))) errs.push('the blacksmith did not open the anvil (v3.11: forging is in town)'); await close();
     // forge: copper ×2 + wood
     const add = async k => E(k => document.querySelector(`.ov [data-i="${k}"]`).click(), k);
     await E(() => window.__ng.openForge()); await wait(300); await add('copper'); await add('copper'); await add('wood'); await E(() => document.querySelector('#fGo').click()); await wait(600);
