@@ -52,15 +52,24 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   const KZ = -14, KW = 16, KD = 12, KH = 13;
   box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone).userData.roof = 1.4 + KH + 1.2;   /* v3.30.3 a roof you can stand on (landing from the sky never drops you inside) */ box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
   for (let i = 0; i < 7; i++) box(-KW / 2 + 1.2 + i * (KW - 2.4) / 6, 1.4 + KH + 1.2, KZ + KD / 2 + .2, 1, 1.2, 1, M.dark);   // battlements
-  add(new THREE.BoxGeometry(4.4, 7, .2), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .02).userData.nosol = 1; arch(0, 1.4 + 7, KZ + KD / 2 + .55, 2.3, .45, M.dark);   // the doorway (the light inside)
-  { const half = add(new THREE.CircleGeometry(2.2, 20, 0, Math.PI), M.glow, 0, 1.4 + 7, KZ + KD / 2 + .13); half.userData.nosol = 1;   /* the arch above glows too */
-    /* v4.78 designer: "look more like a door" — two old plank leaves standing ajar (opened outwards), iron bands, the light spilling out between them */
-    const z0 = KZ + KD / 2 + .35, a = .62, LW = 2.15, LH = 6.9;
-    for (const sd of [-1, 1]) { const hx = sd * 2.2, dx = -sd * Math.cos(a), dz = Math.sin(a), ryy = sd * a;
-      for (let i = 0; i < 5; i++) { const t = (i + .5) / 5 * LW; const pl = add(new THREE.BoxGeometry(LW / 5 - .04, LH - (i % 2) * .12, .22), M.wood, hx + dx * t, 1.4 + LH / 2 - (i % 2) * .06, z0 + dz * t, 0, ryy, 0); pl.userData.nosol = 1 }
-      for (const yy of [1.2, 3.5, 5.8]) add(new THREE.BoxGeometry(LW, .2, .28), M.void, hx + dx * LW / 2, 1.4 + yy, z0 + dz * LW / 2, 0, ryy, 0).userData.nosol = 1;   // iron bands
-      add(new THREE.TorusGeometry(.22, .05, 6, 12), M.void, hx + dx * (LW - .35), 1.4 + 3.2, z0 + dz * (LW - .35) + .16, 0, ryy, 0).userData.nosol = 1 } }   // ring handles
-  for (const [wx, wy] of [[-5.5, 4.6], [-3, 4.6], [3, 4.6], [5.5, 4.6], [-5.5, 9.6], [-2.6, 9.6], [0, 10.2], [2.6, 9.6], [5.5, 9.6]]) add(new THREE.BoxGeometry(1, 1.7, .12), CAP_WIN, wx, 1.4 + wy, KZ + KD / 2 + .06).userData.nosol = 1;   /* v3.45 the keep's windows */
+  /* v4.78 the keep's door (designer: no flat light — a real door · the pictures were a guide only): two closed plank leaves under a round arch of wedge stones,
+     long iron strap hinges with curled ends, studs, ring handles, two stone columns · only a small crest on the keystone wears the kingdom's colour (gold once restored) */
+  { const fz = KZ + KD / 2, y0 = 1.4, R0 = 2.2, LH = 7, NP = 10, PW = 2 * R0 / NP, iron = M.void;
+    add(new THREE.BoxGeometry(2 * R0 + .2, LH + R0, .3), M.void, 0, y0 + (LH + R0) / 2, fz - .05).userData.nosol = 1;   // the dark recess behind
+    for (let i = 0; i < NP; i++) { const x = -R0 + PW * (i + .5), top = LH + Math.sqrt(Math.max(0, R0 * R0 - x * x)) - .05; const pl = add(new THREE.BoxGeometry(PW - .05, top, .22), M.wood, x, y0 + top / 2, fz + .14, 0, 0, (i % 3 - 1) * .004); pl.userData.nosol = 1 }
+    add(new THREE.BoxGeometry(.08, LH + R0 - .1, .26), iron, 0, y0 + (LH + R0) / 2, fz + .16).userData.nosol = 1;   // the seam between the leaves
+    for (const sd of [-1, 1]) for (const yy of [1.1, 3.6, 6.1]) { const L = R0 * .82; add(new THREE.BoxGeometry(L, .2, .06), iron, sd * (R0 - L / 2 - .05), y0 + yy, fz + .28).userData.nosol = 1;   // strap hinge
+        add(new THREE.TorusGeometry(.16, .05, 6, 12, Math.PI * 1.5), iron, sd * (R0 - L - .02), y0 + yy + .12, fz + .3, 0, 0, sd > 0 ? Math.PI / 2 : 0).userData.nosol = 1;   // its curl
+        for (let n = 0; n < 4; n++) add(new THREE.SphereGeometry(.06, 6, 4), iron, sd * (R0 - .25 - n * L / 4), y0 + yy, fz + .32).userData.nosol = 1 }   // studs
+    for (const sd of [-1, 1]) add(new THREE.TorusGeometry(.24, .05, 6, 14), iron, sd * .35, y0 + 3.2, fz + .36).userData.nosol = 1;   // ring handles
+    /* the arch: wedge stones round the top · a big keystone with the crest */
+    const NV = 11, AR = R0 + .38; for (let i = 0; i < NV; i++) { const a = Math.PI * (i + .5) / NV, key = i === (NV >> 1), sz = key ? [.95, 1.05, .9] : [.62, .7, .8];
+      add(new THREE.BoxGeometry(...sz), M.stone, Math.cos(a) * AR, y0 + LH + Math.sin(a) * AR, fz + .25, 0, 0, a - Math.PI / 2).userData.nosol = 1 }
+    const crest = add(new THREE.CircleGeometry(.3, 6), M.glow, 0, y0 + LH + AR, fz + .71); crest.userData.nosol = 1;
+    /* two columns: base · shaft · capital */
+    for (const sd of [-1, 1]) { const cx2 = sd * (R0 + .55); add(new THREE.BoxGeometry(.95, .5, .95), M.dark, cx2, y0 + .25, fz + .3).userData.nosol = 1; add(new THREE.CylinderGeometry(.34, .38, LH - .9, 12), M.stone, cx2, y0 + .5 + (LH - .9) / 2, fz + .3).userData.nosol = 1;
+      add(new THREE.BoxGeometry(1, .4, 1), M.dark, cx2, y0 + LH - .2, fz + .3).userData.nosol = 1 } }
+  for (const [wx, wy] of [[-5.5, 4.6], [-3, 4.6], [3, 4.6], [5.5, 4.6], [-5.5, 9.6], [-2.6, 9.6], [2.6, 9.6], [5.5, 9.6]]) add(new THREE.BoxGeometry(1, 1.7, .12), CAP_WIN, wx, 1.4 + wy, KZ + KD / 2 + .06).userData.nosol = 1;   /* v3.45 the keep's windows */
   for (const sx of [-1, 1]) for (const wy of [4.6, 9.6]) for (const wz of [-3, 3]) add(new THREE.BoxGeometry(.12, 1.7, 1), CAP_WIN, sx * (KW / 2 + .06), 1.4 + wy, KZ + wz).userData.nosol = 1;
   for (let i = 0; i < 5; i++) box(0, 0, KZ + KD / 2 + 2.6 + i * .7, 6 - i * .3, 1.4 - i * .28, .7, M.dark).userData.walk = 1;   // steps you climb (v3.30.1: were picture-only, you sank into them)
   for (const [tx, tz, broken] of [[-KW / 2, KZ + KD / 2, 0], [KW / 2, KZ + KD / 2, 1], [-KW / 2, KZ - KD / 2, 0], [KW / 2, KZ - KD / 2, 0]]) { const th = broken ? 12 : 22 + R() * 4;
@@ -107,7 +116,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   if (k === 'sylvaren') {   // 🌿 dead twisted trees · ivy curtains · the green portal
     for (const [x, z, kk] of [[-24, 8, 1.6], [24, -2, 1.5], [-8, 24, 1.3], [10, -26, 1.7], [-26, -18, 1.4], [26, 20, 1.6], [6, 10, 1.1], [-6, -26, 1.5]]) deadTree(x, z, kk);
     for (let i = 0; i < 10; i++) box(-KW / 2 + R() * KW, 1.4 + R() * 6, KZ + KD / 2 + .36, 1 + R() * 2, 3 + R() * 6, .12, M.moss).userData.nosol = 1;
-    add(new THREE.TorusGeometry(2.2, .3, 8, 20), M.glow, 0, 1.4 + 3.5, KZ + KD / 2 + .7);
+    /* v4.78 the green ring over the door is gone (the door is a real door now) */
   }
   if (k === 'frosthelm') {   // ❄️ ice spires · chains · a rune circle · a frozen fall
     for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28 + .3, r = 22 + R() * 4; if (Math.abs(a - Math.PI / 2) < .5) continue; cone(Math.cos(a) * r, 0, Math.sin(a) * r, 1 + R() * .8, 7 + R() * 7, M.ice, 6) }
