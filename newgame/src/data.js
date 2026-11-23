@@ -1058,7 +1058,7 @@ export const STARTER_TOOLS = ['sickle0', 'axe0', 'pick0', 'hoe0'];
 export const AIMLOCK = { range: 34, snap: 9, breakPx: 2.5 };
 /* v3.48 🧗 climbing: CLIFF = steeper than this (rise / run) is a wall · CLIMB_V = how fast you go up (m/s) · CLIMB_OUT = how far off the rock you hang (m) */
 export const CLIFF = 2.4, CLIMB_V = 1.1, CLIMB_OUT = .3;
-export const KRIG_ON = true, KRIG_SIT = 14, KRIG_SITY = .3, KRIG_CHAIRY = .1;   // KRIG_SIT: seconds standing still before sitting down
+export const KRIG_ON = true, KRIG_SIT = 14, KRIG_SITY = .3, KRIG_CHAIRY = .02;   // KRIG_SIT: seconds standing still before sitting down
 //   // v3.49 🦴 the player moves through the standard KRIG clips (false = the old motion everywhere)
 
 /* v3.88 ⚡ the eel: 10 fish (a system quest) → its sea shrine rises · beat it → ⚡ สายฟ้าฟาด (every enemy within r m: hit + stun) */
