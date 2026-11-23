@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>KEALEE king and Rainbow</title><style>body{margin:0;background:#141016}</style></head><body>
 <script type="module">
 /* v4.75 the King on his throne → the spell runs out → 🌈 Rainbow the slime */
-import { THREE, HUMANS, rainbowSlime } from '../../src/clay.js';
+import { THREE, HUMANS, rainbowSlime, sitPose } from '../../src/clay.js';
 import { CASTLEIN } from '../../src/castlein.js';
 const W = 1600, H = 1100, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.4); r.setSize(W, H); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.autoClear = false;
@@ -10,7 +10,7 @@ const view = (fill, camP, camL, vp, fov = 30) => { const S = new THREE.Scene(); 
 const room = S => { const g = new THREE.Group(); CASTLEIN.throne(g, false); S.add(g); return g };
 const kealee = (S, x, z, ry) => { const k = new THREE.Group(); HUMANS.kealee(k); k.scale.setScalar(.82); k.position.set(x, 0, z); k.rotation.y = ry; S.add(k) };
 const w2 = W / 2, h2 = H / 2, TZ = -4 + 1.1;
-view(S => { room(S); const k = new THREE.Group(); HUMANS.king(k); k.scale.setScalar(.86); k.position.set(0, .55, TZ + .05); S.add(k); kealee(S, .3, TZ + 2.6, Math.PI) }, [1.8, 3.2, TZ + 6.2], [0, 1.1, TZ], [0, h2, w2, h2]);
+view(S => { room(S); const k = new THREE.Group(); HUMANS.king(k); k.scale.setScalar(.86); k.position.set(0, 0, TZ + .12); k.position.y = sitPose(k, .98); S.add(k); kealee(S, .3, TZ + 2.6, Math.PI) }, [1.8, 3.2, TZ + 6.2], [0, 1.1, TZ], [0, h2, w2, h2]);
 view(S => { room(S); const k = new THREE.Group(); HUMANS.king(k); k.scale.setScalar(.86); k.position.set(0, .55, TZ + .05); k.traverse(o => { if (o.isMesh && o.material && o.material.clone) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .35 } }); S.add(k);
   const s = new THREE.Group(); rainbowSlime(s); s.scale.setScalar(.9); s.position.set(0, .9, TZ + .15); S.add(s); for (let i = 0; i < 40; i++) { const a = i * 2.4, rr = .3 + (i % 7) * .12, sp = new THREE.Mesh(new THREE.OctahedronGeometry(.04, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / 40, .8, .7) })); sp.position.set(Math.cos(a) * rr, .7 + (i % 9) * .17, TZ + .2 + Math.sin(a) * rr); S.add(sp) }
   const l = new THREE.PointLight('#ffffff', 3, 5); l.position.set(0, 1.4, TZ + .8); S.add(l); kealee(S, .3, TZ + 2.6, Math.PI) }, [1.8, 3.2, TZ + 6.2], [0, 1.1, TZ], [w2, h2, w2, h2]);

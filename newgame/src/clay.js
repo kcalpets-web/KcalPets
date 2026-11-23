@@ -559,3 +559,7 @@ export function rainbowSlime(g, crown = true) {
   return b }
 /* v4.75 ⚔️ a Luminia soldier as a foe (the kingdom hunts you after the King vanished) */
 MONS.soldier = g => HUMANS.villager(g, 0, { v: 2, sex: 'm', hair: 'short', hairCol: '#3a2418', skin: '#e2b183', wear: 'knight', top: '#3a4aa0', hat: 'knight', hatCol: '#9aa4b8', expr: '' });
+/* v4.77 sit a vinyl figure down (thighs forward · shins down) and put its hips at `seatY` (call after scaling, before placing): returns the y to give the group */
+export function sitPose(g, seatY) { const J = {}; g.traverse(o => { const r = o.userData && o.userData.role; if (r) J[r] = o; if (/^(hip|knee)[LR]$/.test(o.name)) J[o.name] = o });
+  for (const s of ['L', 'R']) { if (J['hip' + s]) J['hip' + s].rotation.x = -1.45; if (J['knee' + s]) J['knee' + s].rotation.x = 1.45 }
+  g.updateMatrixWorld(true); const h = J.hipL || J.hipR; if (!h) return 0; const p = new THREE.Vector3(); h.getWorldPosition(p); return seatY - (p.y - g.position.y) }
