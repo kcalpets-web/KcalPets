@@ -4,7 +4,7 @@
    buildHarbour(HB, groundH) → { G, sols, light, flags } · local x = east (inland), z = north/south · the plaza sits at (HB.x + 13, HB.z) */
 import * as THREE from '../lib/three.module.min.js';
 import { M_WIN } from './world.js';
-import { oldShop } from './masonry.js';
+import { oldShop, stoneTex, worldUV } from './masonry.js';
 
 export function buildHarbour(HB, groundH, opt = {}) {
   const std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .9, flatShading: true }, o));
@@ -13,7 +13,9 @@ export function buildHarbour(HB, groundH, opt = {}) {
     gold: std('#e8c060', { metalness: .3, roughness: .5 }), water: new THREE.MeshStandardMaterial({ color: '#7ad0f0', roughness: .1, transparent: true, opacity: .8 }), light: new THREE.MeshStandardMaterial({ color: '#fff2b0', emissive: '#ffd060', emissiveIntensity: 1.4 }),
     green: std('#5a9a48'), statue: std('#8a96a0', { metalness: .2 }), crate: std('#b08850'), cloth: ['#d84a3a', '#3a62b0', '#f4f0e8', '#e8a030'].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 1, side: THREE.DoubleSide })) };
   const G = new THREE.Group(), sols = [], ox = HB.x, oz = HB.z, gh = (x, z) => groundH(ox + x, oz + z);
-  const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, sc) => { const o = new THREE.Mesh(geo, m); o.position.set(ox + x, y, oz + z); o.rotation.set(rx, ry, rz); if (sc) o.scale.set(...sc); G.add(o); return o };
+  /* v4.82 designer: the harbour's walls / towers / castle in the same old stone as the capitals (masonry.js stoneTex · cones and domes stay plain clay) */
+  const PLAIN = new Map([[M.stone, M.stone.clone()], [M.stoneD, M.stoneD.clone()]]); Object.assign(M.stone, { map: stoneTex('#8a8478', '#d8d0c0', { planks: 1, mortar: '#4a443c', seed: 31 }), color: new THREE.Color('#ffffff'), flatShading: false }); Object.assign(M.stoneD, { map: stoneTex('#6a645a', '#a8a094', { mortar: '#3a342e', seed: 32 }), color: new THREE.Color('#ffffff'), flatShading: false }); M.stone.userData.tile = M.stoneD.userData.tile = 1;
+  const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, sc) => { if (PLAIN.has(m)) { if (geo.type === 'ConeGeometry' || geo.type === 'SphereGeometry') m = PLAIN.get(m); else worldUV(geo, .2) } const o = new THREE.Mesh(geo, m); o.position.set(ox + x, y, oz + z); o.rotation.set(rx, ry, rz); if (sc) o.scale.set(...sc); G.add(o); return o };
   const box = (x, y, z, w, h, d, m, ry = 0) => add(new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z, 0, ry, 0);
   const cyl = (x, y, z, r0, r1, h, m, seg = 10) => add(new THREE.CylinderGeometry(r1, r0, h, seg), m, x, y + h / 2, z);
   const cone = (x, y, z, r, h, m, seg = 8) => add(new THREE.ConeGeometry(r, h, seg), m, x, y + h / 2, z);
