@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE old masonry</title><style>body{margin:0;background:#2a2638;font:700 18px system-ui;color:#fff}#w{position:relative;width:1800px;height:640px}.lb{position:absolute;top:auto;bottom:10px;text-shadow:0 2px 3px #000;width:600px;text-align:center}.lb small{display:block;font-size:14px;color:#cfc8e0;font-weight:600}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.78 mock: old shops / castles of stacked stones, worn, patched with planks (designer: style ข.) */
+import * as THREE from '../../lib/three.module.min.js';
+import { stoneWall, timberWall, crenel, shingleRoof } from '../../src/masonry.js';
+import { rbox } from '../../src/clay.js';
+const W = 1800, H = 640, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); r.shadowMap.enabled = true; document.getElementById('w').appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.setScissorTest(true);
+function scene() { const S = new THREE.Scene(); S.background = new THREE.Color('#a8d4ee'); S.fog = new THREE.Fog('#a8d4ee', 30, 70); S.add(new THREE.HemisphereLight('#fff4e0', '#5a6a48', 1.3)); const k = new THREE.DirectionalLight('#fff0d8', 2.6); k.position.set(-8, 12, 9); k.castShadow = true; k.shadow.mapSize.set(2048, 2048); Object.assign(k.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); S.add(k);
+  const gr = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshStandardMaterial({ color: '#7aa858', roughness: 1 })); gr.rotation.x = -Math.PI / 2; gr.receiveShadow = true; S.add(gr); return S }
+const box = (w, d, H, make) => { /* four walls of a w × d house: front (z+) · back · left · right */ make(w, d, H) };
+/* 1 · ⚒️ the smith: all stone · worn · plank patches · a chimney */
+const S1 = scene(); { const g = new THREE.Group(), st = ['#6e665a', '#b4aa96'], w = 6, d = 5, h = 3.2;
+  stoneWall(g, { w, h, t: .45, at: [0, 0, d / 2], ry: 0, stone: st, ruin: .55, moss: .6, planks: true, seed: 3, open: [[1, 0, 1.3, 2.1], [3.6, 1.1, 1.1, .9]] });
+  stoneWall(g, { w, h, t: .45, at: [0, 0, -d / 2], ry: Math.PI, stone: st, ruin: .4, moss: .5, planks: true, seed: 4 });
+  stoneWall(g, { w: d, h, t: .45, at: [w / 2, 0, 0], ry: Math.PI / 2, stone: st, ruin: .5, moss: .6, planks: true, seed: 5, open: [[1.8, 1.1, 1, .8]] });
+  stoneWall(g, { w: d, h, t: .45, at: [-w / 2, 0, 0], ry: -Math.PI / 2, stone: st, ruin: .45, moss: .5, planks: true, seed: 6 });
+  shingleRoof(g, { w: w + .6, d: d + .6, rise: 1.6, at: [0, h, 0], col: '#6a4a3a', ruin: .6, seed: 9 });
+  const ch = new THREE.Group(); stoneWall(ch, { w: .9, h: 2.2, t: .9, at: [0, 0, 0], stone: st, ruin: .2, size: [.45, .3], noHoles: 1, seed: 8 }); ch.position.set(1.6, h + .2, -.6); g.add(ch);
+  for (let i = 0; i < 4; i++) rbox(g, '#3a2a1a', '#7a5a3a', [-w / 2 + 1.15 + i * .33, 1.02, d / 2 + .12], [.3, 2.04, .08], [0, 0, (i - 1.5) * .01], .03);   // the old plank door
+  rbox(g, '#2a2a30', '#6a6a78', [1.2, .3, d / 2 + 1.2], [.35, .6, .35], [0, 0, 0], .05); rbox(g, '#2a2a30', '#9a9aa8', [1.2, .68, d / 2 + 1.2], [.9, .2, .35], [0, 0, 0], .06);   // an anvil outside
+  S1.add(g) }
+/* 2 · 🍹 the bar: a stone ground floor · half-timbered upstairs · worn */
+const S2 = scene(); { const g = new THREE.Group(), st = ['#7a6e5e', '#c0b49c'], w = 6.4, d = 5, h1 = 1.6, h2 = 2.4;
+  stoneWall(g, { w, h: h1, t: .45, at: [0, 0, d / 2], stone: st, ruin: .35, moss: .7, planks: true, seed: 13, open: [[2.6, 0, 1.2, 1.6]] });
+  stoneWall(g, { w: d, h: h1, t: .45, at: [w / 2, 0, 0], ry: Math.PI / 2, stone: st, ruin: .3, moss: .6, seed: 14 }); stoneWall(g, { w: d, h: h1, t: .45, at: [-w / 2, 0, 0], ry: -Math.PI / 2, stone: st, ruin: .3, moss: .6, seed: 15 }); stoneWall(g, { w, h: h1, t: .45, at: [0, 0, -d / 2], ry: Math.PI, stone: st, ruin: .3, seed: 16 });
+  timberWall(g, { w: w + .3, h: h2, t: .3, at: [0, h1, d / 2 + .12], ruin: .6, seed: 21, open: [[1, .5, 1, .9], [4.3, .5, 1, .9]] }); timberWall(g, { w: d + .3, h: h2, t: .3, at: [w / 2 + .12, h1, 0], ry: Math.PI / 2, ruin: .5, seed: 22, open: [[2, .5, 1, .9]] });
+  timberWall(g, { w: d + .3, h: h2, t: .3, at: [-w / 2 - .12, h1, 0], ry: -Math.PI / 2, ruin: .5, seed: 23 }); timberWall(g, { w: w + .3, h: h2, t: .3, at: [0, h1, -d / 2 - .12], ry: Math.PI, ruin: .5, seed: 24 });
+  shingleRoof(g, { w: w + 1, d: d + 1, rise: 1.8, at: [0, h1 + h2, 0], col: '#5a6a3a', ruin: .5, seed: 25 });
+  for (let i = 0; i < 4; i++) rbox(g, '#3a2a1a', '#7a5a3a', [-w / 2 + 2.75 + i * .3, .78, d / 2 + .12], [.28, 1.56, .08], [0, 0, 0], .03); rbox(g, '#3a2a1a', '#6a4a2a', [w / 2 - .6, 1.95, d / 2 + .7], [.08, .08, 1.2], [0, 0, 0], .02); rbox(g, '#5a3a22', '#b8885a', [w / 2 - .6, 1.6, d / 2 + 1.1], [.06, .55, .8], [0, 0, .06], .04);   // door · a hanging sign
+  S2.add(g) }
+/* 3 · 🏰 a castle corner: thick high walls · battlements (some broken) · a corner tower · plank-boarded breaches · a torn banner */
+const S3 = scene(); { const g = new THREE.Group(), st = ['#5e5a56', '#a8a29a'];
+  stoneWall(g, { w: 10, h: 5, t: 1.1, at: [-3, 0, 2], stone: st, size: [1.05, .55], ruin: .5, moss: .7, planks: true, seed: 31, open: [[3.6, 0, 2.2, 3]] });
+  crenel(g, { w: 10, t: 1.1, at: [-3, 5, 2], stone: st, ruin: .6, seed: 32 });
+  stoneWall(g, { w: 9, h: 5, t: 1.1, at: [2.1, 0, -2.4], ry: Math.PI / 2, stone: st, size: [1.05, .55], ruin: .45, moss: .6, planks: true, seed: 33 }); crenel(g, { w: 9, t: 1.1, at: [2.1, 5, -2.4], ry: Math.PI / 2, stone: st, ruin: .5, seed: 34 });
+  for (const [i, ry] of [[0, 0], [1, Math.PI / 2], [2, Math.PI], [3, -Math.PI / 2]]) { const tw = 3; stoneWall(g, { w: tw, h: 8, t: .8, at: [2.1 + Math.sin(ry) * tw / 2, 0, 2 + Math.cos(ry) * tw / 2], ry, stone: st, size: [.9, .5], ruin: .35, moss: .6, planks: i < 2, seed: 40 + i, open: i === 0 ? [[1.1, 5, .7, 1.1]] : [] }); crenel(g, { w: tw, t: .8, at: [2.1 + Math.sin(ry) * tw / 2, 8, 2 + Math.cos(ry) * tw / 2], ry, stone: st, ruin: .4, seed: 50 + i }) }
+  for (let i = 0; i < 7; i++) rbox(g, '#2a1a10', '#6a4a2a', [-8 + 3.6 + .16 + i * .31, 1.5, 2.55], [.29, 3, .12], [0, 0, (i % 2 - .5) * .015], .03); for (const yy of [.7, 2.3]) rbox(g, '#2a2a30', '#5a5a64', [-8 + 3.6 + 1.1, yy, 2.63], [2.2, .12, .05], [0, 0, 0], .02);   // the gate's old doors + iron bands
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 2.6), new THREE.MeshStandardMaterial({ color: '#4a3a2a' })); pole.position.set(2.1, 9.3, 2); g.add(pole);
+  const sh = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(1.6, 0), new THREE.Vector2(1.3, -.35), new THREE.Vector2(1.6, -.6), new THREE.Vector2(.9, -.75), new THREE.Vector2(1.2, -1), new THREE.Vector2(0, -1)]);
+  const fl = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ color: '#a83a3a', roughness: .9, side: THREE.DoubleSide })); fl.position.set(2.15, 10.5, 2); g.add(fl);   // a torn banner
+  S3.add(g) }
+const cams = [[S1, [9, 6, 13], [0, 1.9, 0]], [S2, [9.5, 6, 13.5], [0, 2.4, 0]], [S3, [-9, 7.5, 21], [-.5, 4, 0]]];
+const L = [['⚒️ ช่างตีเหล็ก · หินล้วน', 'หินเรียงไม่เท่ากัน · บิ่น/หลุด · ตะไคร่ · แปะไม้ซ่อม · หลังคาแผ่นกระเบื้องหลุด'], ['🍹 บาร์ · ครึ่งหินครึ่งไม้', 'ชั้นล่างหิน · ชั้นบนโครงไม้ฉาบปูน ปูนกะเทาะเห็นหินข้างใน'], ['🏰 มุมปราสาท', 'กำแพงหนา · เชิงเทินแตก · หอคอย · รูกำแพงปิดด้วยไม้ · ธงขาด']];
+let tris = 0; cams.forEach(([S, p, t], i) => { const c = new THREE.PerspectiveCamera(36, 600 / H, .1, 200); c.position.set(...p); c.lookAt(...t); r.setViewport(i * 600, 0, 600, H); r.setScissor(i * 600, 0, 600, H); r.render(S, c); tris += r.info.render.triangles;
+  const d = document.createElement('div'); d.className = 'lb'; d.style.left = i * 600 + 'px'; d.innerHTML = `${L[i][0]}<small>${L[i][1]}</small>`; document.getElementById('w').appendChild(d) });
+window.__tris = cams.map(([S]) => { let n = 0; S.traverse(o => { if (o.isMesh) n += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 }); return Math.round(n) }); window.__done = 1;
+</script></body></html>
