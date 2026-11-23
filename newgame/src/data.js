@@ -621,6 +621,11 @@ export const STARTER = [
   { k: 'eatheal', icon: '❤️', name: 'กินอาหารเพิ่มเลือด', unit: 'ครั้ง', stats: ['ateHeal'], goals: [1, 5, 15], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เลือดไม่ฟื้นเอง ต้องกินเท่านั้น · เนื้อสัตว์ ❤️ หรืออาหารที่มี ❤️ · ถือแล้วกด <b>A</b> ค้าง/🎒 → 🍲 กิน', go: 'food' },
   { k: 'eatbuff', icon: '💪', name: 'กินอาหารบัพ', unit: 'ครั้ง', stats: ['ateBuff'], goals: [1, 3, 8], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'อาหารกันหนาว ❄️ กันร้อน ☀️ กันพิษ ☠️ หรือเพิ่มพลังโจมตี ⚔️ · กินก่อนเข้าอาณาจักรที่อากาศโหด', go: 'food' },
   { k: 'craft', icon: '🛠️', name: 'สร้างอุปกรณ์', unit: 'ชิ้น', stats: ['crafts', 'forged'], goals: [1, 3, 8], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: '☰ เมนู → 🛠️ คราฟ → เลือกลูกธนู/คบไฟแล้วกด 🛠️ ทำเลย · อาวุธให้ช่างตีเหล็กหลอม', go: 'craft' }];
+/* v4.75 🐄 farm chains (house: 1 = only while the house is on) */
+STARTER.push(
+  { k: 'farmbuild', house: 1, icon: '🔨', name: 'สร้างฟาร์ม', unit: 'ครั้ง', stats: ['farmBuilt'], goals: [1, 3, 6], rew: [{ coin: 300 }, { coin: 800 }, { gem: 30 }], how: 'คุยกับ 🔨 ช่างไม้ตองที่เมืองท่า → สร้าง 🐔 เล้า · 🐄 โรงเลี้ยงสัตว์ · 🌾 ยุ้งฉาง · หรือขยายคอกเป็น Lv 2–3 (🐟 บ่อปลาสร้างเองที่ 🔨 สร้าง)' },
+  { k: 'farmhay', house: 1, icon: '🌾', name: 'วางฟางในราง', unit: 'ครั้ง', stats: ['hayPut'], goals: [1, 5, 20], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เดินไปที่กองฟางข้างคอก กด <b>A</b> หยิบฟาง → ถือไปที่รางอาหาร กด <b>A</b> วาง (คอก Lv 3 เติมเองจากยุ้งฉาง)' },
+  { k: 'farmprod', house: 1, icon: '🧺', name: 'เก็บผลผลิตจากสัตว์', unit: 'ชิ้น', stats: ['farmProd'], goals: [3, 15, 50], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'ให้สัตว์ได้กินทุกวัน → ตอนเช้าแตะที่คอก → 🧺 เก็บผลผลิต' });
 export const STARTER_ALL = { gem: 50 };   // every step of every chain
 export const STARTER_SPIRIT = 1;          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
 export const PATHS = [
@@ -699,7 +704,7 @@ export const BLUEPRINTS = {
   /* v4.75 🐔 house stage 4 (house: 1 = only while the house is on · carp: 1 = the carpenter builds it: done after you sleep, or after CARP.mins) */
   poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ช่างไม้ตองสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
   livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ช่างไม้ตองสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
-  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'เก็บหญ้าได้ 300 · ทุกเช้าเติมรางอาหารให้เล้า/โรงในระยะ 25 ม. เอง · ช่างไม้ตองสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
+  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'คลังเก็บฟาง (อาหารสัตว์) ได้ 300 · วางที่ไหนก็ได้ · กองฟางข้างคอกหยิบจากที่นี่ · คอก Lv 3 เติมรางเองทุกเช้า · ช่างไม้ตองสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
   fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว (ขยายได้ถึง 12) · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
@@ -864,6 +869,7 @@ export const FARM_LV = {
   poultry:   [{ cap: 4, trough: 40 }, { cap: 8, trough: 80, cost: { wood: 30, stone: 10, grass: 20 } }, { cap: 12, trough: 120, cost: { wood: 60, stone: 25, feather: 10 } }],
   livestock: [{ cap: 4, trough: 40 }, { cap: 8, trough: 80, cost: { wood: 60, stone: 25, hide: 4 } }, { cap: 12, trough: 120, cost: { wood: 120, stone: 50, ore: 8 } }],
   fishpond:  [{ cap: 4 }, { cap: 8, cost: { stone: 30, grass: 10 } }, { cap: 12, cost: { stone: 60, flint: 6 } }] };
+export const HAY = { arm: 10, reach: 1.8, slot: { poultry: [1.65, .55], livestock: [2.7, -.4] }, trough: { poultry: [-1.0, 1.6], livestock: [-1.6, 2.25] } };   // one armful · where the hay slot / trough stand (local to the building)
 export const FARM = { cap: { poultry: 4, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
 export const ANIMAL_SHOP = { name: 'ป้าบัว', what: 'ร้านสัตว์ฟาร์ม' };
 export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep

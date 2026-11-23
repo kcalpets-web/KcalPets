@@ -529,6 +529,7 @@ FARMB.poultry = g => {   /* 🐔 a closed hen house: plank walls · red roof · 
   rbox(g, ...WOOD, [-.75, 1.05, Dd / 2 + .04], [.6, .45, .05], [0, 0, 0], .02); rbox(g, ...STRAW, [-.75, 1.0, Dd / 2 + .06], [.5, .18, .03], [0, 0, 0], .02); part(g, '#f0e8d8', '#ffffff', [-.85, 1.1, Dd / 2 + .08], [.06, .08, .05], [0, 0, 0], { A: 0 }); part(g, '#f0e8d8', '#ffffff', [-.65, 1.1, Dd / 2 + .08], [.06, .08, .05], [0, 0, 0], { A: 0 });
   rbox(g, ...ROOF_R, [.2, 1.25, Dd / 2 + .15], [1.1, .06, .3], [.25, 0, 0], .02); part(g, '#e0b030', '#ffe070', [0, 2.45, Dd / 2 + .15], [.05, .3, .05], [0, 0, 0], { A: 0 });
   const vane = new THREE.Group(); part(vane, '#c02020', '#ff4a3a', [0, 0, 0], [.12, .14, .04], [0, 0, 0], { A: 0 }); part(vane, '#e0b030', '#ffe070', [.12, -.02, 0], [.04, .03, .02], [0, 0, 0], { A: 0 }); vane.position.set(0, 2.42, 0); g.add(vane);
+  trough(g, -1.0, 1.6, 0, '#e8c860');   /* v4.75b the feed trough (hay goes here) */
   const bin = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .6, 14), new THREE.MeshStandardMaterial({ color: '#8a8a92', roughness: .4, metalness: .5 })); bin.position.set(1.65, .3, .55); g.add(bin); rbox(g, ...STRAW, [1.65, .62, .55], [.5, .06, .5], [0, 0, 0], .1) };
 FARMB.livestock = g => {   /* 🐄 a closed barn for four-legged animals: long red walls · a wide sliding door left open · hay loft · water + feed troughs outside */
   const W = 4.4, Dd = 3, H = 2.1, RED = ['#8a2a1a', '#c8402a']; rbox(g, '#8a7a6a', '#b8a898', [0, .06, 0], [W + .2, .12, Dd + .2], [0, 0, 0], .04);
