@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE big castle</title><style>body{margin:0;background:#141016}</style></head><body>
+<script type="module">
+/* v4.77 the big castle: floor 1 (some rooms still in fog) · floor 2 · walking in (close camera, the next room veiled) */
+import { THREE, HUMANS, rainbowSlime } from '../../src/clay.js';
+import { buildFloor, CASTLE2 } from '../../src/castle2.js';
+const W = 1600, H = 1100, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.3); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.autoClear = false;
+const shot = (fl, seen, me, camP, camL, vp, fov = 38) => { const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff4e0', '#4a3a50', 1.05)); const sun = new THREE.DirectionalLight('#fff1dc', .7); sun.position.set(-4, 12, 6); S.add(sun);
+  const g = new THREE.Group(); buildFloor(g, CASTLE2.floors[fl], seen); S.add(g); if (me) { const k = new THREE.Group(); HUMANS.kealee(k); k.scale.setScalar(.82); k.position.set(me[0], 0, me[1]); k.rotation.y = me[2]; S.add(k); const s = new THREE.Group(); rainbowSlime(s); s.scale.setScalar(.42); s.position.set(me[0] - .7, 0, me[1] + .6); S.add(s) }
+  const cam = new THREE.PerspectiveCamera(fov, vp[2] / vp[3], .1, 200); cam.position.set(...camP); cam.lookAt(...camL); r.setViewport(...vp); r.setScissor(...vp); r.setScissorTest(true); r.setClearColor('#141016'); r.clear(); r.render(S, cam) };
+const w2 = W / 2, h2 = H / 2;
+shot(0, { hall: 1, dine: 1, throne: 1 }, [0, 4, Math.PI], [0, 21, 17], [0, 0, -1.5], [0, h2, w2, h2]);
+shot(1, { lib: 1, bal: 1 }, [-8, -6, Math.PI], [0, 21, 17], [0, 0, -1.5], [w2, h2, w2, h2]);
+shot(0, { hall: 1 }, [2.5, -1.5, 2.4], [0, 9, 13], [2, 1, -2], [0, 0, w2, h2], 40);
+shot(0, { hall: 1, arm: 1, dine: 1, throne: 1, st1: 1 }, [-8, -5, Math.PI], [-6, 8, 4], [-8, 1, -7], [w2, 0, w2, h2], 42);
+window.__done = 1;
+</script></body></html>
