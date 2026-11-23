@@ -4,8 +4,9 @@
    buildHarbour(HB, groundH) → { G, sols, light, flags } · local x = east (inland), z = north/south · the plaza sits at (HB.x + 13, HB.z) */
 import * as THREE from '../lib/three.module.min.js';
 import { M_WIN } from './world.js';
+import { oldShop } from './masonry.js';
 
-export function buildHarbour(HB, groundH) {
+export function buildHarbour(HB, groundH, opt = {}) {
   const std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .9, flatShading: true }, o));
   const M = { stone: std('#c8c2b4'), stoneD: std('#9a948a'), pave: std('#c2b49a', { roughness: 1 }), wood: std('#8a5a34'), woodD: std('#5a3a22'), plank: std('#a87848'), plaster: std('#f0e4cc'), beam: std('#6a4428'),
     roofB: std('#3a62b0'), roofO: std('#d0703a'), roofR: std('#b0402e'), white: std('#f4f0e8'), sail: new THREE.MeshStandardMaterial({ color: '#f6f2e8', roughness: .9, side: THREE.DoubleSide }), blue: new THREE.MeshStandardMaterial({ color: '#2f56a8', roughness: .8, side: THREE.DoubleSide }),
@@ -50,10 +51,9 @@ export function buildHarbour(HB, groundH) {
     for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6), [M.roofO, M.green, M.roofR, M.gold][k]); f.position.set(-.6 + k * .4, .9, .1); g.add(f) } sols.push({ x: ox + x, z: oz + z, hw: 1.05, hd: .5, ry }) };
   stall(PX - 6.5, -3, .4, 0); stall(PX - 6.5, 3, -.4, 1); stall(PX + 6.2, -3.4, -.4 + Math.PI, 3); stall(PX + 6.2, 3.4, .4 + Math.PI, 0);
   /* ---- timber houses with blue / orange roofs (behind the shop rows) ---- */
-  const house = (x, z, ry, w, d, h, roof) => { const y = gh(x, z), g = new THREE.Group(); g.position.set(ox + x, y, oz + z); g.rotation.y = ry; G.add(g); const bx = (W, H, D, px, py2, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), m); o.position.set(px, py2, pz); g.add(o) };
-    bx(w, h * .45, d, 0, h * .225, 0, M.stone); bx(w + .1, h * .55, d + .1, 0, h * .45 + h * .275, 0, M.plaster); for (const s of [-1, 1]) { bx(.12, h * .55, d + .14, s * w / 2, h * .725, 0, M.beam); bx(w + .14, .12, .12, 0, h * .45, s * d / 2, M.beam) }
-    for (let k = -1; k <= 1; k += 2) bx(.6, .7, .06, k * w / 4, h * .72, d / 2 + .06, M_WIN);   /* v3.45 lit at night */ const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(w, d) * .6, h * .55, 4), roof); rf.position.y = h + h * .27; rf.rotation.y = Math.PI / 4; rf.scale.set(w / Math.hypot(w, d) * 1.45, 1, d / Math.hypot(w, d) * 1.45); g.add(rf);
-    bx(.4, 1.2, .4, w * .3, h + h * .35, -d * .2, M.stoneD); sols.push({ x: ox + x, z: oz + z, hw: w / 2 + .1, hd: d / 2 + .1, ry }); G.userData.chim = (G.userData.chim || []).concat([[ox + x + Math.cos(ry) * w * .3 - Math.sin(ry) * d * .2 * 0, y + h * 1.65, oz + z]]) };
+  /* v4.81 designer: the houses behind match the old shops (stone below · half-timber above · worn shingles · a chimney) · masonry.js oldShop at the house's size */
+  let hi = 0; const house = (x, z, ry, w, d, h, roof) => { const y = gh(x, z), g = new THREE.Group(); g.position.set(ox + x, y, oz + z); g.rotation.y = ry; G.add(g); hi++;
+    oldShop(g, { kind: hi % 3 ? 'half' : 'stone', W: w, D: d, H: h * .85, rise: h * .5, roof: '#' + roof.color.getHexString(), seed: 40 + hi, ruin: .3, chimney: true, eco: opt.eco, winMat: M_WIN, door: [w / 2 - .4, 0, .8, 1.3], win: [[w / 4 - .3, 1.3, .6, .65], [w * .75 - .3, 1.3, .6, .65]] }); sols.push({ x: ox + x, z: oz + z, hw: w / 2 + .1, hd: d / 2 + .1, ry }); G.userData.chim = (G.userData.chim || []).concat([[ox + x + Math.cos(ry) * w * .3 - Math.sin(ry) * d * .2 * 0, y + h * 1.65, oz + z]]) };
   for (const [x, z, ry, w, d, h, r] of [[6, -16, 0, 4, 3.4, 3.4, M.roofB], [11, -17, .1, 3.6, 3.2, 4, M.roofO], [17, -16.5, -.1, 4.2, 3.4, 3.6, M.roofB], [23, -15, -.3, 3.6, 3.2, 3.2, M.roofR], [6, 16, Math.PI, 4, 3.4, 3.6, M.roofO], [11.5, 17, Math.PI - .1, 3.8, 3.2, 3.8, M.roofB], [17.5, 16.5, Math.PI + .1, 4, 3.4, 3.4, M.roofB], [23.5, 15, Math.PI + .3, 3.6, 3.2, 3.6, M.roofO], [28, -9, -Math.PI / 2, 3.6, 3.2, 3.4, M.roofB], [28, 9, -Math.PI / 2, 3.6, 3.2, 3.8, M.roofR]]) house(x, z, ry, w, d, h, r);
   /* ---- the curtain wall: an arc to the east · round towers · the gate (the road east) · banners ---- */
   const WR = 24, wc = [PX - 4, 0]; let n = 0;
