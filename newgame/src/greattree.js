@@ -4,6 +4,7 @@
    greatTree() → { g, season(s), night(k), tick(t, dt, viewer) }   s = 'spring' | 'summer' | 'autumn' | 'winter' · k = 0..1
    preview: tools/art/greattree.html */
 import { THREE, C, MAT, part, blobGeo, ANIMALS } from './clay.js';
+import { poseQ } from './krigq.js';
 
 const SEASON = {
   spring: { leaf: ['#f6a8c4', '#ffd6e4', '#e88aa8', '#9ad870'], fill: 1, fall: '#ffc0d4', fallN: 60, glow: '#ffd0f0' },
@@ -80,6 +81,19 @@ export function greatTree(o = {}) {
   ANIMALS.deer(deer); deer.traverse(m => { if (m.isMesh) { m.material = dmat; m.castShadow = false } }); deer.scale.setScalar(1.4); const dhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: '#7ad8ff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); dhalo.scale.setScalar(4); dhalo.position.y = 1; deer.add(dhalo);
   const DEER_AT = [POND + 4.5, 0, -2]; deer.position.set(...DEER_AT); deer.rotation.y = -Math.PI / 2 - .4; g.add(deer);
   let cur = null, nightK = 0, deerK = 0;
+  /* v4.77 designer: the deer lives — wanders the glade (the island, over the water, the bank), drinks at the pond, grazes, stands · you within 10 m = it startles, leaps away and is gone for the rest of that night */
+  const DQ = deer.children[0] && deer.children[0].userData.quad, DR = { st: 'idle', t: .6, x: DEER_AT[0], z: DEER_AT[2], yaw: deer.rotation.y, tx: 0, tz: 0, gone: false, flee: 0, ph: 0 };
+  const pickSpot = () => { const k = R(), a = R() * 6.283; let r; if (k < .35) { r = POND + .3; DR.next = 'drink' } else if (k < .6) { r = ISL + 1 + R() * (POND - ISL - 2); DR.next = 'idle' } else if (k < .8) { r = 3.4 + R() * 1.6; DR.next = 'graze' } else { r = POND + 1.5 + R() * 4; DR.next = 'graze' } DR.tx = Math.cos(a) * r; DR.tz = Math.sin(a) * r; DR.st = 'walk' };
+  function deerTick(t, dt, viewer) { if (nightK < .3) { DR.gone = false; DR.flee = 0 }   /* day: back again tomorrow night */
+    const wx = g.position.x + DR.x * g.scale.x, wz = g.position.z + DR.z * g.scale.x, near = viewer ? Math.hypot(viewer.x - wx, viewer.z - wz) : 99;
+    if (!DR.gone && !DR.flee && deerK > .3 && near < 10) { DR.flee = 1; DR.st = 'run'; const a = Math.atan2(DR.x - (viewer.x - g.position.x) / g.scale.x, DR.z - (viewer.z - g.position.z) / g.scale.x); DR.yaw = a; DR.tx = DR.x + Math.sin(a) * 9; DR.tz = DR.z + Math.cos(a) * 9 }
+    if (DR.flee) { DR.flee -= dt; if (DR.flee <= 0) { DR.flee = 0; DR.gone = true } }
+    let clip = DR.st, sp = 0; DR.t -= dt;
+    if (DR.st === 'walk' || DR.st === 'run') { const dx = DR.tx - DR.x, dz = DR.tz - DR.z, d = Math.hypot(dx, dz); sp = DR.st === 'run' ? 6.5 : .9; if (d < .15 && DR.st === 'walk') { DR.st = DR.next || 'idle'; DR.t = DR.st === 'drink' ? 5 + R() * 3 : 3 + R() * 4; if (DR.st === 'drink') DR.yaw = Math.atan2(-DR.x, -DR.z) } else { const yw = Math.atan2(dx, dz); let df = yw - DR.yaw; df = Math.atan2(Math.sin(df), Math.cos(df)); DR.yaw += df * Math.min(1, dt * 4); const st = Math.min(d, sp * dt); DR.x += Math.sin(DR.yaw) * st; DR.z += Math.cos(DR.yaw) * st } }
+    else if (DR.t <= 0) pickSpot();
+    if (DR.st === 'drink') clip = 'graze';
+    const r = Math.hypot(DR.x, DR.z), water = r > ISL && r < POND; deer.position.set(DR.x, (water ? -.06 : 0) + (DR.flee ? Math.abs(Math.sin(t * 9)) * .5 : Math.sin(t * 1.2) * .04), DR.z); deer.rotation.y = DR.yaw;
+    if (DQ) { DR.ph += dt * (clip === 'run' ? 2.1 : clip === 'walk' ? 1.1 : .4); poseQ(DQ, clip === 'run' ? 'jump' : clip, DR.ph % 1) } return near }
   const mLeaves = []; mirror.traverse(m => { if (m.isInstancedMesh) { m.instanceMatrix = leaves.instanceMatrix; mLeaves.push(m) } });
   function season(s) { cur = SEASON[s] ? s : 'summer'; const P = SEASON[cur], c = new THREE.Color(), off = new THREE.Matrix4().makeScale(0, 0, 0);
     for (let i = 0; i < NL; i++) { c.set(P.leaf[i % P.leaf.length]).offsetHSL((lk[i] - .5) * .04, 0, (lk[i] - .5) * .16); leaves.setColorAt(i, c) } leaves.instanceColor.needsUpdate = true;
@@ -92,8 +106,8 @@ export function greatTree(o = {}) {
     const n = falls.userData.n || 0, p = fgeo.attributes.position; for (let i = 0; i < FN; i++) { const v = fv[i]; if (i >= n) { p.setXYZ(i, 0, -50, 0); continue } v[1] -= dt * (cur === 'winter' ? .7 : 1.1); v[3] += dt; const x = v[0] + Math.sin(v[3] * 1.3 + i) * .6, z = v[2] + Math.cos(v[3] + i) * .6; if (v[1] < .05) { v[0] = (R() - .5) * 18; v[1] = 9 + R() * 5; v[2] = (R() - .5) * 18 } p.setXYZ(i, x, v[1], z) } p.needsUpdate = true;
     ffm.size = .75 + Math.sin(t * 3) * .12;
     // the deer: shows at night when nobody is close · fades away as you come near
-    const far = viewer ? Math.hypot(viewer.x - (g.position.x + DEER_AT[0]), viewer.z - (g.position.z + DEER_AT[2])) : 99, want = nightK > .5 && far > 14 ? 1 : 0; deerK += (want - deerK) * Math.min(1, dt * (want ? .6 : 2.5)); dmat.opacity = .55 * deerK; dhalo.material.opacity = .5 * deerK; deer.visible = deerK > .01;
-    deer.children.forEach(c => { }); deer.position.y = Math.sin(t * 1.2) * .08 }
+    deerTick(t, dt, viewer); const want = nightK > .5 && !DR.gone && !DR.flee ? 1 : 0; deerK += (want - deerK) * Math.min(1, dt * (want ? .6 : DR.flee || DR.gone ? 4 : 2.5)); dmat.opacity = .55 * deerK; dhalo.material.opacity = .5 * deerK; deer.visible = deerK > (DR.gone ? .06 : .01);
+  }
   season(o.season || 'summer'); night(o.night || 0); g.scale.setScalar(S);
-  return { g, season, night, tick, stones, ISL, POND, deer };
+  return { g, season, night, tick, stones, ISL, POND, deer, DR };
 }
