@@ -894,7 +894,7 @@ export const HAY = { arm: 10, reach: 1.8, slot: { poultry: [1.65, .55], livestoc
 export const FARM = { cap: { poultry: 4, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
 export const ANIMAL_SHOP = { name: 'ป้าบัว', what: 'ร้านสัตว์ฟาร์ม' };
 export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
-export const HOUSE = false;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
+export const HOUSE = true;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
 export const PEBBLE = { sp: .85 };   // v4.56 🪨 walking speed while holding a small stone
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
 /* v3.21 🌾 Vaneya = a farm island: dig / plant / build almost anywhere · water every day (rain does it for you) · new stones, weeds, branches and saplings each morning · animals, no monsters */
