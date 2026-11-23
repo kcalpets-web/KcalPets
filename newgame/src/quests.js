@@ -8,19 +8,19 @@ export const KQ = {
       { id: 'tapun', name: 'ตาปุ่น', icon: '👴', v: 0, dx: 6, dz: 4, hello: 'ทะเลสาบนี้เคยเต็มไปด้วยเรือ… ตอนนี้เหลือแต่ซากกับตาแก่ๆ อย่างข้า', q: ['nv1', 'nv2', 'nvW4'] },
       { id: 'mira', name: 'มิรา', icon: '🧜', v: 1, dx: -6, dz: 5, hello: 'ฉันดำน้ำมาตั้งแต่เด็ก ใต้น้ำยังมีของมีค่าอีกเยอะเลยนะ', q: ['nv3', 'nv4', 'nvW1', 'nvF2'] },
       { id: 'toll', name: 'ภราดาโทลล์', icon: '🔔', v: 2, dx: 0, dz: -7, hello: 'ระฆังของเราเงียบมานาน… ถ้ามันดังอีกครั้ง ผู้คนคงกลับมา', q: ['nv5', 'nv6', 'nvW6'] },
-      { id: 'nvLead', name: 'ราชินีชลา', icon: '👸', v: 1, dx: 0, dz: 0, lead: 1, hello: 'นักเดินทาง… นาวาลีจมลงเพราะเมฆทมิฬ ช่วยเราฟื้นเมืองนี้ได้ไหม', q: ['nvF1'] },   /* v4.24 after the kingdom is restored */
+      { id: 'nvLead', name: 'นีน่า', icon: '👸', v: 1, dx: 0, dz: 0, lead: 1, hello: 'นักเดินทาง… นาวาลีจมลงเพราะเมฆทมิฬ ช่วยเราฟื้นเมืองนี้ได้ไหม', q: ['nvF1'] },   /* v4.24 after the kingdom is restored */
       { id: 'kaew', name: 'ป้าแก้ว', icon: '🧵', v: 1, dx: 9, dz: -4, hello: 'ป้าเย็บชุดว่ายน้ำให้ชาวนาวาลีมาทั้งชีวิต… ถ้ามีของดีๆ ป้าจะเย็บให้เจ้าสักชุด', q: ['nvW2', 'nvW3'], look: { sex: 'f', hair: 'buns', hairCol: '#8a7a70', glasses: 'round', wear: 'vest', top: '#d86a8a', bottom: 'skirt', hat: 'none', expr: 'smile' } },   // v4.24 the tailor
       { id: 'marin', name: 'กัปตันมาริน', icon: '⚓', v: 2, dx: -9, dz: -3, hello: 'ข้าล่องเรือมาทั่วทะเลสาบ ปลาตัวไหนอยู่ตรงไหน ข้ารู้หมด', q: ['nvW5', 'nvF3'], look: { sex: 'm', skin: '#e2b183', hair: 'messy', hairCol: '#5a3a2a', beard: 'full', wear: 'sailor', top: '#2a3a6a', bottom: 'pants', hat: 'sailor' } },   // v4.24 the captain
     ],
     restore: ['nvR1', 'nvR2', 'nvR3'],
-    memory: ['💭 ความทรงจำของนาวาลี…', 'คืนเทศกาลลอยโคม เรือนับร้อยลอยเต็มทะเลสาบ', 'เมฆดำเคลื่อนมาโดยไม่มีลม แล้วคลื่นยักษ์ก็ซัดเข้าฝั่ง', 'ราชินีชลาสั่งให้ทุกคนหนีขึ้นที่สูง… เมืองทั้งเมืองจมลงในคืนเดียว', 'แต่ตอนนี้ น้ำลดแล้ว — นาวาลีจะกลับมามีชีวิตอีกครั้ง'],
+    memory: ['💭 ความทรงจำของนาวาลี…', 'คืนเทศกาลลอยโคม เรือนับร้อยลอยเต็มทะเลสาบ', 'เมฆดำเคลื่อนมาโดยไม่มีลม แล้วคลื่นยักษ์ก็ซัดเข้าฝั่ง', 'นีน่าสั่งให้ทุกคนหนีขึ้นที่สูง… เมืองทั้งเมืองจมลงในคืนเดียว', 'แต่ตอนนี้ น้ำลดแล้ว — นาวาลีจะกลับมามีชีวิตอีกครั้ง'],
   },
   sylvaren: {
     npcs: [
       { id: 'baitong', name: 'ยายใบตอง', icon: '👵', v: 0, dx: 5, dz: -5, hello: 'ป่าเหี่ยวแบบนี้ สมุนไพรหายากขึ้นทุกวัน…', q: ['sv1', 'sv2', 'svW1', 'svF1'] },
       { id: 'boonma', name: 'ช่างไม้บุญมา', icon: '🪵', v: 2, dx: -6, dz: 3, hello: 'ไม้ดีๆ เหลือน้อยเต็มที ถ้าได้ไม้มาข้าจะสร้างสะพานข้ามลำธาร', q: ['sv3', 'sv4', 'svW2', 'svW4'] },
       { id: 'leo', name: 'นักเดินทางลีโอ', icon: '🎨', v: 1, dx: 4, dz: 7, hello: 'ผมเดินทางวาดภาพไปทั่วโลก ป่านี้ยังสวยแม้จะเหี่ยวเฉา', q: ['sv5', 'sv6', 'svW5'] },
-      { id: 'svLead', name: 'ผู้เฒ่าวนา', icon: '🧙', v: 0, dx: 0, dz: 0, lead: 1, hello: 'ต้นไม้แม่กำลังจะตาย… ถ้ามันตาย ป่าทั้งป่าจะตายตาม', q: ['svF3'] },   /* v4.30 after the kingdom is restored */
+      { id: 'svLead', name: 'ซิลวี่', icon: '🧙', v: 0, dx: 0, dz: 0, lead: 1, hello: 'ต้นไม้แม่กำลังจะตาย… ถ้ามันตาย ป่าทั้งป่าจะตายตาม', q: ['svF3'] },   /* v4.30 after the kingdom is restored */
       { id: 'mali', name: 'พรานมาลี', icon: '🏹', v: 1, dx: -8, dz: -5, hello: 'ข้าล่าสัตว์ในป่านี้มาตั้งแต่เด็ก ฝนฟ้าที่นี่แรงนัก ต้องแต่งตัวให้ถูก', q: ['svW3', 'svW6', 'svF2'], look: { sex: 'f', skin: '#d8a878', hair: 'pony', hairCol: '#3a2418', wear: 'traveler', top: '#5a7a3a', bottom: 'pants', legCol: '#5a4a32', hat: 'headband', hatCol: '#5aa848', expr: 'smile' } },   // v4.30 the hunter
     ],
     restore: ['svR1', 'svR2', 'svR3'],
@@ -42,7 +42,7 @@ export const KQ = {
       { id: 'bjorn', name: 'บียอร์น', icon: '🧔', v: 2, dx: 6, dz: 5, hello: 'ข้าหลุดจากผนึกมาได้คนเดียว… ครอบครัวข้ายังติดอยู่ในน้ำแข็ง', q: ['fh1', 'fh2', 'fhW1', 'fhW5', 'fhF2'] },
       { id: 'grunda', name: 'กรุนดา', icon: '🔨', v: 0, dx: -6, dz: 4, hello: 'ช่างตีเหล็กคนแคระอย่างข้าไม่กลัวหนาว กลัวแต่ไม่มีแร่ให้ตี!', q: ['fh3', 'fh4', 'fhW4'] },
       { id: 'tutu', name: 'ตูตู้', icon: '🐧', v: 1, dx: 3, dz: -7, hello: 'ปิ๊บๆ! (เพนกวินน้อยดูหิวและหลงทาง)', q: ['fh5', 'fh6', 'fhW6', 'fhF1'] },
-      { id: 'fhLead', name: 'แม่ชีเอลซ่า', icon: '🕯️', v: 1, dx: 0, dz: 0, lead: 1, hello: 'ราชินีผนึกเมืองไว้เพื่อปกป้องทุกคน… แต่ผนึกต้องถูกคลายด้วยไฟ', q: ['fhF3'] },
+      { id: 'fhLead', name: 'ซาเอล', icon: '🕯️', v: 1, dx: 0, dz: 0, lead: 1, hello: 'ราชินีผนึกเมืองไว้เพื่อปกป้องทุกคน… แต่ผนึกต้องถูกคลายด้วยไฟ', q: ['fhF3'] },
       { id: 'inka', name: 'ช่างขนสัตว์อินกา', icon: '🧶', v: 1, dx: -8, dz: -5, hello: 'ขนหมาป่าหิมะอุ่นที่สุดในโลก ถ้ามีหนังมาให้ ข้าจะเย็บให้สักชุด', q: ['fhW2', 'fhW3'], look: { sex: 'f', skin: '#f4d8c0', hair: 'braids', hairCol: '#c86a3a', wear: 'traveler', top: '#8a3a3a', bottom: 'pants', legCol: '#4a3a3a', hat: 'beanie', hatCol: '#e8e8f0', expr: 'smile' } },   // v4.32 the furrier
     ],
     restore: ['fhR1', 'fhR2', 'fhR3'],
@@ -87,7 +87,7 @@ export const KQUEST = {
   nvW4: { t: 'bring', need: { wood: 30, ore: 3 }, text: 'หาไม้ 30 ท่อน + แร่ 3 ก้อน ซ่อมเรือเก่าให้ตาปุ่น', done: 'เรือทั้งสามลำกลับมาลอยได้แล้ว! เอาใบพายเก่าของข้าไป มันฟันได้ดีกว่าที่คิด', reward: { coin: 900, item: { t: 'paddleSword', r: 'R' } } },
   nvW5: { t: 'bring', need: { goldpuffer: 1 }, text: 'ตกปลาปักเป้าทองให้กัปตันมาริน (ปลาหายากในนาวาลี)', done: 'ปักเป้าทองจริงๆ ด้วย! ฉมวกปะการังเล่มนี้เป็นของเจ้าแล้ว', reward: { coin: 1200, item: { t: 'coralHarpoon', r: 'R' } } },
   nvW6: { t: 'draw', text: 'วาดภาพหอระฆังให้ภราดาโทลล์อีกภาพ', done: 'ภาพนี้ทำให้ระฆังร้องเพลงในใจข้า… รับธนูเสียงระฆังไปเถอะ', reward: { coin: 800, item: { t: 'bellBow', r: 'R' } } },
-  nvF1: { t: 'bring', need: { fish: 3 }, text: 'ส่งปลา 3 ตัวให้ราชินีชลา', done: 'ข้าจะสอนสูตรต้มยำปลาของนาวาลีให้เจ้า', reward: { coin: 500, recipe: 'tomyumfish' } },
+  nvF1: { t: 'bring', need: { fish: 3 }, text: 'ส่งปลา 3 ตัวให้นีน่า', done: 'ข้าจะสอนสูตรต้มยำปลาของนาวาลีให้เจ้า', reward: { coin: 500, recipe: 'tomyumfish' } },
   nvF2: { t: 'bring', need: { seaweed: 5 }, text: 'หาสาหร่าย 5 กำให้มิรา (ตกปลาในนาวาลี)', done: 'ข้าวห่อสาหร่ายแบบนักดำน้ำ! กินแล้วดำน้ำได้ทั้งวัน', reward: { coin: 400, recipe: 'riceball' } },
   nvF3: { t: 'bring', need: { squid: 3 }, text: 'ตกปลาหมึก 3 ตัวให้กัปตันมาริน (กลางคืนในนาวาลี)', done: 'หมึกสดๆ! ข้าจะสอนสูตรหมึกย่างซอสระฆังให้', reward: { coin: 500, recipe: 'squidgrill' } },
   /* v4.30 🏙️ sylvaren town quests: the leaf hunter set (⚡) · 3 weapons · 3 recipes */
@@ -99,7 +99,7 @@ export const KQUEST = {
   svW6: { t: 'killK', n: 10, text: 'ปราบมอนสเตอร์ในซิลวาเรน 10 ตัว', done: 'ป่าสงบลงแล้ว รับหอกเขากวางของข้าไป มันไม่ล่อฟ้าด้วยนะ', reward: { coin: 1000, item: { t: 'antlerSpear', r: 'R' } } },
   svF1: { t: 'bring', need: { mushroom: 5 }, text: 'หาเห็ดป่า 5 ดอกให้ยายใบตอง', done: 'ยายจะสอนวิธีย่างเห็ดเสียบไม้ให้', reward: { coin: 400, recipe: 'mushskewer' } },
   svF2: { t: 'bring', need: { venison: 2, honey: 1 }, text: 'เนื้อกวาง 2 ชิ้น + น้ำผึ้ง 1 ให้พรานมาลี', done: 'กวางตุ๋นน้ำผึ้งสูตรพรานป่า ลองทำดูสิ', reward: { coin: 500, recipe: 'venisonhoney' } },
-  svF3: { t: 'bring', need: { berry: 6 }, text: 'เก็บเบอร์รี่ 6 ลูกให้ผู้เฒ่าวนา', done: 'คัพเค้กเบอร์รี่ป่าของซิลวาเรน กินแล้วพิษไม่ระคายเจ้า', reward: { coin: 500, recipe: 'berrycake' } },
+  svF3: { t: 'bring', need: { berry: 6 }, text: 'เก็บเบอร์รี่ 6 ลูกให้ซิลวี่', done: 'คัพเค้กเบอร์รี่ป่าของซิลวาเรน กินแล้วพิษไม่ระคายเจ้า', reward: { coin: 500, recipe: 'berrycake' } },
   /* 🌿 Sylvaren */
   sv1: { t: 'bring', need: { flower: 4 }, text: 'เก็บดอกไม้ป่า 4 ดอกให้ยายใบตอง', done: 'ดอกไม้หอมจริงๆ จะทำชาให้ผู้คนดื่ม', reward: { coin: 500, recipe: 'flowertea' } },
   sv2: { t: 'bring', need: { mushroom: 3 }, text: 'หาเห็ดป่า 3 ดอก', done: 'เห็ดพวกนี้ทำยาได้ดีนัก', reward: { coin: 600, gem: 15 } },
@@ -129,7 +129,7 @@ export const KQUEST = {
   fhW6: { t: 'bring', need: { fish: 8 }, text: 'ตกปลา 8 ตัวให้ตูตู้', done: 'ปิ๊บๆ! (ตูตู้คาบดาบน้ำแข็งใสมาให้)', reward: { coin: 900, item: { t: 'iceSword', r: 'R' } } },
   fhF1: { t: 'bring', need: { fish: 3 }, text: 'ตกปลา 3 ตัวให้ตูตู้อีกครั้ง', done: 'ปิ๊บ! (ตูตู้สอนตากปลาแห้งแบบขั้วโลก)', reward: { coin: 400, recipe: 'polarfish' } },
   fhF2: { t: 'bring', need: { bearmeat: 1, chili: 2 }, text: 'เนื้อหมี 1 + พริก 2 ให้บียอร์น', done: 'ลูกชิ้นหมีน้ำพริก กินแล้วอุ่นทั้งตัว', reward: { coin: 500, recipe: 'bearballs' } },
-  fhF3: { t: 'bring', need: { honey: 2, corn: 2 }, text: 'น้ำผึ้ง 2 + ข้าวโพด 2 ให้แม่ชีเอลซ่า', done: 'แพนเค้กข้าวโพดน้ำผึ้งของโบสถ์เรา ทำให้เด็กๆ กินทุกเช้า', reward: { coin: 500, recipe: 'cornpancake' } },
+  fhF3: { t: 'bring', need: { honey: 2, corn: 2 }, text: 'น้ำผึ้ง 2 + ข้าวโพด 2 ให้ซาเอล', done: 'แพนเค้กข้าวโพดน้ำผึ้งของโบสถ์เรา ทำให้เด็กๆ กินทุกเช้า', reward: { coin: 500, recipe: 'cornpancake' } },
   /* v4.33 🏙️ asrah town quests: the desert cloth set (☀️) · 3 weapons · 3 recipes · 🌴 dates drop from asrah's monsters */
   asW1: { t: 'bring', need: { hide: 3, grass: 10 }, text: 'หาหนังสัตว์ 3 ผืน + หญ้า 10 กำให้ซาร่า', done: 'ผ้าโพกหัวของเจ้าเสร็จแล้ว แดดแรงแค่ไหนหัวก็เย็น', reward: { coin: 700, wear: 'h_turban' } },
   asW2: { t: 'bring', need: { flower: 5 }, text: 'เก็บดอกไม้ 5 ดอกให้ซาร่า (ย้อมผ้า)', done: 'เสื้อคลุมลินินผืนนี้เบาเหมือนลม', reward: { coin: 800, wear: 'b_linen' } },
