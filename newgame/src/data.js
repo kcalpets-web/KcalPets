@@ -1073,3 +1073,39 @@ export const EEL = { fish: 10, cd: 90000, r: 10, stun: 1.5, mul: 2.4, min: 40, h
   atk: { zap: { r: 2.2, wind: 1.2, n: [1, 2, 3] }, nova: { r: 4.6, wind: 1.4 }, dash: { r: 2.4, wind: 1.1 } }, gap: [0, 3000, 2500, 1900] };
 
 export const STORE = 60;   // v3.90 🗃️ storage chest slots (a kind stacks like the bag)
+/* v4.79 📋 the guild's daily board (designer · docs/art/daily-mock.png): every day (local midnight) 3 of these, picked at random (all equal) · d = e easy / m middle / h hard
+   counted from the moment the card is drawn (S.stat deltas · or f = a value of the save) · lock = what it needs first (a locked card can be swapped for free) · 🎟️ for the gacha */
+export const DAILY = [
+  { k: 'water', ic: '💧', t: 'รดน้ำแปลงผัก', n: 10, st: ['watered'], d: 'e', lock: 'hoe' },
+  { k: 'harvest', ic: '🥕', t: 'เก็บผักในฟาร์ม', n: 8, st: ['harvested'], d: 'e', lock: 'hoe' },
+  { k: 'farmprod', ic: '🥚', t: 'เก็บไข่หรือนมจากคอก', n: 5, st: ['farmProd'], d: 'm', lock: 'pen' },
+  { k: 'hay', ic: '🌾', t: 'เติมฟางในราง', n: 5, st: ['hayPut'], d: 'e', lock: 'pen' },
+  { k: 'cookveg', ic: '🥗', t: 'ทำอาหารจากผักที่ปลูกเอง', n: 2, st: ['cookVeg'], d: 'm', lock: 'hoe' },
+  { k: 'buff', ic: '💪', t: 'กินอาหารบัฟ', n: 1, st: ['ateBuff'], d: 'e' },
+  { k: 'recipe', ic: '📖', t: 'ทำเมนูที่ยังไม่เคยทำ', n: 1, f: 'recipes', d: 'h' },
+  { k: 'fish', ic: '🎣', t: 'ตกปลา', n: 5, st: ['fish'], d: 'm', lock: 'rod' },
+  { k: 'fishrain', ic: '🌧️', t: 'ตกปลาตอนฝนตก', n: 1, st: ['fishRain'], d: 'h', lock: 'rod' },
+  { k: 'hunt', ic: '🏹', t: 'ล่าสัตว์ป่า', n: 3, st: ['hunt'], d: 'm' },
+  { k: 'rope', ic: '🪢', t: 'ใช้เชือกดึงของ', n: 5, st: ['ropes'], d: 'e' },
+  { k: 'kills', ic: '⚔️', t: 'ปราบมอนสเตอร์', n: 15, st: ['kills'], d: 'm', lock: 'sword' },
+  { k: 'night', ic: '🌙', t: 'ปราบมอนสเตอร์ตอนกลางคืน', n: 5, st: ['nightKills'], d: 'h', lock: 'sword' },
+  { k: 'sneak', ic: '🥷', t: 'โจมตีลับหลัง', n: 3, st: ['sneakHits'], d: 'h', lock: 'sword' },
+  { k: 'arrow', ic: '🎯', t: 'ยิงธนูโดนเป้า', n: 10, st: ['arrows'], d: 'm', lock: 'bow' },
+  { k: 'charge', ic: '💥', t: 'โจมตีแบบชาร์จ', n: 5, st: ['chargeHits'], d: 'm', lock: 'sword' },
+  { k: 'camp', ic: '🏕️', t: 'ยึดแคมป์มอนสเตอร์', n: 1, st: ['wcamps'], d: 'h', lock: 'sword' },
+  { k: 'feed', ic: '🍖', t: 'ให้อาหารน้อง', n: 3, st: ['feeds'], d: 'e', lock: 'pet' },
+  { k: 'ride', ic: '🐕', t: 'ขี่น้องเดินทาง', n: 3, st: ['petRide'], d: 'e', lock: 'ridepet' },
+  { k: 'catch', ic: '🕸️', t: 'จับสัตว์ป่าตัวใหม่', n: 1, st: ['caught'], d: 'h', lock: 'net' },
+  { k: 'chest', ic: '📦', t: 'เปิดหีบสมบัติ', n: 2, st: ['chests'], d: 'h' },
+  { k: 'visit', ic: '🗺️', t: 'ไปเยือนอาณาจักร', n: 1, visit: 1, d: 'm' },
+  { k: 'horse', ic: '🐴', t: 'ขี่ม้า', n: 3, st: ['horseRide'], d: 'e', lock: 'horse' },
+  { k: 'sail', ic: '⛵', t: 'ล่องเรือข้ามทะเล', n: 1, st: ['sails'], d: 'm', lock: 'boat' },
+  { k: 'draw', ic: '🖍️', t: 'วาดภาพลงสมุด', n: 1, st: ['drawings'], d: 'e' },
+  { k: 'photo', ic: '📷', t: 'ถ่ายรูป', n: 1, st: ['photos'], d: 'e' },
+  { k: 'music', ic: '🎵', t: 'เล่นดนตรี (ขลุ่ย หรือที่บาร์)', n: 1, st: ['songs', 'barPlays'], d: 'm' },
+  { k: 'craft', ic: '🛠️', t: 'คราฟต์ของ', n: 3, st: ['crafts', 'forged'], d: 'm' },
+  { k: 'repair', ic: '🔧', t: 'ซ่อมอาวุธหรืออุปกรณ์', n: 1, st: ['repairs'], d: 'e', lock: 'sword' },
+  { k: 'rumor', ic: '🍹', t: 'ฟังข่าวลือในบาร์', n: 1, st: ['rumors'], d: 'e', lock: 'town' },
+  { k: 'deliver', ic: '🧺', t: 'ส่งของให้ลุงฮาวซิฟ', n: 5, deliver: ['carrot', 'cabbage', 'egg', 'apple', 'meat'], d: 'm' },
+  { k: 'chop', ic: '🪓', t: 'ตัดต้นไม้', n: 10, st: ['clr_tree'], d: 'e' }];
+export const DAILY_REW = { coin: { e: 300, m: 600, h: 1000 }, ticket: 1, all: 1, streak: 7, streakT: 5, swaps: 1 };
