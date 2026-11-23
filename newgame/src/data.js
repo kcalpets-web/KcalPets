@@ -768,6 +768,8 @@ export const WEAR = {
   h_wizard: { slot: 'head', icon: '🧙', name: 'หมวกพ่อมด', warm: 0, cool: 0, hatK: 'wizard' },
   h_crown: { slot: 'head', icon: '👑', name: 'มงกุฎ', warm: 0, cool: 0, hatK: 'crown' },
   h_sailor: { slot: 'head', icon: '⚓', name: 'หมวกกะลาสี', warm: 0, cool: 0, hatK: 'sailor' },
+  h_raghood: { slot: 'head', icon: '🧥', name: 'ฮู้ดผ้าขาดลึกลับ', warm: 1, cool: 0, hatK: 'raghood', src: 'quest' },   /* v4.76 the wanderer (back from the gate of Mergeland) */
+  b_wanderer: { slot: 'body', icon: '🟫', name: 'ผ้าคลุมนักเดินทางลึกลับ', warm: 1, cool: 1, col: '#7a5a3a', look: 'wanderer', src: 'quest', def: 2 },
   h_soldier: { slot: 'head', icon: '⛑️', name: 'หมวกทหารลูมิเนีย', warm: 0, cool: 0, hatK: 'knight', src: 'drop' },   /* v4.75 the soldier set (a disguise) */
   b_soldier: { slot: 'body', icon: '🛡️', name: 'เกราะทหารลูมิเนีย', warm: 1, cool: 0, col: '#3a4aa0', look: 'knight', src: 'drop', def: 3 },
   l_soldier: { slot: 'legs', icon: '👢', name: 'กางเกงทหารลูมิเนีย', warm: 0, cool: 0, legs: 'boots', legCol: '#2a3060', src: 'drop' },

@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE wanderer</title><style>body{margin:0;background:#cfe6ef}</style></head><body>
+<script type="module">
+/* v4.76 the wanderer's ragged cloak + hood (front · side · back · with Rainbow) */
+import { THREE, rainbowSlime } from '../../src/clay.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1500, H = 760, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#cfe6ef'); S.add(new THREE.HemisphereLight('#fff6ec', '#a08a6a', 1)); const sun = new THREE.DirectionalLight('#fff1dc', 2); sun.position.set(-3, 8, 6); sun.castShadow = true; S.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 12), new THREE.MeshStandardMaterial({ color: '#8ac068' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const look = { v: 2, sex: 'f', hair: 'long', hairCol: '#8a5030', skin: '#f9e0d2', wear: 'wanderer', top: '#7a5a3a', legs: 'pants', legCol: '#4a3a2a', eyes: 'sparkle', eyeCol: '#3a9a8a', hat: 'raghood' };
+[[-3, 0], [-1, Math.PI / 2], [1, Math.PI]].forEach(([x, ry]) => { const g = new THREE.Group(); vinyl(g, look); g.position.x = x; g.rotation.y = ry; g.traverse(o => { if (o.isMesh) o.castShadow = true }); S.add(g) });
+{ const g = new THREE.Group(); vinyl(g, Object.assign({}, look, { hat: 'none' })); g.position.x = 3; g.rotation.y = -.4; S.add(g); const s = new THREE.Group(); rainbowSlime(s); s.scale.setScalar(.45); s.position.set(3.8, 0, .5); s.rotation.y = -.6; S.add(s) }
+const cam = new THREE.PerspectiveCamera(26, W / H, .1, 100); cam.position.set(0, 1.1, 7.5); cam.lookAt(0, .6, 0); r.render(S, cam); window.__done = 1;
+</script></body></html>
