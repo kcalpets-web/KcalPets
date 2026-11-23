@@ -624,7 +624,7 @@ export const STARTER = [
 /* v4.75 🐄 farm chains (house: 1 = only while the house is on) */
 STARTER.push(
   { k: 'farmbuild', house: 1, icon: '🔨', name: 'สร้างฟาร์ม', unit: 'ครั้ง', stats: ['farmBuilt'], goals: [1, 3, 6], rew: [{ coin: 300 }, { coin: 800 }, { gem: 30 }], how: 'คุยกับ 🔨 ช่างไม้ตองที่เมืองท่า → สร้าง 🐔 เล้า · 🐄 โรงเลี้ยงสัตว์ · 🌾 ยุ้งฉาง · หรือขยายคอกเป็น Lv 2–3 (🐟 บ่อปลาสร้างเองที่ 🔨 สร้าง)' },
-  { k: 'farmhay', house: 1, icon: '🌾', name: 'วางฟางในราง', unit: 'ครั้ง', stats: ['hayPut'], goals: [1, 5, 20], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เดินไปที่กองฟางข้างคอก กด <b>A</b> หยิบฟาง → ถือไปที่รางอาหาร กด <b>A</b> วาง (คอก Lv 3 เติมเองจากยุ้งฉาง)' },
+  { k: 'farmhay', house: 1, icon: '🌾', name: 'วางฟางในราง', unit: 'ครั้ง', stats: ['hayPut'], goals: [1, 5, 20], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เดินเข้าไปในเล้า/โรงเลี้ยงสัตว์ → กองฟาง กด <b>A</b> หยิบฟาง → ถือไปที่รางอาหาร กด <b>A</b> วาง (คอก Lv 3 เติมเองจากยุ้งฉาง)' },
   { k: 'farmprod', house: 1, icon: '🧺', name: 'เก็บผลผลิตจากสัตว์', unit: 'ชิ้น', stats: ['farmProd'], goals: [3, 15, 50], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'ให้สัตว์ได้กินทุกวัน → ตอนเช้าแตะที่คอก → 🧺 เก็บผลผลิต' });
 export const STARTER_ALL = { gem: 50 };   // every step of every chain
 export const STARTER_SPIRIT = 1;          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
