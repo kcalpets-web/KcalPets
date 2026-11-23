@@ -195,8 +195,15 @@ export const TOOLMESH = {
   sickle(g, t = 0) { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .22, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#9a9aa8', '#b8c0d8', '#9ad8ff'][t], '#eef2ff', [.08, .24, 0], [.14, .03, .03], [0, 0, .6], { A: 0, mat: MAT_GOLD }) },
   torch(g) { part(g, '#6a4024', '#a8703e', [0, .05, 0], [.035, .26, .035], [0, 0, 0], { A: 0 }); part(g, '#7a5a3a', '#c8a070', [0, .3, 0], [.06, .06, .06], [0, 0, 0], { A: 0 });   /* v3.12.1 🔥 a stick, a wrapped head, a flame */
     const f1 = new THREE.Mesh(new THREE.ConeGeometry(.1, .3, 7), new THREE.MeshBasicMaterial({ color: '#ffb040' })), f2 = new THREE.Mesh(new THREE.ConeGeometry(.06, .2, 6), new THREE.MeshBasicMaterial({ color: '#fff2a0' })); f1.position.y = .48; f2.position.y = .45; f1.name = 'flame'; g.add(f1, f2) },
-  lamp(g) { part(g, '#5a5a62', '#a8a8b8', [0, .02, 0], [.05, .03, .05], [0, 0, 0], { A: 0 }); const gl = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, .11, 8), new THREE.MeshBasicMaterial({ color: '#ffe8a0' })); gl.position.y = .1; g.add(gl);   /* v3.82 🏮 an oil lamp: a base, a glowing glass, a cap, a ring handle */
-    part(g, '#5a5a62', '#a8a8b8', [0, .18, 0], [.05, .025, .05], [0, 0, 0], { A: 0 }); const h = new THREE.Mesh(new THREE.TorusGeometry(.05, .008, 6, 12), new THREE.MeshStandardMaterial({ color: '#4a4a52', roughness: .5 })); h.position.y = .24; g.add(h) },
+  lamp(g) {   /* v4.84 🏮 an oil lantern (designer: it looked like a tin can): a base · 4 iron posts around warm glass · a flame inside · a peaked cap · a ring handle */
+    const IR = ['#3a3a42', '#7a7a88'], BR = ['#8a5a20', '#d8a040'];
+    part(g, BR[0], BR[1], [0, .02, 0], [.075, .025, .075], [0, 0, 0], { A: 0 });
+    const gl = new THREE.Mesh(new THREE.CylinderGeometry(.055, .06, .15, 12), new THREE.MeshBasicMaterial({ color: '#ffe2a0', transparent: true, opacity: .85 })); gl.position.y = .12; g.add(gl);
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(.022, .07, 8), new THREE.MeshBasicMaterial({ color: '#ff9a30' })); fl.position.y = .12; fl.name = 'flame'; g.add(fl);
+    for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; part(g, IR[0], IR[1], [Math.cos(a) * .062, .12, Math.sin(a) * .062], [.012, .085, .012], [0, 0, 0], { A: 0 }) }
+    part(g, BR[0], BR[1], [0, .205, 0], [.08, .02, .08], [0, 0, 0], { A: 0 });
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(.07, .07, 12), new THREE.MeshStandardMaterial({ color: '#4a4a54', roughness: .5 })); cap.position.y = .25; g.add(cap);
+    const h = new THREE.Mesh(new THREE.TorusGeometry(.04, .009, 6, 14), new THREE.MeshStandardMaterial({ color: '#3a3a42', roughness: .5 })); h.position.y = .31; g.add(h) },
   sword(g) { part(g, '#8a8fa8', '#eef2ff', [0, .32, 0], [.04, .34, .015], [0, 0, 0], { A: 0, mat: MAT_GOLD }); part(g, '#7a4422', '#c8843a', [0, 0, 0], [.04, .1, .04], [0, 0, 0], { A: 0 }) },
 };
 
