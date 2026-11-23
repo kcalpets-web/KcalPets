@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE shop interiors</title><style>body{margin:0;background:#1c1612}</style></head><body>
+<script type="module">
+/* v4.76 shop interiors preview (cut-away rooms like the house) */
+import { THREE, HUMANS } from '../../src/clay.js';
+import { SHOPIN } from '../../src/shopin.js';
+const W = 1500, H = 760, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#1c1612'); S.add(new THREE.HemisphereLight('#fff4e0', '#6a5040', 1.0)); const sun = new THREE.DirectionalLight('#fff1dc', 1.2); sun.position.set(-4, 10, 6); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 8, bottom: -8 }); sun.shadow.mapSize.set(2048, 2048); S.add(sun);
+const put = (k, x, who) => { const g = new THREE.Group(), R = SHOPIN[k](g); g.position.x = x; S.add(g); const p = new THREE.Group(); HUMANS.villager(p, 0, who); p.scale.setScalar(.86); p.position.set(x + R.owner[0], 0, R.owner[1]); g.parent.add(p); const k2 = new THREE.Group(); HUMANS.kealee(k2); k2.scale.setScalar(.8); k2.position.set(x + R.counter[0] + 1.6, 0, R.counter[1] + 1.1); k2.rotation.y = -Math.PI / 2 - .5; S.add(k2); g.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true } }) };
+put('smith', -4, { v: 2, sex: 'm', hair: 'messy', hairCol: '#3a2418', skin: '#c88a5a', wear: 'farmer', bottom: 'pants', top: '#5a4a3a', eyes: 'round', eyeCol: '#2a2020', beard: 'full' });
+put('bar', 4, { v: 2, sex: 'm', hair: 'slick', hairCol: '#e8e8f0', skin: '#e2b183', wear: 'farmer', bottom: 'pants', top: '#e8e0d0', eyes: 'smile', eyeCol: '#3a3040', beard: 'full' });
+const cam = new THREE.PerspectiveCamera(32, W / H, .1, 100); cam.position.set(0, 7, 12.5); cam.lookAt(0, .6, -.6); r.render(S, cam); window.__done = 1;
+</script></body></html>
