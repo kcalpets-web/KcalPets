@@ -434,7 +434,7 @@ export function groundH(x, z) {
   if (onCloud(x, z)) return .6;
   if (inTr(x, z)) return trainH(x, z);
   if (inEelA(x, z)) return eelIn(x, z) ? .15 : -3;
-  if (coreDist(x, z) > 0) return wildH(x, z);
+  if (coreDist(x, z) > 0) return gtStone(x, z) ? GTREE.h + .1 : wildH(x, z);
   const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
 }
 function coreH(x, z) {
@@ -462,7 +462,7 @@ export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (inEelA(x, z)) return eelIn(x, z) ? 'land' : false;
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
-  if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
+  if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; if (gtStone(x, z)) return 'land'; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island
   if (x < 9.6) return 'land';                                                                                   // the island gate (open world)
@@ -556,6 +556,8 @@ export const GTREE = { x: 0, z: 0, h: 2, r: 26, edge: 14, isl: 5.4, pond: 14.5, 
 export const GT_STONES = Array.from({ length: 7 }, (_, i) => { const t = i / 6, r = 5.7 + t * (14.5 - 5.4 - .6), a = 1.2 + Math.sin(t * 3) * .18; return [Math.cos(a) * r, Math.sin(a) * r] });
 function gtSite() { if (GTREE.ok) return; GTREE.ok = true; const K = KINGDOMS.sylvaren, c = CAPS.sylvaren; let dx = 1, dz = 0; if (c) { dx = K.x - c.x; dz = K.z - c.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l } GTREE.x = K.x + dx * 45; GTREE.z = K.z + dz * 45; GTREE.h = Math.max(1.2, wildH0(GTREE.x, GTREE.z)) }
 export const inGlade = (x, z, m = 0) => { if (!GTREE.ok) return false; const dx = x - GTREE.x, dz = z - GTREE.z; return dx * dx + dz * dz < (GTREE.r + m) ** 2 };
+/* v4.77 designer: "the bridge by the tree — you sink" · on a stepping stone you stand on the stone (the pond's bed under it was the ground → water → swimming) */
+export function gtStone(x, z) { if (!GTREE.ok) return false; const dx = x - GTREE.x, dz = z - GTREE.z, d = dx * dx + dz * dz; if (d < GTREE.isl * GTREE.isl || d > (GTREE.pond + .5) ** 2) return false; return GT_STONES.some(([sx, sz]) => Math.hypot(dx - sx, dz - sz) < 1.05) }
 export function gladePond(x, z) { if (!GTREE.ok) return false; const dx = x - GTREE.x, dz = z - GTREE.z, d = Math.hypot(dx, dz); if (d < GTREE.isl + .3 || d > GTREE.pond - .2) return false; return !GT_STONES.some(([sx, sz]) => Math.hypot(dx - sx, dz - sz) < 1.05) }   /* in the water, off the stones */
 export const HARBC = { x: 194, z: 20, r: 21, edge: 10, h: .7 };   /* v3.41 the harbour town's ground (flattened) */
 export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); { const d = Math.hypot(x - HARBC.x, z - HARBC.z); if (d < HARBC.r + HARBC.edge && h > -1.5) { const t = smw(HARBC.r + HARBC.edge, HARBC.r, d); h = h * (1 - t) + t * Math.max(h, HARBC.h) } }
