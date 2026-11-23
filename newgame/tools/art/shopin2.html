@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE shops 2</title><style>body{margin:0;background:#1c1612}</style></head><body>
+<script type="module">
+import { THREE, HUMANS } from '../../src/clay.js';
+import { SHOPIN } from '../../src/shopin.js';
+const W = 1500, H = 1000, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.4); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.autoClear = false;
+['food', 'tools', 'market', 'guild', 'gacha', 'tailor'].forEach((k, n) => { const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#fff4e0', '#6a5040', 1.0)); const sun = new THREE.DirectionalLight('#fff1dc', 1.1); sun.position.set(-4, 10, 6); sun.castShadow = true; S.add(sun);
+  const g = new THREE.Group(), R = SHOPIN[k](g); S.add(g); g.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true } });
+  const p = new THREE.Group(); HUMANS.villager(p, n + 1); p.scale.setScalar(.86); p.position.set(R.owner[0], 0, R.owner[1]); S.add(p);
+  const k2 = new THREE.Group(); HUMANS.kealee(k2); k2.scale.setScalar(.8); k2.position.set(R.counter[0] - 1.3, 0, R.counter[1] + 1.1); k2.rotation.y = Math.PI * .75; S.add(k2);
+  const vw = W / 3, vh = H / 2, vp = [(n % 3) * vw, (1 - Math.floor(n / 3)) * vh, vw, vh]; const cam = new THREE.PerspectiveCamera(36, vw / vh, .1, 100); cam.position.set(0, 7.5, 9.5); cam.lookAt(0, .4, -.5);
+  r.setViewport(...vp); r.setScissor(...vp); r.setScissorTest(true); r.setClearColor('#1c1612'); r.clear(); r.render(S, cam) });
+window.__done = 1;
+</script></body></html>

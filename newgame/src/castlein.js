@@ -21,10 +21,10 @@ export const CASTLEIN = {
     box(g, GOLD, [0, 1.6, -hd + .75], [1.2, 2, .25], [0, 0, 0], .08); box(g, RED, [0, 1.6, -hd + .9], [.8, 1.5, .06], [0, 0, 0], .04); box(g, GOLD, [0, .85, -hd + 1.1], [1.2, .2, .8], [0, 0, 0], .05); for (const s of [-1, 1]) box(g, GOLD, [s * .55, 1.05, -hd + 1.1], [.12, .45, .8], [0, 0, 0], .04);
     cone(g, '#a8781a', '#ffd860', [0, 2.8, -hd + .75], [.18, .3, .1], [0, 0, 0], .9);
     for (const x of [-4.8, 4.8]) torch(g, x, 2.3, -1, '#ffb860');
-    const tx = 3.6, tz = 2.4; box(g, DARK, [tx, .01, tz], [1.4, .02, 1.4], [0, 0, 0], .01);   /* the cellar trapdoor */
+    const tx = 3.6, tz = 2.4; if (open) box(g, DARK, [tx, .01, tz], [1.4, .02, 1.4], [0, 0, 0], .01);   /* the cellar trapdoor */
     if (open) { const hole = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), emis('#1a1408', '#ffb830', .5)); hole.rotation.x = -Math.PI / 2; hole.position.set(tx, .03, tz); g.add(hole); for (let i = 0; i < 4; i++) box(g, STONE, [tx, .04 - i * .001, tz - .4 + i * .25], [1, .03, .18], [0, 0, 0], .01);
       box(g, ['#5a3420', '#9a6238'], [tx - .62, .55, tz], [.1, 1.1, 1.3], [0, 0, -.25], .03); glow(g, tx, .5, tz, '#ffc040', 2.4, 5) }
-    else box(g, ['#5a3420', '#9a6238'], [tx, .04, tz], [1.25, .06, 1.25], [0, 0, 0], .02);
+    else { for (const [a, b2, r] of [[-.2, .1, .5], [.15, -.2, -.7], [.3, .25, .2]]) box(g, ['#6a6458', '#8a8478'], [tx + a, .012, tz + b2], [.45, .01, .02], [0, r, 0], .002); for (let i = 0; i < 4; i++) part(g, '#b8b0a4', '#d8d0c4', [tx - .3 + i * .2, .02, tz + .3 - (i % 2) * .15], [.05, .015, .05], [0, 0, 0], { A: 0 }) }   /* v4.74 hidden: only a cracked tile + dust (the secret) */
     return { w: W, d: Dd, cellar: [tx, tz], throne: [0, -hd + 1.6] } },
   /* 🪜 the stair room under the castle: rough stone · a stone stair coming down from above · torches · the great golden door at the end */
   stair(g) { const W = 6, Dd = 7, H = 4.5, hw = W / 2, hd = Dd / 2; hall(g, W, Dd, H, STONE, DARK, STONE, DARK);
