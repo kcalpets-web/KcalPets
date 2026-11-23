@@ -697,10 +697,10 @@ export const CAMP_TIERS = [                                    // by distance fr
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {
   /* v4.75 🐔 house stage 4 (house: 1 = only while the house is on · carp: 1 = the carpenter builds it: done after you sleep, or after CARP.mins) */
-  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 6 ตัว · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ช่างไม้ตองสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
-  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ช่างไม้ตองสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
+  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ช่างไม้ตองสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
+  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ช่างไม้ตองสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
   granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'เก็บหญ้าได้ 300 · ทุกเช้าเติมรางอาหารให้เล้า/โรงในระยะ 25 ม. เอง · ช่างไม้ตองสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
-  fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
+  fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว (ขยายได้ถึง 12) · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
@@ -859,7 +859,12 @@ export const FARM_A = {
   sheep:   { n: 'แกะ', ic: '🐑', home: 'livestock', price: 1200, prod: 'wool', eat: .25, s: 1.1 },
   goat:    { n: 'แพะ', ic: '🐐', home: 'livestock', price: 1100, prod: 'goatmilk', eat: .25, s: 1.1 },
   fishfry: { n: 'ลูกปลานิล', ic: '🐟', home: 'fishpond', price: 150, prod: 'pondfish', eat: 0 } };
-export const FARM = { cap: { poultry: 6, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
+/* v4.75b designer: pens start at 4 · upgrade with materials to Lv 2 (8) and Lv 3 (12) · one level at a time · the carpenter does it overnight · the trough grows too */
+export const FARM_LV = {
+  poultry:   [{ cap: 4, trough: 40 }, { cap: 8, trough: 80, cost: { wood: 30, stone: 10, grass: 20 } }, { cap: 12, trough: 120, cost: { wood: 60, stone: 25, feather: 10 } }],
+  livestock: [{ cap: 4, trough: 40 }, { cap: 8, trough: 80, cost: { wood: 60, stone: 25, hide: 4 } }, { cap: 12, trough: 120, cost: { wood: 120, stone: 50, ore: 8 } }],
+  fishpond:  [{ cap: 4 }, { cap: 8, cost: { stone: 30, grass: 10 } }, { cap: 12, cost: { stone: 60, flint: 6 } }] };
+export const FARM = { cap: { poultry: 4, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
 export const ANIMAL_SHOP = { name: 'ป้าบัว', what: 'ร้านสัตว์ฟาร์ม' };
 export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
 export const HOUSE = false;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
