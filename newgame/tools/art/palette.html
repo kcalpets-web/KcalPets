@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE palette icon</title><style>body{margin:0;background:#1e1a2a;font:700 16px system-ui;color:#fff}.r{display:flex;gap:24px;padding:20px}.c{text-align:center}.c div{width:220px;height:220px;border:4px solid #ffd23f;border-radius:22px;background:#262234;display:grid;place-items:center}.c img{width:200px}</style></head><body><div class="r" id="r"></div>
+<script type="module">
+/* v4.77 mock: the 🖍️ draw tool's icon → a paint palette (designer: easier to read) */
+import * as THREE from '../../lib/three.module.min.js';
+import { part } from '../../src/clay.js';
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setSize(384, 384, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#fff6ec', '#6a5a50', 1.6)); const l = new THREE.DirectionalLight('#ffffff', 2.2); l.position.set(-1, 3, 4); sc.add(l); const rim = new THREE.DirectionalLight('#9ac8ff', 1.2); rim.position.set(2, 1, -2); sc.add(rim);
+const cam = new THREE.PerspectiveCamera(30, 1, .01, 50);
+const OLD = g => { part(g, '#e8a81a', '#ffe27a', [0, .35, 0], [.06, .32, .06], [0, 0, 0], { A: 0 }); part(g, '#f4d8b0', '#fff2dc', [0, .72, 0], [.055, .07, .055], [0, 0, 0], { A: 0 }); part(g, '#d84a3a', '#ff8a6a', [0, .8, 0], [.025, .04, .025], [0, 0, 0], { A: 0 }) };
+export const PALETTE = g => { const p = new THREE.Group();
+  const sh = new THREE.Shape(); sh.absellipse(0, 0, .42, .32, 0, Math.PI * 2); const hole = new THREE.Path(); hole.absellipse(-.24, -.1, .065, .055, 0, Math.PI * 2); sh.holes.push(hole);
+  const wood = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .035, bevelEnabled: true, bevelSize: .015, bevelThickness: .012, bevelSegments: 2, curveSegments: 32 }), new THREE.MeshStandardMaterial({ color: '#c8904a', roughness: .7 })); p.add(wood);
+  [['#e8402a', .05, .17], ['#ffd23f', .22, .1], ['#3a8ad8', .27, -.08], ['#4ab84a', .1, -.18], ['#ffffff', -.07, .02], ['#b050d8', -.1, .2]].forEach(([c, x, y]) => { const b = new THREE.Mesh(new THREE.SphereGeometry(.062, 16, 10), new THREE.MeshStandardMaterial({ color: c, roughness: .35 })); b.scale.set(1, 1, .45); b.position.set(x, y, .06); p.add(b) });
+  const br = new THREE.Group(); part(br, '#6a4024', '#b07a44', [0, 0, 0], [.028, .3, .028], [0, 0, 0], { A: 0 }); part(br, '#9a9aa8', '#eef2ff', [0, .3, 0], [.032, .05, .032], [0, 0, 0], { A: 0 }); part(br, '#c8302a', '#ff6a4a', [0, .39, 0], [.028, .06, .028], [0, 0, 0], { A: 0 });
+  br.position.set(.12, -.05, .12); br.rotation.z = -.7; p.add(br); g.add(p) };
+const shot = (build, rot) => { const g = new THREE.Group(), w = new THREE.Group(); build(w); g.add(w); g.rotation.set(...rot); sc.add(g); g.updateMatrixWorld(true);
+  const bx = new THREE.Box3().setFromObject(g), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3()), d = Math.max(sz.x, sz.y) * 2.35 + sz.z; cam.position.set(c.x, c.y, c.z + d); cam.lookAt(c); r.render(sc, cam); const u = r.domElement.toDataURL(); sc.remove(g); return u };
+const add = (t, u) => { const d = document.createElement('div'); d.className = 'c'; d.innerHTML = `<div><img src="${u}"></div><p>${t}</p>`; document.getElementById('r').appendChild(d) };
+add('เดิม (ดินสอสี)', shot(OLD, [.25, .5, -.75])); add('ใหม่: ถาดสี', shot(PALETTE, [-.35, .3, .15])); window.__done = 1;
+</script></body></html>
