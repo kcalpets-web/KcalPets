@@ -95,10 +95,10 @@ export function plankWall(g, o) {
 /* v4.78 🏚️ an old shop of the harbour town (the same footprint / door / windows as harbourShop: 2.9 × 2.35 · front = +z)
    kind: 'stone' (all stone · a chimney) · 'half' (stone below, half-timber above) · 'wood' (boards on a stone footing) · roof colour · winMat = the lit-window material (null = plain) */
 export function oldShop(g, o) {
-  const W = 2.9, D = 2.35, H = 2.3, kind = o.kind || 'half', seed = o.seed || 1, st = o.stone || ['#6e665a', '#b8ae9a'], eco = o.eco, sz = eco ? [.55, .32] : [.4, .24], ruin = o.ruin ?? .45;
-  const door = [W / 2 - .38, 0, .76, 1.15], win = [[.25, 1.1, .5, .55], [W - .75, 1.1, .5, .55]], fr = [0, 0, D / 2], bk = [0, 0, -D / 2], rt = [W / 2, 0, 0], lf = [-W / 2, 0, 0];
+  const W = o.W || 2.9, D = o.D || 2.35, H = o.H || 2.3, kind = o.kind || 'half', seed = o.seed || 1, st = o.stone || ['#6e665a', '#b8ae9a'], eco = o.eco, sz = eco ? [.55, .32] : [.4, .24], ruin = o.ruin ?? .45, moss = o.moss ?? .6, patch = !eco && (o.planks ?? true);   /* v4.78 W/D/H/ruin/planks: the player's own (new, unbroken) buildings reuse it */
+  const door = o.door || [W / 2 - .38, 0, .76, 1.15], win = o.win || [[.25, 1.1, .5, .55], [W - .75, 1.1, .5, .55]], fr = [0, 0, D / 2], bk = [0, 0, -D / 2], rt = [W / 2, 0, 0], lf = [-W / 2, 0, 0];
   const front = [door, ...win], side = [[D / 2 - .28, 1.1, .56, .55]];
-  const sw = (h, at, ry, w, open, s2, y0 = 0) => stoneWall(g, { w, h, t: .26, at: [at[0], y0, at[2]], ry, stone: st, size: sz, ruin, moss: .6, planks: !eco, seed: seed * 10 + s2, open });
+  const sw = (h, at, ry, w, open, s2, y0 = 0) => stoneWall(g, { w, h, t: .26, at: [at[0], y0, at[2]], ry, stone: st, size: sz, ruin, moss, planks: patch, seed: seed * 10 + s2, open });
   const tw = (h, at, ry, w, open, s2, y0) => timberWall(g, { w: w + .1, h, t: .2, at: [at[0] * 1.02, y0, at[2] * 1.03], ry, ruin: ruin + .1, seed: seed * 10 + s2, open, plaster: o.plaster, beam: o.beam });
   const pw = (h, at, ry, w, open, s2, y0) => plankWall(g, { w, h, t: .12, at: [at[0], y0, at[2]], ry, ruin, seed: seed * 10 + s2, open, wood: o.wood });
   const shift = (op, dy) => op.map(([x, y, w2, h2]) => [x, y - dy, w2, h2]).filter(([, y, , h2]) => y + h2 > 0);
@@ -106,13 +106,13 @@ export function oldShop(g, o) {
   else { const h1 = kind === 'wood' ? .45 : .95, up = kind === 'wood' ? pw : tw;
     sw(h1, fr, 0, W, front.filter(a => a[1] < h1), 1); sw(h1, bk, Math.PI, W, [], 2); sw(h1, rt, Math.PI / 2, D, [], 3); sw(h1, lf, -Math.PI / 2, D, [], 4);
     up(H - h1, fr, 0, W, shift(front, h1), 5, h1); up(H - h1, bk, Math.PI, W, [], 6, h1); up(H - h1, rt, Math.PI / 2, D, shift(side, h1), 7, h1); up(H - h1, lf, -Math.PI / 2, D, shift(side, h1), 8, h1) }
-  shingleRoof(g, { w: W + .3, d: D + .3, rise: 1.05, eave: .12, tile: eco ? [.4, .34] : [.3, .26], at: [0, H, 0], col: o.roof, ruin: ruin + .1, seed: seed * 7 });
+  shingleRoof(g, { w: W + .3, d: D + .3, rise: o.rise || 1.05, eave: .12, tile: eco ? [.4, .34] : [.3, .26], at: [0, H, 0], col: o.roof, ruin: ruin + .1, seed: seed * 7 });
   /* the door (old boards) · windows (dark glass, or lit at night) · a sign board */
-  for (let i = 0; i < 3; i++) { const bd = new THREE.Mesh(stoneGeo(.24, 1.12, .06, .02), MASON_MAT.clone()); bd.material = new THREE.MeshStandardMaterial({ color: ['#5a3a22', '#6a4428', '#4e321e'][i], roughness: .95 }); bd.position.set(-W / 2 + door[0] + .13 + i * .25, .57, D / 2 + .1); bd.rotation.z = (i - 1) * .015; g.add(bd) }
+  const nb = Math.max(2, Math.round(door[2] / .25)), bw = door[2] / nb; for (let i = 0; i < nb; i++) { const bd = new THREE.Mesh(stoneGeo(bw - .01, door[3] - .03, .06, .02), new THREE.MeshStandardMaterial({ color: ['#5a3a22', '#6a4428', '#4e321e'][i % 3], roughness: .95 })); bd.position.set(-W / 2 + door[0] + bw / 2 + i * bw, door[3] / 2, D / 2 + .1); bd.rotation.z = (i - 1) * .015; g.add(bd) }
   for (const [x, y, w2, h2] of win) { const gl = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, .04), o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 })); gl.position.set(-W / 2 + x + w2 / 2, y + h2 / 2, D / 2 - .02); g.add(gl);
     const bar = new THREE.Mesh(new THREE.BoxGeometry(.04, h2, .05), new THREE.MeshStandardMaterial({ color: '#4a3422' })); bar.position.copy(gl.position); bar.position.z += .02; g.add(bar) }
   for (const s2 of [-1, 1]) { const gl = new THREE.Mesh(new THREE.BoxGeometry(.04, .55, .56), o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 })); gl.position.set(s2 * W / 2, 1.375, 0); g.add(gl) }
-  if (kind === 'stone' || o.chimney) { const ch = new THREE.Group(); stoneWall(ch, { w: .5, h: 1.5, t: .5, at: [0, 0, 0], stone: st, ruin: .15, size: [.25, .17], noHoles: 1, seed: seed * 3 }); ch.position.set(.75, H + .1, -.45); g.add(ch) }
+  if (o.chimney ?? kind === 'stone') { const ch = new THREE.Group(); stoneWall(ch, { w: .5, h: 1.5, t: .5, at: [0, 0, 0], stone: st, ruin: .15, size: [.25, .17], noHoles: 1, seed: seed * 3 }); ch.position.set(.75, H + .1, -.45); g.add(ch) }
   return g }
 
 /* v4.78 big walls (castles / keeps): a painted stone-course texture instead of single stones (a keep is ~700 m² — single stones would be ~40k triangles each)
