@@ -2682,6 +2682,8 @@ if (!S.spiritV) { const n = D.SPIRIT_QUESTS.filter(id => D.QUESTS.findIndex(q =>
   if (S.story.intro) setTimeout(() => { toast(`🆕 ระบบใหม่! เลเวลผู้เล่น → ✨ จิตวิญญาณแห่งลูโทเนีย${n ? ` ×${n}` : ''}${refund ? `<br>คืนเลเวลเดิมเป็น 🪙 ${fmt(refund)}` : ''}`, 4200); if (n) setTimeout(() => openSpirit(), 4400) }, 3500) }
 function openTools() { const def = D.SHOPS.find(s2 => s2.k === 'tools'), has = c => Object.keys(c).every(k => k === 'coin' ? S.coin >= c.coin : (S.mats[k] || 0) >= c[k]);
   return shopBag(`${def.icon} ${def.name}`, [
+    { k: 'buy', ic: '🛒', n: 'ซื้อ', list: () => D.TOOL_BUY.map(x => ({ id: x.has, x, pic: emo(x.icon), name: x.name, tag: S.has[x.has] ? '✅ มีแล้ว' : `🪙 ${fmt(x.price)}`, tc: S.has[x.has] ? 'gift' : S.coin >= x.price ? 'prog' : 'no' })),
+      detail: o => { const x = o.x; return { sub: x.desc, btn: S.has[x.has] ? { label: '✅ มีแล้ว', off: 1 } : { label: `🛒 ซื้อ · 🪙 ${fmt(x.price)}`, off: S.coin < x.price, go: () => { if (S.coin < x.price || S.has[x.has]) return false; S.coin -= x.price; S.has[x.has] = 1; bump('buys'); sfx('level'); toast(`${x.icon} ได้${x.name}!<br><small>เลือกถือที่ช่อง A (แตะจอย 2 ที)</small>`, 2600); save(); hud(); gearView() } } } } },
     { k: 'up', ic: '⬆️', n: 'อัปเกรด', empty: 'ยังไม่มีเบ็ด · ขวาน เคียว อีเต้อ ซื้อ/ตีที่ช่างตีเหล็ก',
       list: () => Object.keys(D.TOOLS).filter(k => k === 'rod' && S.has.rod).map(k => { const t = S.tools[k] || 0, up = D.TOOL_UP[t + 1]; return { id: k, k, t, up, pic: emo(D.TOOLS[k][0]), name: D.TOOLS[k][1] + D.TIER[t], tag: up ? `→ ${D.TIER[t + 1]}` : '🌟 สูงสุด', tc: up && has(up) ? 'gift' : 'prog' } }),
       detail: o => { const { k, t, up } = o; return { sub: `แรงรอก ${D.REEL.base + D.REEL.perTier * t}${up ? ` → ${D.REEL.base + D.REEL.perTier * (t + 1)} · เจอปลาหายากบ่อยขึ้น` : ''}`, tags: up ? Object.keys(up).map(m => m === 'coin' ? `🪙 ${fmt(up.coin)}` : `<span class="${(S.mats[m] || 0) >= up[m] ? '' : 'dn'}">${D.MATS[m][0]} ${D.MATS[m][1]} ${S.mats[m] || 0}/${up[m]}</span>`) : [],
@@ -5163,10 +5165,10 @@ function rqSites() { if (RQ) return RQ; RQ = []; const R2 = seeded(4242), flat =
       RQ.push({ i, k, x, z, d, sh, slots: P.map((p, j) => ({ x: p[0], z: p[1], miss: miss.has(j) })), loose }); got++; i++ } }
   return RQ }
 const RQS = () => S.riddle || (S.riddle = {});
-const RQ_STONE = new THREE.MeshStandardMaterial({ color: '#8a8478', roughness: .9 }), RQ_GLOW = new THREE.MeshStandardMaterial({ color: '#bfe8ff', emissive: '#6ac8ff', emissiveIntensity: .9, roughness: .5 }), RQ_HOLE = new THREE.MeshBasicMaterial({ color: '#2a2420', transparent: true, opacity: .45, depthWrite: false });
+const RQ_STONE = new THREE.MeshStandardMaterial({ color: '#8a8478', roughness: .9 }), RQ_GLOW = new THREE.MeshStandardMaterial({ color: '#bfe8ff', emissive: '#6ac8ff', emissiveIntensity: .9, roughness: .5 }), RQ_HOLE = new THREE.MeshBasicMaterial({ color: '#3a3020', transparent: true, opacity: .22, depthWrite: false });
 function rqView(q) { const done = !!(RQS()[q.i] || {}).done, g = new THREE.Group(); scene.add(g);
   for (const s2 of q.slots) { const y = groundH(s2.x, s2.z); if (s2.miss && !done) { const h = new THREE.Mesh(new THREE.RingGeometry(.3, .5, 18), RQ_HOLE); h.rotation.x = -Math.PI / 2; h.position.set(s2.x, y + .03, s2.z); g.add(h); continue }
-    const st = new THREE.Group(); rbox(st, '#5e5a54', '#b8b2a6', [0, .5, 0], [.55, 1, .42], [0, 0, 0], .14); if (done) st.children[0].material = RQ_GLOW; part(st, '#3a5a2a', '#5a8a3a', [0, 1.02, 0], [.22, .06, .16], [0, 0, 0], { A: .1 }); st.position.set(s2.x, y, s2.z); st.rotation.y = s2.x * 7; g.add(st) }
+    const st = new THREE.Group(); PROPS.rock(st, .45); st.position.set(s2.x, y, s2.z); st.rotation.y = s2.x * 7; g.add(st) }   /* v4.84 (designer) plain small stones, just like the ones you pick up — natural, no pillars, no glow */
   if (q.d === 'h') { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x2 = cv.getContext('2d'); x2.fillStyle = '#8a8478'; x2.fillRect(0, 0, 128, 128); x2.fillStyle = '#3a342e'; for (const [px, pz] of rqShape(q.sh)) { x2.beginPath(); x2.arc(64 + px * 42, 64 + pz * 42, 7, 0, 6.283); x2.fill() }   /* the engraved plan */
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; const tb = new THREE.Group(); rbox(tb, '#4e4a44', '#8a8478', [0, .7, 0], [1.1, 1.4, .25], [0, 0, 0], .08); const fc = new THREE.Mesh(new THREE.PlaneGeometry(.9, .9), new THREE.MeshStandardMaterial({ map: t, roughness: .9 })); fc.position.set(0, .8, .13); tb.add(fc);
     const a = Math.atan2(q.slots[0].x - q.x, q.slots[0].z - q.z), tx = q.x - Math.sin(a) * (D.RIDDLE.size + 2.2), tz = q.z - Math.cos(a) * (D.RIDDLE.size + 2.2); tb.position.set(tx, groundH(tx, tz), tz); tb.rotation.y = a; g.add(tb) }
@@ -5180,7 +5182,7 @@ function riddleTick(now) { if (now < rqT || HIN.on || !S.story.intro) return; rq
   for (const q of L) { const d = dist(q0.x, q0.z, q.x, q.z), v = RQV.get(q.i);
     if (d < D.RIDDLE.near && !v) { rqView(q); rqLoose(q, true) } else if (d > D.RIDDLE.near + 30 && v) { scene.remove(v); RQV.delete(q.i); rqLoose(q, false) }
     if (d > 30) continue; const R = st[q.i] || (st[q.i] = {});
-    if (!R.seen && d < D.RIDDLE.seen) { R.seen = 1; bump('riddleSeen'); sfx('level'); toast(q.d === 'h' ? '🪨 วงหินโบราณที่ว่างเปล่า…<br><small>แผ่นศิลาข้างๆ สลักลายบางอย่างไว้</small>' : '🪨 วงหินโบราณ… มีบางก้อนหายไป<br><small>ร่องรอยบนพื้นบอกว่าเคยมีหินวางอยู่</small>', 3200); save() }
+    if (!R.seen && d < D.RIDDLE.seen) { R.seen = 1; bump('riddleSeen'); sfx('level'); toast(q.d === 'h' ? '🪨 ก้อนหินเล็กๆ ไม่กี่ก้อน…<br><small>แผ่นศิลาข้างๆ สลักลายบางอย่างไว้</small>' : '🪨 ก้อนหินพวกนี้เรียงกันแปลกๆ…<br><small>เหมือนมีบางก้อนหายไป</small>', 3200); save() }
     if (R.done) continue; const holes = q.slots.filter(s2 => s2.miss), fill = holes.map(s2 => pebAt(s2.x, s2.z, D.RIDDLE.slot)[0]); if (fill.some(f => !f)) continue;
     /* solved: the placed stones become part of the circle · glow · a chest */
     for (const f of fill) { S.peb = (S.peb || []).filter(p => p.id !== f.id); const o = W.clear.get(f.id); if (o) { despawnClear(W, o); W.clear.delete(f.id) } }
@@ -5679,7 +5681,7 @@ function ruinTick(now) {
   const q = me();
   for (const r of RV) { const d = dist(r.x, r.z, q.x, q.z); if (now > rvT) { if (d < 95) ruinView(r, true); else if (d > 130) ruinView(r, false);
       if (d < 35 && !S.ruins[r.id]) { S.ruins[r.id] = { seen: 1, done: [0, 0, 0] }; sfx('tap'); toast(`🏚️ พบ <b>${r.def.name}</b>… เหลือแต่ซาก<br>มีคนยืนอยู่ตรงกลาง ลองไปคุยดู`, 3400); save() } }
-    if (!r.g) continue; r.npc.yawT = Math.atan2(q.x - r.x, q.z - r.z); animate(r.npc, false, .016, now);
+    if (!r.g) continue; { const A = r.npc, dt = Math.min(.05, (now - (A.lt || now)) / 1000), nr = d < (A.nearT ? D.NPC_NEAR[1] : D.NPC_NEAR[0]); A.lt = now; A.nearT = nr; if (nr && d > .8) A.yawT = Math.atan2(q.x - r.x, q.z - r.z); else if (!nr) A.yawT = Math.PI; animate(A, false, dt * .5, now) }   /* v4.84 (designer: Captain Riw still jumps) the town-ruin keeper faces you only inside the NPC_NEAR gap (4.5 in · 7 out · not when you stand on him) and turns slowly · real dt (120 Hz screens ran him at double speed) */
     for (const o of r.spots) if (o.m) { const b = o.m.getObjectByName('blades'); if (b) b.rotation.z = now / 700; const l = o.m.getObjectByName('lamp'); if (l) l.scale.setScalar(1 + Math.sin(now / 300) * .15) }
     for (const v of r.vill) { v.t += .016; const a = v.a + v.t * .15, x = r.x + Math.cos(a) * 3.2, z = r.z + Math.sin(a) * 3.2; v.A.root.position.set(x, groundH(x, z), z); v.A.yawT = a + Math.PI; animate(v.A, true, .016, now, 6) } }
   if (now > rvT) rvT = now + 400;

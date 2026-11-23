@@ -23,6 +23,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8915, OUT = process.arg
       if (!r.done || r.gem <= g0) bad.push('site ' + i + ' not solved/rewarded');
       await pg.screenshot({ timeout: 90000, path: OUT + `/rq${i}b.png` });
     }
+    /* v4.84 🏮 the lamp can be bought at the tools shop */
+    { await E(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); const N = window.__ng; N.S.shops.tools = 1; N.S.has.lamp = 0; N.openShopKind('tools') }); await wait(800); await E(() => document.querySelector('.shopbag [data-sbt="buy"]').click()); await wait(400); await E(() => document.querySelector('.shopbag [data-sbi]').click()); await wait(300);
+      await pg.screenshot({ timeout: 90000, path: OUT + '/lamp.png' }); await E(() => document.querySelector('#sbGo').click()); await wait(400); const L = await E(() => !!window.__ng.S.has.lamp); log('lamp bought', L); if (!L) bad.push('lamp not bought') }
     /* shops in the bag layout */
     for (const [fn, name] of [['openAnimalShop', 'animal'], ['openCarp', 'carp']]) {
       await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await E(fn => window.__ng[fn] ? window.__ng[fn]() : null, fn); await wait(900);

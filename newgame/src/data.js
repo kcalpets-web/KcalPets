@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.83';
+export const APP_VER = '4.84';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -455,6 +455,7 @@ export const SHOPS = [
 ];
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
 export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
+export const TOOL_BUY = [{ has: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน', price: 2500, desc: 'ให้แสงแม้ฝนตก · ไม่อุ่น · ถือแทนคบเพลิง' }];   /* v4.84 (designer) the lamp can be bought outright · or ordered cheaper with your own materials */
 export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
 export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 1500 }, { t: 'axe1', r: 'B', price: 3200 }, { t: 'pick1', r: 'B', price: 3200 }, { t: 'sickle1', r: 'B', price: 2300 }, { t: 'mallet0', r: 'B', price: 2100 }, { t: 'hoe0', r: 'B', price: 1500 }, { t: 'woodBow', r: 'B', price: 2300 }, { t: 'travelerSword', r: 'B', price: 1800 }, { t: 'woodSpear', r: 'B', price: 2100 }, { t: 'woodAxe', r: 'B', price: 2800 }, { t: 'woodShield', r: 'B', price: 2100 }, { t: 'branchSword', r: 'B', price: 4100 }, { t: 'woodSword', r: 'B', price: 5500 }, { t: 'oakShield', r: 'B', price: 6000 }, { t: 'barkArmor', r: 'B', price: 4600 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
