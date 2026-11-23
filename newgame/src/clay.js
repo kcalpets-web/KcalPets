@@ -542,3 +542,18 @@ FARMB.livestock = g => {   /* 🐄 a closed barn for four-legged animals: long r
   for (const s of [-1, 1]) { rbox(g, ...WHITE, [s * 1.6, 1.2, Dd / 2 + .06], [.7, .55, .04], [0, 0, 0], .01); rbox(g, '#2a3a4a', '#4a6a8a', [s * 1.6, 1.2, Dd / 2 + .08], [.56, .42, .02], [0, 0, 0], .01) }
   trough(g, -1.6, Dd / 2 + .7, 0, '#5aa0d0'); hay(g, W / 2 + .5, 0, -.6, .2); hay(g, W / 2 + .5, .44, -.6, -.1); hay(g, W / 2 + .5, 0, .2, -.3) };
 Object.assign(BUILDS, { poultry: FARMB.poultry, livestock: FARMB.livestock, granary: FARMB.barn, fishpond: FARMB.pond });   /* v4.75 the farm blueprints use these models */
+/* v4.75 👑 King of Luminia (an illusion: Rainbow wearing his shape) + 🌈 Rainbow the shape-shifting slime (the King's pet monster) */
+HUMANS.king = g => { vinyl(g, { v: 2, sex: 'm', hair: 'messy', hairCol: '#e8e8f0', skin: '#f0c8a0', wear: 'mage', top: '#8a1a2a', eyes: 'smile', eyeCol: '#3a3040', beard: 'full', cheek: 'rosy' });
+  const cape = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.15, 1, 4), new THREE.MeshStandardMaterial({ color: '#a81a2a', side: THREE.DoubleSide, roughness: .8 })); const p = cape.geometry.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, -Math.pow((p.getY(i) + .575) / 1.15, 2) * .12); cape.geometry.computeVertexNormals(); cape.position.set(0, .82, -.26); cape.rotation.x = .12; g.add(cape);
+  const fur = new THREE.Mesh(new THREE.TorusGeometry(.3, .07, 8, 20), new THREE.MeshStandardMaterial({ color: '#f4f0e8', roughness: 1 })); fur.rotation.x = Math.PI / 2; fur.scale.set(1, 1, .6); fur.position.set(0, 1.32, -.05); g.add(fur);
+  HEADX(g, h => { const c = new THREE.Group(); ACC.crown(c, 0); c.scale.setScalar(1.25); c.position.y = .42; h.add(c) }) };
+export function rainbowSlime(g, crown = true) {
+  const geo = new THREE.SphereGeometry(.5, 40, 28), p = geo.attributes.position, col = [], c = new THREE.Color();
+  for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < 0) p.setY(i, y * .55); p.setX(i, p.getX(i) * (1 + Math.max(0, -y) * .5)); p.setZ(i, p.getZ(i) * (1 + Math.max(0, -y) * .5)); const yy = p.getY(i), t = Math.min(.83, Math.max(0, (yy + .28) / .78 * .83 + Math.sin(Math.atan2(p.getZ(i), p.getX(i)) * 3) * .03)); c.setHSL(t, .92, .55); col.push(c.r, c.g, c.b) }
+  geo.computeVertexNormals(); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const b = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: .18, clearcoat: 1, clearcoatRoughness: .1, transmission: 0, sheen: .4 })); b.position.y = .38; b.castShadow = true; g.add(b);
+  const hl = new THREE.Mesh(new THREE.SphereGeometry(.09, 12, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .75 })); hl.scale.set(1.4, .7, .5); hl.position.set(-.2, .66, .32); g.add(hl);
+  eyes(g, .5, .44, .15, .085); part(g, '#ff8fa6', '#ffb3c0', [-.27, .4, .4], [.07, .04, .03], [0, -.5, 0], { A: 0, shadow: false }); part(g, '#ff8fa6', '#ffb3c0', [.27, .4, .4], [.07, .04, .03], [0, .5, 0], { A: 0, shadow: false });
+  part(g, '#7a2a3a', '#c85a6a', [0, .36, .47], [.07, .035, .02], [0, 0, 0], { A: 0 });
+  if (crown) { const cg = new THREE.Group(); ACC.crown(cg, 0); cg.scale.setScalar(.8); cg.position.set(.1, .86, 0); cg.rotation.z = -.28; g.add(cg) }
+  return b }
