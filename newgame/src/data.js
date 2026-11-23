@@ -41,7 +41,7 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
@@ -514,6 +514,9 @@ export const INGR = {
   whalemeat: { icon: '🍣', name: 'เนื้อวาฬ', tag: 'meat', price: 90 },
   hawkmeat: { icon: '🍗', name: 'เนื้อเหยี่ยว', tag: 'meat', price: 25 },
   bearmeat: { icon: '🥩', name: 'เนื้อหมี', tag: 'meat', price: 80 },
+  egg: { icon: '🥚', name: 'ไข่ไก่', tag: 'egg', price: 20 }, duckegg: { icon: '🥚', name: 'ไข่เป็ด', tag: 'egg', price: 30 },   /* v4.75 🐔 farm produce */
+  milk: { icon: '🥛', name: 'นมวัว', tag: 'dairy', price: 40 }, goatmilk: { icon: '🥛', name: 'นมแพะ', tag: 'dairy', price: 45 },
+  truffle: { icon: '🍄', name: 'เห็ดทรัฟเฟิล', tag: 'veg', price: 120 }, pondfish: { icon: '🐟', name: 'ปลานิลจากบ่อ', tag: 'fish', price: 35 },
   rocksalt: { icon: '🧂', name: 'เกลือหิน', tag: 'salt', price: 20 },   /* v3.98 mined from salt veins · for cooking */
   /* v1.0 farm crops */
   carrot:   { icon: '🥕', name: 'แครอท', tag: 'veg', price: 20 },
@@ -538,6 +541,9 @@ export const SPOIL = { poison: .4 };   // v3.55 a wrong mix: chance it is poison
 /* recipes: need = { tag or ingredient key or 'fish': count } · only = nothing else may be in the pot · 2–5 ingredients per dish
    the most specific matching recipe wins · undiscovered recipes show as ??? with a hint in the journal */
 export const RECIPES = [
+  { k: 'omelette', house: 1, desc: 'ไข่เจียวฟูๆ จากไข่ในเล้าของคุณเอง', icon: '🍳', name: 'ไข่เจียวฟาร์ม', need: { egg: 2 }, eff: { hp: 70, en: 25 }, hint: 'ไข่ 2 ฟอง' },   /* v4.75 farm dishes */
+  { k: 'custard', house: 1, desc: 'คัสตาร์ดนมสดหวานนุ่ม', icon: '🍮', name: 'คัสตาร์ดนมสด', need: { dairy: 1, egg: 1 }, eff: { hp: 90, en: 40 }, hint: 'นม 1 + ไข่ 1' },
+  { k: 'trufflesoup', house: 1, desc: 'ซุปครีมเห็ดทรัฟเฟิล หอมกรุ่น กินแล้วอึดขึ้น', icon: '🥣', name: 'ซุปครีมทรัฟเฟิล', need: { truffle: 1, dairy: 1 }, eff: { hp: 140, en: 60, buff: { stam: .3, min: 5 } }, hint: 'ทรัฟเฟิล 1 + นม 1' },
   { k: 'tomyumfish', desc: 'ต้มยำปลาสดจากทะเลสาบนาวาลี เผ็ดร้อน อุ่นถึงใจ', icon: '🥣', name: 'ต้มยำปลานาวาลี', need: { fish: 2, spice: 1 }, eff: { hp: 40, buff: { warm: 1, min: 5 } }, hint: 'ปลา 2 ตัว + พริก' },   // v4.24 navalee
   { k: 'riceball', desc: 'ข้าวปั้นห่อสาหร่าย พกง่าย กินแล้วกระปรี้กระเปร่า', icon: '🍙', name: 'ข้าวห่อสาหร่าย', need: { seaweed: 2 }, only: 1, eff: { en: 100, buff: { stam: .35, min: 5 } }, hint: 'สาหร่ายล้วน' },
   { k: 'mushskewer', desc: 'เห็ดป่าเสียบไม้ย่างกับสมุนไพรเรืองแสง สูตรยายใบตอง', icon: '🍡', name: 'เห็ดเสียบไม้ย่าง', need: { mushroom: 2, glowherb: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'เห็ด 2 + สมุนไพรเรืองแสง 1' },   // v4.30 sylvaren
@@ -689,7 +695,12 @@ export const CAMP_TIERS = [                                    // by distance fr
   { name: 'ป้อมเมฆทมิฬ', col: '#4a2a5a', mons: ['shadeKnight', 'shadeKnight', 'rockGolem', 'goblin', 'shadeKnight', 'goblin'], chief: 'shadeKnight', gem: [250, 400], coin: [2500, 4000], fort: 1 },   // v3.14 round the castle
 ];
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
-export const BLUEPRINTS = {     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
+export const BLUEPRINTS = {
+  /* v4.75 🐔 house stage 4 (house: 1 = only while the house is on · carp: 1 = the carpenter builds it: done after you sleep, or after CARP.mins) */
+  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 6 ตัว · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ช่างไม้ตองสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
+  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ช่างไม้ตองสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
+  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'เก็บหญ้าได้ 300 · ทุกเช้าเติมรางอาหารให้เล้า/โรงในระยะ 25 ม. เอง · ช่างไม้ตองสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
+  fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
@@ -839,6 +850,17 @@ export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
   { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
   { n: 'ห้องนอนแยก', ic: '🏘️', w: 11, d: 9, cap: 40, cost: { wood: 150, stone: 80, coin: 6000 }, what: 'ห้องนอนแยก · ห้องกว้างที่สุด · ของตกแต่ง 40 ชิ้น' }];
+/* v4.75 farm animals: home = the building they live in · prod = what a fed animal gives each morning · eat = grass a day (from the meadow round the building first, then the trough) */
+export const FARM_A = {
+  chicken: { n: 'ไก่', ic: '🐔', home: 'poultry', price: 300, prod: 'egg', eat: .1, s: 1.1 },
+  duck:    { n: 'เป็ด', ic: '🦆', home: 'poultry', price: 400, prod: 'duckegg', eat: .1, s: 1.1 },
+  cow:     { n: 'วัว', ic: '🐄', home: 'livestock', price: 1500, prod: 'milk', eat: .35, s: 1 },
+  pig:     { n: 'หมู', ic: '🐖', home: 'livestock', price: 1000, prod: 'truffle', eat: .3, s: 1 },
+  sheep:   { n: 'แกะ', ic: '🐑', home: 'livestock', price: 1200, prod: 'wool', eat: .25, s: 1.1 },
+  goat:    { n: 'แพะ', ic: '🐐', home: 'livestock', price: 1100, prod: 'goatmilk', eat: .25, s: 1.1 },
+  fishfry: { n: 'ลูกปลานิล', ic: '🐟', home: 'fishpond', price: 150, prod: 'pondfish', eat: 0 } };
+export const FARM = { cap: { poultry: 6, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
+export const ANIMAL_SHOP = { name: 'ป้าบัว', what: 'ร้านสัตว์ฟาร์ม' };
 export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
 export const HOUSE = false;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
 export const PEBBLE = { sp: .85 };   // v4.56 🪨 walking speed while holding a small stone

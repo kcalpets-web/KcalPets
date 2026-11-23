@@ -541,3 +541,4 @@ FARMB.livestock = g => {   /* 🐄 a closed barn for four-legged animals: long r
   rbox(g, '#2a1a10', '#4a3020', [0, H + .55, Dd / 2 + .02], [.7, .55, .04], [0, 0, 0], .02); rbox(g, ...STRAW, [0, H + .42, Dd / 2 + .05], [.6, .28, .05], [0, 0, 0], .02); for (const s of [-1, 1]) rbox(g, ...WHITE, [s * .37, H + .55, Dd / 2 + .05], [.06, .6, .04], [0, 0, 0], .005);
   for (const s of [-1, 1]) { rbox(g, ...WHITE, [s * 1.6, 1.2, Dd / 2 + .06], [.7, .55, .04], [0, 0, 0], .01); rbox(g, '#2a3a4a', '#4a6a8a', [s * 1.6, 1.2, Dd / 2 + .08], [.56, .42, .02], [0, 0, 0], .01) }
   trough(g, -1.6, Dd / 2 + .7, 0, '#5aa0d0'); trough(g, -W / 2 - .55, .3, Math.PI / 2, '#9ac050'); hay(g, W / 2 + .5, 0, -.6, .2); hay(g, W / 2 + .5, .44, -.6, -.1); hay(g, W / 2 + .5, 0, .2, -.3) };
+Object.assign(BUILDS, { poultry: FARMB.poultry, livestock: FARMB.livestock, granary: FARMB.barn, fishpond: FARMB.pond });   /* v4.75 the farm blueprints use these models */
