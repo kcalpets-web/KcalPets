@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.82';
+export const APP_VER = '4.83';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -1151,3 +1151,13 @@ Object.assign(BLUEPRINTS, {   /* 🏡 the home machine's farm pieces (gacha: 1 =
   g_fence:    { icon: '🪵', name: 'รั้วลายไม้', desc: 'รั้วไม้ทาสีลายสวย (จากกาชา)', cost: {}, gacha: 1, t: 3, w: 2.4, d: .4 },
   g_fountain: { icon: '⛲', name: 'น้ำพุฟาร์ม', desc: 'น้ำพุหินเล็กๆ น้ำไหลตลอด (จากกาชา)', cost: {}, gacha: 1, t: 8, w: 2, d: 2, solid: 1 },
   g_windmill: { icon: '🌈', name: 'กังหันลมสีรุ้ง', desc: 'กังหันลมใบสีรุ้ง หมุนตามลม (จากกาชา)', cost: {}, gacha: 1, t: 10, w: 1, d: 1, solid: 1 } });
+/* ================= v4.83 🪨 stone-circle riddles (designer): 24 hidden in out-of-the-way places (never towns / roads) · some stones are missing · loose stones always lie within 50 m · fill the gaps → a chest
+   d = e (1 missing) · m (3 missing) · h (all but 2 missing · an engraved tablet shows the shape) · rewards by difficulty */
+export const RIDDLE = { n: 24, per: { navalee: 4, sylvaren: 4, frosthelm: 4, asrah: 3, deadgar: 3, valkara: 3, luminia: 3 }, shapes: ['ring', 'tri', 'square', 'arrow', 'star', 'spiral'], size: 3.2, near: 150, seen: 18, slot: 1.05, loose: [12, 45], spacing: 90,
+  rew: { e: { gem: 20, mats: [['gemstone', 2], ['silver', 3], ['goldOre', 3], ['crystal', 2], ['emerald', 1], ['aquamarine', 1]] }, m: { gem: 40, items: ['knightSword', 'crystalBow', 'scimitar', 'knightShield', 'trident', 'crystalBlade'] }, h: { gem: 80, wear: ['r_sage', 'r_sagehat', 'r_moss', 'r_rune'] } } };
+Object.assign(WEAR, {
+  r_sage:    { slot: 'body', icon: '🧙', name: 'ชุดนักปราชญ์ศิลา', warm: 1, cool: 1, col: '#6a7a5a', look: 'mage', src: 'riddle' },
+  r_sagehat: { slot: 'head', icon: '🎩', name: 'หมวกนักปราชญ์ศิลา', warm: 0, cool: 0, hatK: 'wizard', hatCol: '#8a8478', src: 'riddle' },
+  r_moss:    { slot: 'body', icon: '🌿', name: 'ผ้าคลุมตะไคร่', warm: 1, cool: 0, col: '#4a6a3a', look: 'cape', src: 'riddle' },
+  r_rune:    { slot: 'body', icon: '🔷', name: 'ชุดเกราะอักขระ', warm: 0, cool: 1, col: '#8a96b8', look: 'knight', src: 'riddle', def: 2 } });
+ACH.push({ k: 'riddles', icon: '🪨', name: 'ผู้ไขปริศนาศิลา', text: 'ไขปริศนาวงหินครบ 24 จุด', stat: 'riddles', goal: 24, reward: { gem: 200 } });
