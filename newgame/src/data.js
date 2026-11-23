@@ -53,12 +53,12 @@ export const FLINT_P = .15, SALT_P = .12, SALT_LANDS = ['asrah', 'navalee', 'fro
 export const TOOLS = { sickle: ['🌾', 'เคียว'], axe: ['🪓', 'ขวาน'], hammer: ['⛏️', 'อีเต้อ'], rod: ['🎣', 'เบ็ด'] };
 export const CLEAR_EXP = { s: 2, m: 4, l: 8 };          // player exp per cleared thing
 export const TIER = ['ไม้', 'หิน', 'เหล็ก', 'คริสตัล'];
-export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 2000 }, { wood: 30, stone: 30, ore: 3, coin: 15000 }, { wood: 80, stone: 80, ore: 12, coin: 60000 }];
+export const TOOL_UP = [null, { wood: 10, stone: 10, coin: 3000 }, { wood: 30, stone: 30, ore: 3, coin: 25000 }, { wood: 80, stone: 80, ore: 12, coin: 80000 }];
 
 /* ---- monsters (no legs) ---- */
 export const MON = {
-  slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [20, 50], mat: { grass: 1 }, loot: ['branch', 'leafBlade', 'potLid', 'leafVest'], tier: 'normal' },
-  slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [300, 500], mat: { stone: 3 }, loot: ['travelerSword', 'woodAxe', 'woodSpear', 'woodShield', 'woodBow'], tier: 'mini' },
+  slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [7, 17], mat: { grass: 1 }, loot: ['branch', 'leafBlade', 'potLid', 'leafVest'], tier: 'normal' },
+  slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [100, 167], mat: { stone: 3 }, loot: ['travelerSword', 'woodAxe', 'woodSpear', 'woodShield', 'woodBow'], tier: 'mini' },
   /* v1.2 wild animals (tier 'animal'): run away when you come close (hold B to sneak) · the boar charges back when hit */
   rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['rabbitmeat', 1], loot: [], tier: 'animal' },
   chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
@@ -72,23 +72,23 @@ export const MON = {
   eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2200, atk: 30, def: 12, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
   serpent:   { boss: 1, snake: 1, name: '🐍 ปีศาจงูยักษ์', lv: 70, hp: 7000, atk: 70, def: 32, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss', scale: .85 },   // v4.09 the dark cloud's true form (phase 2)
   stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 6000, atk: 60, def: 30, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
-  shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [20, 40], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
-  goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [60, 120], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
-  goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [500, 800], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor', 'soldierBow'], tier: 'mini', legs: 1 },
-  grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [40, 90], mat: { grass: 3 }, loot: ['branch', 'leafBlade', 'pitchfork', 'leafVest'], tier: 'normal' },
-  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [60, 120], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor', 'woodSword', 'oakShield'], tier: 'normal' },
-  rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [80, 160], mat: { stone: 3 }, loot: ['stoneClub', 'greatsword', 'stoneHammer', 'stoneArmor', 'soldierBow'], tier: 'normal' },
+  shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [7, 13], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
+  goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [20, 40], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
+  goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [167, 267], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor', 'soldierBow'], tier: 'mini', legs: 1 },
+  grassSprite: { ingr: ['berry', .5], name: '🌿 ภูตหญ้า', lv: 1, hp: 32, atk: 5, def: 1, exp: 14, coin: [13, 30], mat: { grass: 3 }, loot: ['branch', 'leafBlade', 'pitchfork', 'leafVest'], tier: 'normal' },
+  branchImp:   { name: '🌳 ปีศาจกิ่งไม้', lv: 2, hp: 48, atk: 7, def: 2, exp: 22, coin: [20, 40], mat: { wood: 3 }, loot: ['branchSword', 'woodAxe', 'woodSpear', 'barkArmor', 'woodSword', 'oakShield'], tier: 'normal' },
+  rockGolem:   { name: '🪨 อสูรหิน', lv: 3, hp: 66, atk: 8, def: 4, exp: 30, coin: [27, 53], mat: { stone: 3 }, loot: ['stoneClub', 'greatsword', 'stoneHammer', 'stoneArmor', 'soldierBow'], tier: 'normal' },
   /* v2.7 kingdom monsters (a base model, recoloured) */
-  sandSlime:  { base: 'slime', cols: ['#c89a3a', '#ffe08a'], ingr: ['jelly', .6], name: '🟡 สไลม์ทราย', lv: 6, hp: 70, atk: 11, def: 3, exp: 40, coin: [120, 220], mat: { stone: 1 }, loot: ['scimitar', 'soldierSpear', 'hunterBow'], tier: 'normal' },
-  iceSlime:   { base: 'slime', cols: ['#4a98d8', '#c8f0ff'], ingr: ['jelly', .6], name: '🔵 สไลม์น้ำแข็ง', lv: 7, hp: 80, atk: 12, def: 4, exp: 45, coin: [140, 240], mat: { stone: 1 }, loot: ['knightSword', 'soldierBow'], tier: 'normal' },
-  lavaSlime:  { base: 'slime', cols: ['#c8401a', '#ffb040'], ingr: ['jelly', .6], name: '🔴 สไลม์ลาวา', lv: 9, hp: 100, atk: 15, def: 5, exp: 60, coin: [180, 300], mat: { ore: 1 }, loot: ['knightSword', 'golemCrusher'], tier: 'normal' },
-  frostGolem: { base: 'rockGolem', tint: '#9ad0f0', name: '🧊 อสูรน้ำแข็ง', lv: 9, hp: 150, atk: 16, def: 9, exp: 70, coin: [200, 320], mat: { stone: 4, ore: 1 }, loot: ['crystalBlade', 'stoneArmor', 'knightBow'], tier: 'normal' },
-  magmaGolem: { base: 'rockGolem', tint: '#e0502a', name: '🔥 อสูรแม็กม่า', lv: 11, hp: 180, atk: 19, def: 10, exp: 90, coin: [240, 380], mat: { stone: 4, ore: 2 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'normal' },
-  ghoul:      { base: 'goblin', tint: '#8a6aa8', ingr: ['meat', .3], name: '🧟 ผีดิบ', lv: 10, hp: 130, atk: 17, def: 6, exp: 80, coin: [220, 360], mat: {}, loot: ['kingSword', 'crystalBow'], tier: 'normal' },
-  witherImp:  { base: 'branchImp', tint: '#a0803a', name: '🍂 ภูตไม้เหี่ยว', lv: 5, hp: 75, atk: 10, def: 3, exp: 35, coin: [100, 200], mat: { wood: 3 }, loot: ['woodSpear', 'hunterBow', 'barkArmor'], tier: 'normal' },
-  marshSprite:{ base: 'grassSprite', tint: '#4aa0a0', ingr: ['berry', .5], name: '🪷 ภูตบึง', lv: 5, hp: 65, atk: 9, def: 3, exp: 32, coin: [90, 180], mat: { grass: 3 }, loot: ['harpoon', 'trident'], tier: 'normal' },
-  soldier:    { name: '⚔️ ทหารลูมิเนีย', lv: 14, hp: 230, atk: 22, def: 12, exp: 110, coin: [120, 260], mat: { ore: 1 }, loot: ['soldierSpear', 'knightSword'], tier: 'normal', legs: 1, scale: .84 },   /* v4.75 the kingdom's soldiers (only while you are wanted) */
-  shadeKnight:{ base: 'goblinChief', tint: '#5a4a7a', ingr: ['meat', .5], name: '🗡️ อัศวินเงา', lv: 12, hp: 220, atk: 22, def: 12, exp: 120, coin: [300, 500], mat: { ore: 2 }, loot: ['kingSword', 'dragonBlade'], tier: 'normal' },
+  sandSlime:  { base: 'slime', cols: ['#c89a3a', '#ffe08a'], ingr: ['jelly', .6], name: '🟡 สไลม์ทราย', lv: 6, hp: 70, atk: 11, def: 3, exp: 40, coin: [40, 73], mat: { stone: 1 }, loot: ['scimitar', 'soldierSpear', 'hunterBow'], tier: 'normal' },
+  iceSlime:   { base: 'slime', cols: ['#4a98d8', '#c8f0ff'], ingr: ['jelly', .6], name: '🔵 สไลม์น้ำแข็ง', lv: 7, hp: 80, atk: 12, def: 4, exp: 45, coin: [47, 80], mat: { stone: 1 }, loot: ['knightSword', 'soldierBow'], tier: 'normal' },
+  lavaSlime:  { base: 'slime', cols: ['#c8401a', '#ffb040'], ingr: ['jelly', .6], name: '🔴 สไลม์ลาวา', lv: 9, hp: 100, atk: 15, def: 5, exp: 60, coin: [60, 100], mat: { ore: 1 }, loot: ['knightSword', 'golemCrusher'], tier: 'normal' },
+  frostGolem: { base: 'rockGolem', tint: '#9ad0f0', name: '🧊 อสูรน้ำแข็ง', lv: 9, hp: 150, atk: 16, def: 9, exp: 70, coin: [67, 107], mat: { stone: 4, ore: 1 }, loot: ['crystalBlade', 'stoneArmor', 'knightBow'], tier: 'normal' },
+  magmaGolem: { base: 'rockGolem', tint: '#e0502a', name: '🔥 อสูรแม็กม่า', lv: 11, hp: 180, atk: 19, def: 10, exp: 90, coin: [80, 127], mat: { stone: 4, ore: 2 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'normal' },
+  ghoul:      { base: 'goblin', tint: '#8a6aa8', ingr: ['meat', .3], name: '🧟 ผีดิบ', lv: 10, hp: 130, atk: 17, def: 6, exp: 80, coin: [73, 120], mat: {}, loot: ['kingSword', 'crystalBow'], tier: 'normal' },
+  witherImp:  { base: 'branchImp', tint: '#a0803a', name: '🍂 ภูตไม้เหี่ยว', lv: 5, hp: 75, atk: 10, def: 3, exp: 35, coin: [33, 67], mat: { wood: 3 }, loot: ['woodSpear', 'hunterBow', 'barkArmor'], tier: 'normal' },
+  marshSprite:{ base: 'grassSprite', tint: '#4aa0a0', ingr: ['berry', .5], name: '🪷 ภูตบึง', lv: 5, hp: 65, atk: 9, def: 3, exp: 32, coin: [30, 60], mat: { grass: 3 }, loot: ['harpoon', 'trident'], tier: 'normal' },
+  soldier:    { name: '⚔️ ทหารลูมิเนีย', lv: 14, hp: 230, atk: 22, def: 12, exp: 110, coin: [40, 87], mat: { ore: 1 }, loot: ['soldierSpear', 'knightSword'], tier: 'normal', legs: 1, scale: .84 },   /* v4.75 the kingdom's soldiers (only while you are wanted) */
+  shadeKnight:{ base: 'goblinChief', tint: '#5a4a7a', ingr: ['meat', .5], name: '🗡️ อัศวินเงา', lv: 12, hp: 220, atk: 22, def: 12, exp: 120, coin: [100, 167], mat: { ore: 2 }, loot: ['kingSword', 'dragonBlade'], tier: 'normal' },
   /* v3.0 golems (giant · armoured unless stunned · see GOLEMS) */
   golemDiamond: { base: 'golemGiant', cols: ['#cfe8ff', '#ffffff', 'reflect'], golem: 1, scale: 3, name: '💎 โกเลมเพชร', lv: 24, hp: 2600, atk: 42, def: 24, exp: 1200, coin: [4000, 6000], mat: {}, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
   golemLava: { base: 'golemGiant', cols: ['#3a2a28', '#ff6a1a', 'fire'], golem: 1, scale: 3, name: '🌋 โกเลมลาวาถ่านหิน', lv: 22, hp: 2300, atk: 40, def: 22, exp: 1100, coin: [3500, 5000], mat: {}, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
@@ -98,7 +98,7 @@ export const MON = {
   golemCrystal: { base: 'golemGiant', cols: ['#a8d8f0', '#ffffff', 'freeze'], golem: 1, scale: 3, name: '🔹 โกเลมคริสตัล', lv: 20, hp: 2000, atk: 36, def: 21, exp: 950, coin: [3200, 4800], mat: {}, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
   golemBone: { base: 'golemGiant', cols: ['#e8e0d0', '#c080ff', 'summon'], golem: 1, scale: 3, name: '🦴 โกเลมกระดูก', lv: 23, hp: 2400, atk: 40, def: 22, exp: 1150, coin: [3800, 5500], mat: {}, loot: ['kingSword', 'dragonBlade'], tier: 'boss' },
   dummy:        { dummy: 1, name: '🎯 หุ่นฝึก', lv: 1, hp: 9999, atk: 0, def: 0, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'normal' },   // v3.2 the training ground (never falls)
-  skeleton:     { base: 'goblin', tint: '#f0ece0', name: '💀 โครงกระดูก', lv: 12, hp: 90, atk: 16, def: 6, exp: 40, coin: [60, 120], mat: {}, loot: ['boneClub'], tier: 'normal' },
+  skeleton:     { base: 'goblin', tint: '#f0ece0', name: '💀 โครงกระดูก', lv: 12, hp: 90, atk: 16, def: 6, exp: 40, coin: [20, 40], mat: {}, loot: ['boneClub'], tier: 'normal' },
   /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
   mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
   demonTree: { boss: 1, tree: 1, mini: 1, name: '🌳 ต้นไม้ปีศาจ', lv: 18, hp: 1900, atk: 30, def: 18, exp: 620, coin: [2200, 3200], mat: { wood: 20 }, loot: ['rootStaff', 'crystalBow'], tier: 'boss', scale: 1, tagH: 6.6 },   // v4.12 🌳 sylvaren's boss (main quest) · rooted (never walks)
@@ -119,7 +119,7 @@ export const RAR_COL = { B: '#8a8fa8', R: '#4f9cff', E: '#b45cff', L: '#ffb020' 
 export const RAR_W = { B: 70, R: 20, E: 9, L: 1 };
 export const RAR_OK = { normal: ['B', 'R'], mini: ['B', 'R', 'E'], boss: ['B', 'R', 'E', 'L'] };
 export const RAR_MUL = { B: 1, R: 1.6, E: 2.5, L: 4 };
-export const ITEM_DROP = .55;                  // chance an item drops at all (materials + coins always drop)
+export const ITEM_DROP = .1;   /* v4.77 economy (docs/ECONOMY.md): was .55 → 37–52 free pieces an hour */                  // chance an item drops at all (materials + coins always drop)
 
 /* ---- equipment templates (slot · base stats at Basic) ---- */
 /* v2.0 weapons & shields (models: src/weapons.js) · kind: one = one-handed (shield usable) · two = two-handed (slow, sweeps, no shield) · spear (fast, long reach, no shield)
@@ -309,10 +309,10 @@ export const PICK_MAX = 12;   /* v3.49 the item picker shows your first 12 (loop
 export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { spear: 1.8, knife: 1.3, def: 1.1 }, speed: 24, grav: 9, wear: 2, pick: 1.4, up: .12, windRot: 3.0 };   // windRot: the weapon back over the shoulder while winding up   // v3.69 up: lift of a wound-up throw with no target
 /* v3.22 💔 broken gear stays in the bag until the blacksmith repairs it: price = base[tier] × (weapon | tool) × how worn */
 /* v3.39 broken gear rests and comes back by itself (minutes by rarity) · the blacksmith fixes it at once · weapons / shields / bows are made by the blacksmith (coins = his labour, you bring the materials) */
-export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
-export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 };
+export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 450, R: 1200, E: 3750, L: 12000 };
+export const REPAIR = { base: [0, 450, 1350, 3750, 9000], weapon: .3, tool: .15 };
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
-export const MON_GEAR = { soldier: ['soldierSpear', 'knightSword'], goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .2;   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
+export const MON_GEAR = { soldier: ['soldierSpear', 'knightSword'], goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .08;   /* v4.77 economy (was .2) */   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
 export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' }, rope: { icon: '🪢', name: 'เชือกดึงของ (15 ม.)' } };
 export const ROPE = { r: 15, pull: .7 };   // v4.03 🪢 reach (m) · seconds to pull a drop to you
@@ -383,9 +383,9 @@ export const MPET = { near: 2.4, tele: 26, walk: 1.6, trot: 3.6, run: 6.4, back:
   biteCd: 650, biteR: 3.4, biteMul: 1.3, clawMul: .9, ramMul: 1.1, ramR: 1.8, push: 1.8, lunge: 7, lungeT: 260 };   // v3.54 🐶🐱 ride the starter pet (teen+): walk · dash speed · cooldown after you get off · size while ridden · rider height per age
 export const PET_ATK_CD = 1100, PET_RANGE = 1.2, HELP_RANGE = 8, DOWN_MS = 60000, TEAM_MAX = 3;   // v3.16 the team = up to 3 skill buttons (pets stay home)   // v3.1 one pet adventures with you (tap another to swap)
 export const FOODS = [
-  { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 200 },
-  { k: 'meal', icon: '🍗', name: 'อาหารชุดใหญ่', exp: 120, price: 700 },
-  { k: 'feast', icon: '🍱', name: 'อาหารพิเศษ', exp: 400, price: 2000 },
+  { k: 'snack', icon: '🍖', name: 'ขนมน้อง', exp: 30, price: 400 },
+  { k: 'meal', icon: '🍗', name: 'อาหารชุดใหญ่', exp: 120, price: 1500 },
+  { k: 'feast', icon: '🍱', name: 'อาหารพิเศษ', exp: 400, price: 5000 },
 ];
 export const FEED_PLAYER_EXP = 3;                                         // raising pets also grows the player
 
@@ -418,14 +418,14 @@ export const REEL = { up: 1.25, down: 1.0, base: 32, perTier: 10 };       // ten
 /* ---- economy: pets → boat vault ---- */
 export const COIN_PER_PET_H = 0;
 export const BOAT_CAP = lv => 10000 * lv;                                   // Lv1 10,000 … Lv10 100,000
-export const BOAT_UP = [0, 300, 600, 1000, 1500, 2200, 3000, 4000, 5200, 6600];   // 💎 to go from Lv n → n+1 (index n) · เสนอ
+export const BOAT_UP = [0, 100, 200, 350, 500, 650, 800, 950, 1100, 1300];   /* v4.77 economy: was 24,400 💎 in all (the whole game gives ~5,500) → 5,950 */   // 💎 to go from Lv n → n+1 (index n) · เสนอ
 export const SHOP = [
-  { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', cure: 'poison', price: 150 },       // v1.4.3: no HP potions — ❤️ comes back from food, sleep and 💧🌱 pets
-  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', cure: 'cold', price: 150 },
-  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', cure: 'burn', price: 150 },
-  { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', cure: 'daze', price: 150 },
-  { k: 'mpS', icon: '🍵', name: 'ชาสมุนไพร (พลังงาน)', en: 30, price: 250 },
-  { k: 'mpL', icon: '🍵', name: 'ชาสมุนไพรเข้มข้น (พลังงาน)', en: 90, price: 700 },
+  { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', cure: 'poison', price: 300 },       // v1.4.3: no HP potions — ❤️ comes back from food, sleep and 💧🌱 pets
+  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', cure: 'cold', price: 300 },
+  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', cure: 'burn', price: 300 },
+  { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', cure: 'daze', price: 300 },
+  { k: 'mpS', icon: '🍵', name: 'ชาสมุนไพร (พลังงาน)', en: 30, price: 500 },
+  { k: 'mpL', icon: '🍵', name: 'ชาสมุนไพรเข้มข้น (พลังงาน)', en: 90, price: 1500 },
 ];
 export const SELL_RATE = .5;
 
@@ -455,8 +455,8 @@ export const SHOPS = [
 ];
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
 export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
-export const MAKE_FEE = { wear: 150, potion: 60, meal: 120, has: 500 };
-export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 250 }, { t: 'axe1', r: 'B', price: 700 }, { t: 'pick1', r: 'B', price: 700 }, { t: 'sickle1', r: 'B', price: 500 }, { t: 'mallet0', r: 'B', price: 450 }, { t: 'hoe0', r: 'B', price: 300 }, { t: 'woodBow', r: 'B', price: 500 }, { t: 'travelerSword', r: 'B', price: 400 }, { t: 'woodSpear', r: 'B', price: 450 }, { t: 'woodAxe', r: 'B', price: 600 }, { t: 'woodShield', r: 'B', price: 450 }, { t: 'branchSword', r: 'B', price: 900 }, { t: 'woodSword', r: 'B', price: 1200 }, { t: 'oakShield', r: 'B', price: 1300 }, { t: 'barkArmor', r: 'B', price: 1000 }];
+export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
+export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 1500 }, { t: 'axe1', r: 'B', price: 3200 }, { t: 'pick1', r: 'B', price: 3200 }, { t: 'sickle1', r: 'B', price: 2300 }, { t: 'mallet0', r: 'B', price: 2100 }, { t: 'hoe0', r: 'B', price: 1500 }, { t: 'woodBow', r: 'B', price: 2300 }, { t: 'travelerSword', r: 'B', price: 1800 }, { t: 'woodSpear', r: 'B', price: 2100 }, { t: 'woodAxe', r: 'B', price: 2800 }, { t: 'woodShield', r: 'B', price: 2100 }, { t: 'branchSword', r: 'B', price: 4100 }, { t: 'woodSword', r: 'B', price: 5500 }, { t: 'oakShield', r: 'B', price: 6000 }, { t: 'barkArmor', r: 'B', price: 4600 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
   { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },
@@ -678,12 +678,12 @@ export const ACH = [
 
 /* ================= v1.0 farming: hoe the ground near the tree house · plant seeds · real-time growth (grows while the game is closed) · harvest ================= */
 export const CROPS = {                                       // v3.21 days = watered game days to ripen (Stardew) · min = (old) real minutes · n = harvest [min, max] · seed = price at Uncle Howsif · back = chance to get a seed back
-  carrot:     { days: 2, min: 4, n: [1, 2], seed: 30, back: .35, col: '#f08a2a' },
-  cabbage:    { days: 3, min: 7, n: [1, 2], seed: 50, back: .3, col: '#7ac850' },
-  strawberry: { days: 4, min: 10, n: [2, 3], seed: 80, back: .3, col: '#e8304a' },
-  tomato:     { days: 5, min: 12, n: [2, 3], seed: 90, back: .3, col: '#e84a3a' },
-  corn:       { days: 6, min: 18, n: [1, 3], seed: 120, back: .25, col: '#f0c83a' },
-  pumpkin:    { days: 8, min: 35, n: [1, 1], seed: 250, back: .2, col: '#e8802a' },
+  carrot:     { days: 2, min: 4, n: [1, 2], seed: 10, back: .35, col: '#f08a2a' },
+  cabbage:    { days: 3, min: 7, n: [1, 2], seed: 20, back: .3, col: '#7ac850' },
+  strawberry: { days: 4, min: 10, n: [2, 3], seed: 35, back: .3, col: '#e8304a' },
+  tomato:     { days: 5, min: 12, n: [2, 3], seed: 40, back: .3, col: '#e84a3a' },
+  corn:       { days: 6, min: 18, n: [1, 3], seed: 50, back: .25, col: '#f0c83a' },
+  pumpkin:    { days: 8, min: 35, n: [1, 1], seed: 100, back: .2, col: '#e8802a' },
 };
 export const PLOT_MAX = 400, FARM_GIFT = { carrot: 4, cabbage: 2 }, WILD_SEED = .08;   // plots allowed · seeds Uncle Howsif gives · chance a bush/grass drops a seed
 
@@ -874,17 +874,17 @@ export const MAP_FOG = .78;   // v4.76 how dark unexplored land is on the map (1
 export const OUTLAW = { respawn: 120, door: 4, sight: 12 };   // v4.75 ⚔️ wanted: camps respawn soldiers every 2 min · 4 at the castle door · how far they spot you
 export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
-  { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
-  { n: 'ห้องนอนแยก', ic: '🏘️', w: 11, d: 9, cap: 40, cost: { wood: 150, stone: 80, coin: 6000 }, what: 'ห้องนอนแยก · ห้องกว้างที่สุด · ของตกแต่ง 40 ชิ้น' }];
+  { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 10000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
+  { n: 'ห้องนอนแยก', ic: '🏘️', w: 11, d: 9, cap: 40, cost: { wood: 150, stone: 80, coin: 30000 }, what: 'ห้องนอนแยก · ห้องกว้างที่สุด · ของตกแต่ง 40 ชิ้น' }];
 /* v4.75 farm animals: home = the building they live in · prod = what a fed animal gives each morning · eat = grass a day (from the meadow round the building first, then the trough) */
 export const FARM_A = {
-  chicken: { n: 'ไก่', ic: '🐔', home: 'poultry', price: 300, prod: 'egg', eat: .1, s: 1.1 },
-  duck:    { n: 'เป็ด', ic: '🦆', home: 'poultry', price: 400, prod: 'duckegg', eat: .1, s: 1.1 },
-  cow:     { n: 'วัว', ic: '🐄', home: 'livestock', price: 1500, prod: 'milk', eat: .35, s: 1 },
-  pig:     { n: 'หมู', ic: '🐖', home: 'livestock', price: 1000, prod: 'truffle', eat: .3, s: 1 },
-  sheep:   { n: 'แกะ', ic: '🐑', home: 'livestock', price: 1200, prod: 'wool', eat: .25, s: 1.1 },
-  goat:    { n: 'แพะ', ic: '🐐', home: 'livestock', price: 1100, prod: 'goatmilk', eat: .25, s: 1.1 },
-  fishfry: { n: 'ลูกปลานิล', ic: '🐟', home: 'fishpond', price: 150, prod: 'pondfish', eat: 0 } };
+  chicken: { n: 'ไก่', ic: '🐔', home: 'poultry', price: 1200, prod: 'egg', eat: .1, s: 1.1 },
+  duck:    { n: 'เป็ด', ic: '🦆', home: 'poultry', price: 1500, prod: 'duckegg', eat: .1, s: 1.1 },
+  cow:     { n: 'วัว', ic: '🐄', home: 'livestock', price: 6000, prod: 'milk', eat: .35, s: 1 },
+  pig:     { n: 'หมู', ic: '🐖', home: 'livestock', price: 4000, prod: 'truffle', eat: .3, s: 1 },
+  sheep:   { n: 'แกะ', ic: '🐑', home: 'livestock', price: 5000, prod: 'wool', eat: .25, s: 1.1 },
+  goat:    { n: 'แพะ', ic: '🐐', home: 'livestock', price: 4500, prod: 'goatmilk', eat: .25, s: 1.1 },
+  fishfry: { n: 'ลูกปลานิล', ic: '🐟', home: 'fishpond', price: 400, prod: 'pondfish', eat: 0 } };
 /* v4.75b designer: pens start at 4 · upgrade with materials to Lv 2 (8) and Lv 3 (12) · one level at a time · the carpenter does it overnight · the trough grows too */
 export const FARM_LV = {
   poultry:   [{ cap: 4, trough: 40 }, { cap: 8, trough: 80, cost: { wood: 30, stone: 10, grass: 20 } }, { cap: 12, trough: 120, cost: { wood: 60, stone: 25, feather: 10 } }],
@@ -1038,6 +1038,13 @@ export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
 export const WEAR_DROP = { soldier: [['h_soldier', .22], ['b_soldier', .16], ['l_soldier', .2]], shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };
 /* v3.43 🎩 the wandering merchant: every `cycle` game days he camps `stay` days at a forest spot in some kingdom, then is gone · stock is drawn per visit (limited)
    · gear: rare weapons (rarity E/L) · wear: pieces no shop sells · mats: [n, price] · prices in coins (🪙) and gems (💎) */
+/* v4.77 🔨 enhancing gear at the blacksmith (designer: +1–3 always works, then less and less · a miss costs only the materials · aura by level, docs/art/aura-mock.png)
+   per = ⚔️/🛡️ gained per level (of the piece's own stats) · ok = chance for +1 … +10 · dupe = a second piece of the same kind adds this much · coin / gem for +1 … +10 · tierMul = the coins × by the piece's tier · mat = per tier (× how many by level) · aura = [from level, colour, sparkles] */
+export const ENH = { max: 10, per: .08, ok: [1, 1, 1, .85, .7, .55, .45, .35, .25, .15], dupe: .15,
+  coin: [1000, 2000, 3500, 5000, 8000, 12000, 18000, 25000, 40000, 60000], gem: [0, 0, 0, 0, 0, 0, 0, 20, 30, 50], tierMul: [.6, .6, .8, 1, 1.3],
+  mat: [null, { wood: 6, stone: 4 }, { copper: 3, stone: 4 }, { ore: 3, coal: 1 }, { silver: 2, crystal: 1 }], matN: lv => 1 + Math.floor((lv - 1) / 3),
+  aura: [[3, '#ffffff', 6, 0], [6, '#5ab4ff', 12, .3], [9, '#c070ff', 20, .42], [10, '#ffc830', 28, .55]] };
+export const MERCH_P = { wear: [5, 6], gear: [2.5, 5] };   /* v4.77 economy: the merchant's coins × / gems × (wear · gear) */
 export const MERCHANT = { cycle: 3, stay: 3, near: 110, n: { gear: 1, wear: 1, mats: 2 }, legend: .3,   // v3.69 moves town every 3 days (never gone) · n = the common picks on top of the town's own
   /* v3.69 each town's own stock: gear (one is the rare piece, legend = chance it is ⭐) · wear [k, coin, gem] · mats {k: [n, coin]} */
   town: { navalee: { gear: ['trident'], wear: [['h_sailor', 1600, 3]], mats: { aquamarine: [3, 320] } },

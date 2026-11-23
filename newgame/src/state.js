@@ -1,6 +1,6 @@
 /* Save state (localStorage) + derived stats. The player has no body: a profile, stats, equipment and the tools.
    The player has ⚡ energy (tools), not Mana. Pets have their own level / HP / Mana / Exp and grow by eating. */
-import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, HEART, EN_STEP, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, WEAR, RAR_MUL, RAR_BONUS, KIND, OLD_ITEM, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX, BEAR } from './data.js';
+import { DAY, SAVE_KEY, STARTERS, PLAYER_BASE, PLAYER_GROW, HEART, EN_STEP, PET_BASE, PET_GROW, PET_RAR_MUL, PET_LV_MAX, FORMS, ITEMS, WEAR, RAR_MUL, RAR_BONUS, KIND, OLD_ITEM, expNeed, COIN_PER_PET_H, BOAT_CAP, TEAM_MAX, BEAR, ENH } from './data.js';
 
 export let S = null;
 export function fresh() {
@@ -68,7 +68,8 @@ export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 
 /* v2.0 an item = { id, t, r, ba (bonus atk / def), bd (bonus durability), d (durability left) } */
 export function itemStats(it) { const T = ITEMS[it.t] || ITEMS.branch, sh = T.slot === 'shield', ba = it.ba || 0;
-  return { atk: sh ? 0 : (T.atk || 0) + ba, def: (T.def || 0) + (sh ? ba : 0), hp: 0, dur: ((T.dur || 1) + (it.bd || 0)) * 3 } }   // v3.39 gear lasts 3× longer
+  const m = 1 + (it.p || 0) * ENH.per;   /* v4.77 🔨 +N */
+  return { atk: sh ? 0 : Math.round(((T.atk || 0) + ba) * m), def: Math.round(((T.def || 0) + (sh ? ba : 0)) * m), hp: 0, dur: ((T.dur || 1) + (it.bd || 0)) * 3 } }   // v3.39 gear lasts 3× longer
 export const durLeft = it => it.d == null ? itemStats(it).dur : it.d;
 export function newItem(t, r = 'B') { const T = ITEMS[t], [A, Dr] = RAR_BONUS[r] || RAR_BONUS.B, R = ([a, b]) => a + Math.floor(Math.random() * (b - a + 1));
   const it = { id: S.nextItem++, t, r, ba: T.slot === 'shield' ? Math.ceil(R(A) / 2) : R(A), bd: R(Dr) }; it.d = itemStats(it).dur; return it }
