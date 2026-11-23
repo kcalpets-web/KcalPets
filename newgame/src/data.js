@@ -834,6 +834,12 @@ export const CAM_UP = -.55;   // v3.12.2 how far the camera may tilt up to the s
 /* v3.15 things you build wear out (real days until they fall down · below `worn` they look shabby and you can repair them for `fix` × the build cost) */
 export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 10, kitchen: 10, chest: 12, scarecrow: 6, fence: 8, stonewall: 20, path: 30 }, def: 8, worn: .35, fix: .3 };
 export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
+/* v4.74 🏠 house levels (the carpenter in the harbour town builds 2 and 3 · done after you sleep once, or after `mins` real minutes) · cap = decor pieces placed */
+export const HOUSE_LV = [
+  { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
+  { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
+  { n: 'ห้องนอนแยก', ic: '🏘️', w: 11, d: 9, cap: 40, cost: { wood: 150, stone: 80, coin: 6000 }, what: 'ห้องนอนแยก · ห้องกว้างที่สุด · ของตกแต่ง 40 ชิ้น' }];
+export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
 export const HOUSE = false;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
 export const PEBBLE = { sp: .85 };   // v4.56 🪨 walking speed while holding a small stone
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
