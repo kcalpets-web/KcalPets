@@ -557,3 +557,5 @@ export function rainbowSlime(g, crown = true) {
   part(g, '#7a2a3a', '#c85a6a', [0, .36, .47], [.07, .035, .02], [0, 0, 0], { A: 0 });
   if (crown) { const cg = new THREE.Group(); ACC.crown(cg, 0); cg.scale.setScalar(.8); cg.position.set(.1, .86, 0); cg.rotation.z = -.28; g.add(cg) }
   return b }
+/* v4.75 ⚔️ a Luminia soldier as a foe (the kingdom hunts you after the King vanished) */
+MONS.soldier = g => HUMANS.villager(g, 0, { v: 2, sex: 'm', hair: 'short', hairCol: '#3a2418', skin: '#e2b183', wear: 'knight', top: '#3a4aa0', hat: 'knight', hatCol: '#9aa4b8', expr: '' });

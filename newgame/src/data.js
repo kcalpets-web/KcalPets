@@ -87,6 +87,7 @@ export const MON = {
   ghoul:      { base: 'goblin', tint: '#8a6aa8', ingr: ['meat', .3], name: '🧟 ผีดิบ', lv: 10, hp: 130, atk: 17, def: 6, exp: 80, coin: [220, 360], mat: {}, loot: ['kingSword', 'crystalBow'], tier: 'normal' },
   witherImp:  { base: 'branchImp', tint: '#a0803a', name: '🍂 ภูตไม้เหี่ยว', lv: 5, hp: 75, atk: 10, def: 3, exp: 35, coin: [100, 200], mat: { wood: 3 }, loot: ['woodSpear', 'hunterBow', 'barkArmor'], tier: 'normal' },
   marshSprite:{ base: 'grassSprite', tint: '#4aa0a0', ingr: ['berry', .5], name: '🪷 ภูตบึง', lv: 5, hp: 65, atk: 9, def: 3, exp: 32, coin: [90, 180], mat: { grass: 3 }, loot: ['harpoon', 'trident'], tier: 'normal' },
+  soldier:    { name: '⚔️ ทหารลูมิเนีย', lv: 14, hp: 230, atk: 22, def: 12, exp: 110, coin: [120, 260], mat: { ore: 1 }, loot: ['soldierSpear', 'knightSword'], tier: 'normal', legs: 1, scale: .84 },   /* v4.75 the kingdom's soldiers (only while you are wanted) */
   shadeKnight:{ base: 'goblinChief', tint: '#5a4a7a', ingr: ['meat', .5], name: '🗡️ อัศวินเงา', lv: 12, hp: 220, atk: 22, def: 12, exp: 120, coin: [300, 500], mat: { ore: 2 }, loot: ['kingSword', 'dragonBlade'], tier: 'normal' },
   /* v3.0 golems (giant · armoured unless stunned · see GOLEMS) */
   golemDiamond: { base: 'golemGiant', cols: ['#cfe8ff', '#ffffff', 'reflect'], golem: 1, scale: 3, name: '💎 โกเลมเพชร', lv: 24, hp: 2600, atk: 42, def: 24, exp: 1200, coin: [4000, 6000], mat: {}, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
@@ -311,7 +312,7 @@ export const THROW = { spread: { spear: .012, knife: .035, def: .075 }, mul: { s
 export const BREAK = { min: { B: 5, R: 8, E: 12, L: 15 } }, FORGE_FEE = { B: 300, R: 800, E: 2500, L: 8000 };
 export const REPAIR = { base: [0, 300, 900, 2500, 6000], weapon: .3, tool: .15 };
 /* v3.22 monsters carry gear by land (shown in hand) · a kill may drop it */
-export const MON_GEAR = { goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .2;   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
+export const MON_GEAR = { soldier: ['soldierSpear', 'knightSword'], goblin: ['stoneKnife', 'woodClub', 'axe1', 'mallet0'], goblinChief: ['axe2', 'branchSword'], shadeKnight: ['scimitar', 'soldierSpear', 'knightSword'], ghoul: ['stoneClub', 'pick3', 'axe3'], skeleton: ['boneClub', 'stoneClub'], branchImp: ['leafBlade', 'pitchfork'], witherImp: ['woodSpear', 'axe2'] }, GEAR_DROP = .2;   // v3.98 a monster with a weapon hits with that weapon's ⚔️ (picked near its old strength)
 export const DIG_R = 6;   // v3.6 how far the shovel aim reaches (m)
 export const YTOOL = { bow: { icon: '🏹', name: 'ธนู' }, net: { icon: '🕸️', name: 'ตาข่ายจับสัตว์' }, rod: { icon: '🎣', name: 'เบ็ดตกปลา' }, hoe: { icon: '🪏', name: 'พลั่ว (ขุดแปลง)' }, flute: { icon: '🎵', name: 'ขลุ่ยไม้ (7 โน้ต)' }, draw: { icon: '🖍️', name: 'วาดภาพ' }, rope: { icon: '🪢', name: 'เชือกดึงของ (15 ม.)' } };
 export const ROPE = { r: 15, pull: .7 };   // v4.03 🪢 reach (m) · seconds to pull a drop to you
@@ -767,6 +768,9 @@ export const WEAR = {
   h_wizard: { slot: 'head', icon: '🧙', name: 'หมวกพ่อมด', warm: 0, cool: 0, hatK: 'wizard' },
   h_crown: { slot: 'head', icon: '👑', name: 'มงกุฎ', warm: 0, cool: 0, hatK: 'crown' },
   h_sailor: { slot: 'head', icon: '⚓', name: 'หมวกกะลาสี', warm: 0, cool: 0, hatK: 'sailor' },
+  h_soldier: { slot: 'head', icon: '⛑️', name: 'หมวกทหารลูมิเนีย', warm: 0, cool: 0, hatK: 'knight', src: 'drop' },   /* v4.75 the soldier set (a disguise) */
+  b_soldier: { slot: 'body', icon: '🛡️', name: 'เกราะทหารลูมิเนีย', warm: 1, cool: 0, col: '#3a4aa0', look: 'knight', src: 'drop', def: 3 },
+  l_soldier: { slot: 'legs', icon: '👢', name: 'กางเกงทหารลูมิเนีย', warm: 0, cool: 0, legs: 'boots', legCol: '#2a3060', src: 'drop' },
   h_knight: { slot: 'head', icon: '⛑️', name: 'หมวกอัศวิน', warm: 0, cool: 0, hatK: 'knight' },
   h_straw: { slot: 'head', icon: '👒', name: 'หมวกฟาง', warm: 0, cool: 1, hatK: 'straw' },
   h_catEars: { slot: 'head', icon: '🐱', name: 'หูแมว', warm: 0, cool: 0, hatK: 'catEars' },
@@ -820,7 +824,7 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   l_wrap: { slot: 'legs', icon: '👖', name: 'กางเกงพันผ้า', warm: 0, cool: 0, air: 1, legs: 'wrap', legCol: '#3a3a42', shoe: '#2a2228', src: 'quest', k: 'deadgar' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
-export const WEAR_SETS = { diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
+export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูมิเนีย', parts: ['h_soldier', 'b_soldier', 'l_soldier'], glow: '#8aa0ff', bonus: '🎭 ปลอมตัว: ทหารไม่สงสัย ไม่โจมตี (จนกว่าเจ้าจะโจมตีก่อน)' }, diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
   leafhunter: { name: 'เซ็ตพรานใบไม้', parts: ['h_leafhood', 'b_bark', 'l_vine'], glow: '#a8ff6a', bounce: { dmg: 30, r: 9, stun: 2 }, bonus: '⚡ ฝนตก/พายุ: ฟ้าผ่าเด้งไปโดนมอนสเตอร์รอบตัวแทน' },
   misthunter: { name: 'เซ็ตนักล่าหมอก', parts: ['h_crowhood', 'b_filtercoat', 'l_wrap'], glow: '#8af0c0', bonus: '☠️ พิษทุกชนิดไม่ลด ❤️ (มลพิษ · พิษมอนสเตอร์ · อาหารเสีย)' },   // v4.35
   lavasmith: { name: 'เซ็ตช่างหลอมลาวา', parts: ['h_forgehood', 'b_apron', 'l_minepants'], glow: '#ff9a4a', bonus: '🔥 ไม่ติดไหม้ · ลาวาไม่ลด ❤️' },   // v4.34
@@ -858,6 +862,7 @@ export const LUMFIX = { secs: 45, spots: [
   { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },
   { n: 'สะพานหิน', ic: '🌉', cost: { stone: 50, ore: 6 } },
   { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 }, king: { coin: 10000, gem: 100, title: '👑 ผู้พิทักษ์ลูมิเนีย' } };
+export const OUTLAW = { respawn: 120, door: 4, sight: 12 };   // v4.75 ⚔️ wanted: camps respawn soldiers every 2 min · 4 at the castle door · how far they spot you
 export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
   { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
@@ -1021,7 +1026,7 @@ export const BAR = { open: 18 * 60, close: 2 * 60, rumor: 15, menu: [
   { k: 'storm', icon: '🧉', name: 'ชาพายุ (ชาเย็นเข้มข้น)', price: 90, eff: { en: 80, buff: { stam: 1, min: 6 } } },
 ] };
 /* v3.43 ⚔️ armour + helmets some monsters wear (chance per kill) */
-export const WEAR_DROP = { shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };
+export const WEAR_DROP = { soldier: [['h_soldier', .22], ['b_soldier', .16], ['l_soldier', .2]], shadeKnight: [['a_knight', .08], ['h_knight', .08]], skeleton: [['h_helmet', .07], ['a_knight', .03]], goblinChief: [['a_knight', .1], ['h_helmet', .1]], goblin: [['h_helmet', .025]], ghoul: [['h_hood', .04]] };
 /* v3.43 🎩 the wandering merchant: every `cycle` game days he camps `stay` days at a forest spot in some kingdom, then is gone · stock is drawn per visit (limited)
    · gear: rare weapons (rarity E/L) · wear: pieces no shop sells · mats: [n, price] · prices in coins (🪙) and gems (💎) */
 export const MERCHANT = { cycle: 3, stay: 3, near: 110, n: { gear: 1, wear: 1, mats: 2 }, legend: .3,   // v3.69 moves town every 3 days (never gone) · n = the common picks on top of the town's own
