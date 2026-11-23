@@ -1333,6 +1333,7 @@ const gamePaused = () => !!(PICK || SMENU.on || (typeof SKW !== 'undefined' && S
 function frame(now) {
   requestAnimationFrame(frame); if (CUT || gamePaused()) { if (!CUT) padTick(0); last = now; return }   /* the controller still works in menus (B = back, D-pad in pickers) */   /* v3.7 a window, the map or a picker open = the game waits (a rest, like Start) */
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1) * (AIRAIM ? D.HOLD.airSlow : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
+  try { beaconArrive(now) } catch (e) { }
   /* pets: wander · fight (run in, auto attack, auto element skill) · rest after fainting */
   for (const e of PA.values()) {
     if (e === HORSE) { horseTick(e, dt, now); continue }
@@ -1776,7 +1777,7 @@ function mapA() { const N = MAPNAV; if (!N) return; const r = D.PINS.reach / N.k
   pinPick(N.cx, N.cz) }
 function pinPick(px, pz) { const n = (S.pins || []).length; sheet('📍 ปักหมุด', (b, r2, close) => {
     b.innerHTML = `<p class="mut">หมุด ${n}/${D.PINS.max}${n >= D.PINS.max ? ' · เต็มแล้ว ลบหมุดเก่าก่อน' : ''}</p><div class="pingrid">${D.PINS.icons.map(([ic, nm]) => `<button class="btn" data-pin="${ic}"${n >= D.PINS.max ? ' disabled' : ''}>${ic}<small>${nm}</small></button>`).join('')}</div>
-      <p class="mut">🔆 หมุดลำแสง (มองเห็นจากไกล · ขึ้นที่ขอบแผนที่เล็ก) · สีละ 1 อัน</p><div class="pingrid">${D.PINS.beam.map((c, i) => `<button class="btn beam" data-bm="${i}" style="--bc:${c}">🔆<small>${(S.beacons || [])[i] ? 'ย้ายมาที่นี่' : 'ปัก'}</small></button>`).join('')}</div>`;
+      <p class="mut">🔆 หมุดลำแสง (มองเห็นจากไกล · ขึ้นที่ขอบแผนที่เล็ก) · สีละ 1 อัน</p><div class="pingrid">${D.PINS.beam.map((c, i) => `<button class="btn beam" data-bm="${i}" style="--bc:${c}"><i class="bdot"></i><small>${(S.beacons || [])[i] ? 'ย้ายมาที่นี่' : 'ปัก'}</small></button>`).join('')}</div>`;
     b.querySelectorAll('[data-pin]').forEach(x => x.onclick = () => { S.pins = S.pins || []; if (S.pins.length >= D.PINS.max) return; S.pins.push({ x: +px.toFixed(1), z: +pz.toFixed(1), ic: x.dataset.pin }); sfx('coin'); save(); close(); mapReopen() });
     b.querySelectorAll('[data-bm]').forEach(x => x.onclick = () => { S.beacons = S.beacons || []; S.beacons[+x.dataset.bm] = { c: +x.dataset.bm, x: +px.toFixed(1), z: +pz.toFixed(1) }; sfx('level'); save(); beaconsView(); close(); mapReopen() }) }, { cls: 'dlg' }) }
 function pinMenu(pi, bi) { const p = pi >= 0 ? S.pins[pi] : S.beacons[bi]; sheet(pi >= 0 ? `${p.ic} หมุด` : '🔆 หมุดลำแสง', (b, r2, close) => {
@@ -1790,6 +1791,9 @@ function beaconsView() { for (const m of BEAMS.splice(0)) scene.remove(m); (S.be
     const core = new THREE.Mesh(new THREE.CylinderGeometry(.18, .25, D.PINS.beamH, 8, 1, true), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); core.position.y = D.PINS.beamH / 2; g.add(core);
     g.position.set(bc.x, groundH(bc.x, bc.z), bc.z); scene.add(g); BEAMS.push(g) }) }
 beaconsView();
+/* v4.76 designer: a 🔆 beacon is a "go here" mark → it goes away when you get there (📍 pins stay until you remove them) */
+let bcT = 0; function beaconArrive(now) { if (now < bcT || !S.beacons) return; bcT = now + 500; const q = me(); if (!q) return;
+  S.beacons.forEach((bc, i) => { if (!bc) return; const d = dist(q.x, q.z, bc.x, bc.z); if (d > D.PINS.arrive * 2) bc.away = 1; if (bc.away && d < D.PINS.arrive) { S.beacons[i] = null; sfx('level'); toast(`🔆 ถึงหมุดลำแสงแล้ว · เก็บหมุดให้เรียบร้อย`, 1800); save(); beaconsView() } }) }
 function miniBeacons(g, P, c0, dpr) { for (const bc of S.beacons || []) { if (!bc) continue; let [x, y] = P(bc.x, bc.z); const dx = x - c0, dy = y - c0, d = Math.hypot(dx, dy), rr = c0 * .86; if (d > rr) { x = c0 + dx / d * rr; y = c0 + dy / d * rr } g.fillStyle = D.PINS.beam[bc.c]; g.strokeStyle = '#fff'; g.lineWidth = 2 * dpr; g.beginPath(); g.arc(x, y, 4.5 * dpr, 0, 7); g.fill(); g.stroke() } }
 /* ================= v3.74 📜 the quest page: sections (◀▶): เควสหลัก · เควส NPC · Memories · ความสำเร็จ · ▲▼ pick · A = follow it (blinks on the map) · X = walk there by itself · B = back ================= */
 const QSUB = [['main', '⭐', 'เรื่องหลัก'], ['starter', '🌱', 'ฝึกหัด'], ['npc', '📜', 'คนในเมือง'], ['paths', '🧭', 'เส้นทาง'], ['mem', '🎬', 'ความทรงจำ'], ['ach', '🏆', 'ความสำเร็จ']];

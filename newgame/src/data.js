@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.75';
+export const APP_VER = '4.76';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -260,7 +260,7 @@ export const GOLEMS = {
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
 export const NPC_NEAR = [4.5, 7];   // v3.77 strolling people stop and face you inside 4.5 m · walk on only past 7 m
 export const WIN = { padRoom: 320, landGap: 12, h: 366 };   // h = every window's height (px) in both orientations   // v3.75 portrait: windows stop this many px above the screen's bottom (the pad lives there) · landscape: a small gap so the whole frame shows
-export const PINS = { max: 100, reach: 22, curSpeed: 240, beamH: 160,   // v3.74 📍 map pins: how many in all · A finds a point this close (screen px) · the cursor's speed (screen px/s) · beam height (m)
+export const PINS = { max: 100, reach: 22, arrive: 6, curSpeed: 240, beamH: 160,   // v3.74 📍 map pins: how many in all · A finds a point this close (screen px) · the cursor's speed (screen px/s) · beam height (m)
   icons: [['⚔️', 'ดาบ'], ['🛡️', 'โล่'], ['🏹', 'ธนู'], ['🪵', 'วัตถุดิบ'], ['🍲', 'อาหาร'], ['💀', 'มอนสเตอร์'], ['📦', 'หีบ'], ['⛏️', 'แร่'], ['⭐', 'ชื่นชอบ']],
   beam: ['#ff5a5a', '#ffd23f', '#5adc7a', '#5ab4ff', '#d77aff'] };   // 🔆 five beacon colours (one each)
 export const GSET = { hold: .6, swap: [70, 0] };   // v3.73 hold Y this long (melee) = ⚔️ combat ↔ 🌾 farm · 🔄 sits this far right of X (px at full size)
