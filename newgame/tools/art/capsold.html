@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE old castles</title><style>body{margin:0;background:#2a2638;font:700 16px system-ui;color:#fff}#w{position:relative;width:1800px;height:900px}.lb{position:absolute;width:600px;text-align:center;text-shadow:0 2px 3px #000}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.78 mock: the six capitals' keeps in old worn stone (capitals.js + masonry.js stoneTex) */
+import * as THREE from '../../lib/three.module.min.js';
+import { buildCapital } from '../../src/capitals.js';
+const W = 1800, H = 900, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.setScissorTest(true);
+const K = [['navalee', '🌊 นาวาลี'], ['asrah', '🏜️ อัสราห์'], ['sylvaren', '🌲 ซิลวาเรน'], ['frosthelm', '❄️ ฟรอสต์เฮล์ม'], ['valkara', '🌋 วัลคาร่า'], ['deadgar', '💀 เดดการ์']];
+K.forEach(([k, n], i) => { const S = new THREE.Scene(); S.background = new THREE.Color('#a8d4ee'); S.fog = new THREE.Fog('#a8d4ee', 60, 140); S.add(new THREE.HemisphereLight('#fff4e0', '#5a6a48', 1.4)); const d = new THREE.DirectionalLight('#fff0d8', 2.4); d.position.set(-20, 30, 25); S.add(d);
+  const gr = new THREE.Mesh(new THREE.CircleGeometry(80, 32), new THREE.MeshStandardMaterial({ color: '#8aa868', roughness: 1 })); gr.rotation.x = -Math.PI / 2; gr.position.y = -.1; S.add(gr);
+  const B = buildCapital(k, 0, 0, 0, 0); S.add(B.G);
+  const c = new THREE.PerspectiveCamera(40, 600 / 450, .5, 300); c.position.set(-22, 15, 34); c.lookAt(0, 9, -12); const col = i % 3, row = 1 - Math.floor(i / 3);
+  r.setViewport(col * 600, row * 450, 600, 450); r.setScissor(col * 600, row * 450, 600, 450); r.render(S, c);
+  const l = document.createElement('div'); l.className = 'lb'; l.style.left = col * 600 + 'px'; l.style.top = (1 - row) * 450 + 412 + 'px'; l.textContent = n; document.getElementById('w').appendChild(l) });
+window.__done = 1;
+</script></body></html>

@@ -1,9 +1,20 @@
 /* v4.76 🏪 inside the town shops (in development · behind the house switch): a cut-away room per shop, built like the house / pens · the owner stands behind the counter
    each builder fills a group centred on the floor (front = +z, cut away) and returns { w, d, owner: [x, z], counter: [x, z] } */
 import { THREE, rbox, part, cone } from './clay.js';
+import { stoneWall, timberWall, plankWall } from './masonry.js';
 const box = (g, c, p, s, r = [0, 0, 0], k = .03) => rbox(g, c[0], c[1], p, s, r, k);
 const WOOD = ['#5a3420', '#9a6238'], WOODL = ['#7a4a28', '#c08a52'], STONE = ['#6a6460', '#a8a098'], BRICK = ['#8a4a34', '#c0704a'], CREAM = ['#cdb894', '#f0e2c2'];
+/* v4.78 🏚️ the inside matches the outside (designer): stone · half-timber · boards, worn and patched (masonry.js) · the shop's kind is set by main.js before the builder runs */
+export const OLD_IN = { smith: 'stone', guild: 'stone', food: 'half', tailor: 'half', bar: 'half', tools: 'wood', market: 'wood' }; let ROOM_K = null, ROOM_ECO = false;
+export const setRoomKind = (k, eco) => { ROOM_K = OLD_IN[k] || null; ROOM_ECO = !!eco };
+function oldWalls(g, W, Dd, H) { const hw = W / 2, hd = Dd / 2, kind = ROOM_K, sz = ROOM_ECO ? [.7, .4] : [.5, .3], st = ['#6e665a', '#b8ae9a'], seed = W * 7 + Dd;
+  const walls = [[W, [0, 0, -hd - .08], 0, 1], [Dd + .32, [-hw - .08, 0, 0], -Math.PI / 2, 2], [Dd + .32, [hw + .08, 0, 0], Math.PI / 2, 3]];
+  const lowH = kind === 'stone' ? H : kind === 'wood' ? .5 : 1.05;
+  for (const [w, at, ry, k] of walls) { stoneWall(g, { w, h: lowH, t: .26, at, ry, stone: st, size: sz, ruin: .3, moss: .25, planks: !ROOM_ECO, seed: seed + k });
+    if (lowH < H) { const o = { w, h: H - lowH, at: [at[0], lowH, at[2]], ry, ruin: .35, seed: seed + k + 10 }; if (kind === 'wood') plankWall(g, Object.assign(o, { t: .14 })); else timberWall(g, Object.assign(o, { t: .2 })) } }
+  for (const sx of [-1, 1]) stoneWall(g, { w: hw - .72, h: .56, t: .22, at: [sx * (hw / 2 + .36), 0, hd + .08], stone: st, size: [.4, .26], ruin: .2, noHoles: 1, seed: seed + 20 + sx }) }
 function room(g, W, Dd, H, wall, floor, trim = WOOD) { const hw = W / 2, hd = Dd / 2;
+  if (ROOM_K) { for (let i = 0; i < W * 2; i++) box(g, [i % 2 ? floor[0] : floor[1], i % 2 ? floor[2] : floor[3]], [-hw + .25 + i * .5, -.06, 0], [.49, .12, Dd], [0, 0, 0], .03); oldWalls(g, W, Dd, H); for (const s of [-1, 1]) box(g, trim, [s * .62, .3, hd + .08], [.14, .6, .22]); box(g, trim, [0, H - .08, -hd + .06], [W, .14, .12], [0, 0, 0], .02); return }
   for (let i = 0; i < W * 2; i++) box(g, [i % 2 ? floor[0] : floor[1], i % 2 ? floor[2] : floor[3]], [-hw + .25 + i * .5, -.06, 0], [.49, .12, Dd], [0, 0, 0], .03);
   box(g, wall, [0, H / 2, -hd - .08], [W + .32, H, .16]); box(g, wall, [-hw - .08, H / 2, 0], [.16, H, Dd + .32]); box(g, wall, [hw + .08, H / 2, 0], [.16, H, Dd + .32]);
   for (const s of [-1, 1]) box(g, wall, [s * (hw / 2 + .36), .28, hd + .08], [hw - .72, .56, .16]); for (const s of [-1, 1]) box(g, trim, [s * .62, .3, hd + .08], [.14, .6, .22]);

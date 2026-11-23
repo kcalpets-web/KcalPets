@@ -3,6 +3,7 @@
    Built once from boxes / cylinders / arches in a few shared materials, then merged (few draw calls). Collisions are returned as solids (circles / rotated boxes).
    Local frame: plaza at (0,0), the cathedral at −z facing +z (the gate side) · the whole city is turned so its gate faces the way you come (west). */
 import * as THREE from '../lib/three.module.min.js';
+import { stoneTex, worldUV } from './masonry.js';
 
 const MATS = () => ({
   stone: new THREE.MeshStandardMaterial({ color: '#a8a296', roughness: .92, flatShading: true }),
@@ -26,7 +27,9 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   let SK = null; const sk = (lx, lz) => SK ? [lx * SK.k, SK.z0 + (lz - SK.z0) * SK.k] : [lx, lz], kk = v => SK ? v * SK.k : v;   /* inside a scaled part (the cathedral) */
   const solC = (lx, lz, r) => { const [x, z] = W(...sk(lx, lz)); sols.push({ x, z, r: kk(r) }) };
   const solB = (lx, lz, hw, hd, r0 = 0) => { const [x, z] = W(...sk(lx, lz)); sols.push({ x, z, hw: kk(hw), hd: kk(hd), ry: r0 + ry }) };
-  const add = (geo, m, x, y, z, rx = 0, ryy = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, rz); G.add(o); return o };
+  /* v4.78 🏚️ old worn stone (masonry.js stoneTex) on the cathedral / walls / towers · cones + spheres stay plain */
+  const PLAIN = new Map([[M.stone, M.stone.clone()], [M.dark, M.dark.clone()]]); Object.assign(M.stone, { map: stoneTex('#7c776c', '#c8c2b4', { planks: 1, mortar: '#3a3630', seed: 21 }), color: new THREE.Color('#ffffff'), flatShading: false }); Object.assign(M.dark, { map: stoneTex('#5a564e', '#8c877c', { mortar: '#2a2622', seed: 22 }), color: new THREE.Color('#ffffff'), flatShading: false }); M.stone.userData.tile = M.dark.userData.tile = 1;
+  const add = (geo, m, x, y, z, rx = 0, ryy = 0, rz = 0) => { if (PLAIN.has(m)) { if (geo.type === 'ConeGeometry' || geo.type === 'SphereGeometry') m = PLAIN.get(m); else worldUV(geo, .13) } const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, rz); G.add(o); return o };
   const box = (x, y, z, w, h, d, m = M.stone, ryy = 0, rx = 0, rz = 0) => add(new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z, rx, ryy, rz);
   const cyl = (x, y, z, r0, r1, h, m = M.stone, seg = 10) => add(new THREE.CylinderGeometry(r1, r0, h, seg), m, x, y + h / 2, z);
   const cone = (x, y, z, r, h, m = M.dark, seg = 8) => add(new THREE.ConeGeometry(r, h, seg), m, x, y + h / 2, z);

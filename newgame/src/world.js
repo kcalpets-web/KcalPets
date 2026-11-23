@@ -285,7 +285,7 @@ function mergeStatic(root, cell = 0) {
 }
 function mergeStatic0(root, cell = 0) {   /* v3.4 cell > 0: also split by a ground grid (m) so a whole zone is not one mesh → parts off screen are culled */
   root.updateMatrixWorld(true); const buckets = new Map(), E = new THREE.Vector3();
-  root.traverse(o => { if (!o.isMesh) return; const keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv').sort().join(','), mat = o.material === MAT ? WMAT : o.material, key = mat.uuid + '|' + keys + (cell ? '|' + (E.setFromMatrixPosition(o.matrixWorld), Math.floor(E.x / cell) + ',' + Math.floor(E.z / cell)) : '');
+  root.traverse(o => { if (!o.isMesh) return; const mat = o.material === MAT ? WMAT : o.material, keys = Object.keys(o.geometry.attributes).filter(k => k !== 'uv' || (mat.userData && mat.userData.tile)).sort().join(','), key = mat.uuid + '|' + keys + (cell ? '|' + (E.setFromMatrixPosition(o.matrixWorld), Math.floor(E.x / cell) + ',' + Math.floor(E.z / cell)) : '');
     if (!buckets.has(key)) buckets.set(key, { mat, list: [], keys: keys.split(',') }); const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld); buckets.get(key).list.push(g) });
   const out = new THREE.Group();
   for (const { mat, list, keys } of buckets.values()) {
@@ -297,7 +297,7 @@ function mergeStatic0(root, cell = 0) {   /* v3.4 cell > 0: also split by a grou
 }
 
 /* v3.14 merge a prop group into a few meshes (by material) · textured pieces (decals) stay as their own meshes */
-export function mergeProp(root) { root.updateMatrixWorld(true); const keep = []; root.traverse(o => { if (o.isMesh && o.material && o.material.map) keep.push(o) });
+export function mergeProp(root) { root.updateMatrixWorld(true); const keep = []; root.traverse(o => { if (o.isMesh && o.material && o.material.map && !(o.material.userData && o.material.userData.tile)) keep.push(o) });   /* v4.78 tiled stone (userData.tile) merges with its uvs */
   const out = new THREE.Group(); for (const o of keep) { const m = new THREE.Mesh(o.geometry, o.material); o.matrixWorld.decompose(m.position, m.quaternion, m.scale); out.add(m); o.parent.remove(o) }
   root.updateMatrixWorld(true); mergeStatic0(root).children.slice().forEach(m => out.add(m)); return out }
 /* ================= the ruined town (east of the island; the camera jumps here through the gate) ================= */

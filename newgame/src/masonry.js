@@ -114,3 +114,27 @@ export function oldShop(g, o) {
   for (const s2 of [-1, 1]) { const gl = new THREE.Mesh(new THREE.BoxGeometry(.04, .55, .56), o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 })); gl.position.set(s2 * W / 2, 1.375, 0); g.add(gl) }
   if (kind === 'stone' || o.chimney) { const ch = new THREE.Group(); stoneWall(ch, { w: .5, h: 1.5, t: .5, at: [0, 0, 0], stone: st, ruin: .15, size: [.25, .17], noHoles: 1, seed: seed * 3 }); ch.position.set(.75, H + .1, -.45); g.add(ch) }
   return g }
+
+/* v4.78 big walls (castles / keeps): a painted stone-course texture instead of single stones (a keep is ~700 m² — single stones would be ~40k triangles each)
+   stoneTex(lo, hi, o) → a tiling CanvasTexture of worn courses (stones of mixed size and shade · dark mortar · chips · a few plank patches · moss at the foot)
+   worldUV(geo, k) rewrites a geometry's uvs from its own size (k = tiles per metre) so one texture tiles at the same scale on every box / cylinder */
+const TEXC = new Map();
+export function stoneTex(lo, hi, o = {}) { const key = [lo, hi, o.mortar, o.planks, o.moss].join('|'); if (TEXC.has(key)) return TEXC.get(key);
+  const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const x = cv.getContext('2d'), R = rng(o.seed || 9), A = C(lo), B = C(hi), cc = new THREE.Color();
+  x.fillStyle = o.mortar || '#3e3830'; x.fillRect(0, 0, N, N);
+  const rows = 8, rh = N / rows; for (let r = 0; r < rows; r++) { let px = r % 2 ? -R() * 60 : 0; while (px < N) { const w = 46 + R() * 70, y0 = r * rh;
+      cc.copy(A).lerp(B, .15 + R() * .8).offsetHSL((R() - .5) * .02, (R() - .5) * .06, (R() - .5) * .06); const ch = R() < .12;   /* a chipped stone */
+      const draw = (ox) => { const gx = px + ox + 3, gy = y0 + 3, gw = w - 6, gh = rh - 6, rr = 9;
+        x.fillStyle = '#' + cc.getHexString(); x.beginPath(); x.roundRect ? x.roundRect(gx, gy, gw, gh, rr) : x.rect(gx, gy, gw, gh); x.fill();
+        const gr = x.createLinearGradient(0, gy, 0, gy + gh); gr.addColorStop(0, 'rgba(255,255,255,.16)'); gr.addColorStop(.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,.22)'); x.fillStyle = gr; x.beginPath(); x.roundRect ? x.roundRect(gx, gy, gw, gh, rr) : x.rect(gx, gy, gw, gh); x.fill();
+        if (ch) { x.fillStyle = 'rgba(30,24,20,.55)'; x.beginPath(); const cx = gx + R() * gw, cy = gy + R() * gh * .5; x.moveTo(cx, cy); for (let i = 0; i < 5; i++) x.lineTo(cx + (R() - .3) * 26, cy + R() * 20); x.fill() }
+        if (R() < .25) { x.strokeStyle = 'rgba(20,16,14,.45)'; x.lineWidth = 1.5; x.beginPath(); let cx = gx + R() * gw, cy = gy; x.moveTo(cx, cy); for (let i = 0; i < 4; i++) { cx += (R() - .5) * 14; cy += gh / 4; x.lineTo(cx, cy) } x.stroke() } };   /* a crack */
+      draw(0); if (px + w > N) draw(-N); px += w } }
+  if (o.planks) for (let i = 0; i < 1; i++) { const px = R() * (N - 120), py = (2 + Math.floor(R() * 5)) * rh; for (let j = 0; j < 3; j++) { x.save(); x.translate(px + 60, py + j * 20 + 10); x.rotate((R() - .5) * .2); x.fillStyle = ['#7a5a38', '#5e442a', '#8a6a44'][j]; x.fillRect(-62, -9, 124, 18); x.fillStyle = '#2a2a30'; x.fillRect(-56, -2, 4, 4); x.fillRect(52, -2, 4, 4); x.restore() } }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; TEXC.set(key, t); return t }
+/* a box / cylinder: u, v in metres × k (each face by its own two axes) */
+export function worldUV(geo, k = .25) { const P = geo.attributes.position, N = geo.attributes.normal, U = geo.attributes.uv; if (!U) return geo; const v = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); n.fromBufferAttribute(N, i); const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z); let u, w;
+    if (geo.type === 'CylinderGeometry' && ay < .9) { u = Math.atan2(v.z, v.x) * (geo.parameters.radiusBottom || 1); w = v.y }
+    else if (ay >= ax && ay >= az) { u = v.x; w = v.z } else if (ax >= az) { u = v.z; w = v.y } else { u = v.x; w = v.y }
+    U.setXY(i, u * k, w * k + .5) } U.needsUpdate = true; return geo }

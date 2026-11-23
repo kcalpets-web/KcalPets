@@ -1,6 +1,10 @@
 /* v4.77 🏰 the big castles (in development): many rooms on several floors, walked like the house (cut-away) · rooms you have not been in yet are veiled in a dim fog (you can still make them out)
    a layout = floors of rooms { k, x, z, w, d } (metres, the floor's centre = 0,0) · doors = gaps where two rooms touch · stairs link floors */
 import { THREE, rbox, part, cone } from './clay.js';
+import { stoneTex, worldUV } from './masonry.js';
+/* v4.78 🏚️ the rooms' walls are old worn stone in the theme's colours (a tiled course texture · one material per colour pair) */
+const WMATS = new Map(); const wallMat = WC => { const k = WC.join('|'); if (!WMATS.has(k)) { const m = new THREE.MeshStandardMaterial({ map: stoneTex(new THREE.Color(WC[0]).multiplyScalar(.85).getStyle(), WC[1], { planks: 1, mortar: new THREE.Color(WC[0]).multiplyScalar(.45).getStyle(), seed: k.length }), roughness: .9 }); m.userData.tile = 1; WMATS.set(k, m) } return WMATS.get(k) };
+const wbox = (g, WC, p, sz) => { const m = new THREE.Mesh(worldUV(new THREE.BoxGeometry(...sz), .26), wallMat(WC)); m.position.set(...p); m.castShadow = m.receiveShadow = true; g.add(m); return m };
 const box = (g, c, p, s, r = [0, 0, 0], k = .03) => rbox(g, c[0], c[1], p, s, r, k);
 const MARBLE = ['#c8c0b4', '#f4efe6'], MARB2 = ['#a8a094', '#d8d0c4'], STONE = ['#8a8478', '#b8b0a4'], GOLD = ['#a8781a', '#ffd860'], RED = ['#7a1a2a', '#c8384a'], WOOD = ['#5a3420', '#9a6238'], BLUE = ['#1a3a7a', '#3a6ad0'];
 const pillar = (g, x, z, h) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(.26, .3, h, 14), new THREE.MeshStandardMaterial({ color: '#f0ebe2', roughness: .5 })); p.position.set(x, h / 2, z); g.add(p); box(g, GOLD, [x, .1, z], [.75, .2, .75], [0, 0, 0], .04); box(g, GOLD, [x, h - .1, z], [.75, .2, .75], [0, 0, 0], .04) };
@@ -35,7 +39,7 @@ export function buildFloor(g, F, seen = {}, H = 3.4, opt = {}) { const fog = [];
     const wallH = (side) => side === 's' && !opt.solidFront ? .6 : H, WC = R.wall || TF.wall || ['#c8bca8', '#f0e6d4'];
     for (const side of ['n', 'w', 'e', 's']) { const along = side === 'n' || side === 's', L = along ? R.w : R.d, c0 = along ? R.x : R.z, gaps = doorAt(side).map(([a, b]) => [(a + b) / 2 - 1, (a + b) / 2 + 1]).filter(([a, b]) => b - a > 0);
       if (side === 's' && R.door) gaps.push([R.x - 1.1, R.x + 1.1]); let segs = [[c0 - L / 2, c0 + L / 2]]; for (const [a, b] of gaps) segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > .05));
-      const h = gaps.length && side !== 's' ? H : wallH(side); for (const [s, e] of segs) { const m = (s + e) / 2 - c0, len = e - s; if (side === 'n') box(r, WC, [m, h / 2, -hd - .08], [len, h, .16]); else if (side === 's') box(r, WC, [m, Math.min(h, .6) / 2, hd + .08], [len, Math.min(h, .6), .16]); else box(r, WC, [side === 'w' ? -hw - .08 : hw + .08, h / 2, m], [.16, h, len]) } }
+      const h = gaps.length && side !== 's' ? H : wallH(side); for (const [s, e] of segs) { const m = (s + e) / 2 - c0, len = e - s; if (side === 'n') wbox(r, WC, [m, h / 2, -hd - .08], [len, h, .16]); else if (side === 's') wbox(r, WC, [m, Math.min(h, .6) / 2, hd + .08], [len, Math.min(h, .6), .16]); else wbox(r, WC, [side === 'w' ? -hw - .08 : hw + .08, h / 2, m], [.16, h, len]) } }
     (FILL[R.k] || (() => 0))(r, R.w, R.d, H, R, TF); if (TF.k && DECO[TF.k]) { const dg = new THREE.Group(); DECO[TF.k](dg, R, H); for (const c of dg.children.slice()) { if (c.isLight) { r.add(c); continue } const p0 = c.position.clone(); c.scale.multiplyScalar(1.35); c.position.set(p0.x, p0.y * 1.35, p0.z); r.add(c) } }
     if (!seen[R.id]) { const f = new THREE.Mesh(new THREE.BoxGeometry(R.w + .34, H + .2, R.d + .34), new THREE.MeshBasicMaterial({ color: '#0e0a14', transparent: true, opacity: opt.fog ?? .72, depthWrite: false })); f.position.set(R.x, (H + .2) / 2 - .05, R.z); f.renderOrder = 4; f.userData.fog = R.id; g.add(f); fog.push(f) } }
   return fog }

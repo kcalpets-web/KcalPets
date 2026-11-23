@@ -8,6 +8,7 @@
    💀 deadgar  violet stone · the reaper statue with his scythe · dead trees · ghost fires · a pale moon
    Local frame: plaza (0,0) · keep at −z · gate at +z. glow = the materials that turn warm gold once the kingdom is restored. */
 import * as THREE from '../lib/three.module.min.js';
+import { stoneTex, worldUV } from './masonry.js';
 
 const LOOK = {
   navalee:   { stone: '#b9c3c9', dark: '#7d8b97', pave: '#a2acb2', roof: '#3d6ea8', glow: '#5ac8ff', moss: '#5f8a5e' },
@@ -28,9 +29,13 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     glow: new THREE.MeshStandardMaterial({ color: L.glow, emissive: L.glow, emissiveIntensity: .65, roughness: .6 }),   /* v3.30.2 softer (it filled the screen up close) */
     water: new THREE.MeshStandardMaterial({ color: k === 'valkara' ? '#ff7a1a' : '#4a9ac0', emissive: k === 'valkara' ? '#ff4a00' : '#000000', emissiveIntensity: k === 'valkara' ? 1.2 : 0, roughness: .2, transparent: k !== 'valkara', opacity: .85 }),
     ice: new THREE.MeshStandardMaterial({ color: '#bfe6ff', emissive: '#4aa8ff', emissiveIntensity: .25, roughness: .25, transparent: true, opacity: .9, flatShading: true }) };
+  /* v4.78 🏚️ old stone: the keep / towers / walls wear a painted course texture (designer: built of stacked stones, worn · masonry.js stoneTex) */
+  { const tS = stoneTex(L.dark, L.stone, { planks: 1, mortar: '#2e2a26', seed: k.length }), tD = stoneTex(new THREE.Color(L.dark).multiplyScalar(.7).getStyle(), L.dark, { mortar: '#1e1a18', seed: k.length + 3 });
+    Object.assign(M.stone, { map: tS, color: new THREE.Color('#ffffff'), flatShading: false }); Object.assign(M.dark, { map: tD, color: new THREE.Color('#ffffff'), flatShading: false }); M.stone.needsUpdate = M.dark.needsUpdate = true; M.stone.userData.tile = M.dark.userData.tile = 1 }
   const G = new THREE.Group(), sols = [], c = Math.cos(ry), s = Math.sin(ry); let seed = 1 + k.length * 977; const R = () => (seed = seed * 16807 % 2147483647) / 2147483647;
   const W = (lx, lz) => [cx + lx * c + lz * s, cz - lx * s + lz * c];
-  const add = (geo, m, x, y, z, rx = 0, ryy = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, rz); G.add(o); return o };
+  const PLAIN = new Map([[M.stone, std(L.stone)], [M.dark, std(L.dark)]]);   /* v4.78 cones (the volcano · spires · roofs) / spheres stay plain clay */
+  const add = (geo, m, x, y, z, rx = 0, ryy = 0, rz = 0) => { if (PLAIN.has(m)) { if (geo.type === 'ConeGeometry' || geo.type === 'SphereGeometry') m = PLAIN.get(m); else worldUV(geo, .13) } const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, rz); G.add(o); return o };
   const box = (x, y, z, w, h, d, m = M.stone, ryy = 0, rx = 0, rz = 0) => add(new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z, rx, ryy, rz);
   const cyl = (x, y, z, r0, r1, h, m = M.stone, seg = 10) => add(new THREE.CylinderGeometry(r1, r0, h, seg), m, x, y + h / 2, z);
   const cone = (x, y, z, r, h, m = M.dark, seg = 8) => add(new THREE.ConeGeometry(r, h, seg), m, x, y + h / 2, z);

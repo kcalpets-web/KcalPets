@@ -31,7 +31,7 @@ import { vinyl, vinylFrom, VLOOK, VBACK, VSCALE } from './vinyl.js';
 import { toonify, toonOn, facetify, facetOn } from './toon.js';
 import { makeGrade } from './grade.js';
 import { CLIPS as KCLIPS } from './krig.js';
-import { SHOPIN } from './shopin.js';
+import { SHOPIN, setRoomKind } from './shopin.js';
 import { CASTLEIN } from './castlein.js';
 import { buildFloor, LAYOUT, THEMES } from './castle2.js';
 import { unlock, mood, sfx, toggle as toggleSound, soundOn, note as fluteNote } from './audio.js';
@@ -4734,7 +4734,7 @@ function fInCtx(q) { const o = HIN.g.position, lx = q.x - o.x, lz = q.z - o.z, F
   if (near(F.board, 1.5)) return { k: 'board', go: () => openFarmB(b) };
   if (lz > HIN.d / 2 - 1.1 && Math.abs(lx) < 1) return { k: 'doorout', go: hinExit }; return { k: 'none', go: () => { } } }
 /* ================= v4.76 🏪 inside the town shops (behind the house switch): the cut-away room from shopin.js · the owner behind the counter (A = the shop's usual page) · 🚪 out ================= */
-function sInBuild(b) { const k = D.SHOPS[b.shop].k, g = new THREE.Group(), R2 = SHOPIN[k](g); HIN.w = R2.w; HIN.d = R2.d; HIN.fix = []; HIN.stove = null; HIN.items = []; HIN.bed = { x: 99, z: 99 }; HIN.shop = { i: b.shop, k, owner: R2.owner, counter: R2.counter }; HIN.seats = R2.seats || null;
+function sInBuild(b) { const k = D.SHOPS[b.shop].k, g = new THREE.Group(); setRoomKind(k, eco); const R2 = SHOPIN[k](g); setRoomKind(null); HIN.w = R2.w; HIN.d = R2.d; HIN.fix = []; HIN.stove = null; HIN.items = []; HIN.bed = { x: 99, z: 99 }; HIN.shop = { i: b.shop, k, owner: R2.owner, counter: R2.counter }; HIN.seats = R2.seats || null;
   const o = new THREE.Group(); HUMANS.villager(o, b.shop); o.scale.setScalar(.86); o.position.set(R2.owner[0], 0, R2.owner[1]); g.add(o); HIN.shop.who = o;
   HIN.fix.push({ x: R2.counter[0], z: R2.counter[1], hw: k === 'bar' ? 1.9 : 1.35, hd: .4 }, { x: R2.owner[0], z: R2.owner[1], hw: .3, hd: .3 });
   for (const [x, z, hw, hd] of R2.sols || []) HIN.fix.push({ x, z, hw, hd });
