@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE old harbour shops</title><style>body{margin:0;background:#2a2638;font:700 15px system-ui;color:#fff}#w{position:relative;width:1800px;height:700px}.lb{position:absolute;bottom:8px;width:257px;text-align:center;text-shadow:0 2px 3px #000}.lb small{display:block;font-size:12px;color:#e0d8f0;font-weight:600}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.78 mock: the harbour town's 7 shops rebuilt old (masonry.js oldShop) */
+import * as THREE from '../../lib/three.module.min.js';
+import { oldShop } from '../../src/masonry.js';
+import { rbox } from '../../src/clay.js';
+const W = 1800, H = 700, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); r.shadowMap.enabled = true; document.getElementById('w').appendChild(r.domElement); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.setScissorTest(true);
+const SH = [['🍖 ร้านอาหารน้อง', 'half', '#3a62b0', 'ครึ่งหินครึ่งไม้'], ['🛠️ ช่างอุปกรณ์', 'wood', '#d0703a', 'ไม้ล้วน (บนฐานหิน)'], ['⚒️ ช่างตีเหล็ก', 'stone', '#3a62b0', 'หินล้วน + ปล่องควัน'], ['🧺 ตลาด', 'wood', '#b0402e', 'ไม้ล้วน'], ['📜 กิลด์', 'stone', '#3a62b0', 'หินล้วน'], ['🪡 ร้านตัดเสื้อ', 'half', '#d0703a', 'ครึ่งหินครึ่งไม้'], ['🍹 บาร์', 'half', '#6a2a3a', 'ครึ่งหินครึ่งไม้ + ปล่องควัน']];
+let tris = 0; const cw = 450, chh = 350;
+SH.forEach(([n, kind, roof, note], i) => { const S = new THREE.Scene(); S.background = new THREE.Color('#a8d4ee'); S.add(new THREE.HemisphereLight('#fff4e0', '#5a6a48', 1.3)); const k = new THREE.DirectionalLight('#fff0d8', 2.6); k.position.set(-6, 10, 8); k.castShadow = true; S.add(k);
+  const gr = new THREE.Mesh(new THREE.CircleGeometry(12, 32), new THREE.MeshStandardMaterial({ color: '#c2b49a', roughness: 1 })); gr.rotation.x = -Math.PI / 2; gr.receiveShadow = true; S.add(gr);
+  const g = new THREE.Group(); oldShop(g, { kind, roof, seed: i + 2, chimney: i === 6 }); for (let a = 0; a < 5; a++) rbox(g, '#5a3a22', a % 2 ? '#f4f0e8' : roof, [-1.12 + a * .56, 1.32, 1.5], [.56, .05, .7], [-.45, 0, 0], .02); S.add(g);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 } });
+  const c = new THREE.PerspectiveCamera(34, cw / chh, .1, 100); c.position.set(4.6, 3.6, 8.4); c.lookAt(0, 1.6, 0); const col = i < 4 ? i : i - 4 + .5, row = i < 4 ? 1 : 0; r.setViewport(col * cw, row * chh, cw, chh); r.setScissor(col * cw, row * chh, cw, chh); r.render(S, c);
+  const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i < 4 ? i : i - 4 + .5) * cw + 'px'; d.style.width = cw + 'px'; d.style.bottom = (i < 4 ? 358 : 8) + 'px'; d.innerHTML = `${n}<small>${note}</small>`; document.getElementById('w').appendChild(d) });
+window.__tris = Math.round(tris / 7); window.__done = 1;
+</script></body></html>

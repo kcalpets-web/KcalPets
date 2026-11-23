@@ -71,11 +71,46 @@ export function crenel(g, o) { const R = rng(o.seed || 5), B = new Builder(), m 
   const c = B.mesh(); c.position.set(...o.at); c.rotation.y = o.ry || 0; c.position.x -= Math.cos(o.ry || 0) * o.w / 2; c.position.z += Math.sin(o.ry || 0) * o.w / 2; g.add(c); return c }
 
 /* a roof of old shingles: rows of overlapping tiles, a few missing / slipped · two slopes over [w × d], ridge along x */
-export function shingleRoof(g, o) { const R = rng(o.seed || 3), B = new Builder(), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), cc = new THREE.Color(), base = C(o.col || '#8a4a32'), w = o.w, d = o.d, rise = o.rise || 1.4, half = d / 2 + .3, slope = Math.atan2(rise, half), L = Math.hypot(rise, half), rows = Math.ceil(L / .32);
-  for (const side of [-1, 1]) for (let r = 0; r < rows; r++) { const off = r % 2 ? .2 : 0; for (let x = -w / 2 - .3 + off; x < w / 2 + .3; x += .42) { if (o.ruin && R() < o.ruin * .12) continue; const slip = o.ruin && R() < o.ruin * .08 ? .1 : 0, t = (r + .5) / rows, yy = rise * (1 - t), zz = side * half * t;
-      cc.copy(base).offsetHSL((R() - .5) * .02, (R() - .5) * .08, (R() - .5) * .1); e.set(-side * slope + (R() - .5) * .06, 0, (R() - .5) * .08 + slip); q.setFromEuler(e); m.compose(p.set(x, yy + .05, zz + side * slip), q, s); B.add(stoneGeo(.44, .06, .38, .02), m, cc, .3) } }
-  for (let x = -w / 2 - .3; x < w / 2 + .3; x += .5) { m.compose(p.set(x, rise + .08, 0), q.identity(), s); cc.copy(base).multiplyScalar(.8); B.add(stoneGeo(.52, .14, .22, .05), m, cc, .2) }
+export function shingleRoof(g, o) { const R = rng(o.seed || 3), B = new Builder(), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), cc = new THREE.Color(), base = C(o.col || '#8a4a32'), w = o.w, d = o.d, rise = o.rise || 1.4, half = d / 2 + (o.eave ?? .3), slope = Math.atan2(rise, half), L = Math.hypot(rise, half), [tw, td] = o.tile || [.44, .38], rows = Math.ceil(L / (td * .84));
+  for (const side of [-1, 1]) for (let r = 0; r < rows; r++) { const off = r % 2 ? .2 : 0; for (let x = -w / 2 - .3 + off * tw / .44; x < w / 2 + .3; x += tw * .95) { if (o.ruin && R() < o.ruin * .12) continue; const slip = o.ruin && R() < o.ruin * .08 ? .1 : 0, t = (r + .5) / rows, yy = rise * (1 - t), zz = side * half * t;
+      cc.copy(base).offsetHSL((R() - .5) * .02, (R() - .5) * .08, (R() - .5) * .1); e.set(-side * slope + (R() - .5) * .06, 0, (R() - .5) * .08 + slip); q.setFromEuler(e); m.compose(p.set(x, yy + .05, zz + side * slip), q, s); B.add(stoneGeo(tw, tw * .13, td, .015), m, cc, .3) } }
+  for (let x = -w / 2 - .3; x < w / 2 + .3; x += tw * 1.1) { m.compose(p.set(x, rise + .08 * tw / .44, 0), q.identity(), s); cc.copy(base).multiplyScalar(.8); B.add(stoneGeo(tw * 1.15, tw * .32, tw * .5, .04), m, cc, .2) }
   const rf = B.mesh(); rf.position.set(...o.at); rf.rotation.y = o.ry || 0; g.add(rf);
   /* the boards under the tiles (seen through the gaps) */
   const ug = new THREE.Group(), sh = new THREE.Shape([new THREE.Vector2(-half, 0), new THREE.Vector2(0, rise), new THREE.Vector2(half, 0)]), ex = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: w + .5, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: '#3a2a1e', roughness: 1 })); ex.rotation.y = Math.PI / 2; ex.position.set(-(w + .5) / 2, -.02, 0); ex.scale.set(1, .97, 1); ug.add(ex); ug.position.copy(rf.position); ug.rotation.y = rf.rotation.y; g.add(ug);
   return rf }
+
+/* weathered boards: horizontal planks (a few missing / crooked / a different colour where they were replaced) between corner posts */
+export function plankWall(g, o) {
+  const R = rng(o.seed || 17), B = new Builder(), w = o.w, h = o.h, t = o.t || .14, open = o.open || [], ruin = o.ruin || 0, base = C(o.wood || '#8a6440'), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), cc = new THREE.Color(), ph = o.board || .2;
+  { const back = new THREE.BoxGeometry(w - .04, h - .02, t * .4).toNonIndexed(); back.computeVertexNormals(); m.makeTranslation(w / 2, h / 2, -t * .35); B.add(back, m, C('#2e2218'), 0) }
+  for (let y = 0; y < h - .02; y += ph) { let x = 0; while (x < w - .02) { const L = Math.min(w - x, .9 + R() * 1.4), cx = x + L / 2, cy = y + ph / 2; x += L;
+      if (inOpen(open, cx, cy, L * .3, ph * .5, -.02)) { /* cut round the opening */ for (const [ox, oy, ow, oh] of open) if (cy > oy && cy < oy + oh) { for (const [a, b2] of [[cx - L / 2, ox], [ox + ow, cx + L / 2]]) if (b2 - a > .08) { m.compose(p.set((a + b2) / 2, cy, 0), q.identity(), s); B.add(stoneGeo(b2 - a - .02, ph - .025, t, .015), m, cc.copy(base).offsetHSL(0, 0, (R() - .5) * .1), .18) } } continue }
+      if (ruin && R() < ruin * .1) continue;   /* a missing board */
+      const repl = R() < .15; cc.copy(repl ? C('#b08a5a') : base).offsetHSL((R() - .5) * .02, (R() - .5) * .08, (R() - .5) * .12); e.set(0, 0, (R() - .5) * .04 * (1 + ruin * 2)); q.setFromEuler(e); m.compose(p.set(cx, cy, (R() - .5) * .02), q, s); B.add(stoneGeo(L - .02, ph - .025, t, .015), m, cc, .18) } }
+  for (const x of [.06, w - .06]) { m.compose(p.set(x, h / 2, .05), q.identity(), s); B.add(stoneGeo(.14, h, t + .08, .02), m, C(o.post || '#4a3422'), .2) }
+  for (const [ox, oy, ow, oh] of open) { for (const x of [ox - .04, ox + ow + .04]) { m.compose(p.set(x, oy + oh / 2, .05), q.identity(), s); B.add(stoneGeo(.08, oh, t + .06, .015), m, C(o.post || '#4a3422'), .2) } m.compose(p.set(ox + ow / 2, oy + oh + .04, .05), q.identity(), s); B.add(stoneGeo(ow + .16, .08, t + .06, .015), m, C(o.post || '#4a3422'), .2) }
+  const wall = B.mesh(); wall.position.set(...(o.at || [0, 0, 0])); wall.rotation.y = o.ry || 0; wall.position.x -= Math.cos(o.ry || 0) * w / 2; wall.position.z += Math.sin(o.ry || 0) * w / 2; g.add(wall); return wall }
+
+/* v4.78 🏚️ an old shop of the harbour town (the same footprint / door / windows as harbourShop: 2.9 × 2.35 · front = +z)
+   kind: 'stone' (all stone · a chimney) · 'half' (stone below, half-timber above) · 'wood' (boards on a stone footing) · roof colour · winMat = the lit-window material (null = plain) */
+export function oldShop(g, o) {
+  const W = 2.9, D = 2.35, H = 2.3, kind = o.kind || 'half', seed = o.seed || 1, st = o.stone || ['#6e665a', '#b8ae9a'], eco = o.eco, sz = eco ? [.55, .32] : [.4, .24], ruin = o.ruin ?? .45;
+  const door = [W / 2 - .38, 0, .76, 1.15], win = [[.25, 1.1, .5, .55], [W - .75, 1.1, .5, .55]], fr = [0, 0, D / 2], bk = [0, 0, -D / 2], rt = [W / 2, 0, 0], lf = [-W / 2, 0, 0];
+  const front = [door, ...win], side = [[D / 2 - .28, 1.1, .56, .55]];
+  const sw = (h, at, ry, w, open, s2, y0 = 0) => stoneWall(g, { w, h, t: .26, at: [at[0], y0, at[2]], ry, stone: st, size: sz, ruin, moss: .6, planks: !eco, seed: seed * 10 + s2, open });
+  const tw = (h, at, ry, w, open, s2, y0) => timberWall(g, { w: w + .1, h, t: .2, at: [at[0] * 1.02, y0, at[2] * 1.03], ry, ruin: ruin + .1, seed: seed * 10 + s2, open, plaster: o.plaster, beam: o.beam });
+  const pw = (h, at, ry, w, open, s2, y0) => plankWall(g, { w, h, t: .12, at: [at[0], y0, at[2]], ry, ruin, seed: seed * 10 + s2, open, wood: o.wood });
+  const shift = (op, dy) => op.map(([x, y, w2, h2]) => [x, y - dy, w2, h2]).filter(([, y, , h2]) => y + h2 > 0);
+  if (kind === 'stone') { sw(H, fr, 0, W, front, 1); sw(H, bk, Math.PI, W, [], 2); sw(H, rt, Math.PI / 2, D, side, 3); sw(H, lf, -Math.PI / 2, D, side, 4) }
+  else { const h1 = kind === 'wood' ? .45 : .95, up = kind === 'wood' ? pw : tw;
+    sw(h1, fr, 0, W, front.filter(a => a[1] < h1), 1); sw(h1, bk, Math.PI, W, [], 2); sw(h1, rt, Math.PI / 2, D, [], 3); sw(h1, lf, -Math.PI / 2, D, [], 4);
+    up(H - h1, fr, 0, W, shift(front, h1), 5, h1); up(H - h1, bk, Math.PI, W, [], 6, h1); up(H - h1, rt, Math.PI / 2, D, shift(side, h1), 7, h1); up(H - h1, lf, -Math.PI / 2, D, shift(side, h1), 8, h1) }
+  shingleRoof(g, { w: W + .3, d: D + .3, rise: 1.05, eave: .12, tile: eco ? [.4, .34] : [.3, .26], at: [0, H, 0], col: o.roof, ruin: ruin + .1, seed: seed * 7 });
+  /* the door (old boards) · windows (dark glass, or lit at night) · a sign board */
+  for (let i = 0; i < 3; i++) { const bd = new THREE.Mesh(stoneGeo(.24, 1.12, .06, .02), MASON_MAT.clone()); bd.material = new THREE.MeshStandardMaterial({ color: ['#5a3a22', '#6a4428', '#4e321e'][i], roughness: .95 }); bd.position.set(-W / 2 + door[0] + .13 + i * .25, .57, D / 2 + .1); bd.rotation.z = (i - 1) * .015; g.add(bd) }
+  for (const [x, y, w2, h2] of win) { const gl = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, .04), o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 })); gl.position.set(-W / 2 + x + w2 / 2, y + h2 / 2, D / 2 - .02); g.add(gl);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(.04, h2, .05), new THREE.MeshStandardMaterial({ color: '#4a3422' })); bar.position.copy(gl.position); bar.position.z += .02; g.add(bar) }
+  for (const s2 of [-1, 1]) { const gl = new THREE.Mesh(new THREE.BoxGeometry(.04, .55, .56), o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 })); gl.position.set(s2 * W / 2, 1.375, 0); g.add(gl) }
+  if (kind === 'stone' || o.chimney) { const ch = new THREE.Group(); stoneWall(ch, { w: .5, h: 1.5, t: .5, at: [0, 0, 0], stone: st, ruin: .15, size: [.25, .17], noHoles: 1, seed: seed * 3 }); ch.position.set(.75, H + .1, -.45); g.add(ch) }
+  return g }

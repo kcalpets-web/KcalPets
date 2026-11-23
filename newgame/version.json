@@ -46,6 +46,7 @@
   "src/lumcity.js",
   "src/lush.js",
   "src/main.js",
+  "src/masonry.js",
   "src/noto.js",
   "src/quests.js",
   "src/roaddata.js",
