@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE farm</title><style>body{margin:0}</style></head><body>
+<script type="module">
+/* v4.75 house stage 4 line-up: coop · cow pen · pig pen · barn · fish pond + animals */
+import { THREE, ANIMALS, HUMANS, FARMB } from '../../src/clay.js';
+const W = 1500, H = 760, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#bfe3f2'); S.add(new THREE.HemisphereLight('#fff6ec', '#c9a27e', .95)); const sun = new THREE.DirectionalLight('#fff1dc', 2.1); sun.position.set(-6, 12, 9); sun.castShadow = true; Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 12, bottom: -12 }); sun.shadow.mapSize.set(2048, 2048); S.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: '#7cc060' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const at = (fn, x, z, ry = 0, s = 1) => { const g = new THREE.Group(); fn(g); g.position.set(x, 0, z); g.rotation.y = ry; g.scale.setScalar(s); g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } }); S.add(g); return g };
+const C = (x, z) => [x, z];
+at(FARMB.coop, -6.2, -3.2, .15); for (const [x, z, ry] of [[-5.6, -2.4, .8], [-5.0, -1.8, -.6], [-5.9, -1.6, 2.4], [-5.1, -3.0, 1.6]]) at(ANIMALS.chicken, x, z, ry, 1.15);
+at(FARMB.cowpen, 0, -3.6, 0); at(ANIMALS.cow, -.7, -2.7, .7, 1.05); at(ANIMALS.cow, .9, -3.0, -.9, 1.05);
+at(FARMB.barn, 6.4, -4, -.2);
+at(FARMB.pigpen, -3.6, 2.4, .1); at(ANIMALS.pig, -3.0, 2.8, -.8, 1.1); at(ANIMALS.pig, -4.2, 3.4, 2.6, 1.1);
+at(FARMB.pond, 3.6, 2.6, 0); at(HUMANS.kealee, .2, 3.6, .2, .82);
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 120); cam.position.set(0, 13, 17); cam.lookAt(0, 0, -.4); r.render(S, cam); window.__done = 1;
+</script></body></html>

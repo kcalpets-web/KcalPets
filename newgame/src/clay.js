@@ -458,3 +458,55 @@ export const STORM = {
     for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff5a8a' })); e.position.set(s * .11, .9, .26); g.add(e) } },
   cloud(g) { for (let i = 0; i < 22; i++) { const a = i * 2.39, r = 6 + (i % 5) * 4.5; part(g, '#1a1830', '#3a3458', [Math.cos(a) * r, Math.sin(i * 1.3) * 3, Math.sin(a) * r * .6], [9 - (i % 4), 6 - (i % 3), 8], [0, a, 0], { A: .25, f: 1.4 }) } },
 };
+/* ================= v4.75 🐔 farm animals + buildings (house stage 4 · in development) ================= */
+ANIMALS.cow = g => { quad(g, { body: ['#e8e4dc', '#ffffff'], w: .46, h: .38, d: .72, lw: .1, lh: .24 });
+  for (const [x, y, z, s] of [[.2, .95, .1, .2], [-.18, .9, -.3, .24], [.05, 1.08, -.05, .14], [-.24, .78, .25, .13]]) part(g, '#2a2420', '#4a4038', [x, y, z], [s, s * .7, s * 1.2], [0, 0, 0], { A: 0 });
+  part(g, '#e8e4dc', '#ffffff', [0, 1.0, .68], [.27, .25, .26]); part(g, '#e89aa0', '#ffc8cc', [0, .9, .9], [.2, .13, .1], [0, 0, 0], { A: 0 });
+  for (const s of [-1, 1]) { part(g, '#3a2a20', '#5a4030', [s * .05, .92, .99], [.025, .025, .01], [0, 0, 0], { A: 0 }); cone(g, '#d8ccb0', '#fffbe8', [s * .17, 1.22, .62], [.035, .1, .035], [0, 0, -s * .6], .9); part(g, '#e8e4dc', '#ffffff', [s * .3, 1.08, .6], [.1, .05, .06], [0, 0, s * .4]) }
+  part(g, '#f0b0b8', '#ffd0d8', [0, .42, -.15], [.16, .08, .14], [0, 0, 0], { A: 0 }); part(g, '#e8e4dc', '#ffffff', [0, .78, -.78], [.03, .26, .03], [-.2, 0, 0], { A: 0 }); part(g, '#2a2420', '#4a4038', [0, .55, -.84], [.05, .07, .05], [0, 0, 0], { A: 0 });
+  eyes(g, 1.08, .86, .12, .035); part(g, '#c84a3a', '#ff7a5a', [0, .82, .72], [.12, .03, .05], [0, 0, 0], { A: 0 }); part(g, '#e0b030', '#ffe070', [0, .72, .74], [.06, .07, .05], [0, 0, 0], { A: 0 }) };   // red collar + bell
+ANIMALS.pig = g => { quad(g, { body: ['#e89aa0', '#ffc8cc'], w: .4, h: .3, d: .5, lw: .08, lh: .12 });
+  part(g, '#e89aa0', '#ffc8cc', [0, .55, .48], [.27, .24, .22]); part(g, '#d87a88', '#f8a8b0', [0, .5, .7], [.13, .1, .06], [0, 0, 0], { A: 0 });
+  for (const s of [-1, 1]) { part(g, '#8a3a48', '#a85060', [s * .045, .5, .76], [.025, .03, .01], [0, 0, 0], { A: 0 }); part(g, '#d87a88', '#f8a8b0', [s * .17, .8, .42], [.09, .1, .04], [-.5, 0, s * .5], { A: 0 }) }
+  const t = new THREE.Mesh(new THREE.TorusGeometry(.06, .018, 6, 12, 5), new THREE.MeshStandardMaterial({ color: '#f0a8b0', roughness: .7 })); t.position.set(0, .55, -.53); t.rotation.y = Math.PI / 2; g.add(t);
+  eyes(g, .62, .66, .1, .03); cheeks(g, .5, .66, .17) };
+const ROOF_R = ['#8a2a1a', '#d05a3a'], PLANK = ['#7a4a28', '#c08a52'], WHITE = ['#d8d0c0', '#ffffff'];
+const plankWall = (g, x, y, z, w, h, ry = 0, c = PLANK) => { const n = Math.max(1, Math.round(w / .22)); for (let i = 0; i < n; i++) rbox(g, i % 2 ? c[0] : '#8a5a32', c[1], [x + Math.cos(ry) * (-w / 2 + (i + .5) * w / n), y, z - Math.sin(ry) * (-w / 2 + (i + .5) * w / n)], [w / n - .01, h, .1], [0, ry, 0], .02) };
+const gable = (g, w, d, y, h, c = ROOF_R) => { for (const s of [-1, 1]) rbox(g, ...c, [s * w / 4, y + h / 2, 0], [Math.hypot(w / 2, h) + .2, .1, d + .3], [0, 0, -s * Math.atan2(h, w / 2)], .03) };
+const pen = (g, w, d, gate = 1) => { const hw = w / 2, hd = d / 2, posts = [];   /* a log fence round w × d with a gate gap at the front */
+  for (let x = -hw; x <= hw + .01; x += w / Math.round(w / 1)) { posts.push([x, -hd]); if (!gate || Math.abs(x) > .6) posts.push([x, hd]) } for (let z = -hd + d / Math.round(d / 1); z < hd - .01; z += d / Math.round(d / 1)) { posts.push([-hw, z]); posts.push([hw, z]) }
+  for (const [x, z] of posts) log(g, [x, .42, z], .85, [0, 0, 0], .065);
+  for (const y of [.33, .65]) { log(g, [0, y, -hd], w, [0, 0, Math.PI / 2], .045, WOODL); for (const s of [-1, 1]) { log(g, [s * hw, y, 0], d, [Math.PI / 2, 0, 0], .045, WOODL); if (gate) log(g, [s * (hw + .6) / 2, y, hd], hw - .6, [0, 0, Math.PI / 2], .045, WOODL) } } };
+const trough = (g, x, z, ry = 0, food = '#d8b040') => { const t = new THREE.Group(); rbox(t, ...WOOD, [0, .2, 0], [1, .3, .38], [0, 0, 0], .03); rbox(t, food, '#fff0a0', [0, .33, 0], [.88, .05, .28], [0, 0, 0], .02); t.position.set(x, 0, z); t.rotation.y = ry; g.add(t) };
+const hay = (g, x, y, z, ry = 0) => { rbox(g, ...STRAW, [x, y + .22, z], [.8, .44, .5], [0, ry, 0], .08); for (const s of [-.2, .2]) rbox(g, '#8a6a2a', '#b89040', [x + Math.cos(ry) * s, y + .22, z - Math.sin(ry) * s], [.03, .46, .52], [0, ry, 0], .01) };
+export const FARMB = {
+  /* 🐔 the coop: a little red-roofed hut on legs + a ramp + a fenced run */
+  coop(g) { const h = new THREE.Group(); h.position.set(-.9, 0, -.5); g.add(h); for (const [x, z] of [[-.6, -.5], [.6, -.5], [-.6, .5], [.6, .5]]) log(h, [x, .25, z], .5, [0, 0, 0], .06);
+    rbox(h, ...PLANK, [0, .52, 0], [1.4, .08, 1.2], [0, 0, 0], .02); plankWall(h, 0, .95, -.55, 1.4, .8); for (const s of [-1, 1]) rbox(h, ...PLANK, [s * .68, .95, 0], [.1, .8, 1.1], [0, 0, 0], .02);
+    plankWall(h, -.42, .95, .55, .55, .8); plankWall(h, .42, .95, .55, .55, .8); rbox(h, '#2a1a10', '#4a3020', [0, .82, .56], [.3, .4, .05], [0, 0, 0], .02); gable(h, 1.5, 1.3, 1.35, .45);
+    for (const s of [-1, 1]) rbox(h, ...PLANK, [0, 1.35, s * .58], [1.42, .1, .06], [0, 0, 0], .01); rbox(h, ...WOODL, [0, .3, .95], [.32, .04, .8], [.6, 0, 0], .02); for (let i = 0; i < 4; i++) rbox(h, ...WOOD, [0, .14 + i * .1, .68 + i * .18], [.32, .02, .03], [.6, 0, 0], .005);
+    pen(g, 3.6, 2.6); trough(g, .9, .6, 0, '#e8c860'); for (const [x, z] of [[.4, -.6], [1.3, -.2], [.9, 1.0]]) part(g, '#e8d890', '#fff4c0', [x, .02, z], [.12, .02, .12], [0, 0, 0], { A: 0 });
+    for (const [x, z] of [[-.3, .55], [-.15, .62]]) part(g, '#f0e8d8', '#ffffff', [x - .9, .62, z - .5], [.06, .08, .06], [0, 0, 0], { A: 0 }) },   // eggs in the doorway
+  /* 🐄 the cow pen: a big fence + an open shed with hay at the back + a water trough */
+  cowpen(g) { pen(g, 5, 4); const sh = new THREE.Group(); sh.position.set(0, 0, -1.4); g.add(sh); for (const [x, z] of [[-1.8, -.5], [1.8, -.5], [-1.8, .6], [1.8, .6]]) log(sh, [x, .85, z], 1.7, [0, 0, 0], .08);
+    plankWall(sh, 0, .8, -.55, 3.6, 1.6); rbox(sh, ...ROOF_R, [0, 1.78, 0], [4.1, .1, 1.6], [.18, 0, 0], .03); hay(sh, -1, 0, -.15); hay(sh, -1, .44, -.15, .2); hay(sh, .9, 0, -.1, -.3);
+    trough(g, 1.5, .9, Math.PI / 2, '#5aa0d0'); trough(g, -1.2, .7, 0, '#9ac050') },
+  /* 🐖 the pig pen: a low fence · a mud wallow · a lean-to */
+  pigpen(g) { pen(g, 4, 3.2); const mud = new THREE.Mesh(new THREE.CircleGeometry(.9, 20), new THREE.MeshStandardMaterial({ color: '#6a4a2a', roughness: .35 })); mud.rotation.x = -Math.PI / 2; mud.scale.set(1.3, .8, 1); mud.position.set(.6, .015, .4); g.add(mud);
+    const lt = new THREE.Group(); lt.position.set(-1, 0, -1); g.add(lt); for (const x of [-.8, .8]) { log(lt, [x, .6, .4], 1.2, [0, 0, 0], .07); log(lt, [x, .9, -.4], 1.8, [0, 0, 0], .07) } plankWall(lt, 0, .8, -.45, 1.7, 1.5); rbox(lt, ...STRAW, [0, 1.28, 0], [2, .12, 1.3], [-.4, 0, 0], .05);
+    for (let i = 0; i < 6; i++) part(lt, ...STRAW, [-.5 + i * .2, .06, -.1 + (i % 2) * .2], [.2, .05, .2], [0, i, 0], { A: 0 }); trough(g, 1.2, -1, 0, '#c8a070') },
+  /* 🌾 the barn: tall red walls with white trim · big doors · a hay loft */
+  barn(g) { const W = 3, Dd = 2.6, H = 2; for (const [x, z, w, ry] of [[0, -Dd / 2, W, 0], [-W / 2, 0, Dd, Math.PI / 2], [W / 2, 0, Dd, Math.PI / 2]]) plankWall(g, x, H / 2, z, w, H, ry, ['#8a2a1a', '#c8402a']);
+    for (const s of [-1, 1]) { plankWall(g, s * 1.1, H / 2, Dd / 2, .8, H, 0, ['#8a2a1a', '#c8402a']); rbox(g, ...WHITE, [s * .7, H / 2, Dd / 2 + .06], [.1, H, .06], [0, 0, 0], .01) }
+    for (const s of [-1, 1]) { const d = new THREE.Group(); d.position.set(s * .65, 0, Dd / 2 + .05); d.rotation.y = s * .5; g.add(d); rbox(d, '#8a2a1a', '#c8402a', [-s * .32, .8, 0], [.62, 1.6, .07], [0, 0, 0], .02); rbox(d, ...WHITE, [-s * .32, .8, .04], [.62, .07, .02], [0, 0, .9 * s], .005); rbox(d, ...WHITE, [-s * .32, .8, .04], [.6, 1.58, .015], [0, 0, 0], .005).scale.set(1, 1, .3) }
+    const tri = new THREE.Shape([new THREE.Vector2(-W / 2, 0), new THREE.Vector2(W / 2, 0), new THREE.Vector2(0, 1.1)]); for (const z of [-Dd / 2, Dd / 2]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(tri), new THREE.MeshStandardMaterial({ color: '#c8402a', side: THREE.DoubleSide, roughness: .9 })); m.position.set(0, H, z); g.add(m) }
+    rbox(g, '#2a1a10', '#4a3020', [0, H + .4, Dd / 2 + .02], [.5, .45, .04], [0, 0, 0], .02); rbox(g, ...STRAW, [0, H + .3, Dd / 2 + .04], [.4, .2, .04], [0, 0, 0], .02); gable(g, W + .1, Dd, H, 1.1, ['#4a4a52', '#7a7a88']);
+    hay(g, 1.9, 0, 1, .3); hay(g, 2.2, 0, .3, -.2); hay(g, 2.0, .44, .7, .1) },
+  /* 🐟 the fish pond: water ringed with stones · reeds · lily pads */
+  pond(g) { const w = new THREE.Mesh(new THREE.CircleGeometry(1.5, 28), new THREE.MeshStandardMaterial({ color: '#3a8ac0', roughness: .15, metalness: .1 })); w.rotation.x = -Math.PI / 2; w.scale.set(1.25, 1, 1); w.position.y = .02; g.add(w);
+    const sh = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.75, 28), new THREE.MeshStandardMaterial({ color: '#a8885a', roughness: 1 })); sh.rotation.x = -Math.PI / 2; sh.scale.set(1.25, 1, 1); sh.position.y = .015; g.add(sh);
+    for (let i = 0; i < 18; i++) { const a = i / 18 * 6.283; part(g, ...STONE, [Math.cos(a) * 1.95, .08, Math.sin(a) * 1.6], [.2 + (i % 3) * .05, .13, .18], [0, a, 0], { A: .2 }) }
+    for (const [x, z] of [[-1.2, -.6], [1.3, .7], [-.9, 1.0]]) for (let i = 0; i < 5; i++) cone(g, '#3a6a2a', '#7ab050', [x + (i % 3) * .08, .35, z + (i % 2) * .08], [.03, .35 + i * .04, .03], [(i - 2) * .08, 0, (i % 2 - .5) * .2], .95);
+    for (const [x, z] of [[.4, -.3], [-.3, .5], [.8, .4]]) { const p = new THREE.Mesh(new THREE.CircleGeometry(.16, 12, .3, 5.8), new THREE.MeshStandardMaterial({ color: '#4a9a3a' })); p.rotation.x = -Math.PI / 2; p.position.set(x, .03, z); g.add(p) } part(g, '#e85a8a', '#ffb0d0', [-.3, .07, .5], [.06, .05, .06], [0, 0, 0], { A: 0 });
+    const f = new THREE.Group(); part(f, '#d86a2a', '#ffa050', [0, 0, 0], [.08, .1, .2]); cone(f, '#d86a2a', '#ffa050', [0, 0, -.2], [.07, .1, .02], [Math.PI / 2, 0, 0], .1); f.position.set(-.5, .35, -.2); f.rotation.set(-.6, .4, 0); g.add(f);
+    for (let i = 0; i < 6; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 5), new THREE.MeshStandardMaterial({ color: '#cfeeff' })); d.position.set(-.5 + Math.cos(i) * .2, .1 + (i % 3) * .05, -.1 + Math.sin(i) * .15); g.add(d) } } };
