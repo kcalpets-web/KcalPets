@@ -857,7 +857,7 @@ export const LUMFIX = { secs: 45, spots: [
   { n: 'กำแพงเมือง', ic: '🧱', cost: { stone: 60, flint: 5 } },
   { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },
   { n: 'สะพานหิน', ic: '🌉', cost: { stone: 50, ore: 6 } },
-  { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 } };
+  { n: 'ประตูปราสาท', ic: '🏰', cost: { wood: 40, ore: 10, coin: 3000 } }], reward: { coin: 5000, gem: 50 }, king: { coin: 10000, gem: 100, title: '👑 ผู้พิทักษ์ลูมิเนีย' } };
 export const HOUSE_LV = [
   { n: 'ห้องเดียว', ic: '🏠', w: 6, d: 6, cap: 12, what: 'เตียง · หีบ · ของตกแต่ง 12 ชิ้น' },
   { n: 'ห้องใหญ่ + ครัว', ic: '🏡', w: 9, d: 7, cap: 24, cost: { wood: 80, stone: 40, coin: 2000 }, what: 'ห้องกว้างขึ้น · ครัวในบ้าน (ใช้หม้อหน้าบ้านได้จากในบ้าน) · ของตกแต่ง 24 ชิ้น' },
