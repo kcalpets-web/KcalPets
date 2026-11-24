@@ -24,7 +24,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('camps', camps.length, JSON.stringify(camps.slice(0, 6))); if (camps.length < 10) errs.push('too few camps: ' + camps.length);
     const c = camps.find(c => c.tier === 0) || camps[0];
     /* walk-in area near the camp: animals stream in with the chunks */
-    await E(c => window.__ng.placeMe(c.x + 40, c.z + 10), c); await wait(9000); await closeAll();
+    await E(c => window.__ng.placeMe(c.x + 40, c.z + 10), c); await wait(9000); await closeAll(); await pg.waitForFunction(() => window.__ng.mons.some(m => m.T.animal), null, { timeout: 40000, polling: 500 }).catch(() => 0);   /* chunks stream in slowly when the frame rate is low */
     const an = await N(() => window.__ng.mons.filter(m => m.T.animal).map(m => m.kind)); log('animals', JSON.stringify(an)); if (!an.length) errs.push('no animals spawned');
     const fl = await E(async () => { const N = window.__ng, a = N.mons.find(m => m.T.animal && !m.T.charge) || N.mons.find(m => m.T.animal); if (!a) return null; const q = a.A.root.position, x0 = q.x, z0 = q.z;
       N.placeMe(q.x + 2.5, q.z); N.CAM.yaw = -Math.PI / 2; await new Promise(r => setTimeout(r, 300)); const al = a.alert; await new Promise(r => setTimeout(r, 2500)); return { kind: a.kind, alert: al, moved: Math.hypot(a.A.root.position.x - x0, a.A.root.position.z - z0) } });

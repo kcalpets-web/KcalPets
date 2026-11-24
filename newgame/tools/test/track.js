@@ -6,7 +6,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8814, OUT = process.arg
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   try {
-    const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on('pageerror', e => errs.push('PE ' + e.message));
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.setDefaultTimeout(90000); pg.on('pageerror', e => errs.push('PE ' + e.message));
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, time: 640, quest: 99,
         kq: { nv1: { st: 'on', b: 0, t: 1 } } })) });
@@ -21,7 +21,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8814, OUT = process.arg
     // quest card: ☁️ main first · chooser lists main + the people-quest
     /* v3.74 no quest card on screen: the 📜 quest page (main · NPC sections) */
     const card = await E(() => getComputedStyle(document.getElementById('quest')).display); log('card display', card); if (card !== 'none') errs.push('v3.74 the quest card should be gone');
-    await E(() => window.__ng.openAtlas('quest')); await wait(600); const L0 = await E(() => [...document.querySelectorAll('.ov [data-qc]')].map(x => x.dataset.qc)); await E(() => { window.__ng.qSubStep(1); window.__ng.qSubStep(1) }); await wait(600); const L1 = await E(() => [...document.querySelectorAll('.ov [data-qc]')].map(x => x.dataset.qc)); log('main', L0, 'npc', L1); if (!L0.includes('main') || !L1.includes('kq:nv1')) errs.push('the quest page does not list main + the people quest');
+    await E(() => window.__ng.openAtlas('quest')); await wait(600); const L0 = await E(() => [...document.querySelectorAll('.ov [data-qc]')].map(x => x.dataset.qc)); await E(() => { window.__ng.qSubStep(1); window.__ng.qSubStep(1); window.__ng.qSubStep(1) }); await wait(600); const L1 = await E(() => [...document.querySelectorAll('.ov [data-qc]')].map(x => x.dataset.qc)); log('main', L0, 'npc', L1); if (!L0.includes('main') || !L1.includes('kq:nv1')) errs.push('the quest page does not list main + the people quest');
     await pg.screenshot({ path: OUT + '/chooser.png' });
     await E(() => document.querySelector('.ov [data-qc="kq:nv1"]').click()); await wait(400); await E(() => document.querySelector('.ov [data-tr="kq:nv1"]').click()); await wait(1200); const c2 = await E(() => ({ tr: window.__ng.S.track, map: window.__ng.atlasK, star: document.querySelectorAll('.wtgt').length })); await close(); await wait(300);
     log('follow', JSON.stringify(c2)); if (c2.tr !== 'kq:nv1' || c2.map !== 'map' || c2.star !== 1) errs.push('A on a quest should follow it and show it blinking on the map');

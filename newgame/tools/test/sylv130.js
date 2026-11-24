@@ -10,7 +10,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8887, OUT = process.argv[2] || '/tmp/
         time: 600 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-    const r = await E(async () => { const N = window.__ng, K = N.KINGDOMS.sylvaren, sl = ms => new Promise(r => setTimeout(r, ms)); N.placeMe(K.x + 2, K.z + 6); await sl(3500);
+    const r = await E(async () => { const N = window.__ng, K = N.KINGDOMS.sylvaren, C = N.CAPS.sylvaren || K, sl = ms => new Promise(r => setTimeout(r, ms)); N.placeMe(C.x + 2, C.z + 6); await sl(3500);
       const npc = !!N.KNPC['sylvaren:mali'];
       const S = N.S, done = []; const run = (id, prep) => { prep(); N.qAccept(id); const p = N.qProg(id); N.qTurnIn(id, null); done.push(id + ':' + (p.ok ? 1 : 0)) };
       run('svW1', () => { S.ingr.glowherb = 5 }); run('svW2', () => { S.mats.wood = 20; S.mats.hide = 3 }); run('svW3', () => { S.ingr.venison = 5 }); run('svW4', () => { S.mats.wood = 30 });
