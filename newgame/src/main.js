@@ -4471,6 +4471,7 @@ function talkNpc(key) { const N = KNPC[key]; if (!N) return; if (outlaw()) { sfx
     let line, ch = [['bye', '👋 ลาก่อน']];
     if (say) { line = say; say = null }
     else if (done) line = 'ขอบคุณจากใจ… บ้านเมืองของเรากลับมามีชีวิตอีกครั้งเพราะเจ้า';
+    else if (!Q && qg.job) line = `${n.hello}<div class="dlgR">🔒 ช่วยอาณาจักรให้ได้ก่อน แล้วข้าจะมีงานตามอาชีพให้ช่วย</div>`;
     else if (!Q && qg.need) line = `${n.hello}<div class="dlgR">🔒 เควสต่อไปเปิดเมื่อสนิท ${qg.need}❤️<br><small>ถือของที่ชอบมาให้ หรือทำเควสให้สำเร็จ (+1❤️)</small></div>`;   /* v4.90 quests open by hearts */
     else if (!Q) line = n.hello + ' …ตอนนี้ข้าไม่มีอะไรให้ช่วยแล้วล่ะ ขอบใจนะ';
     else if (!st) { line = `${n.hello}<br><br>มีเรื่องอยากขอให้ช่วยหน่อย… รับไหม?<div class="dlgR">${n.lead ? '🌈' : '📜'} <b>${Q.text}</b><br>🎁 ${qReward(Q.reward || {})} · ✨ ${D.QUEST_SPIRIT}</div>`; ch = [['yes', '✅ รับเควส'], ['no', '❌ ไว้ก่อน']] }
@@ -5364,7 +5365,7 @@ const SHOPN = {}; function shopNpc(sk) { if (SHOPN[sk]) return SHOPN[sk]; const 
 function giftShop(sk, who, lx, lz) { const o = HIN.g.position; giftNpc({ k: 'harbour', n: shopNpc(sk), pos: { x: o.x + lx, y: HIN.Y, z: o.z + lz }, who }) }
 /* v4.90 (designer) quests open by hearts: the i-th quest of a villager (0 = first) needs i ❤️ · a quest done = +1 ❤️ · the leader's restore quests are never locked */
 const frP = (k, n) => (((S.fr || {})[FRK(k, n)]) || {}).p || 0;
-function qGate(k, n, ids) { const id = qNext(ids); if (!id || ids !== n.q) return { id }; if ((KQS()[id] || {}).st === 'on') return { id }; const i = ids.indexOf(id); return i > frHearts(frP(k, n)) ? { id: null, need: i } : { id } }
+function qGate(k, n, ids) { const id = qNext(ids); if (!id || ids !== n.q) return { id }; if ((KQS()[id] || {}).st === 'on') return { id }; const i = KQUEST[id] && KQUEST[id].job ? (raided(k) ? 99 : D.FRIEND.jobQ) : ids.indexOf(id); return i > frHearts(frP(k, n)) ? { id: null, need: i, job: i === 99 } : { id } }   /* v4.96 the job quest: kingdom free + D.FRIEND.jobQ ❤️ */
 function frAdd(k, n, add) { const st = FRS(k, n), h0 = frHearts(st.p); st.p = Math.max(0, Math.min(D.FRIEND.max, st.p + add)); const h1 = frHearts(st.p); save(); kqMarks();
   if (h1 > h0) setTimeout(() => toast(`${n.icon} ${n.name} สนิทขึ้น! ${heartsTxt(st.p)}${h1 === D.FRIEND.room ? '<br><small>🔑 เข้าห้องของเขาในโรงเตี๊ยมได้แล้ว (ตอนเขาอยู่)</small>' : ''}`, 2800), 900);
   if (h1 >= 5 && !st.g) { const N = Object.values(KNPC).find(x => x.k === k && x.n === n); if (N) setTimeout(() => frSpecial(N), 2400) } return h1 }
