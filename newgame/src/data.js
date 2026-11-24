@@ -475,6 +475,7 @@ export const FRIEND = {   /* v4.90 💞 friendship (designer · docs/plan-friend
   shop: { potion: ['herb', 'flower'], food: ['meat', 'fish'], tools: ['nut', 'egg'], smith: ['meat', 'spice'], market: ['veg', 'fruit'], guild: ['meat', 'sweet'], tailor: ['flower', 'sweet'], bar: ['fruit', 'squid'], inn: ['sweet', 'dairy'] },   /* v4.91 the harbour's shopkeepers + Martha (key 'harbour:shop_<k>') */
   extra: ['egg', 'nut', 'veg', 'sweet', 'dairy', 'fruit', 'fish'], hate: ['stone', 'hay', 'monster', 'salt', 'seed'],
   tagN: { fish: '🐟 ปลา', seaweed: '🌊 สาหร่าย', squid: '🦑 ปลาหมึก', fruit: '🍎 ผลไม้', herb: '🌿 สมุนไพร', flower: '🌸 ดอกไม้', spice: '🌶️ เครื่องเทศ', sweet: '🍯 ของหวาน', meat: '🍖 เนื้อ', dairy: '🥛 นม/ชีส', monster: '👾 ของจากมอนสเตอร์', egg: '🥚 ไข่', nut: '🌰 ถั่ว', veg: '🥕 ผัก', stone: '🪨 หิน', hay: '🌾 ฟาง', salt: '🧂 เกลือ', gem: '💎 อัญมณี', wrap: '🍃 ใบไม้ห่อ', cool: '🧊 ของเย็น', seed: '🌱 เมล็ดพันธุ์', mat: '🪵 วัสดุ', misc: '📦 ของอื่นๆ' } };
+export const SELFIE = { d: 3.2, h: 1.25, look: 1.0 };   /* v4.94 🤳 the selfie camera in the drawing frame: distance (÷ zoom) · height · looks at this height on you */
 export const POUCH = { s: .42, at: [0, -.05, -.26] };   /* v4.88 👝 the leather pouch at the back of the belt: size · place on the waist */
 export const GOLD = { hold: .38 };   /* v4.88 🟡 the gold button: hold this long (s) = the options panel */
 export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
