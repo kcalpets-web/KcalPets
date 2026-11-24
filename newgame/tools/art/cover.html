@@ -1,13 +1,13 @@
 <!doctype html><html><head><meta charset="utf-8"><title>KEALEE cover</title><style>body{margin:0;background:#000}#w{position:relative;width:780px;height:1688px;overflow:hidden;font-family:system-ui}canvas{display:block}
 .logo{position:absolute;left:0;right:0;top:150px;text-align:center;color:#fff}.logo h1{margin:0;font:900 150px/1 Georgia,serif;letter-spacing:6px;color:#fff6d8;text-shadow:0 0 30px #ffd86088,0 8px 0 #3a2a50,0 10px 24px #000a}
-.logo p{margin:6px 0 0;font:italic 700 46px Georgia,serif;color:#ffe9a8;text-shadow:0 4px 10px #000c}.play{position:absolute;left:50%;bottom:170px;transform:translateX(-50%);padding:26px 70px;border-radius:999px;border:6px solid #2a2030;background:#ffe27a;font:900 46px system-ui;color:#2a2030;box-shadow:0 10px 0 #2a2030}
-.sub{position:absolute;left:0;right:0;bottom:110px;text-align:center;font:700 26px system-ui;color:#fff;text-shadow:0 2px 6px #000}</style></head><body><div id="w"></div>
+.logo p{margin:6px 0 0;font:italic 700 46px Georgia,serif;color:#ffe9a8;text-shadow:0 4px 10px #000c}.play{white-space:nowrap;position:absolute;left:50%;bottom:120px;transform:translateX(-50%);padding:26px 70px;border-radius:999px;border:6px solid #2a2030;background:#ffe27a;font:900 46px system-ui;color:#2a2030;box-shadow:0 10px 0 #2a2030}
+.sub{position:absolute;left:0;right:0;bottom:60px;text-align:center;font:700 26px system-ui;color:#fff;text-shadow:0 2px 6px #000}</style></head><body><div id="w"></div>
 <script type="module">
 /* v4.95 mock: the game's cover (designer picked concept 1) — the hero + pet on a hill of Vaneya at dusk · across the sea, Luminia under the dark cloud · Keelee held in a golden orb inside the cloud · her light breaks through */
 import * as THREE from '../../lib/three.module.min.js';
 import { part, HUMANS, STORM, PETS } from '../../src/clay.js';
 import { vinyl } from '../../src/vinyl.js';
-import { buildCapital } from '../../src/capitals.js';
+import { buildLumCity } from '../../src/lumcity.js';
 const W = 780, H = 1688, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
 const S = new THREE.Scene();
@@ -20,20 +20,19 @@ S.add(new THREE.HemisphereLight('#ffd8b0', '#3a3060', 1.1)); const sun = new THR
   for (const [x, z, c] of [[-2.6, 1.2, '#ff7a9a'], [2.8, 1.8, '#ffd23f'], [-1.4, 2.6, '#ffffff'], [1.9, .4, '#ff9ad0']]) part(S, '#3a7a2a', c, [x, .02, z], [.1, .1, .1], [0, 0, 0], { A: 0 }) }
 /* the hero (default look) + a shiba, from behind, looking out */
 const hero = new THREE.Group(); vinyl(hero, { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', wear: 'traveler', top: '#3a8ad8', legs: 'pants', eyes: 'round' }); { const b = new THREE.Box3().setFromObject(hero); hero.scale.setScalar(1.7 / (b.max.y - b.min.y)) } hero.position.set(-.5, 0, 2.2); hero.rotation.y = Math.PI + .25; S.add(hero);
-{ const sw = new THREE.Group(); part(sw, '#6a6a78', '#d8dce8', [0, .55, 0], [.04, .55, .02], [0, 0, 0], { A: 0 }); part(sw, '#6a4024', '#a8703e', [0, -.08, 0], [.12, .04, .05], [0, 0, 0], { A: 0 }); sw.position.set(-.1, 1.05, 1.95); sw.rotation.set(.35, 0, -.5); S.add(sw) }   /* a sword on the back */
 const pet = new THREE.Group(); PETS.shiba(pet); { const b = new THREE.Box3().setFromObject(pet); pet.scale.setScalar(.75 / (b.max.y - b.min.y)) } pet.position.set(.75, 0, 2.5); pet.rotation.y = Math.PI - .35; S.add(pet);
 S.traverse(o => { if (o.isMesh) { o.castShadow = true } });
 /* Luminia far away on its island */ { const isl = new THREE.Mesh(new THREE.CylinderGeometry(26, 32, 4, 24), new THREE.MeshStandardMaterial({ color: '#6a8a5a', roughness: 1, flatShading: true })); isl.position.set(6, -1.5, -150); S.add(isl);
-  const B = buildCapital('luminia', 0, 0, 0, 0); B.G.scale.setScalar(.55); B.G.position.set(6, .4, -150); S.add(B.G) }
+  const B = buildLumCity(0, 0, 0, 0); B.G.scale.setScalar(.35); B.G.position.set(6, .4, -150); S.add(B.G) }
 /* the dark cloud + Keelee's golden orb */
 const CL = new THREE.Group(); STORM.cloud(CL); CL.scale.setScalar(1.9); CL.position.set(6, 52, -150); S.add(CL);
-const orbP = new THREE.Vector3(6, 40, -140); { const orb = new THREE.Mesh(new THREE.SphereGeometry(5.5, 32, 20), new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffc040', emissiveIntensity: 1.6, transparent: true, opacity: .55 })); orb.position.copy(orbP); S.add(orb);
+const orbP = new THREE.Vector3(6, 38, -118); { const orb = new THREE.Mesh(new THREE.SphereGeometry(5.5, 32, 20), new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffc040', emissiveIntensity: 1.6, transparent: true, opacity: .55 })); orb.position.copy(orbP); S.add(orb);
   const halo = new THREE.Mesh(new THREE.SphereGeometry(9, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffd870', transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false })); halo.position.copy(orbP); S.add(halo);
-  const kl = new THREE.Group(); HUMANS.kealee(kl); { const b = new THREE.Box3().setFromObject(kl); kl.scale.setScalar(6 / (b.max.y - b.min.y)) } kl.position.set(orbP.x, orbP.y - 3, orbP.z); kl.rotation.y = .2; S.add(kl);
+  const kl = new THREE.Group(); HUMANS.kealee(kl); { const b = new THREE.Box3().setFromObject(kl); kl.scale.setScalar(7.5 / (b.max.y - b.min.y)) } kl.position.set(orbP.x, orbP.y - 3, orbP.z); kl.rotation.y = .2; S.add(kl);
   const L = new THREE.PointLight('#ffc860', 600, 120); L.position.copy(orbP); S.add(L);
   for (let i = 0; i < 7; i++) { const len = 70 + i * 6, ray = new THREE.Mesh(new THREE.ConeGeometry(2.5 + i * .8, len, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffe0a0', transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
     ray.position.set(orbP.x + (i - 3) * 6, orbP.y - len / 2 + 2, orbP.z + 20); ray.rotation.set(-.35, 0, (i - 3) * .12); S.add(ray) } }
-const cam = new THREE.PerspectiveCamera(42, W / H, .1, 900); cam.position.set(.6, 2.4, 7.5); cam.lookAt(2, 12, -60);
+const cam = new THREE.PerspectiveCamera(50, W / H, .1, 900); cam.position.set(.4, 2.1, 10.5); cam.lookAt(1.6, 6.6, -60);
 r.render(S, cam);
 const d = document.createElement('div'); d.innerHTML = '<div class="logo"><h1>KEALEE</h1><p>and the New Light of Luminia</p></div><div class="play">▶ เริ่มผจญภัย</div><div class="sub">เล่นแบบไม่ล็อกอิน · ล็อกอิน Google</div>'; document.getElementById('w').appendChild(d);
 window.done = 1;
