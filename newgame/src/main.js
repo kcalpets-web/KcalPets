@@ -3331,7 +3331,7 @@ function chgTick() { holdTick(); if (CHGA) { const k = Math.min(1, (performance.
 /* v3.18 🎯 Y = tap once to aim (no holding) · Y zoom in · X zoom out · A use (hold = charge) · B leave · a legend blinks the first few times */
 const YLG = (() => { const e = document.createElement('div'); e.id = 'ylg'; document.body.appendChild(e); return e })();
 const YACT = { throw: 'ปา · ค้าง = แรงขึ้น (หอกแม่นสุด)', bow: 'ยิง · ค้าง = ชาร์จแรงขึ้น', rod: 'เหวี่ยงเบ็ด · ค้าง = เลือกระยะ', dig: 'ขุดดิน', net: 'โยนตาข่าย · ค้าง = เลือกระยะ', draw: 'วาดภาพ' };
-function aimStart(kind = 'bow') { aimStart0(kind); if (!AIM) return; AIM.zm = 1; AIM.zd = 0; AIM.ch = 0; AIM.kind = kind; gyroAsk();
+function aimStart(kind = 'bow') { aimStart0(kind); if (!AIM) return; AIM.zm = 1; AIM.zd = 0; AIM.ch = 0; AIM.kind = kind; gyroAsk(); YLG.classList.remove('gone'); if (kind === 'draw') { setTimeout(() => { if (AIM && AIM.draw) YLG.classList.add('gone') }, 3000); for (const k in KNPC) KNPC[k].mk.visible = false }   /* v4.94 the drawing frame: the help fades after 3 s · no ❗💬 over heads */
   YLG.innerHTML = `<p><b class="ky">Y</b>ค้าง = ซูมเข้า</p><p><b class="kx">X</b>ค้าง = ซูมออก</p><p><b class="ka">A</b>${YACT[kind] || YACT.bow}</p><p><b class="kb">B</b>ออก</p><p class="zm"></p>`; S.yHelp = (S.yHelp || 0) + 1; YLG.classList.toggle('blink', S.yHelp <= D.YHELP); zoomLbl() }
 /* v3.18.1 smooth zoom: hold Y = in · hold X = out (AIM.zd = +1 / −1 while held) */
 const zmOf = () => AIM && AIM.zm || 1;
@@ -3490,7 +3490,7 @@ function aimCam(tx, ty, tz) {   /* third person → first person at the eyes, lo
   const draw = AIM && !AIM.rod ? chgK() : 0, zm = zmOf(); cam.fov = AIM && AIM.draw ? 52 / zm : (52 - AIMK * (4 + 8 * draw)) / (1 + (zm - 1) * AIMK);   /* v3.18 Y / X = zoom steps */   /* v3.12.4 drawing: the bar is the zoom */   // (gentle: portrait screens are already narrow)
   const fps = AIMK > .6; PL.root.visible = !fps && !!S.avatar; VM.visible = fps && !!AIM && !!AIM.rod && !AIM.dig; if (VM.visible) vmTick(draw);   /* v3.1 the bow: just the crosshair */
 }
-function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; document.body.classList.remove('selfie'); document.body.classList.remove('qaim'); $('xhair').classList.remove('lock'); $('bB').classList.remove('cancelOn'); AIRAIM = null; document.body.classList.remove('drawaim'); NOCK.visible = false; VM.visible = false; CASTR.visible = false; DIGSQ.visible = false; $('xhair').classList.remove('rod'); document.body.classList.remove('rodaim');
+function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; document.body.classList.remove('selfie'); YLG.classList.remove('gone'); if (a.draw) setTimeout(() => kqMarks(), 400); document.body.classList.remove('qaim'); $('xhair').classList.remove('lock'); $('bB').classList.remove('cancelOn'); AIRAIM = null; document.body.classList.remove('drawaim'); NOCK.visible = false; VM.visible = false; CASTR.visible = false; DIGSQ.visible = false; $('xhair').classList.remove('rod'); document.body.classList.remove('rodaim');
   if (a.rod) { document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { const c = a.cast; if (a.dig) { if (c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R) { const [cx, cz] = cellOf(c.x, c.z); till(cx, cz) } else hint('🪏 เล็งวงฟ้าไปที่พื้นหญ้าใกล้ๆ แล้วปล่อย', 1500) } else if (c && c.wet) castAt(c.x, c.z); else hint('🎣 เล็งวงฟ้าให้ตกลงน้ำ แล้วปล่อย', 1500) } gearView(); return } document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { if (a.net) throwNet(a); else shoot(a) } gearView() }
 const arwT = () => { const t = S.arrowT; return t && D.ARROWX[t] && ((S.arrowsX || {})[t] || 0) > 0 ? t : '' };
 function aimHud() { const t = arwT(); $('xN').textContent = t ? `${D.ARROWX[t].icon} ${D.ARROWX[t].name} ×${S.arrowsX[t]}` : '🏹 ×' + (S.arrows || 0); arwBtn() }
@@ -3646,8 +3646,9 @@ let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; 
   /* B: guard · back / fold / get off */
   btnSet('bB', AIM ? ['↩️', 'ยกเลิก'] : GLIDE ? ['🪂', 'หุบร่ม'] : HORSE ? ['⬇️', HORSE.p ? 'ลงจากน้อง' : 'ลง'] : RIDE && !RIDE.whale ? ['🧍', 'ลงยืนบนแพ'] : RIDE ? ['🛡️', 'ป้องกัน'] : carryN() ? ['🎒', 'เก็บของ'] : shieldOn() ? [gearIco('shield', '🛡️'), 'ป้องกัน'] : [gearIco('sword', '⚔️'), 'ปัด']);   /* v4.25 the shield / weapon you hold (designer) */
   /* A: what is in front of you */
-  { const show = $('bA').classList.contains('ctx') && CTX; btnSet('bA', show ? [CTX_ICO[CTX.k] || '✋', CTX_LB[CTX.k] || 'ใช้'] : ['✋', 'ใช้'], null, !show) }
+  { const show = $('bA').classList.contains('ctx') && CTX; if (AIM && AIM.draw) btnSet('bA', ['🖍️', 'วาด']); else btnSet('bA', show ? [CTX_ICO[CTX.k] || '✋', CTX_LB[CTX.k] || 'ใช้'] : ['✋', 'ใช้'], null, !show) }
   /* Y: hit / shoot / the farm tool */
+  if (AIM && AIM.draw) { btnSet('bY', ['🔍', 'ซูมเข้า']); $('bY').classList.remove('boff'); $('bB').classList.remove('boff'); return }   /* v4.94 (designer) the drawing frame: A = draw · Y / X = zoom */
   { const f = gFarm(), r = gRange(), w = weaponOf(), wi = w && D.ITEMS[w.t]; let tap, hold = null;
     if (!r) { tap = wi ? [f ? wi.icon : gearIco('sword', wi.icon), f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; if (!f && wi) hold = ['🎯', 'ค้าง = ปา'] }
     else if (!f) { tap = ['🏹', 'ค้าง = เล็ง']; hold = ['🎯', 'ปล่อย = ยิง'] }
