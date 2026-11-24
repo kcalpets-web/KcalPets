@@ -1761,7 +1761,6 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   Y.addEventListener('pointerdown', e => { e.preventDefault(); if (!CUT && winFlip(-1)) return; if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; const now = performance.now(); /* v4.29 riding the pet: Y = your own weapon (designer: the pet only runs + jumps) */
     if (SKW.on) { skwUse('Y'); return } if (PICK) { pickChoose(); return } t0 = now; if (SMENU.on) { smenuGo('left'); return } if (AIM && !AIM.quick) { aimZoom(1); return } if (AIM) return;
     try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
-    if (gFarm() && !gRange() && S.hand === 'torch' && S.lampOn) { S.lampOff = !S.lampOff; sfx('tap'); hint(S.lampOff ? '🏮 ปิดตะเกียง' : '🏮 เปิดตะเกียง', 900); save(); return }   /* v4.88 🏮 tap Y = light on / off */
     if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (gFarm()) hint('🧰 เครื่องมือฟาร์มปาไม่ได้', 1100); else windStart() }); return }   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
     if (carryN()) carryBack(true); if (!gFarm()) { qaimStart('bow', Y); if (AIM) { AIM.lx = e.clientX; AIM.ly = e.clientY } return }   /* ranged combat: hold = aim the bow */
     const k = yTool();
@@ -1808,7 +1807,7 @@ addEventListener('resize', () => setTimeout(padExtras, 200));
 /* ================= v4.88 🟡 the gold button (designer · docs/plan-buttons.md) — replaces 🎒 bGear · 🔄 bSwap · 🔄 bFarm
    ⚔️ fight: tap = swap melee ↔ bow (the button shows what you swap to) · hold = panel: 🌾 farm mode + weapon/shield rows (or bow/arrow rows)
    🌾 farm: tap = the farm wheel (every farm tool you have but the one in hand) · hold = panel: ⚔️ weapon mode · B closes (only B) ================= */
-if (S.ytool === 'draw') S.ytool = 'net';   /* the crayon moved to the menu */
+if (S.ytool === 'draw') S.ytool = 'net'; delete S.lampOff;   /* the crayon moved to the menu */
 let GP = null; const goldEl = document.createElement('button'); goldEl.id = 'bGold'; goldEl.className = 'bgold'; goldEl.setAttribute('aria-label', 'เลือกอุปกรณ์'); document.body.appendChild(goldEl);
 const gpic = (url, ic, cls = ' spic') => picTag(url, emo(ic), cls);
 function farmCur() { if (gRange()) return 'y:' + yTool(); if (S.hand === 'torch' && S.lampOn) return 'lamp'; return S.eq.sword ? 'w:' + S.eq.sword : '' }
@@ -3241,7 +3240,7 @@ function nearTarget() {
 /* v3.12.1 🔥 torch in the A hand: lights the dark around you · 1 warm piece · burns D.TORCH.burn game minutes, then the next one in the bag lights */
 const rainOut = () => { try { return raining() && !indoors() } catch (e) { return false } };   /* v3.82 🌧️ (safe before the weather code loads) */
 const torchOn = () => S.hand === 'torch' && !S.lampOn && S.torchT > 0 && !!PL && !PL.swim && !rainOut();   /* a lit flame (warms) · v3.82 the rain puts it out (you still hold it) */
-const lightOn = () => torchOn() || (S.hand === 'torch' && S.lampOn && !S.lampOff && !!PL && !PL.swim);   /* v4.88 Y turns the lamp off / on */   /* v3.82 🏮 the oil lamp: light in any weather, no warmth */
+const lightOn = () => torchOn() || (S.hand === 'torch' && S.lampOn && !!PL && !PL.swim);   /* v3.82 🏮 the oil lamp: light in any weather, no warmth · v4.88 (designer) it works like the torch: held = light (no on / off) */   /* v3.82 🏮 the oil lamp: light in any weather, no warmth */
 function torchLight() { if (S.lampOn) return true; if (S.torchT > 0) return true; if (!((S.mats.torch || 0) > 0)) { hint('🔥 ไม่มีคบเพลิงในกระเป๋า · คราฟได้ที่ 🎒 วัตถุดิบ (ไม้ + หญ้า)', 1800); S.hand = 'w'; setTool(''); return false }
   S.mats.torch--; S.torchT = D.TORCH.burn; sfx('knock'); hint(`🔥 จุดคบเพลิง · เหลือ ${S.mats.torch} อัน`, 1300); gearView(); return true }
 let rainTip = 0;
@@ -3643,7 +3642,7 @@ let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; 
     if (!r) { tap = wi ? [f ? wi.icon : gearIco('sword', wi.icon), f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; if (!f && wi) hold = ['🎯', 'ค้าง = ปา'] }
     else if (!f) { tap = ['🏹', 'ค้าง = เล็ง']; hold = ['🎯', 'ปล่อย = ยิง'] }
     else { const k = yTool(), T = D.YTOOL[k] || {}; tap = [T.icon || '🧰', k === 'rope' ? 'ดึงของ' : k === 'net' ? 'ตาข่าย' : k === 'rod' ? 'ตกปลา' : k === 'draw' ? 'วาดภาพ' : k === 'flute' ? 'ขลุ่ย' : 'ใช้']; }   /* v4.88 no hold-to-aim: the white ring */
-    if (f && !r && wi) tap[0] = picTag(itemPic(w.t), emo(wi.icon), ' bic2'); else if (f && r && YMESH[yTool()]) tap[0] = picTag(yPic(yTool()), emo(tap[0]), ' bic2'); else if (f && S.hand === 'torch' && S.lampOn) tap = [picTag(lampPic(), emo('🏮'), ' bic2'), S.lampOff ? 'เปิดไฟ' : 'ปิดไฟ'];   /* v4.88 the real clay picture (designer) */
+    if (f && !r && wi) tap[0] = picTag(itemPic(w.t), emo(wi.icon), ' bic2'); else if (f && r && YMESH[yTool()]) tap[0] = picTag(yPic(yTool()), emo(tap[0]), ' bic2'); else if (f && S.hand === 'torch' && S.lampOn) tap[0] = picTag(lampPic(), emo('🏮'), ' bic2');   /* v4.88 the real clay picture (designer) */
     btnSet('bY', tap, hold); { const safe = !f && safeHere() && !AIM && !HORSE && !RIDE && !GLIDE && !carryN(), t2 = safe && nearTarget(); $('bY').classList.toggle('boff', !!safe && !(t2 && t2.o)); $('bB').classList.toggle('boff', !!safe) } } }   /* v4.88 (designer) in a safe town hitting / parrying does nothing → the buttons fade */
 function ctxPos(now = performance.now()) {
   const c = CTX; let p = null; if (c && c.at) p = [c.at.x, (c.at.y || 0) + (c.h || 1.8), c.at.z]; else if (c && c.xz) p = [c.xz[0], groundH(c.xz[0], c.xz[1]) + (c.h || 1.6), c.xz[1]];
