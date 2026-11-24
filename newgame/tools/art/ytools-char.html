@@ -42,22 +42,24 @@ const pouch = () => { const g = new THREE.Group(); rbox(g, '#6a3a1e', '#a86a3a',
   for (let i = 0; i < 9; i++) part(g, '#e8d0a0', '#fff0d0', [-.27 + i * .0675, .07, .2], [.012, .012, .01], [0, 0, 0], { A: 0 }); part(g, '#a8801a', '#ffd860', [0, .08, .22], [.06, .06, .03], [0, 0, 0], { A: .05 }); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
 const backPouch = (g, s) => { const p = pouch(); p.scale.setScalar(.42 / s); p.position.set(0, .7 / s, -.33 / s); p.rotation.y = Math.PI; g.add(p) };
 const ringAt = (x, z, r0) => { const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r0 + .08, 40), new THREE.MeshBasicMaterial({ color: '#ffffff' })); ring.rotation.x = -Math.PI / 2; ring.position.set(x, GY + .02, z); S.add(ring) };
+/* in the hand: a small round net ball · a single small loop of rope */
+const netBall = () => { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.SphereGeometry(.5, 20, 14), M('#e8dcc0', { roughness: 1 }))); g.add(new THREE.Mesh(new THREE.SphereGeometry(.53, 20, 14), netMat([5, 4]))); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const ropeLoop = () => { const t = new THREE.Mesh(new THREE.TorusGeometry(.5, .11, 10, 32), ropeMat(10)); t.castShadow = true; return t };
 /* ① net chosen (Y): a small folded net in the right hand · pouch on the back */
-{ ground(X[0]); const { g, hp, s } = hero(X[0] - .7, 2.0, [-1.2, .15]); backPouch(g, s); const n = netPack(); n.scale.setScalar(.3); n.position.copy(hp).add(new THREE.Vector3(.05, .02, .08)); S.add(n); ringAt(X[0] + 1.1, .3, .62) }
+{ ground(X[0]); const { g, hp, s } = hero(X[0] - .7, 2.0, [-1.2, .15]); backPouch(g, s); const n = netBall(); n.scale.setScalar(.24); n.position.copy(hp).add(new THREE.Vector3(.14, .06, .16)); S.add(n); ringAt(X[0] + 1.1, .3, .62) }
 /* ② rope chosen (Y): a small coil in the right hand · the loose end hanging */
-{ ground(X[1]); const { g, hp, s } = hero(X[1] - .7, 2.0, [-1.2, .15]); backPouch(g, s); const c = coil(); c.scale.setScalar(.22); c.position.copy(hp).add(new THREE.Vector3(.06, .02, .1)); c.rotation.set(.2, .4, 0); S.add(c);
-  S.add(tube([hp.clone().add(new THREE.Vector3(.18, -.08, .15)), hp.clone().add(new THREE.Vector3(.22, -.4, .2)), hp.clone().add(new THREE.Vector3(.15, -.7, .15))], .025, 6)); ringAt(X[1] + 1.1, .3, .55) }
+{ ground(X[1]); const { g, hp, s } = hero(X[1] - .7, 2.0, [-1.2, .15]); backPouch(g, s); const c = ropeLoop(); c.scale.setScalar(.24); c.position.copy(hp).add(new THREE.Vector3(.05, .02, .1)); c.rotation.set(.2, .5, 0); S.add(c); ringAt(X[1] + 1.1, .3, .55) }
 /* ③ the net thrown: it opens in the air on its way to the circle */
 { ground(X[2]); const { g, hp, s } = hero(X[2] - 1.1, 1.0, [-1.6, .1]); backPouch(g, s); const cx = X[2] + .9; const ck = new THREE.Group(); ANIMALS.chicken(ck); ck.scale.setScalar(1.1); ck.position.set(cx, GY, .2); ck.rotation.y = -.8; S.add(ck); ringAt(cx, .2, .72);
   const n = castNet(X[2] + .15, .2, GY + 1.45, .8, true); n.scale.y = .5; n.rotation.z = -.3;
   dots([...Array(5)].map((_, i) => { const t = (i + 1) / 6; return new THREE.Vector3(hp.x + (X[2] + .15 - hp.x) * t, hp.y + (GY + 1.45 - hp.y) * t + Math.sin(t * Math.PI) * .25, .2) })) }
 /* ④ the rope thrown: a line to the dropped thing · the coil in the hand pays out */
-{ ground(X[3]); const { g, hp, s } = hero(X[3] - 1.1, 1.0, [-1.6, .1]); backPouch(g, s); const c = coil(); c.scale.setScalar(.17); c.position.copy(hp).add(new THREE.Vector3(.02, -.05, .1)); c.rotation.set(.2, .4, 0); S.add(c);
+{ ground(X[3]); const { g, hp, s } = hero(X[3] - 1.1, 1.0, [-1.6, .1]); backPouch(g, s); const c = ropeLoop(); c.scale.setScalar(.18); c.position.copy(hp).add(new THREE.Vector3(.04, -.02, .1)); c.rotation.set(.2, .5, 0); S.add(c);
   const bx = X[3] + 1.0, bd = new THREE.Group(); part(bd, '#a8301e', '#e8604a', [0, .18, 0], [.32, .18, .26], [0, .4, 0], { A: .08 }); part(bd, '#e8d8b0', '#fff6e0', [.1, .36, .05], [.08, .1, .08], [0, 0, .4], { A: .05 }); bd.scale.setScalar(1.1); bd.position.set(bx, GY, .2); S.add(bd); ringAt(bx, .2, .55);
   S.add(tube([hp, new THREE.Vector3((hp.x + bx) / 2, hp.y + .25, .2), new THREE.Vector3(bx - .1, GY + .35, .2)], .035, 12)); const kn = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), ropeMat(2)); kn.position.set(bx - .1, GY + .35, .2); S.add(kn) }
 
 r.render(S, cam);
-const L = [['① ถือตาข่าย (กด Y)', 'หยิบห่อตาข่ายเล็กๆ จากกระเป๋าหลัง'], ['② ถือเชือก (กด Y)', 'หยิบขดเชือกเล็กๆ · ปลายห้อย'], ['③ โยนตาข่าย', 'พุ่งออก กางกลางอากาศ → วงขาว'], ['④ เหวี่ยงเชือก', 'เชือกพุ่งเป็นเส้น · ขดในมือคลายออก']];
+const L = [['① ถือตาข่าย (กด Y)', 'ลูกตาข่ายกลมเล็กๆ ในมือ'], ['② ถือเชือก (กด Y)', 'เชือกวงเล็กวงเดียว'], ['③ โยนตาข่าย', 'พุ่งออก กางกลางอากาศ → วงขาว'], ['④ เหวี่ยงเชือก', 'เชือกพุ่งเป็นเส้นไปที่ของ']];
 L.forEach(([t, s], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 400) + 'px'; d.innerHTML = t + '<small>' + s + '</small>'; document.getElementById('w').appendChild(d) });
 window.done = 1;
 </script></body></html>
