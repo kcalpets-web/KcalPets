@@ -2476,9 +2476,19 @@ function struggleTick(dt) { const g = SG; if (!g) return; const R = D.STRUG;
 function catchPet(M, C) { const c = { C }, q = M.A.root.position; cheer(2000);
   const rar = rollRarity(['B', 'R', 'E', 'L']), p = { id: 'p' + Date.now().toString(36), kind: M.kind, name: M.T.name.replace(/^\S+\s/, ''), rar, el: c.C.el, lv: Math.max(1, Math.min(D.PET_LV_MAX, Math.round(M.T.lv || 1))), exp: 0, hp: null, mp: null, down: 0 };   /* v4.85 (designer) the pet keeps the level it was caught at */
   VF.burst(q.x, q.y + .6, q.z, '#ffe27a', 24, 4); VF.ring(q.x, q.y, q.z, '#ffe27a', 2.2, .5); const x = q.x, z = M.T.swim ? me().z : q.z; monGone(M);
+  const keep = () => {
   S.pets.push(p); bump('catches'); S.team = S.pets.map(x => x.id); petHome(p); if (SKILLS[p.kind] && !S.pets.some(x => x !== p && x.kind === p.kind)) setTimeout(() => askSkSlot(p), 2400);   /* v3.17 a skill pet: which button? */ buildPet(p, M.T.swim ? me().x + 1 : x, z); bump('caught'); if (SKILLS[p.kind] && p.lv >= D.SKILL_LV) setTimeout(() => { try { skCheck() } catch (e) { } }, 2600); sfx('level'); save(); hud(); achCheck();
   sheet('🎉 จับได้แล้ว!', (b, redraw, close) => { b.innerHTML = `<div class="card">${petCard(p)}</div>${c.C.ability ? `<p>✨ ความสามารถพิเศษ: ${c.C.ability === 'swim' ? '🐋 ขี่ข้ามทะเล — ลงน้ำแล้วกด A' : '🦅 ร่อนลงจากที่สูง — ยืนริมผาแล้วกด A'}</p>` : ''}<p class="mut">ตั้งชื่อน้อง</p><input id="pnN" maxlength="12" value="${esc(p.name)}" style="width:100%;font:inherit;font-size:16px;padding:8px;border:3px solid var(--ink);border-radius:12px"><button class="btn go wide" id="pnOk" style="margin-top:10px">ตกลง</button>`;
     b.querySelector('#pnOk').onclick = () => { const n = b.querySelector('#pnN').value.trim(); if (n) p.name = n; save(); hud(); close() } });
+}
+  /* v4.87 (designer) a wild chicken / duck: keep it as a pet, or send it to a coop (it lays eggs) */
+  const A = D.FARM_A[M.kind]; if (!A) return keep();
+  let chose = false; sheet(`🎉 จับ${A.n}ได้แล้ว!`, (b, redraw, close) => { const room = fRoom(M.kind), H = BP[A.home];
+    b.innerHTML = `<p style="text-align:center;font-size:44px;margin:4px 0">${A.ic}</p><p class="mut" style="text-align:center">จะเลี้ยง${A.n}ตัวนี้แบบไหนดี?</p>
+      <button class="btn go wide" id="ckPet">🐾 เลี้ยงเป็นน้อง (คู่หู · ติดตาม · ช่วยสู้)</button>
+      <button class="btn wide" id="ckFarm" style="margin-top:8px" ${room ? '' : 'disabled'}>${room ? `${H.icon} ส่งเข้า${H.name} (ออก${D.MATS[A.prod] ? D.MATS[A.prod][1] : D.INGR[A.prod].name}ทุกเช้า)` : `${H.icon} ต้องมี${H.name}ที่ว่างก่อน`}</button>`;
+    b.querySelector('#ckPet').onclick = () => { chose = true; close(); keep() };
+    b.querySelector('#ckFarm').onclick = () => { if (!fRoom(M.kind)) return; chose = true; faGive(M.kind); bump('catches'); bump('caught'); sfx('level'); toast(`${A.ic} ${A.n}ไปอยู่ที่${H.icon} ${H.name}แล้ว!`, 2400); save(); hud(); achCheck(); close() } }, { onClose: () => { if (!chose) { chose = true; keep() } } })
 }
 /* ================= v3.8.1 🕸️ the net: hold Y to aim (only animals you can tame light the crosshair) · let go = throw · the weaker / the sneakier, the likelier ================= */
 let netT = 0; const NETM = new THREE.Mesh(new THREE.SphereGeometry(.35, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#f4ecd8', wireframe: true })); NETM.visible = false; scene.add(NETM);
