@@ -23,14 +23,17 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8931, OUT = process.arg
     await E(() => window.__ng.c2Floor(1, [-9, -7])); await wait(1500); s = await E(() => ({ n: window.__ng.mons.filter(M => M.ind).length, fl: window.__ng.HINC.fl })); log('floor 2', JSON.stringify(s)); if (!s.n) bad.push('no monsters on floor 2');
     const locked = await E(() => { const N = window.__ng, R = N.HINC.F.rooms.find(r => r.id === 'gold'), o = window.__ng.HINC; return !!R }); 
     await E(() => { const N = window.__ng; for (const M of N.mons.filter(M => M.ind)) N.monDie(M) }); await wait(800);
-    await E(k => { const N = window.__ng; N.raidFree(k) }, k); await wait(800); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-    log('freed', await E(k => window.__ng.RDS(k).freed > 0, k)); await pg.screenshot({ path: OUT + '/r2-floor2.png' });
+    await pg.screenshot({ path: OUT + '/r2-floor2.png' });
     await E(() => window.__ng.c2Floor(2, [-9, -7])); await wait(1200); await pg.screenshot({ path: OUT + '/r3-top.png' });
     await E(k => window.__ng.raidBoss(k), k); await wait(6000); s = await E(() => { const N = window.__ng, q = N.S && N.THALL; return { on: N.HINON, hall: !!N.THALL, boss: N.mons.filter(M => M.T.mini).map(M => M.kind), ctx: N.CTX && N.CTX.k } }); log('throne hall', JSON.stringify(s)); if (s.on || !s.hall || !s.boss.length) bad.push('the throne hall did not load with the boss');
     await E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await wait(1500); await pg.screenshot({ path: OUT + '/r4-boss.png' });
     await E(() => { const N = window.__ng, T = N.THALL; window.__ngCam = { p: [-420 + 9, 9, -420 + 19], l: [-420, 1.5, -420 - 4] } }); await wait(900); await pg.screenshot({ path: OUT + '/r4b-hall.png' }); await E(() => { window.__ngCam = null });
     await E(() => { const N = window.__ng; for (const M of N.mons.filter(M => M.T.mini)) N.monDie(M) }); await wait(3500); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    let pre = await E(k => ({ restored: !!(window.__ng.S.restored || {})[k], cage: !!(window.__ng.THALL && window.__ng.THALL.cage.visible), lead: !!(window.__ng.THALL && window.__ng.THALL.lead) }), k); log('won, before rescue', JSON.stringify(pre)); if (pre.restored || !pre.cage || !pre.lead) bad.push('the leader should wait in the cage until rescued');
+    await E(() => { const T = window.__ng.THALL; window.__ngCam = { p: [-420 + 3, 6, -420 - 17 + 12], l: [-420 + 7, 1.2, -420 - 17 + 3] } }); await wait(900); await pg.screenshot({ path: OUT + '/r5-cage.png' }); await E(() => { window.__ngCam = null });
+    await E(k => window.__ng.raidFree(k), k); await wait(600); for (let i = 0; i < 4; i++) { await E(() => { const t = document.querySelector('#tN'); if (t) t.click() }); await wait(500) } await wait(3000); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const rs = await E(k => ({ restored: !!(window.__ng.S.restored || {})[k], raided: window.__ng.raided(k) }), k); log('after boss', JSON.stringify(rs)); if (!rs.restored) bad.push('beating the boss did not restore the kingdom');
+    await E(() => window.__ng.openMap()); await wait(1200); await pg.screenshot({ path: OUT + '/r6-map.png' }); await wait(3200); await pg.screenshot({ path: OUT + '/r7-map-lit.png' }); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const ex = await E(() => ({ ring: !!(window.__ng.THALL && window.__ng.THALL.out.visible) })); log('exit ring', JSON.stringify(ex)); if (!ex.ring) bad.push('no way out after the win');
     await E(() => window.__ng.thrBack()); await wait(5000); const bk = await E(() => ({ hall: !!window.__ng.THALL, x: Math.round(window.__ng.me ? 0 : 0) })); log('back', JSON.stringify(bk)); if (bk.hall) bad.push('the hall stayed after going back');
   } catch (e) { bad.push('EXC ' + e.message) }
