@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE cover</title><style>body{margin:0;background:#000}#w{position:relative;width:780px;height:1688px;overflow:hidden;font-family:system-ui}canvas{display:block}
+.logo{position:absolute;left:0;right:0;top:150px;text-align:center;color:#fff}.logo h1{margin:0;font:900 150px/1 Georgia,serif;letter-spacing:6px;color:#fff6d8;text-shadow:0 0 30px #ffd86088,0 8px 0 #3a2a50,0 10px 24px #000a}
+.logo p{margin:6px 0 0;font:italic 700 46px Georgia,serif;color:#ffe9a8;text-shadow:0 4px 10px #000c}.play{white-space:nowrap;position:absolute;left:50%;bottom:90px;transform:translateX(-50%);padding:26px 70px;border-radius:999px;border:6px solid #2a2030;background:#ffe27a;font:900 46px system-ui;color:#2a2030;box-shadow:0 10px 0 #2a2030}
+.sub{position:absolute;left:0;right:0;bottom:36px;text-align:center;font:700 26px system-ui;color:#fff;text-shadow:0 2px 6px #000}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.95 mock: the game's cover (designer picked concept 1 · 'the new light' = the dawn after the dark cloud is gone: the kingdoms see light again) — the hero + pet on a hill of Vaneya at dusk · across the sea, Luminia under the dark cloud · Keelee held in a golden orb inside the cloud · her light breaks through */
+import * as THREE from '../../lib/three.module.min.js';
+import { part, HUMANS, STORM, PETS } from '../../src/clay.js';
+import { vinyl } from '../../src/vinyl.js';
+import { buildLumCity } from '../../src/lumcity.js';
+import { WEAPON_MESH } from '../../src/weapons.js';
+const W = 780, H = 1688, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene();
+{ const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#0e0a1c'); gr.addColorStop(.55, '#2a2048'); gr.addColorStop(.8, '#6a4a78'); gr.addColorStop(1, '#d89a80'); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; S.background = t }
+S.fog = new THREE.Fog('#4a3a68', 60, 220);
+S.add(new THREE.HemisphereLight('#c8b8ff', '#3a3060', .9)); const sun = new THREE.DirectionalLight('#ffc890', 2.2); sun.position.set(30, 25, -60); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); S.add(sun);
+/* the sea */ { const m = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: '#3a6a9a', roughness: .25, metalness: .2 })); m.rotation.x = -Math.PI / 2; m.position.y = -2; S.add(m) }
+/* v4.95 mock 2 (designer: concept 2 · no Keelee in the sky): the hero, sword drawn, at the foot of Luminia's cathedral steps · the dark cloud swirling over the spires · dawn breaking at its edge */
+const B = buildLumCity(0, 0, 0, 0); S.add(B.G); const door = B.door; { const bb = new THREE.Box3().setFromObject(B.G); window.dbg = JSON.stringify({ door, min: bb.min, max: bb.max, center: B.center }) }
+{ const gr = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: '#7a7468', roughness: 1 })); gr.rotation.x = -Math.PI / 2; gr.position.y = -.02; gr.receiveShadow = true; S.add(gr) }
+const hz = door.z + 32; const hero = new THREE.Group(); vinyl(hero, { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', wear: 'traveler', top: '#3a8ad8', legs: 'pants', eyes: 'round' }); { const b = new THREE.Box3().setFromObject(hero); hero.scale.setScalar(1.7 / (b.max.y - b.min.y)) } hero.position.set(door.x + 6.4, 0, hz); hero.rotation.y = Math.PI + .15; S.add(hero);
+{ const sw = new THREE.Group(); WEAPON_MESH.travelerSword(sw); sw.scale.setScalar(1.35); sw.position.set(door.x + 6.85, .78, hz - .05); sw.rotation.set(-.35, 0, -.55); S.add(sw) }   /* the sword held low and ready */
+const pet = new THREE.Group(); PETS.shiba(pet); { const b = new THREE.Box3().setFromObject(pet); pet.scale.setScalar(.75 / (b.max.y - b.min.y)) } pet.position.set(door.x + 7.6, 0, hz + .5); pet.rotation.y = Math.PI - .3; S.add(pet);
+S.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } });
+const CL = new THREE.Group(); STORM.cloud(CL); CL.scale.setScalar(2.2); CL.position.set(door.x, 62, door.z - 30); S.add(CL);
+{ const L = new THREE.PointLight('#a080ff', 400, 90); L.position.set(door.x, 40, door.z - 20); S.add(L);   /* a cold glow from under the cloud */
+  const gc = document.createElement('canvas'); gc.width = gc.height = 256; { const g = gc.getContext('2d'), gr = g.createRadialGradient(128, 128, 8, 128, 128, 128); gr.addColorStop(0, 'rgba(255,236,180,1)'); gr.addColorStop(.3, 'rgba(255,190,110,.5)'); gr.addColorStop(1, 'rgba(255,150,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256) } const gt = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace;
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshBasicMaterial({ map: gt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); glow.position.set(door.x + 40, 18, door.z - 160); S.add(glow);   /* dawn at the cloud's edge */
+  for (let i = 0; i < 4; i++) { const len = 80, ray = new THREE.Mesh(new THREE.ConeGeometry(1.4 + i * .5, len, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: .08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    ray.position.set(door.x + 26 + i * 4, 56 - len / 2, door.z - 40); ray.rotation.set(0, 0, -.5 + i * .05); S.add(ray) } }
+const cam = new THREE.PerspectiveCamera(50, W / H, .1, 900); cam.position.set(door.x + 8, 1.4, hz + 6.5); cam.lookAt(door.x + 4, 10.5, door.z - 8);
+r.render(S, cam);
+const d = document.createElement('div'); d.innerHTML = '<div class="logo"><h1>KEALEE</h1><p>and the New Light of Luminia</p></div><div class="play">▶ เริ่มผจญภัย</div><div class="sub">เล่นแบบไม่ล็อกอิน · ล็อกอิน Google</div>'; document.getElementById('w').appendChild(d);
+window.done = 1;
+</script></body></html>
