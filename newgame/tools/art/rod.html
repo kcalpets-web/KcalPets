@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE rod</title><style>body{margin:0;background:#1e1a2a;font:700 22px system-ui;color:#fff}#w{position:relative;width:1200px;height:700px}canvas{display:block}.lb{position:absolute;top:14px;width:400px;text-align:center}.lb small{display:block;font-size:15px;color:#c8c0e0;font-weight:600;margin-top:4px}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.88 mock: the hero with the new 🕸️ net and 🪢 rope (on the back · in the hand · thrown) */
+import * as THREE from '../../lib/three.module.min.js';
+import { part, rbox, ANIMALS } from '../../src/clay.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1200, H = 700, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#2a2440'); S.add(new THREE.HemisphereLight('#ffffff', '#605870', 1.5)); const k = new THREE.DirectionalLight('#ffffff', 2.3); k.position.set(-2, 5, 6); k.castShadow = true; k.shadow.camera.left = -9; k.shadow.camera.right = 9; k.shadow.camera.top = 5; k.shadow.camera.bottom = -5; k.shadow.mapSize.set(2048, 1024); S.add(k);
+const cam = new THREE.OrthographicCamera(-6, 6, 3.5, -3.5, .1, 50); cam.position.set(0, 3, 10); cam.lookAt(0, .2, 0);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .8 }, o));
+const netTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); g.strokeStyle = '#f4ecd8'; g.lineWidth = 7; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, 128); g.stroke(); g.beginPath(); g.moveTo(0, i * 32); g.lineTo(128, i * 32); g.stroke() } g.fillStyle = '#c8b890'; for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) { g.beginPath(); g.arc(i * 32, j * 32, 5, 0, 6.3); g.fill() } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t })();
+const netMat = rep => { const t = netTex.clone(); t.needsUpdate = true; t.repeat.set(...rep); return new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: .4, side: THREE.DoubleSide, roughness: .9 }) };
+const ropeTex = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#b8884a'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#7a5428'; g.lineWidth = 6; for (let i = -64; i < 128; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke() } g.strokeStyle = '#e0b878'; g.lineWidth = 2; for (let i = -60; i < 128; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke() } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t })();
+const ropeMat = u => { const t = ropeTex.clone(); t.needsUpdate = true; t.repeat.set(u, 1); return new THREE.MeshStandardMaterial({ map: t, roughness: .95 }) };
+const tube = (pts, rad, u, closed = false) => { const cv = new THREE.CatmullRomCurve3(pts.map(p => p.isVector3 ? p : new THREE.Vector3(...p)), closed); const m = new THREE.Mesh(new THREE.TubeGeometry(cv, Math.max(24, pts.length * 12), rad, 10, closed), ropeMat(u)); m.castShadow = true; return m };
+const GY = -1.6, X = [-6, -2, 2, 6];
+const ground = x => { const g = new THREE.Mesh(new THREE.CircleGeometry(1.95, 48), M('#5a8a3a', { roughness: 1 })); g.rotation.x = -Math.PI / 2; g.position.set(x, GY, 0); g.receiveShadow = true; S.add(g) };
+/* the held net (pole along +y, hoop at the top) */
+const netHeld = () => { const g = new THREE.Group(); part(g, '#6a4024', '#a8703e', [0, -.2, 0], [.05, 1.1, .05], [0, 0, 0], { A: 0 }); part(g, '#4a2a18', '#7a4a2a', [0, -1.0, 0], [.065, .22, .065], [0, 0, 0], { A: 0 });
+  const hoop = new THREE.Mesh(new THREE.TorusGeometry(.5, .045, 10, 32), M('#8a5a30')); hoop.position.set(0, 1.35, 0); hoop.rotation.x = Math.PI / 2 - .25; g.add(hoop);
+  const bag = new THREE.Mesh(new THREE.ConeGeometry(.5, 1.0, 24, 6, true), netMat([4, 3])); bag.rotation.x = Math.PI - .25; bag.position.set(0, .78, .12); g.add(bag); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const coil = () => { const g = new THREE.Group(); for (let i = 0; i < 5; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(.62 - i * .012, .07, 10, 40), ropeMat(18)); t.position.set((i - 2) * .03, (i - 2) * .025, (i - 2) * .05); t.rotation.set(0, (i - 2) * .06, (i - 2) * .05); t.castShadow = true; g.add(t) }
+  for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.TorusGeometry(.11, .05, 8, 16), ropeMat(4)); w.position.set(s * .6, 0, 0); w.rotation.y = Math.PI / 2; g.add(w) } return g };
+/* the hero (scaled to ~2.3 high) · arm pose · hand position */
+const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', wear: 'traveler', top: '#3a8ad8', legs: 'pants', eyes: 'round' };
+const hero = (x, ry, arm) => { const g = new THREE.Group(); vinyl(g, look); const b = new THREE.Box3().setFromObject(g), h = b.max.y - b.min.y, s = 2.3 / h; g.scale.setScalar(s); g.position.set(x, GY - b.min.y * s, 0); g.rotation.y = ry; S.add(g);
+  let A = null, Hd = null; g.traverse(o => { if (o.userData.role === 'armR') A = o; if (o.name === 'handR') Hd = o }); if (arm && A) { A.rotation.x = arm[0]; A.rotation.z = arm[1] || 0 } g.traverse(o => o.isMesh && (o.castShadow = true));
+  g.updateMatrixWorld(true); const hp = new THREE.Vector3(); if (Hd) Hd.getWorldPosition(hp); return { g, hp, s } };
+
+/* a folded net hung at the hip: a soft bundle of cord · lead weights peeking out · tied with a cord */
+const netPack = () => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.SphereGeometry(.5, 20, 14), M('#e8dcc0', { roughness: 1 })); b.scale.set(1, .8, .75); g.add(b); const o = new THREE.Mesh(new THREE.SphereGeometry(.53, 20, 14), netMat([5, 4])); o.scale.copy(b.scale); g.add(o);
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283, w = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), M('#7a7a88', { roughness: .4, metalness: .3 })); w.position.set(Math.cos(a) * .42, -.3 + Math.sin(i * 2.1) * .06, Math.sin(a) * .32); g.add(w) }
+  const t = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 8, 20), ropeMat(4)); t.rotation.x = Math.PI / 2; t.position.y = .28; g.add(t); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const atHips = (g, s, kc = 1) => { const n = netPack(); n.scale.setScalar(.3 / s); n.position.set(-.44 / s, .72 / s, .04 / s); g.add(n); const c = coil(); c.scale.setScalar(.21 * kc / s); c.position.set(.44 / s, .78 / s, -.02 / s); c.rotation.set(0, Math.PI / 2 + .2, -.15); g.add(c) };
+const castNet = (cx, cz, y, R0, open) => { const geo = new THREE.SphereGeometry(R0, 28, 10, 0, Math.PI * 2, 0, Math.PI / (open ? 2.2 : 3.2)); const net = new THREE.Mesh(geo, netMat([6, 3])); net.scale.set(1, open ? .95 : .55, 1); net.position.set(cx, y, cz); net.castShadow = true; S.add(net);
+  const th = Math.PI / (open ? 2.2 : 3.2); for (let i = 0; i < 24; i++) { const a = i / 24 * 6.283, rr = R0 * Math.sin(th); const w = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), M('#7a7a88', { roughness: .4, metalness: .3 })); w.position.set(cx + Math.cos(a) * rr, y + Math.cos(th) * R0 * net.scale.y, cz + Math.sin(a) * rr); S.add(w) } return net };
+const dots = (pts) => pts.forEach(p => { const sp = new THREE.Mesh(new THREE.SphereGeometry(.035, 6, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); sp.position.copy(p); S.add(sp) });
+
+/* the plain leather pouch on the belt at the back */
+const pouch = () => { const g = new THREE.Group(); rbox(g, '#6a3a1e', '#a86a3a', [0, 0, 0], [.62, .56, .32], [0, 0, 0], .12); rbox(g, '#5a2e16', '#94582c', [0, .2, .1], [.66, .3, .14], [-.25, 0, 0], .08);
+  for (let i = 0; i < 9; i++) part(g, '#e8d0a0', '#fff0d0', [-.27 + i * .0675, .07, .2], [.012, .012, .01], [0, 0, 0], { A: 0 }); part(g, '#a8801a', '#ffd860', [0, .08, .22], [.06, .06, .03], [0, 0, 0], { A: .05 }); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const backPouch = (g, s) => { const p = pouch(); p.scale.setScalar(.42 / s); p.position.set(0, .7 / s, -.33 / s); p.rotation.y = Math.PI; g.add(p) };
+const ringAt = (x, z, r0) => { const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r0 + .08, 40), new THREE.MeshBasicMaterial({ color: '#ffffff' })); ring.rotation.x = -Math.PI / 2; ring.position.set(x, GY + .05, z); S.add(ring) };
+/* in the hand: a small round net ball · a single small loop of rope */
+const netBall = () => { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.SphereGeometry(.5, 20, 14), M('#e8dcc0', { roughness: 1 }))); g.add(new THREE.Mesh(new THREE.SphereGeometry(.53, 20, 14), netMat([5, 4]))); g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const ropeLoop = () => { const t = new THREE.Mesh(new THREE.TorusGeometry(.5, .11, 10, 32), ropeMat(10)); t.castShadow = true; return t };
+
+/* the fishing rod (as in the game's FROD): a cork grip · a reel · a two-piece brown pole · the line */
+const rod = () => { const g = new THREE.Group(), cy = (r1, r2, h, c, y, ro = .6) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 14), M(c, { roughness: ro })); o.position.y = y; o.castShadow = true; g.add(o); return o };
+  cy(.022, .026, .32, '#c8a070', 0, .9); cy(.014, .02, .7, '#6a4024', .5, .5); cy(.006, .012, .7, '#6a4024', 1.2, .5); const rl = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .04, 18), M('#d0d4dc', { roughness: .3, metalness: .4 })); rl.rotation.z = Math.PI / 2; rl.position.set(.045, .12, 0); g.add(rl); return g };
+const water = (x, z) => { const w = new THREE.Mesh(new THREE.CircleGeometry(1.1, 40), new THREE.MeshStandardMaterial({ color: '#3a8ac0', roughness: .2, metalness: .1 })); w.rotation.x = -Math.PI / 2; w.position.set(x, GY + .02, z); w.scale.set(1, .7, 1); S.add(w) };
+const XX = [-3, 3];
+/* ① rod chosen (Y): the rod in the palm, tip up and forward · a white circle on the water ahead */
+{ ground(XX[0]); const { g, hp, s } = hero(XX[0] - .9, 1.0, [-1.0, .15]); backPouch(g, s); water(XX[0] + 1.0, .2); ringAt(XX[0] + 1.0, .2, .45);
+  const r0 = rod(); r0.scale.setScalar(.95); r0.position.copy(hp).add(new THREE.Vector3(.02, -.02, .03)); r0.rotation.set(0, 0, -.7); S.add(r0); r0.updateMatrixWorld(true);
+  const tip = new THREE.Vector3(0, 1.55, 0).applyMatrix4(r0.matrixWorld); const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([tip, tip.clone().add(new THREE.Vector3(0, -.35, 0))]), new THREE.LineBasicMaterial({ color: '#ffffff' })); S.add(ln) }
+/* ② cast: the line out to a bobber in the circle · waiting for a bite */
+{ ground(XX[1]); const { g, hp, s } = hero(XX[1] - .9, 1.0, [-1.3, .15]); backPouch(g, s); const bx = XX[1] + 1.0; water(bx, .2); ringAt(bx, .2, .45);
+  const r0 = rod(); r0.scale.setScalar(.95); r0.position.copy(hp).add(new THREE.Vector3(.02, -.02, .03)); r0.rotation.set(0, 0, -.95); S.add(r0); r0.updateMatrixWorld(true);
+  const tip = new THREE.Vector3(0, 1.55, 0).applyMatrix4(r0.matrixWorld), bob = new THREE.Vector3(bx, GY + .08, .2);
+  const pts = []; for (let i = 0; i <= 20; i++) { const t = i / 20; pts.push(new THREE.Vector3(tip.x + (bob.x - tip.x) * t, tip.y + (bob.y - tip.y) * t - Math.sin(t * Math.PI) * .25, tip.z + (bob.z - tip.z) * t)) } S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#ffffff' })));
+  const b1 = new THREE.Mesh(new THREE.SphereGeometry(.07, 14, 10), M('#e8402a', { roughness: .4 })); b1.position.copy(bob); S.add(b1); const b2 = new THREE.Mesh(new THREE.SphereGeometry(.07, 14, 10, 0, 6.3, 0, 1.4), M('#ffffff', { roughness: .4 })); b2.position.copy(bob).add(new THREE.Vector3(0, .02, 0)); S.add(b2) }
+r.render(S, cam);
+const L = [['① ถือเบ็ด (กด Y)', 'คันเบ็ดในฝ่ามือ · วงขาวบนน้ำ'], ['② เหวี่ยงแล้ว', 'สายเบ็ด + ทุ่นลอยในวงขาว · รอปลากิน']];
+L.forEach(([t, s2], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 600 + 100) + 'px'; d.innerHTML = t + '<small>' + s2 + '</small>'; document.getElementById('w').appendChild(d) });
+window.done = 1;
+</script></body></html>
