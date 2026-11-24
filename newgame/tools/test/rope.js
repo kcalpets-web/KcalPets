@@ -1,4 +1,4 @@
-/* v4.03 🪢 the rope (farm Y tool · free from the start): hold Y = aim · a drop inside the white circle (≤ 15 m) locks · let go = pull it to you → into the bag · farther than 15 m = nothing
+/* v4.03 🪢 the rope (farm Y tool · free from the start) · v4.88: the white ring sits on a drop ahead (≤ 15 m) · tap Y = pull it to you → into the bag · farther than 15 m = no ring
    NODE_PATH=$(npm root -g) node newgame/tools/test/rope.js outDir   (~2 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const fs = require('fs');
 const ROOT = '/home/user/KcalPets', PORT = 8860, OUT = process.argv[2] || '/tmp/ng_rope', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
@@ -14,15 +14,15 @@ const ROOT = '/home/user/KcalPets', PORT = 8860, OUT = process.argv[2] || '/tmp/
     const inList = await E(() => { const N = window.__ng; return N.D.YTOOL.rope && N.pickList ? N.pickList('y').L.some(o => o.k === 'rope') : !!N.D.YTOOL.rope }); log('in the Y list', inList); if (!inList) errs.push('the rope should be a Y tool from the start');
     for (const [far, want] of [[10, true], [20, false]]) {
       const r = await E(async far => { const N = window.__ng; N.placeMe(300, 300); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .35; await new Promise(r => setTimeout(r, 800)); N.S.ingr.apple = 0; const q = N.me; N.dropIngr('apple', 1, q.x, q.z + far); await new Promise(r => setTimeout(r, 400)); return { drops: N.drops.length } }, far);
-      await btn('bY', 'pointerdown'); await wait(1500); const aim = await E(() => { const N = window.__ng, d = N.drops[N.drops.length - 1], p = d && d.g.position, s2 = p && N.project(p.x, p.y + .3, p.z); return { rope: !!(N.AIM && N.AIM.rope), lock: !!(N.AIM && N.AIM.lockD), scr: s2 && [Math.round(s2.x), Math.round(s2.y), +s2.z.toFixed(2)], c: [innerWidth / 2, innerHeight / 2, Math.round(Math.min(innerWidth, innerHeight) * N.D.QAIM.circle)], dist: p && +Math.hypot(p.x - N.me.x, p.z - N.me.z).toFixed(1) } }); await pg.screenshot({ path: OUT + '/aim' + far + '.png' }); await btn('bY', 'pointerup'); await wait(300); log('after up', JSON.stringify(await E(() => ({ aim: !!window.__ng.AIM, rp: !!window.__ng.ROPEP, drops: window.__ng.drops.length })))); await wait(2200);
+      const aim = await E(() => { const N = window.__ng, T = N.yTarget(); return { ring: T && T.k, lock: !!(T && T.k === 'rope') } }); await pg.screenshot({ path: OUT + '/aim' + far + '.png' }); await btn('bY', 'pointerdown'); await wait(120); await btn('bY', 'pointerup'); await wait(2500); log('after tap', JSON.stringify(await E(() => ({ aim: !!window.__ng.AIM }))));
       const got = await E(() => window.__ng.S.ingr.apple || 0); log(far + ' m', JSON.stringify(aim), 'apple', got);
-      if (!aim.rope) errs.push('holding Y with the rope should aim it'); if (want && (!aim.lock || got !== 1)) errs.push('a drop 10 m away should lock and be pulled into the bag'); if (!want && (aim.lock || got)) errs.push('a drop 20 m away is out of reach');
+      if (want && (!aim.lock || got !== 1)) errs.push('a drop 10 m away should get the ring and be pulled into the bag'); if (!want && (aim.lock || got)) errs.push('a drop 20 m away is out of reach');
       await E(() => { const N = window.__ng; for (const d of [...N.drops]) N.pickDrop(d) }) }
     /* v4.15 ground loot (a weapon lying on a light disc) locks too · designer: the rope did not lock the sword on the ground */
     { await E(async () => { const N = window.__ng; N.placeMe(300, 300); N.PL.yaw = N.PL.yawT = 0; N.CAM.yaw = 0; N.CAM.pitch = .35; await new Promise(r => setTimeout(r, 800)); const q = N.me; window.__bag0 = N.S.bag.length; window.__gl0 = N.GL.size; N.glSpawn('knightSword', q.x, q.z + 8); await new Promise(r => setTimeout(r, 600)) });
-      await btn('bY', 'pointerdown'); await wait(1500); const lk = await E(() => { const A = window.__ng.AIMR; return A && A.lockD ? A.lockD.k : null }); await btn('bY', 'pointerup'); await wait(2500);
+      const lk = await E(() => { const T = window.__ng.yTarget(); return T && T.d ? T.d.k : null }); await btn('bY', 'pointerdown'); await wait(120); await btn('bY', 'pointerup'); await wait(2500);
       const g2 = await E(() => ({ bag: window.__ng.S.bag.length - window.__bag0, gl: window.__ng.GL.size - window.__gl0 })); log('ground loot', lk, JSON.stringify(g2)); await pg.screenshot({ path: OUT + '/loot.png' });
-      if (lk !== 'gl' || g2.bag !== 1) errs.push('v4.15 a weapon lying on the ground should lock and be pulled into the bag') }
+      if (lk !== 'gl' || g2.bag !== 1) errs.push('v4.15 a weapon lying on the ground should get the ring and be pulled into the bag') }
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();
