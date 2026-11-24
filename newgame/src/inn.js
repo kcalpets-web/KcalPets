@@ -1,0 +1,25 @@
+/* v4.90 🍺 the harbour inn (designer · docs/plan-kingdoms-inn.md · mock tools/art/inn.html approved): 4 floors · an old stone ground floor (the counter + the dining room) ·
+   3 half-timber floors of rooms · a balcony on the 2nd floor · a mug on the hanging sign · lanterns by the door · window boxes of flowers · a chimney
+   innModel(g, { winMat }) — local: the door faces +z · footprint INN.w × INN.d · returns { door: [x, z] } */
+import * as THREE from '../lib/three.module.min.js';
+import { part } from './clay.js';
+import { stoneWall, timberWall, shingleRoof } from './masonry.js';
+export const INN = { w: 7.2, d: 5.4, h1: 2.7, hf: 2.3, nf: 3 };
+export function innModel(g, o = {}) { const IW = INN.w, ID = INN.d, H1 = INN.h1, HF = INN.hf, NF = INN.nf, st = ['#6e665a', '#b8ae9a'], winM = o.winMat || new THREE.MeshStandardMaterial({ color: '#2e3a52', roughness: .4 });
+  const door = [IW / 2 - .6, 0, 1.2, 1.7], gw = [[.5, 1.0, .9, .9], [IW - 1.4, 1.0, .9, .9]];
+  stoneWall(g, { w: IW, h: H1, t: .3, at: [0, 0, ID / 2], ry: 0, stone: st, size: [.42, .25], ruin: .2, moss: .5, seed: 11, open: [door, ...gw] }); stoneWall(g, { w: IW, h: H1, t: .3, at: [0, 0, -ID / 2], ry: Math.PI, stone: st, ruin: .2, seed: 12, open: [] });
+  stoneWall(g, { w: ID, h: H1, t: .3, at: [IW / 2, 0, 0], ry: Math.PI / 2, stone: st, ruin: .2, seed: 13, open: [[ID / 2 - .45, 1.0, .9, .9]] }); stoneWall(g, { w: ID, h: H1, t: .3, at: [-IW / 2, 0, 0], ry: -Math.PI / 2, stone: st, ruin: .2, seed: 14, open: [[ID / 2 - .45, 1.0, .9, .9]] });
+  const fw = [[.45, .7, .75, .9], [IW / 2 - .38, .7, .75, .9], [IW - 1.2, .7, .75, .9]], sw2 = [[.6, .7, .75, .9], [ID - 1.35, .7, .75, .9]];
+  for (let f = 0; f < NF; f++) { const y0 = H1 + f * HF, sd = 20 + f * 4; timberWall(g, { w: IW + .1, h: HF, t: .2, at: [0, y0, ID / 2 + .02], ry: 0, ruin: .15, seed: sd, open: fw }); timberWall(g, { w: IW + .1, h: HF, t: .2, at: [0, y0, -ID / 2 - .02], ry: Math.PI, ruin: .15, seed: sd + 1, open: fw });
+    timberWall(g, { w: ID + .1, h: HF, t: .2, at: [IW / 2 + .02, y0, 0], ry: Math.PI / 2, ruin: .15, seed: sd + 2, open: sw2 }); timberWall(g, { w: ID + .1, h: HF, t: .2, at: [-IW / 2 - .02, y0, 0], ry: -Math.PI / 2, ruin: .15, seed: sd + 3, open: sw2 });
+    for (const [x, y, w2, h2] of fw) { const gl = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, .04), winM); gl.position.set(-IW / 2 + x + w2 / 2, y0 + y + h2 / 2, ID / 2 + .135); g.add(gl); part(g, '#5a3a22', '#8a5a32', [gl.position.x, y0 + y - .06, ID / 2 + .12], [w2 / 2 + .06, .05, .12], [0, 0, 0], { A: 0 });
+      part(g, '#3a7a2a', '#6ab048', [gl.position.x, y0 + y + .02, ID / 2 + .2], [w2 / 2 - .05, .08, .08], [0, 0, 0], { A: .03 }); for (let i = 0; i < 3; i++) part(g, ['#ff7a9a', '#ffd23f', '#ffffff'][i], '#ffffff', [gl.position.x - .2 + i * .2, y0 + y + .13, ID / 2 + .22], [.05, .05, .05], [0, 0, 0], { A: 0 }) }
+    for (const s of [-1, 1]) for (const [x, y, w2, h2] of sw2) { const gl = new THREE.Mesh(new THREE.BoxGeometry(.04, h2, w2), winM); gl.position.set(s * (IW / 2 + .125), y0 + y + h2 / 2, -ID / 2 + x + w2 / 2); g.add(gl) } }
+  for (const [x, y, w2, h2] of gw) { const gl = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, .04), winM); gl.position.set(-IW / 2 + x + w2 / 2, y + h2 / 2, ID / 2 - .03); g.add(gl) }
+  shingleRoof(g, { w: IW + .5, d: ID + .5, rise: 1.9, eave: .18, tile: [.3, .26], at: [0, H1 + NF * HF, 0], col: '#8a3a2a', ruin: .1, seed: 77 });
+  for (let i = 0; i < 9; i++) part(g, '#5a3a22', '#8a5a32', [-IW / 2 + .5 + i * (IW - 1) / 8, H1 + .45, ID / 2 + .75], [.04, .45, .04], [0, 0, 0], { A: 0 }); part(g, '#5a3a22', '#8a5a32', [0, H1 + .9, ID / 2 + .75], [IW / 2 - .4, .05, .06], [0, 0, 0], { A: 0 }); part(g, '#6a4428', '#9a6a3a', [0, H1 + .02, ID / 2 + .42], [IW / 2 - .3, .06, .42], [0, 0, 0], { A: 0 });   /* the balcony */
+  for (let i = 0; i < 5; i++) part(g, ['#5a3a22', '#6a4428', '#4e321e'][i % 3], '#8a5a32', [-IW / 2 + door[0] + .12 + i * .24, .85, ID / 2 + .12], [.115, .85, .04], [0, 0, 0], { A: 0 });   /* the door */
+  part(g, '#4a3422', '#7a5a3a', [IW / 2 - .1, H1 - .25, ID / 2 + .55], [.04, .04, .55], [0, 0, 0], { A: 0 }); const sg = new THREE.Group(); part(sg, '#7a4a24', '#c8904a', [0, 0, 0], [.04, .38, .55], [0, 0, 0], { A: .02 }); part(sg, '#c08a2a', '#ffd860', [.05, .05, 0], [.02, .16, .16], [0, 0, 0], { A: 0 }); part(sg, '#ffffff', '#ffffff', [.05, .2, 0], [.02, .05, .12], [0, 0, 0], { A: 0 }); sg.position.set(IW / 2 - .1, H1 - .72, ID / 2 + .85); g.add(sg);   /* 🍺 a mug on the board */
+  for (const sx of [-1, 1]) { const lx = -IW / 2 + door[0] + (sx < 0 ? -.25 : door[2] + .25); part(g, '#2a2a30', '#6a6a78', [lx, 1.9, ID / 2 + .25], [.1, .14, .1], [0, 0, 0], { A: 0 }); const lg = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), winM); lg.position.set(lx, 1.9, ID / 2 + .25); g.add(lg) }
+  { const ch = new THREE.Group(); stoneWall(ch, { w: .7, h: 2.2, t: .7, at: [0, 0, 0], stone: st, ruin: .1, size: [.25, .17], noHoles: 1, seed: 9 }); ch.position.set(IW / 2 - 1.2, H1 + NF * HF + .3, -ID / 4); g.add(ch) }
+  return { door: [-IW / 2 + door[0] + door[2] / 2, ID / 2 + .6] } }
