@@ -426,6 +426,10 @@ const inTr = (x, z) => Math.abs(x - TRAIN.x) < 70 && Math.abs(z - TRAIN.z) < 70;
 export const EELA = { x: -420, z: 420, r: 14 };
 export const inEelA = (x, z) => Math.abs(x - EELA.x) < 70 && Math.abs(z - EELA.z) < 70;
 const eelIn = (x, z) => Math.hypot(x - EELA.x, z - EELA.z) < EELA.r;
+/* v4.90 👑 the throne hall of a captured castle (designer: meeting the boss loads a wide hall · pillars · a throne): a flat stone floor far out at sea (own little map) */
+export const THRH = { x: -420, z: -420, hw: 13, hd: 17 };
+export const inThrA = (x, z) => Math.abs(x - THRH.x) < 70 && Math.abs(z - THRH.z) < 70;
+const thrIn = (x, z) => Math.abs(x - THRH.x) < THRH.hw && Math.abs(z - THRH.z) < THRH.hd;
 export function trainH(x, z) { const T = TRAIN, dx = Math.abs(x - T.x), dz = Math.abs(z - T.z); if (dx > T.hw + .5 || dz > T.hw + .5) return -2;
   const [px, pz, pw, pd] = T.pond, wx = Math.max(Math.abs(x - px) - pw, Math.abs(z - pz) - pd); if (wx < .8) return wx < 0 ? -1.1 : .15 - (.8 - wx) * .5;
   const [lx, lz, lw, ld, lh] = T.ledge, e = Math.max(Math.abs(x - lx) - lw, Math.abs(z - lz) - ld); if (e < .6) return e < 0 ? lh : lh * (1 - e / .6) + .15 * (e / .6);
@@ -434,6 +438,7 @@ export function groundH(x, z) {
   if (onCloud(x, z)) return .6;
   if (inTr(x, z)) return trainH(x, z);
   if (inEelA(x, z)) return eelIn(x, z) ? .15 : -3;
+  if (inThrA(x, z)) return thrIn(x, z) ? .15 : -3;
   if (coreDist(x, z) > 0) return gtStone(x, z) ? GTREE.h + .1 : wildH(x, z);
   const h = coreH(x, z), k = 1 - smw(0, CORE_BLEND, coreIn(x, z)); return k > 0 ? h + (wildH(x, z) - h) * k : h;   /* v3.7 zone 1's last metres melt into the land / sea around it: one sheet, no straight seam (mesh · map · feet all use this) */
 }
@@ -448,7 +453,7 @@ function coreH(x, z) {
   return 0;
 }
 export function waterAt(x, z) {
-  if (inEelA(x, z)) return null;
+  if (inEelA(x, z) || inThrA(x, z)) return null;
   if (inTr(x, z)) { const [px, pz, pw, pd] = TRAIN.pond; return Math.abs(x - px) < pw && Math.abs(z - pz) < pd ? 'fresh' : trainH(x, z) < -1.5 ? 'sea' : null }
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? null : 'sea';
   if (coreDist(x, z) > 0) return x < coastX(z) + 2 && wildH(x, z) < -.4 ? 'sea' : wildH(x, z) < -.45 ? 'fresh' : null;
@@ -461,6 +466,7 @@ export function waterAt(x, z) {
 export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (inEelA(x, z)) return eelIn(x, z) ? 'land' : false;
+  if (inThrA(x, z)) return thrIn(x, z) ? 'land' : false;
   if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; if (gtStone(x, z)) return 'land'; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
@@ -652,7 +658,7 @@ export function decorLook(x, z, out, peb) { if (peb === 'sand') { if (waterAt(x,
   if (peb === 'sea') { if (waterAt(x, z) !== 'sea') return null; const d = groundH(x, z); return d < -.5 && d > -2.8 ? { y: d } : null }   /* coral grounds */
   if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
   if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
-  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z) || inGlade(x, z, -GTREE.r + GTREE.pond + 1.5) && !inGlade(x, z, -GTREE.r + GTREE.isl - .5)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z) || inThrA(x, z) || inGlade(x, z, -GTREE.r + GTREE.pond + 1.5) && !inGlade(x, z, -GTREE.r + GTREE.isl - .5)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
   const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
   if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }
