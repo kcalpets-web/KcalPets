@@ -19,7 +19,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8838, OUT = process.arg
     const eff = await E(() => { const N = window.__ng, S = N.S, give = t => { const it = N.newItem(t, 'B'); S.bag.push(it); return it }, out = {};
       for (const t of ['axe2', 'travelerSword', 'sickle1', 'pick0', 'mallet0', 'hoe0']) { const it = S.bag.find(x => x.t === t) || give(t); N.equipA(it); out[t] = ['wood', 'grass', 'stone'].map(c => N.effOf(c)) } return out }); log('eff wood/grass/stone', JSON.stringify(eff));
     if (!(eff.axe2[0] > eff.travelerSword[0] && eff.travelerSword[0] > 0)) errs.push('the axe should cut wood faster than a sword (both can)'); if (!(eff.sickle1[1] > eff.travelerSword[1])) errs.push('the sickle should cut grass fastest');
-    if (!(eff.pick0[2] > eff.mallet0[2] && eff.mallet0[2] > 0) || eff.travelerSword[2]) errs.push('only the pickaxe / hammer break stone (pickaxe faster)');
+    if (!(eff.pick0[2] > 0) || eff.mallet0[2] || eff.travelerSword[2]) errs.push('only the pickaxe breaks stone (v4.88: hammers are weapons)');
     // real hits on a tree: axe vs sword
     const hits = await E(() => { const N = window.__ng, S = N.S; let o = null, bd = 1e9; for (const c of N.W.clear.values()) if (c.g && c.t === 'tree') { const d = Math.hypot(c.x - N.me.x, c.z - N.me.z); if (d < bd) { bd = d; o = c } } if (!o) return null;
       const r = {}; for (const t of ['axe2', 'travelerSword']) { N.equipA(S.bag.find(x => x.t === t)); N.setTool(S.hand === 'w' ? 'sword' : S.hand); o.left = 0; N.placeMe(o.x - .9, o.z); N.toolHit({ kind: 'clear', id: o.id, ok: 1, w: 1 }); r[t] = o.tot; o.left = 0 } return r }); log('hits for a tree', JSON.stringify(hits));
