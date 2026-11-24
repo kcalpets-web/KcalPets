@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE hip pouch</title><style>body{margin:0;background:#1e1a2a;font:700 22px system-ui;color:#fff}#w{position:relative;width:1600px;height:700px}canvas{display:block}.lb{position:absolute;top:14px;width:400px;text-align:center}.lb small{display:block;font-size:15px;color:#c8c0e0;font-weight:600;margin-top:4px}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.88 mock: a small leather pouch at the hip (holds the net and the rope) */
+import * as THREE from '../../lib/three.module.min.js';
+import { part, rbox } from '../../src/clay.js';
+import { vinyl } from '../../src/vinyl.js';
+const W = 1600, H = 700, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#2a2440'); S.add(new THREE.HemisphereLight('#ffffff', '#605870', 1.5)); const k = new THREE.DirectionalLight('#ffffff', 2.3); k.position.set(-2, 5, 6); k.castShadow = true; k.shadow.camera.left = -9; k.shadow.camera.right = 9; k.shadow.camera.top = 5; k.shadow.camera.bottom = -5; S.add(k);
+const cam = new THREE.OrthographicCamera(-8, 8, 3.5, -3.5, .1, 50); cam.position.set(0, 2, 10); cam.lookAt(0, .2, 0);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .8 }, o));
+const netTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); g.strokeStyle = '#f4ecd8'; g.lineWidth = 8; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, 128); g.stroke(); g.beginPath(); g.moveTo(0, i * 32); g.lineTo(128, i * 32); g.stroke() } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t })();
+const ropeTex = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#b8884a'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#7a5428'; g.lineWidth = 6; for (let i = -64; i < 128; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke() } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t })();
+const ropeMat = u => { const t = ropeTex.clone(); t.needsUpdate = true; t.repeat.set(u, 1); return new THREE.MeshStandardMaterial({ map: t, roughness: .95 }) };
+/* the pouch: a rounded leather body · a flap with stitching · a brass stud · a belt loop · (what) peeking out */
+const pouch = (what) => { const g = new THREE.Group();
+  rbox(g, '#6a3a1e', '#a86a3a', [0, 0, 0], [.62, .56, .32], [0, 0, 0], .12);
+  rbox(g, '#5a2e16', '#94582c', [0, .2, .1], [.66, .3, .14], [-.25, 0, 0], .08);
+  for (let i = 0; i < 9; i++) part(g, '#e8d0a0', '#fff0d0', [-.27 + i * .0675, .07, .2], [.012, .012, .01], [0, 0, 0], { A: 0 });
+  part(g, '#a8801a', '#ffd860', [0, .08, .22], [.06, .06, .03], [0, 0, 0], { A: .05 });
+  rbox(g, '#4a2612', '#7a4a24', [0, .36, -.08], [.24, .2, .06], [0, 0, 0], .03);
+  if (what === 'net') { const n = new THREE.Mesh(new THREE.SphereGeometry(.16, 14, 10), new THREE.MeshStandardMaterial({ map: netTex, transparent: true, alphaTest: .4, side: THREE.DoubleSide })); n.position.set(.2, .34, .02); g.add(n); for (let i = 0; i < 3; i++) { const w = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 6), M('#7a7a88', { metalness: .3, roughness: .4 })); w.position.set(.12 + i * .08, .4 + (i % 2) * .05, .05); g.add(w) } }
+  if (what === 'rope') { const t = new THREE.Mesh(new THREE.TorusGeometry(.14, .04, 8, 24), ropeMat(6)); t.position.set(-.18, .36, .02); t.rotation.set(.3, 0, .2); g.add(t); const cv = new THREE.CatmullRomCurve3([new THREE.Vector3(-.28, .3, .1), new THREE.Vector3(-.38, .05, .16), new THREE.Vector3(-.34, -.25, .14)]); g.add(new THREE.Mesh(new THREE.TubeGeometry(cv, 20, .03, 8), ropeMat(3))) }
+  if (what === 'both') { g.add(pouchBits('net')); g.add(pouchBits('rope')) }
+  g.traverse(o => o.isMesh && (o.castShadow = true)); return g };
+const pouchBits = w => { const p = pouch(w); p.children.splice(0, 5 + 9).forEach(() => {}); return p };
+const look = { v: 2, sex: 'm', skin: '#f2cfa6', hair: 'messy', wear: 'traveler', top: '#3a8ad8', legs: 'pants', eyes: 'round' };
+const GY = -1.6, X = [-6, -2, 2, 6];
+const ground = x => { const g = new THREE.Mesh(new THREE.CircleGeometry(1.95, 48), M('#5a8a3a', { roughness: 1 })); g.rotation.x = -Math.PI / 2; g.position.set(x, GY, 0); g.receiveShadow = true; S.add(g) };
+const hero = (x, ry) => { const g = new THREE.Group(); vinyl(g, look); const b = new THREE.Box3().setFromObject(g), h = b.max.y - b.min.y, s = 2.3 / h; g.scale.setScalar(s); g.position.set(x, GY - b.min.y * s, 0); g.rotation.y = ry; g.traverse(o => o.isMesh && (o.castShadow = true)); S.add(g); return { g, s } };
+/* ① front: one pouch on the right hip */
+{ ground(X[0]); const { g, s } = hero(X[0], -.35); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(.44 / s, .74 / s, .1 / s); p.rotation.y = .5; g.add(p) }
+/* ② side: how it hangs on the belt */
+{ ground(X[1]); const { g, s } = hero(X[1], .9); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(.44 / s, .74 / s, .1 / s); p.rotation.y = .5; g.add(p) }
+/* ③④ close-ups */
+{ const p = pouch('net'); p.scale.setScalar(3.4); p.position.set(X[2], -.2, 0); p.rotation.set(.1, -.35, 0); S.add(p) }
+{ const p = pouch('rope'); p.scale.setScalar(3.4); p.position.set(X[3], -.2, 0); p.rotation.set(.1, .35, 0); S.add(p) }
+r.render(S, cam);
+const L = [['① กระเป๋าข้างเอว', 'ใบเล็ก ห้อยเอวขวา'], ['② มองด้านข้าง', 'ห้อยกับเข็มขัด · ไม่บังมือ'], ['③ ใส่ตาข่าย', 'ตาข่าย + ลูกตุ้มโผล่ขอบฝา'], ['④ ใส่เชือก', 'ขดเชือกโผล่ · ปลายห้อยออกมา']];
+L.forEach(([t, s], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 400) + 'px'; d.innerHTML = t + '<small>' + s + '</small>'; document.getElementById('w').appendChild(d) });
+window.done = 1;
+</script></body></html>
