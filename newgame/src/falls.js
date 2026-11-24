@@ -1,0 +1,27 @@
+/* v4.96 💦 clay waterfalls (designer: make them clay like the rest) — a streaked water sheet down the cliff · a lip of white foam blobs at the top ·
+   a foam ring and splashing blobs at the foot · round clay boulders around a pool · soft mist puffs (animated) · optional dark cave mouth behind the curtain
+   fallTex() → the scrolling water texture · fallDeco(g, top, bot, side, o) → { mist: [Mesh] } (top / bot = [x, y, z] · side = the unit vector across the fall) */
+import * as THREE from '../lib/three.module.min.js';
+import { part } from './clay.js';
+export function fallTex() { const cv = document.createElement('canvas'); cv.width = 64; cv.height = 256; const g = cv.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, '#7ac8f0'); gr.addColorStop(.5, '#b8e8ff'); gr.addColorStop(1, '#7ac8f0'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256);
+  for (let i = 0; i < 26; i++) { const x = Math.random() * 64, w = 1.5 + Math.random() * 4, y = Math.random() * 256, h = 120 + Math.random() * 160; g.fillStyle = `rgba(255,255,255,${.3 + Math.random() * .45})`; for (const yy of [y, y - 256]) { g.beginPath(); g.roundRect ? g.roundRect(x, yy, w, h, w / 2) : g.rect(x, yy, w, h); g.fill() } }   /* long streaks (wrapped top / bottom: no seam) */
+  for (let i = 0; i < 18; i++) { const x = Math.random() * 64, y = Math.random() * 256, h = 60 + Math.random() * 90; g.fillStyle = 'rgba(70,150,210,.28)'; for (const yy of [y, y - 256]) g.fillRect(x, yy, 1.5, h) }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t }
+let MISTT = null; const mistTex = () => MISTT || (MISTT = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return t })());
+export function fallDeco(g, top, bot, side, o = {}) { const W = o.w || 2.6, R = (() => { let s = o.seed || 7; return () => (s = s * 16807 % 2147483647) / 2147483647 })(), [sx, , sz] = side, fx = bot[0] - top[0], fz = bot[2] - top[2], fl = Math.hypot(fx, fz) || 1, ox = fx / fl, oz = fz / fl;   /* o = outward (away from the cliff) */
+  /* the lip: a row of white foam blobs where the water spills over */
+  for (let i = 0; i < 7; i++) { const u = -W + i * W / 3, s = .32 + R() * .18; part(g, '#d8f0ff', '#ffffff', [top[0] + sx * u, top[1] + .1, top[2] + sz * u], [s, s * .7, s], [0, 0, 0], { A: .1 }) }
+  /* the foot: a foam ring + splashing blobs */
+  const fx0 = bot[0] + ox * 1.2, fz0 = bot[2] + oz * 1.2, fy = bot[1];
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, r = 2.4 + R() * .8, s = .35 + R() * .35; part(g, '#d8f0ff', '#ffffff', [fx0 + Math.cos(a) * r * .9, fy + .05, fz0 + Math.sin(a) * r * .9], [s, s * .45, s], [0, 0, 0], { A: .1 }) }
+  for (let i = 0; i < 8; i++) { const u = (R() - .5) * W * 1.6, s = .4 + R() * .45; part(g, '#e8f8ff', '#ffffff', [bot[0] + sx * u + ox * .4, fy + .2 + R() * .5, bot[2] + sz * u + oz * .4], [s, s * .8, s], [0, 0, 0], { A: .15 }) }
+  /* the pool + round boulders around it */
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(4.2, 28), new THREE.MeshStandardMaterial({ color: '#4aa8dc', roughness: .15, transparent: true, opacity: .88 })); pool.rotation.x = -Math.PI / 2; pool.position.set(fx0 + ox * 1.2, fy + .02, fz0 + oz * 1.2); g.add(pool);
+  for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2 + R() * .3, r = 4.4 + R() * .9, s = .45 + R() * .7; part(g, '#6a6458', '#a8a090', [pool.position.x + Math.cos(a) * r, fy + s * .4, pool.position.z + Math.sin(a) * r], [s, s * .75, s * .9], [R(), R() * 3, R()], { A: .25, f: 1.3 }) }
+  for (const sd of [-1, 1]) for (let i = 0; i < 4; i++) { const t = .15 + i * .22, s = .7 + R() * .6; part(g, '#5a544a', '#9a9284', [top[0] + fx * t + sx * sd * (W + .6 + R() * .5), top[1] + (bot[1] - top[1]) * t, top[2] + fz * t + sz * sd * (W + .6 + R() * .5)], [s, s * .8, s], [R(), R() * 3, R()], { A: .25, f: 1.3 }) }   /* rocks framing the fall */
+  if (o.cave) { const c = new THREE.Mesh(new THREE.CircleGeometry(1.6, 24), new THREE.MeshBasicMaterial({ color: '#0e0c14' })); c.scale.set(1, 1.25, 1); c.position.set(bot[0] - ox * .5, fy + 1.7, bot[2] - oz * .5); c.lookAt(c.position.x + ox, c.position.y, c.position.z + oz); g.add(c);
+    for (let i = 0; i < 9; i++) { const a = Math.PI * (i / 8), s = .5 + R() * .25; part(g, '#4a443c', '#7a7268', [c.position.x + sx * Math.cos(a) * 1.9 + ox * .1, fy + .4 + Math.sin(a) * 2.4, c.position.z + sz * Math.cos(a) * 1.9 + oz * .1], [s, s, s], [R(), R(), R()], { A: .2, f: 1.2 }) } }   /* the dark cave mouth behind the curtain */
+  const mist = []; for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: mistTex(), transparent: true, opacity: .5, depthWrite: false })); m.position.set(fx0 + (R() - .5) * 3, fy + .8 + R() * 1.5, fz0 + (R() - .5) * 3); m.userData.p0 = m.position.clone(); m.userData.ph = R() * 6; g.add(m); mist.push(m) }
+  return { mist, pool } }
+export function mistTick(L, now, cam) { for (const m of L) { const p = m.userData.p0, t = now / 1000 + m.userData.ph; m.position.set(p.x + Math.sin(t * .7) * .4, p.y + (t * .35 % 1.6), p.z + Math.cos(t * .5) * .4); m.material.opacity = .45 * (1 - (t * .35 % 1.6) / 1.6); if (cam) m.quaternion.copy(cam.quaternion) } }

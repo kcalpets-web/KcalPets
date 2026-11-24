@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE waterfall</title><style>body{margin:0;background:#1e1a2a;font:700 22px system-ui;color:#fff}#w{position:relative;width:1600px;height:900px}canvas{display:block}.lb{position:absolute;top:14px;width:800px;text-align:center}.lb small{display:block;font-size:15px;color:#c8c0e0;font-weight:600;margin-top:4px}</style></head><body><div id="w"></div>
+<script type="module">
+/* v4.96 mock: 💦 the clay waterfall (src/falls.js) — left: a fall down a cliff · right: the one with the cave behind it */
+import * as THREE from '../../lib/three.module.min.js';
+import { part } from '../../src/clay.js';
+import { fallTex, fallDeco, mistTick } from '../../src/falls.js';
+const W = 1600, H = 900, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); r.setScissorTest(true); document.getElementById('w').appendChild(r.domElement); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+function scene(cave) { const S = new THREE.Scene(); S.background = new THREE.Color('#bfe2f2'); S.add(new THREE.HemisphereLight('#ffffff', '#6a7a50', 1.4)); const k = new THREE.DirectionalLight('#fff4e0', 2.2); k.position.set(-8, 14, 10); k.castShadow = true; S.add(k);
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: '#6aa84a', roughness: 1 })); gr.rotation.x = -Math.PI / 2; gr.receiveShadow = true; S.add(gr);
+  /* a clay cliff: stacked rounded blocks */ for (let i = 0; i < 26; i++) { const x = -14 + (i % 13) * 2.3, y = i < 13 ? 3 : 8.5, s = 2.4 + (i * 7 % 5) * .25; part(S, '#7a7262', '#b8ae98', [x, y, -3.5 - (i * 3 % 2)], [s, i < 13 ? 3.2 : 2.6, 2.4], [0, (i % 3) * .2, 0], { A: .2, f: 1.2 }) }
+  for (let i = 0; i < 12; i++) part(S, '#4a8a3a', '#7ac858', [-13 + i * 2.4, 11.3, -3.5], [1.4, .5, 1.6], [0, 0, 0], { A: .2 });
+  const tex = fallTex(); tex.repeat.set(1.5, 1.5); const top = [0, 11, -1.3], bot = [0, 0, .2], side = [1, 0, 0], N = 16, pos = [], uv = [], idx = [];
+  for (let i = 0; i <= N; i++) { const t = i / N, y = top[1] + (bot[1] - top[1]) * t, z = top[2] + (bot[2] - top[2]) * t + Math.sin(t * Math.PI) * .5; for (const w of [-2.6, 2.6]) { pos.push(w, y, z); uv.push(w > 0 ? 1 : 0, 1 - t) } if (i) { const k2 = i * 2; idx.push(k2 - 2, k2 - 1, k2, k2 - 1, k2 + 1, k2) } }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+  const sheet = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, transparent: true, opacity: .92, roughness: .3, side: THREE.DoubleSide })); S.add(sheet); tex.offset.y = .3;
+  const D = fallDeco(S, top, bot, side, { cave, seed: cave ? 11 : 5 }); mistTick(D.mist, 800, cam); S.traverse(o => { if (o.isMesh && o.material && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true } }); return S }
+const cam = new THREE.PerspectiveCamera(42, 800 / 900, .1, 200); cam.position.set(9, 6, 17); cam.lookAt(0, 4.5, 0);
+[[false, 0], [true, 800]].forEach(([c, x]) => { r.setViewport(x, 0, 800, 900); r.setScissor(x, 0, 800, 900); r.render(scene(c), cam) });
+[['💦 น้ำตกดินปั้น', 'แผ่นน้ำมีลายฟอง · ฟองขาวตรงปากน้ำตก · ฟองรอบแอ่ง · ก้อนหินกลม · ละอองลอย'], ['🕳️ น้ำตกมีถ้ำด้านหลัง', 'ปากถ้ำมืดหลังม่านน้ำ (ถ้ำในฉากเปิดเกม)']].forEach(([t, s], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 800) + 'px'; d.innerHTML = t + '<small>' + s + '</small>'; document.getElementById('w').appendChild(d) });
+window.done = 1;
+</script></body></html>
