@@ -1770,7 +1770,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   Y.addEventListener('pointercancel', yUp); Y.addEventListener('pointerup', yUp); Y.addEventListener('contextmenu', e => e.preventDefault()) }
 function bowBtn() { padExtras() }   /* v3.73 the 🏹 button became 🔄 + 🎯 */
 /* ================= v3.73 🎮 the sets: ⚔️ combat / 🌾 farm (hold Y in melee) × melee / ranged (🔄) · each set keeps its own A-hand item · the chooser: double-tap the stick → X / Y ================= */
-function setSet(farm, quiet) { if (farm === gFarm()) return; stowAll(); aimEnd(false); const keep = S.eqKeep = S.eqKeep || {}; keep[gFarm() ? 'farm' : 'fight'] = S.eq.sword; S.gset = farm ? 'farm' : 'fight';
+function setSet(farm, quiet) { if (farm === gFarm()) return; stowAll(); aimEnd(false); const keep = S.eqKeep = S.eqKeep || {}; keep[gFarm() ? 'farm' : 'fight'] = S.eq.sword; { const gk = S.grk = S.grk || {}; gk[gFarm() ? 'farm' : 'fight'] = !!S.grange; S.grange = !!gk[farm ? 'farm' : 'fight'] }   /* v4.88 each mode keeps its own near / far (farm with the rod → fight = the sword again) */ S.gset = farm ? 'farm' : 'fight';
   const fits = x => x && D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'sword' && !x.br && !x.away && !!D.ITEMS[x.t].tool === farm; let it = S.bag.find(x => x.id === keep[S.gset] && fits(x));
   if (!it) it = S.bag.filter(fits).sort((p, q) => (D.ITEMS[q.t].tier || 1) - (D.ITEMS[p.t].tier || 1))[0]; S.eq.sword = it ? it.id : null; if (S.hand !== 'torch' || !farm) S.hand = it ? jobHand(it) : 'w'; setTool('');
   sfx('level'); if (!quiet) toast(farm ? '🌾 โหมดฟาร์ม<br><small>Y = ใช้เครื่องมือ · 🔄 (ขวาของ X) = ตาข่าย/เบ็ด/ขลุ่ย/วาด · 🔄 ซ้ายของ X = กลับโหมดต่อสู้</small>' : '⚔️ โหมดต่อสู้<br><small>Y = ฟัน · ค้าง Y = ง้างปา · 🔄 (ขวาของ X) = ธนู</small>', 2200); save(); hud(); gearView() }
@@ -1801,8 +1801,60 @@ function gearPair() { const f = gFarm(), r = gRange(), ip = it => it ? picTag(th
   return R ? `<b class="two"><span>${L}</span><span>${R}</span></b>` : `<b class="one">${L}</b>` }
 function padExtras() { const x = $('bX').getBoundingClientRect(), y = $('bY').getBoundingClientRect(); if (!x.width || !y.width) return; const k = x.width / 64, put = (el, cx, cy) => { const w = el.offsetWidth || 34; el.style.left = Math.round(cx - w / 2) + 'px'; el.style.top = Math.round(cy - w / 2) + 'px'; el.style.right = el.style.bottom = 'auto' };
   const sw = $('bSwap'), tb = $('bFarm'); sw.innerHTML = `<b class="one">${swapPic(gFarm(), !gRange())}</b>`;   /* v3.94 one icon: what this button switches to */   /* v3.80 the two 🔄 look different: this one = near ↔ far */ sw.classList.toggle('farm', gFarm());
-  put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.innerHTML = `<b class="one">${swapPic(!gFarm(), gRange())}</b>`;   /* v3.94 one icon: 🧰 = to the farm tools · ⚔️ = back to fighting */   /* this one = fight ↔ farm */ tb.classList.toggle('farm', gFarm()); const gb = $('bGear'); if (gb) { put(gb, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k - 52 * k);   /* above the ↔ swap button (designer) */ gb.innerHTML = gearPair() } }   /* v4.36 🎒 opens the X / Y gear menu (was: tap the move button twice) */
+  put(sw, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k); put(tb, (x.left + x.right + y.left + y.right) / 4 + D.QAIM.btn[0] * k, (x.top + x.bottom + y.top + y.bottom) / 4 + D.QAIM.btn[1] * k); tb.innerHTML = `<b class="one">${swapPic(!gFarm(), gRange())}</b>`;   /* v3.94 one icon: 🧰 = to the farm tools · ⚔️ = back to fighting */   /* this one = fight ↔ farm */ tb.classList.toggle('farm', gFarm()); const gb = $('bGear'); if (gb) { put(gb, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k - 52 * k);   /* above the ↔ swap button (designer) */ gb.innerHTML = gearPair() } { const gd = $('bGold'); if (gd) { put(gd, (x.left + x.right) / 2 + D.GSET.swap[0] * k, (x.top + x.bottom) / 2 + D.GSET.swap[1] * k - 52 * k + 6 * k); goldView() } } }   /* v4.36 🎒 opens the X / Y gear menu (was: tap the move button twice) */
 addEventListener('resize', () => setTimeout(padExtras, 200));
+/* ================= v4.88 🟡 the gold button (designer · docs/plan-buttons.md) — replaces 🎒 bGear · 🔄 bSwap · 🔄 bFarm
+   ⚔️ fight: tap = swap melee ↔ bow (the button shows what you swap to) · hold = panel: 🌾 farm mode + weapon/shield rows (or bow/arrow rows)
+   🌾 farm: tap = the farm wheel (every farm tool you have but the one in hand) · hold = panel: ⚔️ weapon mode · B closes (only B) ================= */
+if (S.ytool === 'draw') S.ytool = 'net';   /* the crayon moved to the menu */
+let GP = null; const goldEl = document.createElement('button'); goldEl.id = 'bGold'; goldEl.className = 'bgold'; goldEl.setAttribute('aria-label', 'เลือกอุปกรณ์'); document.body.appendChild(goldEl);
+const gpic = (url, ic, cls = ' spic') => picTag(url, emo(ic), cls);
+function farmCur() { if (gRange()) return 'y:' + yTool(); if (S.hand === 'torch' && S.lampOn) return 'lamp'; return S.eq.sword ? 'w:' + S.eq.sword : '' }
+function farmTools() { const L = [], w = weaponOf(), cur = farmCur();
+  for (const kind of ['sickle', 'axe', 'pick', 'hoe']) { const ok = x => { const T = D.ITEMS[x.t]; return T && T.tool && T.kind === kind && !x.br && !x.away };
+    const it = (w && ok(w) && cur === 'w:' + w.id ? w : null) || S.bag.filter(ok).sort((p, q) => (D.ITEMS[q.t].tier || 1) - (D.ITEMS[p.t].tier || 1))[0]; if (it) L.push({ id: 'w:' + it.id, it, pic: gpic(itemPic(it.t), D.ITEMS[it.t].icon), n: D.ITEMS[it.t].name }) }
+  for (const k of ['rod', 'net', 'rope', 'flute']) if (k === 'net' || k === 'rope' || S.has[k]) L.push({ id: 'y:' + k, k, pic: gpic(yPic(k), D.YTOOL[k].icon), n: { rod: 'เบ็ด', net: 'ตาข่าย', rope: 'เชือก', flute: 'ขลุ่ย' }[k], off: k === 'net' && (RIDE || HORSE || PL.swim) ? 'ขี่/ว่ายน้ำอยู่' : '' });
+  if (S.has.lamp) L.push({ id: 'lamp', pic: gpic(lampPic(), '🏮'), n: 'ตะเกียง' }); return L }
+function goldIcon() { if (!gFarm()) return swapPic(false, !gRange()); const c = farmCur(), o = farmTools().find(x => x.id === c); return o ? o.pic : emo('🧰') }
+function goldView() { goldEl.innerHTML = `<b class="one">${goldIcon()}</b><span class="gl">ค้าง = ตัวเลือก</span>`; goldEl.classList.toggle('farm', gFarm()) }
+function farmPick(o) { if (!gFarm()) setSet(true, true); aimEnd(false); DRAWN = false;
+  if (o.it) { if (gRange()) S.grange = false; S.lampOn = 0; equipA(o.it); setTool(weaponOf() ? S.hand : '') }
+  else if (o.k) { S.grange = true; S.ytool = o.k; S.lampOn = 0; if (S.hand === 'torch') S.hand = jobHand(weaponOf()); if (tool === 'rod' || tool === 'hoe') setTool('') }
+  else { S.grange = false; S.lampOn = 1; S.hand = 'torch'; setTool('torch') }
+  sfx('coin'); hint(o.n, 900); save(); gearView(); hud(); padExtras() }
+function gpClose() { if (!GP) return; GP.el.remove(); GP = null; padExtras() }
+function gpOpen(kind) { gpClose(); const el = document.createElement('div'); el.className = 'ov dlg gpan ' + kind; document.body.appendChild(el); GP = { el, kind }; gpDraw() }
+function gpDraw() { if (!GP) return; const el = GP.el, k = GP.kind;
+  if (k === 'wheel') { const cur = farmCur(), all = farmTools(), L = all.filter(o => o.id !== cur), me0 = all.find(o => o.id === cur), n = L.length, R = Math.min(128, innerWidth * .33);
+    el.innerHTML = `<div class="gwh">${L.map((o, i) => { const a = -Math.PI / 2 + i / Math.max(1, n) * Math.PI * 2; return `<button class="gwi${o.off ? ' off' : ''}" data-gw="${o.id}" style="left:${Math.cos(a) * R}px;top:${Math.sin(a) * R}px">${o.pic}<small>${o.n}</small></button>` }).join('')}<div class="gwc">${me0 ? me0.pic : ''}<small>ถืออยู่</small><em>B = ปิด</em></div></div>`;
+    el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = L.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); farmPick(o) }); return }
+  if (k === 'farmHold') { el.innerHTML = `<div class="gpc"><button class="gpb fight" data-gm="fight">⚔️ โหมดอาวุธ</button></div>`; el.querySelector('[data-gm]').onclick = () => { gpClose(); setSet(false) }; return }
+  /* fight: 🌾 farm button + two rows */
+  const r = gRange(), card = (key, pic, n, col, on, sub) => `<button class="gpi${on ? ' on' : ''}" data-gp="${key}">${pic}<small style="color:${col || 'inherit'}">${n}${sub ? `<br><i>${sub}</i>` : ''}</small></button>`;
+  let rows = '';
+  if (!r) { const ws = S.bag.filter(x => { const T = D.ITEMS[x.t]; return T && T.slot === 'sword' && !T.tool && !x.br && !x.away }), cur = S.hand === 'torch' && !S.lampOn ? 'torch' : 'w:' + S.eq.sword;
+    let h = ws.map(x => card('w:' + x.id, gpic(itemPic(x.t), D.ITEMS[x.t].icon), D.ITEMS[x.t].name + (x.p ? ' +' + x.p : ''), D.RAR_COL[x.r], cur === 'w:' + x.id)).join('');
+    const nT = (S.mats.torch || 0) + (S.torchT > 0 ? 1 : 0); if (nT) h += card('torch', gpic(toolPic('torch'), '🔥'), 'คบเพลิง', '', cur === 'torch', '×' + nT);
+    const sh = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'shield' && !x.br);
+    rows = `<h4>⚔️ อาวุธ</h4><div class="gpr">${h || '<p class="mut">ยังไม่มีอาวุธ</p>'}</div><h4>🛡️ โล่</h4><div class="gpr">${card('s:', emo('✖️'), 'ไม่ใช้', '', !S.eq.shield)}${sh.map(x => card('s:' + x.id, gpic(itemPic(x.t), D.ITEMS[x.t].icon), D.ITEMS[x.t].name, D.RAR_COL[x.r], S.eq.shield === x.id)).join('')}</div>` }
+  else { const bs = S.bag.filter(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'bow' && !x.br), at = arwT(), ar = [];
+    if ((S.arrows || 0) > 0) ar.push(['', '➶', 'ธรรมดา', S.arrows]); for (const q of Object.keys(D.ARROWX)) if ((S.arrowsX || {})[q] > 0) ar.push([q, D.ARROWX[q].icon, D.ARROWX[q].name.replace('ลูกธนู', ''), S.arrowsX[q]]);   /* only the kinds you have (designer) */
+    rows = `<h4>🏹 ธนู</h4><div class="gpr">${bs.map(x => card('b:' + x.id, gpic(itemPic(x.t), '🏹'), D.ITEMS[x.t].name, D.RAR_COL[x.r], S.eq.bow === x.id)).join('') || '<p class="mut">ยังไม่มีธนู</p>'}</div><h4>➶ ลูกธนู</h4><div class="gpr">${ar.map(([q, ic, n, c]) => card('a:' + q, emo(ic), n, '', (at || '') === q, '×' + c)).join('') || '<p class="mut">ไม่มีลูกธนู</p>'}</div>` }
+  el.innerHTML = `<div class="gpc"><button class="gpb farm" data-gm="farm">🌾 โหมดฟาร์ม</button>${rows}</div>`;
+  el.querySelector('[data-gm]').onclick = () => { gpClose(); setSet(true) };
+  el.querySelectorAll('[data-gp]').forEach(b => b.onclick = () => { const v = b.dataset.gp, id = v.slice(2);
+    if (v === 'torch') { S.lampOn = 0; S.hand = 'torch'; DRAWN = false; setTool('torch'); torchLight() }
+    else if (v[0] === 'w') { const it = S.bag.find(x => x.id === +id); S.lampOn = 0; S.hand = 'w'; if (it) equipA(it); if (weaponOf() && S.hand === 'w') { DRAWN = true; setTool('sword') } }
+    else if (v[0] === 's') { S.eq.shield = id ? +id : null; guardTog = false; updGuard() }
+    else if (v[0] === 'b') { S.eq.bow = +id }
+    else if (v[0] === 'a') { S.arrowT = id; aimHud() }
+    sfx('coin'); save(); gearView(); hud(); gpDraw() }) }
+{ let t = null, held = false;
+  goldEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (CUT || document.querySelector('.ov') || SKW.on || PICK || SMENU.on) return; unlock(); held = false;
+    t = setTimeout(() => { t = null; held = true; sfx('tap'); aimEnd(false); gpOpen(gFarm() ? 'farmHold' : 'fight') }, D.GOLD.hold * 1000) });
+  goldEl.addEventListener('pointerup', e => { e.preventDefault(); if (!t) return; clearTimeout(t); t = null; if (held) return; sfx('tap'); if (gFarm()) { aimEnd(false); gpOpen('wheel') } else setRange(!gRange()) });
+  goldEl.addEventListener('pointercancel', () => { if (t) { clearTimeout(t); t = null } }); goldEl.addEventListener('contextmenu', e => e.preventDefault()) }
+
 /* v3.95 every window opens as a page like the bag (full height · D-pad + A + B) · small boxes (.dlg) · the map · the bag itself · the craft book stay as they are */
 new MutationObserver(L => { for (const m of L) for (const o of m.addedNodes) if (o.nodeType === 1 && o.classList.contains('ov') && !/\b(dlg|mapfs|inv|cbook)\b/.test(o.className)) o.classList.add('pg') }).observe(document.body, { childList: true });
 /* v3.94 🎒 ☰ stand in a column on the left of the minimap (portrait and landscape) */
@@ -1857,7 +1909,7 @@ function openMenuPick() { closeSheets(); sheet('☰ เมนู', (b, redraw, c
   b.querySelectorAll('[data-mp]').forEach(x => x.onclick = () => { sfx('tap'); (MENU_GO[x.dataset.mp] || (() => openAtlas(x.dataset.mp)))() }) }, { cls: 'menuPick dlg' }) }   /* v3.95 ☰ stays the small box (the pages it opens are like the bag) */
 const openPetsPage = () => openBag('pets');
 /* v4.64 📖 สมุด and ⚙️ ตั้งค่า: a second set of big tiles (each opens its page) */
-const SUBM = { book: ['📖 สมุด', [['collect', '📖', 'ชุดสะสม', 'ชุด อาวุธ อาหารจากเควสแต่ละอาณาจักร', () => openAtlas('collect')], ['found', '🔍', 'สิ่งที่พบ', 'สัตว์ มอนสเตอร์ ปลาที่วาดไว้', () => { closeSheets(); openJournal() }], ['album', '📸', 'อัลบั้ม', 'ภาพที่วาดไว้', () => openAtlas('album')], ['journey', '🧭', 'การเดินทาง', 'สถิติการผจญภัย', () => openAtlas('journey')], ['src', '🪵', 'แหล่งวัตถุดิบ', 'หาวัตถุดิบได้ที่ไหน', () => { closeSheets(); openAdv('mats', 1) }], ['notes', '📝', 'โน้ต', 'โน้ตที่เก็บได้', () => { closeSheets(); openNotes() }]]],
+const SUBM = { book: ['📖 สมุด', [['collect', '📖', 'ชุดสะสม', 'ชุด อาวุธ อาหารจากเควสแต่ละอาณาจักร', () => openAtlas('collect')], ['found', '🔍', 'สิ่งที่พบ', 'สัตว์ มอนสเตอร์ ปลาที่วาดไว้', () => { closeSheets(); openJournal() }], ['album', '📸', 'อัลบั้ม', 'ภาพที่วาดไว้', () => openAtlas('album')], ['journey', '🧭', 'การเดินทาง', 'สถิติการผจญภัย', () => openAtlas('journey')], ['src', '🪵', 'แหล่งวัตถุดิบ', 'หาวัตถุดิบได้ที่ไหน', () => { closeSheets(); openAdv('mats', 1) }], ['notes', '📝', 'โน้ต', 'โน้ตที่เก็บได้', () => { closeSheets(); openNotes() }], ['draw', '🖍️', 'วาดภาพ', 'วาดสัตว์ ต้นไม้ แหล่งวัตถุดิบ', () => { closeSheets(); setTimeout(() => aimStart('draw'), 60) }]]],   /* v4.88 (designer) the crayon lives in the menu now */
   set: ['⚙️ ตั้งค่า', [['me', '👤', 'ตัวละคร', 'ชื่อ หน้าตา ✨ จิตวิญญาณ', () => openAtlas('me')], ['opt', '🎮', 'ตั้งค่าเกม', 'ควบคุม ภาพ กล้อง เสียง', () => openAtlas('set')], ['howto', '🎬', 'วิธีเล่น', 'คลิปสอนเล่น', () => { closeSheets(); openHowto() }]]] };
 function openSub(k) { const [title, L] = SUBM[k]; closeSheets(); sheet(title, (b) => { b.innerHTML = `<div class="mpick6">${L.map(([id, ic, nm, sub]) => { const bd = id === 'me' ? menuBadge('set') : ''; return `<button class="mpt6" data-sm2="${id}"><i>${ic}</i><b>${nm}</b><small>${sub}</small>${bd ? `<em>${bd}</em>` : ''}</button>` }).join('')}</div>`;
   b.querySelectorAll('[data-sm2]').forEach(x => x.onclick = () => { sfx('tap'); L.find(t => t[0] === x.dataset.sm2)[4]() }) }, { cls: 'menuPick dlg' }) }   /* v4.64 for now the 🐾 page is the bag's pet section (its own page comes next) */
@@ -3859,7 +3911,7 @@ function holdWatch(el, sec, done) { const t0 = performance.now(); let on = true;
 let guard = false, guardTog = false, guardHold = false, bTap = 0;
 function updGuard() { guard = guardHold || guardTog; if (guard) tutEv('guard'); document.body.classList.toggle('guard', guard); if (guard && PL) gearView() }
 { const B = $('bB'); let t0 = 0, bstop = null;   /* v3.18.2 B = 🛡️ only while held (shield · or parry with the weapon) · a window / menu / aim open → back */
-  B.addEventListener('pointerdown', e => { e.preventDefault(); if (SKW.on) { skwUse('B'); return } if (SMENU.on) { if (smenuBack()) return; smenuShow(false); sfx('tap'); return } if (AIM && !document.querySelector('.ov')) { aimEnd(false); sfx('tap'); t0 = 0; return } if (PICK) { pickClose(); return } if (GLIDE && GLIDE.para) { closePara(); hint('🍃 พับใบไม้แล้ว · ยังไม่ถึงพื้น กด X เพื่อร่อนใหม่', 1500); return }   /* v3.43 B folds the glider again (X in the air re-opens it) */
+  B.addEventListener('pointerdown', e => { e.preventDefault(); if (GP) { gpClose(); sfx('tap'); return }   /* v4.88 🟡 B closes the gold panel / wheel (only B · designer) */ if (SKW.on) { skwUse('B'); return } if (SMENU.on) { if (smenuBack()) return; smenuShow(false); sfx('tap'); return } if (AIM && !document.querySelector('.ov')) { aimEnd(false); sfx('tap'); t0 = 0; return } if (PICK) { pickClose(); return } if (GLIDE && GLIDE.para) { closePara(); hint('🍃 พับใบไม้แล้ว · ยังไม่ถึงพื้น กด X เพื่อร่อนใหม่', 1500); return }   /* v3.43 B folds the glider again (X in the air re-opens it) */
     if (TORCHUP && !document.querySelector('.ov')) { torchUp(false); return } if (HORSE && !document.querySelector('.ov')) { dismount(); return } if (RIDE && !RIDE.whale && !document.querySelector('.ov')) { raftStand(); return }   /* v4.38 (designer) riding the pet / a horse / the raft: B = get off (no guard) */ if (carryN() && !document.querySelector('.ov')) { carryBack(); return } if (RUNON) { RUNON = false; sprintT = 0 } t0 = performance.now(); if (wheelOn) { closeWheel(); return }
     if (document.querySelector('.ov') || BM || PL.swim || RIDE || GLIDE) return; unlock(); try { B.setPointerCapture(e.pointerId) } catch (_) { }
     if (shieldOn() || weaponOf()) { guardHold = true; walkT = null; work = null; stopAuto(); updGuard(); sfx('knock') } else hint(S.eq.shield ? '🛡️ ยังไม่มีอาวุธ' : '🛡️ ยังไม่ได้สวมโล่ · ไม่มีอาวุธปัด', 1200) });

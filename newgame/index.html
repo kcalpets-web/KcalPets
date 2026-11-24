@@ -624,6 +624,23 @@ body.hedit #stick,body.hedit #dpad,body.hedit #bA,body.hedit #bB,body.hedit #bX,
   .ov.up2 .up2d .up2grab{display:none}.ov.up2 .up2d .up2btn{margin-top:auto;padding:9px;font-size:17px}.ov.up2 .up2d .up2m{margin:8px 0}.ov.up2 .up2p.big img,.ov.up2 .up2p.big img.ipic,.ov.up2 .up2p.big .cbig{width:64px;height:64px;font-size:40px}.ov.up2 .up2dh h3{font-size:16px}
   .ov.up2:has(.up2d) .sh{max-width:none!important;width:calc((100vw - min(42vw,420px)) / .82)!important;margin-left:0!important;margin-right:auto!important;align-self:flex-start}.ov.up2 .up2g,.ov.inv.up2 .up2g{max-height:calc(100vh / .82 - 150px)}.ov.up2 .up2t,.ov.inv.up2 .up2t{max-height:calc(100vh / .82 - 90px)}.ov.up2 .up2hint{margin-top:4px}}
 body:has(.ov.up2):not(.gamepad) #dpad,body:has(.ov.up2):not(.gamepad) #bA,body:has(.ov.up2):not(.gamepad) #bB{display:none!important}   /* no buttons over the page (a game pad brings them back) */
+
+/* v4.88 🟡 the gold button + its wheel / panels (designer · docs/plan-buttons.md) */
+#bGear,#bSwap,#bFarm{display:none!important}
+.bgold{position:fixed;z-index:7;width:52px;height:52px;padding:0;border-radius:50%;border:4px solid #e8b838;background:#fff4d8;box-shadow:0 4px 0 #0005;display:grid;place-items:center;touch-action:none;-webkit-user-select:none;user-select:none}
+.bgold.farm{border-color:#3fae6a;background:#eaf8ec}.bgold .one{display:grid;place-items:center;width:100%;height:100%;font-size:24px}.bgold .one img{width:40px;height:40px;object-fit:contain}
+.bgold .gl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font:800 10px/1 system-ui;color:#fff;white-space:nowrap;text-shadow:0 1px 2px #000;opacity:.75;pointer-events:none}
+body:has(.ov) .bgold,body.cut .bgold,body.smenuOn .bgold{display:none}
+.ov.dlg.gpan,.ov.gpan{background:#0008!important;display:block!important;inset:0!important;height:auto!important}
+.gwh{position:fixed;left:50%;top:44vh;width:0;height:0}
+.gwi{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:#fff8ec;border:4px solid #3fae6a;box-shadow:0 3px 0 #2a2030;display:grid;place-items:center;padding:0}
+.gwi img{width:44px;height:44px;object-fit:contain}.gwi small{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:3px;font:800 11px system-ui;color:#fff;white-space:nowrap;text-shadow:0 1px 2px #000}.gwi.off{opacity:.35;filter:grayscale(1)}
+.gwc{position:absolute;left:-46px;top:-46px;width:92px;text-align:center;color:#fff;font:800 12px system-ui;text-shadow:0 1px 3px #000}.gwc img{width:48px;height:48px;object-fit:contain;display:block;margin:0 auto}.gwc small{display:block}.gwc em{display:block;font-style:normal;font-size:11px;opacity:.75;margin-top:2px}
+.gpc{position:fixed;left:50%;top:24vh;transform:translateX(-50%);width:min(94vw,420px);background:#fff8ec;border:4px solid var(--ink,#2a2030);border-radius:18px;padding:10px;box-shadow:0 5px 0 #0005;color:#2a2030}
+.gpb{width:100%;border:3px solid #2a2030;border-radius:14px;padding:10px;font:900 16px system-ui;color:#fff;box-shadow:0 3px 0 #2a2030}.gpb.farm{background:#3fae6a}.gpb.fight{background:#e8604a}
+.gpc h4{margin:10px 2px 5px;font:900 13px system-ui}.gpr{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.gpr::-webkit-scrollbar{display:none}
+.gpi{flex:0 0 68px;min-height:76px;border:3px solid #2a2030;border-radius:12px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px}.gpi img{width:36px;height:36px;object-fit:contain}.gpi small{font:800 9.5px/1.15 system-ui;text-align:center}.gpi small i{font-style:normal;color:#8a7a68}.gpi.on{background:#ffe27a;border-color:#c08a10}
+.ov.gpan.farmHold .gpc{width:min(80vw,320px);top:36vh}
 </style></head>
 <body>
 <canvas id="cv"></canvas>

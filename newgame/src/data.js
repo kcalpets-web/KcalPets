@@ -180,8 +180,8 @@ export const ITEMS = {
   pick1: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อหิน', icon: '⛏️', atk: 8, dur: 90, tier: 2 },
   pick2: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อเหล็ก', icon: '⛏️', atk: 12, dur: 130, tier: 3, metal: 1 },
   pick3: { slot: 'sword', kind: 'pick', tm: 'hammer', tool: 1, name: 'อีเต้อคริสตัล', icon: '⛏️', atk: 17, dur: 180, tier: 4 },
-  mallet0: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนไม้', icon: '🔨', atk: 7, dur: 50, tier: 1 },
-  mallet1: { slot: 'sword', kind: 'hammer', tm: 'mallet', tool: 1, name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3, metal: 1 },
+  mallet0: { slot: 'sword', kind: 'one', tm: 'mallet', name: 'ค้อนไม้', icon: '🔨', atk: 7, dur: 50, tier: 1 },   /* v4.88 (designer) the hammers are weapons now (rocks = the pickaxe only) */
+  mallet1: { slot: 'sword', kind: 'one', tm: 'mallet', name: 'ค้อนเหล็ก', icon: '🔨', atk: 15, dur: 80, tier: 3, metal: 1 },
   hoe0: { slot: 'sword', kind: 'hoe', tm: 'hoe', tool: 1, starter: 1, name: 'จอบ', icon: '🪏', atk: 1, dur: 120, tier: 1, metal: 1 },
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3, metal: 1 },
@@ -456,6 +456,7 @@ export const SHOPS = [
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
 export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
 export const TOOL_BUY = [{ has: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน', price: 2500, desc: 'ให้แสงแม้ฝนตก · ไม่อุ่น · ถือแทนคบเพลิง' }];   /* v4.84 (designer) the lamp can be bought outright · or ordered cheaper with your own materials */
+export const GOLD = { hold: .38 };   /* v4.88 🟡 the gold button: hold this long (s) = the options panel */
 export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
 export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 1500 }, { t: 'axe1', r: 'B', price: 3200 }, { t: 'pick1', r: 'B', price: 3200 }, { t: 'sickle1', r: 'B', price: 2300 }, { t: 'mallet0', r: 'B', price: 2100 }, { t: 'hoe0', r: 'B', price: 1500 }, { t: 'woodBow', r: 'B', price: 2300 }, { t: 'travelerSword', r: 'B', price: 1800 }, { t: 'woodSpear', r: 'B', price: 2100 }, { t: 'woodAxe', r: 'B', price: 2800 }, { t: 'woodShield', r: 'B', price: 2100 }, { t: 'branchSword', r: 'B', price: 4100 }, { t: 'woodSword', r: 'B', price: 5500 }, { t: 'oakShield', r: 'B', price: 6000 }, { t: 'barkArmor', r: 'B', price: 4600 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
