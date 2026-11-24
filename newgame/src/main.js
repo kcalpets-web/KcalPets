@@ -1539,6 +1539,7 @@ function frame(now) {
   if (GOL && !GOL.on) golemCam(now);
   if (EELCS) eelCam(now);
   if (F && F.phase) fishCam(now);
+  if ((AIM && AIM.draw) || SELFIE_HOLD) { const H = innerHeight, fc = parseFloat(DFRAME.style.top) + parseFloat(DFRAME.style.height) / 2; cam.setViewOffset(innerWidth, H, 0, H / 2 - fc, innerWidth, H) } else if (cam.view && cam.view.enabled) cam.clearViewOffset();   /* v4.94 the view's centre = the viewfinder's centre */
   cam.updateProjectionMatrix(); SKY.position.copy(cam.position); SKY.material.uniforms.t.value = now / 1000;
   sunFollow();
   if (HIN.on && HIN.g) { hinHide(); if (!scene.background || !scene.background.equals || !scene.background.equals(HIN.dark)) scene.background = HIN.dark; const c = HIN.g.position, q = me(); const fit = Math.max(1, .95 / Math.max(.45, cam.aspect)), big = Math.max(1, (HIN.camW || HIN.w) / 6 * .82), dd = 6.2 * fit * big, fo = HIN.camW ? .94 : big > 1 ? .5 : .15; cam.position.set(c.x + (q.x - c.x) * fo, c.y + dd * 1.12, c.z + dd * .78 + (q.z - c.z) * fo); cam.lookAt(c.x + (q.x - c.x) * fo, c.y + .2, c.z + .1 + (q.z - c.z) * fo) }   /* v4.74 a bigger room: further back + follows you more */   /* v4.72 🏠 the room from above (front wall cut away) */
@@ -3747,12 +3748,17 @@ function drawNow() { if (!AIM || !AIM.draw) return; SELFIE_LAST = !!AIM.selfie; 
 const DPOSE = [{ c: 'idle', i: '🧍', n: 'ยืน' }, { c: 'wave', i: '👋', n: 'โบกมือ' }, { c: 'cheer', i: '🙌', n: 'ดีใจ' }, { c: 'sit', i: '🧘', n: 'นั่ง' }, { c: 'jump', i: '🦘', n: 'กระโดด' }];
 function drawFlip() { if (!AIM || !AIM.draw) return; AIM.selfie = !AIM.selfie; AIM.zm = 1; sfx('tap'); document.body.classList.toggle('selfie', AIM.selfie); poseBtn.innerHTML = `${DPOSE[AIM.pose || 0].i}<small>ท่า</small>`; hint(AIM.selfie ? '🤳 กล้องหลัง: เห็นตัวเอง · ลากจอ/จอย = หมุนรอบตัว · 💃 เลือกท่า' : '🏞️ กล้องหน้า: วิว', 1600) }
 function drawPose() { if (!AIM || !AIM.selfie) return; AIM.pose = ((AIM.pose || 0) + 1) % DPOSE.length; const P = DPOSE[AIM.pose]; poseBtn.innerHTML = `${P.i}<small>${P.n}</small>`; sfx('tap') }
+/* v4.94 (designer) 🔲 the viewfinder: the picture is what is inside the frame (D.DRAWFRAME) */
+const DFRAME = (() => { const e = document.createElement('div'); e.id = 'dframe'; e.innerHTML = '<i></i><i></i><i></i><i></i>'; document.body.appendChild(e); return e })();
+function frameLay() { const F = D.DRAWFRAME, w = Math.min(innerWidth * F.w, innerHeight * F.hMax * F.ar), h = w / F.ar; Object.assign(DFRAME.style, { width: w + 'px', height: h + 'px', left: (innerWidth - w) / 2 + 'px', top: Math.max(10, innerHeight * F.top - h / 2) + 'px' }) }
+addEventListener('resize', frameLay); frameLay();
+function frameCrop(src) { const r = DFRAME.getBoundingClientRect(), k = src.width / innerWidth, c = document.createElement('canvas'); if (!r.width) return src; c.width = Math.round(r.width * k); c.height = Math.round(r.height * k); c.getContext('2d').drawImage(src, r.left * k, r.top * k, c.width, c.height, 0, 0, c.width, c.height); return c }
 const mkDB = (id, html, fn) => { const b = document.createElement('button'); b.id = id; b.className = 'dbx'; b.innerHTML = html; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn() }); document.body.appendChild(b); return b };
 const flipBtn = mkDB('bFlip', '🔄<small>สลับกล้อง</small>', drawFlip), poseBtn = mkDB('bPose', '🧍<small>ท่า</small>', drawPose);
 const drawBtn = (() => { const b = document.createElement('button'); b.id = 'bDrawNow'; b.textContent = '🖍️ วาด'; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); drawNow() }); b.style.display = 'none'; document.body.appendChild(b); return b })();   /* v3.19 hidden: A draws */
 function crayonDraw() {
   document.body.classList.add('snap'); sfx('sketch'); toast('🖍️ กำลังวาด…', 900);
-  SNAP = () => { document.body.classList.remove('snap'); const pic = crayonPaint(R.domElement); SELFIE_HOLD = null; finishDrawing(pic) };
+  SNAP = () => { document.body.classList.remove('snap'); const pic = crayonPaint(frameCrop(R.domElement)); SELFIE_HOLD = null; finishDrawing(pic) };
 }
 function finishDrawing(pic) {
   { const url = pic.toDataURL('image/jpeg', .88); bump('drawings'); tutEv('draw'); kqDrew(); albumAdd(url);
