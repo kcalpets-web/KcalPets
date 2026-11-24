@@ -1,7 +1,7 @@
 # แผนปรับปุ่ม + อุปกรณ์ (ตกลงกับผู้ออกแบบ · 24 พ.ย. 2026) — ยังไม่ได้ทำ
 
 > ไฟล์นี้คือ **ข้อตกลงล่าสุด** · ของเดิมก่อนแก้อยู่ `docs/backup/plan-buttons-*.md` · สถานะปุ่มตอนนี้ดู `docs/CONTROLS.md`
-> ภาพตัวอย่าง: `docs/art/buttons-wheel-summary.png` · `ytools-ground-circle-mock.png` · `ytools-palm-mock.png` · `rod-hold-mock.png` · `sickle-hold-mock.png` · `hip-pouch-back-mock.png`
+> ภาพสรุปล่าสุด: `docs/art/buttons-plan-summary.png` · ภาพเก่า: `docs/art/buttons-wheel-summary.png` · `ytools-ground-circle-mock.png` · `ytools-palm-mock.png` · `rod-hold-mock.png` · `sickle-hold-mock.png` · `hip-pouch-back-mock.png`
 
 ## ตกลงแล้ว (ข้อ 5–7 ยังเป็นข้อเสนอ · ดูด้านล่าง)
 1. **A B X ไม่เปลี่ยน** (A = คำสั่งตามสิ่งตรงหน้า · B = ปัด/ย้อน · X = กระโดด/สกิล)
