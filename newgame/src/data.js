@@ -458,6 +458,9 @@ export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก'
 export const TOOL_BUY = [{ has: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน', price: 2500, desc: 'ให้แสงแม้ฝนตก · ไม่อุ่น · ถือแทนคบเพลิง' }];   /* v4.84 (designer) the lamp can be bought outright · or ordered cheaper with your own materials */
 export const MON_REACH_Y = 1.5;   /* v4.88 how far up / down a melee monster reaches (× its size) */
 export const YRING = { net: 10, rope: 15, rod: 8, waterY: -.3 };   /* v4.88 ⭕ the white ring: how far (m) · the water surface height */
+export const RAID = {   /* v4.90 🏰 the captured castles (designer · docs/plan-kingdoms-inn.md): monsters on floors 1–2 · a captive in a cage · the mini-boss on top · beat it = the kingdom is restored */
+  rooms: [['kit', 'dine', 'arm', 'bar', 'gard', 'throne', 'chap'], ['lib', 'bed', 'gal', 'bal'], []], per: [1, 2], cage: 'gold', boss: 'obs', bossOut: 14,
+  captive: { sylvaren: 'svLead', asrah: 'asLead', frosthelm: 'fhLead', valkara: 'fire', deadgar: 'gard' } };
 export const POUCH = { s: .42, at: [0, -.05, -.26] };   /* v4.88 👝 the leather pouch at the back of the belt: size · place on the waist */
 export const GOLD = { hold: .38 };   /* v4.88 🟡 the gold button: hold this long (s) = the options panel */
 export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
