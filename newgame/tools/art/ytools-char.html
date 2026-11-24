@@ -39,15 +39,15 @@ const dots = (pts) => pts.forEach(p => { const sp = new THREE.Mesh(new THREE.Sph
 
 /* ① walking: the net bundle on the left hip · the rope coil on the right */
 { ground(X[0]); const { g, s } = hero(X[0], -.35); atHips(g, s) }
-/* ② the net flies out: it leaves the hand and opens in the air on its way to the white circle */
-{ ground(X[1]); const { g, hp, s } = hero(X[1] - 1.1, 1.0, [-1.6, .1]); atHips(g, s); g.children.filter(c => c.children.length && c.scale.x < 1 && c.position.x < 0).forEach(c => c.visible = false);
-  const cx = X[1] + .9; const ck = new THREE.Group(); ANIMALS.chicken(ck); ck.scale.setScalar(1.1); ck.position.set(cx, GY, .2); ck.rotation.y = -.8; S.add(ck);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(.72, .8, 40), new THREE.MeshBasicMaterial({ color: '#ffffff' })); ring.rotation.x = -Math.PI / 2; ring.position.set(cx, GY + .02, .2); S.add(ring);
-  const n = castNet(X[1] + .15, .2, GY + 1.45, .8, true); n.scale.y = .5; n.rotation.z = -.3;
-  dots([...Array(5)].map((_, i) => { const t = (i + 1) / 6; return new THREE.Vector3(hp.x + (X[1] + .15 - hp.x) * t, hp.y + (GY + 1.55 - hp.y) * t + Math.sin(t * Math.PI) * .25, .2) })) }
-/* ③ the net lands over the animal */
-{ ground(X[2]); const { g, s } = hero(X[2] - 1.1, 1.0, [-1.2, .1]); atHips(g, s); g.children.filter(c => c.children.length && c.scale.x < 1 && c.position.x < 0).forEach(c => c.visible = false);
-  const cx = X[2] + .9, ck = new THREE.Group(); ANIMALS.chicken(ck); ck.scale.setScalar(1.1); ck.position.set(cx, GY, .2); ck.rotation.y = -.8; S.add(ck); castNet(cx, .2, GY + .03, .85, true) }
+/* ② net chosen (Y): the bundle comes off the hip into the right hand, ready to throw · white circle ahead */
+{ ground(X[1]); const { g, hp, s } = hero(X[1] - .7, .7, [-1.3, .15]); atHips(g, s); g.children.filter(c => c.children.length && c.scale.x < 1 && c.position.x < 0).forEach(c => c.visible = false);
+  const n = netPack(); n.scale.setScalar(.48); n.position.copy(hp).add(new THREE.Vector3(.08, .05, .12)); S.add(n);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.62, .7, 40), new THREE.MeshBasicMaterial({ color: '#ffffff' })); ring.rotation.x = -Math.PI / 2; ring.position.set(X[1] + 1.1, GY + .02, .3); S.add(ring) }
+/* ③ rope chosen (Y): the coil comes off the hip into the right hand · loose end hanging · white circle ahead */
+{ ground(X[2]); const { g, hp, s } = hero(X[2] - .7, .7, [-1.3, .15]); atHips(g, s); g.children.filter(c => c.children.length && c.scale.x < 1 && c.position.x > 0).forEach(c => c.visible = false);
+  const c = coil(); c.scale.setScalar(.36); c.position.copy(hp).add(new THREE.Vector3(.1, .05, .15)); c.rotation.set(.2, .4, 0); S.add(c);
+  S.add(tube([hp.clone().add(new THREE.Vector3(.3, -.1, .2)), hp.clone().add(new THREE.Vector3(.35, -.5, .25)), hp.clone().add(new THREE.Vector3(.25, -.8, .2))], .03, 6));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.55, .62, 40), new THREE.MeshBasicMaterial({ color: '#ffffff' })); ring.rotation.x = -Math.PI / 2; ring.position.set(X[2] + 1.1, GY + .02, .3); S.add(ring) }
 /* ④ the rope shoots out as a line to the dropped thing · the coil shrinks at the hip */
 { ground(X[3]); const { g, hp, s } = hero(X[3] - 1.1, 1.0, [-1.6, .1]); atHips(g, s, .75);
   const bx = X[3] + 1.0, bd = new THREE.Group(); part(bd, '#a8301e', '#e8604a', [0, .18, 0], [.32, .18, .26], [0, .4, 0], { A: .08 }); part(bd, '#e8d8b0', '#fff6e0', [.1, .36, .05], [.08, .1, .08], [0, 0, .4], { A: .05 }); bd.scale.setScalar(1.1); bd.position.set(bx, GY, .2); S.add(bd);
@@ -55,7 +55,7 @@ const dots = (pts) => pts.forEach(p => { const sp = new THREE.Mesh(new THREE.Sph
   S.add(tube([hp, new THREE.Vector3((hp.x + bx) / 2, hp.y + .25, .2), new THREE.Vector3(bx - .1, GY + .35, .2)], .035, 12)); const kn = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), ropeMat(2)); kn.position.set(bx - .1, GY + .35, .2); S.add(kn) }
 
 r.render(S, cam);
-const L = [['① เดินปกติ', 'ตาข่ายพับ (ซ้าย) · ขดเชือก (ขวา) ที่เอว'], ['② โยนตาข่าย', 'พุ่งออกจากมือ กางกลางอากาศ → วงขาว'], ['③ ตาข่ายลง', 'กางครอบสัตว์ · ลูกตุ้มรอบขอบ'], ['④ เหวี่ยงเชือก', 'เชือกพุ่งเป็นเส้นไปที่ของ แล้วดึงกลับ']];
+const L = [['① เดินปกติ', 'ตาข่ายพับ (ซ้าย) · ขดเชือก (ขวา) ที่เอว'], ['② เลือกตาข่าย (Y)', 'หยิบห่อตาข่ายจากเอวมาถือ · วงขาวข้างหน้า'], ['③ เลือกเชือก (Y)', 'หยิบขดเชือกจากเอวมาถือ · ปลายห้อย'], ['④ เหวี่ยงเชือก', 'เชือกพุ่งเป็นเส้นไปที่ของ แล้วดึงกลับ']];
 L.forEach(([t, s], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 400) + 'px'; d.innerHTML = t + '<small>' + s + '</small>'; document.getElementById('w').appendChild(d) });
 window.done = 1;
 </script></body></html>
