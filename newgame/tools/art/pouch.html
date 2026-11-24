@@ -29,14 +29,14 @@ const GY = -1.6, X = [-6, -2, 2, 6];
 const ground = x => { const g = new THREE.Mesh(new THREE.CircleGeometry(1.95, 48), M('#5a8a3a', { roughness: 1 })); g.rotation.x = -Math.PI / 2; g.position.set(x, GY, 0); g.receiveShadow = true; S.add(g) };
 const hero = (x, ry) => { const g = new THREE.Group(); vinyl(g, look); const b = new THREE.Box3().setFromObject(g), h = b.max.y - b.min.y, s = 2.3 / h; g.scale.setScalar(s); g.position.set(x, GY - b.min.y * s, 0); g.rotation.y = ry; g.traverse(o => o.isMesh && (o.castShadow = true)); S.add(g); return { g, s } };
 /* ① front: one pouch on the right hip */
-{ ground(X[0]); const { g, s } = hero(X[0], -.35); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(.44 / s, .74 / s, .1 / s); p.rotation.y = .5; g.add(p) }
+{ ground(X[0]); const { g, s } = hero(X[0], -.35); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(-.45 / s, .7 / s, .06 / s); p.rotation.y = -1.25; g.add(p) }
 /* ② side: how it hangs on the belt */
-{ ground(X[1]); const { g, s } = hero(X[1], .9); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(.44 / s, .74 / s, .1 / s); p.rotation.y = .5; g.add(p) }
+{ ground(X[1]); const { g, s } = hero(X[1], 1.0); const p = pouch('both'); p.scale.setScalar(.42 / s); p.position.set(-.45 / s, .7 / s, .06 / s); p.rotation.y = -1.25; g.add(p) }
 /* ③④ close-ups */
 { const p = pouch('net'); p.scale.setScalar(3.4); p.position.set(X[2], -.2, 0); p.rotation.set(.1, -.35, 0); S.add(p) }
 { const p = pouch('rope'); p.scale.setScalar(3.4); p.position.set(X[3], -.2, 0); p.rotation.set(.1, .35, 0); S.add(p) }
 r.render(S, cam);
-const L = [['① กระเป๋าข้างเอว', 'ใบเล็ก ห้อยเอวขวา'], ['② มองด้านข้าง', 'ห้อยกับเข็มขัด · ไม่บังมือ'], ['③ ใส่ตาข่าย', 'ตาข่าย + ลูกตุ้มโผล่ขอบฝา'], ['④ ใส่เชือก', 'ขดเชือกโผล่ · ปลายห้อยออกมา']];
+const L = [['① กระเป๋าข้างเอว', 'ห้อยเอวซ้าย (ข้างเข็มขัด)'], ['② มองด้านข้าง', 'ตรงจุดที่ชี้ · มือขวาว่างใช้ดาบ'], ['③ ใส่ตาข่าย', 'ตาข่าย + ลูกตุ้มโผล่ขอบฝา'], ['④ ใส่เชือก', 'ขดเชือกโผล่ · ปลายห้อยออกมา']];
 L.forEach(([t, s], i) => { const d = document.createElement('div'); d.className = 'lb'; d.style.left = (i * 400) + 'px'; d.innerHTML = t + '<small>' + s + '</small>'; document.getElementById('w').appendChild(d) });
 window.done = 1;
 </script></body></html>
