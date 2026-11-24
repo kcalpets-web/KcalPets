@@ -3,7 +3,7 @@
 .logo p{margin:6px 0 0;font:italic 700 46px Georgia,serif;color:#ffe9a8;text-shadow:0 4px 10px #000c}.play{white-space:nowrap;position:absolute;left:50%;bottom:120px;transform:translateX(-50%);padding:26px 70px;border-radius:999px;border:6px solid #2a2030;background:#ffe27a;font:900 46px system-ui;color:#2a2030;box-shadow:0 10px 0 #2a2030}
 .sub{position:absolute;left:0;right:0;bottom:60px;text-align:center;font:700 26px system-ui;color:#fff;text-shadow:0 2px 6px #000}</style></head><body><div id="w"></div>
 <script type="module">
-/* v4.95 mock: the game's cover (designer picked concept 1) — the hero + pet on a hill of Vaneya at dusk · across the sea, Luminia under the dark cloud · Keelee held in a golden orb inside the cloud · her light breaks through */
+/* v4.95 mock: the game's cover (designer picked concept 1 · 'the new light' = the dawn after the dark cloud is gone: the kingdoms see light again) — the hero + pet on a hill of Vaneya at dusk · across the sea, Luminia under the dark cloud · Keelee held in a golden orb inside the cloud · her light breaks through */
 import * as THREE from '../../lib/three.module.min.js';
 import { part, HUMANS, STORM, PETS } from '../../src/clay.js';
 import { vinyl } from '../../src/vinyl.js';
@@ -11,7 +11,7 @@ import { buildLumCity } from '../../src/lumcity.js';
 const W = 780, H = 1688, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); document.getElementById('w').appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
 const S = new THREE.Scene();
-{ const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#1c1436'); gr.addColorStop(.45, '#4a3a78'); gr.addColorStop(.72, '#e8907a'); gr.addColorStop(.86, '#ffd49a'); gr.addColorStop(1, '#ffe8b8'); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; S.background = t }
+{ const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#120c22'); gr.addColorStop(.5, '#2e2450'); gr.addColorStop(.74, '#8a5a7a'); gr.addColorStop(.86, '#ffb070'); gr.addColorStop(1, '#ffe6a8'); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; S.background = t }
 S.fog = new THREE.Fog('#e8a88a', 90, 260);
 S.add(new THREE.HemisphereLight('#ffd8b0', '#3a3060', 1.1)); const sun = new THREE.DirectionalLight('#ffc890', 2.2); sun.position.set(30, 25, -60); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); S.add(sun);
 /* the sea */ { const m = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: '#3a6a9a', roughness: .25, metalness: .2 })); m.rotation.x = -Math.PI / 2; m.position.y = -2; S.add(m) }
@@ -26,12 +26,15 @@ S.traverse(o => { if (o.isMesh) { o.castShadow = true } });
   const B = buildLumCity(0, 0, 0, 0); B.G.scale.setScalar(.35); B.G.position.set(6, .4, -150); S.add(B.G) }
 /* the dark cloud + Keelee's golden orb */
 const CL = new THREE.Group(); STORM.cloud(CL); CL.scale.setScalar(1.9); CL.position.set(6, 52, -150); S.add(CL);
-const orbP = new THREE.Vector3(6, 38, -118); { const orb = new THREE.Mesh(new THREE.SphereGeometry(5.5, 32, 20), new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffc040', emissiveIntensity: 1.6, transparent: true, opacity: .55 })); orb.position.copy(orbP); S.add(orb);
-  const halo = new THREE.Mesh(new THREE.SphereGeometry(9, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffd870', transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false })); halo.position.copy(orbP); S.add(halo);
-  const kl = new THREE.Group(); HUMANS.kealee(kl); { const b = new THREE.Box3().setFromObject(kl); kl.scale.setScalar(7.5 / (b.max.y - b.min.y)) } kl.position.set(orbP.x, orbP.y - 3, orbP.z); kl.rotation.y = .2; S.add(kl);
-  const L = new THREE.PointLight('#ffc860', 600, 120); L.position.copy(orbP); S.add(L);
-  for (let i = 0; i < 7; i++) { const len = 70 + i * 6, ray = new THREE.Mesh(new THREE.ConeGeometry(2.5 + i * .8, len, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffe0a0', transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
-    ray.position.set(orbP.x + (i - 3) * 6, orbP.y - len / 2 + 2, orbP.z + 20); ray.rotation.set(-.35, 0, (i - 3) * .12); S.add(ray) } }
+/* Keelee: held in a dim purple bubble at the cloud's edge (still captured) */
+const orbP = new THREE.Vector3(-14, 40, -125); { const orb = new THREE.Mesh(new THREE.SphereGeometry(4.2, 28, 18), new THREE.MeshStandardMaterial({ color: '#7a5aa8', emissive: '#3a2060', emissiveIntensity: .8, transparent: true, opacity: .55 })); orb.position.copy(orbP); S.add(orb);
+  const kl = new THREE.Group(); HUMANS.kealee(kl); { const b = new THREE.Box3().setFromObject(kl); kl.scale.setScalar(5.6 / (b.max.y - b.min.y)) } kl.position.set(orbP.x, orbP.y - 2.6, orbP.z); kl.rotation.y = .3; S.add(kl); const L2 = new THREE.PointLight('#b08aff', 80, 30); L2.position.copy(orbP); S.add(L2) }
+/* 🌅 the new light: dawn rising behind Luminia · golden beams breaking through a gap in the dark cloud */
+{ const sunD = new THREE.Mesh(new THREE.CircleGeometry(11, 40), new THREE.MeshBasicMaterial({ color: '#fff2c0', fog: false })); sunD.position.set(10, 4, -230); S.add(sunD);
+  const gc = document.createElement('canvas'); gc.width = gc.height = 256; { const g = gc.getContext('2d'), gr = g.createRadialGradient(128, 128, 10, 128, 128, 128); gr.addColorStop(0, 'rgba(255,240,190,1)'); gr.addColorStop(.25, 'rgba(255,200,120,.55)'); gr.addColorStop(1, 'rgba(255,160,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256) } const gt = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace; const glow = new THREE.Mesh(new THREE.PlaneGeometry(130, 130), new THREE.MeshBasicMaterial({ map: gt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); glow.position.set(10, 6, -232); S.add(glow);
+  const L = new THREE.PointLight('#ffd890', 900, 160); L.position.set(10, 20, -170); S.add(L);
+  for (let i = 0; i < 6; i++) { const len = 90, ray = new THREE.Mesh(new THREE.ConeGeometry(1.8 + i * .6, len, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: .09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    ray.position.set(14 + (i - 2.5) * 5, 52 - len / 2 + 6, -150); ray.rotation.set(0, 0, -.18 + (i - 2.5) * .06); S.add(ray) } }
 const cam = new THREE.PerspectiveCamera(50, W / H, .1, 900); cam.position.set(.4, 2.1, 10.5); cam.lookAt(1.6, 6.6, -60);
 r.render(S, cam);
 const d = document.createElement('div'); d.innerHTML = '<div class="logo"><h1>KEALEE</h1><p>and the New Light of Luminia</p></div><div class="play">▶ เริ่มผจญภัย</div><div class="sub">เล่นแบบไม่ล็อกอิน · ล็อกอิน Google</div>'; document.getElementById('w').appendChild(d);
