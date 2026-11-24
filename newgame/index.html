@@ -627,6 +627,8 @@ body:has(.ov.up2):not(.gamepad) #dpad,body:has(.ov.up2):not(.gamepad) #bA,body:h
 
 /* v4.88 🟡 the gold button + its wheel / panels (designer · docs/plan-buttons.md) */
 #bGear,#bSwap,#bFarm{display:none!important}
+#bY.boff,#bB.boff{opacity:.32;filter:grayscale(1)}   /* v4.88 nothing to hit here (a safe town) */
+.bic2 img,img.bic2{width:70%;height:70%;object-fit:contain}
 .bgold{position:fixed;z-index:7;width:52px;height:52px;padding:0;border-radius:50%;border:4px solid #e8b838;background:#fff4d8;box-shadow:0 4px 0 #0005;display:grid;place-items:center;touch-action:none;-webkit-user-select:none;user-select:none}
 .bgold.farm{border-color:#3fae6a;background:#eaf8ec}.bgold .one{display:grid;place-items:center;width:100%;height:100%;font-size:24px}.bgold .one img{width:40px;height:40px;object-fit:contain}
 .bgold .gl{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font:800 10px/1 system-ui;color:#fff;white-space:nowrap;text-shadow:0 1px 2px #000;opacity:.75;pointer-events:none}
