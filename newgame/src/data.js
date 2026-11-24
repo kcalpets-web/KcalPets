@@ -461,7 +461,7 @@ export const YRING = { net: 10, rope: 15, rod: 8, waterY: -.3 };   /* v4.88 ⭕ 
 export const RAID = {   /* v4.90 🏰 the captured castles (designer · docs/plan-kingdoms-inn.md): monsters on floors 1–2 · a captive in a cage · the mini-boss on top · beat it = the kingdom is restored */
   rooms: [['kit', 'dine', 'arm', 'bar', 'gard', 'throne', 'chap'], ['lib', 'bed', 'gal', 'bal', 'gold'], []], per: [1, 2], boss: 'obs', bossOut: 14,
   captive: { sylvaren: 'svLead', asrah: 'asLead', frosthelm: 'fhLead', valkara: 'vkLead', deadgar: 'dgLead' } };   /* v4.90 (designer) every cage holds the kingdom's leader · the cage stands beside the throne in the boss hall (open it once the boss is beaten) */
-export const RAIDMAP = { col: [40, 14, 60], a: .55, fade: 2600 };   /* v4.90 🗺️ a captured kingdom on the map: dark purple tint (rgb · strength) · lights up over `fade` ms once freed */
+export const RAIDMAP = { col: [90, 30, 140], a: .72, fade: 2600 };   /* v4.90 🗺️ a captured kingdom on the map: dark purple tint (rgb · strength) · lights up over `fade` ms once freed */
 export const POUCH = { s: .42, at: [0, -.05, -.26] };   /* v4.88 👝 the leather pouch at the back of the belt: size · place on the waist */
 export const GOLD = { hold: .38 };   /* v4.88 🟡 the gold button: hold this long (s) = the options panel */
 export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
