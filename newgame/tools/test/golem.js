@@ -22,13 +22,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll();
     for (const k of ['valkara', 'luminia', 'deadgar']) {
       const L = await E(k => window.__ng.golemLair(k), k); log('lair', k, JSON.stringify(L));
-      await E(([L]) => { window.__ng.placeMe(L.x + 22, L.z); window.__ng.CAM.yaw = -Math.PI / 2 }, [L]); await wait(4000); await closeAll();
+      await E(([L]) => { window.__ng.placeMe(L.x + 22, L.z); window.__ng.CAM.yaw = -Math.PI / 2 }, [L]); await wait(1500); for (let i = 0; i < 30 && !(await E(k => !!window.__ng.GPILE[k], k)); i++) await wait(500); await closeAll();   /* poll: a slow machine builds the pile later */
       const pile = await E(k => !!window.__ng.GPILE[k], k); log('pile', pile); if (!pile) errs.push(k + ': no rock pile at the lair');
       if (k === 'valkara') await shot('01-pile');
       await E(([L]) => window.__ng.placeMe(L.x + 9, L.z), [L]); await wait(2200);
       const w = await N(() => { const G = window.__ng.GOL; return G && { k: G.k, on: !!G.on, kind: G.M.kind } }); log('wake', JSON.stringify(w)); if (!w || w.k !== k || w.on) errs.push(k + ': golem did not start waking');
       if (k === 'valkara') await shot('02-waking');
-      await wait(3000);
+      for (let i = 0; i < 30 && !(await N(() => !!(window.__ng.GOL && window.__ng.GOL.on))); i++) await wait(500);   /* poll: a slow machine wakes it later */
       const on = await N(() => { const N = window.__ng, G = N.GOL; return G && { on: !!G.on, hp: G.M.hp, y: N.me ? 0 : 0 } }); log('awake', JSON.stringify(on)); if (!on || !on.on) errs.push(k + ': golem never finished waking');
       if (k === 'valkara') await shot('03-fight');
       /* the arena keeps you in */
@@ -45,7 +45,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     log('mats', JSON.stringify(await N(() => window.__ng.S.mats)));
     /* lose / leave: the fight ends and the pile comes back */
     { const k = 'sylvaren', L = await E(k => window.__ng.golemLair(k), k); await E(([L]) => window.__ng.placeMe(L.x + 9, L.z), [L]); await wait(2500); const st = await N(() => !!window.__ng.GOL); log('sylvaren wake', st);
-      await E(([L]) => window.__ng.placeMe(L.x + 200, L.z), [L]); await wait(2000); const gone = await N(() => !window.__ng.GOL); log('left far → reset', gone); if (!st || !gone) errs.push('golem reset after leaving failed');
+      await E(([L]) => window.__ng.placeMe(L.x + 200, L.z), [L]); for (let i = 0; i < 20 && !(await N(() => !window.__ng.GOL)); i++) await wait(500); const gone = await N(() => !window.__ng.GOL); log('left far → reset', gone); if (!st || !gone) errs.push('golem reset after leaving failed');
       const st2 = await N(() => window.__ng.mons.filter(m => m.T.golem).length); if (st2) errs.push('golem still alive after reset') }
     /* crafting with golem materials */
     const cr = await E(async () => { const N = window.__ng, D = await import('/newgame/src/data.js'); Object.assign(N.S.mats, { diamond: 3, goldBar: 3, golemCore: 2, bone: 2, grass: 9 }); const i = D.CRAFT.findIndex(r => r.k === 'cKingSword'), j = D.CRAFT.findIndex(r => r.k === 'cBoneBroth'); N.openCraft(); await new Promise(r => setTimeout(r, 400));

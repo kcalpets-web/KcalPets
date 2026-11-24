@@ -14,7 +14,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8882, OUT = process.argv[2] || '/tmp/
       o.glider = N.skOn('glider'); o.gliderPage = N.invItems('skill').some(x => x.key === 'kglider' && /ใบไม้ร่อน/.test(x.name));
       o.swapPics = ['bSwap', 'bFarm'].map(id => !!document.querySelector('#' + id + ' img.spic'));
       N.smenuShow(true); await sl(500); o.letters = ['A', 'B', 'X', 'Y'].map(k => getComputedStyle(document.querySelector('#b' + k + ' .bk')).display); N.smenuShow(false);
-      const p = N.S.pets[0]; N.mountPet(p); await sl(300); o.mounted = !!N.HORSE; const q0 = { x: N.me.x, z: N.me.z }; N.autoGo(N.me.x + 40, N.me.z, 'test'); await sl(3000);
+      const p = N.S.pets[0]; N.mountPet(p); await sl(300); o.mounted = !!N.HORSE; const q0 = { x: N.me.x, z: N.me.z }; N.autoGo(N.me.x + 40, N.me.z, 'test'); for (let i = 0; i < 30 && N.AUTOGO && Math.hypot(N.me.x - q0.x, N.me.z - q0.z) < 5; i++) await sl(300);   /* poll: a slow machine moves later */
       o.ride = { still: !!N.HORSE, auto: !!N.AUTOGO, moved: Math.hypot(N.me.x - q0.x, N.me.z - q0.z), spd: N.SPD, walk: N.D.WALK_SP }; N.stopGo();
       const C = Object.values(N.CAPS)[0]; N.placeMe(C.x, C.z); await sl(800); o.town = { inTown: N.inTown(N.me.x, N.me.z), horse: !!N.HORSE }; N.mountPet(p); await sl(300); o.town.remount = !!N.HORSE; return o });
     log(JSON.stringify(r));

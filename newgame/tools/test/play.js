@@ -14,7 +14,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const errs = [], log = (...a) => console.log(...a); let ok = false;
   try {
-    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 }); pg.setDefaultTimeout(90000);   /* busy machine: slow screenshots */
     pg.on('pageerror', e => errs.push('PE ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/accounts\.google/.test(m.text())) errs.push('CE ' + m.text()) });
     await pg.addInitScript(() => setInterval(() => { const b = document.querySelector('[data-sp="hp"]:not([disabled])'); if (b) b.click() }, 300));   /* v1.4: pick ❤️ whenever a ✨ spirit pops up */
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.evaluate(gfx => { localStorage.clear(); localStorage.setItem('ng_gfx', gfx); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'top') }, process.env.GFX || 'eco'); await pg.reload();
@@ -112,9 +112,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { window.__ng.speed = 3; window.__ng.openCage() }); await pg.waitForFunction(() => window.__cut && window.__cut.beat >= 0, null, { timeout: 60000 }); await wait(2500); await shot('16-cage-cut');
     await E(() => window.__cut.skip()); await wait(1500); await shot('17-pet-pick'); await E(() => window.__cut.pet('cat')); await wait(500); await E(() => window.__cut.setName('มิว')); await wait(3000); await shot('18-thanks');
     await E(() => window.__cut.skip()); await wait(2500); await clickAll('#tN');
+    for (let i = 0; i < 60 && !(await N(() => window.__ng.S.story.freed)); i++) { await wait(500); await E(() => { const s = document.querySelector('.skip'); if (s && s.offsetParent) s.click() }); await clickAll('#tN') }   /* busy machine: let the rescue cutscene finish before going to town */
     log('pets', JSON.stringify(await N(() => window.__ng.S.pets.map(p => p.kind + ':' + p.name))), 'freed', await N(() => window.__ng.S.story.freed));
     await wait(1200); await shot('19-with-pet');
-    await E(() => window.__ng.goTown()); await wait(2500); await shot('20-sberh-town'); await clickAll('#tN');
+    await E(() => window.__ng.goTown()); await pg.waitForFunction(() => window.__ng.S.story.sberhTown, null, { timeout: 60000 }); await wait(1500); await shot('20-sberh-town'); await clickAll('#tN');
     await E(() => { const N = window.__ng; N.S.mats.wood = (N.S.mats.wood || 0) + 10; N.S.mats.stone = (N.S.mats.stone || 0) + 10; N.S.coin += 500; N.openShopBuilding(0) }); await wait(400); await pg.click('#rB'); await wait(1200); await shot('21-repairing'); await E(() => window.__ng.finishJobs());
     await pg.waitForFunction(() => window.__ng.cut, null, { timeout: 60000 }); await wait(3500); await shot('22-flashback'); await E(() => window.__cut.skip());
     await pg.waitForFunction(() => !window.__ng.cut, null, { timeout: 60000 }); await wait(800); await shot('23-gift'); await clickAll('#tN');

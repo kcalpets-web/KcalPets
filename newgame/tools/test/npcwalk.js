@@ -14,7 +14,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8886, OUT = process.argv[2] || '/tmp/
     log('village', JSON.stringify(K)); if (!K) throw new Error('no village people found');
     const R = await E(async k => { const N = window.__ng, NL = Object.values(N.KNPC).filter(n => n.k === k && n.A.wander), L = NL.map(n => n.A); const st = L.map(A => ({ x: A.root.position.x, z: A.root.position.z, v: 0 }));
       let moving = 0, side = 0, jumps = 0, inside = 0, frames = 0, maxV = 0; const t0 = performance.now(); let tl = t0;
-      while (performance.now() - t0 < 45000) { await new Promise(r => requestAnimationFrame(r)); const t = performance.now(), dt = Math.min(.05, (t - tl) / 1000); tl = t; frames++;
+      while ((performance.now() - t0 < 45000 || frames < 600) && performance.now() - t0 < 240000) {   /* a slow machine (software GL) gets few frames · each frame's dt is capped at 50 ms, so count frames too */ await new Promise(r => requestAnimationFrame(r)); const t = performance.now(), dt = Math.min(.05, (t - tl) / 1000); tl = t; frames++;
         L.forEach((A, i) => { const p = A.root.position, s = st[i], dx = p.x - s.x, dz = p.z - s.z, m = Math.hypot(dx, dz), v = m / Math.max(.001, dt); if (m > .004) { moving++; const a = Math.atan2(dx, dz), d = Math.abs(Math.atan2(Math.sin(a - A.yaw), Math.cos(a - A.yaw))); if (d > .6) side++ }
           if (Math.abs(v - s.v) > 1.2 && m < 1) jumps++; maxV = Math.max(maxV, m < 1 ? v : 0); { const e = N.solBlock(p.x, p.z, N.groundH(p.x, p.z) + .1, .05); if (e && e !== NL[i].hsol) inside++ }   /* their own stall / house counter is where they stand */ s.x = p.x; s.z = p.z; s.v = v }) }
       return { people: L.length, frames, moving, side, jumps, inside, maxV: +maxV.toFixed(2) } }, K.k);
