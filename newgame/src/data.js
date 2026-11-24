@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '4.88';
+export const APP_VER = '4.89';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -444,17 +444,17 @@ export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet th
 export const CURE_GIFT = { antidote: 2, mpS: 2 };                  // potions Sberh gives after the shop is repaired
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
-  { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'ลุงแป้ง', cost: { wood: 8, stone: 4, coin: 400 } },
-  { k: 'tools', name: 'ช่างอุปกรณ์', icon: '🛠️', owner: 'ช่างตุ้ม', cost: { wood: 10, stone: 6, coin: 600 } },
-  { k: 'smith', name: 'ช่างตีเหล็ก', icon: '⚒️', owner: 'ช่างเหล็ก', cost: { wood: 10, stone: 10, coin: 800 } },
-  { k: 'market', name: 'ตลาด', icon: '🧺', owner: 'แม่ค้าส้ม', cost: { wood: 6, stone: 6, coin: 300 } },
-  { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'หัวหน้ากิลด์', cost: { wood: 14, stone: 10, coin: 1000 } },
+  { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'บรอม', cost: { wood: 8, stone: 4, coin: 400 } },
+  { k: 'tools', name: 'ช่างอุปกรณ์', icon: '🛠️', owner: 'ท็อบบี้', cost: { wood: 10, stone: 6, coin: 600 } },
+  { k: 'smith', name: 'ช่างตีเหล็ก', icon: '⚒️', owner: 'ฮาร์แลน', cost: { wood: 10, stone: 10, coin: 800 } },
+  { k: 'market', name: 'ตลาด', icon: '🧺', owner: 'เทสซา', cost: { wood: 6, stone: 6, coin: 300 } },
+  { k: 'guild', name: 'กิลด์นักผจญภัย', icon: '📜', owner: 'โรวัน', cost: { wood: 14, stone: 10, coin: 1000 } },
   { k: 'gacha', name: 'ร้านกาชา', icon: '🎟️', owner: 'ตู้กาชา', cost: null },
-  { k: 'tailor', name: 'ร้านตัดเสื้อ', icon: '🪡', owner: 'ป้าเข็ม', cost: null },   // v3.40 clothes · hats
-  { k: 'bar', name: 'บาร์นกนางนวล', icon: '🍹', owner: 'ลุงโจ้', cost: null },   // v3.43 open late (BAR.open → BAR.close)
+  { k: 'tailor', name: 'ร้านตัดเสื้อ', icon: '🪡', owner: 'เนลล์', cost: null },   // v3.40 clothes · hats
+  { k: 'bar', name: 'บาร์นกนางนวล', icon: '🍹', owner: 'กัส', cost: null },   // v3.43 open late (BAR.open → BAR.close)
 ];
 /* v3.40 who makes what (you bring the materials · coins pay the work) · arrows + torches you can still make yourself */
-export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 ป้าเข็ม ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ช่างตุ้ม ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
+export const MAKER = { smith: { name: '⚒️ ช่างตีเหล็ก', what: 'อาวุธ โล่ ธนู' }, tailor: { name: '🪡 เนลล์ ร้านตัดเสื้อ', what: 'ชุด หมวก ชุดว่ายน้ำ ชุดกันหนาว' }, potion: { name: '🧪 Sberh ร้านยา', what: 'ยา อาหารพิเศษ' }, tools: { name: '🛠️ ท็อบบี้ ช่างอุปกรณ์', what: 'ใบไม้ร่อน' }, self: { name: '🎒 ทำเอง', what: 'ลูกธนู คบเพลิง' } };
 export const TOOL_BUY = [{ has: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน', price: 2500, desc: 'ให้แสงแม้ฝนตก · ไม่อุ่น · ถือแทนคบเพลิง' }];   /* v4.84 (designer) the lamp can be bought outright · or ordered cheaper with your own materials */
 export const MON_REACH_Y = 1.5;   /* v4.88 how far up / down a melee monster reaches (× its size) */
 export const YRING = { net: 10, rope: 15, rod: 8, waterY: -.3 };   /* v4.88 ⭕ the white ring: how far (m) · the water surface height */
@@ -552,19 +552,19 @@ export const RECIPES = [
   { k: 'trufflesoup', house: 1, desc: 'ซุปครีมเห็ดทรัฟเฟิล หอมกรุ่น กินแล้วอึดขึ้น', icon: '🥣', name: 'ซุปครีมทรัฟเฟิล', need: { truffle: 1, dairy: 1 }, eff: { hp: 140, en: 60, buff: { stam: .3, min: 5 } }, hint: 'ทรัฟเฟิล 1 + นม 1' },
   { k: 'tomyumfish', desc: 'ต้มยำปลาสดจากทะเลสาบนาวาลี เผ็ดร้อน อุ่นถึงใจ', icon: '🥣', name: 'ต้มยำปลานาวาลี', need: { fish: 2, spice: 1 }, eff: { hp: 40, buff: { warm: 1, min: 5 } }, hint: 'ปลา 2 ตัว + พริก' },   // v4.24 navalee
   { k: 'riceball', desc: 'ข้าวปั้นห่อสาหร่าย พกง่าย กินแล้วกระปรี้กระเปร่า', icon: '🍙', name: 'ข้าวห่อสาหร่าย', need: { seaweed: 2 }, only: 1, eff: { en: 100, buff: { stam: .35, min: 5 } }, hint: 'สาหร่ายล้วน' },
-  { k: 'mushskewer', desc: 'เห็ดป่าเสียบไม้ย่างกับสมุนไพรเรืองแสง สูตรยายใบตอง', icon: '🍡', name: 'เห็ดเสียบไม้ย่าง', need: { mushroom: 2, glowherb: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'เห็ด 2 + สมุนไพรเรืองแสง 1' },   // v4.30 sylvaren
-  { k: 'venisonhoney', desc: 'เนื้อกวางตุ๋นน้ำผึ้งป่า สูตรพรานมาลี', icon: '🥙', name: 'กวางตุ๋นน้ำผึ้ง', need: { venison: 1, honey: 1 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อกวาง + น้ำผึ้ง' },
+  { k: 'mushskewer', desc: 'เห็ดป่าเสียบไม้ย่างกับสมุนไพรเรืองแสง สูตรเอลวีน่า', icon: '🍡', name: 'เห็ดเสียบไม้ย่าง', need: { mushroom: 2, glowherb: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'เห็ด 2 + สมุนไพรเรืองแสง 1' },   // v4.30 sylvaren
+  { k: 'venisonhoney', desc: 'เนื้อกวางตุ๋นน้ำผึ้งป่า สูตรลิราเอล', icon: '🥙', name: 'กวางตุ๋นน้ำผึ้ง', need: { venison: 1, honey: 1 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อกวาง + น้ำผึ้ง' },
   { k: 'berrycake', desc: 'คัพเค้กเบอร์รี่ป่า กินแล้วกันพิษได้ 3 นาที', icon: '🧁', name: 'คัพเค้กเบอร์รี่ป่า', need: { berry: 3 }, only: 1, eff: { hp: 20, buff: { antidote: 1, min: 3 } }, hint: 'เบอร์รี่ 3 ลูก' },
   { k: 'filtertonic', desc: 'ยาต้มสมุนไพรเรืองแสง ดื่มแล้วหมอกพิษไม่ระคายปอด', icon: '🍶', name: 'ยาต้มกรองอากาศ', need: { glowherb: 2 }, only: 1, eff: { hp: 20, buff: { air: 1, min: 5 } }, hint: 'สมุนไพรเรืองแสง 2' },   // v4.35 deadgar
   { k: 'knightpie', desc: 'พายเนื้อสูตรอัศวิน อิ่มนาน', icon: '🥯', name: 'พายเนื้ออัศวิน', need: { meat: 1, mushroom: 1 }, only: 1, eff: { hp: 60 }, hint: 'เนื้อ + เห็ด' },
-  { k: 'crowcorn', desc: 'ข้าวโพดคั่วของอีกาเฒ่า กินแล้วตาไว', icon: '🍿', name: 'ข้าวโพดคั่วอีกา', need: { corn: 2 }, only: 1, eff: { en: 80, buff: { stam: .25, min: 5 } }, hint: 'ข้าวโพด 2' },
+  { k: 'crowcorn', desc: 'ข้าวโพดคั่วของคราวลีย์ กินแล้วตาไว', icon: '🍿', name: 'ข้าวโพดคั่วอีกา', need: { corn: 2 }, only: 1, eff: { en: 80, buff: { stam: .25, min: 5 } }, hint: 'ข้าวโพด 2' },
   { k: 'lavapumpkin', desc: 'ฟักทองอบบนหินลาวา สูตรซาลา', icon: '🍠', name: 'ฟักทองอบหินลาวา', need: { pumpkin: 1, rocksalt: 1 }, only: 1, eff: { hp: 50 }, hint: 'ฟักทอง + เกลือหิน' },   // v4.34 valkara
   { k: 'corncracker', desc: 'ข้าวเกรียบข้าวโพดโรยเกลือหิน ขนมคนงานเหมือง', icon: '🍘', name: 'ข้าวเกรียบข้าวโพด', need: { corn: 2, rocksalt: 1 }, only: 1, eff: { en: 100 }, hint: 'ข้าวโพด 2 + เกลือหิน' },
   { k: 'chilisauce', desc: 'ซอสพริกภูเขาไฟ เผ็ดจนมือร้อน', icon: '🥫', name: 'ซอสพริกภูเขาไฟ', need: { chili: 3 }, only: 1, eff: { hp: 20, buff: { atk: 4, min: 6 } }, hint: 'พริก 3' },
-  { k: 'kebab', desc: 'เคบับเนื้อเผ็ดห่อแป้ง สูตรป้าพริก', icon: '🌯', name: 'เคบับเผ็ด', need: { meat: 1, chili: 1 }, only: 1, eff: { hp: 60, buff: { atk: 4, min: 5 } }, hint: 'เนื้อ + พริก' },   // v4.33 asrah
+  { k: 'kebab', desc: 'เคบับเนื้อเผ็ดห่อแป้ง สูตรซาฮีรา', icon: '🌯', name: 'เคบับเผ็ด', need: { meat: 1, chili: 1 }, only: 1, eff: { hp: 60, buff: { atk: 4, min: 5 } }, hint: 'เนื้อ + พริก' },   // v4.33 asrah
   { k: 'minttea', desc: 'ชาเย็นใบมิ้นต์ เย็นชื่นใจกลางทะเลทราย', icon: '🫖', name: 'ชาเย็นมิ้นต์', need: { mint: 2 }, only: 1, eff: { en: 60, buff: { cool: 1, min: 8 } }, hint: 'ใบมิ้นต์ 2' },
   { k: 'datesweet', desc: 'ขนมอินทผลัมราดน้ำผึ้ง ของกินระหว่างทางของคาราวาน', icon: '🥮', name: 'ขนมอินทผลัม', need: { dates: 2, honey: 1 }, only: 1, eff: { hp: 40, en: 100 }, hint: 'อินทผลัม 2 + น้ำผึ้ง' },
-  { k: 'polarfish', desc: 'ปลาตากแห้งแบบขั้วโลก สูตรตูตู้', icon: '🍤', name: 'ปลาแห้งขั้วโลก', need: { fish: 3, rocksalt: 1 }, only: 1, eff: { hp: 40 }, hint: 'ปลา 3 + เกลือหิน' },   // v4.32 frosthelm
+  { k: 'polarfish', desc: 'ปลาตากแห้งแบบขั้วโลก สูตรทูวา', icon: '🍤', name: 'ปลาแห้งขั้วโลก', need: { fish: 3, rocksalt: 1 }, only: 1, eff: { hp: 40 }, hint: 'ปลา 3 + เกลือหิน' },   // v4.32 frosthelm
   { k: 'bearballs', desc: 'ลูกชิ้นเนื้อหมีในน้ำพริกร้อน กินแล้วอุ่นทั้งตัว', icon: '🧆', name: 'ลูกชิ้นหมีน้ำพริก', need: { bearmeat: 1, chili: 1 }, only: 1, eff: { hp: 40, buff: { warm: 1, min: 6 } }, hint: 'เนื้อหมี + พริก' },
   { k: 'cornpancake', desc: 'แพนเค้กข้าวโพดราดน้ำผึ้ง อาหารเช้าของโบสถ์ฟรอสต์เฮล์ม', icon: '🥞', name: 'แพนเค้กข้าวโพดน้ำผึ้ง', need: { corn: 2, honey: 1 }, only: 1, eff: { hp: 40, buff: { stam: .25, min: 5 } }, hint: 'ข้าวโพด 2 + น้ำผึ้ง' },
   { k: 'squidgrill', desc: 'หมึกย่างซอสระฆัง สูตรกัปตันมาริน', icon: '🦑', name: 'หมึกย่างซอสระฆัง', need: { squid: 2 }, only: 1, eff: { hp: 60 }, hint: 'ปลาหมึกล้วน' },
@@ -632,9 +632,9 @@ STARTER.push(
   /* v4.76 (designer) a chain per farm building: build it → Lv 2 → Lv 3 (the granary: build → 100 hay → 300 hay) · steps = each step's own words */
   ...['poultry', 'livestock', 'fishpond'].map(k => ({ k: 'fb_' + k, house: 1, abs: 1, noCount: 1, icon: { poultry: '🐔', livestock: '🐄', fishpond: '🐟' }[k], name: { poultry: 'สร้างเล้าสัตว์ปีก', livestock: 'สร้างโรงเลี้ยงสัตว์', fishpond: 'สร้างบ่อปลา' }[k], unit: '', f: S => Math.max(0, ...(S.builds || []).filter(b => b.done && b.k === k).map(b => (b.lv || 0) + 1)), goals: [1, 2, 3],
     steps: { poultry: ['สร้างเล้าสัตว์ปีก', 'ขยายเล้าเป็น Lv 2 (8 ตัว)', 'ขยายเล้าเป็น Lv 3 (12 ตัว)'], livestock: ['สร้างโรงเลี้ยงสัตว์', 'ขยายโรงเป็น Lv 2 (8 ตัว)', 'ขยายโรงเป็น Lv 3 (12 ตัว)'], fishpond: ['ขุดบ่อปลา', 'ขยายบ่อเป็น Lv 2 (8 ตัว)', 'ขยายบ่อเป็น Lv 3 (12 ตัว)'] }[k],
-    rew: [{ coin: 300 }, { coin: 800 }, { gem: 30 }], how: k === 'fishpond' ? '🔨 สร้าง → 🐄 เลี้ยงสัตว์ → 🐟 บ่อปลา (สร้างเอง) · ขยายได้ที่หน้าบ่อ (แตะบ่อ → ⬆️ ขยาย)' : `คุยกับ 🔨 ช่างไม้ตองที่เมืองท่า → 📐 เลือกที่วาง${k === 'poultry' ? 'เล้า' : 'โรง'} · นอนถึงเช้าเสร็จ · ขยาย: เข้าไปข้างใน → 📋 → ⬆️ ขยาย (ใช้วัตถุดิบ)` })),
+    rew: [{ coin: 300 }, { coin: 800 }, { gem: 30 }], how: k === 'fishpond' ? '🔨 สร้าง → 🐄 เลี้ยงสัตว์ → 🐟 บ่อปลา (สร้างเอง) · ขยายได้ที่หน้าบ่อ (แตะบ่อ → ⬆️ ขยาย)' : `คุยกับ 🔨 ทิมโบที่เมืองท่า → 📐 เลือกที่วาง${k === 'poultry' ? 'เล้า' : 'โรง'} · นอนถึงเช้าเสร็จ · ขยาย: เข้าไปข้างใน → 📋 → ⬆️ ขยาย (ใช้วัตถุดิบ)` })),
   { k: 'fb_granary', house: 1, abs: 1, noCount: 1, icon: '🌾', name: 'สร้างยุ้งฉาง', unit: '', f: S => { const G = (S.builds || []).filter(b => b.done && b.k === 'granary'); if (!G.length) return 0; const h = G.reduce((t, b) => t + (b.hay || 0), 0); return h >= 300 ? 3 : h >= 100 ? 2 : 1 }, goals: [1, 2, 3],
-    steps: ['สร้างยุ้งฉาง', 'เก็บฟางในยุ้งฉางให้ถึง 100', 'เก็บฟางในยุ้งฉางให้ถึง 300 (เต็มยุ้ง)'], rew: [{ coin: 300 }, { coin: 600 }, { gem: 20 }], how: 'คุยกับ 🔨 ช่างไม้ตองที่เมืองท่า → 📐 ยุ้งฉาง · ตัดหญ้าด้วย 🌾 เคียว แล้วแตะยุ้งฉาง → 🌿 ใส่หญ้าทั้งหมด' },
+    steps: ['สร้างยุ้งฉาง', 'เก็บฟางในยุ้งฉางให้ถึง 100', 'เก็บฟางในยุ้งฉางให้ถึง 300 (เต็มยุ้ง)'], rew: [{ coin: 300 }, { coin: 600 }, { gem: 20 }], how: 'คุยกับ 🔨 ทิมโบที่เมืองท่า → 📐 ยุ้งฉาง · ตัดหญ้าด้วย 🌾 เคียว แล้วแตะยุ้งฉาง → 🌿 ใส่หญ้าทั้งหมด' },
   { k: 'farmhay', house: 1, icon: '🌾', name: 'วางฟางในราง', unit: 'ครั้ง', stats: ['hayPut'], goals: [1, 5, 20], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เดินเข้าไปในเล้า/โรงเลี้ยงสัตว์ → กองฟาง กด <b>A</b> หยิบฟาง → ถือไปที่รางอาหาร กด <b>A</b> วาง (คอก Lv 3 เติมเองจากยุ้งฉาง)' },
   { k: 'farmprod', house: 1, icon: '🧺', name: 'เก็บผลผลิตจากสัตว์', unit: 'ชิ้น', stats: ['farmProd'], goals: [3, 15, 50], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'ให้สัตว์ได้กินทุกวัน → ตอนเช้าแตะที่คอก → 🧺 เก็บผลผลิต' });
 export const STARTER_ALL = { gem: 50 };   // every step of every chain
@@ -713,9 +713,9 @@ export const CAMP_TIERS = [                                    // by distance fr
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {
   /* v4.75 🐔 house stage 4 (house: 1 = only while the house is on · carp: 1 = the carpenter builds it: done after you sleep, or after CARP.mins) */
-  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ช่างไม้ตองสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
-  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ช่างไม้ตองสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
-  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'คลังเก็บฟาง (อาหารสัตว์) ได้ 300 · วางที่ไหนก็ได้ · กองฟางข้างคอกหยิบจากที่นี่ · คอก Lv 3 เติมรางเองทุกเช้า · ช่างไม้ตองสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
+  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ทิมโบสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
+  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ทิมโบสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
+  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'คลังเก็บฟาง (อาหารสัตว์) ได้ 300 · วางที่ไหนก็ได้ · กองฟางข้างคอกหยิบจากที่นี่ · คอก Lv 3 เติมรางเองทุกเช้า · ทิมโบสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
   fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว (ขยายได้ถึง 12) · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
@@ -897,8 +897,8 @@ export const FARM_LV = {
   fishpond:  [{ cap: 4 }, { cap: 8, cost: { stone: 30, grass: 10 } }, { cap: 12, cost: { stone: 60, flint: 6 } }] };
 export const HAY = { arm: 10, reach: 1.8, slot: { poultry: [1.65, .55], livestock: [2.7, -.4] }, trough: { poultry: [-1.0, 1.6], livestock: [-1.6, 2.25] } };   // one armful · where the hay slot / trough stand (local to the building)
 export const FARM = { cap: { poultry: 4, livestock: 4, fishpond: 4 }, regrow: .5, rainRegrow: .2, trough: 40, gran: 300, granR: 25, keep: 3, out: [6 * 60 + 30, 18 * 60], roam: 7 };   // meadow 0..1 per building · products wait (max keep per animal)
-export const ANIMAL_SHOP = { name: 'ป้าบัว', what: 'ร้านสัตว์ฟาร์ม' };
-export const CARP = { name: 'ช่างไม้ตอง', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
+export const ANIMAL_SHOP = { name: 'มาเบล', what: 'ร้านสัตว์ฟาร์ม' };
+export const CARP = { name: 'ทิมโบ', mins: 20 };   // the harbour carpenter · minutes a job takes if you do not sleep
 export const HOUSE = true;   // 🏠 inside the house (in development · designer: not on the web yet) · try it with ?house=1
 export const PEBBLE = { sp: .85 };   // v4.56 🪨 walking speed while holding a small stone
 export const LSTONE = { off: [28, 22], guard: [4, 6], spirit: 1, r: 26 };
@@ -966,28 +966,28 @@ export const CRAFT = [
   { k: 'woolCap', icon: '🧣', name: 'ผ้าพันคอไหมพรม (กันหนาว)', need: { grass: 5, feather: 2 }, give: { wear: 'woolCap' } },
   { k: 'tank', icon: '🦺', name: 'เสื้อกั๊กกันร้อน (กันร้อน)', need: { grass: 6 }, give: { wear: 'tank' } },
   { k: 'strawHat', icon: '😷', name: 'ผ้าปิดหน้ากันแดด (กันร้อน)', need: { grass: 5 }, give: { wear: 'strawHat' } },
-  { k: 'furHood', icon: '🦊', name: 'หน้ากากขนสัตว์ (กันหนาว)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'furCoat', icon: '🧥', name: 'ชุดขนสัตว์ (กันหนาว ×2)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
+  { k: 'furHood', icon: '🦊', name: 'หน้ากากขนสัตว์ (กันหนาว)', need: { hide: 3, feather: 2 }, give: { wear: 'furHood' }, from: 'ruin:farmv', who: 'ฮอลลิส หมู่บ้านทุ่งข้าว' },
+  { k: 'furCoat', icon: '🧥', name: 'ชุดขนสัตว์ (กันหนาว ×2)', need: { hide: 8, feather: 4 }, give: { wear: 'furCoat' }, from: 'ruin:farmv', who: 'ฮอลลิส หมู่บ้านทุ่งข้าว' },
   { k: 'antidote', icon: '🧴', name: 'ยาแก้พิษ', need: { grass: 4, feather: 1 }, give: { potions: { antidote: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'clear', icon: '🌿', name: 'ยาตื่นตัว', need: { grass: 5, stone: 1 }, give: { potions: { clear: 1 } }, from: 'sberh', who: 'Sberh หมอยาในเมือง' },
   { k: 'tea', icon: '🍵', name: 'ชาสมุนไพร (⚡ +30)', need: { grass: 3, wood: 1 }, give: { potions: { mpS: 1 } }, from: 'howsif', who: 'ลุงฮาวซิฟ' },
-  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', need: { grass: 3, hide: 1 }, give: { potions: { warmer: 1 } }, from: 'ruin:farmv', who: 'ลุงทองดี หมู่บ้านทุ่งข้าว' },
-  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', need: { grass: 3, stone: 2 }, give: { potions: { cooler: 1 } }, from: 'ruin:fishing', who: 'ป้ามาลี หมู่บ้านชาวประมง' },
-  { k: 'arrowsBig', icon: '🏹', name: 'ลูกธนู ×50 (สูตรนายพราน)', need: { wood: 8, feather: 6, stone: 6, hide: 1 }, give: { arrows: 50 }, from: 'ruin:market', who: 'พ่อค้าโต ตลาดนัดเก่า' },
+  { k: 'warmer', icon: '🌶️', name: 'ยาอุ่นกาย', need: { grass: 3, hide: 1 }, give: { potions: { warmer: 1 } }, from: 'ruin:farmv', who: 'ฮอลลิส หมู่บ้านทุ่งข้าว' },
+  { k: 'cooler', icon: '🧊', name: 'ยาเย็น', need: { grass: 3, stone: 2 }, give: { potions: { cooler: 1 } }, from: 'ruin:fishing', who: 'มาริน่า หมู่บ้านชาวประมง' },
+  { k: 'arrowsBig', icon: '🏹', name: 'ลูกธนู ×50 (สูตรนายพราน)', need: { wood: 8, feather: 6, stone: 6, hide: 1 }, give: { arrows: 50 }, from: 'ruin:market', who: 'โบลด์ ตลาดนัดเก่า' },
 ];
 /* v2.2 broken shrines across the map → repair = a warp point ✨ */
 export const SHRINE = { n: 8, cost: { stone: 14, wood: 10 }, see: 32, names: ['ศาลริมผา', 'ศาลใต้ต้นไทร', 'ศาลสายลม', 'ศาลแสงจันทร์', 'ศาลหินเก่า', 'ศาลทุ่งดอกไม้', 'ศาลริมธาร', 'ศาลเนินหมอก'] };
 export const RUIN_T = 45;                                       // seconds to rebuild one place (hammer)
 export const RUINS = [                                          // need: where it likes to be · projects: [model, name, cost]
-  { k: 'fishing', name: 'หมู่บ้านชาวประมง', npc: '👵 ป้ามาลี', need: 'coast', v: 1, hello: 'เกลียวคลื่นพัดทุกอย่างไปหมด… ถ้ามีท่าเรือกับบ่อน้ำ พวกเราคงกลับมาจับปลาได้อีก',
+  { k: 'fishing', name: 'หมู่บ้านชาวประมง', npc: '👵 มาริน่า', need: 'coast', v: 1, hello: 'เกลียวคลื่นพัดทุกอย่างไปหมด… ถ้ามีท่าเรือกับบ่อน้ำ พวกเราคงกลับมาจับปลาได้อีก',
     projects: [['dock', 'ท่าเรือ', { wood: 30, stone: 6 }], ['well', 'บ่อน้ำ', { stone: 20, wood: 6 }], ['house', 'บ้านชาวประมง', { wood: 24, stone: 12, hide: 2 }]], reward: { coin: 2000, gem: 60 } },
-  { k: 'farmv', name: 'หมู่บ้านทุ่งข้าว', npc: '👨‍🌾 ลุงทองดี', need: 'flat', v: 0, hello: 'ทุ่งข้าวเงียบไปนานแล้ว… กังหันลมพังตั้งแต่เมฆดำมา ช่วยสร้างใหม่ได้ไหม',
+  { k: 'farmv', name: 'หมู่บ้านทุ่งข้าว', npc: '👨‍🌾 ฮอลลิส', need: 'flat', v: 0, hello: 'ทุ่งข้าวเงียบไปนานแล้ว… กังหันลมพังตั้งแต่เมฆดำมา ช่วยสร้างใหม่ได้ไหม',
     projects: [['windmill', 'กังหันลม', { wood: 36, stone: 10, feather: 4 }], ['well', 'บ่อน้ำ', { stone: 20, wood: 6 }], ['house', 'บ้านไร่', { wood: 24, stone: 12, hide: 2 }]], reward: { coin: 2500, gem: 70 } },
-  { k: 'market', name: 'ตลาดนัดเก่า', npc: '🧔 พ่อค้าโต', need: 'flat', v: 2, hello: 'ที่นี่เคยเป็นตลาดที่คึกคักที่สุด… ถ้ามีแผงขายของ พ่อค้าคงกลับมา',
+  { k: 'market', name: 'ตลาดนัดเก่า', npc: '🧔 โบลด์', need: 'flat', v: 2, hello: 'ที่นี่เคยเป็นตลาดที่คึกคักที่สุด… ถ้ามีแผงขายของ พ่อค้าคงกลับมา',
     projects: [['stall', 'แผงผักผลไม้', { wood: 20, grass: 10 }], ['stall', 'แผงของป่า', { wood: 20, hide: 3 }], ['house', 'ร้านพ่อค้า', { wood: 28, stone: 14, hide: 2 }]], reward: { coin: 3000, gem: 80 } },
-  { k: 'shrine', name: 'ศาลบนเนินเขา', npc: '🧙 หลวงตาเมฆ', need: 'high', v: 1, hello: 'ศาลนี้เคยปกป้องดินแดนจากเมฆดำ… สร้างให้มันส่องแสงอีกครั้งเถิด',
+  { k: 'shrine', name: 'ศาลบนเนินเขา', npc: '🧙 นิมบัส', need: 'high', v: 1, hello: 'ศาลนี้เคยปกป้องดินแดนจากเมฆดำ… สร้างให้มันส่องแสงอีกครั้งเถิด',
     projects: [['shrine', 'ศาลเจ้า', { stone: 30, wood: 16, feather: 4 }], ['well', 'บ่อน้ำศักดิ์สิทธิ์', { stone: 24, wood: 6 }], ['house', 'กุฏิ', { wood: 24, stone: 14 }]], reward: { coin: 3500, gem: 90 } },
-  { k: 'light', name: 'เมืองประภาคาร', npc: '🧑‍✈️ กัปตันริว', need: 'coast', v: 2, hello: 'ไม่มีแสงนำทาง เรือก็กลับบ้านไม่ได้… ช่วยจุดประภาคารอีกครั้งที',
+  { k: 'light', name: 'เมืองประภาคาร', npc: '🧑‍✈️ ไรเดน', need: 'coast', v: 2, hello: 'ไม่มีแสงนำทาง เรือก็กลับบ้านไม่ได้… ช่วยจุดประภาคารอีกครั้งที',
     projects: [['lighthouse', 'ประภาคาร', { stone: 40, wood: 20, feather: 6 }], ['dock', 'ท่าเรือใหญ่', { wood: 34, stone: 8 }], ['stall', 'แผงปลาสด', { wood: 20, grass: 10 }]], reward: { coin: 4000, gem: 100 } },
 ];
 

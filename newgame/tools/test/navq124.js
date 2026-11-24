@@ -1,4 +1,4 @@
-/* v4.24 🏙️ navalee town quests: 2 new people (ป้าแก้ว · กัปตันมาริน) · the diver set · 3 weapons · 3 recipes · fishing in navalee brings seaweed / pearls / squid · the queen's quest after the kingdom is restored
+/* v4.24 🏙️ navalee town quests: 2 new people (ลุชชา · กัปตันมาริน) · the diver set · 3 weapons · 3 recipes · fishing in navalee brings seaweed / pearls / squid · the queen's quest after the kingdom is restored
    NODE_PATH=$(npm root -g) node newgame/tools/test/navq124.js outDir   (~2 min) */
 const { chromium } = require('playwright'); const { spawn } = require('child_process'); const fs = require('fs');
 const ROOT = '/home/user/KcalPets', PORT = 8865, OUT = process.argv[2] || '/tmp/ng_navq', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
