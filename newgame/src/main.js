@@ -5294,7 +5294,7 @@ const barGoer = n => idHash({ id: n.id }) % D.INN.bar === 0 && refList().filter(
 function refList() { const L = []; for (const k in D.MINIB) if (raided(k)) for (const n of KQ[k].npcs || []) if (refOf(k, n)) L.push({ k, n }); return L }
 function innOcc() { const occ = {}, beds = D.INN.floors.flatMap(F => F.rooms.filter(r => r.bed).map(r => r.id)); refList().forEach((r, i) => { const id = beds[i % beds.length]; (occ[id] = occ[id] || []).push(r) }); return occ }
 function refTalk(N) { const { k, n } = N, B = D.MON[D.MINIB[k][0]].name, ld = (KQ[k].npcs || []).find(x => x.id === D.RAID.captive[k]), f = t => t.replace(/\{K\}/g, KINGDOMS[k].name).replace(/\{B\}/g, B).replace(/\{L\}/g, ld ? ld.name : 'ผู้นำ'), C = D.INN.clue, h = idHash({ id: n.id }) + (S.dayN || 0), who = `${n.icon} ${n.name}${n.job ? ' · ' + n.job : ''}`;
-  if (PL) PL.waveT = performance.now() + 1300; talk([[who, `<small>${heartsTxt(FRS(k, n).p)}</small><br>` + f(C[0])], [who, f(C[1 + h % (C.length - 1)])]]) }
+  if (PL) PL.waveT = performance.now() + 1300; talk([[who, `<span class="frl">${heartsTxt(FRS(k, n).p)} สนิท ${frHearts(FRS(k, n).p)}/5</span><br>` + f(C[0])], [who, f(C[1 + h % (C.length - 1)])]]) }
 const INN_T = { fa: ['#a8784a', '#c89a68'], fb: ['#8a5a32', '#a8784a'], wall: ['#d8c8a8', '#f0e4cc'], carpet: ['#7a2a1a', '#b04a2a'], banner: ['#5a3a22', '#8a5a32'] };
 function innBuild(b) { const fl = b.fl || 0, F = D.INN.floors[fl], g = new THREE.Group(), raw = new THREE.Group(), occ = innOcc(), night = isNight();
   buildFloor(raw, F, Object.fromEntries(F.rooms.map(r => [r.id, 1])), 3.2, { T: INN_T }); const mg = mergeProp(raw); mg.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = true } }); g.add(mg);
