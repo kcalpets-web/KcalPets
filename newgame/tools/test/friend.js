@@ -1,0 +1,27 @@
+/* v4.90 💞 friendship: hold + A at a villager = a gift · love / like / hate · once a game day · hearts · 5❤️ special gift · 3❤️ opens the inn room at night · 📖 friends page
+   NODE_PATH=$(npm root -g) node newgame/tools/test/friend.js outDir   (~2 min) */
+const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8939, OUT = process.argv[2] || '/tmp/ngfr', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
+(async () => {
+  const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], bad = [], log = (...a) => console.log(...a);
+  try {
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); pg.on('pageerror', e => errs.push(e.message));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('s')) return; sessionStorage.setItem('s', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1');
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, avatar: { hair: 'afro' }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, town: 1, townClear: 1, sword: 1, boatFixed: 1 }, has: { sword: 1 }, time: 600, quest: 99, en: 999, ingr: { apple: 9, carrot: 3 }, dayN: 1 })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2000);
+    const E = (f, a) => pg.evaluate(f, a), clr = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    await E(() => window.__ng.placeMe(179 + 13 + 6, 20)); await pg.waitForFunction(() => { document.querySelectorAll('.ov').forEach(o => o.remove()); return Object.values(window.__ng.KNPC).some(a => a.ref && a.k === 'sylvaren') }, null, { timeout: 60000, polling: 500 });
+    const key = await E(() => { const A = Object.values(window.__ng.KNPC).find(a => a.ref && a.k === 'sylvaren'); return A.k + ':' + A.n.id }); log('npc', key);
+    const give = async (item, day) => E(([key, item, day]) => { const N = window.__ng; N.S.dayN = day; N.carryTake(item, 'g'); N.talkNpc(key); const F = N.S.fr[key]; return F ? F.p : null }, [key, item, day]);
+    let p = await give('apple', 1); log('apple (fruit, sylvaren loves)', p); if (p !== 3) bad.push('love gift should be +3');
+    p = await give('apple', 1); log('again same day', p, 'held', await E(() => window.__ng.S.hold.length)); if (p !== 3) bad.push('only once a day'); await E(() => window.__ng.S.hold = []);
+    p = await give('carrot', 2); log('carrot', p); if (p !== 4 && p !== 6) bad.push('like +1 (or love if the extra is veg)');
+    await clr(); await E(k => window.__ng.talkNpc(k), key); await wait(600); const t = await E(() => (document.querySelector('.ov') || {}).innerText || ''); log('talk', t.replace(/\s+/g, ' ').slice(0, 80)); if (!/❤️/.test(t)) bad.push('hearts not shown in talk'); await pg.screenshot({ path: OUT + '/f1-talk.png' }); await clr();
+    for (let d = 3; d < 9; d++) await give('apple', d); await wait(2500); const g = await E(k => ({ p: window.__ng.S.fr[k].p, g: window.__ng.S.fr[k].g }), key); log('5 hearts', JSON.stringify(g)); if (!g.g) bad.push('no special gift at 5 hearts');
+    await wait(500); for (let i = 0; i < 3; i++) { await E(() => { const t = document.querySelector('#tN'); if (t) t.click() }); await wait(400) } await clr();
+    await E(() => window.__ng.openFriends()); await wait(600); const fp = await E(() => (document.querySelector('.ov') || {}).innerText || ''); log('friends page', fp.replace(/\s+/g, ' ').slice(0, 80)); if (!/เพื่อน/.test(fp)) bad.push('friends page'); await pg.screenshot({ path: OUT + '/f2-friends.png' }); await clr();
+    /* 3❤️ = the room opens at night */ const room = await E(k => { const N = window.__ng; N.S.time = 23 * 60; const P = N.INNP; N.placeMe(P.dx, P.dz + .5); N.useThing({ kind: 'inn' }); const occ = N.innOcc(); let fl = -1, id = null; for (const r in occ) if (occ[r].some(x => x.k + ':' + x.n.id === k)) { id = r; fl = +r[1] - 1 } N.innFloor(fl, [-7, -6]); const C = N.HINC; return { id, locked: C.doors.filter(d => d.lock && d.lock.id === id).length, bar: !!C.ppl && !C.ppl.some(t => t.r.k + ':' + t.r.n.id === k) } }, key); log('room', JSON.stringify(room)); if (room.locked && !room.bar) bad.push('a 5-heart friend\'s room is still locked');
+    await wait(1200); await clr(); await pg.screenshot({ path: OUT + '/f3-room.png' });
+  } catch (e) { bad.push('EXC ' + e.message) }
+  if (errs.length) bad.push(...errs.map(e => 'PE ' + e)); log(bad.length ? 'FAIL\n' + bad.join('\n') : 'PASS'); await b.close(); srv.kill(); process.exit(bad.length ? 1 : 0) })();
