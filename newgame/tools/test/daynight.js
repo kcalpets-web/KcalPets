@@ -6,7 +6,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   try {
-    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); pg.on('pageerror', e => errs.push('PE ' + e.message + ' ' + (e.stack || '').split('\n').slice(1, 3).join(' ')));
+    const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); pg.setDefaultTimeout(90000); pg.on('pageerror', e => errs.push('PE ' + e.message + ' ' + (e.stack || '').split('\n').slice(1, 3).join(' ')));
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1');
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'pony' }, has: { sword: 1 }, mats: { wood: 3, stone: 30 }, time: 640, quest: 99, en: 999 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
@@ -33,7 +33,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     // 🌙 harbour shop shut at night
     await E(() => { const N = window.__ng, H = N.D ? N.D.VANEYA.harbour : null; N.S.story.slept = 1; N.S.time = 23 * 60; const sh = N.TW.shops[1]; N.placeMe(sh.x + 2, sh.z + 2 * sh.fz); document.querySelectorAll(".ov").forEach(o => o.remove()); N.openShopBuilding(1) }); await wait(3500); await E(() => window.__ng.openShopBuilding(1)); await wait(300); const s1 = await E(() => ({ ov: !!document.querySelector('.ov'), own: window.__ng.TW.shops.filter((s, i) => i !== 8 && s.owner && s.owner.root.visible).length })); const t3 = await toastTxt(); log('shop night', JSON.stringify(s1), t3.slice(0, 90));
     await pg.screenshot({ path: OUT + '/4-shop-night.png' }); if (s1.ov || !/ปิด/.test(t3) || s1.own) errs.push('harbour shops should be shut at night with the owners home');
-    await E(() => { window.__ng.S.time = 10 * 60; window.__ng.openShopBuilding(1) }); await wait(500); if (!(await E(() => !!document.querySelector('.ov')))) errs.push('the shop should open by day');
+    await E(() => { window.__ng.S.time = 10 * 60; window.__ng.openShopBuilding(1) }); await wait(800); if (!(await E(() => !!document.querySelector('.ov') || window.__ng.HIN.on))) errs.push('the shop should open by day');   /* v4.76 by day you walk into the shop (HIN) instead of a sheet · stay inside: the bar below then opens its sheet directly */
     // 🍹 v3.43 the bar opens late: drinks + rumours · shut by day
     await E(() => { const N = window.__ng; document.querySelectorAll('.ov').forEach(o => o.remove()); N.S.time = 23 * 60; N.S.coin = 500; const sh = N.TW.shops[8]; N.placeMe(sh.x + 1.5, sh.z + 2.5) }); await wait(1500);
     const br = await E(async () => { const N = window.__ng, sl = ms => new Promise(r => setTimeout(r, ms)); N.openShopBuilding(8); await sl(400); const ov = document.querySelector('.ov'), n = ov ? ov.querySelectorAll('[data-sbi]').length : 0;

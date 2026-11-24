@@ -25,7 +25,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       await E(([L]) => { window.__ng.placeMe(L.x + 22, L.z); window.__ng.CAM.yaw = -Math.PI / 2 }, [L]); await wait(1500); for (let i = 0; i < 30 && !(await E(k => !!window.__ng.GPILE[k], k)); i++) await wait(500); await closeAll();   /* poll: a slow machine builds the pile later */
       const pile = await E(k => !!window.__ng.GPILE[k], k); log('pile', pile); if (!pile) errs.push(k + ': no rock pile at the lair');
       if (k === 'valkara') await shot('01-pile');
-      await E(([L]) => window.__ng.placeMe(L.x + 9, L.z), [L]); await wait(2200);
+      await E(([L]) => window.__ng.placeMe(L.x + 9, L.z), [L]); await wait(1200); await pg.waitForFunction(k => { const G = window.__ng.GOL; return G && G.k === k }, k, { timeout: 15000, polling: 200 }).catch(() => 0);   /* slow frames: the lair check runs on the tick */
       const w = await N(() => { const G = window.__ng.GOL; return G && { k: G.k, on: !!G.on, kind: G.M.kind } }); log('wake', JSON.stringify(w)); if (!w || w.k !== k || w.on) errs.push(k + ': golem did not start waking');
       if (k === 'valkara') await shot('02-waking');
       for (let i = 0; i < 30 && !(await N(() => !!(window.__ng.GOL && window.__ng.GOL.on))); i++) await wait(500);   /* poll: a slow machine wakes it later */
