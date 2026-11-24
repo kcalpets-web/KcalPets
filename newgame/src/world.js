@@ -410,8 +410,8 @@ const smw = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
 export const POND = { x: 25, z: -6.5, r: 3.4 };   /* v3.29 the stream is gone: a pond in the overgrown field */
 export const RIVER = { x: 22, w: 1.7, bz: 1.1 }, riverC = z => RIVER.x + .7 * Math.sin(z * .45 + .6) * smw(2.4, 5, Math.abs(z - RIVER.bz)), riverW = z => RIVER.w * (1 + .14 * Math.sin(z * .9)) * (1 - .4 * smw(6.5, 11.5, Math.abs(z))),   // v3.7 the stream winds a little and narrows to its ends (straight under the bridge)
   LAKE = { x: 65, z: -6.2, r: 3.3 }, MESA = { x: 69, z: 6.2, r: 3.6, h: 2.3, edge: 1.4 };
-export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะวาเนย่า · บ้านต้นไม้', meadow: 'เกาะวาเนย่า · ทุ่งทานตะวัน', town: 'เกาะวาเนย่า · หมู่บ้าน', hills: 'เกาะวาเนย่า · เนินผา', forest: 'เกาะวาเนย่า · ป่าตะวันออก' };   // v3.13 the island is Vaneya, the sunflower isles
-if (BALD_ON) Object.assign(ZONES, { farm: 'เกาะวาเนย่า', town: 'เมืองท่า', forest: 'ป่าก็อบลิน (เหนือเมืองท่า)' });   /* v3.50 */
+export const ZONES = { wild: 'ดินแดนกว้างใหญ่', farm: 'เกาะวาเนญ่า · บ้านต้นไม้', meadow: 'เกาะวาเนญ่า · ทุ่งทานตะวัน', town: 'เกาะวาเนญ่า · หมู่บ้าน', hills: 'เกาะวาเนญ่า · เนินผา', forest: 'เกาะวาเนญ่า · ป่าตะวันออก' };   // v3.13 the island is Vaneya, the sunflower isles
+if (BALD_ON) Object.assign(ZONES, { farm: 'เกาะวาเนญ่า', town: 'เมืองท่า', forest: 'ป่าก็อบลิน (เหนือเมืองท่า)' });   /* v3.50 */
 export const STC = BALD_ON ? { x: 192, z: 20, r: 24 } : { x: 46, z: 0, r: 11 };   /* v3.50 the story's town: the harbour plaza (slimes · the sword · Sberh's stall) */
 export const GOBC = { x: 212, z: 80, r: 15, edge: 9, h: 2.4 };   /* v3.50 the goblin wood + cage: a cleared ground north of the harbour town */
 export const zoneOf = (x, z = 0) => BALD_ON ? (coreDist(x, z) <= 0 ? 'farm' : Math.hypot(x - STC.x, z - STC.z) < STC.r ? 'town' : Math.hypot(x - GOBC.x, z - GOBC.z) < GOBC.r + 6 ? 'forest' : 'wild') : coreDist(x, z) > 0 ? 'wild' : x < 9 ? 'farm' : x < 35 ? 'meadow' : x < 57 ? 'town' : x < 79 ? 'hills' : 'forest';

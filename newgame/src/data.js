@@ -675,7 +675,7 @@ export const PATHS = [
     { text: 'วาดภาพลงสมุด 1 ภาพ', f: nSk, goal: 1, reward: { coin: 200 } }, { text: 'วาดภาพลงสมุด 5 ภาพ', f: nSk, goal: 5, reward: { coin: 600 } },
     { text: 'วาดมอนสเตอร์ 4 ชนิด', f: S => Object.keys(S.journal.sketch || {}).filter(k => MON[k]).length, goal: 4, reward: { gem: 50 } }, { text: 'วาดภาพ 20 ครั้ง', stat: 'drawings', goal: 20, reward: { gem: 80 } },
     { text: 'วาดภาพลงสมุด 20 ภาพ', f: nSk, goal: 20, reward: { gem: 150 } }] },
-  { k: 'farm', icon: '🌾', name: 'ชาวไร่', title: '🌾 ชาวไร่แห่งวาเนย่า', desc: 'ขุดแปลง ปลูกผัก รดน้ำ เก็บเกี่ยวรอบบ้าน', steps: [
+  { k: 'farm', icon: '🌾', name: 'ชาวไร่', title: '🌾 ชาวไร่แห่งวาเนญ่า', desc: 'ขุดแปลง ปลูกผัก รดน้ำ เก็บเกี่ยวรอบบ้าน', steps: [
     { text: 'ขุดแปลงผัก 3 ช่อง', stat: 'tilled', goal: 3, reward: { coin: 200 } }, { text: 'ปลูกผัก 5 ครั้ง', stat: 'planted', goal: 5, reward: { coin: 500 } },
     { text: 'เก็บเกี่ยว 10 ครั้ง', stat: 'harvested', goal: 10, reward: { gem: 40 } }, { text: 'รดน้ำ 30 ครั้ง', stat: 'watered', goal: 30, reward: { gem: 60 } },
     { text: 'เก็บเกี่ยว 60 ครั้ง', stat: 'harvested', goal: 60, reward: { gem: 150 } }] },
@@ -926,7 +926,7 @@ export const FIELDS = [{ x0: 10, x1: 19, z0: -9, z1: -1 }, { x0: 10, x1: 19, z0:
 export const FARMLAND = { harbourR: 26, houseR: 4.5, slope: .7, rainy: ['drizzle', 'rain', 'storm'], debris: { perDay: 10, max: 80, near: 26, kinds: [['pebble', 4], ['grass', 4], ['bush', 2], ['rock', 2], ['tree', 1]] } };
 /* v3.29 🌾 Vaneya is overgrown land to clear (Stardew): tile = m · cell = m between candidates · p = chance per cell (grove = in the thick woods) · kinds [kind, weight, max per tile] · keep = [x, z, r] open spots (the first clearing) */
 export const OVERGROW = { regrowK: 2, tile: 32, rad: 2, cell: 2, p: .15, grove: .38, groveAt: .58, kinds: [['grass', 30, 30], ['pebble', 20, 22], ['bush', 12, 14], ['rock', 9, 10], ['stump', 5, 6], ['bigrock', 3, 4]], trees: 40, keep: [[22, 1, 9]], house: 7 };
-export const VANEYA = { name: 'เกาะวาเนย่า', world: 'เอิร์ทแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar', 'gacha'] };
+export const VANEYA = { name: 'เกาะวาเนญ่า', world: 'เอิร์ทแลน', isle: { x1: 150, z0: -240, z1: 170 }, harbour: { x: 179, z: 20 }, shops: ['food', 'tools', 'smith', 'market', 'guild', 'tailor', 'bar', 'gacha'] };
 export const HOLD = { pick: .28, charge: { start: .3, full: 1.2, mul: 2.5, en: 14, spinAt: .95, spinR: 1.3 }, aimEn: 4, guardEn: 6, airSlow: .3, airEn: 18, airSink: .35 };
 export const PARRY = .5, CROUCH_HOLD = 1, STOW_WALK = 1.5;   // v3.19 walking puts the weapon away this many seconds after your last attack   // v3.18.2 hold B with no shield = parry with the weapon (damage ×) · hold the stick still this long = crouch
 export const LUM_MONS = { out: 12, in: 10 };   // v4.63 the occupied capital (before the dark cloud falls): monsters outside the walls · inside by the tower

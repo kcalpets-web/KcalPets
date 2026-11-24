@@ -304,7 +304,7 @@ function titleSea() { const { S, cam, at } = stage({ sky: skyTex('#3f8fdc', '#e6
   const boat = at(g => { BUILDS.raft(g); part(g, '#5a3420', '#8a5a30', [0, 1.1, 0], [.06, 1.1, .06], [0, 0, 0], { A: 0 }); const sl = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.3), M('#fffaf0', .8, { side: THREE.DoubleSide })); sl.position.set(.5, 1.3, 0); sl.rotation.y = Math.PI / 2; g.add(sl) }, 10, 62, Math.PI * .85, .3);   /* tiny, far out */
   const wake = new THREE.Mesh(new THREE.PlaneGeometry(.18, 2.4), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .3 })); wake.rotation.x = -Math.PI / 2; S.add(wake);
   try { gulls(S, 5, 0, 30, 12) } catch (_) { }
-  return { S, cam, min: 10, lead: .5, bloom: .3, big: 1, title: 'KEALEE', titleAt: 3000, sub: 'And The New Light Of Luthonia', subAt: 4600, update(t) {
+  return { S, cam, min: 10, lead: .5, bloom: .3, big: 1, title: 'KEALEE', titleAt: 3000, sub: 'And The New Light Of Luminia', subAt: 4600, update(t) {
     const k = Math.min(1, t / 10); cam.position.set(18 - k * 4, 9 - k * 2, 108 - k * 16); cam.lookAt(0, 9 - k * 1.5, 0);
     const bz = 70 - t * 1.4, bx = 12 - t * .5; boat.position.set(bx, Math.sin(t * 1.6) * .05, bz); boat.rotation.z = Math.sin(t * 1.3) * .05; wake.position.set(bx + .45, .05, bz + 1.5); wake.rotation.z = -.33 } } }
 export const playTitle = (R, name) => film(R, { beats: [titleSea], moods: ['sea'], preset: name });
