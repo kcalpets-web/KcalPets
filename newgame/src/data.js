@@ -365,6 +365,11 @@ export const WANDER = [   // each walks one town → the next town each day (07:
 export const WANDER_SHOP = { kira: { items: ['ironSword', 'northAxe', 'moonBlade', 'boomerang'], price: 1800 }, torbin: { n: 3, mul: 1.5 }, pip: { price: 900 } };   // v5.08 one offer per wanderer per day
 export const WANDER_RUMOR = ['ได้ยินว่ามีถ้ำลับหลังน้ำตกที่ขอบโลก…', 'ปลาไหลตัวใหญ่ชอบโผล่ตอนพายุเข้า', 'หีบสมบัติในแคมป์ก็อบลินมักมีแบบแปลนดีๆ', 'กลางคืนที่บาร์นกนางนวล คนชอบเล่าเรื่องแปลกๆ', 'ใครเก็บอัญมณีครบเจ็ดสี จะไม่มีวันหมดสติง่ายๆ'];
 export const NPCMARKET = { by: 'tapun', n: 3, stock: 3, mul: .9 };   // v5.06 the day after Oren fishes, the market sells n kinds of his fish (stock each · price ×mul)   // v5.05 🧑‍🌾 (designer) NPCs live their day: p = chance per day to go out · from–to = minutes of the day
+export const ANIMAL_HINT = {   // v5.11 🐾 where each catch-quest animal lives + who tells you (a pin on the map once you follow the quest)
+  whale: { npc: 'tapun', k: 'navalee', when: 'ไปตอนกลางวันนะ มันไม่ชอบความมืด · เข้าไปช้าๆ แล้วโยน 🕸️ ตาข่าย', say: 'อยากเจอวาฬน้อยหรือ? ข้าเห็นมันพ่นน้ำอยู่ทะเลลึกทาง{dir}ของท่าเรือ ราว {m} เมตร' },
+  bear: { npc: 'bjorn', k: 'frosthelm', when: 'หมีออกมาบ่อยตอนกลางคืน · ระวังมันโกรธ ทำให้มันอ่อนแรงก่อนค่อยโยน 🕸️ ตาข่าย', say: 'หมีอยู่ในป่าทึบทาง{dir}ของเมือง ราว {m} เมตร · ข้าเห็นรอยเล็บบนต้นไม้แถวนั้น' },
+  boar: { npc: 'mali', k: 'sylvaren', when: 'หมูป่าชอบพุ่งชน หลบแล้วค่อยโยน 🕸️ ตาข่าย', say: 'หมูป่าชอบขุดดินในป่าทาง{dir}ของเมือง ราว {m} เมตร' },
+  hawk: { npc: 'miners', k: 'valkara', when: 'เหยี่ยวอยู่บนที่สูง ปีนขึ้นไปเงียบๆ ตอนกลางวัน', say: 'ข้าเห็นเหยี่ยววนอยู่บนหน้าผาสูงทาง{dir}ของเหมือง ราว {m} เมตร' } };
 export const HARB_STATUE = 'whale';   // v5.09 🗿 the harbour square statue: 'hero' (old) · 'sailor' ⚓ · 'whale' 🐋 (preview)
 export const TOWN_LIGHT = { n: 6, r: 7.6, a0: .26 }, FOUNTAIN = { bowl: .95, top: 1.55 };   // v5.09 💡 lamps round the harbour square · 🌊 the fountain's jets (basin radius · how high they start)
 export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
