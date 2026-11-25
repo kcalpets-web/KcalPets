@@ -49,6 +49,7 @@ function fromObj(o) {
     const W = S.wear || {}, C = S.clothes = S.clothes || {}; C.s_tank = 1; C.s_shorts = 1; for (const k of Object.keys(C)) if (WEAR['L_' + k]) C['L_' + k] = 1;
     const body = WEAR[W.body] ? W.body : 's_tank'; let legs = WEAR['L_' + body] ? 'L_' + body : 's_shorts'; if (S.avatar && S.avatar.bottom === 'skirt') { C.s_skirt = 1; legs = 's_skirt' }
     S.wear = { head: W.hat || W.head || null, body, legs }; S.wearV = 3 }
+  if (S.lastT > 1e6) { S.lastPlay = S.lastPlay || S.lastT; S.lastT = S.time }   /* v5.04.1 a save stamp once landed in lastT (the clock of the day/night cycle) and the dark cloud came every frame */
   GEN = S.gen || 0; return S }
 function tryKey(k) { const raw = localStorage.getItem(k); if (!raw) return { raw: null }; let o = null; try { o = JSON.parse(raw) } catch (e) { return { raw, bad: 'json' } }
   if (!o || typeof o !== 'object' || o.v !== 3) return { raw, bad: 'version ' + (o && o.v) }; try { return { raw, S: fromObj(o) } } catch (e) { return { raw, bad: 'load ' + e.message } } }
@@ -62,7 +63,7 @@ export function load() {
 export function save() { if (NOSAVE || !S) return false;
   try { const cur = localStorage.getItem(SAVE_KEY);
     if (cur) { const m = /"gen":(\d+)/.exec(cur); if (m && +m[1] > GEN) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'tab' })) } return false } localStorage.setItem(PREV, cur) }   /* another tab saved newer progress: do not write over it */
-    S.gen = ++GEN; S.lastT = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true }
+    S.gen = ++GEN; S.lastPlay = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true }
   catch (e) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'full' })) } return false } }
 export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 

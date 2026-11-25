@@ -9,7 +9,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8881, OUT = process.arg
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 640, quest: 99, coin: 500 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 90000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-    await E(() => { const N = window.__ng, K = N.KINGDOMS.navalee; N.S.time = 10 * 60; N.placeMe(K.x + 6, K.z + 10) });
+    await E(() => { window.__lifeTest = 1; const N = window.__ng, K = N.KINGDOMS.navalee; N.S.time = 10 * 60; N.placeMe(K.x + 6, K.z + 10) });
     await pg.waitForFunction(() => !!window.__ng.KNPC['navalee:tapun'], null, { timeout: 60000, polling: 500 });
     const day = await E(() => { const N = window.__ng, n = N.KNPC['navalee:tapun'].n; let home = -1, out = -1; for (let d = 0; d < 40 && (home < 0 || out < 0); d++) { N.S.dayN = d; if (N.lifeAway('navalee', n)) { if (out < 0) out = d } else if (home < 0) home = d } return { home, out } }); log('days', JSON.stringify(day));
     if (day.out < 0 || day.home < 0) errs.push('some days he goes fishing, some days he stays home');
