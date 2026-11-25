@@ -371,7 +371,12 @@ export const ANIMAL_HINT = {   // v5.11 🐾 where each catch-quest animal lives
   boar: { npc: 'mali', k: 'sylvaren', when: 'หมูป่าชอบพุ่งชน หลบแล้วค่อยโยน 🕸️ ตาข่าย', say: 'หมูป่าชอบขุดดินในป่าทาง{dir}ของเมือง ราว {m} เมตร' },
   hawk: { npc: 'miners', k: 'valkara', when: 'เหยี่ยวอยู่บนที่สูง ปีนขึ้นไปเงียบๆ ตอนกลางวัน', say: 'ข้าเห็นเหยี่ยววนอยู่บนหน้าผาสูงทาง{dir}ของเหมือง ราว {m} เมตร' } };
 export const HARB_STATUE = 'whale';   // v5.09 🗿 the harbour square statue: 'hero' (old) · 'sailor' ⚓ · 'whale' 🐋 (preview)
-export const CAP_PLAZA = { sylvaren: { animal: 'deer', scale: 2.3, face: 0, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 } };   // v5.12 🦌 restored capitals' squares (statue · lamps) · one kingdom at a time
+export const CAP_PLAZA = {   // v5.12 🦌 restored capitals' squares: the statue's animal · its stone · planter flowers / bush · lamps (n · radius · start angle) · pillar = a rock crag under a bird
+  sylvaren:  { animal: 'deer', scale: 2.3, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 },
+  frosthelm: { animal: 'bear', scale: 2.0, stone: '#dfe8f0', flowers: ['#9fd4ff', '#ffffff', '#c8b8ff'], bush: '#5a7a6a', lamps: 8, r: 11, a0: .39 },
+  valkara:   { animal: 'hawk', scale: 3.4, wings: -.55, stone: '#8a7a72', flowers: ['#ff7a1a', '#ffd23f', '#ff4a2a'], bush: '#5a5a34', lamps: 8, r: 11, a0: .39, pillar: 2.6 },
+  asrah:     { animal: 'camel', scale: 2.0, face: .7, stone: '#e0c89a', flowers: ['#ff4a6a', '#ffd84a', '#ff9a3a'], bush: '#7a9a4a', lamps: 8, r: 11, a0: .39 },
+  deadgar:   { animal: 'owl', scale: 2.4, stone: '#a8a0b4', flowers: ['#b06aff', '#ffffff', '#7ad8ff'], bush: '#4a5a4a', lamps: 8, r: 11, a0: .39, pillar: 1.4 } };
 export const TOWN_LIGHT = { n: 6, r: 7.6, a0: .26 }, FOUNTAIN = { bowl: .95, top: 1.55 };   // v5.09 💡 lamps round the harbour square · 🌊 the fountain's jets (basin radius · how high they start)
 export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
 export const PARRY2 = { tell: 380, win: 300, stun: 1100, counter: 2, cwin: 1600, stop: 220 };   // v5.00 🛡️ (designer: game feel) B pressed ≤win ms before a hit = perfect parry: no damage · the foe staggers stun ms · your next hit within cwin ms ×counter
