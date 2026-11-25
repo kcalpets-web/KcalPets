@@ -570,7 +570,7 @@ export function wildH(x, z) { if (!capsReady) capSites(); let h = wildH0(x, z); 
   if (BALD_ON) { const d = Math.hypot(x - GOBC.x, z - GOBC.z); if (d < GOBC.r + GOBC.edge) { const t = smw(GOBC.r + GOBC.edge, GOBC.r, d); h = h * (1 - t) + t * GOBC.h } }   /* v3.50 */
   if (!GTREE.ok) gtSite(); { const d = Math.hypot(x - GTREE.x, z - GTREE.z); if (d < GTREE.r + GTREE.edge) { const t = smw(GTREE.r + GTREE.edge, GTREE.r, d); h = h * (1 - t) + t * GTREE.h; if (d > GTREE.isl && d < GTREE.pond + .4) h -= 1.3 * Math.sin(Math.PI * (d - GTREE.isl) / (GTREE.pond + .4 - GTREE.isl)) } }   /* v3.60 the glade + its pond */
   for (const k in CAPS) { const c = CAPS[k], d = Math.hypot(x - c.x, z - c.z); if (d < c.r + c.edge) { const t = smw(c.r + c.edge, c.r, d); h = h * (1 - t) + t * c.h;
-      if (k === 'navalee' && d < 20) { const cs = Math.cos(c.ry), sn = Math.sin(c.ry), dx = x - c.x, dz = z - c.z, lx = dx * cs - dz * sn, lz = dx * sn + dz * cs, e = Math.hypot(lx / 1.15, lz + 14); if (e > 12.2 && e < 15.3) h -= .75 * Math.sin(Math.PI * (e - 12.2) / 3.1) } } } return h }   /* v3.59 Navalee's moat is a real ditch now (the stone bridge in front of the keep crosses it) */
+    } } return h }   /* v5.14 Navalee's hidden moat ditch is gone (the player fell under the square) · the water sits on the paving */   /* v3.59 Navalee's moat is a real ditch now (the stone bridge in front of the keep crosses it) */
 function wildH0(x, z) {
 
   const n = fbm(x / 210 + 7.3, z / 210 - 3.1), r = 1 - Math.abs(fbm(x / 380 + 1.7, z / 380 + 9.2, 4) * 2 - 1), far = smw(120, 520, Math.hypot(x - 46, z));

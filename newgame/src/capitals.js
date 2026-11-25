@@ -98,7 +98,9 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   /* ---- each kingdom's own landmark ---- */
   const anim = [];
   if (k === 'navalee') {   // 🌊 a moat round the keep · arch bridges · the drowned king with his trident · waterfalls · a wreck
-    const moat = add(new THREE.RingGeometry(12.3, 15.2, 40), M.water, 0, -.3, KZ, -Math.PI / 2);   /* v3.59 the water sits down in the ditch */ moat.userData.nosol = 1; moat.scale.set(1.15, 1, 1);
+    const moat = add(new THREE.RingGeometry(12.3, 15.2, 48), M.water, 0, .1, KZ, -Math.PI / 2); moat.userData.nosol = 1; moat.scale.set(1.15, 1, 1);   /* v5.14 (designer: fell under the square) the water lies on top of the paving now · no hidden ditch */
+    for (const r of [12.15, 15.35]) { const rim = add(new THREE.RingGeometry(r - .18, r + .18, 48), M.dark, 0, .11, KZ, -Math.PI / 2); rim.userData.nosol = 1; rim.scale.set(1.15, 1, 1) }   /* stone kerbs */
+    for (const r of [12.9, 14.6]) for (let i = 0; i < 64; i++) { const a = i / 64 * 6.283, lx = Math.cos(a) * r * 1.15, lz = KZ + Math.sin(a) * r; if (Math.abs(lx) < 2.3 && lz > KZ + 9) continue; const [x, z] = W(lx, lz); sols.push({ x, z, r: .85 }) }   /* the moat can't be walked through · cross on the bridge */
     for (let i = 0; i < 3; i++) arch(-9 + i * 9, 0, KZ + 13.6, 2.1, .45, M.stone, 0);
     { const deck = box(0, 0, KZ + 13.7, 3.2, .32, 4.6, M.stone); deck.userData.walk = 1; for (const sx of [-1, 1]) box(sx * 1.5, .32, KZ + 13.7, .25, .5, 4.6, M.dark).userData.nosol = 1 }   /* v3.59 a low stone bridge over the moat, in front of the keep (you walk on it) */
     const kx = -15, kz = -2; cyl(kx, 0, kz, 2.6, 2.4, 2.2, M.dark, 10); box(kx, 2.2, kz, 2.2, 4.5, 1.4, M.stone); box(kx, 6.7, kz, 3.2, 3.6, 1.8, M.stone); add(new THREE.SphereGeometry(1.1, 10, 8), M.stone, kx, 9.6 + .2, kz);
