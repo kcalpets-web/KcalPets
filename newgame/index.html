@@ -653,6 +653,29 @@ body:has(.ov) .bgold,body.cut .bgold,body.smenuOn .bgold{display:none}
 .gpc h4{margin:10px 2px 5px;font:900 13px system-ui}.gpr{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.gpr::-webkit-scrollbar{display:none}
 .gpi{flex:0 0 68px;min-height:76px;border:3px solid #2a2030;border-radius:12px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px}.gpi img{width:36px;height:36px;object-fit:contain}.gpi small{font:800 9.5px/1.15 system-ui;text-align:center}.gpi small i{font-style:normal;color:#8a7a68}.gpi.on{background:#ffe27a;border-color:#c08a10}
 .ov.gpan.farmHold .gpc{width:min(80vw,320px);top:36vh}
+
+/* ===== v5.17 🎮 layout 4 (designer): one-hand cluster bottom-right · big Y = what you hold · A ✋ / X 🏃 / B 🛡️ round it · quick bar over the stick ===== */
+body.l4 #bY{right:calc(16px + env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 24px);width:84px;height:84px;font-size:30px}
+body.l4 #bA{right:calc(128px + env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 52px);width:54px;height:54px}
+body.l4 #bX{right:calc(88px + env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 124px);width:54px;height:54px}
+body.l4 #bB{right:calc(16px + env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 140px);width:54px;height:54px}
+body.l4 .bgold,body.l4 #mBag{display:none!important}
+#qbar{display:none}
+body.l4.pad #qbar{display:flex;position:fixed;z-index:6;gap:6px;left:calc(16px + env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 168px)}
+body.l4 #qbar .qs{position:relative;width:48px;height:48px;border-radius:14px;background:#0007;border:2px solid #fff9;padding:0;display:grid;place-items:center;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.l4 #qbar .qs.on{background:#fff8ec;border:3px solid #ffd23f;box-shadow:0 0 0 3px #ffd23f66}
+body.l4 #qbar .qs small{position:absolute;right:3px;bottom:0;font:800 10px system-ui;color:#fff;text-shadow:0 1px 2px #000}
+body.l4 #qbar .qs.on small{color:#2a2030;text-shadow:none}
+body.l4 #qbar .qs img,body.l4 #qbar .qs .spic{width:40px;height:40px;max-width:40px;max-height:40px;object-fit:contain}
+body.l4 #qbar .qe{font-style:normal;color:#fffc;font-size:22px}
+body.l4 .gwi.on{border-color:#ffd23f;box-shadow:0 0 0 4px #ffd23f88}
+@media (orientation:landscape) and (max-height:500px){
+ body.l4 #bY{width:74px;height:74px;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 16px)}
+ body.l4 #bA{right:calc(110px + env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 38px);width:48px;height:48px}
+ body.l4 #bX{right:calc(78px + env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 100px);width:48px;height:48px}
+ body.l4 #bB{right:calc(16px + env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 114px);width:48px;height:48px}
+ body.l4.pad #qbar{left:calc(150px + env(safe-area-inset-left));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 10px)}
+ body.l4 #qbar .qs{width:44px;height:44px}}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
