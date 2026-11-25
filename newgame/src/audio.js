@@ -48,6 +48,7 @@ function noise(type, freq, dur, peak, t = ctx.currentTime, q = 1, f1 = 0) { cons
 function bird() { const t = ctx.currentTime, base = 2200 + Math.random() * 1600, n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone('sine', base * (1 + Math.random() * .2), base * (1.3 + Math.random() * .3), .07 + Math.random() * .05, .035, t + i * (.09 + Math.random() * .05)) }
 function cricket() { const t = ctx.currentTime; for (let i = 0; i < 3; i++) tone('triangle', 4300, 4250, .04, .012, t + i * .06) }
 const FX = {
+  parry: t => { tone('sine', 2400, 1800, .35, .22, t); tone('triangle', 3600, 3000, .25, .1, t + .01); noise('bandpass', 1800, .22, .3, t, 1.2, 600) },   // v4.99 🛡️ perfect parry: a bright ting + a whoosh
   crackle: t => { for (let i = 0; i < 3; i++) noise('highpass', 3000 + Math.random() * 2000, .03, .12 + Math.random() * .1, t + i * (.05 + Math.random() * .12), 2) },   // v4.99 🔥 resting by the fire
   chop: t => { noise('bandpass', 900, .12, .5, t, 2); tone('sine', 160, 70, .12, .4, t) },
   stone: t => { noise('bandpass', 2600, .07, .4, t, 3); tone('triangle', 300, 120, .08, .25, t) },
@@ -93,3 +94,17 @@ export const barPlaying = () => barOn;
 export function bar(play) { if (play === barOn || !ctx) return; barOn = play; const t = ctx.currentTime;
   if (play) { if (!barG) { barG = ctx.createGain(); barG.gain.value = 0; barG.connect(master) } barG.gain.setTargetAtTime(.55, t, .8); barT = t + .1; barI = 0; clearInterval(barTimer); barTimer = setInterval(barTick, 200) }
   else if (barG) { barG.gain.setTargetAtTime(0, t, .6); const g = barG; setTimeout(() => { if (!barOn) { clearInterval(barTimer); try { g.disconnect() } catch (e) { } if (barG === g) barG = null } }, 2500) } }
+/* v4.99 ⚔️ adaptive battle music: low toms + a pulsing bass + a short tense motif, looped while battle(true) · fades in ~.6 s, out ~2 s */
+let batG = null, batT = 0, batI = 0, batOn = false, batTimer = 0;
+const BAT_MOT = [0, 3, 2, 0, -1, 0, 3, 7], BAT_BASS = [0, 0, 0, 0, -2, -2, 1, 1];
+function batTick() { if (!ctx || !batG) return; const g0 = master; master = batG; try { const s16 = .14;   /* 16th notes at ~107 bpm */
+  while (batT < ctx.currentTime + .5) { const i = batI % 32, bar = Math.floor(batI / 32);
+    if (i % 8 === 0) tone('sine', 120, 45, .28, .55, batT); if (i % 8 === 6 || i === 3 || i === 19) tone('sine', 170, 70, .18, .32, batT);   /* toms */
+    if (i % 8 === 4) noise('bandpass', 1800, .08, .16, batT, 1.5);   /* a snare-ish slap */
+    if (i % 2 === 0) { const b = BAT_BASS[Math.floor(i / 4)], f = 55 * 2 ** (b / 12); tone('sawtooth', f, 0, .12, .07, batT) }   /* the pulse */
+    if (bar % 2 === 1 && i % 4 === 0) { const n = BAT_MOT[(i / 4) % BAT_MOT.length]; tone('square', 220 * 2 ** (n / 12), 0, .22, .035, batT) }   /* the motif, every other bar */
+    batT += s16; batI++ } } catch (e) { } master = g0 }
+export const battlePlaying = () => batOn;
+export function battle(play) { if (play === batOn || !ctx) return; batOn = play; const t = ctx.currentTime;
+  if (play) { if (!batG) { batG = ctx.createGain(); batG.gain.value = 0; batG.connect(master) } batG.gain.cancelScheduledValues(t); batG.gain.setTargetAtTime(.5, t, .2); batT = t + .05; batI = 0; clearInterval(batTimer); batTimer = setInterval(batTick, 150) }
+  else if (batG) { batG.gain.setTargetAtTime(0, t, .7); const g = batG; setTimeout(() => { if (!batOn) { clearInterval(batTimer); try { g.disconnect() } catch (e) { } if (batG === g) batG = null } }, 3500) } }
