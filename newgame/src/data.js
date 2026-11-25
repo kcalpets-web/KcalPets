@@ -351,7 +351,7 @@ export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2
 export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // extra ⚡ (yellow, over the max) from eating a fish · herbal tea and some dishes too
 export const EN_BONUS_MAX = 100;
 export const PERF = { from: 8000, span: 20000, low: 22 };   // v5.01 📱 sample fps from..from+span ms of play · below `low` (high-quality mode) = offer the eco mode once
-export const NPCLIFE_ON = false;   // v5.05 waits for the designer's OK on the preview
+export const NPCLIFE_ON = false, NPCLIFE_ROD = 1.15;   // rod size in the hand (designer: about a sword / a branch)   // v5.05 waits for the designer's OK on the preview
 export const NPCLIFE = { tapun: { k: 'navalee', act: 'fish', p: .5, from: 7 * 60, to: 18 * 60, sign: '🎣', away: 'ไปตกปลา', say: 'ชู่ว… เบาๆ หน่อย ปลากำลังจะกินเบ็ด · ได้ปลามาข้าจะเอาไปขายที่ตลาดนะ' } };   // v5.05 🧑‍🌾 (designer) NPCs live their day: p = chance per day to go out · from–to = minutes of the day
 export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
 export const PARRY2 = { tell: 380, win: 300, stun: 1100, counter: 2, cwin: 1600, stop: 220 };   // v5.00 🛡️ (designer: game feel) B pressed ≤win ms before a hit = perfect parry: no damage · the foe staggers stun ms · your next hit within cwin ms ×counter
