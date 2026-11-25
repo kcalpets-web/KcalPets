@@ -131,6 +131,7 @@ export const ITEMS = {
   woodClub:      { slot: 'sword', kind: 'one', name: 'กระบองไม้', icon: '🪵', atk: 8, dur: 14, tier: 1 },   // v3.54 found on the ground · from felled trees
   boneBit:       { slot: 'sword', kind: 'one', name: 'กระดูก', icon: '🦴', atk: 7, dur: 12, tier: 1 },   // v3.54 from medium / large animals · on the ground
   leafBlade:     { slot: 'sword', kind: 'one', name: 'ดาบใบหญ้าคม', icon: '🗡️', atk: 7, dur: 12, tier: 1 },
+  lightSword:    { slot: 'sword', kind: 'one', name: 'ดาบแห่งแสง', icon: '🗡️', atk: 40, dur: 40, tier: 5, only: 1, magic: 1 },   // v5.14 (designer) pulled from Luminia's rock · never shatters: out of power → recharges
   travelerSword: { slot: 'sword', kind: 'one', name: 'ดาบนักเดินทาง', icon: '🗡️', atk: 10, dur: 20, tier: 1, metal: 1 },
   branchSword:   { slot: 'sword', kind: 'one', name: 'ดาบกิ่งไม้', icon: '🗡️', atk: 12, dur: 18, tier: 2 },
   woodSword:     { slot: 'sword', kind: 'one', name: 'ดาบไม้เนื้อแข็ง', icon: '🗡️', atk: 18, dur: 26, tier: 2 },   // v4.29 🪵 no metal: safe in the rain · weaker than the metal blades
@@ -204,6 +205,7 @@ export const ITEMS = {
   stoneArmor:    { slot: 'shield', name: 'โล่หิน', icon: '🛡️', def: 8, dur: 26, tier: 2 },
   knightShield:  { slot: 'shield', name: 'โล่อัศวิน', icon: '🛡️', def: 11, dur: 30, tier: 3, metal: 1 },
   crystalShield: { slot: 'shield', name: 'โล่คริสตัล', icon: '🛡️', def: 14, dur: 30, tier: 4 },
+  lightShield:   { slot: 'shield', name: 'โล่แห่งแสง', icon: '🛡️', def: 30, dur: 40, tier: 5, only: 1, magic: 1 },   // v5.14 (designer) hidden under Deadgar · never shatters
   kingShield:    { slot: 'shield', name: 'โล่ราชันย์', icon: '🛡️', def: 18, dur: 40, tier: 4, metal: 1 },
 };
 /* v3.8 ⚒️ forging (like the cooking pot): 2–5 materials · the most specific recipe that fits wins · nothing fits = 🔩 scrap
@@ -371,6 +373,8 @@ export const ANIMAL_HINT = {   // v5.11 🐾 where each catch-quest animal lives
   boar: { npc: 'mali', k: 'sylvaren', when: 'หมูป่าชอบพุ่งชน หลบแล้วค่อยโยน 🕸️ ตาข่าย', say: 'หมูป่าชอบขุดดินในป่าทาง{dir}ของเมือง ราว {m} เมตร' },
   hawk: { npc: 'miners', k: 'valkara', when: 'เหยี่ยวอยู่บนที่สูง ปีนขึ้นไปเงียบๆ ตอนกลางวัน', say: 'ข้าเห็นเหยี่ยววนอยู่บนหน้าผาสูงทาง{dir}ของเหมือง ราว {m} เมตร' } };
 export const HARB_STATUE = 'whale';   // v5.09 🗿 the harbour square statue: 'hero' (old) · 'sailor' ⚓ · 'whale' 🐋 (preview)
+export const LUM_STATUE = 'sword';   // v5.14 🗿 Luminia's square statue: 'knight' (old) · 'kealee' · 'knight2' · 'star' (preview)
+export const MAGIC = { recharge: 10, pull: { need: 13, cost: 12, sec: 15 } };   // v5.14 🗡️🛡️ (designer) magic gear: out of power → back in `recharge` min · the sword pulls with ❤️ ≥ need · costs `cost` hearts over `sec` s (= 12×20/15 = 16 HP/s)
 export const CAP_PLAZA_OZ = 6;   // v5.12 the statue stands this far out from the keep's door, toward the gate (designer: don't block the door)
 export const CAP_PLAZA = {   // v5.12 🦌 restored capitals' squares: the statue's animal · its stone · planter flowers / bush · lamps (n · radius · start angle) · pillar = a rock crag under a bird
   sylvaren:  { icon: '🦌', name: 'กวาง', animal: 'deer', scale: 2.3, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 },

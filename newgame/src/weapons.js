@@ -18,6 +18,7 @@ export const WEAPON_MESH = {
   /* ── one-handed ── */
   branch(g) { cyl(g, .02, .028, .62, WOOD, [0, .22, 0], [0, 0, .06]); cyl(g, .012, .016, .2, WOOD, [.06, .38, 0], [0, 0, -.7]); ico(g, .05, LEAF, [.13, .46, 0], [1, .6, .4]); ico(g, .04, LEAF, [-.01, .56, 0], [1, .6, .4]) },
   leafBlade(g) { grip(g, .14, WOODD, WOODD, .1, WOOD); add(g, shape('leafB', [[-.03, 0], [.03, 0], [.05, .2], [0, .48], [-.05, .2]], .012), LEAF, [0, .06, 0]); box(g, .005, .4, .016, '#3a7a30', [0, .26, 0]) },
+  lightSword(g) { grip(g, .17, '#2a3a7a', '#7ad0ff', .22, GOLD); blade(g, 'bLight', .036, .7, '#dfe8f4'); box(g, .012, .52, .02, '#9ad8ff', [0, .34, .006]); for (const s of [-1, 1]) box(g, .09, .024, .04, GOLD, [s * .14, .075, 0], [0, 0, s * .55]); ico(g, .026, '#7ad0ff', [0, .045, .026]) },   /* v5.14 🗡️ the sword of light (never shatters) */
   travelerSword(g) { grip(g, .15, '#6a4a2a', DARK, .17, DARK); blade(g, 'bTrav', .028, .58, STEEL) },
   woodClub(g) { cyl(g, .022, .024, .22, WOODD, [0, -.05, 0]); cyl(g, .03, .058, .42, WOOD, [0, .25, 0], [0, 0, .04], 7); ico(g, .062, WOOD, [.005, .47, 0], [1, .9, 1]); for (const [x, y] of [[.05, .3], [-.05, .38], [.04, .43]]) ico(g, .016, WOODD, [x, y, .02]) },   /* v3.54 a knotty wooden club */
   boneBit(g) { cyl(g, .02, .024, .5, BONE, [0, .15, 0], [0, 0, .05], 7); for (const y of [-.1, .4]) for (const s of [-1, 1]) ico(g, .035, BONE, [s * .028, y, 0], [1, .85, .85]) },   /* v3.54 a big bone (knobs both ends) */
@@ -80,6 +81,7 @@ export const SHIELD_MESH = {
   stoneArmor(g) { add(g, disc('st', .2, 8, .05), '#8a8478'); add(g, disc('st2', .12, 6, .055), '#a8a298'); ico(g, .05, '#6a645a', [0, 0, .04]) },
   knightShield(g) { add(g, heater('kn', .19, .52), '#c8ccd8'); add(g, heater('kn2', .15, .42, .02), '#2a4a9a', [0, 0, .015]); box(g, .03, .34, .01, GOLD, [0, -.01, .05]); box(g, .26, .03, .01, GOLD, [0, .1, .05]) },
   crystalShield(g) { add(g, heater('cs', .19, .52), '#5a7a9a'); add(g, heater('cs2', .14, .4, .03), '#8ae0ff', [0, 0, .015]); ico(g, .06, '#bff4ff', [0, .04, .04], [1, 1.3, .6]) },
+  lightShield(g) { add(g, heater('ls', .2, .55), '#dfe8f4'); add(g, heater('ls2', .155, .43, .02), '#2a3a5a', [0, 0, .015]); for (let i = 0; i < 8; i++) box(g, .012, .11, .01, GOLD, [Math.sin(i * .785) * .075, .03 + Math.cos(i * .785) * .075, .04], [0, 0, -i * .785]); ico(g, .045, '#bfe8ff', [0, .03, .045], [1, 1, .6]) },   /* v5.14 🛡️ the shield of light, hidden under Deadgar (never shatters) */
   kingShield(g) { add(g, heater('ks', .21, .58), GOLD); add(g, heater('ks2', .17, .48, .02), '#7a1a2a', [0, 0, .015]); ico(g, .05, GOLD, [0, .05, .035]); for (const s of [-1, 1]) ico(g, .025, '#fff0b0', [s * .12, .17, .03]) },
 };
 /* ── v2.1 bows: the grip at the origin, limbs up/down (±y), the arc bulges toward the target (+z), the string behind (−z) ── */

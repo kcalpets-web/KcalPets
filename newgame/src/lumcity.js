@@ -20,7 +20,7 @@ const MATS = () => ({
   bark: new THREE.MeshStandardMaterial({ color: '#5a4430', roughness: 1, flatShading: true }),
 });
 
-export function buildLumCity(cx, cz, H, ry = 0) {
+export function buildLumCity(cx, cz, H, ry = 0, opt = {}) {
   const M = MATS(), G = new THREE.Group(), sols = [], c = Math.cos(ry), s = Math.sin(ry);
   let seed = 7; const R = () => (seed = seed * 16807 % 2147483647) / 2147483647;
   const W = (lx, lz) => [cx + lx * c + lz * s, cz - lx * s + lz * c];   // local → world (same as a group turned by ry)
@@ -41,10 +41,18 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   /* ---- the plaza: cracked paving · a ring of steps · the knight on his fountain ---- */
   cyl(0, -.05, 0, 21, 21, .12, M.pave, 28);
   for (let i = 0; i < 40; i++) { const a = R() * 6.28, r = 3 + R() * 17; box(Math.cos(a) * r, .05, Math.sin(a) * r, .8 + R() * 1.6, .06, .6 + R() * 1.2, R() < .4 ? M.moss : M.dark, R() * 3) }   // cracks / moss in the stones
+  if (opt.statue === 'sword') {   /* v5.14 🗡️ (designer) the fountain gives way to a stone dais · a cracked rock in the middle holds the sword of light · rune ring glows faintly */
+    cyl(0, 0, 0, 5.2, 5.2, .16, M.stone, 24); cyl(0, .16, 0, 3.6, 3.7, .12, M.dark, 24);   /* low: you just walk up */
+    const rk = add(new THREE.DodecahedronGeometry(1, 0), M.stone, 0, .5, 0); rk.scale.set(1.05, .42, 1.05); rk.rotation.y = .4;
+    for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283 + .3; box(Math.cos(a) * .55, .55, Math.sin(a) * .55, .05, .35, .5, M.dark, a, 0, .4) }   // cracks running from the blade
+    const ring = add(new THREE.RingGeometry(2.3, 2.6, 40), new THREE.MeshBasicMaterial({ color: '#9ad8ff', transparent: true, opacity: .55, depthWrite: false }), 0, .3, 0, -Math.PI / 2); ring.userData.nosol = 1;
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; add(new THREE.PlaneGeometry(.28, .28), new THREE.MeshBasicMaterial({ color: '#cfeeff', transparent: true, opacity: .7, depthWrite: false }), Math.cos(a) * 3.1, .3, Math.sin(a) * 3.1, -Math.PI / 2, 0, a) }   // runes round the dais
+    solC(0, 0, 1.05) } else {
   cyl(0, 0, 0, 5.2, 5.2, .35, M.stone, 20); cyl(0, .35, 0, 4.6, 4.6, .55, M.dark, 20); add(new THREE.CircleGeometry(4.2, 20), new THREE.MeshStandardMaterial({ color: '#4a8fb0', roughness: .2, metalness: .1 }), 0, .82, 0, -Math.PI / 2);
   cyl(0, .8, 0, 1.1, .9, 2.2, M.stone, 8);   // pedestal
-  { const k = 1.5; box(-.25 * k, 3, -.1, .35 * k, 1.1 * k, .4 * k, M.dark); box(.25 * k, 3, -.1, .35 * k, 1.1 * k, .4 * k, M.dark); box(0, 3 + 1.1 * k, 0, 1.1 * k, 1.5 * k, .6 * k, M.stone); add(new THREE.SphereGeometry(.38 * k, 8, 6), M.stone, 0, 3 + 2.95 * k, 0); box(.75 * k, 3 + 1.2 * k, .25, .14, 2.6 * k, .14, M.dark, 0, 0, .25); box(-.7 * k, 3 + 1.1 * k, .2, .7, 1, .12, M.stone, 0, 0, -.2) }   // the knight · sword raised · a shield
-  solC(0, 0, 5.4);
+  if (!opt.statue || opt.statue === 'knight') { const k = 1.5; box(-.25 * k, 3, -.1, .35 * k, 1.1 * k, .4 * k, M.dark); box(.25 * k, 3, -.1, .35 * k, 1.1 * k, .4 * k, M.dark); box(0, 3 + 1.1 * k, 0, 1.1 * k, 1.5 * k, .6 * k, M.stone); add(new THREE.SphereGeometry(.38 * k, 8, 6), M.stone, 0, 3 + 2.95 * k, 0); box(.75 * k, 3 + 1.2 * k, .25, .14, 2.6 * k, .14, M.dark, 0, 0, .25); box(-.7 * k, 3 + 1.1 * k, .2, .7, 1, .12, M.stone, 0, 0, -.2) }   // the knight · sword raised · a shield
+  solC(0, 0, 5.4) }
+
   /* ---- the cathedral: a grand stair · a tall facade with a rose window · two towers (one broken) · a roofless nave of pillars and arches ---- */
   const CZ = -21, K = 1.32, g0 = G.children.length; SK = { k: K, z0: CZ + 11.5 };   /* built at 1:1, then scaled up round its stairs (grand) */
   for (let i = 0; i < 12; i++) box(0, 0, CZ + 6 + 1.8 + (11 - i) * .6, 14 - i * .3, (i + 1) * 3.1 / 12, .6, i % 2 ? M.stone : M.dark).userData.nosol = 1;   // v3.26 12 low steps from the ground up to the door (walkable)
@@ -99,7 +107,7 @@ export function buildLumCity(cx, cz, H, ry = 0) {
   G.position.set(cx, H, cz); G.rotation.y = ry;
   const ramp = (() => { const z0 = CZ + 11.5, zF = z0 + (FZ + 1.8 + 6.6 + .3 - z0) * K, zB = z0 + (FZ + 1.8 - .3 - z0) * K, [x, z] = W(0, (zF + zB) / 2); return { x, z, hw: 14 * K / 2, hd: (zF - zB) / 2, ry, top: FY * K, ramp: 1 } })();   /* v3.26 the stairs walk as a smooth ramp (no missed steps at low frame rates) */
   /* v3.25.1 solids from the real shapes: every box / cylinder that stands on the ground and is taller than 1 m (not moss, ivy, leaves, cloth, windows) → a rotated box / circle */
-  { G.updateMatrixWorld(true); const skip = new Set([M.moss, M.ivy, M.leaf, M.leaf2, M.cloth, M.void]), P = new THREE.Vector3(), Q = new THREE.Quaternion(), SC = new THREE.Vector3(), E = new THREE.Euler(); sols.length = 0; solC(0, 0, 5.4);
+  { G.updateMatrixWorld(true); const skip = new Set([M.moss, M.ivy, M.leaf, M.leaf2, M.cloth, M.void]), P = new THREE.Vector3(), Q = new THREE.Quaternion(), SC = new THREE.Vector3(), E = new THREE.Euler(); sols.length = 0; solC(0, 0, opt.statue === 'sword' ? 1.05 : 5.4);   /* v5.14 the sword's rock only: walk up to it */
     sols.push(ramp);
     G.traverse(o => { if (!o.isMesh || skip.has(o.material) || o.material.transparent || o.userData.nosol) return; const pr = o.geometry.parameters || {}, t = o.geometry.type; if (t !== 'BoxGeometry' && t !== 'CylinderGeometry') return;
       o.matrixWorld.decompose(P, Q, SC); E.setFromQuaternion(Q, 'YXZ'); if (Math.abs(E.x) > .6 || Math.abs(E.z) > .6) return;   /* fallen / leaning beams: walk over */
