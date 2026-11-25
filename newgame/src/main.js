@@ -1958,6 +1958,9 @@ function farmPick(o) { if (!gFarm()) setSet(true, true); aimEnd(false); DRAWN = 
 function gpClose() { if (!GP) return; GP.el.remove(); GP = null; padExtras() }
 function gpOpen(kind) { gpClose(); const el = document.createElement('div'); el.className = 'ov dlg gpan ' + kind; document.body.appendChild(el); GP = { el, kind }; gpDraw() }
 function gpDraw() { if (!GP) return; const el = GP.el, k = GP.kind;
+  if (k === 'qwheel' && qbAll().length > 10) { const all = qbAll(), cur = qbCur(), sl = GP.slot, row = (t, c) => { const L = all.filter(o => (o.cat || 'o') === c); return L.length ? `<h4>${t}</h4><div class="qgr">${L.map(o => `<button class="gwi${o.id === cur ? ' on' : ''}${o.off ? ' off' : ''}" data-gw="${o.id}">${o.pic}<small>${o.n}</small>${o.cnt ? `<i class="qn">×${o.cnt}</i>` : ''}</button>`).join('')}</div>` : '' };   /* v5.17.1 many things: a grid by kind instead of a crowded ring */
+    el.innerHTML = `<div class="gpc qgrid"><b>${sl != null ? `🎒 เลือกของใส่ช่อง ${sl + 1}` : '🎒 เลือกของที่จะถือ'}</b> <small class="mut">B = ปิด</small>${row('⚔️ อาวุธ · ธนู', 'w')}${row('🧰 เครื่องมือฟาร์ม', 't')}${row('🎣 อื่นๆ', 'o')}</div>`;
+    el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = all.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); if (sl != null) { qbSlots(); S.qs[sl] = o.id; hint(`ช่อง ${sl + 1} = ${o.n}`, 900) } qbPick(o) }); return }
   if (k === 'qwheel') { const all = qbAll(), cur = qbCur(), n = all.length, R = Math.min(n > 8 ? 140 : 124, innerWidth * .36), sl = GP.slot;   /* v5.17 the item wheel: everything you can hold */
     el.innerHTML = `<div class="gwh">${all.map((o, i) => { const a = -Math.PI / 2 + i / Math.max(1, n) * Math.PI * 2; return `<button class="gwi${o.id === cur ? ' on' : ''}${o.off ? ' off' : ''}" data-gw="${o.id}" style="left:${Math.cos(a) * R}px;top:${Math.sin(a) * R}px">${o.pic}<small>${o.n}</small></button>` }).join('')}<div class="gwc"><small>${sl != null ? `ใส่ช่อง ${sl + 1}` : 'เลือกของที่จะถือ'}</small><em>B = ปิด</em></div></div>`;
     el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = all.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); if (sl != null) { qbSlots(); S.qs[sl] = o.id; hint(`ช่อง ${sl + 1} = ${o.n}`, 900) } qbPick(o) }); return }
@@ -7182,9 +7185,11 @@ document.body.classList.add('l4');
 const QB = document.createElement('div'); QB.id = 'qbar'; document.body.appendChild(QB);
 const foeNear = () => { const q = me(); return mons.some(M => !M.died && M.A && !(M.T && M.T.animal && !M.T.charge) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < 14) };   /* a foe within throwing range */
 function qbAll() { const L = [];
-  for (const x of S.bag) { const T = D.ITEMS[x.t]; if (T && T.slot === 'sword' && !T.tool && !x.br && !x.away) L.push({ id: 'w:' + x.id, it: x, pic: gpic(itemPic(x.t), T.icon), n: T.name + (x.p ? ' +' + x.p : '') }) }
-  if (S.bag.some(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'bow' && !x.br)) { const b = bowOf(); L.push({ id: 'bow', pic: b ? gpic(itemPic(b.t), '🏹') : emo('🏹'), n: 'ธนู' }) }
-  for (const o of farmTools()) L.push(o); return L }
+  const best = {}, rk = x => D.RAR.indexOf(x.r) * 100 + (x.p || 0) * 10 + (x.id === S.eq.sword ? 1000 : 0);   /* v5.17.1 one card per kind of weapon: the one in hand, else the best (designer: 30 swords in the ring) */
+  for (const x of S.bag) { const T = D.ITEMS[x.t]; if (T && T.slot === 'sword' && !T.tool && !x.br && !x.away && (!best[x.t] || rk(x) > rk(best[x.t]))) best[x.t] = x }
+  for (const x of Object.values(best).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p)))) { const T = D.ITEMS[x.t], n = S.bag.filter(y => y.t === x.t && !y.br && !y.away).length; L.push({ id: 'w:' + x.id, it: x, pic: gpic(itemPic(x.t), T.icon), n: T.name + (x.p ? ' +' + x.p : ''), cnt: n > 1 ? n : 0, cat: 'w' }) }
+  if (S.bag.some(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'bow' && !x.br)) { const b = bowOf(); L.push({ id: 'bow', pic: b ? gpic(itemPic(b.t), '🏹') : emo('🏹'), n: 'ธนู', cat: 'w' }) }
+  for (const o of farmTools()) L.push(Object.assign({ cat: o.it ? 't' : 'o' }, o)); return L }
 function qbCur() { if (!gFarm()) return gRange() ? 'bow' : 'w:' + S.eq.sword; return farmCur() }
 function qbSlots() { const all = qbAll(), has = id => all.some(o => o.id === id);
   if (!Array.isArray(S.qs) || S.qs.length !== 3) { const w = all.find(o => o.id.startsWith('w:') && !D.ITEMS[o.it.t].tool); S.qs = [w ? w.id : null, has('bow') ? 'bow' : 'y:rope', has('y:rod') ? 'y:rod' : 'y:flute'] }
