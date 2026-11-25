@@ -348,6 +348,7 @@ export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +L
 export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
 export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // extra ⚡ (yellow, over the max) from eating a fish · herbal tea and some dishes too
 export const EN_BONUS_MAX = 100;
+export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
 export const COMBO = { win: 950, fin: 1.35, kb: .8, finStop: 2.4, finT: .4 };   // v4.99 ⚔️ (designer: game feel) a 3-hit combo: hit again within win ms = next move · the 3rd hits ×fin, pauses longer · kb = metres a normal hit pushes a monster back
 export const HIT_STOP = 55;                                               // ms the world pauses when the sword connects (game-feel)
 export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pets)

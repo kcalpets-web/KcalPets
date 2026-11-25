@@ -48,6 +48,7 @@ function noise(type, freq, dur, peak, t = ctx.currentTime, q = 1, f1 = 0) { cons
 function bird() { const t = ctx.currentTime, base = 2200 + Math.random() * 1600, n = 2 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) tone('sine', base * (1 + Math.random() * .2), base * (1.3 + Math.random() * .3), .07 + Math.random() * .05, .035, t + i * (.09 + Math.random() * .05)) }
 function cricket() { const t = ctx.currentTime; for (let i = 0; i < 3; i++) tone('triangle', 4300, 4250, .04, .012, t + i * .06) }
 const FX = {
+  crackle: t => { for (let i = 0; i < 3; i++) noise('highpass', 3000 + Math.random() * 2000, .03, .12 + Math.random() * .1, t + i * (.05 + Math.random() * .12), 2) },   // v4.99 🔥 resting by the fire
   chop: t => { noise('bandpass', 900, .12, .5, t, 2); tone('sine', 160, 70, .12, .4, t) },
   stone: t => { noise('bandpass', 2600, .07, .4, t, 3); tone('triangle', 300, 120, .08, .25, t) },
   grass: t => noise('highpass', 2500, .14, .25, t, .7, 6000),
