@@ -1017,6 +1017,7 @@ export const STORM_GO_X = 1330;                       // sail past this (raft / 
 export const STORM_HEARTS = 12;                       // recommended hearts
 export const STORM_TOWN = { def: .08, atk: .06 };     // each revived town weakens the storm lord (5 towns → def −40 % · atk −30 %)
 export const STORM_ATK = { slam: { r: 4.5, wind: 1.1, mul: 1 }, bolt: { r: 1.7, wind: 1.2, mul: .8, n: [3, 4, 6] }, minions: [0, 2, 3] };
+export const PROG_REW = [{ p: 25, coin: 3000, gem: 30 }, { p: 50, coin: 8000, gem: 80, spirit: 1 }, { p: 75, coin: 15000, gem: 150, spirit: 1 }, { p: 100, coin: 30000, gem: 300, spirit: 2, title: '🧭 นักสำรวจแห่งลูมิเนีย' }];   // v4.99 📊 (designer) rewards for the whole-game progress %
 export const STORM_REWARD = { coin: 10000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
