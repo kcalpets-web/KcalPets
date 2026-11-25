@@ -9,10 +9,10 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8874, OUT = process.arg
       localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 640, quest: 99, coin: 500 })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
-    const P = await E(() => { const N = window.__ng, P = N.POT.home; N.placeMe(P.x + 2.2, P.z); return [P.x, P.z] }); log('home pot', P);
+    const P = await E(() => { const N = window.__ng, P = N.POT.home; N.placeMe(P.x + 3, P.z + 1); return [P.x, P.z] }); log('home pot', P);
     await pg.waitForFunction(() => window.__ng.SIT, null, { timeout: 30000, polling: 200 }).catch(() => 0);
     const a = await E(() => ({ sit: window.__ng.SIT, rest: window.__ng.fireRest() })); log('by the fire', JSON.stringify(a)); if (!a.sit || !a.rest) errs.push('standing still by a lit fire should sit you down to rest');
-    await pg.screenshot({ path: OUT + '/rest.png' });
+    await wait(1500); log('pose', JSON.stringify(await E(() => { const N = window.__ng; return { st: N.plStateX(), sit: N.SIT, crouch: N.CROUCH, drawn: N.DRAWN } }))); await pg.screenshot({ path: OUT + '/rest.png' });
     const rate = async () => E(async () => { const N = window.__ng; N.S.en = 5; const t0 = performance.now(), e0 = N.S.en; await new Promise(r => setTimeout(r, 2500)); return (N.S.en - e0) / (performance.now() - t0) * 1000 });
     const r1 = await rate(); await E(() => { const N = window.__ng; N.standUp(); N.FRT.still = -1e9 }); const r0 = await rate(); log('⚡/s sitting by the fire', r1.toFixed(2), 'standing', r0.toFixed(2));   /* same spot = same frame rate */
     if (!(r1 > r0 * 1.4)) errs.push('⚡ should come back faster while resting by the fire');
