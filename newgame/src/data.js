@@ -373,11 +373,11 @@ export const ANIMAL_HINT = {   // v5.11 🐾 where each catch-quest animal lives
 export const HARB_STATUE = 'whale';   // v5.09 🗿 the harbour square statue: 'hero' (old) · 'sailor' ⚓ · 'whale' 🐋 (preview)
 export const CAP_PLAZA_OZ = 6;   // v5.12 the statue stands this far out from the keep's door, toward the gate (designer: don't block the door)
 export const CAP_PLAZA = {   // v5.12 🦌 restored capitals' squares: the statue's animal · its stone · planter flowers / bush · lamps (n · radius · start angle) · pillar = a rock crag under a bird
-  sylvaren:  { animal: 'deer', scale: 2.3, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 },
-  frosthelm: { animal: 'bear', scale: 2.0, stone: '#dfe8f0', flowers: ['#9fd4ff', '#ffffff', '#c8b8ff'], bush: '#5a7a6a', lamps: 8, r: 11, a0: .39 },
-  valkara:   { animal: 'hawkS', scale: 2.5, face: .3, stone: '#c08a62', flowers: ['#ff7a1a', '#ffd23f', '#ff4a2a'], bush: '#5a5a34', lamps: 8, r: 11, a0: .39, pillar: 1.5 },
-  asrah:     { animal: 'camel', scale: 2.0, face: .7, stone: '#e0c89a', flowers: ['#ff4a6a', '#ffd84a', '#ff9a3a'], bush: '#7a9a4a', lamps: 8, r: 11, a0: .39 },
-  deadgar:   { animal: 'crow', scale: 3.0, face: -1.3, stone: '#3a3646', gloss: 1, glint: '#3a1c6e', flowers: ['#b06aff', '#ffffff', '#7ad8ff'], bush: '#4a5a4a', lamps: 8, r: 11, a0: .39, pillar: 1.4 } };
+  sylvaren:  { icon: '🦌', name: 'กวาง', animal: 'deer', scale: 2.3, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 },
+  frosthelm: { icon: '🐻', name: 'หมี', animal: 'bear', scale: 2.0, stone: '#dfe8f0', flowers: ['#9fd4ff', '#ffffff', '#c8b8ff'], bush: '#5a7a6a', lamps: 8, r: 11, a0: .39 },
+  valkara:   { icon: '🦅', name: 'เหยี่ยว', animal: 'hawkS', scale: 2.5, face: .3, stone: '#c08a62', flowers: ['#ff7a1a', '#ffd23f', '#ff4a2a'], bush: '#5a5a34', lamps: 8, r: 11, a0: .39, pillar: 1.5 },
+  asrah:     { icon: '🐪', name: 'อูฐ', animal: 'camel', scale: 2.0, face: .7, stone: '#e0c89a', flowers: ['#ff4a6a', '#ffd84a', '#ff9a3a'], bush: '#7a9a4a', lamps: 8, r: 11, a0: .39 },
+  deadgar:   { icon: '🐦‍⬛', name: 'อีกา', animal: 'crow', scale: 3.0, face: -1.3, stone: '#3a3646', gloss: 1, glint: '#3a1c6e', flowers: ['#b06aff', '#ffffff', '#7ad8ff'], bush: '#4a5a4a', lamps: 8, r: 11, a0: .39, pillar: 1.4 } };
 export const TOWN_LIGHT = { n: 6, r: 7.6, a0: .26 }, FOUNTAIN = { bowl: .95, top: 1.55 };   // v5.09 💡 lamps round the harbour square · 🌊 the fountain's jets (basin radius · how high they start)
 export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
 export const PARRY2 = { tell: 380, win: 300, stun: 1100, counter: 2, cwin: 1600, stop: 220 };   // v5.00 🛡️ (designer: game feel) B pressed ≤win ms before a hit = perfect parry: no damage · the foe staggers stun ms · your next hit within cwin ms ×counter
@@ -1054,7 +1054,7 @@ export const STORM_GO_X = 1330;                       // sail past this (raft / 
 export const STORM_HEARTS = 12;                       // recommended hearts
 export const STORM_TOWN = { def: .08, atk: .06 };     // each revived town weakens the storm lord (5 towns → def −40 % · atk −30 %)
 export const STORM_ATK = { slam: { r: 4.5, wind: 1.1, mul: 1 }, bolt: { r: 1.7, wind: 1.2, mul: .8, n: [3, 4, 6] }, minions: [0, 2, 3] };
-export const PROG_REW_ON = false;   // ⏸️ parked (designer: 'พักไว้ก่อน') — true = show the % reward cards
+export const PROG_REW_ON = true;    // ⏸️ parked (designer: 'พักไว้ก่อน') — true = show the % reward cards
 export const PROG_REW = [{ p: 25, coin: 3000, gem: 30 }, { p: 50, coin: 8000, gem: 80, spirit: 1 }, { p: 75, coin: 15000, gem: 150, spirit: 1 }, { p: 100, coin: 30000, gem: 300, spirit: 2, title: '🧭 นักสำรวจแห่งลูมิเนีย' }];   // v4.99 📊 (designer) rewards for the whole-game progress %
 export const STORM_REWARD = { coin: 10000, gem: 500 };
 
