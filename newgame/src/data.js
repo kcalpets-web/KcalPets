@@ -352,7 +352,12 @@ export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // ext
 export const EN_BONUS_MAX = 100;
 export const PERF = { from: 8000, span: 20000, low: 22 };   // v5.01 📱 sample fps from..from+span ms of play · below `low` (high-quality mode) = offer the eco mode once
 export const NPCLIFE_ON = true, NPCLIFE_ROD = 1.15;   // rod size in the hand (designer: about a sword / a branch)   // v5.05 waits for the designer's OK on the preview
-export const NPCLIFE = { tapun: { k: 'navalee', act: 'fish', p: .5, from: 7 * 60, to: 18 * 60, sign: '🎣', away: 'ไปตกปลา', say: 'ชู่ว… เบาๆ หน่อย ปลากำลังจะกินเบ็ด · ได้ปลามาข้าจะเอาไปขายที่ตลาดนะ' } };   // v5.05 🧑‍🌾 (designer) NPCs live their day: p = chance per day to go out · from–to = minutes of the day
+export const NPCLIFE = { tapun: { k: 'navalee', act: 'fish', p: .5, from: 7 * 60, to: 18 * 60, sign: '🎣', away: 'ไปตกปลา', say: 'ชู่ว… เบาๆ หน่อย ปลากำลังจะกินเบ็ด · ได้ปลามาข้าจะเอาไปขายที่ตลาดนะ' },
+  mali: { k: 'sylvaren', act: 'hunt', p: .45, from: 6 * 60, to: 17 * 60, sign: '🏹', away: 'ออกล่าสัตว์', say: 'ชู่… กวางอยู่ตรงนั้น อย่าเพิ่งขยับ' },
+  bjorn: { k: 'frosthelm', act: 'hunt', p: .45, from: 7 * 60, to: 16 * 60, sign: '🏹', away: 'ออกล่าสัตว์', say: 'หิมะลงหนัก รอยเท้าสัตว์ชัดดี วันนี้ได้เนื้อแน่' },
+  miners: { k: 'valkara', act: 'mine', p: .55, from: 6 * 60, to: 18 * 60, sign: '⛏️', away: 'ไปเหมือง', say: 'แร่ดีๆ อยู่ลึกกว่านี้อีกนิด… ฮึบ!' },
+  boonma: { k: 'sylvaren', act: 'chop', p: .5, from: 7 * 60, to: 17 * 60, sign: '🪓', away: 'ไปตัดไม้', say: 'ไม้ต้นนี้แข็งดี เอาไปทำโต๊ะได้สวยเลย' } };
+export const NPCMARKET = { by: 'tapun', n: 3, stock: 3, mul: .9 };   // v5.06 the day after Oren fishes, the market sells n kinds of his fish (stock each · price ×mul)   // v5.05 🧑‍🌾 (designer) NPCs live their day: p = chance per day to go out · from–to = minutes of the day
 export const FIRE_REST = { en: 2, auto: 2500, crackle: 1400 };   // v4.99 🔥 (designer) sit by a lit fire: ⚡ ×en · standing still auto ms = sit down by itself · a crackle every ~ms
 export const PARRY2 = { tell: 380, win: 300, stun: 1100, counter: 2, cwin: 1600, stop: 220 };   // v5.00 🛡️ (designer: game feel) B pressed ≤win ms before a hit = perfect parry: no damage · the foe staggers stun ms · your next hit within cwin ms ×counter
 export const COMBO = { lunge: .4, win: 950, fin: 1.35, kb: .8, finStop: 2.4, finT: .4 };   // v4.99 ⚔️ (designer: game feel) a 3-hit combo: hit again within win ms = next move · the 3rd hits ×fin, pauses longer · kb = metres a normal hit pushes a monster back
