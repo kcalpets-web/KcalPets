@@ -72,3 +72,23 @@ export function note(i, len = .55) { if (!ctx || !on || ctx.state !== 'running')
   o.type = 'sine'; o.frequency.value = f; v.frequency.value = 5.2; vg.gain.value = f * .006; v.connect(vg); vg.connect(o.frequency); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .05); g.gain.setTargetAtTime(.15, t + .08, .1); g.gain.setTargetAtTime(0, t + len, .09);
   o.connect(g); g.connect(master); o.start(t); v.start(t); o.stop(t + len + .5); v.stop(t + len + .5);
   const n = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain(); n.buffer = noiseBuf; nf.type = 'bandpass'; nf.frequency.value = f * 2; nf.Q.value = 4; ng.gain.setValueAtTime(.05, t); ng.gain.setTargetAtTime(0, t + .06, .05); n.connect(nf); nf.connect(ng); ng.connect(master); n.start(t); n.stop(t + .3) } catch (e) { } }
+/* v4.99 👣 footsteps by ground: a short filtered-noise scuff (+ a low thud) · quiet · kind: grass road sand snow wood water */
+const STEP = {
+  grass: t => { noise('bandpass', 1900 + Math.random() * 500, .09, .05, t, .8, 900) },
+  road:  t => { noise('bandpass', 2600 + Math.random() * 600, .05, .06, t, 1.4); tone('sine', 140, 90, .05, .05, t) },
+  sand:  t => { noise('lowpass', 1100 + Math.random() * 300, .14, .06, t, .5, 500) },
+  snow:  t => { noise('bandpass', 3200, .03, .03, t, 3); noise('lowpass', 1600, .12, .05, t + .02, .7, 700) },
+  wood:  t => { tone('triangle', 210 + Math.random() * 30, 150, .07, .07, t); noise('bandpass', 1300, .04, .03, t, 2) },
+  water: t => { noise('bandpass', 1400 + Math.random() * 500, .16, .07, t, 1.2, 2600); noise('lowpass', 500, .2, .04, t + .03) },
+};
+export let stepN = 0;
+export function step(kind, vol = 1) { stepN++; if (!ctx || !on || ctx.state !== 'running' || !STEP[kind]) return; try { const g0 = master; master = ctx.createGain(); master.gain.value = Math.max(0, Math.min(1.5, vol)); master.connect(g0); STEP[kind](ctx.currentTime); master = g0 } catch (e) { } }
+/* v4.99 🎵 soft bar music: a plucked lute line over a slow bass, looped while bar(true) · fades in / out */
+let barG = null, barT = 0, barI = 0, barOn = false, barTimer = 0;
+const BAR_MEL = [[0, 2], [4, 1], [7, 1], [9, 2], [7, 1], [4, 1], [2, 2], [4, 1], [5, 1], [4, 2], [2, 1], [0, 1], [-3, 2], [0, 1], [2, 1], [4, 4]], BAR_BASS = [0, 0, -5, -5, -3, -3, -7, -5];
+function pluck(f, t, dur, peak) { const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter(); o.type = 'triangle'; o2.type = 'sawtooth'; o.frequency.value = f; o2.frequency.value = f * 1.003; lp.type = 'lowpass'; lp.frequency.setValueAtTime(f * 6, t); lp.frequency.exponentialRampToValueAtTime(f * 1.5, t + dur); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + dur); const g2 = ctx.createGain(); g2.gain.value = .25; o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(barG); o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05) }
+function barTick() { if (!ctx || !barG) return; const beat = .36; while (barT < ctx.currentTime + .6) { const [n, len] = BAR_MEL[barI % BAR_MEL.length]; pluck(392 * 2 ** (n / 12), barT, beat * len * 1.4, .09); if (barI % 2 === 0) { const b = BAR_BASS[Math.floor(barI / 2) % BAR_BASS.length]; pluck(98 * 2 ** (b / 12), barT, beat * 3, .07) } barT += beat * len; barI++ } }
+export const barPlaying = () => barOn;
+export function bar(play) { if (play === barOn || !ctx) return; barOn = play; const t = ctx.currentTime;
+  if (play) { if (!barG) { barG = ctx.createGain(); barG.gain.value = 0; barG.connect(master) } barG.gain.setTargetAtTime(.55, t, .8); barT = t + .1; barI = 0; clearInterval(barTimer); barTimer = setInterval(barTick, 200) }
+  else if (barG) { barG.gain.setTargetAtTime(0, t, .6); const g = barG; setTimeout(() => { if (!barOn) { clearInterval(barTimer); try { g.disconnect() } catch (e) { } if (barG === g) barG = null } }, 2500) } }

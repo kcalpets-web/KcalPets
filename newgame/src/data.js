@@ -339,6 +339,7 @@ export const UPHILL = { from: .3, en: 9 };   // v3.1 stamina/s walking up a slop
 export const GLOOT = { per: [0, 2], p: .55, back: 3 * 3600e3, ring: [[150, 1], [420, 2], [800, 3], [1e9, 4]], t1: ['branch', 'branch', 'woodClub', 'boneBit'], rare: .15, tree: [['branch', .3], ['woodClub', .1]], bone: .5 };
 export const STORY_EASE = .6;   // v3.54 the chapter 1–2 fights (the harbour slimes · the goblin camp) hit at 60%: a new player with only the traveller's sword gets through
 export const SAFE_HOME = 12;   // v3.50 the bald isle: the safe zone (no weapons) is the ring round your hut, not the whole island
+export const STEPS = { road: 2.6, walk: .8, run: 1.15, crouch: .4 };   // v4.99 👣 footsteps: road = metres from a road's centre line that count as stone · volume walk / run / crouch
 export const WADE = { deep: .85, sp: .62, ring: .35 };   // v3.50 shallow water: you wade (walk, slower, splashes) · you swim only where the bed is deeper than `deep` m
 export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN = 16, SLOPE = .9;   // v0.9 open world: swimming · climbing (steeper than SLOPE = climbing)
 export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'rabbit', 'chicken', 'rabbit', 'branchImp'], hills: ['rockGolem', 'branchImp', 'deer', 'rabbit', 'boar', 'slime'] };   // wanderers in the wild zones
@@ -347,6 +348,7 @@ export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +L
 export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
 export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // extra ⚡ (yellow, over the max) from eating a fish · herbal tea and some dishes too
 export const EN_BONUS_MAX = 100;
+export const COMBO = { win: 950, fin: 1.35, kb: .8, finStop: 2.4, finT: .4 };   // v4.99 ⚔️ (designer: game feel) a 3-hit combo: hit again within win ms = next move · the 3rd hits ×fin, pauses longer · kb = metres a normal hit pushes a monster back
 export const HIT_STOP = 55;                                               // ms the world pauses when the sword connects (game-feel)
 export const expNeed = lv => Math.round(40 * Math.pow(1.35, lv - 1));      // exp to go from lv → lv+1 (player and pets)
 export const REGEN = { perSec: 1 / 150 };                                 // share of max HP per second when not hurt for 4 s → full in 2.5 min
