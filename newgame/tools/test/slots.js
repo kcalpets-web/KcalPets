@@ -19,13 +19,21 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8880, OUT = process.arg
     await Promise.all([pg.waitForNavigation(), E(() => window.__ng.slotGo(2))]); await go();
     const s2 = await E(() => { const N = window.__ng; N.S.profile = { name: 'น้องมิว', guest: true }; N.S.coin = 5; N.save(); localStorage.setItem('ng_sk_s2_deer', 'data:y'); return { slot: N.D.SLOT, coin: N.S.coin, key: !!localStorage.getItem('ng_save_v3_s2'), old: JSON.parse(localStorage.getItem('ng_save_v3')).coin } }); log('slot 2', JSON.stringify(s2));
     if (s2.slot !== 2 || !s2.key) errs.push('slot 2 has its own save'); if (s2.old !== 777) errs.push('slot 1 is untouched');
+    // 🔒 a code on slot 2 (1234)
+    await E(() => { const N = window.__ng; N.S.pin = N.pinHash('1234', 2); N.save() });
+    await E(() => sessionStorage.removeItem('ng_pin_ok2')); await pg.reload(); await pg.waitForFunction(() => window.__ng, null, { timeout: 90000 }); await wait(4500);
+    const lockd = await E(() => !!document.querySelector('.pinov')); log('slot 2 asks its code at the start', lockd); if (!lockd) errs.push('a locked save asks its code when it opens'); await pg.screenshot({ path: OUT + '/4-pin.png' });
+    const tap = async ks => { for (const k of ks) { await E(k => document.querySelector('.pinov [data-k="' + k + '"]').click(), k); await wait(80) } };
+    await tap('9999'); const still2 = await E(() => !!document.querySelector('.pinov')); if (!still2) errs.push('a wrong code does not open it');
+    await tap('1234'); const open2 = await E(() => !document.querySelector('.pinov')); if (!open2) errs.push('the right code opens it');
     // back to slot 1 · the picker shows at the start (two saves)
     await Promise.all([pg.waitForNavigation(), E(() => window.__ng.slotGo(1))]); await go();
     const s3 = await E(() => ({ slot: window.__ng.D.SLOT, coin: window.__ng.S.coin, sk: window.__ng.skImgX ? 0 : 0 })); log('back', JSON.stringify(s3)); if (s3.slot !== 1 || s3.coin !== 777) errs.push('back in slot 1 with its things');
     await E(() => sessionStorage.removeItem('ng_slot_ok')); await pg.reload(); await go(); await wait(1500);
     const boot = await E(() => !!document.querySelector('.svc')); log('picker at the start', boot); if (!boot) errs.push('two saves = the picker at the start'); await pg.screenshot({ path: OUT + '/2-boot.png' });
     // delete slot 2 (type ลบ)
-    await E(() => document.querySelector('[data-sd="2"]').click()); await wait(500); await pg.screenshot({ path: OUT + '/3-del.png' });
+    await E(() => document.querySelector('[data-sd="2"]').click()); await wait(500); const delPin = await E(() => !!document.querySelector('.pinov')); if (!delPin) errs.push('deleting a locked save asks its code');
+    await tap('1234'); await wait(400); await pg.screenshot({ path: OUT + '/3-del.png' });
     await E(() => document.querySelector('#sdOk').click()); await wait(300); const still = await E(() => !!localStorage.getItem('ng_save_v3_s2')); if (!still) errs.push('without typing ลบ nothing is deleted');
     await E(() => { document.querySelector('#sdIn').value = 'ลบ'; document.querySelector('#sdOk').click() }); await wait(500);
     const d = await E(() => ({ s2: !!localStorage.getItem('ng_save_v3_s2'), sk2: !!localStorage.getItem('ng_sk_s2_deer'), sk1: !!localStorage.getItem('ng_sk_rabbit'), s1: !!localStorage.getItem('ng_save_v3') })); log('after delete', JSON.stringify(d));
