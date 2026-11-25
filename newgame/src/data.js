@@ -371,6 +371,7 @@ export const ANIMAL_HINT = {   // v5.11 🐾 where each catch-quest animal lives
   boar: { npc: 'mali', k: 'sylvaren', when: 'หมูป่าชอบพุ่งชน หลบแล้วค่อยโยน 🕸️ ตาข่าย', say: 'หมูป่าชอบขุดดินในป่าทาง{dir}ของเมือง ราว {m} เมตร' },
   hawk: { npc: 'miners', k: 'valkara', when: 'เหยี่ยวอยู่บนที่สูง ปีนขึ้นไปเงียบๆ ตอนกลางวัน', say: 'ข้าเห็นเหยี่ยววนอยู่บนหน้าผาสูงทาง{dir}ของเหมือง ราว {m} เมตร' } };
 export const HARB_STATUE = 'whale';   // v5.09 🗿 the harbour square statue: 'hero' (old) · 'sailor' ⚓ · 'whale' 🐋 (preview)
+export const CAP_PLAZA_OZ = 6;   // v5.12 the statue stands this far out from the keep's door, toward the gate (designer: don't block the door)
 export const CAP_PLAZA = {   // v5.12 🦌 restored capitals' squares: the statue's animal · its stone · planter flowers / bush · lamps (n · radius · start angle) · pillar = a rock crag under a bird
   sylvaren:  { animal: 'deer', scale: 2.3, stone: '#b4b8a8', flowers: ['#ffd84a', '#ff9ac8', '#ffffff'], lamps: 8, r: 11, a0: .39 },
   frosthelm: { animal: 'bear', scale: 2.0, stone: '#dfe8f0', flowers: ['#9fd4ff', '#ffffff', '#c8b8ff'], bush: '#5a7a6a', lamps: 8, r: 11, a0: .39 },
