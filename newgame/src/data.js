@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '5.06';
+export const APP_VER = '5.07';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
@@ -357,7 +357,7 @@ export const NPCLIFE = { tapun: { k: 'navalee', act: 'fish', p: .5, from: 7 * 60
   bjorn: { k: 'frosthelm', act: 'hunt', p: .45, from: 7 * 60, to: 16 * 60, sign: '🏹', away: 'ออกล่าสัตว์', say: 'หิมะลงหนัก รอยเท้าสัตว์ชัดดี วันนี้ได้เนื้อแน่' },
   miners: { k: 'valkara', act: 'mine', p: .55, from: 6 * 60, to: 18 * 60, sign: '⛏️', away: 'ไปเหมือง', say: 'แร่ดีๆ อยู่ลึกกว่านี้อีกนิด… ฮึบ!' },
   boonma: { k: 'sylvaren', act: 'chop', p: .5, from: 7 * 60, to: 17 * 60, sign: '🪓', away: 'ไปตัดไม้', say: 'ไม้ต้นนี้แข็งดี เอาไปทำโต๊ะได้สวยเลย' } };
-export const WANDER_ON = false, WANDER_GEAR = .8;   // gear size in a wanderer's hand   // v5.07 🧭 wanderers (waits for the designer's OK on the preview)
+export const WANDER_ON = true, WANDER_GEAR = .8;   // gear size in a wanderer's hand   // v5.07 🧭 wanderers (waits for the designer's OK on the preview)
 export const WANDER = [   // each walks one town → the next town each day (07:00–19:00) · nights in town · route = kingdoms in order
   { id: 'w_kira', name: 'คีร่า', icon: '🗡️', job: 'นักผจญภัยสาว', look: { v: 2, sex: 'f', hair: 'pony', hairCol: '#c8603a', skin: '#f2cfa6', wear: 'knight', top: '#a04a3a', expr: '' }, hold: 'travelerSword', route: ['navalee', 'sylvaren', 'frosthelm', 'deadgar', 'valkara', 'asrah'], say: ['ข้าเดินทางมาหลายอาณาจักรแล้ว ยังไม่เคยเจอที่ไหนสงบเท่านี้', 'คืนนี้ข้าจะพักที่เมืองถัดไป · ถ้าเจอกันอีกค่อยคุยต่อนะ'] },
   { id: 'w_torbin', name: 'ทอร์บิน', icon: '🎒', job: 'นักเดินทางแบกเป้', look: { v: 2, sex: 'm', hair: 'short', hairCol: '#3a2418', skin: '#c28b5c', wear: 'robe', top: '#5a7a3a', expr: '' }, hold: null, route: ['asrah', 'valkara', 'deadgar', 'frosthelm', 'sylvaren', 'navalee'], say: ['เป้ข้าหนักเพราะของฝากจากทุกเมืองนั่นแหละ ฮ่าๆ', 'ถนนเส้นนี้ตอนเย็นสวยมาก ลองเดินดูสิ'] },
