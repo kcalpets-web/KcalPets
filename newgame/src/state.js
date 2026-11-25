@@ -62,7 +62,7 @@ export function load() {
 export function save() { if (NOSAVE || !S) return false;
   try { const cur = localStorage.getItem(SAVE_KEY);
     if (cur) { const m = /"gen":(\d+)/.exec(cur); if (m && +m[1] > GEN) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'tab' })) } return false } localStorage.setItem(PREV, cur) }   /* another tab saved newer progress: do not write over it */
-    S.gen = ++GEN; localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true }
+    S.gen = ++GEN; S.lastT = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true }
   catch (e) { if (!warned) { warned = true; window.dispatchEvent(new CustomEvent('ng-save', { detail: 'full' })) } return false } }
 export const bump = (k, n = 1) => { S.stat[k] = (S.stat[k] || 0) + n };
 

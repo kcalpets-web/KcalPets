@@ -4,7 +4,9 @@ export const APP_VER = '5.03';
 export const LOCK_ON = 6, LOCK_OFF = 8;   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
 export const CAM_FOLLOW = .45, CAM_DRAG = .0055;   // camera behind the character: max auto-turn (rad/s, ~25°/s) · drag sensitivity (rad per px)                        // bump every release, then run tools/make-version.py (the in-game update bar compares it with version.json)
-export const SAVE_KEY = 'ng_save_v3';                 // v0.4: new save (story start: no pets yet, night island, story flags)
+export const SLOT_N = 3, SLOT = (() => { let n = 1; try { n = Math.max(1, Math.min(SLOT_N, Math.floor(+localStorage.getItem('ng_slot')) || 1)) } catch (e) { } return n })();   // v5.04 💾 save slots: slot 1 keeps the old keys (nothing to move)
+export const slotKey = n => n > 1 ? 'ng_save_v3_s' + n : 'ng_save_v3', slotSuf = n => n > 1 ? '_s' + n : '';
+export const SAVE_KEY = slotKey(SLOT);                 // v0.4: new save (story start: no pets yet, night island, story flags)
 export const GOOGLE_CLIENT_ID = '427026308324-e2vmssgqrm561qtb2l4prc6so3nfukie.apps.googleusercontent.com';   // same web origin as Luthonia
 
 /* ---- clearables: size → hits with a tier-0 tool (Pen Suk: small 1 · medium 3 · large 6) ---- */
