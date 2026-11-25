@@ -1,9 +1,10 @@
 {
- "v": "4.95",
+ "v": "4.96",
  "notes": [
-  "🏷️ ชื่อเกมใหม่: Kealee and the New Light of Luminia",
-  "✨ จิตวิญญาณแห่งลูมิเนีย",
-  "🏝️ เกาะวาเนญ่า"
+  "🌅 ฉากจบใหม่: แสงสว่างกลับคืนสู่อาณาจักร",
+  "💼 เควสตามอาชีพของชาวเมือง",
+  "💧 น้ำตกแบบใหม่ มีละอองน้ำและถ้ำลับ",
+  "🐛 แก้บั๊กเล็กๆ"
  ],
  "files": [
   "index.html",
@@ -31,6 +32,7 @@
   "src/cutscene.js",
   "src/data.js",
   "src/eel.js",
+  "src/falls.js",
   "src/figure-v3.js",
   "src/figure.js",
   "src/gcamp.js",
