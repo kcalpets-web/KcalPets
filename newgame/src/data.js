@@ -894,7 +894,8 @@ export const DECAY = { days: { campfire: 4, cabin: 10, tower: 8, raft: 6, bed: 1
 export const MONLAND = { pct: .65, n: [1, 3], nightPct: .8, nightN: [2, 4], village: 34, isle: 0 };   // v3.42 packs only at night (more, bigger)   // v3.21 no monsters on Vaneya (farm island)
 /* v4.74 🏠 house levels (the carpenter in the harbour town builds 2 and 3 · done after you sleep once, or after `mins` real minutes) · cap = decor pieces placed */
 /* v4.73 🏰 chapter 2 (after the dark cloud): mend Luminia's capital at 5 spots (materials · a short job each) → the castle opens: throne room → cellar → golden door → the great hall (golden stone · black door → Mergeland, coming soon) */
-export const LUMFIX = { secs: 45, spots: [
+export const LUMFIX = { on: false, secs: 45, spots: [   // v5.03 on: false (designer) the capital needs no mending after the dark cloud — straight to the King
+  
   { n: 'น้ำพุอัศวิน', ic: '⛲', cost: { stone: 40, wood: 10 } },
   { n: 'กำแพงเมือง', ic: '🧱', cost: { stone: 60, flint: 5 } },
   { n: 'บ้านเรือน', ic: '🏠', cost: { wood: 50, stone: 20, grass: 20 } },

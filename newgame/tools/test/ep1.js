@@ -6,7 +6,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8879, OUT = process.arg
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
   try { const pg = await b.newPage({ viewport: { width: 390, height: 760 }, deviceScaleFactor: 1 }); pg.setDefaultTimeout(90000); pg.on('pageerror', e => errs.push('PE ' + e.message));
     await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
-      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, cloudGone: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 640, quest: 99, coin: 500, restored: { navalee: 1, sylvaren: 1, asrah: 1, frosthelm: 1, valkara: 1, deadgar: 1 }, ch2: { fix: [0, 1, 2, 3, 4], met: 1, rb: 1, kingV: 1, found: 1, cellar: 1, stone: 1 } })) });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, cloudGone: 1 }, avatar: { hair: 'afro' }, has: { sword: 1 }, gear2: 1, itemV: 2, nextItem: 9, bag: [{ id: 5, t: 'travelerSword', r: 'B' }], eq: { sword: 5 }, time: 640, quest: 99, coin: 500, restored: { navalee: 1, sylvaren: 1, asrah: 1, frosthelm: 1, valkara: 1, deadgar: 1 }, ch2: { fix: [], met: 1, rb: 1, kingV: 1, found: 1, cellar: 1, stone: 1 } })) });
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 90000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     const b0 = await E(() => ({ gone: window.__ng.S.story.cloudGone, row: window.__ng.trackList()[0].text })); log('before the gate', JSON.stringify(b0));
@@ -19,5 +19,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8879, OUT = process.arg
     if (!(a.home < 20) || a.hin) errs.push('you wake at your farm');
     if (a.restored !== 6) errs.push('restored kingdoms stay restored');
     if (!a.title) errs.push('the end-of-part title is kept');
+    if (/ซ่อม/.test(b0.row)) errs.push('v5.03 the capital needs no mending after the dark cloud');
+    const c = await E(() => { const N = window.__ng; N.S.story.cloudGone = 1; const row = N.trackList()[0].text; N.towerDoor(); return { row, hin: N.HINON } }); log('cloud beaten again', JSON.stringify(c));
+    if (!/พระราชา/.test(c.row) || !c.hin) errs.push('after the dark cloud: straight to the King (the castle door opens)');
   } catch (e) { errs.push('X ' + e.message) } finally { await b.close(); srv.kill() }
   if (errs.length) { console.log('ERRORS'); errs.forEach(e => console.log(e)); process.exit(1) } console.log('PASS') })();
