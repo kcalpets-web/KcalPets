@@ -16,7 +16,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8883, OUT = process.arg
     if (!w.pl) errs.push('the character stays on screen (no first-person view)'); if (!w.rod) errs.push('the rod is in the hand'); if (!w.line) errs.push('a line runs to the bobber');
     await E(() => { window.__ng.F.wait = 0 }); await pg.waitForFunction(() => window.__ng.F && window.__ng.F.phase === 'bite', null, { timeout: 20000, polling: 100 }); await pg.screenshot({ path: OUT + '/2-bite.png' });
     await E(() => { window.__ng.F.hold = true }); await pg.waitForFunction(() => window.__ng.F && window.__ng.F.phase === 'reel', null, { timeout: 20000, polling: 100 }); await wait(600);
-    const r = await E(() => ({ bar: getComputedStyle(document.getElementById('fbarW')).display, pl: window.__ng.PL.root.visible })); log('reel', JSON.stringify(r)); await pg.screenshot({ path: OUT + '/3-reel.png' });
+    const r = await E(() => ({ bar: getComputedStyle(document.getElementById('tensW')).display, pl: window.__ng.PL.root.visible })); log('reel', JSON.stringify(r)); await pg.screenshot({ path: OUT + '/3-reel.png' });
     if (r.bar === 'none') errs.push('the reel gauge shows'); if (!r.pl) errs.push('the character stays on screen while reeling');
     await E(() => window.__ng.fishEnd()); await wait(400); const e = await E(() => ({ rod: !!window.__ng.HROD.parent, line: window.__ng.LINE.visible })); log('after', JSON.stringify(e)); if (e.rod || e.line) errs.push('putting the rod away clears it');
   } catch (e) { errs.push('X ' + e.message) } finally { await b.close(); srv.kill() }

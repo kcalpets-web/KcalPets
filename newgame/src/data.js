@@ -452,6 +452,7 @@ export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
 export const ARROWX = { fire: { icon: '🔥', name: 'ลูกธนูไฟ', col: '#ff6a1a', mul: 1.6 }, ice: { icon: '🧊', name: 'ลูกธนูน้ำแข็ง', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { icon: '⚡', name: 'ลูกธนูสายฟ้า', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
 export const ARROW_PICK = { r: 1.4, life: 90 };   // stuck arrows can be picked up (walk over them) for this many seconds
 export const FISH3P = { rod: .55 };   // v5.05 🎣 the rod held in the third-person view (world size ≈ a sword)
+export const TENS = { dist: { B: 5, R: 7, E: 9, L: 12 }, mad: { B: .75, R: 1, E: 1.25, L: 1.5 }, reel: 1.3, up: .34, upPull: .22, down: .8, back: .35, surgeGap: [1.4, 3.2], surgeT: .7, surgeK: 2.3, red: .78, snap: 1, escape: 5 };   // v5.16 🎣🪢 the one-button tension game: metres to land · hold raises the needle (more when it bolts) · let go drops it · red ≥ red · 1 = snap · drifts back `back` m/s while slack
 export const REEL2 = { zone: .28, zoneTier: .045, up: 2.4, grav: 2.0, fill: .24, drain: .17, start: .3, biteWin: .85, wait: [3, 9] };   // v3.1 the reel game (0–1 bar) · bite window s · wait range s (×.6 in rain)
 export const REEL = { up: 1.25, down: 1.0, base: 32, perTier: 10 };       // tension/s while holding · release · fish stamina dmg/s at rod tier 0 · +per tier
 
