@@ -34,6 +34,7 @@ import { CLIPS as KCLIPS } from './krig.js';
 import { SHOPIN, setRoomKind } from './shopin.js';
 import { innModel, INN as INNSZ } from './inn.js';
 import { fallTex, fallDeco, mistTick } from './falls.js';
+import { lampGroup } from './world.js';
 import { CASTLEIN } from './castlein.js';
 import { buildFloor, LAYOUT, THEMES } from './castle2.js';
 import { unlock, mood, sfx, toggle as toggleSound, soundOn, note as fluteNote, step as sfxStep, bar as sfxBar, barPlaying, battle as sfxBattle, battlePlaying } from './audio.js';
@@ -192,6 +193,15 @@ if (BALD_ON) { const x = STC.x - 11, z = STC.z + 8.5, ry = Math.atan2(STC.x - x,
   TW.shops[0] = Object.assign(old || {}, { i: 0, x, z, ry, fixed: mk(false), ruin: mk(true), pick: pk }) }   /* v3.50 */
 for (const k of D.VANEYA.shops) S.shops[k] = S.shops[k] || 1;
 if (S.wearMsg) { const [rf, it] = S.wearMsg; S.wearMsg = null; save(); setTimeout(() => toast(`👗 ชุดรวมเป็นชิ้นเดียวแล้ว${it ? `<br>ชุดที่คุณเลือกไว้ → ${D.WEAR[it].icon} ${D.WEAR[it].name} (ใส่อยู่)` : ''}${rf ? `<br>กางเกงเก่าแลกเป็น 🪙 ${rf}` : ''}`, 4200), 4000) }   /* v3.43 */   /* the harbour shops are open (no repairs) */
+/* v5.09 💡 (designer: the harbour square was too dark at night) street lamps round the square (the glow + a pool of light, like the road lamps) · 🌊 the fountain runs: jets arc from the column into the basin */
+const PLAZA_FX = { jets: [], tex: null };
+{ const P = HARB.town && HARB.town.plaza; if (P) { const L = []; for (let i = 0; i < D.TOWN_LIGHT.n; i++) { const a = i / D.TOWN_LIGHT.n * 6.283 + D.TOWN_LIGHT.a0, x = P.x + Math.cos(a) * D.TOWN_LIGHT.r, z = P.z + Math.sin(a) * D.TOWN_LIGHT.r; L.push({ x, z, y: groundH(x, z), py: groundH(x, z), k: 'harbour' }) } scene.add(lampGroup(L));
+    const py = groundH(P.x + 6, P.z), tex = fallTex(); tex.repeat.set(1, 2); PLAZA_FX.tex = tex; const M2 = new THREE.MeshBasicMaterial({ map: tex, color: '#cfefff', transparent: true, opacity: .8, depthWrite: false });
+    for (let i = 0; i < D.FOUNTAIN.jets; i++) { const a = i / D.FOUNTAIN.jets * 6.283, pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, r = .35 + t * (D.FOUNTAIN.r - .35), y = D.FOUNTAIN.top - (D.FOUNTAIN.top - .55) * t * t + Math.sin(t * Math.PI) * .35; pts.push(new THREE.Vector3(P.x + Math.cos(a) * r, py + y, P.z + Math.sin(a) * r)) }
+      const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, .045, 5, false), M2); scene.add(m); PLAZA_FX.jets.push(m) }
+    const ring = new THREE.Mesh(new THREE.RingGeometry(D.FOUNTAIN.r - .25, D.FOUNTAIN.r + .25, 28), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .25, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(P.x, py + .56, P.z); scene.add(ring); PLAZA_FX.ring = ring;
+    const glow = new THREE.Mesh(new THREE.CircleGeometry(2.45, 28), new THREE.MeshBasicMaterial({ color: '#6ac8ff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); glow.rotation.x = -Math.PI / 2; glow.position.set(P.x, py + .57, P.z); scene.add(glow); PLAZA_FX.glow = glow } }   /* the basin glows softly at night */
+function plazaFxTick(now, dt) { if (!PLAZA_FX.tex) return; PLAZA_FX.tex.offset.y -= dt * 1.4; const k = isNight() ? 1 : 0; PLAZA_FX.glow.material.opacity += (k * .28 - PLAZA_FX.glow.material.opacity) * Math.min(1, dt * 2); const s = 1 + (now % 1200) / 1200 * .35; PLAZA_FX.ring.scale.set(s, s, 1); PLAZA_FX.ring.material.opacity = .3 * (1 - (now % 1200) / 1200) }
 function boatSide() { const at = S.boatAt || 'isle', fixed = !!S.story.boatFixed; W.boat.visible = fixed && at === 'isle'; HARB.boat.visible = fixed && at === 'main' }
 function openBoat() { if (!S.story.boatFixed) return; const to = (S.side || 'isle') === 'isle' ? 'main' : 'isle';
   shopSheet('⛵ เรือของลุงฮาวซิฟ', (b, redraw, close) => { const c = Math.floor(S.boat.c || 0);
@@ -1507,6 +1517,7 @@ function frame(now) {
   perfWatch(now);
   const dt = Math.min(.05, (now - last) / 1000) * speed * (now < stopT ? .06 : 1) * (AIRAIM ? D.HOLD.airSlow : 1), wall = now; last = now;   // hit-stop: the world almost freezes for a beat
   try { kbTick(dt) } catch (e) { }
+  try { plazaFxTick(now, dt) } catch (e) { }
   try { wanderTick(now, dt) } catch (e) { }
   try { const q = me(), mv2 = Math.hypot(q.x - (FRT.px ?? q.x), q.z - (FRT.pz ?? q.z)) > .004 || joy.on || !!walkT; FRT.px = q.x; FRT.pz = q.z; fireRestTick(now, mv2, dt) } catch (e) { }
   try { beaconArrive(now) } catch (e) { } try { auraTick(now) } catch (e) { } try { dlyTick(now) } catch (e) { } try { riddleTick(now) } catch (e) { } try { yRingTick(now) } catch (e) { } try { thrTick(now) } catch (e) { }
