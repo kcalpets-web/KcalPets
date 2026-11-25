@@ -1893,7 +1893,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
     if (SKW.on) { skwUse('Y'); return } if (PICK) { pickChoose(); return } t0 = now; if (SMENU.on) { smenuGo('left'); return } if (AIM && !AIM.quick) { aimZoom(1); return } if (AIM) return;
     try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
     if (CTX && (CTX.k === 'talk' || CTX.k === 'gift') && !carryN()) { actA(); return }   /* v5.17 layout 4: the big button talks in front of someone */
-    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; qwOpen(null) }); return }   /* v5.17 (designer) hold the big button = the item wheel (was: throw) */   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
+    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (!gFarm() && foeNear()) windStart(); else qwOpen(null) }); return }   /* v5.17 (designer) hold the big button = the item wheel · a foe close by = the throw (as before) */   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
     if (carryN()) carryBack(true); if (!gFarm()) { qaimStart('bow', Y); if (AIM) { AIM.lx = e.clientX; AIM.ly = e.clientY } return }   /* ranged combat: hold = aim the bow */
     const k = yTool();
     if (k === 'rod') { if (F) { if (F.phase === 'wait') fishEnd(); else F.hold = true; return } ytUse('rod'); return }   /* v4.88 ⭕ the white ring (no first-person aim) */
@@ -3861,7 +3861,7 @@ let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; 
   /* Y: hit / shoot / the farm tool */
   if (AIM && AIM.draw) { btnSet('bY', ['🔍', 'ซูมเข้า']); $('bY').classList.remove('boff'); $('bB').classList.remove('boff'); return }   /* v4.94 (designer) the drawing frame: A = draw · Y / X = zoom */
   { const f = gFarm(), r = gRange(), w = weaponOf(), wi = w && D.ITEMS[w.t]; let tap, hold = null;
-    if (!r) { tap = wi ? [f ? wi.icon : gearIco('sword', wi.icon), f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; hold = ['🎒', 'ค้าง = เลือกของ'] }
+    if (!r) { tap = wi ? [f ? wi.icon : gearIco('sword', wi.icon), f ? ({ axe: 'ตัด', pick: 'ทุบ', sickle: 'เกี่ยว', hoe: 'ขุด', hammer: 'ทุบ' }[wi.kind] || 'ใช้') : 'ฟัน'] : ['✊', 'ต่อย']; hold = !f && wi && foeNear() ? ['🎯', 'ค้าง = ปา'] : ['🎒', 'ค้าง = เลือกของ'] }
     else if (!f) { tap = ['🏹', 'ค้าง = เล็ง']; hold = ['🎯', 'ปล่อย = ยิง'] }
     else { const k = yTool(), T = D.YTOOL[k] || {}; tap = [T.icon || '🧰', k === 'rope' ? (YT && YT.M ? 'คล้อง' : 'ดึงของ') : k === 'net' ? 'ตาข่าย' : k === 'rod' ? 'ตกปลา' : k === 'draw' ? 'วาดภาพ' : k === 'flute' ? 'ขลุ่ย' : 'ใช้']; }   /* v4.88 no hold-to-aim: the white ring */
     if (f && !r && wi) tap[0] = picTag(itemPic(w.t), emo(wi.icon), ' bic2'); else if (f && r && YMESH[yTool()]) tap[0] = picTag(yPic(yTool()), emo(tap[0]), ' bic2'); else if (f && S.hand === 'torch' && S.lampOn) tap[0] = picTag(lampPic(), emo('🏮'), ' bic2');   /* v4.88 the real clay picture (designer) */
@@ -7180,6 +7180,7 @@ function boltSkill() { if (!S.has.bolt) { hint('⚡ ยังไม่มีส�
    quick bar 3 slots + 🎒 above the stick (tap = hold it · hold a slot = choose what goes in it) · hold the big button = the item wheel · 🎒 tap = bag · hold = the old gold panel ================= */
 document.body.classList.add('l4');
 const QB = document.createElement('div'); QB.id = 'qbar'; document.body.appendChild(QB);
+const foeNear = () => { const q = me(); return mons.some(M => !M.died && M.A && !(M.T && M.T.animal && !M.T.charge) && dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z) < 14) };   /* a foe within throwing range */
 function qbAll() { const L = [];
   for (const x of S.bag) { const T = D.ITEMS[x.t]; if (T && T.slot === 'sword' && !T.tool && !x.br && !x.away) L.push({ id: 'w:' + x.id, it: x, pic: gpic(itemPic(x.t), T.icon), n: T.name + (x.p ? ' +' + x.p : '') }) }
   if (S.bag.some(x => D.ITEMS[x.t] && D.ITEMS[x.t].slot === 'bow' && !x.br)) { const b = bowOf(); L.push({ id: 'bow', pic: b ? gpic(itemPic(b.t), '🏹') : emo('🏹'), n: 'ธนู' }) }

@@ -16,7 +16,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8808, wait = ms => new 
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     const fg = await E(() => ({ builds: window.__ng.S.builds.map(b => b.k), wood: window.__ng.S.mats.wood, bp: !!window.__ng.S.bp.forge })); log('forge table', JSON.stringify(fg));
     if (fg.builds.includes('forge') || fg.bp || fg.wood !== 21) errs.push('the home forge table was not removed / refunded');
-    const vis = await E(() => ['mBag', 'mMap', 'qIcon', 'bDraw'].map(id => getComputedStyle(document.getElementById(id)).display)); log('icons', vis); if (vis[0] === 'none' || vis[1] === 'none' || vis[2] !== 'none' || vis[3] !== 'none') errs.push('v3.74 🎒 + 🗺️ on screen (the old menu button gone)');
+    const vis = await E(() => ['qbar', 'mMap', 'qIcon', 'bDraw'].map(id => getComputedStyle(document.getElementById(id)).display)); log('icons', vis); if (vis[0] === 'none' || vis[1] === 'none' || vis[2] !== 'none' || vis[3] !== 'none') errs.push('v5.17 🎒 in the quick bar + ☰ on screen (the old menu button gone)');
     await E(() => document.getElementById('qIcon').click()); await wait(400); const qm = await E(() => [...document.querySelectorAll('.ov [data-bt]')].map(x => x.dataset.bt)); log('🎒 menu', qm);
     for (const k of ['bag', 'quests', 'adv', 'map', 'ach', 'album', 'book', 'notes', 'set']) if (!qm.includes(k)) errs.push('🎒 menu has no ' + k); await close();
     await E(() => window.__ng.hubGo('adv')); await wait(700); const bt = await E(() => (document.querySelector('.ov h2') || {}).textContent || ''); log('🔨', bt); if (!/สมุดผจญภัย/.test(bt)) errs.push('v3.40 📖 should open the adventure journal'); await close();
