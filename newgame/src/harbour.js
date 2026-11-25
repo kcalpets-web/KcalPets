@@ -45,7 +45,7 @@ export function buildHarbour(HB, groundH, opt = {}) {
   box((PX - 9.5) / 2 - 1, py - .05, 0, PX - 9.5 + 3, .1, 4.2, M.pave).userData.nosol = 1; for (const z of [-9, 9]) box(1.5, py - .05, z * .55, 4, .1, Math.abs(z) * .9, M.pave).userData.nosol = 1;   /* paved streets from the piers to the plaza */
   for (let i = 0; i < 18; i++) { const a = i / 18 * 6.283; box(PX + Math.cos(a) * 8.6, py, Math.sin(a) * 8.6, 1.6, .1, .5, M.stoneD, -a) }
   cyl(PX, py, 0, 2.8, 2.8, .5, M.stone, 18); cyl(PX, py + .5, 0, 2.5, 2.5, .05, M.water, 18).userData.nosol = 1; cyl(PX, py + .4, 0, .7, .55, 1.6, M.stone, 10); solC(PX, 0, 2.9);
-  { const s = new THREE.Group(); s.position.set(ox + PX, py + 2, oz); G.add(s); const p = (geo, x, y, z, rx = 0, rz = 0) => { const o = new THREE.Mesh(geo, M.statue); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); s.add(o) };
+  if (!opt.statue || opt.statue === 'hero') { const s = new THREE.Group(); s.position.set(ox + PX, py + 2, oz); G.add(s); const p = (geo, x, y, z, rx = 0, rz = 0) => { const o = new THREE.Mesh(geo, M.statue); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); s.add(o) };
     p(new THREE.CylinderGeometry(.2, .26, 1.1, 8), -.16, .55, 0); p(new THREE.CylinderGeometry(.2, .26, 1.1, 8), .16, .55, 0); p(new THREE.BoxGeometry(.75, .95, .45), 0, 1.55, 0); p(new THREE.SphereGeometry(.28, 10, 8), 0, 2.3, 0); p(new THREE.CylinderGeometry(.08, .08, .8, 6), .5, 2.2, 0, 0, -.6); p(new THREE.BoxGeometry(.08, 1.6, .05), .78, 3.1, 0, 0, -.25); p(new THREE.CylinderGeometry(.08, .08, .8, 6), -.45, 1.4, 0, 0, .3) }   // a hero raising his sword
   /* ---- market stalls ---- */
   const stall = (x, z, ry, c) => { const g = new THREE.Group(); g.position.set(ox + x, gh(x, z), oz + z); g.rotation.y = ry; G.add(g); const bx = (w, h, d, px, py2, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py2, pz); g.add(o) };
@@ -71,5 +71,5 @@ export function buildHarbour(HB, groundH, opt = {}) {
     for (const [dx, dz, h] of [[-4, -3, 22], [4, 3, 24], [0, -4, 26]]) { cyl(cx + dx, y + 7, cz + dz, 1.4, 1.2, h - 7, M.stone, 10); cone(cx + dx, y + h, cz + dz, 1.7, 5, M.roofB, 10) }
     box(cx - 11.5, y + 3, cz, .6, 4, 4, M.blue); for (const dz of [-6, 6]) banner(cx - 11.1, y + 4, cz + dz, -Math.PI / 2, 1.6); sols.push({ x: ox + cx, z: oz + cz, hw: 12, hd: 10, ry: 0 }) }
   for (let i = 0; i < 14; i++) { const a = R() * 6.28, r = 26 + R() * 18, x = PX + Math.cos(a) * r, z = Math.sin(a) * r; if (x < 4 || Math.abs(z) < 4) continue; const y = gh(x, z); if (y < 0) continue; cyl(x, y, z, .25, .2, 1.6, M.woodD, 6); add(new THREE.IcosahedronGeometry(1.2 + R() * .6, 0), M.green, ox + x, y + 2.4, oz + z) }   // trees outside the wall
-  return { G, sols, flags, plaza: { x: ox + PX, z: oz, r: 9.5 } };
+  return { G, sols, flags, plaza: { x: ox + PX, z: oz, r: 9.5, top: py + 2 } };
 }
