@@ -15,6 +15,13 @@
 
 ---
 
+### v5.28 — หน้าเมนูใหม่ 5 หน้า · น้องตัวแรกปล่อยไม่ได้ (26 พ.ย.)
+- ผู้ออกแบบขอ: ทำตาม quest-layout-mock.png + other-pages-mock.png · ฝึกหัดครบแล้วซ่อน · น้องหมา/แมวตัวแรกปล่อยไม่ได้
+- ทำแล้ว: openQuests (QSUB 4 แท็บ + QSOLO paths/mem/ach · qPeople · #qNow) · upPage tabs ไม่บังคับ + o.top · recipesBody (can/known/new) · openBuild หน้าเดียว · openBag('pets') รวมสกิล + #petTop · menuBody แท็บบน 3 อัน + .ctlg · navAll หน้าไม่มีแท็บเริ่มที่การ์ด · p1 ปล่อยไม่ได้
+- ทดสอบ: ผ่าน atlas · bag · build · build149 · craft151 · layout4 · menupause · menus · pages · pets · riddle · savesafe · skills106 · starter154 · tent (อัปเดต track/starter154/build149/atlas ให้ตรงหน้าใหม่) / ล้มเดิม track (🎒🗺️ ใต้แผนที่เล็ก)
+- ขึ้นเว็บ: ✅
+- ค้าง / ข้อสังเกต: —
+
 ### v5.27 — 📐 แบบแปลน · ⛺ เต็นท์ · งานใหญ่ที่ช่างไม้ (26 พ.ย.)
 - ผู้ออกแบบขอ: งานใหญ่ไปที่ช่างไม้ · บ้านหลังเดียว · ของฟาร์มสร้างในฟาร์มเท่านั้น · หน้าแบบแปลนใหม่ · เต็นท์แทนเตียงฟาง (ผู้เล่นสร้างเอง) · หลอดตึงแดง-เหลือง-เขียว · สูตรบอกวัตถุดิบ · ย้ายภารกิจทั้งหมดไปความคืบหน้า · เต็นท์ดูแปลก → ปั้นใหม่
 - ทำแล้ว: BCAT 4 หมวด · BLUEPRINTS.tent + tentTick · canBuild (farm / one house) · openCarp งานใหญ่ · #tensB กลับด้าน · BUILDS.tent ทรงจั่วทึบ (ExtrudeGeometry)
