@@ -1691,7 +1691,7 @@ function hud() { try { petQuestTick() } catch (e) { } try { walletRefresh() } ca
   $('hCoin').textContent = fmt(S.coin); $('hGem').textContent = fmt(S.gem);
   heartsHud(st);
   $('hMp').style.width = (pEn() / st.en * 100) + '%'; $('hMp').style.background = S.tired ? '#e8a040' : '#9ad03a'; $('hMpB').style.width = Math.min(100, (S.enB || 0) / st.en * 100) + '%'; $('hMpT').textContent = S.tired ? '💦 เหนื่อย' : `${Math.floor(pEn())}${S.enB >= 1 ? '+' + Math.floor(S.enB) : ''}/${st.en}`;
-  setTime(); $('hClock').textContent = timeIcon(); $('hSun').innerHTML = dayBar(); arwBtn(); tempHud();
+  setTime(); $('hClock').textContent = timeIcon(); $('hSun').innerHTML = dayBar(); clockHud(); arwBtn(); tempHud();
   $('hBuff').style.display = S.buff && S.buff.until > Date.now() ? '' : 'none'; if (S.buff && S.buff.until > Date.now()) $('hBuff').textContent = `${S.buff.icon} ${buffTxt(S.buff).split(' ')[0]} ${Math.ceil((S.buff.until - Date.now()) / 60e3)}′`;
   $('bHp').querySelector('small').textContent = '×' + Object.values(S.meals || {}).reduce((a, v) => a + (v > 0 ? v : 0), 0); debHud();
   $('bTool').classList.toggle('dim', !S.shops.tools); $('bShop').classList.toggle('dim', !S.story.town); $('bPets').classList.toggle('dim', !S.pets.length);
@@ -1958,12 +1958,10 @@ function farmPick(o) { if (!gFarm()) setSet(true, true); aimEnd(false); DRAWN = 
 function gpClose() { if (!GP) return; GP.el.remove(); GP = null; padExtras() }
 function gpOpen(kind) { gpClose(); const el = document.createElement('div'); el.className = 'ov dlg gpan ' + kind; document.body.appendChild(el); GP = { el, kind }; gpDraw() }
 function gpDraw() { if (!GP) return; const el = GP.el, k = GP.kind;
-  if (k === 'qwheel' && qbAll().length > 10) { const all = qbAll(), cur = qbCur(), sl = GP.slot, row = (t, c) => { const L = all.filter(o => (o.cat || 'o') === c); return L.length ? `<h4>${t}</h4><div class="qgr">${L.map(o => `<button class="gwi${o.id === cur ? ' on' : ''}${o.off ? ' off' : ''}" data-gw="${o.id}">${o.pic}<small>${o.n}</small>${o.cnt ? `<i class="qn">×${o.cnt}</i>` : ''}</button>`).join('')}</div>` : '' };   /* v5.17.1 many things: a grid by kind instead of a crowded ring */
-    el.innerHTML = `<div class="gpc qgrid"><b>${sl != null ? `🎒 เลือกของใส่ช่อง ${sl + 1}` : '🎒 เลือกของที่จะถือ'}</b> <small class="mut">B = ปิด</small>${row('⚔️ อาวุธ · ธนู', 'w')}${row('🧰 เครื่องมือฟาร์ม', 't')}${row('🎣 อื่นๆ', 'o')}</div>`;
-    el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = all.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); if (sl != null) { qbSlots(); S.qs[sl] = o.id; hint(`ช่อง ${sl + 1} = ${o.n}`, 900) } qbPick(o) }); return }
-  if (k === 'qwheel') { const all = qbAll(), cur = qbCur(), n = all.length, R = Math.min(n > 8 ? 140 : 124, innerWidth * .36), sl = GP.slot;   /* v5.17 the item wheel: everything you can hold */
-    el.innerHTML = `<div class="gwh">${all.map((o, i) => { const a = -Math.PI / 2 + i / Math.max(1, n) * Math.PI * 2; return `<button class="gwi${o.id === cur ? ' on' : ''}${o.off ? ' off' : ''}" data-gw="${o.id}" style="left:${Math.cos(a) * R}px;top:${Math.sin(a) * R}px">${o.pic}<small>${o.n}</small></button>` }).join('')}<div class="gwc"><small>${sl != null ? `ใส่ช่อง ${sl + 1}` : 'เลือกของที่จะถือ'}</small><em>B = ปิด</em></div></div>`;
-    el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = all.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); if (sl != null) { qbSlots(); S.qs[sl] = o.id; hint(`ช่อง ${sl + 1} = ${o.n}`, 900) } qbPick(o) }); return }
+  if (k === 'qwheel') { const sl = GP.slot, g = qwGroup(sl), secs = qwSecs(g), cur = qbCur(), flat = secs.flatMap(x => x[1]);   /* v5.18 (designer) hold a slot = choose only that kind: sword → swords + shields · bow → bows + arrows · farm → farm tools */
+    const row = ([t, L]) => L.length ? `<h4>${t}</h4><div class="qgr">${L.map(o => `<button class="gwi${o.id === cur ? ' on' : ''}${o.eq ? ' eq' : ''}${o.off ? ' off' : ''}" data-gw="${o.id}">${o.pic}<small>${o.n}</small>${o.cnt ? `<i class="qn">×${o.cnt}</i>` : ''}</button>`).join('')}</div>` : '';
+    el.innerHTML = `<div class="gpc qgrid"><b>${{ sword: '⚔️ ดาบ · โล่', bow: '🏹 ธนู · ลูกธนู', farm: '🧰 เครื่องมือฟาร์ม' }[g] || '🎒 เลือกของ'}${sl != null ? ` · ช่อง ${sl + 1}` : ''}</b> <small class="mut">B = ปิด</small>${secs.map(row).join('')}</div>`;
+    el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = flat.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } qwChoose(o, sl) }); return }
   if (k === 'wheel') { const cur = farmCur(), all = farmTools(), L = all.filter(o => o.id !== cur), me0 = all.find(o => o.id === cur), n = L.length, R = Math.min(128, innerWidth * .33);
     el.innerHTML = `<div class="gwh">${L.map((o, i) => { const a = -Math.PI / 2 + i / Math.max(1, n) * Math.PI * 2; return `<button class="gwi${o.off ? ' off' : ''}" data-gw="${o.id}" style="left:${Math.cos(a) * R}px;top:${Math.sin(a) * R}px">${o.pic}<small>${o.n}</small></button>` }).join('')}<div class="gwc">${me0 ? me0.pic : ''}<small>ถืออยู่</small><em>B = ปิด</em></div></div>`;
     el.querySelectorAll('[data-gw]').forEach(b => b.onclick = e => { e.stopPropagation(); const o = L.find(x => x.id === b.dataset.gw); if (!o) return; if (o.off) { hint(`🚫 ${o.n} · ${o.off}`, 1200); return } gpClose(); farmPick(o) }); return }
@@ -6724,7 +6722,11 @@ function timeIcon() { if (!WXS) return isNight() ? '🌙' : '☀️'; const t = 
   return WXS.flash > .3 ? '🌩️' : T.icon }
 function dayBar() { const t = S.time, d0 = D.DAY.dawn, d1 = D.DAY.dusk, n = isNight(), k = n ? ((t - d1 + 1440) % 1440) / (1440 - d1 + d0) : (t - d0) / (d1 - d0); return `<i class="dbar${n ? ' n' : ''}"><b style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></b></i><span class="dclk">${clockTxt()}</span>` }
 const clockTxt = (t = S.time) => { const m2 = Math.floor(((t % 1440) + 1440) % 1440); return String(Math.floor(m2 / 60)).padStart(2, '0') + ':' + String(m2 % 60).padStart(2, '0') };   /* v5.15 🕘 (designer) the game clock as digits · shops keep hours */
-setInterval(() => { const e = document.querySelector('#hSun .dclk'); if (e && S) { const t = clockTxt(); if (e.textContent !== t) e.textContent = t } }, 1000);
+function clockFace(t = S.time) { const m2 = Math.floor(((t % 1440) + 1440) % 1440), h = Math.floor(m2 / 60) % 12 || 12, half = m2 % 60 >= 30; return String.fromCodePoint((half ? 0x1F55C : 0x1F550) + h - 1) }   /* 🕐…🕛 the face follows the hour */
+function clockHud() { const e = $('hClk'); if (!e || !S) return; const t = clockTxt(), f = clockFace(); if (e.dataset.t !== t) { e.dataset.t = t; e.innerHTML = `<i>${f}</i>${t}` }
+  const hs = $('hearts'), hr = hs && hs.querySelectorAll('.hr'); if (!hr || !hr.length) return; const n = Math.min(10, hr.length), x0 = hr[0].getBoundingClientRect(), x1 = hr[n - 1].getBoundingClientRect(), vb = e.parentElement.getBoundingClientRect(), sun = document.querySelector('.pill.clock'), lim = sun ? sun.getBoundingClientRect().left - 8 : innerWidth - 8, L = x1.right + 10;   /* beside the first row of hearts · below them when that would run into the weather box */
+  const side = e.style.position !== 'static' ? L + e.offsetWidth <= lim : L + 80 <= lim; if (side) { e.style.position = ''; e.style.left = (L - vb.left) + 'px'; e.style.top = (x0.top - vb.top + (x0.height - e.offsetHeight) / 2) + 'px' } else { e.style.position = 'static'; if (hs.nextElementSibling !== e) hs.after(e) } }   /* v5.18 (designer) 🕘 10:00 beside the hearts */
+setInterval(() => { const e = document.querySelector('#hSun .dclk'); if (e && S) { const t = clockTxt(); if (e.textContent !== t) e.textContent = t } clockHud() }, 1000);
 /* ---------- v3.0 🗿 the seven golems: a rock pile wakes when you come close → the rocks fly together → a ring of stone closes the arena (no leaving) · slams leave it stunned with its 🔮 core open ---------- */
 var GOL = null, GPILE = {}, GLAIR = {}, FREEZE = 0;
 for (const k in D.GOLEMS) MSCALE[D.GOLEMS[k].kind] = 3;
@@ -7262,6 +7264,20 @@ function qbPick(o) { if (!o || CUT) return; aimEnd(false);
   else farmPick(o);
   sfx('tap'); save(); gearView(); hud(); padExtras(); qbView(true) }
 function qwOpen(slot) { if (CUT) return; gpOpen('qwheel'); GP.slot = slot; gpDraw() }
+function qwGroup(slot) { const o = slot != null ? qbSlots()[slot] : null, id = o ? o.id : slot != null ? null : qbCur(); if (!id) return null; if (id === 'bow') return 'bow'; if (id.startsWith('w:')) { const it = S.bag.find(x => 'w:' + x.id === id); return it && D.ITEMS[it.t] && D.ITEMS[it.t].tool ? 'farm' : 'sword' } return 'farm' }
+function qwBest(slot) { const best = {}, rk = x => D.RAR.indexOf(x.r) * 100 + (x.p || 0) * 10 + (x.id === S.eq[slot] ? 1000 : 0); for (const x of S.bag) { const T = D.ITEMS[x.t]; if (T && T.slot === slot && !T.tool && !x.br && !x.away && (!best[x.t] || rk(x) > rk(best[x.t]))) best[x.t] = x }
+  return Object.values(best).sort((p, q) => gearScore(itemStats(q)) - gearScore(itemStats(p))).map(x => { const T = D.ITEMS[x.t], n = S.bag.filter(y => y.t === x.t && !y.br && !y.away).length; return { x, T, n } }) }
+function qwSecs(g) { const all = qbAll();
+  if (g === 'sword') return [['⚔️ อาวุธ', all.filter(o => o.cat === 'w' && o.id !== 'bow')], ['🛡️ โล่', [{ id: 's:', pic: emo('✋'), n: 'ไม่ใช้โล่', eq: !S.eq.shield }, ...qwBest('shield').map(({ x, T, n }) => ({ id: 's:' + x.id, it: x, pic: gpic(itemPic(x.t), T.icon), n: T.name + (x.p ? ' +' + x.p : ''), cnt: n > 1 ? n : 0, eq: S.eq.shield === x.id }))]]];
+  if (g === 'bow') { const at = arwT(), ar = []; if ((S.arrows || 0) > 0 || !Object.keys(S.arrowsX || {}).some(q => S.arrowsX[q] > 0)) ar.push({ id: 'a:', pic: emo('➶'), n: 'ลูกธนูธรรมดา', cnt: S.arrows || 0, eq: !at }); for (const q of Object.keys(D.ARROWX)) if ((S.arrowsX || {})[q] > 0) ar.push({ id: 'a:' + q, pic: emo(D.ARROWX[q].icon), n: D.ARROWX[q].name, cnt: S.arrowsX[q], eq: at === q });
+    return [['🏹 ธนู', qwBest('bow').map(({ x, T }) => ({ id: 'b:' + x.id, it: x, pic: gpic(itemPic(x.t), '🏹'), n: T.name + (x.p ? ' +' + x.p : ''), eq: S.eq.bow === x.id }))], ['➶ ลูกธนู', ar]] }
+  if (g === 'farm') return [['🧰 เครื่องมือฟาร์ม', all.filter(o => o.cat === 't')], ['🎣 อื่นๆ', all.filter(o => (o.cat || 'o') === 'o')]];
+  return [['⚔️ อาวุธ · ธนู', all.filter(o => o.cat === 'w')], ['🧰 เครื่องมือฟาร์ม', all.filter(o => o.cat === 't')], ['🎣 อื่นๆ', all.filter(o => (o.cat || 'o') === 'o')]] }   /* an empty slot: anything */
+function qwChoose(o, sl) { const put = id => { if (sl != null) { qbSlots(); S.qs[sl] = id } }, bow = qbAll().find(x => x.id === 'bow');
+  if (o.id.startsWith('s:')) { S.eq.shield = o.it ? o.it.id : null; guardTog = false; updGuard(); sfx('coin'); hint(o.it ? `🛡️ ${o.n}` : '✋ ไม่ใช้โล่', 900); save(); gearView(); hud(); gpDraw(); return }   /* a shield: the window stays open so you can pick the sword too */
+  if (o.id.startsWith('b:')) { S.eq.bow = o.it.id; gpClose(); put('bow'); if (bow) qbPick(bow); hint(`🏹 ${o.n}`, 900); return }
+  if (o.id.startsWith('a:')) { S.arrowT = o.id.slice(2); aimHud(); gpClose(); put('bow'); if (bow) qbPick(bow); hint(`${o.n}`, 900); return }
+  gpClose(); put(o.id); if (sl != null) hint(`ช่อง ${sl + 1} = ${o.n}`, 900); qbPick(o) }
 let qbKey = '';
 function qbView(force) { const sl = qbSlots(), cur = qbCur(), key = sl.map(o => o ? o.id : '-').join() + '|' + cur; if (!force && key === qbKey) return; qbKey = key;
   QB.innerHTML = sl.map((o, i) => `<button class="qs${o && o.id === cur ? ' on' : ''}" data-qs="${i}">${o ? o.pic : '<i class="qe">＋</i>'}<small>${i + 1}</small></button>`).join('') + `<button class="qs qbag" data-qs="bag">${emo('🎒')}</button>` }
