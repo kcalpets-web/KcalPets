@@ -2901,9 +2901,9 @@ function tempTick() {
   TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
 }
 let tempK = '';
-function tempHud() { const el = $('hTemp'), gz = $('hGauge') || el; if (!gz.querySelector('svg')) { const P = a => [20 + 15 * Math.cos(a * Math.PI / 180), 21 - 15 * Math.sin(a * Math.PI / 180)].map(v => v.toFixed(1)).join(' '), arc = (a0, a1, c) => `<path d="M${P(a0)} A15 15 0 0 1 ${P(a1)}" stroke="${c}" stroke-width="5" fill="none"/>`;
-    gz.innerHTML = `<svg viewBox="0 0 40 25" width="40" height="25">${arc(180, 122, '#4aa8ff')}${arc(118, 62, '#5ad06a')}${arc(58, 0, '#ff5a4a')}<g id="tNeedle"><line x1="20" y1="21" x2="20" y2="8" stroke="#2a2030" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="20" cy="21" r="3" fill="#2a2030"/></svg>` }
-  const d = Math.round(TEMPV * 80); if (d + '' === tempK) return; tempK = d + ''; el.querySelector('#tNeedle').setAttribute('transform', `rotate(${d} 20 21)`); el.classList.toggle('cold', TEMPV < D.TEMP.coldAt); el.classList.toggle('hot', TEMPV > D.TEMP.hotAt) }
+function tempHud() { const el = $('hTemp'), gz = $('hGauge') || el; if (!gz.querySelector('svg')) { const cx = 1.5, cy = 22, r = 15, P = a => [cx + r * Math.cos(a * Math.PI / 180), cy - r * Math.sin(a * Math.PI / 180)].map(v => v.toFixed(1)).join(' '), arc = (a0, a1, c) => `<path d="M${P(a0)} A${r} ${r} 0 0 1 ${P(a1)}" stroke="${c}" stroke-width="4.5" stroke-linecap="round" fill="none"/>`;   /* v5.23 (designer) the dial stands up and follows the box's round right edge: 🔥 red at the top · green · ❄️ blue at the bottom */
+    gz.innerHTML = `<svg viewBox="0 0 22 44" width="22" height="44">${arc(62, 27, '#ff5a4a')}${arc(19, -19, '#5ad06a')}${arc(-27, -62, '#4aa8ff')}<g id="tNeedle"><line x1="${cx}" y1="${cy}" x2="${cx + 11}" y2="${cy}" stroke="#2a2030" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="${cx}" cy="${cy}" r="2.8" fill="#2a2030"/></svg>` }
+  const d = Math.round(TEMPV * 80); if (d + '' === tempK) return; tempK = d + ''; el.querySelector('#tNeedle').setAttribute('transform', `rotate(${Math.max(-62, Math.min(62, -d * .78)).toFixed(1)} 1.5 22)`); el.classList.toggle('cold', TEMPV < D.TEMP.coldAt); el.classList.toggle('hot', TEMPV > D.TEMP.hotAt) }
 /* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
 let bossK = '';
 function bossHud() { const M = LOCK && (LOCK.chief || LOCK.T.hp >= 100 || /King|Chief/.test(LOCK.kind)) ? LOCK : null, el = $('boss');
