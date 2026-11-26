@@ -469,7 +469,7 @@ export const SHOP = [
   { k: 'mpS', icon: '🍵', name: 'ชาสมุนไพร (พลังงาน)', en: 30, price: 500 },
   { k: 'mpL', icon: '🍵', name: 'ชาสมุนไพรเข้มข้น (พลังงาน)', en: 90, price: 1500 },
 ];
-export const SELL_RATE = .5;
+export const SELL_RATE = .3;   // v5.32 (designer · economy ก) was .5
 
 /* ---- story (docs/STORY.md): no pets until the forest · build a shelter · rescue Uncle Howsif · fix his boat · the ruined town ---- */
 export const STARTERS = [];
@@ -1062,8 +1062,8 @@ export const STORM_HEARTS = 12;                       // recommended hearts
 export const STORM_TOWN = { def: .08, atk: .06 };     // each revived town weakens the storm lord (5 towns → def −40 % · atk −30 %)
 export const STORM_ATK = { slam: { r: 4.5, wind: 1.1, mul: 1 }, bolt: { r: 1.7, wind: 1.2, mul: .8, n: [3, 4, 6] }, minions: [0, 2, 3] };
 export const PROG_REW_ON = true;    // ⏸️ parked (designer: 'พักไว้ก่อน') — true = show the % reward cards
-export const PROG_REW = [{ p: 25, coin: 3000, gem: 30 }, { p: 50, coin: 8000, gem: 80, spirit: 1 }, { p: 75, coin: 15000, gem: 150, spirit: 1 }, { p: 100, coin: 30000, gem: 300, spirit: 2, title: '🧭 นักสำรวจแห่งลูมิเนีย' }];   // v4.99 📊 (designer) rewards for the whole-game progress %
-export const STORM_REWARD = { coin: 10000, gem: 500 };
+export const PROG_REW = [{ p: 25, coin: 1200, gem: 30 }, { p: 50, coin: 3200, gem: 80, spirit: 1 }, { p: 75, coin: 6000, gem: 150, spirit: 1 }, { p: 100, coin: 12000, gem: 300, spirit: 2, title: '🧭 นักสำรวจแห่งลูมิเนีย' }];   // v4.99 📊 (designer) rewards for the whole-game progress %
+export const STORM_REWARD = { coin: 5000, gem: 500 };
 
 /* ================= v1.9.3 temperature (−1 freezing … 0 comfortable … +1 hot) ================= */
 /* v3.2 🌦️ weather: every 6 game hours each land rolls its sky (weights) · temp = added to TEMPV outdoors */
@@ -1180,7 +1180,7 @@ export const DAILY = [
   { k: 'rumor', ic: '🍹', t: 'ฟังข่าวลือในบาร์', n: 1, st: ['rumors'], d: 'e', lock: 'town' },
   { k: 'deliver', ic: '🧺', t: 'ส่งของให้ลุงฮาวซิฟ', n: 5, deliver: ['carrot', 'cabbage', 'egg', 'apple', 'meat'], d: 'm' },
   { k: 'chop', ic: '🪓', t: 'ตัดต้นไม้', n: 10, st: ['clr_tree'], d: 'e' }];
-export const DAILY_REW = { coin: { e: 300, m: 600, h: 1000 }, ticket: 1, all: 1, streak: 7, streakT: 5, swaps: 1 };
+export const DAILY_REW = { coin: { e: 150, m: 300, h: 500 }, ticket: 1, all: 1, streak: 7, streakT: 5, swaps: 1 };
 /* ================= v4.80 🎟️ gacha (designer · docs/art/gacha-mock.png): 3 machines × 12 · looks only (no power) · spin with 🎟️ only · 💎 → 🎟️ · a repeat = ✨ stardust · ✨ buys a chosen piece ================= */
 Object.assign(WEAR, {   /* 👕 the fashion machine's pieces (src: 'gacha' · warm/cool 0: looks only) */
   g_scarf:   { slot: 'head', icon: '🧣', name: 'ผ้าพันคอลายทาง', warm: 0, cool: 0, hat: 'scarf', src: 'gacha' },
@@ -1235,3 +1235,5 @@ Object.assign(WEAR, {
 ACH.push({ k: 'riddles', icon: '🪨', name: 'ผู้ไขปริศนาศิลา', text: 'ไขปริศนาวงหินครบ 24 จุด', stat: 'riddles', goal: 24, reward: { gem: 200 } });
 /* v5.32 (designer) each maker sells the materials of its own goods · dearer than finding them (base price × buy) · rare finds (gems · golem parts · crystals) are never sold */
 export const SHOP_MATS = { buy: 2.5, smith: ['ore', 'copper', 'silver', 'coal', 'flint', 'wood', 'stone', 'feather'], tools: ['wood', 'stone', 'flint', 'grass', 'copper', 'ore', 'hide'], tailor: ['grass', 'hide', 'feather', 'copper'], potion: ['grass', 'stone', 'mint', 'flower'] };
+/* v5.32 (designer · economy ก) money comes in slower: quest 🪙 × .4 (KQUEST + story) · monster 🪙 × .5 (applied at start in main.js) */
+export const ECON = { quest: .4, mon: .5 };
