@@ -3864,7 +3864,7 @@ function ctxTick(now, dt, mv) { whaleAuto(now);
     else if (nearDrop()) { const d = nearDrop(); CTX = { k: 'loot', at: d.g.position, h: 1, go: () => pickDrop(d) } }   /* v3.90 picking up comes before climbing on the raft */
     else if (rf) CTX = { k: 'raft', go: () => board(rf) };
     /* v3.28 no whale ride from the water (the whale is a water barrier now) */
-    else if (PL.swim && !RIDE) CTX = { k: 'swim', go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
+    else if (PL.swim && !RIDE && !ee) CTX = { k: 'swim',   /* v5.34 a door in the water (eel shrine) keeps ✋ 'use' — swimming no longer replaces it */ go: () => { if (now < swimB || !spendEn(D.SWIM_BURST.en)) return; swimB = performance.now() + D.SWIM_BURST.t * 1000; sfx('splash'); VF.ring(q.x, -.05, q.z, '#ffffff', 1.2, .4) } };
     else if (nearDrop()) { const d = nearDrop(); CTX = { k: 'loot', at: d.g.position, h: 1, go: () => pickDrop(d) } }
     else if (nearThrown()) { const P = nearThrown(); CTX = { k: 'loot', at: P.g.position, h: 1, go: () => pickThrown(P) } }
     else if (nearGL()) { const L = nearGL(); CTX = { k: 'loot', at: L.g.position, h: 1, go: () => pickGL(L) } }   /* v3.54 */
