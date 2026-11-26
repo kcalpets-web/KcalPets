@@ -262,7 +262,7 @@ export const GOLEMS = {
   navalee:   { kind: 'golemAqua', dx: -40, dz: 55, name: '🔷 โกเลมอความารีน', col: '#5ac0d0', core: '#c8ffff', mat: 'aquamarine', elem: 'wave' },
   frosthelm: { kind: 'golemCrystal', dx: 50, dz: 45, name: '🔹 โกเลมคริสตัล', col: '#a8d8f0', core: '#ffffff', mat: 'crystal', elem: 'freeze' },
   deadgar:   { kind: 'golemBone', dx: -45, dz: -50, name: '🦴 โกเลมกระดูก', col: '#e8e0d0', core: '#c080ff', mat: 'bone', elem: 'summon' } };
-export const NPC_MARK_R = 9;   // v5.22 (designer) the sign over a person's head (💬 ❗ ❓ 🎁 …) shows only when you are this close
+export const NPC_MARK_R = 1;   // v5.32 (designer) 1 m · v5.22 (designer) the sign over a person's head (💬 ❗ ❓ 🎁 …) shows only when you are this close
 export const NPC_NEAR = [4.5, 7];   // v3.77 strolling people stop and face you inside 4.5 m · walk on only past 7 m
 export const WIN = { padRoom: 320, landGap: 12, h: 366 };   // h = every window's height (px) in both orientations   // v3.75 portrait: windows stop this many px above the screen's bottom (the pad lives there) · landscape: a small gap so the whole frame shows
 export const PINS = { max: 100, reach: 22, arrive: 6, curSpeed: 240, beamH: 160,   // v3.74 📍 map pins: how many in all · A finds a point this close (screen px) · the cursor's speed (screen px/s) · beam height (m)
