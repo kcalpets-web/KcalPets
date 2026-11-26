@@ -5388,10 +5388,10 @@ function openCarp() { sfx('tap'); const H = HOUSE_S();
     detail: o => { const lv = hLv(), { i, L } = o, hasHome = S.builds.some(b2 => b2.k === 'cabin' && b2.done), J = H.job; return { sub: `${L.w}×${L.d} ม. · ${L.what}`, tags: L.cost && i > lv ? Object.entries(L.cost).map(([m, n]) => `<span class="${costHave(m) >= n ? '' : 'dn'}">${costName(m)} ${fmt(costHave(m))}/${fmt(n)}</span>`) : [],
       btn: i <= lv ? { label: i === lv ? '🏠 บ้านตอนนี้' : '✅ ผ่านแล้ว', off: 1 } : J ? { label: `🔨 กำลังต่อเติม → ระดับ ${J.lv + 1} · เสร็จเมื่อนอนถึงเช้า`, off: 1 } : i > lv + 1 ? { label: `ต้องต่อเติมระดับ ${lv + 2} ก่อน`, off: 1 } : !hasHome ? { label: '🏠 ต้องมีบ้านไม้หลังเล็กก่อน', off: 1 }
         : { label: `🔨 จ้างต่อเติม → ระดับ ${i + 1}`, cls: 'gold', off: !hasCost(L.cost), go: () => { if (!hasCost(L.cost)) return false; payCost(L.cost); H.job = { lv: i, day: (S.dayN || 0) + 1, t: Date.now() + D.CARP.mins * 60e3 }; carpProps(); sfx('done'); toast(`🔨 ${D.CARP.name} รับงานแล้ว!<br>เข้านอนถึงเช้า บ้านจะใหญ่ขึ้น (หรือรอ ${D.CARP.mins} นาที)`, 3200); save(); hud() } } } } };
-  const farm = { k: 'farm', ic: '🐄', n: 'สร้างในฟาร์ม', head: () => '<p class="mut">จ่ายวัสดุ + ค่าแรง แล้วเลือกที่วาง · เสร็จเมื่อนอนถึงเช้า</p>',
-    list: () => ['poultry', 'livestock', 'granary'].map(k => ({ id: k, k, pic: emo(BP[k].icon), name: BP[k].name, tag: hasCost(BP[k].cost) ? '📐 วางได้' : '🔒', tc: hasCost(BP[k].cost) ? 'gift' : 'no' })),
+  const farm = { k: 'farm', ic: '🏗️', n: 'งานใหญ่', head: () => '<p class="mut">บ้าน หอสังเกตการณ์ คอกสัตว์ ยุ้งฉาง บ่อปลา · จ่ายวัสดุ แล้วเลือกที่วาง · ทิมโบตามไปสร้างให้</p>',
+    list: () => ['cabin', 'tower', 'poultry', 'livestock', 'granary', 'fishpond'].filter(k => BP[k]).map(k => ({ id: k, k, pic: emo(BP[k].icon), name: BP[k].name, tag: hasCost(BP[k].cost) ? '📐 วางได้' : '🔒', tc: hasCost(BP[k].cost) ? 'gift' : 'no' })),
     detail: o => ({ sub: BP[o.k].desc, tags: Object.entries(BP[o.k].cost).map(([m, n]) => `<span class="${costHave(m) >= n ? '' : 'dn'}">${costName(m)} ${fmt(costHave(m))}/${fmt(n)}</span>`),
-      btn: { label: '📐 เลือกที่วาง', off: !hasCost(BP[o.k].cost), go: () => { S.bp[o.k] = 1; if (!hasCost(BP[o.k].cost)) return false; closeSheets(); enterBuild(o.k); toast('📐 เดินไปที่ฟาร์ม แล้วกดวาง · ทิมโบจะตามไปสร้าง', 2400); return false } } }) };
+      btn: { label: '📐 เลือกที่วาง', off: !hasCost(BP[o.k].cost), go: () => { S.bp[o.k] = 1; if (!hasCost(BP[o.k].cost)) return false; closeSheets(); enterBuild(o.k); toast(BP[o.k].house ? '📐 เดินไปที่ฟาร์ม แล้วกดวาง · ทิมโบจะตามไปสร้าง' : '📐 เดินไปที่ที่อยากสร้าง แล้วกดวาง · ทิมโบจะตามไปสร้าง', 2400); return false } } }) };
   return shopBag(`🔨 ${D.CARP.name} · ช่างไม้`, [house, farm]) }
 function openCarpOld() { const H = HOUSE_S(), lv = hLv(), N = D.HOUSE_LV[lv + 1], J = H.job; sfx('tap');
   shopSheet(`🔨 ${D.CARP.name} · ช่างไม้`, (b, redraw, close) => {
@@ -6144,7 +6144,7 @@ const nearB = (k, x, z, r) => S.builds.some(b => b.k === k && b.done && dist(b.x
 /* placing: a green / red ghost in front of you · ↻ turns it · A (or 🔨) places it · B cancels */
 let BM = null;
 /* v3.97 🔨 building sorted like 🛠️ คราฟ: sections · tiles with the model · tap = its page (what it needs · 🔨 สร้าง) · blueprints you don't have yet show as ❔ */
-const BCAT = [['home', '🏠', 'ที่พัก', ['campfire', 'bed', 'cabin', 'kitchen']], ['store', '🗃️', 'เก็บของ', ['storage', 'chest']], ['farm', '🌾', 'ฟาร์มและรั้ว', ['scarecrow', 'fence', 'path', 'stonewall']], ['go', '🛶', 'เดินทาง', ['raft', 'tower']], ['animal', '🐄', 'เลี้ยงสัตว์', ['poultry', 'livestock', 'granary', 'fishpond']]];
+const BCAT = [['home', '🏠', 'ที่พัก', ['campfire', 'bed', 'kitchen']], ['store', '🗃️', 'เก็บของ', ['storage', 'chest']], ['farm', '🌾', 'ฟาร์มและรั้ว', ['scarecrow', 'fence', 'path', 'stonewall']], ['go', '🛶', 'เดินทาง', ['raft']]];   /* v5.27 (designer) the big works (house · tower · animal barns · fish pond) are built by 🔨 the carpenter */
 const bcatOf = k => (BCAT.find(c => c[3].includes(k)) || BCAT[BCAT.length - 1])[0], bcatList = c => Object.keys(BP).filter(k => bcatOf(k) === c && (!BP[k].house || houseOn()) && (!BP[k].gacha || S.bp[k]));
 const bpPic = k => thumb('bp:' + k, w => w.add(bModel(k)), [.45, .7, 0]);
 let buildTab = null;
