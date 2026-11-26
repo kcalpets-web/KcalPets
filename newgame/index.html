@@ -689,6 +689,11 @@ body.l4 .gwi.on{border-color:#ffd23f;box-shadow:0 0 0 4px #ffd23f88}
 .qcard .qk{display:inline-block;background:#ffd23f;color:#2a2030;border-radius:999px;padding:0 8px;font-size:12px;font-weight:800}
 .vit{overflow:visible}.hclk{position:absolute;left:204px;top:0;margin:0 0 3px;white-space:nowrap;font:800 17px/1 system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px #000c,0 0 4px #0008;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px}.hclk i{font-style:normal;font-size:17px}#hSun .dclk{display:none}   /* v5.18 🕘 (designer) the time beside the hearts */
 .qgrid .gwi.eq::after{content:'✔';position:absolute;left:5px;top:2px;font:900 12px system-ui;color:#3fae6a}
+.wbox{display:flex!important;align-items:center;gap:6px;padding:3px 10px 3px 3px!important;border-radius:30px!important;width:auto!important;height:auto!important;color:var(--ink);font:inherit}   /* v5.20 (designer: C) ☀️ in a ring that fills through the day · the time · the temperature dial — one box */
+.wring{--k:0%;width:38px;height:38px;border-radius:50%;background:conic-gradient(#ffb020 0 var(--k),#0002 var(--k) 100%);display:grid;place-items:center;flex:0 0 auto}.wring.n{background:conic-gradient(#7a8ad8 0 var(--k),#0002 var(--k) 100%)}
+.wring i{width:30px;height:30px;border-radius:50%;background:var(--paper,#fff8ec);display:grid;place-items:center;font-style:normal;font-size:17px;letter-spacing:-3px;overflow:hidden;white-space:nowrap}
+.wcol{display:flex;flex-direction:column;align-items:center;line-height:1}.wcol b{font:800 15px/1.05 system-ui,sans-serif;color:#3a3a46;font-variant-numeric:tabular-nums}.wcol svg{display:block}
+#hTemp.wbox.cold{box-shadow:0 0 0 3px #4aa8ff99,0 3px 0 #0003}#hTemp.wbox.hot{box-shadow:0 0 0 3px #ff5a4a99,0 3px 0 #0003}#hClk{display:none!important}
 </style></head>
 <body>
 <canvas id="cv"></canvas>
@@ -696,7 +701,7 @@ body.l4 .gwi.on{border-color:#ffd23f;box-shadow:0 0 0 4px #ffd23f88}
   <div class="pf" id="pf"><div class="av" id="pfAv">🙂</div><div><div><span id="hLv">Lv 1</span> · <span id="hName"></span></div></div></div>
   <div class="cur"><div class="rt"><div class="pill">🪙 <span id="hCoin">0</span></div><div class="pill">💎 <span id="hGem">0</span></div></div>
     <div class="rt"><div class="pill" id="hMats"></div></div>
-    <div class="rt"><div class="pill clock"><span id="hClock"></span><small id="hSun"></small></div><button class="sq" id="hTemp" aria-label="อุณหภูมิ">🙂</button></div>
+    <div class="rt"><button class="pill wbox" id="hTemp" aria-label="เวลา · อากาศ · อุณหภูมิ"><span class="wring" id="hRing"><i id="hClock"></i></span><span class="wcol"><b id="hTime"></b><span id="hGauge"></span></span><small id="hSun" hidden></small></button></div>
     <div class="rt"><div id="miniW"><canvas id="mini"></canvas><b id="miniN">N</b><small id="miniZ"></small></div></div>
     <div class="rt" id="mBtns"><button class="sq" id="mBag" aria-label="กระเป๋า">🎒</button><button class="sq" id="mMap" aria-label="เมนู"><i class="hb"></i></button></div><button id="goal" aria-label="เป้าหมาย"></button>
     <div class="rt"><div class="pill" id="hBuff" style="display:none"></div><button class="sq" id="bBook" aria-label="สมุดบันทึก">📓</button><button class="sq" id="bMenu" aria-label="เมนู">☰</button><button class="sq" id="bWheel" aria-label="เมนู">◎</button></div></div>

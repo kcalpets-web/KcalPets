@@ -1692,7 +1692,7 @@ function hud() { try { petQuestTick() } catch (e) { } try { walletRefresh() } ca
   $('hCoin').textContent = fmt(S.coin); $('hGem').textContent = fmt(S.gem);
   heartsHud(st);
   $('hMp').style.width = (pEn() / st.en * 100) + '%'; $('hMp').style.background = S.tired ? '#e8a040' : '#9ad03a'; $('hMpB').style.width = Math.min(100, (S.enB || 0) / st.en * 100) + '%'; $('hMpT').textContent = S.tired ? '💦 เหนื่อย' : `${Math.floor(pEn())}${S.enB >= 1 ? '+' + Math.floor(S.enB) : ''}/${st.en}`;
-  setTime(); $('hClock').textContent = timeIcon(); $('hSun').innerHTML = dayBar(); clockHud(); arwBtn(); tempHud();
+  setTime(); $('hClock').textContent = timeIcon(); $('hSun').innerHTML = dayBar(); clockHud(); wxRing(); arwBtn(); tempHud();
   $('hBuff').style.display = S.buff && S.buff.until > Date.now() ? '' : 'none'; if (S.buff && S.buff.until > Date.now()) $('hBuff').textContent = `${S.buff.icon} ${buffTxt(S.buff).split(' ')[0]} ${Math.ceil((S.buff.until - Date.now()) / 60e3)}′`;
   $('bHp').querySelector('small').textContent = '×' + Object.values(S.meals || {}).reduce((a, v) => a + (v > 0 ? v : 0), 0); debHud();
   $('bTool').classList.toggle('dim', !S.shops.tools); $('bShop').classList.toggle('dim', !S.story.town); $('bPets').classList.toggle('dim', !S.pets.length);
@@ -2901,8 +2901,8 @@ function tempTick() {
   TEMPV += (Math.max(-1, Math.min(1, t)) - TEMPV) * .25;
 }
 let tempK = '';
-function tempHud() { const el = $('hTemp'); if (!el.querySelector('svg')) { const P = a => [20 + 15 * Math.cos(a * Math.PI / 180), 21 - 15 * Math.sin(a * Math.PI / 180)].map(v => v.toFixed(1)).join(' '), arc = (a0, a1, c) => `<path d="M${P(a0)} A15 15 0 0 1 ${P(a1)}" stroke="${c}" stroke-width="5" fill="none"/>`;
-    el.innerHTML = `<svg viewBox="0 0 40 25" width="40" height="25">${arc(180, 122, '#4aa8ff')}${arc(118, 62, '#5ad06a')}${arc(58, 0, '#ff5a4a')}<g id="tNeedle"><line x1="20" y1="21" x2="20" y2="8" stroke="#2a2030" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="20" cy="21" r="3" fill="#2a2030"/></svg>` }
+function tempHud() { const el = $('hTemp'), gz = $('hGauge') || el; if (!gz.querySelector('svg')) { const P = a => [20 + 15 * Math.cos(a * Math.PI / 180), 21 - 15 * Math.sin(a * Math.PI / 180)].map(v => v.toFixed(1)).join(' '), arc = (a0, a1, c) => `<path d="M${P(a0)} A15 15 0 0 1 ${P(a1)}" stroke="${c}" stroke-width="5" fill="none"/>`;
+    gz.innerHTML = `<svg viewBox="0 0 40 25" width="40" height="25">${arc(180, 122, '#4aa8ff')}${arc(118, 62, '#5ad06a')}${arc(58, 0, '#ff5a4a')}<g id="tNeedle"><line x1="20" y1="21" x2="20" y2="8" stroke="#2a2030" stroke-width="2.4" stroke-linecap="round"/></g><circle cx="20" cy="21" r="3" fill="#2a2030"/></svg>` }
   const d = Math.round(TEMPV * 80); if (d + '' === tempK) return; tempK = d + ''; el.querySelector('#tNeedle').setAttribute('transform', `rotate(${d} 20 21)`); el.classList.toggle('cold', TEMPV < D.TEMP.coldAt); el.classList.toggle('hot', TEMPV > D.TEMP.hotAt) }
 /* ---------- v1.4.4 boss bar: chiefs / big monsters show their name + HP at the top while you fight them ---------- */
 let bossK = '';
@@ -6724,10 +6724,11 @@ function timeIcon() { if (!WXS) return isNight() ? '🌙' : '☀️'; const t = 
 function dayBar() { const t = S.time, d0 = D.DAY.dawn, d1 = D.DAY.dusk, n = isNight(), k = n ? ((t - d1 + 1440) % 1440) / (1440 - d1 + d0) : (t - d0) / (d1 - d0); return `<i class="dbar${n ? ' n' : ''}"><b style="width:${Math.round(Math.max(0, Math.min(1, k)) * 100)}%"></b></i><span class="dclk">${clockTxt()}</span>` }
 const clockTxt = (t = S.time) => { const m2 = Math.floor(((t % 1440) + 1440) % 1440); return String(Math.floor(m2 / 60)).padStart(2, '0') + ':' + String(m2 % 60).padStart(2, '0') };   /* v5.15 🕘 (designer) the game clock as digits · shops keep hours */
 function clockFace(t = S.time) { const m2 = Math.floor(((t % 1440) + 1440) % 1440), h = Math.floor(m2 / 60) % 12 || 12, half = m2 % 60 >= 30; return String.fromCodePoint((half ? 0x1F55C : 0x1F550) + h - 1) }   /* 🕐…🕛 the face follows the hour */
+function wxRing() { const r = $('hRing'); if (!r || !S) return; const t = S.time, d0 = D.DAY.dawn, d1 = D.DAY.dusk, n = isNight(), k = n ? ((t - d1 + 1440) % 1440) / (1440 - d1 + d0) : (t - d0) / (d1 - d0), v = Math.round(Math.max(0, Math.min(1, k)) * 100) + '%'; if (r.dataset.k !== v + n) { r.dataset.k = v + n; r.style.setProperty('--k', v); r.classList.toggle('n', n) } const h = $('hTime'), c = clockTxt(); if (h && h.textContent !== c) h.textContent = c }   /* v5.20 the day ring (orange by day · blue by night) + the time in the weather box */
 function clockHud() { const e = $('hClk'); if (!e || !S) return; const t = clockTxt(), f = clockFace(); if (e.dataset.t !== t) { e.dataset.t = t; e.innerHTML = `<i>${f}</i>${t}` }
   const hs = $('hearts'), hr = hs && hs.querySelectorAll('.hr'); if (!hr || !hr.length) return; const n = Math.min(10, hr.length), x0 = hr[0].getBoundingClientRect(), x1 = hr[n - 1].getBoundingClientRect(), vb = e.parentElement.getBoundingClientRect(), sun = document.querySelector('.pill.clock'), lim = sun ? sun.getBoundingClientRect().left - 8 : innerWidth - 8, L = x1.right + 10;   /* beside the first row of hearts · below them when that would run into the weather box */
   const side = e.style.position !== 'static' ? L + e.offsetWidth <= lim : L + 80 <= lim; if (side) { e.style.position = ''; e.style.left = (L - vb.left) + 'px'; e.style.top = (x0.top - vb.top + (x0.height - e.offsetHeight) / 2) + 'px' } else { e.style.position = 'static'; if (hs.nextElementSibling !== e) hs.after(e) } }   /* v5.18 (designer) 🕘 10:00 beside the hearts */
-setInterval(() => { const e = document.querySelector('#hSun .dclk'); if (e && S) { const t = clockTxt(); if (e.textContent !== t) e.textContent = t } clockHud() }, 1000);
+setInterval(() => { clockHud(); wxRing() }, 1000);
 /* ---------- v3.0 🗿 the seven golems: a rock pile wakes when you come close → the rocks fly together → a ring of stone closes the arena (no leaving) · slams leave it stunned with its 🔮 core open ---------- */
 var GOL = null, GPILE = {}, GLAIR = {}, FREEZE = 0;
 for (const k in D.GOLEMS) MSCALE[D.GOLEMS[k].kind] = 3;
