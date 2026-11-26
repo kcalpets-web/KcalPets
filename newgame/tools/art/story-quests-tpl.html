@@ -1,0 +1,33 @@
+<title>เควสเนื้อเรื่อง Kealee</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:wght@400;600&display=swap">
+<style>
+/* layout: a field guide — one column of kingdom sections, NPC cards in a 2-up grid, the heart ladder down each card */
+:root{--bg:#f3efe6;--card:#fffaf0;--ink:#2a2030;--mut:#7a6e66;--line:#e2d8c6;--acc:#e8604a;--leaf:#3fae6a;--gold:#e8b838;--display:'Mitr',system-ui,sans-serif;--body:'Sarabun',system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1a20;--card:#29242c;--ink:#f3ece2;--mut:#b0a69c;--line:#3c3540;--acc:#ff8a6a;--leaf:#5fce8a;--gold:#ffd25a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d1a20;--card:#29242c;--ink:#f3ece2;--mut:#b0a69c;--line:#3c3540;--acc:#ff8a6a;--leaf:#5fce8a;--gold:#ffd25a;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2{font-family:var(--display);font-weight:600;text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,5vw,38px)}.lead{color:var(--mut);max-width:65ch;margin:6px 0 0}
+.ladder{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.ladder span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none}nav a{flex:0 0 auto;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:500 14px var(--display)}nav a:focus-visible{outline:2px solid var(--acc)}
+figure{margin:0}figure img{border-radius:12px;border:1px solid var(--line);display:block;width:100%;height:auto}figure figcaption{color:var(--mut);font-size:13px;margin-top:6px}.shots{overflow-x:auto}.shots img{min-width:640px}
+h2{font-size:24px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}h2 span{font:400 14px var(--body);color:var(--mut)}
+.done{color:var(--leaf);font-weight:600;margin:6px 0 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:14px;margin-top:12px}
+article{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}
+header{display:flex;gap:10px;align-items:center}.av{font-size:28px;width:44px;height:44px;display:grid;place-items:center;background:var(--bg);border-radius:50%}header b{font:600 18px var(--display);display:block}header small{color:var(--mut)}
+ol{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}li{display:grid;grid-template-columns:46px 1fr;gap:8px;align-items:start}.h{font:500 13px var(--display);color:var(--acc);padding-top:2px;white-space:nowrap}li p{margin:0}
+.q{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--gold);padding-left:8px}.q .k{font-size:12px;color:var(--mut)}.q small{color:var(--mut);font-size:13px}.q i{color:var(--mut);font-size:14px}.q em{font-style:normal;font-size:13px;color:var(--leaf)}
+.clue{color:var(--ink)}.ref b{font-weight:600}
+footer{color:var(--mut);font-size:14px}
+</style>
+<div class="wrap">
+<div><h1>เควสเนื้อเรื่องทั้ง 6 อาณาจักร</h1><p class="lead">NPC ทุกคนมีหัวใจ 5 ดวง แต่ละขั้นเปิดเรื่องใหม่ · ทั้งหมด %%TOTAL%% เควส · เล่นผ่านอัตโนมัติครบทุกเควสแล้ว (ยังไม่ขึ้นเว็บ ยกเว้นซิลวาเรน)</p>
+<div class="ladder"><span>🤍0 ทักทายตามนิสัย</span><span>❤️1 เควส 1</span><span>❤️2 เบาะแส</span><span>❤️3 เควส 2</span><span>❤️4 แนะนำคนสำคัญ</span><span>❤️5 เควส 3</span></div></div>
+<nav aria-label="อาณาจักร">%%NAV%%</nav>
+<figure class="shots"><img src="shots.png" alt="ภาพจากเกมจริง: จุดทำเควสของนาวาลี อัสราห์ ฟรอสต์เฮล์ม วัลคารา และเดดการ์"><figcaption>ภาพจากเกมจริง (ยังไม่ขึ้นเว็บ): ซ่อมเรือโอเรน · พาฮามีร์ไปโอเอซิส · เตาผิงสาธารณะ · เตาหลอมใหญ่ · เดดการ์</figcaption></figure>
+%%BODY%%
+<footer>ข้อมูลสร้างจากโค้ดในเกม (src/quests.js) · ไฟล์ในเกมยังแก้ข้อความได้ทุกบรรทัด</footer>
+</div>
