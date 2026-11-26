@@ -1893,7 +1893,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
   Y.addEventListener('pointerdown', e => { e.preventDefault(); if (!CUT && winFlip(-1)) return; if (CUT || document.querySelector('.ov')) return; unlock(); RUNON = false; const now = performance.now(); /* v4.29 riding the pet: Y = your own weapon (designer: the pet only runs + jumps) */
     if (SKW.on) { skwUse('Y'); return } if (PICK) { pickChoose(); return } t0 = now; if (SMENU.on) { smenuGo('left'); return } if (AIM && !AIM.quick) { aimZoom(1); return } if (AIM) return;
     try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
-    if (CTX && (CTX.k === 'talk' || CTX.k === 'gift') && !carryN()) { actA(); return }   /* v5.17 layout 4: the big button talks in front of someone */
+    /* v5.25 (designer) talking moved back to ✋ (right of the diamond) · the big button only uses what you hold */
     if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (!gFarm() && foeNear()) windStart(); else qwOpen(null) }); return }   /* v5.17 (designer) hold the big button = the item wheel · a foe close by = the throw (as before) */   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
     if (carryN()) carryBack(true); if (!gFarm()) { qaimStart('bow', Y); if (AIM) { AIM.lx = e.clientX; AIM.ly = e.clientY } return }   /* ranged combat: hold = aim the bow */
     const k = yTool();
@@ -3337,7 +3337,7 @@ function applyOpt() { OPT.ctrl = 'pad';   /* v5.16 (designer) buttons only: the 
 applyOpt();
 /* v3.53 🕹️ your own controller layout: drag the stick and A B X Y where you like · size per control · see-through · colour (original · grey · black & white) · saved on the phone */
 document.body.classList.add('l4');   /* v5.17 layout 4 (designer) */
-const LAYK = ['stick', 'bA', 'bB', 'bX', 'bY'], LAYBASE0 = { stick: 130, bA: 64, bB: 64, bX: 64, bY: 64 }, LAYBASE = new Proxy({}, { get: (_, k) => { if (!document.body.classList.contains('l4')) return LAYBASE0[k]; const land = innerWidth > innerHeight && innerHeight < 500; return (land ? { stick: 118, bA: 48, bB: 48, bX: 48, bY: 74 } : { stick: 130, bA: 54, bB: 54, bX: 54, bY: 84 })[k] } });   /* v5.17 the big button + the ring keep their sizes when the layout editor applies */
+const LAYK = ['stick', 'bA', 'bB', 'bX', 'bY'], LAYBASE0 = { stick: 130, bA: 64, bB: 64, bX: 64, bY: 64 }, LAYBASE = new Proxy({}, { get: (_, k) => { if (!document.body.classList.contains('l4')) return LAYBASE0[k]; const land = innerWidth > innerHeight && innerHeight < 500; return (land ? { stick: 118, bA: 48, bB: 48, bX: 48, bY: 74 } : { stick: 130, bA: 56, bB: 56, bX: 56, bY: 84 })[k] } });   /* v5.17 the big button + the ring keep their sizes when the layout editor applies */
 let LAY = {}; try { LAY = JSON.parse(localStorage.getItem('ng_lay') || '{}') || {} } catch (e) { LAY = {} }
 function layApply() { const L = LAY.pos || {}; for (const id of LAYK) { const el = $(id); if (!el) continue; const p = L[id], sc = (LAY.size || {})[id] || 1, w = Math.round(LAYBASE[id] * sc);
     if (p) Object.assign(el.style, { left: Math.round(p[0] * innerWidth - w / 2) + 'px', top: Math.round(p[1] * innerHeight - w / 2) + 'px', right: 'auto', bottom: 'auto', margin: '0' }); else Object.assign(el.style, { left: '', top: '', right: '', bottom: '', margin: '' });
@@ -3867,7 +3867,7 @@ let btnT = 0; function btnTick(now) { if (now < btnT) return; btnT = now + 150; 
     else if (!f) { tap = ['🏹', 'ค้าง = เล็ง']; hold = ['🎯', 'ปล่อย = ยิง'] }
     else { const k = yTool(), T = D.YTOOL[k] || {}; tap = [T.icon || '🧰', k === 'rope' ? (YT && YT.M ? 'คล้อง' : 'ดึงของ') : k === 'net' ? 'ตาข่าย' : k === 'rod' ? 'ตกปลา' : k === 'draw' ? 'วาดภาพ' : k === 'flute' ? 'ขลุ่ย' : 'ใช้']; }   /* v4.88 no hold-to-aim: the white ring */
     if (f && !r && wi) tap[0] = picTag(itemPic(w.t), emo(wi.icon), ' bic2'); else if (f && r && YMESH[yTool()]) tap[0] = picTag(yPic(yTool()), emo(tap[0]), ' bic2'); else if (f && S.hand === 'torch' && S.lampOn) tap[0] = picTag(lampPic(), emo('🏮'), ' bic2');   /* v4.88 the real clay picture (designer) */
-    if (CTX && (CTX.k === 'talk' || CTX.k === 'gift') && !carryN() && !AIM) { tap = ['💬', CTX.k === 'gift' ? 'ให้ของ' : 'คุย']; hold = null }   /* v5.17 */
+
     btnSet('bY', tap, hold); { const safe = !f && safeHere() && !AIM && !HORSE && !RIDE && !GLIDE && !carryN(), t2 = safe && nearTarget(); $('bY').classList.toggle('boff', !!safe && !(t2 && t2.o)); $('bB').classList.toggle('boff', !!safe) } } }   /* v4.88 (designer) in a safe town hitting / parrying does nothing → the buttons fade */
 function ctxPos(now = performance.now()) {
   const c = CTX; let p = null; if (c && c.at) p = [c.at.x, (c.at.y || 0) + (c.h || 1.8), c.at.z]; else if (c && c.xz) p = [c.xz[0], groundH(c.xz[0], c.xz[1]) + (c.h || 1.6), c.xz[1]];
