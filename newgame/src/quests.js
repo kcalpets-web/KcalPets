@@ -221,3 +221,19 @@ const JOBQ = {
   'ซาลาแมนเดอร์': [{ coal: 6, lavaCoal: 1 }, 'หาถ่านให้{n}อุ่นเปลวไฟ', 'ไฟของข้าลุกโชนแล้ว!'] };
 for (const k in KQ) for (const n of KQ[k].npcs || []) { const J = !n.lead && n.job && JOBQ[n.job]; if (!J) continue; const id = 'job_' + n.id; if (KQUEST[id]) continue;
   KQUEST[id] = { t: 'bring', need: J[0], text: J[1].replace('{n}', n.name), done: J[2], reward: { coin: 1200, gem: 10 }, job: 1 }; n.q = (n.q || []).concat(id) }
+
+/* ================= v5.18 💞 story quests by hearts (designer · docs/plan-story-sylvaren.md): 🤍0 cold · ❤️1 quest 1 · ❤️2 a clue · ❤️3 quest 2 · ❤️4 points you to someone · ❤️5 quest 3
+   the old fetch quests of these people are dropped (their ⭐ job quest stays) · Sylvaren first ================= */
+export const STORY = {
+  'sylvaren:mali': { cold: '…อย่าเข้ามาใกล้กับดักของข้า', q: ['svS_mali1', 'svS_mali2', 'svS_mali3'],
+    clue: 'สังเกตไหม… สัตว์ทุกตัวหนีออกจากป่าทางเหนือ ไม่มีตัวไหนกล้าเข้าใกล้ปราสาทเลย', ref: { to: 'boonma', say: 'ถ้าอยากรู้เรื่องป่ามากกว่านี้ ไปหาฟาเรนสิ เขาเคยสร้างหอสังเกตการณ์ให้พรานอย่างข้า' } },
+  'sylvaren:boonma': { cold: '…ยุ่งอยู่', q: [], clue: 'สะพานข้ามลำธารพังคืนฝนดำ… เสาถูกอะไรบางอย่างกัดกินจากใต้น้ำ', ref: { to: 'leo', say: 'เด็กนั่นเคยวาดภาพเด็กๆ วิ่งข้ามสะพานของข้า ไปคุยกับลีโอดูสิ' } },
+  'sylvaren:leo': { cold: 'ยินดีที่ได้รู้จัก! เธอชอบวาดรูปไหม', q: ['svS_leo1'], clue: 'ในภาพเก่าของผม มีวงหินล้อมต้นไม้แม่… ตอนนี้มันหายไปแล้ว', ref: { to: 'svLead', say: 'ผู้นำซิลวี่น่าจะรู้ความหมายของวงหินนั่น' } },
+  'sylvaren:baitong': { cold: 'วางไว้ตรงนั้นแหละ…', q: ['svS_bai1'], clue: 'ใบไม้ที่ร่วงมีจุดดำ… พิษไหลขึ้นมาจากราก ไม่ได้ตกลงมาจากฟ้า', ref: { to: 'mali', say: 'ลิราเอลรู้ทางลับไปถึงรากต้นไม้แม่ ไปถามนางดูเถอะ' } } };
+Object.assign(KQUEST, {
+  svS_mali1: { t: 'kill', kind: 'boar', n: 2, ask: 'หมูป่าคลั่งขุดแปลงต้นกล้าของข้าพังหมด… ช่วยข้าล่ามันที', text: 'ล่าหมูป่าคลั่ง 2 ตัวที่ขุดแปลงต้นกล้า', done: 'ต้นกล้าของข้าปลอดภัยแล้ว… เจ้าใช้ได้นี่', reward: { coin: 300 }, kind2: '🏹 ล่าสัตว์' },
+  svS_mali2: { t: 'catchK', kind: 'deer', n: 1, ask: 'มีกวางตัวหนึ่งหลงออกนอกป่า มันกลัวจนไม่ยอมให้ใครเข้าใกล้ ใช้เชือกพามันกลับมาที', text: 'ใช้เชือกจับกวางที่หลงทาง 1 ตัว', done: 'ดูมันสิ… กลับมาอยู่ใกล้คนแล้ว ขอบใจนะ', reward: { coin: 500, gem: 5 }, kind2: '🪢 จับ' },
+  svS_mali3: { t: 'guard', waves: 3, per: 2, mon: 'witherImp', at: [-24, -14], ask: 'ฝูงกวางกำลังกลับเข้าป่า แต่ภูตไม้เหี่ยวดักรออยู่ ช่วยข้าคุ้มกันพวกมันที', text: 'คุ้มกันฝูงกวางจากภูตไม้เหี่ยว 3 ระลอก', done: 'ฝูงกวางกลับบ้านได้แล้ว… ป่านี้เริ่มมีชีวิตอีกครั้ง', reward: { coin: 1200, gem: 15 }, kind2: '🛡️ ปกป้อง' },
+  svS_leo1: { t: 'draw', ask: 'ช่วยวาดป่าซิลวาเรนตอนนี้ให้ผมสักภาพได้ไหม ผมอยากเอาไว้เทียบกับภาพเก่า', text: 'วาดภาพป่าซิลวาเรนตอนนี้ 1 ภาพ', done: 'ต่างกันมากเลย… แต่ยังสวยอยู่นะ', reward: { coin: 300 }, kind2: '🖍️ วาด' },
+  svS_bai1: { t: 'cook', k: 'minttea', ask: 'ชาวบ้านไอกันหนักเพราะฝนดำ… ช่วยต้มชามินต์อุ่นให้หน่อย', text: 'ปรุงชาใบมิ้นต์ 1 ครั้ง', done: 'กลิ่นหอมดี… คนป่วยต้องชอบแน่', reward: { coin: 300 }, kind2: '🍲 ปรุง' } });
+for (const key in STORY) { const [k, id] = key.split(':'), n = (KQ[k].npcs || []).find(x => x.id === id); if (!n) continue; n.story = STORY[key]; n.sq = STORY[key].q; n.q = (n.q || []).filter(x => KQUEST[x] && KQUEST[x].job) }
