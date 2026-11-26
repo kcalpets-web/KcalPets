@@ -16,9 +16,9 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8845, OUT = process.arg
     // 🐋 into deep water (west sea off the island), use the skill from the wheel
     await E(() => { const N = window.__ng; N.placeMe(-12, 0) }); await wait(1500);
     const sw0 = await E(() => ({ swim: window.__ng.PL.swim, y: +window.__ng.me.y.toFixed(2) })); log('in the sea', JSON.stringify(sw0)); if (!sw0.swim) errs.push('test spot is not water');
-    await E(() => window.__ng.skwUse('Y')); await wait(600); const w0 = await E(() => ({ ride: !!window.__ng.RIDE, bub: window.__ng.WBUB.visible })); log('child whale', JSON.stringify(w0)); if (w0.ride || w0.bub) errs.push('a child whale (Lv 3) should not carry you yet');
-    await E(() => { const N = window.__ng; N.S.pets[0].lv = 6; N.buildPet(N.S.pets[0], N.me.x, N.me.z - 3) }); await E(() => window.__ng.skwUse('Y')); await wait(800);
-    const w1 = await E(() => ({ ride: !!(window.__ng.RIDE && window.__ng.RIDE.whale), bub: window.__ng.WBUB.visible })); log('teen whale', JSON.stringify(w1)); if (!w1.ride || w1.bub) errs.push('the teen whale skill should be a ride (no barrier)');
+    await wait(2000); const w0 = await E(() => ({ ride: !!window.__ng.RIDE, bub: window.__ng.WBUB.visible })); log('child whale', JSON.stringify(w0)); if (w0.ride || w0.bub) errs.push('a child whale (Lv 3) should not carry you yet');
+    await E(() => { const N = window.__ng; N.S.pets[0].lv = 6; N.buildPet(N.S.pets[0], N.me.x, N.me.z - 3) }); for (let i = 0; i < 8 && !(await E(() => !!(window.__ng.RIDE && window.__ng.RIDE.whale))); i++) await wait(700);   /* v5.33 (designer) 🐋 sets itself: swimming in deep water = it picks you up */
+    const w1 = await E(() => ({ ride: !!(window.__ng.RIDE && window.__ng.RIDE.whale), bub: window.__ng.WBUB.visible })); log('teen whale', JSON.stringify(w1)); if (!w1.ride || w1.bub) errs.push('v5.33 a teen whale should pick you up by itself in deep water (no barrier)');
     await pg.screenshot({ path: OUT + '/ride.png' });
     await E(() => window.__ng.leaveRaft()); await wait(400); const w2 = await E(() => ({ ride: !!window.__ng.RIDE, cd: Math.round(((window.__ng.PSK.whale || 0) - Date.now()) / 1000) })); log('off', JSON.stringify(w2)); if (w2.ride || !(w2.cd > 20)) errs.push('getting off should start the cooldown');
     await E(() => window.__ng.skwUse('Y')); await wait(500); if (await E(() => !!window.__ng.RIDE)) errs.push('the skill should wait for its cooldown');
