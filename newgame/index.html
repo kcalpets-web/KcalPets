@@ -696,6 +696,7 @@ body.l4 .gwi.on{border-color:#ffd23f;box-shadow:0 0 0 4px #ffd23f88}
 #hTemp.wbox.cold{box-shadow:0 0 0 3px #4aa8ff99,0 3px 0 #0003}#hTemp.wbox.hot{box-shadow:0 0 0 3px #ff5a4a99,0 3px 0 #0003}#hClk{display:none!important}
 .wtop{display:flex;align-items:center;gap:3px}.wbox #resist{margin:0;flex-wrap:nowrap;gap:2px}.wbox #resist .rs{font-size:10px;line-height:14px;padding:0 3px;border-width:1.5px;border-radius:7px}.wbox #resist .rs.glow{box-shadow:0 0 5px 2px #ffd84a}   /* v5.23 (designer) the temperature status sits in the weather box, on the lower line beside the dial */
 #hTemp.wbox{position:relative;padding-right:34px!important;min-height:44px}.wbox #hGauge{position:absolute;right:0;top:50%;width:26px;height:44px;transform:translateY(-50%)}.wbox #hGauge svg{display:block}.wbox .wcol{align-items:center;gap:2px;flex:1}.wbox #resist{min-height:16px;display:flex!important}.wbox .wcol{min-width:66px}   /* v5.23 the dial hugs the round right end */
+@media (orientation:landscape){body.l4 #stick{left:10px!important;margin-left:0!important}body.l4 #bA,body.l4 #bB,body.l4 #bX,body.l4 #bY{margin-right:0!important}body.l4 #bY,body.l4 #bB{right:10px}body.l4 #bX{right:72px}body.l4 #bA{right:104px}}   /* v5.24 (designer) landscape: the stick and buttons sit on the same edges as the hearts and the weather box (10 px · the notch inset was counted twice) */
 </style></head>
 <body>
 <canvas id="cv"></canvas>
