@@ -43,7 +43,7 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { tent: ['⛺', 'เต็นท์', 75], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
@@ -776,20 +776,21 @@ export const CAMP_TIERS = [                                    // by distance fr
 /* blueprints: found in camp chests and on glowing scrolls around the map (building mode = v1.3) */
 export const BLUEPRINTS = {
   /* v4.75 🐔 house stage 4 (house: 1 = only while the house is on · carp: 1 = the carpenter builds it: done after you sleep, or after CARP.mins) */
-  poultry:   { icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ทิมโบสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
-  livestock: { icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ทิมโบสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
-  granary:   { icon: '🌾', name: 'ยุ้งฉาง', desc: 'คลังเก็บฟาง (อาหารสัตว์) ได้ 300 · วางที่ไหนก็ได้ · กองฟางข้างคอกหยิบจากที่นี่ · คอก Lv 3 เติมรางเองทุกเช้า · ทิมโบสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
-  fishpond:  { icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว (ขยายได้ถึง 12) · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
+  poultry:   { farm: 1, icon: '🐔', name: 'เล้าสัตว์ปีก', desc: 'ไก่ · เป็ด อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาหากินเอง ตกเย็นเข้าเล้า · ทิมโบสร้างให้', cost: { wood: 40, stone: 10, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 2.8, d: 2.2, solid: 1 },
+  livestock: { farm: 1, icon: '🐄', name: 'โรงเลี้ยงสัตว์', desc: 'วัว · หมู · แกะ · แพะ อยู่ได้ 4 ตัว (ขยายได้ถึง 12) · กลางวันออกมาเล็มหญ้า ตกเย็นเข้าโรง · ทิมโบสร้างให้', cost: { wood: 80, stone: 30, coin: 3000 }, house: 1, carp: 1, t: 1200, w: 4.6, d: 3.2, solid: 1 },
+  granary:   { farm: 1, icon: '🌾', name: 'ยุ้งฉาง', desc: 'คลังเก็บฟาง (อาหารสัตว์) ได้ 300 · วางที่ไหนก็ได้ · กองฟางข้างคอกหยิบจากที่นี่ · คอก Lv 3 เติมรางเองทุกเช้า · ทิมโบสร้างให้', cost: { wood: 50, stone: 20, coin: 1500 }, house: 1, carp: 1, t: 1200, w: 3.2, d: 2.8, solid: 1 },
+  fishpond:  { farm: 1, icon: '🐟', name: 'บ่อปลา', desc: 'ปล่อยลูกปลาได้ 4 ตัว (ขยายได้ถึง 12) · ทุกเช้าได้ปลา · ไม่ต้องให้อาหาร', cost: { stone: 20, grass: 6 }, house: 1, t: 60, w: 4.2, d: 3.6 },     // t = build seconds · w × d = footprint (m) · solid = blocks walking · start = Uncle Howsif teaches it
   campfire:  { icon: '🔥', name: 'กองไฟ', desc: 'ทำอาหารได้ทุกที่ (นอนได้ที่บ้านเท่านั้น) · จุดด้วยหินเหล็กไฟ', cost: { wood: 6, stone: 4, flint: 1 }, start: 1, t: 20, w: 1.6, d: 1.6 },
   storage:   { icon: '🗃️', name: 'หีบเก็บของ', desc: 'เก็บของได้ 60 ช่อง (ของชนิดเดียวกันซ้อนในช่องเดียว) · กด A ที่หีบเพื่อเปิด', cost: { wood: 12, stone: 4 }, start: 1, t: 25, w: 1.2, d: .9, solid: 1 },   // v3.90
   chest:     { icon: '📦', name: 'หีบเก็บผัก', desc: 'วางใกล้แปลงผัก · ผักที่สุกในระยะ 8 ม. ถูกเก็บเข้าหีบเอง', cost: { wood: 10 }, start: 1, t: 20, w: 1, d: .8 },
   raft:      { icon: '🛶', name: 'เรือแพ', desc: 'วางที่น้ำริมฝั่ง · ขึ้นพายข้ามทะเลได้ไม่เสียพลังงาน · ตกปลากลางทะเลได้', cost: { wood: 16, grass: 8 }, start: 1, t: 40, w: 1.6, d: 2.3, water: 1 },
-  fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์และสัตว์เดินผ่านไม่ได้', cost: { wood: 4 }, t: 8, w: 2, d: .3, solid: 1 },
-  path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, t: 6, w: 2, d: 2 },
+  fence:     { icon: '🪵', name: 'รั้วไม้', desc: 'กั้นพื้นที่ · มอนสเตอร์และสัตว์เดินผ่านไม่ได้', cost: { wood: 4 }, farm: 1, t: 8, w: 2, d: .3, solid: 1 },
+  path:      { icon: '🟫', name: 'ทางเดินหิน', desc: 'เดินบนทางเร็วขึ้น 20%', cost: { stone: 2 }, farm: 1, t: 6, w: 2, d: 2 },
   bed:       { icon: '🛏️', name: 'เตียงฟาง', desc: 'วางในบ้าน/ข้างบ้าน แล้วนอนพักได้ · ตื่นมาพลังงานสำรอง +100', cost: { grass: 10, hide: 2 }, t: 30, w: 1.3, d: 2.1 },
-  stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, t: 15, w: 2, d: .6, solid: 1 },
+  stonewall: { icon: '🧱', name: 'กำแพงหิน', desc: 'กำแพงแข็งแรง · มอนสเตอร์ผ่านไม่ได้', cost: { stone: 6 }, farm: 1, t: 15, w: 2, d: .6, solid: 1 },
   kitchen:   { icon: '🍳', name: 'โต๊ะครัว', desc: 'หม้อในระยะ 8 ม. ปรุงอาหารเร็วขึ้นครึ่งหนึ่ง', cost: { wood: 12, stone: 6 }, t: 45, w: 1.9, d: 1, solid: 1 },
-  scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, t: 25, w: .8, d: .8, solid: 1 },
+  scarecrow: { icon: '🎃', name: 'หุ่นไล่กา', desc: 'ผักในแปลงระยะ 8 ม. โตเร็วขึ้น 20%', cost: { wood: 6, grass: 8, feather: 3 }, farm: 1, t: 25, w: .8, d: .8, solid: 1 },
+  tent:      { icon: '⛺', name: 'เต็นท์', desc: 'นอนพักได้ทุกที่ (นอกเมือง) · ใช้ได้ครั้งเดียว · หายไปเมื่อขึ้นวันใหม่', cost: { tent: 1 }, t: 3, w: 1.8, d: 2, tent: 1 },   // v5.27 (designer) bought at 🛠️ the tools shop · in the bag · ⛺ กางเต็นท์
   cabin:     { icon: '🏠', name: 'บ้านไม้หลังเล็ก', desc: 'ที่พักของคุณเอง · นอนพัก', cost: { wood: 40, stone: 20, hide: 4 }, t: 120, w: 3, d: 3, solid: 1 },
   tower:     { icon: '🗼', name: 'หอสังเกตการณ์', desc: 'ปีนขึ้นไปเพื่อเปิดแผนที่รอบๆ กว้าง 150 ม.', cost: { wood: 30, stone: 10, feather: 4 }, t: 90, w: 2, d: 2, solid: 1 },
 };
@@ -1232,3 +1233,4 @@ Object.assign(WEAR, {
   r_moss:    { slot: 'body', icon: '🌿', name: 'ผ้าคลุมตะไคร่', warm: 1, cool: 0, col: '#4a6a3a', look: 'cape', src: 'riddle' },
   r_rune:    { slot: 'body', icon: '🔷', name: 'ชุดเกราะอักขระ', warm: 0, cool: 1, col: '#8a96b8', look: 'knight', src: 'riddle', def: 2 } });
 ACH.push({ k: 'riddles', icon: '🪨', name: 'ผู้ไขปริศนาศิลา', text: 'ไขปริศนาวงหินครบ 24 จุด', stat: 'riddles', goal: 24, reward: { gem: 200 } });
+export const TENT = { price: 150 };   // v5.27 ⛺ a one-night tent from 🛠️ the tools shop

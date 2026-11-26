@@ -398,6 +398,11 @@ const log = (g, [x, y, z], len, [rx, ry, rz], r = .09, c = WOOD) => { const gk =
   m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; g.add(m); return m };
 export const BUILDS = {
   chest(g) { CAMP.chest(g) },
+  tent(g) { const B = new THREE.BoxGeometry(2, 2, 2), cv = new THREE.MeshStandardMaterial({ color: '#e8c890', roughness: .9 }), cv2 = new THREE.MeshStandardMaterial({ color: '#c89a5a', roughness: .9 }), dk = new THREE.MeshStandardMaterial({ color: '#4a3220', roughness: 1 });
+    for (const sd of [-1, 1]) { const m = new THREE.Mesh(B, sd < 0 ? cv : cv2); m.scale.set(.03, .9, 1); m.position.set(sd * .5, .7, 0); m.rotation.z = sd * .6; m.castShadow = true; g.add(m) }   /* two sloping sides of canvas */
+    log(g, [0, 1.42, 0], 2.15, [Math.PI / 2, 0, 0], .045);   /* the ridge pole */ for (const z of [-1, 1]) for (const sd of [-1, 1]) log(g, [sd * .45, .7, z], 1.6, [0, 0, -sd * .6], .035);
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(.5, 1.1, 3, 1, false), dk); fl.position.set(0, .55, .98); fl.rotation.y = Math.PI; fl.scale.z = .05; g.add(fl);   /* the dark doorway */
+    part(g, '#a86a3a', '#e8a868', [0, .03, .1], [1.05, .03, 1.15], [0, 0, 0], { A: .03 }) },   /* v5.27 ⛺ an A-frame tent */
   storage(g) { const c = new THREE.Group(); CAMP.chest(c); c.scale.set(1.7, 1.5, 1.7); g.add(c); for (const x of [-.45, .45]) part(g, '#2a4a7a', '#6a9ad8', [x, .38, 0], [.06, .36, .55], [0, 0, 0], { A: 0 }) },   /* v3.90 🗃️ the storage chest: a big chest with blue straps */
   fence(g) { for (const x of [-.95, 0, .95]) log(g, [x, .45, 0], .9, [0, 0, 0], .07); for (const y of [.35, .7]) log(g, [0, y, 0], 2, [0, 0, Math.PI / 2], .05, WOODL) },
   path(g) { const P = [[-.5, -.5], [.5, -.45], [-.45, .5], [.5, .5], [0, 0]]; for (const [x, z] of P) part(g, STONE[0], STONE[1], [x, .03, z], [.36, .04, .34], [0, x * 2 + z, 0], { A: .08, f: 2 }) },
