@@ -15,6 +15,13 @@
 
 ---
 
+### v5.29 — ถามก่อนนำทาง · เดินตามถนน ไม่ว่ายน้ำ (26 พ.ย.)
+- ผู้ออกแบบขอ: กดแล้วไม่ควรไปเลย ให้ยืนยันก่อน · นำทางเดินเฉพาะบนบก ตามถนน
+- ทำแล้ว: navAsk (confirmBox + ระยะ) ที่ #qNow / data-tr2 / data-qp · rGraph + roadRoute (Dijkstra บนจุดถนน · จุดละ ~10 ม.) ใน autoGo + หลังสะพาน · planPath น้ำลึก = ปิด (เว้นเริ่มในน้ำ) · เดินตรงหยุดที่ฝั่ง
+- ทดสอบ: ผ่าน autogo · autopath · bridge · questnav · atlas · starter154 / ล้มเดิม autoq (โหมดแตะ) · track (🎒🗺️) · route (ชน 27/1121 · เดิม 33/1131)
+- ขึ้นเว็บ: ✅
+- ค้าง / ข้อสังเกต: แถบเควสบนจอหลักยังเดินทันที (ถามผู้ออกแบบแล้ว)
+
 ### v5.28 — หน้าเมนูใหม่ 5 หน้า · น้องตัวแรกปล่อยไม่ได้ (26 พ.ย.)
 - ผู้ออกแบบขอ: ทำตาม quest-layout-mock.png + other-pages-mock.png · ฝึกหัดครบแล้วซ่อน · น้องหมา/แมวตัวแรกปล่อยไม่ได้
 - ทำแล้ว: openQuests (QSUB 4 แท็บ + QSOLO paths/mem/ach · qPeople · #qNow) · upPage tabs ไม่บังคับ + o.top · recipesBody (can/known/new) · openBuild หน้าเดียว · openBag('pets') รวมสกิล + #petTop · menuBody แท็บบน 3 อัน + .ctlg · navAll หน้าไม่มีแท็บเริ่มที่การ์ด · p1 ปล่อยไม่ได้
