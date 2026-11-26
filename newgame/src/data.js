@@ -1233,3 +1233,5 @@ Object.assign(WEAR, {
   r_moss:    { slot: 'body', icon: '🌿', name: 'ผ้าคลุมตะไคร่', warm: 1, cool: 0, col: '#4a6a3a', look: 'cape', src: 'riddle' },
   r_rune:    { slot: 'body', icon: '🔷', name: 'ชุดเกราะอักขระ', warm: 0, cool: 1, col: '#8a96b8', look: 'knight', src: 'riddle', def: 2 } });
 ACH.push({ k: 'riddles', icon: '🪨', name: 'ผู้ไขปริศนาศิลา', text: 'ไขปริศนาวงหินครบ 24 จุด', stat: 'riddles', goal: 24, reward: { gem: 200 } });
+/* v5.32 (designer) each maker sells the materials of its own goods · dearer than finding them (base price × buy) · rare finds (gems · golem parts · crystals) are never sold */
+export const SHOP_MATS = { buy: 2.5, smith: ['ore', 'copper', 'silver', 'coal', 'flint', 'wood', 'stone', 'feather'], tools: ['wood', 'stone', 'flint', 'grass', 'copper', 'ore', 'hide'], tailor: ['grass', 'hide', 'feather', 'copper'], potion: ['grass', 'stone', 'mint', 'flower'] };
