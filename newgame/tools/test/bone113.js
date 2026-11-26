@@ -20,7 +20,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8863, OUT = process.argv[2] || '/tmp/
     log('bone', JSON.stringify(r)); await pg.screenshot({ path: OUT + '/bone.png' });
     if (!r.arm) errs.push('the skeleton giant should have its sword arm'); if (!r.acts.includes('sweep') || !r.acts.includes('thrust')) errs.push('it should sweep and thrust (got ' + r.acts + ')'); if (!r.acts.includes('summon') || !r.minions) errs.push('below half it should raise skeletons'); if (!(r.weak[0] > r.weak[1])) errs.push('a hit while it winds up should do more (' + r.weak + ')');
     const w = await E(async () => { const N = window.__ng, M = window.__m, sp0 = N.S.spirit.free || 0; N.hurtMon(M, 999999, 'test'); await new Promise(r => setTimeout(r, 2500)); return { done: !!(N.S.minib || {}).deadgar, sp: (N.S.spirit.free || 0) - sp0, row: N.trackDone().some(t => t.id === 'bs:deadgar'), gone: !N.mons.includes(M), cloud: !!N.S.story.cloudGone } });
-    log('beaten', JSON.stringify(w)); if (!w.done || w.sp !== 1 || !w.row) errs.push('beating it should finish the deadgar boss (✨ +1 · ✅ in the quest list)'); if (w.cloud) errs.push('it must not count as beating the dark cloud');
+    log('beaten', JSON.stringify(w)); if (!w.done || w.sp < 1 || !w.row) errs.push('beating it should finish the deadgar boss (✨ +1 · ✅ in the quest list)'); if (w.cloud) errs.push('it must not count as beating the dark cloud');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

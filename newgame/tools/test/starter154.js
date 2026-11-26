@@ -23,7 +23,7 @@ const ROOT = require('path').resolve(__dirname, '../../..'), PORT = 8921, OUT = 
     for (let i = 0; i < 4; i++) { await E(() => { const b = [...document.querySelectorAll('.ov .back')].pop(); if (b) b.click() }); await wait(500) } await wait(800); const gl = await E(() => document.getElementById('goal').textContent); log('goal', gl); if (!/ตัดหญ้า \(2\/5\)/.test(gl)) errs.push('the goal card should show the followed 🌱 quest'); await pg.screenshot({ path: OUT + '/q2.png' });
 
     const v55 = await E(() => { const N = window.__ng, S = N.S, T = k => N.D.STARTER.find(t => t.k === k); if (!S.pets.length) S.pets.push({ id: 'pz', kind: 'dog', name: 'z', lv: 1, rar: 'B' }); S.pets.forEach(p => p.lv = 10); const lv = N.sqHave(T('petlv')); S.stat.ateHeal = (S.stat.ateHeal || 0) + 15; S.sq.c.eatheal = 2; const f0 = S.spirit.free; const ok = N.sqClaim('eatheal'); return { lv, ok, sp: S.spirit.free - f0 } }); log('v4.55', JSON.stringify(v55));
-    if (v55.lv < 10 || !v55.ok || v55.sp !== 1) errs.push('pet level counts what you own · step 3 gives ✨ 1');
+    if (v55.lv < 10 || !v55.ok || v55.sp !== 0) errs.push('pet level counts what you own · step 3 gives no ✨ (v5.32)');
   } catch (e) { errs.push('X ' + e.stack) }
   await b.close(); srv.kill();
   if (errs.length) { console.log('ERRORS\n' + errs.join('\n')); process.exit(1) } console.log('no page errors') })();

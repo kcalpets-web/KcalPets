@@ -1802,8 +1802,8 @@ setInterval(() => { if (Object.values(PSK).some(t => t > Date.now() - 1200)) hud
 function questCheck() {
   if (S.story.sberhTown && S.shops.potion && !S.story.flashback && !CUT) setTimeout(runFlashback, 1200);
   let q; while ((q = D.QUESTS[S.quest]) && qDone(q)) { const r = q.reward || {}; if (r.coin) S.coin += r.coin; if (r.gem) S.gem += r.gem;
-    toast(`✅ ${q.text}<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) + ' ' : ''}${r.gem ? '💎 ' + fmt(r.gem) + ' ' : ''}✨ +${D.QUEST_SPIRIT}`, 2600); S.quest++; guide = null; cheer();
-    S.spirit.free += D.QUEST_SPIRIT; spiritNew = true }   /* v3.11 every finished quest gives ✨ (was only some) */
+    toast(`✅ ${q.text}<br>รางวัล ${r.coin ? '🪙 ' + fmt(r.coin) + ' ' : ''}${r.gem ? '💎 ' + fmt(r.gem) + ' ' : ''}${D.QUEST_SPIRIT ? '✨ +' + D.QUEST_SPIRIT : ''}`, 2600); S.quest++; guide = null; cheer();
+    if (D.QUEST_SPIRIT) { S.spirit.free += D.QUEST_SPIRIT; spiritNew = true } }   /* v5.32 none now · v3.11 every finished quest gives ✨ (was only some) */
 
   hud(); save();
 }
@@ -2374,7 +2374,7 @@ function trackDone() { const L = []; if (S.story.cloudGone) { L.push({ id: 'main
 const trackNow = () => { const now = performance.now(); if (trkC && now < trkT && trkC.k === S.track) return trkC.t; const L = trackList(), t = L.find(x => x.id === S.track) || L.find(x => x.id === 'story') || L[0];   /* v3.14 during the intro the story step is followed by default */ trkC = { k: S.track, t }; trkT = now + 600; return t };   /* cached: the maps ask every frame */
 /* v3.27 📖 the quest book: big rows · stick moves · A = follow it (the card + ⭐ on the maps) · the followed one shows its details + 🗺️ / 🧭 · B = close */
 function trackDetail(t) { if (t.id.startsWith('kq:')) { const id = t.id.slice(3), Q = KQUEST[id], R = Q.reward || {}, p = qProg(id), g = kqGiver(id);
-    return `<p>${g ? `${g.n.icon} ${g.n.name} · ${KINGDOMS[g.k].name}` : ''}</p><p>ความคืบหน้า: <b>${p.cur}</b>${p.ok ? ' · ✅ กลับไปส่งได้แล้ว' : ''}</p><p class="mut">รางวัล: ${qReward(R)} · ✨ ${D.QUEST_SPIRIT}</p>` }
+    return `<p>${g ? `${g.n.icon} ${g.n.name} · ${KINGDOMS[g.k].name}` : ''}</p><p>ความคืบหน้า: <b>${p.cur}</b>${p.ok ? ' · ✅ กลับไปส่งได้แล้ว' : ''}</p><p class="mut">รางวัล: ${qReward(R)}${D.QUEST_SPIRIT ? ' · ✨ ' + D.QUEST_SPIRIT : ''}</p>` }
   if (t.id === 'main' && S.story.cloudGone) return `<p class="mut">${t.sub || ''}</p>`;
   if (t.id === 'main') return `<p class="mut">🏰 ประตูดันเจี้ยนอยู่ที่หอคอยในลูมิเนีย (เปิดแล้ว) · ข้างในบอสอาณาจักรที่ยังไม่ได้กำจัดจะออกมาทีละตัว แล้วตามด้วย ⛈️ เมฆทมิฬ · กำจัดบอสอาณาจักรก่อน = เจอเมฆทมิฬทันที</p>`;   /* v4.09 */
   return t.sub ? `<p class="mut">${t.sub}</p>` : '' }
@@ -2982,7 +2982,7 @@ const hearts = () => pStats().hp / D.HEART, enMul = () => 1 + D.EN_STEP * S.spir
 const spiritOk = k => k === 'hp' ? hearts() < D.HEARTS_MAX : enMul() < D.EN_MAX_MUL - .01;
 function spiritCard() { const sp = S.spirit;
   return `<div class="card spirit"><div class="row"><b>✨ จิตวิญญาณแห่งลูมิเนีย</b><b>${sp.free > 0 ? '×' + sp.free + ' รอเลือก' : ''}</b></div>
-    <div class="mut">❤️ หัวใจ ${hearts()} / ${D.HEARTS_MAX} ดวง · ⚡ พลังงาน ×${enMul().toFixed(1)} / ${D.EN_MAX_MUL} · ได้จากภารกิจหลักของ NPC</div>
+    <div class="mut">❤️ หัวใจ ${hearts()} / ${D.HEARTS_MAX} ดวง · ⚡ พลังงาน ×${enMul().toFixed(1)} / ${D.EN_MAX_MUL} · ได้จาก 💠 ศิลาแห่งแสง · ฟื้นเมือง · ฟื้นฟูอาณาจักร · บอส · 📊 ความคืบหน้า</div>
     ${sp.free > 0 ? `<div class="row2"><button class="btn go" data-sp="hp" ${spiritOk('hp') ? '' : 'disabled'}>❤️ หัวใจ +1</button><button class="btn go" data-sp="en" ${spiritOk('en') ? '' : 'disabled'}>⚡ พลังงาน +20%</button></div>` : ''}</div>` }
 function bindSpirit(b, redraw) { b.querySelectorAll('[data-sp]').forEach(x => x.onclick = () => { spiritUp(x.dataset.sp); redraw() }) }
 function spiritUp(k) { cheer();
@@ -4528,7 +4528,7 @@ function qProg(id) { const Q = KQUEST[id], st = KQS()[id] || {};
 const qActive = () => Object.keys(KQS()).find(id => KQS()[id].st === 'on' && KQUEST[id]);
 const qNext = ids => { const T = KQS(); return ids.find(id => (T[id] || {}).st === 'on') || ids.find(id => !(T[id] || {}).st) };
 function qAccept(id) { if (KQS()[id]) return;   /* v4.57 quests are free: take as many as you like (designer) */ KQS()[id] = { st: 'on', b: qVal(id), t: Date.now() }; sfx('tap'); toast(`📜 รับเควส: ${KQUEST[id].text}`, 2200); save(); hud() }
-function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {}; S.spirit.free += D.QUEST_SPIRIT; spiritNew = true; setTimeout(() => floater(`✨ +${D.QUEST_SPIRIT}`, 'coin', me().x, 2.4, me().z), 300);   /* v3.11 ✨ for every quest */
+function qTurnIn(id, npc) { const Q = KQUEST[id], p = qProg(id); if (!p.ok) return; if (Q.t === 'bring') for (const k in Q.need) takeOf(k, Q.need[k]); KQS()[id].st = 'done'; const R = Q.reward || {}; if (D.QUEST_SPIRIT) { S.spirit.free += D.QUEST_SPIRIT; spiritNew = true; setTimeout(() => floater(`✨ +${D.QUEST_SPIRIT}`, 'coin', me().x, 2.4, me().z), 300) }   /* v3.11 ✨ for every quest */
   if (R.coin) S.coin += R.coin; if (R.gem) S.gem += R.gem; if (R.wear) (S.clothes = S.clothes || {})[R.wear] = 1; if (R.item) dropItem({ t: R.item.t, r: R.item.r }, me().x + .8, me().z); if (R.recipe) S.meals[R.recipe] = (S.meals[R.recipe] || 0) + 2;
   sfx('level'); cheer(1600); bump('kquests'); toast(`✅ ${npc ? npc.icon + ' ' + npc.name + ': ' : ''}${Q.done}<br>${[R.coin ? '🪙 ' + fmt(R.coin) : '', R.gem ? '💎 ' + R.gem : '', R.wear ? D.WEAR[R.wear].icon + ' ' + D.WEAR[R.wear].name : '', R.item ? '⚔️ ' + D.ITEMS[R.item.t].name : '', R.recipe ? (D.RECIPES.find(r => r.k === R.recipe) || {}).icon + ' ×2' : ''].filter(Boolean).join(' · ')}`, 3400);
   const k = kingOfQ(id); if (KQ[k].restore.every(r => (KQS()[r] || {}).st === 'done') && !(S.restored || {})[k]) setTimeout(() => restoreKingdom(k), 1600); save(); hud(); kqMarks() }
@@ -4537,7 +4537,7 @@ function kqTrack() { const on = Object.keys(KQS()).filter(id => KQS()[id].st ===
 /* v4.77 (designer) Deadgar's grave-keeper is Edas: his name shows once the kingdom is restored (the air pure again) */
 function leadNames() { const L = (KQ.deadgar && KQ.deadgar.npcs || []).find(n => n.lead); if (L) L.name = (S.restored || {}).deadgar ? 'เอดาส' : 'กริมส์' }
 leadNames();
-function restoreKingdom(k) { setTimeout(leadNames); (S.restored = S.restored || {})[k] = Date.now(); setTimeout(() => giveWear('k_' + k, 'ชาวเมืองมอบชุดประจำอาณาจักรให้!'), 5000);   /* v3.43 */ revealKingdom(k); save(); capCloud(); memoryFx(KQ[k].memory, () => { toast(`🌈 ${KINGDOMS[k].name} ฟื้นฟูแล้ว!<br>☁️ เมฆทมิฬเหนือเมืองหลวงเล็กลง (${restoredN()}/${MAIN_Q.need})`, 3600); if (restoredN() >= MAIN_Q.need) setTimeout(() => toast('🗼 เมฆทมิฬรอบเมืองหลวงสลายไปหมดแล้ว!<br>ไปที่หอคอยแสงในลูมิเนีย', 4000), 3800); hud() }) }
+function restoreKingdom(k) { setTimeout(leadNames); if (!(S.restored || {})[k] && D.KINGDOM_SPIRIT) { S.spirit.free = (S.spirit.free || 0) + D.KINGDOM_SPIRIT; spiritNew = true; setTimeout(() => toast(`✨ ได้จิตวิญญาณแห่งลูมิเนีย +${D.KINGDOM_SPIRIT}<br>🌈 อาณาจักรกลับมาสดใส`, 3000), 7000) }   /* v5.32 (designer) ✨ for each kingdom */ (S.restored = S.restored || {})[k] = Date.now(); setTimeout(() => giveWear('k_' + k, 'ชาวเมืองมอบชุดประจำอาณาจักรให้!'), 5000);   /* v3.43 */ revealKingdom(k); save(); capCloud(); memoryFx(KQ[k].memory, () => { toast(`🌈 ${KINGDOMS[k].name} ฟื้นฟูแล้ว!<br>☁️ เมฆทมิฬเหนือเมืองหลวงเล็กลง (${restoredN()}/${MAIN_Q.need})`, 3600); if (restoredN() >= MAIN_Q.need) setTimeout(() => toast('🗼 เมฆทมิฬรอบเมืองหลวงสลายไปหมดแล้ว!<br>ไปที่หอคอยแสงในลูมิเนีย', 4000), 3800); hud() }) }
 /* v3.15 a restored kingdom: its whole land shows on the map and its town centre is a warp point */
 function revealKingdom(k) { if (!S.fog) return; const a = S.fog.split(''); for (let fz = 0; fz < FR; fz++) for (let fx = 0; fx < FC; fx++) { const x = WORLD.x0 + (fx + .5) * FCELL, z = WORLD.z0 + (fz + .5) * FCELL; if (a[fz * FC + fx] !== '1' && dist(x, z, KINGDOMS[k].x, KINGDOMS[k].z) < 420 && kingdomAt(x, z).k === k) a[fz * FC + fx] = '1' } S.fog = a.join(''); fogDirty = true }
 /* a memory: the game view turns sepia, lines fade in one by one (tap to go on) */
@@ -4783,7 +4783,7 @@ function talkNpc(key, heard) { const N = KNPC[key]; if (!N) return; talkNpc0Mark
     else if (!Q && qg.job) line = `${n.hello}<div class="dlgR">🔒 ช่วยอาณาจักรให้ได้ก่อน แล้วข้าจะมีงานตามอาชีพให้ช่วย</div>`;
     else if (!Q && qg.need) line = `${n.hello}<div class="dlgR">🔒 เควสต่อไปเปิดเมื่อสนิท ${qg.need}❤️<br><small>ถือของที่ชอบมาให้ หรือทำเควสให้สำเร็จ (+1❤️)</small></div>`;   /* v4.90 quests open by hearts */
     else if (!Q) line = n.hello + ' …ตอนนี้ข้าไม่มีอะไรให้ช่วยแล้วล่ะ ขอบใจนะ';
-    else if (!st) { line = `${n.hello}<br><br>มีเรื่องอยากขอให้ช่วยหน่อย… รับไหม?<div class="dlgR">${n.lead ? '🌈' : '📜'} <b>${Q.text}</b><br>🎁 ${qReward(Q.reward || {})} · ✨ ${D.QUEST_SPIRIT}</div>`; ch = [['yes', '✅ รับเควส'], ['no', '❌ ไว้ก่อน']] }
+    else if (!st) { line = `${n.hello}<br><br>มีเรื่องอยากขอให้ช่วยหน่อย… รับไหม?<div class="dlgR">${n.lead ? '🌈' : '📜'} <b>${Q.text}</b><br>🎁 ${qReward(Q.reward || {})}${D.QUEST_SPIRIT ? ' · ✨ ' + D.QUEST_SPIRIT : ''}</div>`; ch = [['yes', '✅ รับเควส'], ['no', '❌ ไว้ก่อน']] }
     else if (p.ok) { line = `โอ้! ทำเสร็จแล้วเหรอ? เยี่ยมไปเลย!<div class="dlgR">📜 ${Q.text} ✅</div>`; ch = [['give', '🎁 ส่งเควส'], ['bye', '👋 ไว้ทีหลัง']] }
     else line = `เป็นยังไงบ้าง? ข้ายังรออยู่นะ<div class="dlgR">📜 ${Q.text}<br>ความคืบหน้า ${p.cur}</div>`;
     b.innerHTML = `<div class="dlgT">${n.lead ? `<p class="mut">${K.name} · 🌈 ฟื้นฟู ${ids.filter(x => (T[x] || {}).st === 'done').length}/3</p>` : `<p class="mut">${K.name} · ${K.sub}</p>`}${frCard(k, n)}<div class="dlgL">${line}</div></div><div class="dlgC">${ch.map(([v, t], i) => `<button class="btn${i ? ' ghost' : ' go'}" data-dc="${v}">${t}</button>`).join('')}</div>`;

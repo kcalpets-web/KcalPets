@@ -222,7 +222,7 @@ export const FORGE = [
 export const BAG = { page: 25, cols: 5, stack: 999,   // v3.72 every section is pages of 5×5 · a stack of one kind holds up to 999 (more = another slot) · no upgrades
   cap: { sword: 25, bow: 25, shield: 25, tools: 25, wear: 100, mats: 200, food: 50, pets: 25 },   // slots per section
   cats: { sword: ['⚔️', 'ดาบ'], bow: ['🏹', 'ธนู'], shield: ['🛡️', 'โล่'], tools: ['🧰', 'เครื่องมือ'], wear: ['👕', 'ชุดเกราะ'], mats: ['🪵', 'วัตถุดิบ'], food: ['🍲', 'อาหารและยา'], pets: ['🐾', 'สัตว์เลี้ยง'], skill: ['✨', 'สกิล'] } };   // v4.06 ✨ the skills page (no slots)
-export const QUEST_SPIRIT = 1;   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
+export const QUEST_SPIRIT = 0, KINGDOM_SPIRIT = 1;   // v5.32 (designer · option ก) quests give 🪙/items only · ✨ comes from big moments (light stones 7 · ruins 5 · kingdoms 6 · bosses 6 · the cloud 1 · progress 4 ≈ 29 for 25 upgrades) · was 1:   // v3.11 ✨ Spirit of Lutonia for every finished quest (story + people)
 export const FORGE_TABLE_REFUND = { wood: 20, stone: 10, copper: 3 };   // v3.11 the old home forge table (removed) gives this back
 export const OCC = { p: .5, far: 60, n: [3, 5], reward: { coin: [400, 900], ore: 3 } };   // v3.8 👹 campfire take-over: chance per dark-cloud cycle · you must be this far (m) · squatters · reward for taking it back
 export const FORGE_RAR = [150, 600, 1500], FORGE_LUCK = .12, FORGE_QUEST = { coin: 800 };   // value thresholds for R / E / L · chance of one step up · the blacksmith's reward for your first forging
@@ -701,7 +701,7 @@ STARTER.push(
   { k: 'farmhay', house: 1, icon: '🌾', name: 'วางฟางในราง', unit: 'ครั้ง', stats: ['hayPut'], goals: [1, 5, 20], rew: [{ coin: 80 }, { coin: 250 }, { gem: 15 }], how: 'เดินเข้าไปในเล้า/โรงเลี้ยงสัตว์ → กองฟาง กด <b>A</b> หยิบฟาง → ถือไปที่รางอาหาร กด <b>A</b> วาง (คอก Lv 3 เติมเองจากยุ้งฉาง)' },
   { k: 'farmprod', house: 1, icon: '🧺', name: 'เก็บผลผลิตจากสัตว์', unit: 'ชิ้น', stats: ['farmProd'], goals: [3, 15, 50], rew: [{ coin: 100 }, { coin: 300 }, { gem: 20 }], how: 'ให้สัตว์ได้กินทุกวัน → ตอนเช้าแตะที่คอก → 🧺 เก็บผลผลิต' });
 export const STARTER_ALL = { gem: 50 };   // every step of every chain
-export const STARTER_SPIRIT = 1;          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
+export const STARTER_SPIRIT = 0;   // v5.32 (designer) none ·          // v4.55 ✨ Spirit of Lutonia for each chain's step 3
 export const PATHS = [
   { k: 'explore', icon: '🧭', name: 'นักสำรวจ', title: '🧭 นักสำรวจแห่งเอิร์ทแลน', desc: 'ออกเดินทาง ค้นหาสถานที่ลับ หีบสมบัติ และศิลาแห่งแสง', steps: [
     { text: 'วาปไปยังจุดพักครั้งแรก', stat: 'warps', goal: 1, reward: { coin: 200 } }, { text: 'เปิดหีบสมบัติ 5 ใบ', stat: 'chests', goal: 5, reward: { coin: 600 } },
