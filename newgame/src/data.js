@@ -1090,7 +1090,7 @@ export const JUMP = { h: .75, t: .55, en: 3 };
 /* v3.64 🎵 the flute: 7 notes on ◀ ▲ ▶ ▼ X Y A (B = put it away) · songs = note orders · finish one at the bar while it is open = a tip */
 /* v3.65 🌉 the Vaneya bridge: from the isle's east shore (near the boat) to the harbour's west pier · Uncle Howsif builds it from what you bring */
 export const BRIDGE = { a: [116.5, 7.2], b: [175.5, 11.2], w: 2.6, endY: .3, endY2: .75, peak: 1.6, cost: { wood: 60, stone: 30, ore: 5 }, coin: 1500, secs: 90 };
-export const FLUTE = { price: 600, keys: ['left', 'up', 'right', 'down', 'X', 'Y', 'A'], names: ['โด', 'เร', 'มี', 'ฟา', 'ซอล', 'ลา', 'ที'], glyph: ['◀', '▲', '▶', '▼', 'X', 'Y', 'A'], tip: [60, 160], tipsPerNight: 5, barR: 9 };
+export const FLUTE = { price: 600, keys: ['up', 'down', 'left', 'right', 'X', 'Y', 'A'], names: ['โด', 'เร', 'มี', 'ฟา', 'ซอล', 'ลา', 'ที'], glyph: ['▲', '▼', '◀', '▶', 'X', 'Y', 'A'], tip: [60, 160], tipsPerNight: 5, barR: 9 };
 export const SONGS = [
   { k: 'dawn', icon: '🌅', name: 'เพลงอรุณ', notes: [0, 2, 4, 2, 0], eff: 'en', desc: 'สดชื่นขึ้น ⚡ +15' },
   { k: 'lull', icon: '🌙', name: 'เพลงกล่อมน้อง', notes: [4, 2, 1, 2, 4, 4], eff: 'pets', desc: 'น้องๆ ดีใจ' },
