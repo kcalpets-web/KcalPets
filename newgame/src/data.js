@@ -523,7 +523,7 @@ export const DRAWFRAME = { ar: 9 / 12, w: .96, hMax: .8, top: .42, gap: 12, reac
 export const SELFIE = { d: 3.2, h: 1.25, look: 1.0 };   /* v4.94 🤳 the selfie camera in the drawing frame: distance (÷ zoom) · height · looks at this height on you */
 export const POUCH = { s: .42, at: [0, -.05, -.26] };   /* v4.88 👝 the leather pouch at the back of the belt: size · place on the waist */
 export const GOLD = { hold: .38 };   /* v4.88 🟡 the gold button: hold this long (s) = the options panel */
-export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 };   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
+export const MAKE_FEE = { wear: 600, wearWx: 1500, potion: 120, meal: 240, has: 1000 , small: 30};   /* v4.77 economy · wearWx = a piece that keeps you warm / cool / swims */
 export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 1500 }, { t: 'axe1', r: 'B', price: 3200 }, { t: 'pick1', r: 'B', price: 3200 }, { t: 'sickle1', r: 'B', price: 2300 }, { t: 'mallet0', r: 'B', price: 2100 }, { t: 'hoe0', r: 'B', price: 1500 }, { t: 'woodBow', r: 'B', price: 2300 }, { t: 'travelerSword', r: 'B', price: 1800 }, { t: 'woodSpear', r: 'B', price: 2100 }, { t: 'woodAxe', r: 'B', price: 2800 }, { t: 'woodShield', r: 'B', price: 2100 }, { t: 'branchSword', r: 'B', price: 4100 }, { t: 'woodSword', r: 'B', price: 5500 }, { t: 'oakShield', r: 'B', price: 6000 }, { t: 'barkArmor', r: 'B', price: 4600 }];
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [

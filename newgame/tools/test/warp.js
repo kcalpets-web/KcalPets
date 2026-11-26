@@ -22,7 +22,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll(); await wait(800); await closeAll();
     /* 🛠️ craft arrows from the 🏠 menu */
     await E(() => window.__ng.openCraft()); await wait(800); await shot('w0-craft');
-    await E(() => { if (document.querySelector('[data-cb="0"]')) window.__ng.craftMake(0, () => {}) });   /* v3.38 the craft book */ await wait(400); const ar = await N(() => [window.__ng.S.arrows, window.__ng.S.mats.wood, window.__ng.S.mats.feather]); log('craft', JSON.stringify(ar));
+    await E(() => { window.__ng.makerOrder(0) });   /* v3.38 the craft book */ await wait(400); const ar = await N(() => [window.__ng.S.arrows, window.__ng.S.mats.wood, window.__ng.S.mats.feather]); log('craft', JSON.stringify(ar));
     if (ar[0] !== 5 || ar[1] !== 39 || ar[2] !== 9) errs.push('craft arrows wrong'); await closeAll();
     /* ⛩️ the shrines: 8 spread over the map · walk near one = discovered · repair = warp point */
     const sh = await N(() => window.__ng.SH.map(s => [s.id, Math.round(s.x), Math.round(s.z)])); log('shrines', JSON.stringify(sh)); if (sh.length < 6) errs.push('too few shrines');

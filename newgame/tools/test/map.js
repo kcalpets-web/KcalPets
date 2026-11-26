@@ -47,7 +47,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8809, OUT = process.arg
     { const s0 = await E(() => window.__ng.SIGNS[1]); await E(([x, z]) => window.__ng.placeMe(x - 3, z - 3), [s0.x, s0.z]); await wait(2500); const vis = await E(() => !!window.__ng.SIGNS[1].g); log('sign built near', vis); if (!vis) errs.push('a sign near you is not built'); await pg.screenshot({ path: OUT + '/sign-3d.png' }) }
     // torches: craft, hold, warm, light, burn out
     await E(() => window.__ng.placeMe(2, 2)); await wait(1200);
-    await E(() => window.__ng.openCraft('mats')); await wait(400); await E(async () => { const D = await import('/newgame/src/data.js'); window.__ng.craftMake(D.CRAFT.findIndex(r => r.k === 'torch2'), () => {}) });   /* v3.38 the craft book */ await wait(400); await close();
+    await E(() => window.__ng.openCraft('mats')); await wait(400); await E(async () => { const D = await import('/newgame/src/data.js'); window.__ng.makerOrder(D.CRAFT.findIndex(r => r.k === 'torch2')) });   /* v3.38 the craft book */ await wait(400); await close();
     const tc = await E(() => window.__ng.S.mats.torch || 0); log('torches crafted', tc); if (tc !== 2) errs.push('crafting torches failed');
     const w0 = await E(() => { window.__ng.WXS.rain = 0; window.__ng.WXS.type = 'clear'; return window.__ng.climate().warm }); await E(() => { window.__ng.WXS.rain = 0; window.__ng.S.hand = 'torch'; window.__ng.torchLight(); window.__ng.gearView() }); await wait(800);
     await E(() => new Promise(r => { const t0 = performance.now(), f = () => { window.__ng.WXS.rain = 0; if (performance.now() - t0 < 1500) requestAnimationFrame(f); else r() }; f() }));   /* hold the weather dry while the light settles */
