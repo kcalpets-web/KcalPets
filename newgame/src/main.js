@@ -3801,7 +3801,7 @@ function ctxTick(now, dt, mv) {
     const t = nearTarget(), farm = S.mode === 'farm', q = me();
     const rf = !RIDE && S.builds.find(b => b.k === 'raft' && b.done && dist(b.x, b.z, q.x, q.z) < 3.2);   /* v3.8.1 a raft close by: A = climb on (swimming or from the shore) */
     const pk = nearPot(), pin = pk && ((S.potIn || {})[pk] || []);
-    const ee = HIN.on ? hinCtx() : fallCaveCtx(q) || thrCtx(q) || eelCtx(q) || farmCtx(q); if (ee) CTX = ee; if (swordHere()) CTX = { k: 'auto:🗡️', xz: [LUMC.x, LUMC.z], h: 2.6, go: () => { } };   /* v5.14 */
+    const ee = HIN.on ? hinCtx() : fallCaveCtx(q) || thrCtx(q) || eelCtx(q) || farmCtx(q); if (ee) CTX = ee; if (HIN.on && ee) { }   /* v5.21 inside a shop / home the room decides (the keeper you face was a target with nothing to do → 'talk' did nothing) */ else if (swordHere()) CTX = { k: 'auto:🗡️', xz: [LUMC.x, LUMC.z], h: 2.6, go: () => { } };   /* v5.14 */
     else if (carryN()) CTX = pk ? { k: 'pot', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: carryA } : { k: 'place', h: 2.2, go: carryA };   /* v3.55 ✋ A puts one in */
     else if (pk && pin.length >= 2 && !S.jobs['cook:' + pk]) CTX = { k: 'cook', xz: [POT[pk].x, POT[pk].z], h: 1.7, go: () => potCook(pk) };   /* empty hands: A = cook */
     else if (nearDrop()) { const d = nearDrop(); CTX = { k: 'loot', at: d.g.position, h: 1, go: () => pickDrop(d) } }   /* v3.90 picking up comes before climbing on the raft */
