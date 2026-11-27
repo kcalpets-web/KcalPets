@@ -63,6 +63,17 @@ export const MON = {
   slime:       { ingr: ['jelly', .6], name: '🟢 สไลม์', lv: 1, hp: 24, atk: 4, def: 0, exp: 10, coin: [7, 17], mat: { grass: 1 }, loot: ['branch', 'leafBlade', 'potLid', 'leafVest'], tier: 'normal' },
   slimeKing:   { ingr: ['jelly', 1, 3], name: '👑 ราชาสไลม์', lv: 4, hp: 120, atk: 7, def: 2, exp: 60, coin: [100, 167], mat: { stone: 3 }, loot: ['travelerSword', 'woodAxe', 'woodSpear', 'woodShield', 'woodBow'], tier: 'mini' },
   /* v1.2 wild animals (tier 'animal'): run away when you come close (hold B to sneak) · the boar charges back when hit */
+  crab:     { animal: 1, legs: 1, flee: 4, run: 3, name: '🦀 ปู', lv: 2, hp: 18, atk: 0, def: 2, exp: 8, coin: [0, 0], mat: {}, ingr: ['crabmeat', 1], loot: [], tier: 'animal' },   // v5.48 (designer) each land's own animals (D.K_ANIMALS)
+  seal:     { animal: 1, legs: 1, flee: 5, run: 2.4, name: '🦭 แมวน้ำ', lv: 3, hp: 40, atk: 0, def: 1, exp: 14, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
+  squirrel: { animal: 1, legs: 1, flee: 7, run: 5, name: '🐿️ กระรอก', lv: 1, hp: 8, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['meat', .5], loot: [], tier: 'animal' },
+  goat:     { animal: 1, charge: 1, legs: 1, flee: 4, run: 4.4, name: '🐐 แพะภูเขา', lv: 4, hp: 50, atk: 8, def: 2, exp: 20, coin: [0, 0], mat: { hide: 1 }, ingr: ['goatmilk', 1], loot: [], tier: 'animal' },
+  fireLizard:{ animal: 1, legs: 1, flee: 6, run: 4.6, name: '🦎 กิ้งก่าไฟ', lv: 3, hp: 24, atk: 0, def: 2, exp: 12, coin: [0, 0], mat: {}, ingr: ['meat', 1], loot: [], tier: 'animal' },
+  camel:    { animal: 1, legs: 1, flee: 6, run: 4.2, name: '🐪 อูฐ', lv: 4, hp: 70, atk: 0, def: 2, exp: 22, coin: [0, 0], mat: { hide: 2 }, ingr: ['meat', 1, 2], loot: [], tier: 'animal' },
+  fox:      { animal: 1, legs: 1, flee: 8, run: 5.4, name: '🦊 จิ้งจอกทะเลทราย', lv: 2, hp: 20, atk: 0, def: 1, exp: 10, coin: [0, 0], mat: { hide: 1 }, ingr: ['meat', 1], loot: [], tier: 'animal' },
+  penguin:  { animal: 1, legs: 1, flee: 4, run: 2.2, name: '🐧 เพนกวิน', lv: 2, hp: 22, atk: 0, def: 1, exp: 9, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
+  reindeer: { animal: 1, legs: 1, flee: 9, run: 5.6, name: '🦌 เรนเดียร์', lv: 4, hp: 46, atk: 0, def: 2, exp: 18, coin: [0, 0], mat: { hide: 2 }, ingr: ['venison', 1, 2], loot: [], tier: 'animal' },
+  bat:      { animal: 1, legs: 1, flee: 6, run: 5, name: '🦇 ค้างคาว', lv: 3, hp: 16, atk: 0, def: 1, exp: 10, coin: [0, 0], mat: {}, loot: [], tier: 'animal' },
+  crow:     { animal: 1, legs: 1, flee: 7, run: 4.6, name: '🐦‍⬛ อีกา', lv: 2, hp: 14, atk: 0, def: 0, exp: 8, coin: [0, 0], mat: { feather: 2 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
   rabbit:  { animal: 1, legs: 1, flee: 6, run: 4.4, name: '🐇 กระต่าย', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: {}, ingr: ['rabbitmeat', 1], loot: [], tier: 'animal' },
   chicken: { animal: 1, legs: 1, flee: 4.5, run: 3.4, name: '🐔 ไก่ป่า', lv: 1, hp: 8, atk: 0, def: 0, exp: 3, coin: [0, 0], mat: { feather: 1 }, ingr: ['poultry', 1], loot: [], tier: 'animal' },
   duck:    { animal: 1, legs: 1, flee: 5, run: 3.2, name: '🦆 เป็ดป่า', lv: 1, hp: 10, atk: 0, def: 0, exp: 4, coin: [0, 0], mat: { feather: 2 }, ingr: ['duckmeat', 1], loot: [], tier: 'animal' },
@@ -305,7 +316,7 @@ export const SEASON_DAYS = 10;   // v3.60 🍂 game days per season (spring → 
 export const AUTOQ = { lowHp: .3 };   // v3.56 🤖 the quest plays itself: stop and warn under this share of ❤️
 export const PLACE = { d: 1.1 };   // v3.98 🫳 the white circle sits this far in front of you
 export const CARRY = { max: 5, reach: 2.6, potY: .95, armY: .62, eat: { fruit: 20, nut: 20, veg: 5, meat: 0, other: 4 }, full: 6 };   // v3.97 fruit = ⚡ (bigger) · meat = ❤️ (MEAT_HEART)
-export const MEAT_HEART = { meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, bearmeat: 7, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
+export const MEAT_HEART = { crabmeat: 3, meat: 3, rabbitmeat: 3, poultry: 2, duckmeat: 2, hawkmeat: 2, venison: 4, boarmeat: 5, horsemeat: 6, bearmeat: 7, whalemeat: 8 };   // v3.97 ❤️ from eating one piece of raw meat (by the animal's size)   // v3.68 eat: ⚡ from eating one piece raw (by INGR tag) · full: 🍖 per piece   // v3.55 ✋ carry ingredients: pieces · how close to a pot to put one in · icon height over the pot
 export const DASH = { sp: 7.6, t: 1.1, en: 4, cd: 1.5 };   // v3.54 🏃 the dash (A while moving): speed · seconds · ⚡ · v3.66 cooldown 1.5 s from one dash to the next (horse / pet ride: gallop · free)
 export const RUN_AFTER = 3, SWIM_BURST = { mul: 1.9, t: 1.1, en: 4 };
 export const SHEATHE = { sword: 6, tool: 2 };   // v2.1.1 seconds the weapon / tool stays in hand after the last swing (then back on the back)
@@ -606,6 +617,7 @@ export const INGR = {
   horsemeat: { icon: '🥩', name: 'เนื้อม้า', tag: 'meat', price: 60 },
   whalemeat: { icon: '🍣', name: 'เนื้อวาฬ', tag: 'meat', price: 90 },
   hawkmeat: { icon: '🍗', name: 'เนื้อเหยี่ยว', tag: 'meat', price: 25 },
+  crabmeat: { icon: '🦀', name: 'เนื้อปู', tag: 'meat', price: 40 },   // v5.48
   bearmeat: { icon: '🥩', name: 'เนื้อหมี', tag: 'meat', price: 80 },
   egg: { icon: '🥚', name: 'ไข่ไก่', tag: 'egg', price: 20 }, duckegg: { icon: '🥚', name: 'ไข่เป็ด', tag: 'egg', price: 30 },   /* v4.75 🐔 farm produce */
   milk: { icon: '🥛', name: 'นมวัว', tag: 'dairy', price: 40 }, goatmilk: { icon: '🥛', name: 'นมแพะ', tag: 'dairy', price: 45 },
@@ -789,6 +801,7 @@ export const GIANT = { sp: 2.2, reach: 3.4, leash: 40, slam: { r: 2.8, d: 3.2, w
 export const WORM = { r: 3.2, under: [3.2, 2.4, 1.8], warn: 1.1, up: [4, 3.4, 3], speed: [4.2, 5.4, 6.6], spit: { n: 5, r: 1.6, t: 1.2 }, hitR: 2.6 };   // v4.03 🪱 burst radius · seconds under the sand per phase · warning · seconds up (open to hits) · mound speed · phase 3 spit (balls · radius · flight s)
 export const GEMQ = { home: { amber: 'sylvaren', opal: 'asrah', topaz: 'luminia', ruby: 'valkara', sapphire: 'frosthelm', diamond: 'deadgar', aquamarine: 'navalee' }, ring: 18, reviveCd: 360000 };   // v4.00 💎 one offering hidden in each kingdom · the altars ring the tree of seasons · the blessing: back to full ❤️ at 0 (cool-down 6 min)
 export const BEAR = { angry: 6, buff: 100, ms: 60000, cd: 240000 };   // v3.99 🐻 charges inside 6 m · its skill: ⚔️🛡️ +100 for 1 min · cool-down 4 min
+export const K_ANIMALS = { p: .55, navalee: ['crab', 'seal', 'crab'], sylvaren: ['squirrel', 'deer', 'boar'], valkara: ['goat', 'fireLizard'], asrah: ['camel', 'fox', 'fox'], frosthelm: ['penguin', 'reindeer', 'penguin'], deadgar: ['bat', 'crow', 'crow'] };   // v5.48 (designer) a land's own animals (p = how often one is picked over the common ones)
 export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar', 'bear'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar', 'bear'], water: ['duck', 'duck', 'rabbit'] };
 export const WCAMP = { count: 40, spacing: 95, ring: 8, ringR: 58 };   // v3.14 ~40 camps over the mainland + a ring of fortress camps round the castle (Luminia)              // monster camps scattered over the big world
 export const CAMP_TIERS = [                                    // by distance from home · chief comes out when the others are down

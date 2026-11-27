@@ -277,6 +277,41 @@ function quad(g, k) {                                    // k: body [lo, hi], si
   part(g, ...k.body, [0, k.lh * 2 + k.h * .7, 0], [k.w, k.h, k.d], [0, 0, 0], { A: .05 });
 }
 export const ANIMALS = {
+  /* ---- v5.48 (designer) each land's own animals ---- */
+  crab(g) { const R = ['#b8301a', '#ff7a4a']; part(g, ...R, [0, .2, 0], [.34, .12, .26], [0, 0, 0], { A: .08 });   // 🦀 navalee: a wide red shell · eyes on stalks · two big claws (arm roles) · three legs each side
+    for (const s of [-1, 1]) { role(part(g, ...R, [s * .32, .22, .2], [.1, .08, .12], [0, s * .4, 0]), s < 0 ? 'armL' : 'armR'); part(g, ...R, [s * .38, .24, .3], [.07, .04, .1], [0, s * .3, 0], { A: 0 });
+      for (let i = 0; i < 3; i++) { const lg = part(g, ...R, [s * .34, .1, -.12 + i * .1], [.03, .1, .03], [0, 0, s * .8], { A: 0 }); if (i === 1) role(lg, s < 0 ? 'footL' : 'footR') }
+      part(g, ...R, [s * .08, .36, .14], [.025, .08, .025], [0, 0, 0], { A: 0 }); eyesAt(g, s * .08, .44, .15) } },
+  seal(g) { const C = ['#6a7a8a', '#b8c8d4']; role(part(g, ...C, [-.12, .06, -.42], [.12, .04, .1], [0, -.4, 0]), 'footL'); role(part(g, ...C, [.12, .06, -.42], [.12, .04, .1], [0, .4, 0]), 'footR');   // 🦭 navalee: a long grey body · front flippers · whiskers
+    part(g, ...C, [0, .2, 0], [.3, .2, .5], [0, 0, 0], { A: .05 }); part(g, ...C, [0, .42, .38], [.2, .19, .2]); for (const s of [-1, 1]) { role(part(g, ...C, [s * .28, .1, .2], [.14, .03, .08], [0, s * .5, s * .3]), s < 0 ? 'armL' : 'armR'); for (let i = 0; i < 3; i++) part(g, '#2a2a2a', '#5a5a5a', [s * .12, .38 - i * .025, .56], [.08, .006, .006], [0, s * .3, s * (i - 1) * .2], { A: 0 }) }
+    part(g, '#2a2a2a', '#4a4a4a', [0, .4, .58], [.04, .03, .02], [0, 0, 0], { A: 0 }); eyes(g, .47, .55, .08, .035) },
+  squirrel(g) { const C = ['#b8601a', '#f0a050']; quad(g, { body: C, w: .16, h: .14, d: .2, lw: .035, lh: .06 }); part(g, ...C, [0, .32, .16], [.12, .12, .12]);   // 🐿️ sylvaren: small · a huge curled tail
+    for (const s of [-1, 1]) cone(g, ...C, [s * .06, .45, .14], [.025, .06, .02], [0, 0, -s * .3], .9); part(g, '#f8e0c0', '#fff4e4', [0, .2, .12], [.08, .08, .08], [0, 0, 0], { A: 0 });
+    for (let i = 0; i < 4; i++) part(g, ...C, [0, .22 + i * .1, -.2 - Math.sin(i * .9) * .08], [.1 - i * .006, .09, .09], [0, 0, 0], { A: .1 }); eyes(g, .34, .25, .05, .025) },
+  goat(g) { const C = ['#8a7a6a', '#d8ccb8']; quad(g, { body: C, w: .28, h: .26, d: .46, lw: .055, lh: .24 }); part(g, ...C, [0, .86, .38], [.13, .16, .18], [.3, 0, 0]);   // 🐐 valkara: a mountain goat · curled horns · a beard
+    for (const s of [-1, 1]) { part(g, '#4a3a2a', '#7a6a5a', [s * .1, 1.02, .34], [.04, .12, .04], [-.6, 0, s * .3], { A: 0 }); part(g, '#4a3a2a', '#7a6a5a', [s * .14, .98, .24], [.035, .08, .035], [-1.6, 0, s * .4], { A: 0 }); part(g, ...C, [s * .13, .9, .36], [.06, .025, .03], [0, 0, s * .4], { A: 0 }) }
+    part(g, '#f0ece4', '#ffffff', [0, .72, .5], [.04, .08, .04], [0, 0, 0], { A: 0 }); eyes(g, .9, .52, .08, .03) },
+  fireLizard(g) { const C = ['#a8301a', '#f07a3a'], hot = new THREE.MeshStandardMaterial({ color: '#ffb040', emissive: '#ff6a00', emissiveIntensity: 1, roughness: .5 }); quad(g, { body: C, w: .2, h: .1, d: .4, lw: .04, lh: .05 });   // 🦎 valkara: low and long · glowing spines · a long tail
+    part(g, ...C, [0, .17, .32], [.12, .08, .14]); for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(.025, .08, 6), hot); sp.position.set(0, .23, .2 - i * .1); g.add(sp) }
+    for (let i = 0; i < 4; i++) part(g, ...C, [0, .12, -.3 - i * .1], [.06 - i * .01, .04, .07], [0, 0, 0], { A: 0 }); eyes(g, .21, .4, .06, .025) },
+  camel(g) { const C = ['#b8905a', '#e8c890']; quad(g, { body: C, w: .32, h: .3, d: .6, lw: .07, lh: .36 }); part(g, ...C, [0, 1.18, 0], [.22, .18, .24]);   // 🐪 asrah: long legs · a hump · a long curved neck
+    part(g, ...C, [0, 1.12, .5], [.1, .3, .1], [.7, 0, 0]); part(g, ...C, [0, 1.3, .74], [.12, .12, .22], [.2, 0, 0]); part(g, '#8a6a3a', '#b89058', [0, 1.27, .94], [.08, .05, .05], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) part(g, ...C, [s * .08, 1.42, .66], [.025, .05, .025], [0, 0, s * .3], { A: 0 }); part(g, '#6a4a2a', '#9a7040', [0, .82, -.6], [.03, .2, .03], [-.3, 0, 0], { A: 0 }); eyes(g, 1.34, .82, .08, .03) },
+  fox(g) { const C = ['#d8a868', '#f8e0b0']; quad(g, { body: C, w: .2, h: .18, d: .34, lw: .04, lh: .14 }); part(g, ...C, [0, .48, .3], [.15, .14, .15]); part(g, '#fff4e4', '#ffffff', [0, .44, .42], [.07, .06, .08], [0, 0, 0], { A: 0 });   // 🦊 asrah: a fennec · huge ears · a bushy tail
+    for (const s of [-1, 1]) { cone(g, ...C, [s * .1, .68, .26], [.07, .2, .03], [0, 0, -s * .3], .9); cone(g, '#f0b0a0', '#ffd8c8', [s * .1, .67, .27], [.045, .15, .01], [0, 0, -s * .3], .9) }
+    part(g, '#2a2a2a', '#4a4a4a', [0, .45, .5], [.025, .02, .02], [0, 0, 0], { A: 0 }); part(g, ...C, [0, .38, -.32], [.08, .08, .2], [.5, 0, 0], { A: .1 }); part(g, '#fff4e4', '#ffffff', [0, .45, -.48], [.06, .06, .06], [0, 0, 0], { A: 0 }); eyes(g, .5, .38, .07, .03) },
+  penguin(g) { const B = ['#1a1a2a', '#3a3a4a']; for (const s of [-1, 1]) role(part(g, '#e08a1a', '#ffb040', [s * .08, .03, .06], [.07, .03, .1]), s < 0 ? 'footL' : 'footR');   // 🐧 frosthelm: waddles · flippers · an orange beak
+    part(g, ...B, [0, .32, 0], [.22, .3, .2], [0, 0, 0], { A: .05 }); part(g, '#e8eef4', '#ffffff', [0, .3, .1], [.16, .24, .12], [0, 0, 0], { A: 0 }); part(g, ...B, [0, .64, .02], [.16, .14, .15]);
+    for (const s of [-1, 1]) role(part(g, ...B, [s * .22, .36, 0], [.04, .16, .08], [0, 0, s * .25]), s < 0 ? 'armL' : 'armR'); cone(g, '#e08a1a', '#ffb040', [0, .62, .18], [.035, .08, .03], [Math.PI / 2, 0, 0], .9); eyes(g, .68, .14, .06, .025) },
+  reindeer(g) { const C = ['#7a5a3a', '#b8946a']; quad(g, { body: C, w: .32, h: .3, d: .56, lw: .065, lh: .32 }); part(g, '#e8e0d4', '#ffffff', [0, 1.0, .42], [.15, .2, .14], [.5, 0, 0], { A: .1 });   // 🦌 frosthelm: a reindeer · a white ruff · big branching antlers
+    part(g, ...C, [0, 1.25, .6], [.15, .14, .2]); part(g, '#2a2a2a', '#4a4a4a', [0, 1.22, .78], [.04, .03, .03], [0, 0, 0], { A: 0 });
+    for (const s of [-1, 1]) { part(g, '#c8b898', '#f0e6d0', [s * .12, 1.5, .55], [.03, .22, .03], [-.2, 0, s * .45], { A: 0 }); for (let i = 0; i < 3; i++) part(g, '#c8b898', '#f0e6d0', [s * (.18 + i * .05), 1.55 + i * .08, .55 + (i - 1) * .06], [.022, .1, .022], [0, 0, s * (1 - i * .3)], { A: 0 }) } eyes(g, 1.3, .74, .09, .035) },
+  bat(g) { const C = ['#2a2230', '#5a4a68']; part(g, ...C, [0, .9, 0], [.12, .14, .12]); part(g, ...C, [0, 1.06, .02], [.11, .1, .1]);   // 🦇 deadgar: flutters at head height · wide wings (arm roles)
+    for (const s of [-1, 1]) { cone(g, ...C, [s * .06, 1.18, 0], [.035, .08, .02], [0, 0, -s * .2], .9); role(part(g, '#3a2a40', '#6a5a7a', [s * .22, .92, 0], [.2, .1, .02], [0, 0, s * .2], { A: 0 }), s < 0 ? 'armL' : 'armR') }
+    for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.02, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff4a6a' })); e.position.set(s * .04, 1.07, .1); g.add(e); cone(g, '#f0f0f0', '#ffffff', [s * .02, 1.0, .1], [.01, .025, .01], [Math.PI, 0, 0], .9) } },
+  crow(g) { const C = ['#1a1a22', '#3a3a48']; role(part(g, '#3a3a3a', '#5a5a5a', [-.05, .08, 0], [.02, .08, .02]), 'footL'); role(part(g, '#3a3a3a', '#5a5a5a', [.05, .08, 0], [.02, .08, .02]), 'footR');   // 🐦‍⬛ deadgar: a black crow · a thick beak
+    part(g, ...C, [0, .26, -.02], [.14, .13, .22], [-.2, 0, 0], { A: .05 }); part(g, ...C, [0, .4, .14], [.1, .1, .1]); cone(g, '#2a2a2a', '#4a4a4a', [0, .39, .26], [.03, .08, .025], [1.7, 0, 0], .9);
+    for (const s of [-1, 1]) role(part(g, ...C, [s * .13, .27, -.04], [.03, .1, .18], [-.2, 0, s * .15], { A: 0 }), s < 0 ? 'armL' : 'armR'); part(g, ...C, [0, .22, -.26], [.06, .02, .14], [-.3, 0, 0], { A: 0 }); eyes(g, .42, .2, .055, .02) },
   rabbit(g) { quad(g, { body: ['#b8a890', '#f0e6d4'], w: .26, h: .24, d: .34, lw: .06, lh: .08 }); part(g, '#b8a890', '#f0e6d4', [0, .5, .3], [.2, .19, .2]);
     for (const s of [-1, 1]) { part(g, '#b8a890', '#f0e6d4', [s * .08, .78, .26], [.05, .2, .04], [0, 0, s * .15]); part(g, '#e8a0a8', '#ffc8d0', [s * .08, .78, .28], [.025, .15, .01], [0, 0, s * .15], { A: 0 }) }
     part(g, '#ffffff', '#ffffff', [0, .42, -.36], [.09, .09, .09], [0, 0, 0], { A: 0 }); eyes(g, .54, .45, .09, .035) },

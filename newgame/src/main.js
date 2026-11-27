@@ -6132,7 +6132,8 @@ function spawnAnimals(ch, x, z) { const nt = isNight();   /* v3.42 animals by da
     if (!walkLand(px, pz) || coreDist(px, pz) < 8 || dist(px, pz, me().x, me().z) < 12 || inTown(px, pz, 8)) continue;
     let wet = false; for (let a = 0; a < 6 && !wet; a++) wet = !!waterAt(px + Math.cos(a) * 6, pz + Math.sin(a) * 6);
     const L = nt ? D.ANIMAL_SPAWN.night : wet ? D.ANIMAL_SPAWN.water : fbm(px / 90 + 2.1, pz / 90 - 4.7, 3) > .52 ? D.ANIMAL_SPAWN.woods : D.ANIMAL_SPAWN.low;
-    ch.mons.push(monSpawn(L[Math.floor(Math.random() * L.length)], px, pz, { area: 'wild' })); break }
+    const KB = kingdomAt(px, pz), KA = KB && KB.w > .5 && D.K_ANIMALS[KB.k], L2 = KA && Math.random() < D.K_ANIMALS.p && (!nt || KB.k === 'deadgar') ? KA : L;   /* v5.48 (designer) each land's own animals */
+    ch.mons.push(monSpawn(L2[Math.floor(Math.random() * L2.length)], px, pz, { area: 'wild' })); break }
 }
 /* camps: same places in every game (seeded) · on flat land far from home · tougher the farther they are */
 const WC = (() => { let sd = 90731; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647, out = [];
