@@ -71,7 +71,7 @@ export function buildLumCity(cx, cz, H, ry = 0, opt = {}) {
   add(new THREE.BoxGeometry(6, 9, .6), M.void, 0, 4.5 + 3, FZ + .35); arch(0, 7.5 + 3, FZ + .6, 3, .5, MG.gold);   /* the great door */
   const rose = add(new THREE.CircleGeometry(2.6, 24), new THREE.MeshStandardMaterial({ color: '#ffe0a0', emissive: '#ffcc60', emissiveIntensity: .15, roughness: .5 }), 0, 13.2, FZ + .52); rose.name = 'orb'; add(new THREE.TorusGeometry(2.7, .3, 6, 24), MG.gold, 0, 13.2, FZ + .55);
   for (let k = 0; k < 6; k++) for (const sx of [-1, 1]) add(new THREE.BoxGeometry(1.2, 2.4, .3), MG.win, sx * (5 + k * 2.1), 9, FZ + .4).userData.nosol = 1;
-  for (let i = 0; i < 10; i++) box(0, 0, FZ + 1 + (9 - i) * .7, 14 - i * .4, (i + 1) * 3 / 10, .7, i % 2 ? M.stone : M.dark).userData.walk = 1;   /* the grand stair up to the door */
+  for (let i = 0; i < 10; i++) box(0, 0, FZ + 1 + (9 - i) * .7, 14 - i * .4, (i + 1) * 3 / 10, .7, i % 2 ? M.stone : M.dark).userData.nosol = 1;   /* the grand stair up to the door (walked as one ramp: see below) */
   for (const [x, z, h] of [[-PW / 2, PZ - PD / 2, 30], [PW / 2, PZ - PD / 2, 30], [0, PZ - 2, 44], [-PW / 2, FZ, 26], [PW / 2, FZ, 26]]) banner(x + 1.5, h + 2, z, 0, 1.4);
   /* ---- the palace ward wall (an arc round the palace) with its own gate on the royal road ---- */
   { const IR = 28, ic = [0, PZ]; let n = 0; for (let a = 0; a < 6.283; a += .26) { n++; const a2 = a + .26, x1 = ic[0] + Math.cos(a) * IR, z1 = ic[1] + Math.sin(a) * IR, x2 = ic[0] + Math.cos(a2) * IR, z2 = ic[1] + Math.sin(a2) * IR, mx = (x1 + x2) / 2, mz = (z1 + z2) / 2, L = Math.hypot(x2 - x1, z2 - z1), r0 = -Math.atan2(z2 - z1, x2 - x1);
@@ -110,6 +110,7 @@ export function buildLumCity(cx, cz, H, ry = 0, opt = {}) {
       if (o.userData.walk && t === 'BoxGeometry') { sols.push({ x: P.x, z: P.z, hw: pr.width * SC.x / 2, hd: pr.depth * SC.z / 2, ry: E.y, top: P.y + h / 2, abs: 1 }); return }   /* steps / the base: you can stand on them */ if (!((h >= 1 && bottom <= .8) || (h >= 4 && bottom <= 4.6))) return;   /* on the ground · or tall walls / towers on the cathedral's base */
       if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .15 && hd < .15) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y, top: P.y + h / 2, abs: 1 }) }   /* v3.59 land on walls from the air */
       else sols.push(Object.assign({ x: P.x, z: P.z, r: Math.max(pr.radiusTop, pr.radiusBottom) * Math.max(SC.x, SC.z) }, t === 'CylinderGeometry' ? { top: P.y + h / 2, abs: 1, flat: 1 } : {})) }) }   /* v3.59 a tower: a flat top */
+  { const zF = FZ + 7.65, zB = FZ + .65, [x, z] = W(0, (zF + zB) / 2); sols.push({ x, z, hw: 7, hd: (zF - zB) / 2, ry, top: 3, ramp: 1 }) }   /* v5.44 the grand stair = a ramp (load on it = stand on it) */
   const [dx, dz] = W(0, FZ + 1.6), guards = [[-10, 10], [12, 8], [-20, 24], [20, 26], [0, 30], [-30, 6], [30, 4], [0, -12], [-8, -22], [8, -22], [-44, 0], [44, 0], [-30, 40], [30, 40]].map(([x, z]) => W(x, z));
   return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, flags, flagMat: MG.flag, center: W(0, 0) };
   return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, center: W(0, 0) };
