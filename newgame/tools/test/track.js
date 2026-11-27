@@ -13,7 +13,8 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8814, OUT = process.arg
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(3000);
     const E = (f, a) => pg.evaluate(f, a), close = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove())); await close();
     // 🎒 button
-    const ic = await E(() => [document.getElementById('mBag').textContent, document.getElementById('mMap').textContent, getComputedStyle(document.getElementById('mBag')).display]); log('🎒 🗺️ buttons', ic); if (ic[2] === 'none') errs.push('v3.74 🎒 + 🗺️ should sit under the minimap');
+    /* v5.42 test update: v5.17 layout 4 hides #mBag (body.l4 #mBag{display:none}) · 🎒 now sits on the quick bar (#qbar [data-qs="bag"]) · ☰ #mMap stays under the minimap */
+    const ic = await E(() => { const vis = el => !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0; return { bag: vis(document.querySelector('#qbar [data-qs="bag"]')), menu: vis(document.getElementById('mMap')) } }); log('🎒 ☰ buttons', JSON.stringify(ic)); if (!ic.bag || !ic.menu) errs.push('v5.17 🎒 on the quick bar + ☰ under the minimap ' + JSON.stringify(ic));
     // camera tilts up: drag the screen upward
     await pg.mouse.move(200, 500); await pg.mouse.down(); for (let i = 1; i <= 12; i++) { await pg.mouse.move(200, 500 - i * 30); await wait(30) } await pg.mouse.up(); await wait(900);
     const cp = await E(() => ({ p: window.__ng.CAM.pitch, ps: window.__ng.CAM.ps, up: window.__ng.camera.getWorldDirection(new window.__ng.camera.position.constructor()).y })); log('camera', JSON.stringify(cp)); if (!(cp.p < 0) || !(cp.up > .05)) errs.push('the camera does not look up');
