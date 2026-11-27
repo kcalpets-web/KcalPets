@@ -1,4 +1,5 @@
-/* v3.30 🏰 the six fallen capitals (one recipe, six looks — the designer's concept art is the guide, drawn here in our own chunky stone-and-clay style):
+/* v5.45 (designer) every capital stands whole — not a ruin, nothing to repair, only held by the enemy: full ring wall · all towers · roofed houses · banners dark while held, the kingdom's colour once freed (main.js capTick)
+   v3.30 🏰 the six capitals (one recipe, six looks — the designer's concept art is the guide, drawn here in our own chunky stone-and-clay style):
    a paved plaza inside a broken ring wall (gate towards the village) · a central keep with towers and a glowing doorway · roofless houses · rubble · and each kingdom's own landmark:
    🌊 navalee  domes · a moat · arch bridges · waterfalls · the drowned king with his trident · a wrecked boat
    🏜️ asrah    a horned demon keep · red banners · a burning ritual ring · giant ribs and a skull half buried in the sand
@@ -25,7 +26,7 @@ export const CAP_WIN = new THREE.MeshStandardMaterial({ color: '#2a2430', emissi
 export function buildCapital(k, cx, cz, H, ry = 0) {
   const L = LOOK[k], std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .93, flatShading: true }, o));
   const M = { stone: std(L.stone), dark: std(L.dark), pave: std(L.pave, { roughness: 1 }), roof: std(L.roof), moss: std(L.moss, { roughness: 1 }), wood: std('#6a4c36'), bone: std('#e6dcc4'), bark: std('#4a3a2e'),
-    void: std('#1c1820', { flatShading: false }), cloth: new THREE.MeshStandardMaterial({ color: '#9a2a22', roughness: 1, side: THREE.DoubleSide }),
+    void: std('#1c1820', { flatShading: false }), flag: new THREE.MeshStandardMaterial({ color: '#1a1020', roughness: .9, side: THREE.DoubleSide }), cloth: new THREE.MeshStandardMaterial({ color: '#9a2a22', roughness: 1, side: THREE.DoubleSide }),
     glow: new THREE.MeshStandardMaterial({ color: L.glow, emissive: L.glow, emissiveIntensity: .65, roughness: .6 }),   /* v3.30.2 softer (it filled the screen up close) */
     water: new THREE.MeshStandardMaterial({ color: k === 'valkara' ? '#ff7a1a' : '#4a9ac0', emissive: k === 'valkara' ? '#ff4a00' : '#000000', emissiveIntensity: k === 'valkara' ? 1.2 : 0, roughness: .2, transparent: k !== 'valkara', opacity: .85 }),
     ice: new THREE.MeshStandardMaterial({ color: '#bfe6ff', emissive: '#4aa8ff', emissiveIntensity: .25, roughness: .25, transparent: true, opacity: .9, flatShading: true }) };
@@ -47,7 +48,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
 
   /* ---- the plaza ---- */
   cyl(0, -.05, 0, 27, 27, .12, M.pave, 28).userData.nosol = 1;
-  for (let i = 0; i < 30; i++) { const a = R() * 6.28, r = 3 + R() * 22; box(Math.cos(a) * r, .04, Math.sin(a) * r, .8 + R() * 1.6, .05, .6 + R() * 1.2, R() < .5 ? M.moss : M.dark, R() * 3).userData.nosol = 1 }
+  /* v5.45 a laid paving pattern (was moss and loose dark slabs) */ add(new THREE.RingGeometry(8.6, 9.4, 40), M.dark, 0, .03, 4, -Math.PI / 2).userData.nosol = 1; for (let i = 0; i < 4; i++) box(0, .02, 4, i % 2 ? 1 : 16, .04, i % 2 ? 16 : 1, M.dark, i * Math.PI / 4).userData.nosol = 1;
   /* ---- the keep: a raised base · a tall hall · 4 towers (one broken) · a glowing doorway ---- */
   const KZ = -14, KW = 16, KD = 12, KH = 13;
   box(0, 0, KZ, KW + 4, 1.4, KD + 4, M.dark).userData.walk = 1;   /* v3.30.1 the keep's base: stand on it */ box(0, 1.4, KZ, KW, KH, KD, M.stone).userData.roof = 1.4 + KH + 1.2;   /* v3.30.3 a roof you can stand on (landing from the sky never drops you inside) */ box(0, 1.4 + KH, KZ, KW + 1, 1.2, KD + 1, M.dark);
@@ -72,28 +73,34 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
   for (const [wx, wy] of [[-5.5, 4.6], [-3, 4.6], [3, 4.6], [5.5, 4.6], [-5.5, 9.6], [-2.6, 9.6], [2.6, 9.6], [5.5, 9.6]]) add(new THREE.BoxGeometry(1, 1.7, .12), CAP_WIN, wx, 1.4 + wy, KZ + KD / 2 + .06).userData.nosol = 1;   /* v3.45 the keep's windows */
   for (const sx of [-1, 1]) for (const wy of [4.6, 9.6]) for (const wz of [-3, 3]) add(new THREE.BoxGeometry(.12, 1.7, 1), CAP_WIN, sx * (KW / 2 + .06), 1.4 + wy, KZ + wz).userData.nosol = 1;
   for (let i = 0; i < 5; i++) box(0, 0, KZ + KD / 2 + 2.6 + i * .7, 6 - i * .3, 1.4 - i * .28, .7, M.dark).userData.walk = 1;   // steps you climb (v3.30.1: were picture-only, you sank into them)
-  for (const [tx, tz, broken] of [[-KW / 2, KZ + KD / 2, 0], [KW / 2, KZ + KD / 2, 1], [-KW / 2, KZ - KD / 2, 0], [KW / 2, KZ - KD / 2, 0]]) { const th = broken ? 12 : 22 + R() * 4;
+  for (const [tx, tz, broken] of [[-KW / 2, KZ + KD / 2, 0], [KW / 2, KZ + KD / 2, 0], [-KW / 2, KZ - KD / 2, 0], [KW / 2, KZ - KD / 2, 0]]) { const th = broken ? 12 : 22 + R() * 4;
     cyl(tx, 0, tz, 3, 2.6, th, M.stone, 10); if (!broken) { k === 'navalee' ? add(new THREE.SphereGeometry(2.9, 12, 8, 0, 6.283, 0, 1.6), M.roof, tx, th, tz) : k === 'frosthelm' ? cone(tx, th, tz, 2.2, 14, M.ice, 6) : cone(tx, th, tz, 3.1, 8 + (k === 'asrah' || k === 'valkara' || k === 'deadgar' ? 4 : 0), M.roof, 8) }
     else for (let j = 0; j < 5; j++) box(tx + (R() - .5) * 2, th, tz + (R() - .5) * 2, .9, .6 + R() * 1.4, .9, M.stone, R() * 3);
     for (let j = 0; j < 3; j++) add(new THREE.BoxGeometry(.7, 1.5, .3), M.void, tx, 5 + j * 5, tz + 2.75) }
   if (k !== 'navalee') { cyl(0, 1.4 + KH, KZ - 1, 3.6, 3.2, 10, M.stone, 10); cone(0, 1.4 + KH + 10, KZ - 1, 4, k === 'frosthelm' ? 16 : 10, k === 'frosthelm' ? M.ice : M.roof, 8) }
   else { add(new THREE.SphereGeometry(5.2, 16, 10, 0, 6.283, 0, 1.6), M.roof, 0, 1.4 + KH + 1.2, KZ); cone(0, 1.4 + KH + 6.2, KZ, .6, 3, M.glow, 6) }
-  /* ---- ruined houses round the plaza ---- */
-  const house = (x, z, w, d, h, r0) => { const g = new THREE.Group(), hw = w / 2, hd = d / 2, b = (bx, by, bz, bw, bh, bd, m = M.stone) => { const o = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), m); o.position.set(bx, by + bh / 2, bz); g.add(o) };
-    b(0, 0, -hd, w, h, .6); b(-hw, 0, 0, .6, h * (.6 + R() * .4), d); b(hw, 0, 0, .6, h, d); b(-hw * .55, 0, hd, w * .45, h * .8, .6); b(hw * .6, 0, hd, w * .35, h, .6); for (let j = 0; j < 2; j++) b(-w / 4 + j * w / 2, h * .45, hd + .02, .9, 1.3, .3, M.void);
+  /* ---- v5.45 whole houses round the plaza (were roofless ruins): stone walls · a pitched roof in the kingdom's colour · a plank door · windows lit at night · a chimney ---- */
+  const house = (x, z, w, d, h, r0) => { const g = new THREE.Group(), hw = w / 2, hd = d / 2, b = (bx, by, bz, bw, bh, bd, m = M.stone, ns = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), m); o.position.set(bx, by + bh / 2, bz); if (ns) o.userData.nosol = 1; g.add(o); return o };
+    b(0, 0, 0, w, h, d); b(0, h, 0, w + .5, .35, d + .5, M.dark, 1);
+    const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(hw, hd) + .7, h * .55 + 1.2, 4), M.roof); rf.position.set(0, h + .35 + (h * .55 + 1.2) / 2, 0); rf.rotation.y = Math.PI / 4; rf.scale.set(1, 1, d / w); rf.userData.nosol = 1; g.add(rf);
+    b(hw * .45, h * .8, -hd * .3, .8, h * .55 + 1.4, .8, M.dark, 1);
+    b(0, 0, hd + .04, 1.3, 2.3, .14, M.wood, 1); for (const sx of [-1, 1]) { const wn = new THREE.Mesh(new THREE.BoxGeometry(.9, 1.1, .1), CAP_WIN); wn.position.set(sx * hw * .6, h * .55, hd + .05); wn.userData.nosol = 1; g.add(wn) }
     g.position.set(x, 0, z); g.rotation.y = r0; G.add(g) };
-  house(-17, 4, 7, 6, 6, .4); house(17, 6, 8, 6, 6.5, -.4); house(-20, -9, 6, 7, 5, .1); house(21, -10, 6, 6, 5, -.1); house(-12, 17, 6, 5, 4.5, .9); house(13, 18, 6, 5, 5, -.9);
+  const HS = k === 'valkara' ? [[-17, 4, 7, 6, 6, .4], [17, 6, 8, 6, 6.5, -.4], [-20, -9, 6, 7, 5, .1], [21, -10, 6, 6, 5, -.1], [-21, 14, 6, 5, 4.5, .9], [20, 16, 6, 5, 5, -.9]]
+    : [[-17, 4, 7, 6, 6, .4], [17, 6, 8, 6, 6.5, -.4], [-20, -9, 6, 7, 5, .1], [21, -10, 6, 6, 5, -.1], [-12, 17, 6, 5, 4.5, .9], [13, 18, 6, 5, 5, -.9]];
+  for (const H2 of HS) house(...H2);
   /* ---- the ring wall (gate at +z) · breaches · round towers ---- */
   const RW = 30; let wi = 0;
   for (let a = 0; a < 6.283; a += .22) { wi++; const a2 = a + .22, x1 = Math.cos(a) * RW, z1 = Math.sin(a) * RW, x2 = Math.cos(a2) * RW, z2 = Math.sin(a2) * RW, mx = (x1 + x2) / 2, mz = (z1 + z2) / 2, len = Math.hypot(x2 - x1, z2 - z1), r0 = -a - .11 + Math.PI / 2;
-    if (Math.abs(Math.atan2(mz, mx) - Math.PI / 2) < .22) continue; if (wi % 5 === 2) { box(mx, 0, mz, len * .45, .9 + R(), 1.6, M.dark, r0); continue }
-    const h = 5 + R() * 3; box(mx, 0, mz, len + .4, h, 1.6, wi % 3 ? M.stone : M.dark, r0); for (const kk of [-1, 1]) box(mx + Math.cos(r0) * kk * len * .3, h, mz - Math.sin(r0) * kk * len * .3, .9, .9, 1.7, M.stone, r0);
+    if (Math.abs(Math.atan2(mz, mx) - Math.PI / 2) < .22) continue;   /* v5.45 no breaches: the whole ring stands */
+    const h = 6.5; box(mx, 0, mz, len + .4, h, 1.6, wi % 3 ? M.stone : M.dark, r0); for (const kk of [-1, 1]) box(mx + Math.cos(r0) * kk * len * .3, h, mz - Math.sin(r0) * kk * len * .3, .9, .9, 1.7, M.stone, r0);
     if (wi % 7 === 0) { cyl(x1, 0, z1, 2.4, 2.1, h + 4, M.stone, 10); cone(x1, h + 4, z1, 2.7, 4, M.roof, 8) } }
   for (const sx of [-1, 1]) { cyl(sx * 5, 0, RW, 2.4, 2.1, 10, M.stone, 10); cone(sx * 5, 10, RW, 2.8, 4, M.roof, 10) }
   const torch = (x, y, z) => { box(x, y - .9, z, .14, .9, .14, M.wood).userData.nosol = 1; cone(x, y, z, .2, .55, CAP_FIRE, 6).userData.nosol = 1; cone(x, y + .05, z, .11, .34, CAP_FIRE2, 5).userData.nosol = 1 };   /* v3.45 */
   for (const sx of [-1, 1]) torch(sx * 3.4, 4.2, RW + 1.15); for (let i = 0; i < 6; i++) { const a = i * 1.047 + .5, x = Math.cos(a) * (RW - .2), z = Math.sin(a) * (RW - .2); if (Math.abs(Math.atan2(z, x) - Math.PI / 2) < .4) continue; torch(x, 6.6, z) } box(0, 6.5, RW, 8, 2.2, 2, M.stone); arch(0, 6.5, RW, 2.6, .5, M.dark);
-  for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = 6 + R() * 22; if (Math.abs(Math.sin(a) * r - KZ) < 9 && Math.abs(Math.cos(a) * r) < 12) continue; box(Math.cos(a) * r, 0, Math.sin(a) * r, .6 + R() * 1.3, .4 + R() * .8, .6 + R() * 1.1, R() < .5 ? M.stone : M.dark, R() * 3).userData.nosol = 1 }   /* rubble: walk over it */
-  for (let i = 0; i < 14; i++) { const a = R() * 6.28, r = 6 + R() * 22; moss(Math.cos(a) * r, .03, Math.sin(a) * r, 1.4 + R() * 2.4, 1.4 + R() * 2.4) }
+  /* v5.45 no rubble, no moss: the city is whole · 🚩 banners (dark while held · the kingdom's colour once freed) on the keep and over the gate */
+  const flags = [], banner = (x, y, z, s2 = 1) => { box(x, y, z, .16, 4 * s2, .16, M.wood).userData.nosol = 1; const f = add(new THREE.PlaneGeometry(2 * s2, 1.3 * s2), M.flag, x + 1.05 * s2, y + 3.2 * s2, z); f.userData.nosol = 1; flags.push(f) };
+  for (const sx of [-1, 1]) banner(sx * 5.5, 1.4 + KH + 1.2, KZ + KD / 2 - .4, 1.2); banner(0, 8.7, RW, 1); banner(-5, 14, RW, .9); banner(5, 14, RW, .9);
 
   /* ---- each kingdom's own landmark ---- */
   const anim = [];
@@ -106,7 +113,6 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     const kx = -15, kz = -2; cyl(kx, 0, kz, 2.6, 2.4, 2.2, M.dark, 10); box(kx, 2.2, kz, 2.2, 4.5, 1.4, M.stone); box(kx, 6.7, kz, 3.2, 3.6, 1.8, M.stone); add(new THREE.SphereGeometry(1.1, 10, 8), M.stone, kx, 9.6 + .2, kz);
     for (let j = 0; j < 5; j++) cone(kx - .8 + j * .4, 10.5, kz, .2, .9, M.glow, 4); box(kx + 2.2, 2.2, kz + .5, .3, 11, .3, M.dark); for (const dx of [-.6, 0, .6]) cone(kx + 2.2 + dx, 13.2, kz + .5, .14, 1.1, M.dark, 4); box(kx + 2.2, 13, kz + .5, 1.6, .25, .25, M.dark);
     for (let i = 0; i < 3; i++) { const f = add(new THREE.PlaneGeometry(2.6, 5), new THREE.MeshBasicMaterial({ color: '#d8f2ff', transparent: true, opacity: .7, side: THREE.DoubleSide }), -9 + i * 9, 2.4, KZ + 13.9); anim.push(f) }
-    box(18, 0, 22, 2.2, .9, 6, M.wood, .5, 0, .2); box(18.2, .9, 22, .2, 4, .2, M.wood, .5, 0, .35);
   }
   if (k === 'asrah') {   // 🏜️ horns · banners · a ritual ring · giant ribs + a skull
     for (const sx of [-1, 1]) for (let j = 0; j < 4; j++) add(new THREE.ConeGeometry(1.1 - j * .2, 3.2, 7), M.bone, sx * (KW / 2 - 1 + j * 1.1), 1.4 + KH + 3 + j * 2.2, KZ, 0, 0, -sx * (.5 + j * .3));
@@ -115,9 +121,9 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     for (let i = 0; i < 6; i++) add(new THREE.TorusGeometry(5.5 - Math.abs(i - 2.5) * .5, .32, 6, 12, Math.PI), M.bone, -24 + i * 2.2, -1.2, 21, 0, Math.PI / 2 + .3, 0);
     add(new THREE.SphereGeometry(2.4, 10, 8), M.bone, -14, 1.2, 26); add(new THREE.BoxGeometry(.8, .8, .6), M.void, -14.8, 1.6, 28.2); add(new THREE.BoxGeometry(.8, .8, .6), M.void, -13.2, 1.6, 28.2);
   }
-  if (k === 'sylvaren') {   // 🌿 dead twisted trees · ivy curtains · the green portal
-    for (const [x, z, kk] of [[-24, 8, 1.6], [24, -2, 1.5], [-8, 24, 1.3], [10, -26, 1.7], [-26, -18, 1.4], [26, 20, 1.6], [6, 10, 1.1], [-6, -26, 1.5]]) deadTree(x, z, kk);
-    for (let i = 0; i < 10; i++) box(-KW / 2 + R() * KW, 1.4 + R() * 6, KZ + KD / 2 + .36, 1 + R() * 2, 3 + R() * 6, .12, M.moss).userData.nosol = 1;
+  if (k === 'sylvaren') {   // 🌿 v5.45 living trees (were dead · the ivy curtains over the keep are gone: the forest kingdom's city stands whole)
+    const leaf = [std('#4f8a3a'), std('#5f9a44'), std('#3f7a34')];
+    for (const [x, z, kk] of [[-24, 8, 1.6], [24, -2, 1.5], [-8, 24, 1.3], [10, -26, 1.7], [-26, -18, 1.4], [26, 20, 1.6], [6, 10, 1.1], [-6, -26, 1.5]]) { cyl(x, 0, z, .35 * kk, .25 * kk, 3.2 * kk, M.bark, 7); for (let j = 0; j < 3; j++) add(new THREE.IcosahedronGeometry((1.5 - j * .25) * kk, 0), leaf[j], x + (R() - .5) * kk, (3.4 + j * 1.1) * kk, z + (R() - .5) * kk, R(), R(), 0).userData.nosol = 1 }
     /* v4.78 the green ring over the door is gone (the door is a real door now) */
   }
   if (k === 'frosthelm') {   // ❄️ ice spires · chains · a rune circle · a frozen fall
@@ -127,7 +133,7 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     box(-18, 0, -20, 4, 9, 1.4, M.ice, .3);
   }
   if (k === 'valkara') {   // 🌋 lava channels · lava falls · a volcano behind the keep
-    for (const [x, z, w, d, r0] of [[-12, 6, 2.2, 26, .25], [13, 2, 2, 24, -.3], [0, 20, 22, 2, 0]]) { const o = box(x, -.02, z, w, .1, d, M.water, r0); o.userData.nosol = 1 }
+    for (const [x, z, w, d, r0] of [[-12, 6, 2.2, 26, .25], [13, 2, 2, 24, -.3], [0, 20, 18, 2, 0]]) { const o = box(x, -.02, z, w, .1, d, M.water, r0); o.userData.nosol = 1 }
     for (let i = 0; i < 3; i++) { const f = add(new THREE.PlaneGeometry(3, 6), M.water, -20 + i * 20, -2, -30.5); anim.push(f) }
     const vol = cone(0, 0, -62, 30, 34, M.dark, 12); vol.userData.nosol = 1; add(new THREE.CylinderGeometry(6, 6, 1, 12), M.glow, 0, 34, -62).userData.nosol = 1;
     for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(1.4, 16, 1.4), M.water, Math.cos(i * 1.3) * 11, 18, -62 + Math.sin(i * 1.3) * 11, Math.sin(i * 1.3) * .9, 0, -Math.cos(i * 1.3) * .9).userData.nosol = 1;
@@ -149,5 +155,5 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
       if (t === 'BoxGeometry') { const hw = pr.width * SC.x / 2, hd = pr.depth * SC.z / 2; if (hw < .2 && hd < .2) return; sols.push({ x: P.x, z: P.z, hw, hd, ry: E.y, top: o.userData.roof ? o.userData.roof + H : P.y + h / 2, abs: 1 }) }   /* v3.59 walls / houses: land on top from the air (glider · hawk) and walk along them */
       else { const r = (t === 'ConeGeometry' ? pr.radius * .8 : Math.max(pr.radiusTop, pr.radiusBottom)) * Math.max(SC.x, SC.z); if (r > .25) sols.push(t === 'CylinderGeometry' ? { x: P.x, z: P.z, r, top: P.y + h / 2, abs: 1, flat: 1 } : { x: P.x, z: P.z, r }) } }) }
   const guards = [[-9, 8], [10, 10], [-16, -2], [16, -4], [0, 18], [-22, 14], [22, 16], [0, KZ + KD / 2 + 7]].map(([x, z]) => W(x, z));
-  return { G, sols, glows, anim, guards, center: W(0, 0), door: W(0, KZ + KD / 2 + 3), look: L };
+  return { G, sols, glows, anim, guards, flags, flagMat: M.flag, center: W(0, 0), door: W(0, KZ + KD / 2 + 3), look: L };
 }
