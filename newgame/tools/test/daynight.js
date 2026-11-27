@@ -14,7 +14,7 @@ const ROOT = path.resolve(__dirname, '../../..'), PORT = 8869, OUT = process.arg
     const toastTxt = () => E(() => [...document.querySelectorAll('.toast,#toast')].map(t => t.innerText).join(' | '));
     // 🏘️ day: villagers with houses in Navalee   /* v4.89 a raided kingdom's people are refugees at the inn: use Navalee (never raided) */
     await E(() => { const N = window.__ng, K = N.KINGDOMS.navalee; N.placeMe(K.x - 3, K.z + 1) }); for (let i = 0; i < 40 && !(await E(() => Object.keys(window.__ng.KNPC).some(k => k.startsWith('navalee:')))); i++) await wait(500);
-    const d1 = await E(() => { const N = window.__ng, L = Object.values(N.KNPC).filter(n => n.k === 'navalee'); return { n: L.length, houses: L.filter(n => n.house).length, vis: L.filter(n => n.A.root.visible).length } }); log('day village', JSON.stringify(d1));
+    const d1 = await E(() => { const N = window.__ng, L = Object.values(N.KNPC).filter(n => n.k === 'navalee'); return { n: L.length, houses: L.filter(n => n.house).length, vis: Object.entries(N.KNPC).filter(([k, n]) => n.k === 'navalee' && (n.A.root.visible || N.LIFEA[k])).length } });   /* v5.42 one off at his day job (🎣 Oren fishing · v5.05 daily life) counts as out */ log('day village', JSON.stringify(d1));
     if (!d1.n || d1.houses !== d1.n || d1.vis !== d1.n) errs.push('by day every villager should be out, each with a house');
     await E(() => { const N = window.__ng, n = Object.values(N.KNPC).find(n => n.k === 'navalee'), p = n.A.root.position; N.placeMe(p.x + 4, p.z + 4); N.CAM && (N.CAM.yaw = Math.atan2(p.x - (p.x + 4), p.z - (p.z + 4))) }); await wait(1500); await pg.screenshot({ path: OUT + '/1-day-village.png' });
     // 🌙 night: indoors · talking = asleep
