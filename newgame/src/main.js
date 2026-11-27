@@ -1918,7 +1918,7 @@ $('mFight').addEventListener('click', e => { e.preventDefault(); setMode('fight'
     if (SKW.on) { skwUse('Y'); return } if (PICK) { pickChoose(); return } t0 = now; if (SMENU.on) { smenuGo('left'); return } if (AIM && !AIM.quick) { aimZoom(1); return } if (AIM) return;
     try { Y.setPointerCapture(e.pointerId) } catch (_) { } lx = e.clientX; ly = e.clientY;
     /* v5.25 (designer) talking moved back to ✋ (right of the diamond) · the big button only uses what you hold */
-    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (!gFarm() && foeNear()) windStart(); else qwOpen(null) }); return }   /* v5.17 (designer) hold the big button = the item wheel · a foe close by = the throw (as before) */   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
+    if (!gRange()) { yHeld = false; yHold = holdWatch(Y, D.GSET.hold, () => { yHold = null; yHeld = true; if (!gFarm()) windStart(); else qwOpen(null) }); return }   /* v5.37 (designer) combat: hold = the throw always (the item wheel stays on 🟡 / farm) */   /* v5.17 (designer) hold the big button = the item wheel · a foe close by = the throw (as before) */   /* v3.73 melee: tap = hit (on release) · hold = wind up a throw (slide onto B = cancel) */
     if (carryN()) carryBack(true); if (!gFarm()) { qaimStart('bow', Y); if (AIM) { AIM.lx = e.clientX; AIM.ly = e.clientY } return }   /* ranged combat: hold = aim the bow */
     const k = yTool();
     if (k === 'rod') { if (F) { if (F.phase === 'wait') fishEnd(); else F.hold = true; return } ytUse('rod'); return }   /* v4.88 ⭕ the white ring (no first-person aim) */
