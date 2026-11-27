@@ -155,10 +155,12 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await E(() => { const N = window.__ng; N.placeMe(17, 3); N.setCam('top') });   /* v3.50 by the plots on the farmland */ await wait(1500); await shot('43-planted'); await E(() => window.__ng.growAll()); await wait(1500); await shot('44-ripe');
     await E(() => { const N = window.__ng; for (const o of [...N.W.clear.values()]) if (o.perm && o.g && Math.hypot(o.x - 18, o.z - 6.5) < 9) N.finishClear(o) });   /* v3.36 Vaneya's weeds next to the bed would pull the swipe away */
     { await E(() => window.__ng.setTool('sickle')); const pts = await E(() => Object.keys(window.__ng.plots).map(k => { const [x, z] = k.split(',').map(Number); return window.__ng.project(x, .3, z) })); pts.sort((a, b) => a.x - b.x);
-      for (const row of [pts.filter((p, i) => i % 2 === 0), pts.filter((p, i) => i % 2)]) if (row.length) { await pg.mouse.move(row[0].x - 40, row[0].y); await pg.mouse.down(); for (const p of row) await pg.mouse.move(p.x, p.y, { steps: 4 }); await pg.mouse.move(row[row.length - 1].x + 40, row[row.length - 1].y, { steps: 3 }); await pg.mouse.up(); await wait(300) } }
+      log('plot screen pts', pts.length);
+      /* v5.42 test update: v5.16 the swipe mode is gone → walk up to each ripe plot and press ✋ (plotAction = the A action on a plot: ripe = harvest) */
+      for (const k of await E(() => Object.keys(window.__ng.plots))) { await E(k => { const N = window.__ng, [x, z] = k.split(',').map(Number); N.placeMe(x - 1, z); N.faceTo(x, z); N.plotAction(k) }, k); await wait(300); await closeAll() } }
     log('plots', JSON.stringify(await N(() => Object.entries(window.__ng.plots).map(([k, p]) => k + ':' + (p.c || '-') + ':' + window.__ng.cropStage(p)))));
     log('harvested', await N(() => window.__ng.S.stat.harvested || 0), 'ingr', JSON.stringify(await N(() => window.__ng.S.ingr)));
-    if (!((await N(() => window.__ng.S.stat.harvested || 0)) >= 1)) errs.push('sickle swipe did not harvest');
+    if (!((await N(() => window.__ng.S.stat.harvested || 0)) >= 1)) errs.push('the ✋ on a ripe plot did not harvest');
     await E(() => { const N = window.__ng; N.S.ingr.carrot = (N.S.ingr.carrot || 0) + 1; N.S.ingr.cabbage = (N.S.ingr.cabbage || 0) + 1; N.openPot('home') }); await wait(300); await pg.click('#pC'); await wait(300);
     await pg.click('[data-i="carrot"]'); await pg.click('[data-i="cabbage"]'); await pg.click('#cGo'); await wait(500); await E(() => window.__ng.finishJobs()); await wait(1500); await E(() => { const N = window.__ng; if ((N.S.potReady || {}).home && !document.querySelector('#eN')) N.openPot('home') }); await pg.waitForSelector('#eN', { timeout: 20000 }); await wait(500); await shot('45-salad'); await closeAll();
     log('farm quest', await N(() => window.__ng.S.quest), JSON.stringify(await N(() => ({ cookVeg: window.__ng.S.stat.cookVeg, salad: window.__ng.S.journal.recipes.salad }))));
