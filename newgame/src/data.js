@@ -502,6 +502,7 @@ export const FOREST_MONS = ['slime', 'grassSprite', 'slime'];   // wander along 
 export const AUTO_POT = .3;                                   // auto-drink when HP is below this share (hold the potion button)
 export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet that finds you in the forest (dog or cat)
 export const CURE_GIFT = { antidote: 2, mpS: 2 };                  // potions Sberh gives after the shop is repaired
+export const REGSHOP = { mul: 5, shop: { wear: 'tailor', item: 'smith', recipe: 'market' } };   // v5.46 (designer) 👑 each kingdom's own pieces (the old quest rewards) on sale at the harbour once its boss is beaten · price = old coin reward × mul
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'บรอม', cost: { wood: 8, stone: 4, coin: 400 } },
