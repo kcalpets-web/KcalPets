@@ -190,14 +190,14 @@ export const ITEMS = {
   stoneKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดหิน', icon: '🔪', atk: 6, dur: 30, tier: 1 },
   ironKnife: { slot: 'sword', kind: 'knife', tm: 'knife', name: 'มีดเหล็ก', icon: '🔪', atk: 13, dur: 45, tier: 3, metal: 1 },
   woodBow:       { slot: 'bow', kind: 'bow', name: 'ธนูไม้', icon: '🏹', atk: 6, dur: 20, tier: 1 },   /* v2.1 bows */
-  boneBow:       { slot: 'bow', kind: 'bow', name: 'ธนูกระดูก', icon: '🏹', atk: 18, dur: 34, tier: 3, only: 1, quick: .5 },   // v4.35 deadgar · draws twice as fast
+  boneBow:       { slot: 'bow', kind: 'bow', name: 'ธนูกระดูก', icon: '🏹', atk: 18, dur: 34, tier: 3, only: 1, pierce: 1 },   // v4.35 deadgar · v5.41 (designer) pierces: goes on through 1 more foe
   hawkBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเหยี่ยวทราย', icon: '🏹', atk: 22, dur: 36, tier: 3, only: 1, far: 1.4 },   // v4.33 asrah · arrows fly further
   flowerBow:     { slot: 'bow', kind: 'bow', name: 'ธนูเถาดอกไม้', icon: '🏹', atk: 18, dur: 34, tier: 3, only: 1, bloom: { n: 5, hp: 5 } },   // v4.30 sylvaren · every 5 hits = ❤️ +¼
   bellBow:       { slot: 'bow', kind: 'bow', name: 'ธนูเสียงระฆัง', icon: '🏹', atk: 24, dur: 38, tier: 3, only: 1, bell: { r: 4, t: 2.5 } },   // bell: monsters within r m of a hit are dazed t s   // v4.24 navalee quest
-  hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1 },
-  soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 32, tier: 2 },
-  knightBow:     { slot: 'bow', kind: 'bow', name: 'ธนูอัศวิน', icon: '🏹', atk: 22, dur: 36, tier: 3 },
-  crystalBow:    { slot: 'bow', kind: 'bow', name: 'ธนูคริสตัล', icon: '🏹', atk: 30, dur: 32, tier: 4 },
+  hunterBow:     { slot: 'bow', kind: 'bow', name: 'ธนูนายพราน', icon: '🏹', atk: 9, dur: 26, tier: 1, quick: .5 },   // v5.41 draws twice as fast · taps shoot twice as often
+  soldierBow:    { slot: 'bow', kind: 'bow', name: 'ธนูทหาร', icon: '🏹', atk: 14, dur: 64, tier: 2 },   // v5.41 sturdy: twice the durability
+  knightBow:     { slot: 'bow', kind: 'bow', name: 'ธนูอัศวิน', icon: '🏹', atk: 22, dur: 36, tier: 3, multi: { n: 3, spread: .14, mul: .6 } },   // v5.41 3 arrows in a fan (1 arrow used · the side ones hit ×mul)
+  crystalBow:    { slot: 'bow', kind: 'bow', name: 'ธนูคริสตัล', icon: '🏹', atk: 30, dur: 32, tier: 4, homing: 1 },   // v5.41 a full draw (and a tap) bends toward the target
   potLid:        { slot: 'shield', name: 'ฝาหม้อ', icon: '🛡️', def: 1, dur: 8, tier: 1, metal: 1 },
   leafVest:      { slot: 'shield', name: 'โล่ใบไม้', icon: '🛡️', def: 3, dur: 12, tier: 1 },
   woodShield:    { slot: 'shield', name: 'โล่ไม้', icon: '🛡️', def: 4, dur: 16, tier: 1 },
