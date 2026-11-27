@@ -482,7 +482,7 @@ function gripTick() {
   PL.gripErr = e.localToWorld(_gH.set(0, -(e.userData.fore || .34), 0)).distanceTo(_gT);
 }
 /* v2.0 helpers: a model for any item · auto-equip the first weapon / shield · wear and break */
-function itemMesh(g, t) { const T = D.ITEMS[t]; if (T.tm && TOOLMESH[T.tm]) { TOOLMESH[T.tm](g, (T.tier || 1) - 1); return } (T.slot === 'shield' ? SHIELD_MESH[t] : T.slot === 'bow' ? BOW_MESH[t] : WEAPON_MESH[t])?.(g) }   /* v3.22 tools / knives / hammers use the tool models */
+function itemMesh(g, t) { const T = D.ITEMS[t]; if (T.tm && TOOLMESH[T.tm]) { TOOLMESH[T.tm](g, (T.tier || 1) - 1); return } (T.slot === 'shield' ? SHIELD_MESH[t] : T.slot === 'bow' ? (BOW_MESH[t] || WEAPON_MESH[t]) : WEAPON_MESH[t])?.(g) }   /* v3.22 tools / knives / hammers use the tool models */
 const jobHand = it => (it && D.GEAR_JOB[D.ITEMS[it.t].kind]) || 'w';   /* v3.22 a tool item = that A-hand */
 function equipA(it) { if (!it || it.br || it.away) return false; S.eq.sword = it.id; S.hand = jobHand(it); if (S.hand === 'hoe') S.has.hoe = true; return true }
 const handSync = () => { if (S.hand === 'w' || S.hand === 'torch') return; const w = weaponOf(); if (w && jobHand(w) === S.hand) return; const alt = S.bag.filter(x => D.ITEMS[x.t] && !x.br && !x.away && jobHand(x) === S.hand).sort((a, b) => (D.ITEMS[b.t].tier || 1) - (D.ITEMS[a.t].tier || 1))[0]; if (alt) S.eq.sword = alt.id; else S.hand = 'w' };   /* v3.22 an A-hand picked by job (axe / sickle / pickaxe / hoe) takes the best such tool from the bag */
@@ -649,7 +649,7 @@ function walkTick(dt, now) {
     PL.body.rotation.z = GLIDE.roll; PL.body.rotation.x = .22 }
   if (RIDE && PL.rig.armL) { const sw = mv ? Math.sin(now / 220) * .9 : 0; PL.rig.armL.rotation.x = -1.1 + sw; PL.rig.armR.rotation.x = -1.1 - sw }   // paddling
   if (swingT > 0) { swingT -= dt; const w = weaponOf(), k2 = tool === 'sword' && w ? D.ITEMS[w.t].kind : 'tool', t = Math.min(1, 1 - Math.max(0, swingT) / (SWK.T || .3)); swingPose(PL.rig, k2, tool === 'sword' ? SWK.n : 0, t) }   /* v4.99 one pose per weapon kind × combo step */
-  gripTick(); shieldPose(dt); arrowsTick(dt); throwTick(dt); lumTick(now); guardTick(dt, now); ctxTick(now, dt, mv); tillTick(); twinkleTick(now); idleTick(now); critterTick(now, dt);
+  gripTick(); shieldPose(dt); arrowsTick(dt); staffTick(dt, now); throwTick(dt); lumTick(now); guardTick(dt, now); ctxTick(now, dt, mv); tillTick(); twinkleTick(now); idleTick(now); critterTick(now, dt);
   if (FALLS.tex) { FALLS.tex.offset.y += dt * 1.6; fallsTick(performance.now()) }
   { const q = me(), w = q.x - WORLD.x0; if (w < 45 && (PL.swim || RIDE)) { q.x += (45 - w) * .9 * dt; if (now > (PL.curT || 0)) { PL.curT = now + 5000; hint('🌊 กระแสน้ำแรงมาก… ออกไปไกลกว่านี้ไม่ได้', 2000) } } }   /* v2.5.1 the western sea's current */
   if (ring.visible) { ring.scale.setScalar(1 + Math.sin(now / 200) * .1); ring.material.opacity = .6 + Math.sin(now / 200) * .3 }
@@ -1608,7 +1608,7 @@ function frame(now) {
     const m = M.A.root.position, age = (now - M.born) / 400, ok = M.ind ? indOk : M.T.swim ? swimOk : M.T.animal ? walkMon : walkMonH, ox = m.x, oz = m.z; M.A.root.scale.setScalar(Math.min(1, age));
     let tgt = null, td = 1e9; for (const e of PA.values()) if (e.mode === 'fight' && e.foe === M) { const d = dist(e.A.root.position.x, e.A.root.position.z, m.x, m.z); if (d < td) { td = d; tgt = e } }
     if (M.T.angry && !M.aggro && !M.farm && dist(me().x, me().z, m.x, m.z) < D.BEAR.angry && !safeHere()) { M.aggro = true; M.alert = 3; floater('💢', 'crit', m.x, 1.9, m.z) }   /* v3.99 🐻 a bear charges when you come close */
-    const pd = dist(me().x, me().z, m.x, m.z), sp = M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5, AN = M.T.animal && !(M.T.charge && M.aggro);
+    const pd = dist(me().x, me().z, m.x, m.z), sp = (M.T.charge ? M.T.run : M.kind === 'slimeKing' ? 1.1 : M.T.legs ? 1.9 : 1.5) * (now < (M.rootT || 0) ? M.rootMul : 1), AN = M.T.animal && !(M.T.charge && M.aggro);
     if (AN) {                                                       // v1.2 wild animals: graze · bolt when you come close (hold B = sneak) · run when hit
       const fr = M.T.flee * (CROUCH ? D.SNEAK.flee : 1);
       if (pd < fr || M.aggro) { if (!(now < M.fleeT)) { M.markT = now; sfx('grass') } M.fleeT = now + 3000 + Math.random() * 2000; if (!M.T.charge) M.aggro = false }
@@ -1768,6 +1768,7 @@ function skGain(k) { if (!SKILLS[k] || (S.skGot = S.skGot || {})[k]) return; S.s
   sheet(`✨ ได้รับสกิลใหม่!`, (b, redraw, close) => { const free = ['X', 'A', 'Y'];
     b.innerHTML = `<div class="skgain"><div class="skic">${SKILLS[k].icon}</div><h3>${SKILLS[k].name}</h3>${skDesc(k)}</div>` + (!SK_WHEEL.includes(k) ? '<button class="btn go wide" id="ssNo">เข้าใจแล้ว</button>'   /* v5.33 set-themselves skills: no slot to pick */ : `<p><b>ใส่ไว้ช่องไหน?</b></p><div class="hgrid">${free.map(sl => `<button class="htile" data-ss="${sl}"><b>${sl}</b><span>ตอนนี้: ${skSlot(sl) ? SKILLS[skSlot(sl)].icon : 'ว่าง'}</span></button>`).join('')}</div><button class="btn ghost wide" id="ssNo">ไว้ทีหลัง (🎒 → ✨ สกิล)</button>`);
     b.querySelectorAll('[data-ss]').forEach(x => x.onclick = () => { setSkSlot(x.dataset.ss, k); close() }); b.querySelector('#ssNo').onclick = close }) }
+{ const it = S.bag.find(x => x.id === S.eq.sword); if (it && D.ITEMS[it.t] && D.ITEMS[it.t].slot !== 'sword') { S.eq.sword = null; if (!S.eq.bow) S.eq.bow = it.id } }   /* v5.38 the root staff moved to the ranged slot */
 if ((S.skGotV || 0) < 3) { S.skGot = S.skGot || {}; if (S.has && S.has.glider) S.skGot.glider = 1; if (S.skGotV === 2) S.skGotV = 3 } if ((S.skGotV || 0) < 2) { S.skGotV = 2; S.skGot = S.skGot || {}; for (const k of SK_ORDER) if (skOn(k)) S.skGot[k] = 1 }   /* v4.06 skills you already had: no pop-ups */
 /* v4.08 🐾 the pet main quest: catch the skill pets and raise them to Lv 5 (one step at a time · a reward each) */
 const PQN = { bear: '🐻 หมี', whale: '🐋 วาฬ', hawk: '🦅 นก', boar: '🐗 หมูป่า', ride: '🐕🐈 หมา/แมว' }, PQW = { bear: 'ป่าและคืนมืด', whale: 'ทะเลลึก (ว่ายน้ำ/แพ)', hawk: 'บนที่สูง หน้าผา', boar: 'ป่า ทุ่งหญ้า' };
@@ -3590,7 +3591,7 @@ function holdTick() { const now = performance.now(), dt = Math.min(.5, (now - (h
   if (AIM && !AIM.draw && !AIM.dig && (AIM.ch || AIRAIM) && !spendRunN((AIRAIM ? H.airEn : H.aimEn) * dt)) { aimEnd(false); out(AIRAIM ? ' ร่วงลงมา' : '') }
   /* v3.93 holding B (guard) costs no ⚡ */ }
 function chgTick() { holdTick(); if (CHGA) { const k = Math.min(1, (performance.now() - CHGA.t0) / 1000 / D.HOLD.charge.full), i = chgEl.querySelector('i'); chgEl.classList.add('on'); i.style.width = Math.round(k * 100) + '%'; i.style.background = k >= D.HOLD.charge.spinAt ? '#ffd23f' : '#ff8a3a'; chgEl.querySelector('b').textContent = k >= D.HOLD.charge.spinAt ? '🌀 ฟันวน! ปล่อยเลย' : `⚔️ ชาร์จ ${Math.round(k * 100)}%`; return }
-  const a = AIM || WIND, on = !!a && !a.dig && !a.draw && !a.rope && !!a.ch;   /* v4.03 the rope has no power bar */ chgEl.classList.toggle('on', on); if (!on) return; const k = chgK(a), i = chgEl.querySelector('i');
+  const a = AIM || WIND, on = !!a && !a.dig && !a.draw && !a.rope && !!a.ch && !(a === AIM && a.quick && !a.net && staffOn());   /* v5.38 a staff shows its 1–5 gauge instead */   /* v4.03 the rope has no power bar */ chgEl.classList.toggle('on', on); if (!on) return; const k = chgK(a), i = chgEl.querySelector('i');
   i.style.width = Math.round(k * 100) + '%'; i.style.background = a.draw ? '#7ac8ff' : k > .85 ? '#ff6a3a' : k > .5 ? '#ffb020' : '#7ad86a';
   chgEl.querySelector('b').textContent = a.draw ? `🔍 ซูม ×${(1 + k * (D.CHARGE.zoom - 1)).toFixed(1)}` : a.rod ? `🎣 ระยะ ${Math.round(D.CHARGE.rodMin + k * (D.CHARGE.rodMax - D.CHARGE.rodMin))} ม.` : a.net ? `🕸️ ระยะ ${Math.round(D.NET.range * (D.CHARGE.netMin + (1 - D.CHARGE.netMin) * k))} ม.` : a.thr ? `🎯 แรงปา ${Math.round(k * 100)}%` : `🏹 แรง ${Math.round(k * 100)}%` }
 /* v3.18 🎯 Y = tap once to aim (no holding) · Y zoom in · X zoom out · A use (hold = charge) · B leave · a legend blinks the first few times */
@@ -3658,7 +3659,7 @@ function aimStart0(kind = 'bow') {
     AIM = { t0: performance.now(), p: .05, tgt: null, thr: 1 }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); $('xN').textContent = `🎯 ปา ${D.ITEMS[w.t].icon} ${D.ITEMS[w.t].name}`; gearView(); airAim(); return }   /* v3.22 */
   if (!b) { hint(S.bag.some(x => D.ITEMS[x.t].slot === 'bow') ? '🏹 ยังไม่ได้สวมธนู · เปิด 🎒 กระเป๋า แท็บ 🏹' : '🏹 ยังไม่มีธนู · ซื้อได้ที่ร้านช่าง หรือหาจากมอนสเตอร์', 1900); return }
   if (LOCK && !mons.includes(LOCK)) LOCK = null;   /* v3.1 never aim at a monster that is gone */
-  if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }
+  if (!staffOn() && !(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด · ซื้อที่ร้านช่าง หรือเก็บจากมอนสเตอร์', 1900); return }   /* v5.38 a staff needs ⚡, not arrows */
   walkT = null; work = null; stopAuto();
   let yaw = camTP() ? CAM.yaw : PL.yaw; if (LOCK) { const q = LOCK.A.root.position; yaw = Math.atan2(q.x - me().x, q.z - me().z); if (camTP()) CAM.yaw = yaw }
   AIM = { t0: performance.now(), p: LOCK ? .08 : .05, tgt: null }; if (!camTP()) PL.yawT = yaw; document.body.classList.add('aim'); gearView(); aimHud(); airAim();
@@ -3679,15 +3680,15 @@ function qaimStart(kind, btn) { if (AIM) return; aimStart(kind); if (!AIM) retur
 function qaimMove(e) { const a = AIM; if (!a || !a.quick) return; if (a.lx != null) aimTurn(e.clientX - a.lx, e.clientY - a.ly); a.lx = e.clientX; a.ly = e.clientY;
   const r = $('bB').getBoundingClientRect(), on = e.clientX > r.left - 8 && e.clientX < r.right + 8 && e.clientY > r.top - 8 && e.clientY < r.bottom + 8; if (on !== a.cancel) { a.cancel = on; $('bB').classList.toggle('cancelOn', on); if (on) sfx('knock') } }
 /* v5.37 (designer) 🏹 tap Y = shoot at once: the locked foe · else the nearest foe ahead (60°, 25 m) · else straight ahead · a full draw */
-let qsT = 0; function quickShot() { const now0 = performance.now(); if (now0 < qsT) return; const b = bowOf(); if (!b) { hint('🏹 ยังไม่มีธนู', 1000); return } if (!(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด', 1100); return } if (AIM) return;
+let qsT = 0; function quickShot() { const now0 = performance.now(); if (now0 < qsT) return; const b = bowOf(); if (!b) { hint('🏹 ยังไม่มีธนู', 1000); return } if (!staffOn() && !(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด', 1100); return } if (AIM) return;
   const q = me(), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw); let tgt = LOCK && mons.includes(LOCK) && hostile(LOCK) ? LOCK : null;
   if (!tgt) { let bd = 25; for (const M of mons) { if (M.died || !M.A || !hostile(M)) continue; const p = M.A.root.position, dx = p.x - q.x, dz = p.z - q.z, d = Math.hypot(dx, dz); if (d < bd && (dx * fx + dz * fz) / (d || 1) > .5) { bd = d; tgt = M } } }
   if (tgt) { const p = tgt.A.root.position; PL.yaw = PL.yawT = Math.atan2(p.x - q.x, p.z - q.z); _aD.set(p.x - q.x, 0, p.z - q.z).normalize() } else _aD.set(fx, 0, fz);
-  qsT = now0 + D.ARROW.draw * 1000; BOWUP = true; shoot({ ch: performance.now() - D.ARROW.draw * 1000 - 50, tgt, from: new THREE.Vector3(q.x + _aD.x * .5, q.y + 1.35, q.z + _aD.z * .5) }) }
+  qsT = now0 + D.ARROW.draw * 1000; BOWUP = true; if (staffOn()) { staffFire(1, tgt, new THREE.Vector3(q.x + _aD.x * .8, q.y + 1.3, q.z + _aD.z * .8), _aD.clone()); return } shoot({ ch: performance.now() - D.ARROW.draw * 1000 - 50, tgt, from: new THREE.Vector3(q.x + _aD.x * .5, q.y + 1.35, q.z + _aD.z * .5) }) }
 function qaimUp() { const a = AIM; if (!a || !a.quick) return; $('bB').classList.remove('cancelOn'); document.body.classList.remove('qaim');
   if (a.cancel) { aimEnd(false); hint(a.net ? '🕸️ ยกเลิก' : '🏹 ยกเลิก', 800); return } if (a.lockM && mons.includes(a.lockM)) a.tgt = a.lockM;
   if (a.rope) { const d = a.lockD; aimEnd(false); if (ropeAlive(d)) ropePull(d); else hint('🪢 ไม่มีของในวง', 900); return }   /* v4.03 */
-  if (a.net) { aimEnd(true); return } if (!a.ch) a.ch = performance.now(); shoot(a); aimEnd(false) }
+  if (a.net) { aimEnd(true); return } if (!a.ch) a.ch = performance.now(); if (staffOn()) { const q = me(), lv = staffLv(a), t = a.tgt && mons.includes(a.tgt) ? a.tgt : null; aimRay(); const d = t ? (() => { const p = t.A.root.position; return new THREE.Vector3(p.x - q.x, 0, p.z - q.z).normalize() })() : _aD.clone(); staffFire(lv, t, new THREE.Vector3(q.x + d.x * .5, q.y + 1.35, q.z + d.z * .5), d); aimEnd(false); return } shoot(a); aimEnd(false) }
 /* each frame: a target whose middle is inside the circle on screen = locked (the camera then follows it) */
 function qaimLock() { const a = AIM; if (!a || !a.quick) return;
   if (a.rope) { const w = innerWidth, h = innerHeight, rr = Math.min(w, h) * D.QAIM.circle * 1.3, q = me(); if (a.lockD && !ropeAlive(a.lockD)) a.lockD = null; let best = null, bd = rr;   /* v4.03 🪢 the nearest thing on the ground inside the circle (≤ 15 m) */
@@ -3772,7 +3773,7 @@ function aimCam(tx, ty, tz) {   /* third person → first person at the eyes, lo
 function aimEnd(fire) { if (!AIM) return; const a = AIM; AIM = null; document.body.classList.remove('selfie'); YLG.classList.remove('gone'); if (a.draw) setTimeout(() => kqMarks(), 400); document.body.classList.remove('qaim'); $('xhair').classList.remove('lock'); $('bB').classList.remove('cancelOn'); AIRAIM = null; document.body.classList.remove('drawaim'); NOCK.visible = false; VM.visible = false; CASTR.visible = false; DIGSQ.visible = false; $('xhair').classList.remove('rod'); document.body.classList.remove('rodaim');
   if (a.rod) { document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { const c = a.cast; if (a.dig) { if (c && !c.wet && dist(me().x, me().z, c.x, c.z) < D.DIG_R) { const [cx, cz] = cellOf(c.x, c.z); till(cx, cz) } else hint('🪏 เล็งวงฟ้าไปที่พื้นหญ้าใกล้ๆ แล้วปล่อย', 1500) } else if (c && c.wet) castAt(c.x, c.z); else hint('🎣 เล็งวงฟ้าให้ตกลงน้ำ แล้วปล่อย', 1500) } gearView(); return } document.body.classList.remove('aim'); $('xhair').classList.remove('on'); if (fire) { if (a.net) throwNet(a); else shoot(a) } gearView() }
 const arwT = () => { const t = S.arrowT; return t && D.ARROWX[t] && ((S.arrowsX || {})[t] || 0) > 0 ? t : '' };
-function aimHud() { const t = arwT(); $('xN').textContent = t ? `${D.ARROWX[t].icon} ${D.ARROWX[t].name} ×${S.arrowsX[t]}` : '🏹 ×' + (S.arrows || 0); arwBtn() }
+function aimHud() { if (staffOn()) { $('xN').textContent = '🪄 ค้าง = ชาร์จ 1–5 · ⚡ ' + Math.round(pEn()); arwBtn(); return } const t = arwT(); $('xN').textContent = t ? `${D.ARROWX[t].icon} ${D.ARROWX[t].name} ×${S.arrowsX[t]}` : '🏹 ×' + (S.arrows || 0); arwBtn() }
 function arwBtn() { const el = $('bArw'); if (!el) return; const has = Object.keys(D.ARROWX).some(k => (S.arrowsX || {})[k] > 0), t = arwT(); el.style.display = has && S.eq.bow && gRange() && !gFarm() && S.mode !== 'farm' ? '' : 'none'; el.textContent = t ? D.ARROWX[t].icon : '🏹' }
 $('bArw').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const L = ['', ...Object.keys(D.ARROWX).filter(k => (S.arrowsX || {})[k] > 0)]; S.arrowT = L[(L.indexOf(arwT()) + 1) % L.length]; sfx('tap'); const t = arwT(); hint(t ? `${D.ARROWX[t].icon} ${D.ARROWX[t].name} ×${S.arrowsX[t]}` : `🏹 ลูกธนูธรรมดา ×${S.arrows || 0}`, 1000); aimHud(); save() });
 function shoot(a) {
@@ -3795,6 +3796,29 @@ function arrowFx(A, hit) { const X = D.ARROWX[A.kind], p = hit ? hit.A.root.posi
   if (A.kind === 'shock') { const near = mons.filter(o => o !== hit && dist(o.A.root.position.x, o.A.root.position.z, p.x, p.z) < X.chain[0]).slice(0, X.chain[2]); for (const o of near) { const q = o.A.root.position; VF.beam(new THREE.Vector3(p.x, p.y + .8, p.z), new THREE.Vector3(q.x, q.y + .8, q.z), X.col, .12, .5); hurtMon(o, Math.max(1, Math.round(A.dmg * X.chain[1])), 'dmg', '⚡') } if (near.length) sfx('thunder') }
   if (A.kind === 'bomb') { VF.ring(p.x, p.y, p.z, '#ffb03a', X.blast, .5); VF.burst(p.x, p.y + .5, p.z, '#ff6a2a', 30, 6); sfx('boom'); shakeT = Math.max(shakeT, .35); for (const o of [...mons]) if (o !== hit && dist(o.A.root.position.x, o.A.root.position.z, p.x, p.z) < X.blast) hurtMon(o, Math.max(1, Math.round(A.dmg * X.mul)), 'dmg', '💣') }
   if (A.kind === 'fire') sfx('splash') }
+/* ================= v5.38 (designer) 🪄 staffs: ⚡ shots · tap = level 1 · hold Y = charge 1–5 (the gauge) · 🌿 the root staff slows what it hits ================= */
+function staffOn() { const b = bowOf(); return !!(b && D.ITEMS[b.t] && D.ITEMS[b.t].staff) } var STAFFB = [];
+const staffLv = a => Math.min(D.STAFF.max, 1 + Math.floor(Math.max(0, performance.now() - (a.ch || performance.now())) / 1000 / D.STAFF.lvT));
+const SGAUGE = (() => { const el = document.createElement('div'); el.id = 'staffG'; el.innerHTML = '<b>🪄</b>' + [1, 2, 3, 4, 5].map(i => `<i data-l="${i}"></i>`).join('') + '<span></span>'; document.body.appendChild(el); return el })();
+function staffFire(lv, tgt, o, dir) { const b = bowOf(); if (!b) return; const T = D.ITEMS[b.t], K = D.STAFF.kinds[T.staff] || D.STAFF.kinds.root, i = lv - 1, cost = D.STAFF.en[i];
+  if (!spendEn(cost)) { hint(`⚡ ไม่พอ · ระดับ ${lv} ใช้ ⚡ ${cost}`, 1300); return } const st = itemStats(b), dmg = Math.max(1, Math.round((st.atk + (S.buff && S.buff.until > Date.now() ? S.buff.atk || 0 : 0)) * D.STAFF.dmg[i]));
+  const r = D.STAFF.size[i], g = new THREE.Group(), core = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff' })), halo = new THREE.Mesh(new THREE.SphereGeometry(r * 1.9, 16, 12), new THREE.MeshBasicMaterial({ color: K.col, transparent: true, opacity: .45, depthWrite: false }));
+  g.add(core, halo); g.position.copy(o); scene.add(g); const v = dir.clone(); v.y = 0; v.normalize().multiplyScalar(D.STAFF.speed);
+  if (tgt) { const p = tgt.A.root.position; const to = new THREE.Vector3(p.x, p.y + .6 * (MSCALE[tgt.kind] || .85), p.z).sub(o); v.copy(to.normalize().multiplyScalar(D.STAFF.speed)) }
+  STAFFB.push({ g, halo, v, dmg, lv, K, r, t: D.STAFF.range / D.STAFF.speed, tgt }); VF.burst(o.x, o.y, o.z, K.glow, 3 + lv * 2, .8 + lv * .3); sfx(lv >= 4 ? 'dive' : 'tap'); wearItem('bow'); bump('staffShots'); hud() }
+function staffHit(B, M) { const p = M.A.root.position, now = performance.now(), K = B.K; hurtMon(M, B.dmg, B.lv >= 4 ? 'crit' : 'dmg', K.ico); VF.burst(p.x, p.y + .6, p.z, K.glow, 10 + B.lv * 4, 3); VF.ring(p.x, groundH(p.x, p.z) + .05, p.z, K.col, .9 + B.lv * .25, .5);
+  if (mons.includes(M) && !M.T.golem) { const s = K.s[B.lv - 1] * (M.T.boss || M.T.mini ? .5 : 1); M.rootT = Math.max(M.rootT || 0, now + s * 1000); M.rootMul = K.mul; floater(`${K.ico} ${K.name} ${s.toFixed(1)} วิ`, 'item', p.x, 2.3, p.z) } }
+function staffTick(dt, now) {
+  /* the gauge: while aiming with a staff */
+  const on = !!(AIM && AIM.quick && staffOn()); SGAUGE.classList.toggle('on', on); if (on) { const lv = staffLv(AIM); if (SGAUGE.dataset.lv !== String(lv)) { SGAUGE.dataset.lv = lv; SGAUGE.querySelectorAll('i').forEach(x => x.classList.toggle('f', +x.dataset.l <= lv)); SGAUGE.querySelector('span').textContent = `ระดับ ${lv} · ⚡ ${D.STAFF.en[lv - 1]}`; if (lv > 1) sfx('tap') } }
+  else if (SGAUGE.dataset.lv) delete SGAUGE.dataset.lv;
+  /* rooted monsters: roots twinkle at their feet */
+  if (Math.random() < .3) for (const M of mons) if (now < (M.rootT || 0) && M.A) { const q = M.A.root.position; VF.burst(q.x + (Math.random() - .5) * .8, groundH(q.x, q.z) + .1, q.z + (Math.random() - .5) * .8, '#7ad85a', 2, .5) }
+  for (let i = STAFFB.length - 1; i >= 0; i--) { const B = STAFFB[i]; B.t -= dt; const p = B.g.position;
+    if (B.tgt && mons.includes(B.tgt)) { const q = B.tgt.A.root.position, to = new THREE.Vector3(q.x, q.y + .6 * (MSCALE[B.tgt.kind] || .85), q.z).sub(p), sp = B.v.length(); B.v.lerp(to.normalize().multiplyScalar(sp), Math.min(1, dt * 6)) }   /* a little homing on the target */
+    p.addScaledVector(B.v, dt); B.halo.scale.setScalar(1 + Math.sin(now / 60 + i) * .15); if (Math.random() < .35) VF.burst(p.x, p.y, p.z, B.K.glow, 1, .25);
+    let hit = null; for (const M of mons) { if (M.died || !M.A) continue; const q = M.A.root.position, rr = .55 * (MSCALE[M.kind] || .85) + B.r; if (Math.hypot(q.x - p.x, q.z - p.z) < rr + .3 && p.y > q.y - .3 && p.y < q.y + 2.4 * (MSCALE[M.kind] || .85) + .4) { hit = M; break } }
+    if (hit) staffHit(B, hit); if (hit || B.t <= 0 || p.y < groundH(p.x, p.z) + .05) { if (!hit) VF.burst(p.x, p.y, p.z, B.K.glow, 8, 2); scene.remove(B.g); B.g.traverse(o => { if (o.geometry) o.geometry.dispose() }); STAFFB.splice(i, 1) } } }
 function arrowsTick(dt) {
   for (let i = ARROWS.length - 1; i >= 0; i--) { const A = ARROWS[i], m = A.m;
     if (A.stuck) { if (A.pick && dist(me().x, me().z, m.position.x, m.position.z) < D.ARROW_PICK.r && Math.abs(me().y - m.position.y) < 2.6) { if (A.kind) S.arrowsX[A.kind] = (S.arrowsX[A.kind] || 0) + 1; else S.arrows = (S.arrows || 0) + 1; floater(A.kind ? D.ARROWX[A.kind].icon + ' +1' : '🏹 +1', 'coin', m.position.x, 1.4, m.position.z); sfx('tap'); scene.remove(m); ARROWS.splice(i, 1); aimHud(); continue }   /* v3.1 walk over a stuck arrow to pick it up */

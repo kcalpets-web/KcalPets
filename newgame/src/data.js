@@ -139,7 +139,7 @@ export const ITEMS = {
   stoneClub:     { slot: 'sword', kind: 'one', name: 'กระบองหิน', icon: '🪨', atk: 17, dur: 22, tier: 2 },
   magmaAxe:      { slot: 'sword', kind: 'two', name: 'ขวานปีศาจลาวา', icon: '🪓', atk: 52, dur: 50, tier: 4 },   // v4.15 🌋 the lava demon's reward
   boneBlade:     { slot: 'sword', kind: 'two', name: 'ดาบยักษ์โครงกระดูก', icon: '🦴', atk: 48, dur: 45, tier: 4 },   // v4.13 💀 the skeleton giant's reward
-  rootStaff:     { slot: 'sword', kind: 'two', name: 'ไม้เท้ารากปีศาจ', icon: '🪵', atk: 44, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward
+  rootStaff:     { slot: 'bow', kind: 'staff', staff: 'root', name: 'คทารากปีศาจ', icon: '🪄', atk: 34, dur: 45, tier: 4 },   // v4.12 🌳 the demon tree's reward · v5.38 (designer) a staff: ranged, ⚡ shots, charge 1–5, 🌿 roots
   frostClub:     { slot: 'sword', kind: 'two', name: 'กระบองยักษ์น้ำแข็ง', icon: '🔨', atk: 46, dur: 45, tier: 4 },   // v4.11 ❄️ the ice giant's reward
   paddleSword:   { slot: 'sword', kind: 'one', name: 'ดาบใบพาย', icon: '🛶', atk: 30, dur: 40, tier: 3, only: 1 },   // v4.24 navalee quest
   ghostSword:    { slot: 'sword', kind: 'one', name: 'ดาบอัศวินวิญญาณ', icon: '👻', atk: 34, dur: 38, tier: 3, only: 1, metal: 1, drain: { p: .3, hp: 5 } },   // v4.35 deadgar · a hit may heal ❤️ +¼
@@ -239,6 +239,7 @@ export const KIND = {                                          // cd = swing tim
   whip:  { name: 'แส้ · ตีไกล กวาดนิดหน่อย · ถือโล่ได้', cd: .9, reach: 3.6, arc: .35, shield: true, en: .9 },   // v4.34
   spear: { name: 'หอก · แทงเร็ว ระยะไกล · ถือโล่ไม่ได้', cd: .7, reach: 3.3, arc: 0, shield: false, en: .8 },
   bow:   { name: 'ธนู · แตะ Y เพื่อเล็ง กด A เพื่อยิง', cd: 1, reach: 30, arc: 0, shield: true, en: .5 },
+  staff: { name: 'คทา · ยิงลูกเวทด้วย ⚡ · ค้าง Y ชาร์จ 1–5', cd: 1, reach: 22, arc: 0, shield: true, en: .5 },   // v5.38
 };
 /* v2.1 arrows: draw = seconds to a full draw (damage 50 % → 100 %) · speed m/s · grav m/s² · drop = chance a monster leaves 1–3 · shop = 10 for 50 */
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 10, shopN: 10, shopPrice: 50, assist: 1.1 };
@@ -450,6 +451,9 @@ export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'],
 export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
 export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
 /* v3.1 special arrows (from treasure chests) · fire = extra burn damage · ice = frozen a while · shock = jumps to monsters nearby · bomb = blast (not reusable) */
+/* v5.38 (designer) 🪄 staffs: tap Y = a level-1 shot · hold Y = charge 1 → 5 (a level every lvT s) · ⚡ per level · damage × · ball size · 🌿 root: slows monsters (mul of their speed) for s seconds (bosses half) */
+export const STAFF = { lvT: .45, max: 5, en: [3, 5, 8, 11, 15], dmg: [1, 1.35, 1.8, 2.3, 3], size: [.16, .2, .25, .31, .38], speed: 16, range: 22,
+  kinds: { root: { col: '#9a6aff', glow: '#9aff7a', mul: .35, s: [1, 1.6, 2.2, 2.8, 3.5], ico: '🌿', name: 'รากพันขา' } } };
 export const ARROWX = { fire: { icon: '🔥', name: 'ลูกธนูไฟ', col: '#ff6a1a', mul: 1.6 }, ice: { icon: '🧊', name: 'ลูกธนูน้ำแข็ง', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { icon: '⚡', name: 'ลูกธนูสายฟ้า', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
 export const ARROW_PICK = { r: 1.4, life: 90 };   // stuck arrows can be picked up (walk over them) for this many seconds
 export const FISH3P = { rod: .55 };   // v5.05 🎣 the rod held in the third-person view (world size ≈ a sword)
