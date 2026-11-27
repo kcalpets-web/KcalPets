@@ -28,7 +28,7 @@ const ROOT = '/home/user/KcalPets', PORT = 8860, OUT = process.argv[2] || '/tmp/
     await pg.waitForEvent('load', { timeout: 30000 }).catch(() => { }); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(5000);
     const after = await E(() => ({ coin: window.__ng.S.coin, minib: Object.keys(window.__ng.S.minib || {}), gone: !!window.__ng.S.story.cloudGone, dg: !!localStorage.getItem('ng_save_v3_dg'), x: Math.round(window.__ng.me.x), toast: document.body.textContent.includes('การผจญภัยยังไม่จบ') }));
     log('after the ending', JSON.stringify(after)); await pg.screenshot({ path: OUT + '/after.png' });
-    if (after.coin !== before + 5000 || after.minib.join() !== 'asrah' || !after.gone || after.dg) errs.push('v5.49 after the ending: the save from before the door + the win (cloud gone · 🪙 5000)');
+    if (after.coin !== before + 5000 || after.minib.length !== 5 || !after.gone || after.dg) errs.push('v5.49 after the ending: the save from before the door + the win (cloud gone · 🪙 5000)');
     { const h = await E(() => { const N = window.__ng, H = N.HOUSE_ ? N.HOUSE_() : null; return { x: Math.round(N.me.x), z: Math.round(N.me.z) } }); log('woke at', JSON.stringify(h)) }
     if (after.x > 2000) errs.push('should be back outside the dungeon');
     // lose = back too

@@ -1,6 +1,6 @@
 /* New Game — all tunable numbers in one place (docs/SPEC.md). "เสนอ" values: change after play-testing. */
 
-export const APP_VER = '5.49';
+export const APP_VER = '5.50';
 export const LOCK_ON = 6, LOCK_OFF = 8, LOCK_OFF_R = 26;   // v5.39 a bow / staff lock lets go beyond 26 m
 //   // v1.4.2 lock-on: face the nearest angry monster within 6 m · let go beyond 8 m
 export const REACH_SWORD = 2.2, REACH_TOOL = 1.9;   // how close you must be to slash / chop — farther away the character walks over first
