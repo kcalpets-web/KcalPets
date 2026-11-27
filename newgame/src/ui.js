@@ -41,7 +41,8 @@ export function floater(text, cls, wx, wy, wz) {
 export function tickFloaters(dt, project) {
   for (let i = live.length - 1; i >= 0; i--) {
     const f = live[i]; f.t += dt; const p = project(f.wx, f.wy + f.t * 1.2, f.wz);
-    f.el.style.transform = `translate(${p.x}px,${p.y}px) translate(-50%,-100%)`; f.el.style.opacity = String(Math.max(0, 1 - Math.max(0, f.t - .5) / .6));
+    if (f.w == null) { f.w = f.el.offsetWidth; f.h = f.el.offsetHeight } const hw = f.w / 2 + 6, x = Math.min(innerWidth - hw, Math.max(hw, p.x)), y = Math.max(f.h + 6, p.y);   /* v5.36 a word near the screen edge stays fully on screen ("📓 บันทึกใหม่" was cut off) */
+    f.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`; f.el.style.visibility = p.z > 1 ? 'hidden' : '';   /* behind the camera: not shown */ f.el.style.opacity = String(Math.max(0, 1 - Math.max(0, f.t - .5) / .6));
     if (f.t > 1.1) { f.el.style.display = 'none'; pool.push(f.el); live.splice(i, 1) }
   }
 }
