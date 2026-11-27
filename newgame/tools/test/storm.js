@@ -1,4 +1,4 @@
-/* v4.09: sailing in = the dungeon · all 6 kingdom bosses beaten → the dark cloud at once · beating it → its true form (the serpent) comes next (dungeon109.js tests the rest)
+/* v5.46: the throne hall is the one way in (sailing in only warns) · v4.09: the dungeon · all 6 kingdom bosses beaten → the dark cloud at once · beating it → its true form (the serpent) comes next (dungeon109.js tests the rest)
    v1.7 test: the cloud on the horizon · sail in (loading screen) · the storm lord: telegraphed slam / bolts / minions · phases · win → the sky clears.
    NODE_PATH=$(npm root -g) node newgame/tools/test/storm.js outDir   (~3 min) · fails on page errors or broken checks */
 const { chromium } = require('playwright');
@@ -23,7 +23,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await closeAll();
     await wait(2500); await closeAll(); await E(() => { const N = window.__ng; N.CAM.yaw = Math.PI / 2 }); await wait(1500); await shot('01-cloud-horizon');
     log('towns done', await N(() => window.__ng.townsDone()));
-    await E(() => window.__ng.goStorm()); await wait(400); await pg.click('#cfY'); await wait(700); await shot('02-loading'); await wait(3500); await closeAll();
+    { const t = await E(() => { window.__ng.goStorm(); return (document.querySelector('#toast') || {}).textContent || '' }); log('sail in', t.slice(0, 80)); if (/ตกลง|ยืนยัน/.test(await E(() => document.body.innerText.slice(0, 0)))) { } if (!/ท้องพระโรง/.test(t)) errs.push('v5.46 sailing into the storm should point to the throne hall (the one way in)') }
+    await closeAll(); await E(() => window.__ng.dgAsk('tower')); await wait(400); await pg.click('#cfY');   /* v5.46 test update: the throne hall's ✋ is the one way into the dungeon */ await wait(700); await shot('02-loading'); await wait(3500); await closeAll();
     const at = await N(() => ({ x: window.__ng.me.x, storm: document.body.classList.contains('storm') })); log('arrived', JSON.stringify(at)); if (!(at.x > 2500) || !at.storm) errs.push('did not reach the storm island');
     await shot('03-island');
     await E(() => { window.__hpkeep = setInterval(() => { const N = window.__ng; if (N.S.hp != null && N.S.hp < 120) N.S.hp = null }, 200) });   /* the test checks the fight's flow, not survival */
