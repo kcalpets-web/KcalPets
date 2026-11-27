@@ -5829,7 +5829,7 @@ function c2Lord(k) { const cs = csOf(k), K = KINGDOMS[k], ld = (KQ[k].npcs || []
 /* ================= v4.90 🍺 the inn: refugees of the captured kingdoms (day = the harbour market · night = their rooms · 1 in D.INN.bar at the bar) ================= */
 const refOf = (k, n) => !!D.MINIB[k] && raided(k) && n.id !== D.RAID.captive[k];
 const capOf = (k, n) => !!D.MINIB[k] && raided(k) && n.id === D.RAID.captive[k] && !RDS(k).freed;
-const plaza = () => [HB.x + 44, HB.z - 22];
+const plaza = () => [HB.x + 47, HB.z - 21];
 /* v5.43 ⛺ the refugee camp: one tent per kingdom (its flag + element), a camp fire in the middle · built once, outside the harbour wall */
 const CAMP_K = Object.keys(D.MINIB),   /* the kingdoms that can fall (Navalee never does) */ CAMP_EL = { navalee: '💧', sylvaren: '🌱', frosthelm: '❄️', asrah: '🪨', deadgar: '⚡', valkara: '🔥' };
 function campTent(k) { const [px, pz] = plaza(), i = Math.max(0, CAMP_K.indexOf(k)), a = i / CAMP_K.length * 6.283 + .4; return [px + Math.cos(a) * 6.5, pz + Math.sin(a) * 5] }
@@ -5838,8 +5838,8 @@ const CAMPG = (() => { const g = new THREE.Group(), [px, pz] = plaza(); scene.ad
   for (const k of CAMP_K) { const [x, z] = campTent(k), y = groundH(x, z), t = new THREE.Group(); t.position.set(x, y, z); t.rotation.y = Math.atan2(px - x, pz - z); g.add(t); const K = KINGDOMS[k];
     const tent = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.1, 4), new THREE.MeshStandardMaterial({ color: '#e8dcc0', roughness: .95, flatShading: true })); tent.rotation.y = Math.PI / 4; tent.position.y = 1.05; t.add(tent);
     const door = new THREE.Mesh(new THREE.PlaneGeometry(.7, 1), new THREE.MeshStandardMaterial({ color: '#5a4030', roughness: 1 })); door.position.set(0, .5, 1.07); door.rotation.x = -.42; t.add(door);
-    part(t, '#4a2e1a', '#7a5232', [1.5, 1.4, .4], [.05, 1.4, .05], [0, 0, 0], { A: 0 }); const fg = new THREE.Mesh(new THREE.PlaneGeometry(.9, .6), new THREE.MeshStandardMaterial({ color: K ? K.col : '#ccc', roughness: .9, side: THREE.DoubleSide })); fg.position.set(1.95, 2.45, .4); t.add(fg);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex(CAMP_EL[k]), transparent: true })); sp.scale.setScalar(.55); sp.position.set(1.95, 2.45, .45); t.add(sp); addSol({ x, z, r: 1.3 }) }
+    part(t, '#4a2e1a', '#7a5232', [1.5, 1.9, .4], [.06, 1.9, .06], [0, 0, 0], { A: 0 }); const fg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1), new THREE.MeshStandardMaterial({ color: K ? K.col : '#ccc', roughness: .9, side: THREE.DoubleSide })); fg.position.set(2.3, 3.2, .4); t.add(fg);   /* v5.43 a bigger flag: seen from the gate */
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex(CAMP_EL[k]), transparent: true })); sp.scale.setScalar(.85); sp.position.set(2.3, 3.2, .46); t.add(sp); addSol({ x, z, r: 1.3 }) }
   g.traverse(o => { if (o.isMesh) { o.castShadow = !eco; o.receiveShadow = true } }); return g })();   /* v5.43 (designer) the refugees live in a camp outside the wall (by the sea, NE) — not around the fountain */
 const barGoer = n => idHash({ id: n.id }) % D.INN.bar === 0 && refList().filter(r => idHash({ id: r.n.id }) % D.INN.bar === 0).slice(0, D.INN.barMax).some(r => r.n === n);   /* at most barMax at the bar · the rest sleep in their rooms */
 function refList() { const L = []; for (const k in D.MINIB) if (raided(k)) for (const n of KQ[k].npcs || []) if (refOf(k, n)) L.push({ k, n }); return L }
@@ -6268,7 +6268,7 @@ function huntTick(M, m, sp, dt, now, ok) {
     if (P.hp <= 0) { const ig = P.T.ingr; monGone(P); if (ig) dropIngr(ig[0], ig[2] || 1, q.x, q.z); M.prey = null; if (nearMe(M, 18)) floater('🍖', 'item', m.x, 1.8, m.z) } } return true }
 function walkMon(x, z) { return walkLand(x, z) && !(S.builds.length && solidAt(x, z)) && !solHit(x, z, .05) }   /* v2.5.1 monsters can't stand inside trees/houses either (or you could never reach them) */
 /* v2.4.1 safe zones: the home island (once its monster is gone) and the town (once cleared) · no monsters walk in · no attacking there */
-function safeAt(x, z) { const zn = zoneOf(x, z); return (zn === 'farm' && !S.mon && (!BALD_ON || dist(x, z, HOUSE.x, HOUSE.z) < D.SAFE_HOME)) || (zn === 'town' && !!S.story.townClear) || dist(x, z, HB.x + 8, HB.z) < 34 || dist(x, z, HB.x + 44, HB.z - 22) < 12 }   /* v5.43 the wider town + the camp */   /* v3.13 the harbour town is safe */
+function safeAt(x, z) { const zn = zoneOf(x, z); return (zn === 'farm' && !S.mon && (!BALD_ON || dist(x, z, HOUSE.x, HOUSE.z) < D.SAFE_HOME)) || (zn === 'town' && !!S.story.townClear) || dist(x, z, HB.x + 8, HB.z) < 34 || dist(x, z, HB.x + 47, HB.z - 21) < 12 }   /* v5.43 the wider town + the camp */   /* v3.13 the harbour town is safe */
 const safeHere = () => safeAt(me().x, me().z);
 function walkMonH(x, z) { return walkMon(x, z) && !safeAt(x, z) }
 let safeHintT = 0; function safeHint() { const n = performance.now(); if (n > safeHintT) { safeHintT = n + 2500; hint('🕊️ เขตปลอดภัย · ที่นี่ใช้อาวุธไม่ได้', 1600) } }
