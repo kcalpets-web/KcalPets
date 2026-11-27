@@ -239,7 +239,7 @@ export const KIND = {                                          // cd = swing tim
   whip:  { name: 'แส้ · ตีไกล กวาดนิดหน่อย · ถือโล่ได้', cd: .9, reach: 3.6, arc: .35, shield: true, en: .9 },   // v4.34
   spear: { name: 'หอก · แทงเร็ว ระยะไกล · ถือโล่ไม่ได้', cd: .7, reach: 3.3, arc: 0, shield: false, en: .8 },
   bow:   { name: 'ธนู · แตะ Y เพื่อเล็ง กด A เพื่อยิง', cd: 1, reach: 30, arc: 0, shield: true, en: .5 },
-  staff: { name: 'คทา · ยิงลูกเวทด้วย ⚡ · ค้าง Y ชาร์จ 1–5', cd: 1, reach: 22, arc: 0, shield: true, en: .5 },   // v5.38
+  staff: { name: 'คทา · ยิงลูกเวท ไม่ใช้กระสุน · ค้าง Y ชาร์จ 1–5', cd: 1, reach: 22, arc: 0, shield: true, en: .5 },   // v5.38
 };
 /* v2.1 arrows: draw = seconds to a full draw (damage 50 % → 100 %) · speed m/s · grav m/s² · drop = chance a monster leaves 1–3 · shop = 10 for 50 */
 export const ARROW = { draw: .6, speed: 38, grav: 5, life: 1.8, en: 2, drop: .3, start: 10, shopN: 10, shopPrice: 50, assist: 1.1 };
@@ -451,8 +451,8 @@ export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'],
 export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
 export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
 /* v3.1 special arrows (from treasure chests) · fire = extra burn damage · ice = frozen a while · shock = jumps to monsters nearby · bomb = blast (not reusable) */
-/* v5.38 (designer) 🪄 staffs: tap Y = a level-1 shot · hold Y = charge 1 → 5 (a level every lvT s) · ⚡ per level · damage × · ball size · 🌿 root: slows monsters (mul of their speed) for s seconds (bosses half) */
-export const STAFF = { lvT: .45, max: 5, en: [3, 5, 8, 11, 15], dmg: [1, 1.35, 1.8, 2.3, 3], size: [.16, .2, .25, .31, .38], speed: 16, range: 22,
+/* v5.38 (designer) 🪄 staffs: tap Y = a level-1 shot · hold Y = charge 1 → 5 (a level every lvT s) · no ammo, no ⚡ (designer: unlike the bow's arrows) — only the charge time + the staff wearing out · damage × · ball size · 🌿 root: slows monsters (mul of their speed) for s seconds (bosses half) */
+export const STAFF = { lvT: .45, max: 5, dmg: [1, 1.35, 1.8, 2.3, 3], size: [.16, .2, .25, .31, .38], speed: 16, range: 22,
   kinds: { root: { col: '#9a6aff', glow: '#9aff7a', mul: .35, s: [1, 1.6, 2.2, 2.8, 3.5], ico: '🌿', name: 'รากพันขา' } } };
 export const ARROWX = { fire: { icon: '🔥', name: 'ลูกธนูไฟ', col: '#ff6a1a', mul: 1.6 }, ice: { icon: '🧊', name: 'ลูกธนูน้ำแข็ง', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { icon: '⚡', name: 'ลูกธนูสายฟ้า', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
 export const ARROW_PICK = { r: 1.4, life: 90 };   // stuck arrows can be picked up (walk over them) for this many seconds
