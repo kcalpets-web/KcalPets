@@ -72,9 +72,9 @@ export const MON = {
   bear:    { animal: 1, charge: 1, angry: 1, legs: 1, flee: 0, run: 4.2, name: '🐻 หมีป่า', lv: 8, hp: 160, atk: 18, def: 5, exp: 60, coin: [0, 0], mat: { hide: 3 }, ingr: ['bearmeat', 1, 2], loot: [], tier: 'animal' },   // v3.99 a fierce bear: attacks when you come close · catch it with the net → its skill 💪
   whale:   { animal: 1, swim: 1, flee: 6, run: 2.6, name: '🐋 วาฬน้อย', lv: 6, hp: 80, atk: 0, def: 3, exp: 20, coin: [0, 0], mat: {}, ingr: ['whalemeat', 1, 2], loot: [], tier: 'animal' },   // v1.5 (open sea · catch from the raft)
   hawk:    { animal: 1, legs: 1, flee: 7, run: 5, name: '🦅 เหยี่ยว', lv: 5, hp: 40, atk: 0, def: 1, exp: 12, coin: [0, 0], mat: { feather: 2 }, ingr: ['hawkmeat', 1], loot: [], tier: 'animal' },   // v1.5 (high ground)
-  eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2500, atk: 30, def: 12, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
-  serpent:   { boss: 1, snake: 1, name: '🐍 ปีศาจงูยักษ์', lv: 70, hp: 6000, atk: 70, def: 32, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss', scale: .85 },   // v4.09 the dark cloud's true form (phase 2)
-  stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 5500, atk: 60, def: 30, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
+  eelBoss: { boss: 1, eel: 1, name: '⚡ Electropic eel', lv: 30, hp: 2500, atk: 70, def: 35, exp: 500, coin: [300, 400], mat: {}, loot: [], tier: 'boss', scale: 1.15 },   // v3.88 the sea guardian (its shrine rises after 10 fish)
+  serpent:   { boss: 1, snake: 1, name: '🐍 ปีศาจงูยักษ์', lv: 70, hp: 6000, atk: 119, def: 84, exp: 0, coin: [0, 0], mat: {}, loot: [], tier: 'boss', scale: .85 },   // v4.09 the dark cloud's true form (phase 2)
+  stormLord: { boss: 1, name: '⛈️ จอมเมฆา', lv: 60, hp: 5500, atk: 112, def: 77, exp: 0, coin: [0, 0], mat: {}, loot: ['crystalBow'], tier: 'boss' },   // v1.7 the final boss
   shade:     { name: '👤 เงาเมฆ', lv: 20, hp: 60, atk: 14, def: 4, exp: 0, coin: [7, 13], mat: {}, loot: ['knightSword', 'soldierSpear', 'knightShield', 'knightBow'], tier: 'normal' },
   goblin:      { ingr: ['meat', .6], name: '👺 ก็อบลิน', lv: 3, hp: 52, atk: 7, def: 2, exp: 26, coin: [20, 40], mat: { wood: 2 }, loot: ['boneClub', 'branchSword', 'harpoon', 'barkArmor', 'hunterBow'], tier: 'normal', legs: 1 },
   goblinChief: { ingr: ['meat', 1, 3], name: '👹 หัวหน้าก็อบลิน', lv: 5, hp: 190, atk: 10, def: 3, exp: 100, coin: [167, 267], mat: { stone: 4 }, loot: ['stoneClub', 'greatsword', 'soldierSpear', 'stoneArmor', 'soldierBow'], tier: 'mini', legs: 1 },
@@ -104,15 +104,15 @@ export const MON = {
   skeleton:     { base: 'goblin', tint: '#f0ece0', name: '💀 โครงกระดูก', lv: 12, hp: 90, atk: 16, def: 6, exp: 40, coin: [20, 40], mat: {}, loot: ['boneClub'], tier: 'normal' },
   /* v2.7 mini-bosses: one per kingdom · strong · beaten once for good (S.minib) · big loot */
   mbCrab:   { base: 'rockGolem', tint: '#d05a3a', mini: 1, scale: 2.2, name: '🦀 กรามเหล็ก', lv: 14, hp: 900, atk: 24, def: 14, exp: 400, coin: [1500, 2500], mat: { stone: 10, ore: 4 }, loot: ['trident', 'knightShield'], tier: 'boss' },
-  demonTree: { boss: 1, tree: 1, mini: 1, name: '🌳 ต้นไม้ปีศาจ', lv: 18, hp: 3000, atk: 30, def: 18, exp: 620, coin: [2200, 3200], mat: { wood: 20 }, loot: ['rootStaff', 'crystalBow'], tier: 'boss', scale: 1, tagH: 6.6 },   // v4.12 🌳 sylvaren's boss (main quest) · rooted (never walks)
+  demonTree: { boss: 1, tree: 1, mini: 1, name: '🌳 ต้นไม้ปีศาจ', lv: 18, hp: 3000, atk: 77, def: 42, exp: 620, coin: [2200, 3200], mat: { wood: 20 }, loot: ['rootStaff', 'crystalBow'], tier: 'boss', scale: 1, tagH: 6.6 },   // v4.12 🌳 sylvaren's boss (main quest) · rooted (never walks)
   mbTreant: { base: 'branchImp', tint: '#3a2a1a', mini: 1, scale: 2.4, name: '🌳 รากดำ', lv: 15, hp: 1000, atk: 26, def: 12, exp: 450, coin: [1600, 2600], mat: { wood: 20 }, loot: ['crystalBow', 'dragonBlade'], tier: 'boss' },
-  sandWorm: { boss: 1, worm: 1, mini: 1, name: '🪱 หนอนยักษ์ทะเลทราย', lv: 18, hp: 4500, atk: 32, def: 12, exp: 600, coin: [2200, 3200], mat: { ore: 4 }, loot: ['wormFang', 'scimitar'], tier: 'boss' },   // v4.03 🏜️ asrah's boss (main quest)
+  sandWorm: { boss: 1, worm: 1, mini: 1, name: '🪱 หนอนยักษ์ทะเลทราย', lv: 18, hp: 4500, atk: 98, def: 63, exp: 600, coin: [2200, 3200], mat: { ore: 4 }, loot: ['wormFang', 'scimitar'], tier: 'boss' },   // v4.03 🏜️ asrah's boss (main quest)
   mbScorp:  { base: 'goblinChief', tint: '#c8902a', mini: 1, scale: 1.9, name: '🦂 ราชาแมงป่อง ซาบัค', lv: 17, hp: 1200, atk: 30, def: 15, exp: 520, coin: [2000, 3000], mat: { ore: 5 }, loot: ['scimitar', 'kingSword'], tier: 'boss' },
-  iceGiant: { boss: 1, giant: 1, mini: 1, name: '❄️ ยักษ์น้ำแข็ง', lv: 20, hp: 3500, atk: 34, def: 16, exp: 650, coin: [2400, 3400], mat: { ore: 5 }, loot: ['frostClub', 'crystalBlade'], tier: 'boss', scale: 1, tagH: 5 },   // v4.11 ❄️ frosthelm's boss (main quest)
+  iceGiant: { boss: 1, giant: 1, mini: 1, name: '❄️ ยักษ์น้ำแข็ง', lv: 20, hp: 3500, atk: 84, def: 49, exp: 650, coin: [2400, 3400], mat: { ore: 5 }, loot: ['frostClub', 'crystalBlade'], tier: 'boss', scale: 1, tagH: 5 },   // v4.11 ❄️ frosthelm's boss (main quest)
   mbWolf:   { base: 'rockGolem', tint: '#e8f4ff', mini: 1, scale: 2, name: '🐺 ฮาวล์ จ่าฝูงน้ำแข็ง', lv: 18, hp: 1300, atk: 32, def: 16, exp: 560, coin: [2200, 3200], mat: { ore: 5 }, loot: ['crystalBlade', 'knightBow'], tier: 'boss' },
-  lavaDemon: { boss: 1, lava: 1, mini: 1, name: '🌋 ปีศาจลาวา', lv: 24, hp: 4000, atk: 40, def: 20, exp: 900, coin: [3200, 4800], mat: { coal: 8 }, loot: ['magmaAxe', 'dragonBlade'], tier: 'boss', scale: 1, tagH: 5.8 },   // v4.15 🌋 valkara's boss (main quest)
+  lavaDemon: { boss: 1, lava: 1, mini: 1, name: '🌋 ปีศาจลาวา', lv: 24, hp: 4000, atk: 91, def: 56, exp: 900, coin: [3200, 4800], mat: { coal: 8 }, loot: ['magmaAxe', 'dragonBlade'], tier: 'boss', scale: 1, tagH: 5.8 },   // v4.15 🌋 valkara's boss (main quest)
   mbMagma:  { base: 'rockGolem', tint: '#ff4a1a', mini: 1, scale: 2.6, name: '🗿 มักม่า โกเลมลาวา', lv: 20, hp: 1600, atk: 36, def: 20, exp: 700, coin: [2600, 3800], mat: { ore: 8 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'boss' },
-  boneGiant: { boss: 1, bone: 1, mini: 1, name: '💀 ยักษ์โครงกระดูก', lv: 22, hp: 5000, atk: 38, def: 18, exp: 800, coin: [3000, 4500], mat: { bone: 6 }, loot: ['boneBlade', 'kingSword'], tier: 'boss', scale: 1, tagH: 6.8 },   // v4.13 💀 deadgar's boss (main quest)
+  boneGiant: { boss: 1, bone: 1, mini: 1, name: '💀 ยักษ์โครงกระดูก', lv: 22, hp: 5000, atk: 105, def: 70, exp: 800, coin: [3000, 4500], mat: { bone: 6 }, loot: ['boneBlade', 'kingSword'], tier: 'boss', scale: 1, tagH: 6.8 },   // v4.13 💀 deadgar's boss (main quest)
   mbLich:   { base: 'goblinChief', tint: '#3a2a4a', mini: 1, scale: 2.2, name: '🧟 มอร์กัส ราชันผีดิบ', lv: 22, hp: 1800, atk: 40, def: 20, exp: 800, coin: [3000, 4500], mat: { ore: 8 }, loot: ['kingSword', 'crystalBlade'], tier: 'boss' },
 };
 /* drop rarity: base 70/20/9/1 — farm monsters can only drop Basic/Rare → renormalised 77.8 / 22.2 */
@@ -503,7 +503,7 @@ export const AUTO_POT = .3;                                   // auto-drink when
 export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet that finds you in the forest (dog or cat)
 export const CURE_GIFT = { antidote: 2, mpS: 2 };                  // potions Sberh gives after the shop is repaired
 export const REGSHOP = { mul: 5, shop: { wear: 'tailor', item: 'smith', recipe: 'market' } };   // v5.46 (designer) 👑 each kingdom's own pieces (the old quest rewards) on sale at the harbour once its boss is beaten · price = old coin reward × mul
-/* v5.47 (designer) boss ❤️ by the story order: 🌊 2500 · 🌿 3000 · ❄️ 3500 · 🌋 4000 · 🏜️ 4500 · 💀 5000 · ⛈️ 5500 · 🐍 6000 (D.MON) */
+/* v5.47 (designer) bosses by the story order (D.MON) · ❤️ 2500→6000 step 500 · ⚔️/🛡️ 70/35 · 77/42 · 84/49 · 91/56 · 98/63 · 105/70 · 112/77 · 119/84 (the designer's 100/50…170/120 −30%) */
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'บรอม', cost: { wood: 8, stone: 4, coin: 400 } },
