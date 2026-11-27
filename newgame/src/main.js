@@ -2729,11 +2729,11 @@ const hostile = M => !M.T.animal || (M.T.charge && M.aggro);
 const lockable = M => (!HIN.on || !!M.ind) && (hostile(M) || (M.T.animal && M !== HORSE && !M.T.boss));   /* v3.97 horses too */   /* v3.28 A locks animals too (hunting) */
 function lockTick(now) {
   const q = me(), dm = M => dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z);
-  if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > D.LOCK_OFF || !(hostile(LOCK) || (ALOCK && lockable(LOCK))) || !(LOCK.aggro || LOCK.hit || ALOCK || guard))) LOCK = null;
+  if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > (ALOCK && gRange() && !gFarm() ? D.LOCK_OFF_R : D.LOCK_OFF) || !(hostile(LOCK) || (ALOCK && lockable(LOCK))) || !(LOCK.aggro || LOCK.hit || ALOCK || guard))) LOCK = null;
   if (!LOCK && !RIDE && S.has.sword) { let bd = D.LOCK_ON; for (const M of mons) if (hostile(M) && (M.aggro || M.hit) && M.born + 600 < now) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }
   if (guard && !LOCK && !RIDE) { let bd = D.LOCK_ON; for (const M of mons) if (hostile(M)) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }   /* v3.19 holding B picks the nearest foe even before it attacks */
-  if (ALOCK && (!DRAWN || !LOCK || !mons.includes(LOCK))) ALOCK = false;   /* put away = unlocked */
-  if ((guard || ALOCK) && LOCK && !RIDE && !GLIDE && !PL.swim && !DROWN && !EAT) { const m = LOCK.A.root.position; PL.yawT = Math.atan2(m.x - q.x, m.z - q.z);
+  if (ALOCK && (!(DRAWN || (BOWUP && gRange() && !gFarm())) || !LOCK || !mons.includes(LOCK))) ALOCK = false;   /* put away = unlocked · v5.39 the bow / staff in hand keeps it */
+  if ((guard || ALOCK) && LOCK && !RIDE && !GLIDE && !PL.swim && !DROWN && !EAT && !(AIM && !AIM.thr)) {   /* v5.39 aiming: the camera decides */ const m = LOCK.A.root.position; PL.yawT = Math.atan2(m.x - q.x, m.z - q.z);
     lockMark.visible = !CUT; lockMark.position.set(m.x, m.y + (MSCALE[LOCK.kind] || .85) * 2 + .35 + Math.sin(now / 160) * .08, m.z); lockMark.rotation.y = now / 300 } else lockMark.visible = false;
 }
 const facing = m => { const q = me(), p = m.A.root.position; let d = Math.atan2(p.x - q.x, p.z - q.z) - PL.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.abs(d) < 1.2 };
@@ -3684,7 +3684,7 @@ function drawBow() { const b = bowOf(); if (!b) { hint('🏹 ยังไม่�
 let qsT = 0; function quickShot() { const now0 = performance.now(); if (now0 < qsT) return; const b = bowOf(); if (!b) { hint('🏹 ยังไม่มีธนู', 1000); return } if (!staffOn() && !(S.arrows > 0 || arwT())) { hint('🏹 ลูกธนูหมด', 1100); return } if (AIM) return;
   const q = me(), fx = Math.sin(PL.yaw), fz = Math.cos(PL.yaw); let tgt = LOCK && mons.includes(LOCK) && hostile(LOCK) ? LOCK : null;
   if (!tgt) { let bd = 25; for (const M of mons) { if (M.died || !M.A || !hostile(M)) continue; const p = M.A.root.position, dx = p.x - q.x, dz = p.z - q.z, d = Math.hypot(dx, dz); if (d < bd && (dx * fx + dz * fz) / (d || 1) > .5) { bd = d; tgt = M } } }
-  if (tgt) { const p = tgt.A.root.position; PL.yaw = PL.yawT = Math.atan2(p.x - q.x, p.z - q.z); _aD.set(p.x - q.x, 0, p.z - q.z).normalize() } else _aD.set(fx, 0, fz);
+  if (tgt) { const p = tgt.A.root.position; PL.yaw = PL.yawT = Math.atan2(p.x - q.x, p.z - q.z); if (lockable(tgt)) { if (LOCK !== tgt) sfx('tap'); LOCK = tgt; ALOCK = true }   /* v5.39 (designer) the first shot locks on: face it until put away (like the sword) */ _aD.set(p.x - q.x, 0, p.z - q.z).normalize() } else _aD.set(fx, 0, fz);
   qsT = now0 + D.ARROW.draw * 1000; BOWUP = true; if (staffOn()) { staffFire(1, tgt, new THREE.Vector3(q.x + _aD.x * .8, q.y + 1.3, q.z + _aD.z * .8), _aD.clone()); return } shoot({ ch: performance.now() - D.ARROW.draw * 1000 - 50, tgt, from: new THREE.Vector3(q.x + _aD.x * .5, q.y + 1.35, q.z + _aD.z * .5) }) }
 function qaimUp() { const a = AIM; if (!a || !a.quick) return; $('bB').classList.remove('cancelOn'); document.body.classList.remove('qaim');
   if (a.cancel) { aimEnd(false); hint(a.net ? '🕸️ ยกเลิก' : '🏹 ยกเลิก', 800); return } if (a.lockM && mons.includes(a.lockM)) a.tgt = a.lockM;
