@@ -544,7 +544,7 @@ export const KINGDOMS = {
   valkara:   { x: 690, z: 530, name: '🌋 วัลคาร่า', sub: 'ภูเขาไฟที่ร้อนระอุ', col: '#3f3536', temp: .55 },
 };
 const KL = Object.entries(KINGDOMS);
-export const LUMC = { x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z, r: 46, h: 7, edge: 14 };   // v3.25 the fallen capital stands on a raised plateau
+export const LUMC = { x: KINGDOMS.luminia.x, z: KINGDOMS.luminia.z, r: 64, h: 7, edge: 14 };   // v5.44 (designer) the grandest city: 46 → 64   // v3.25 the fallen capital stands on a raised plateau
 /* nearest kingdom + how sure (0 at a border … 1 well inside) · near the hand-made home strip there is none */
 export function kingdomAt(x, z) { const wx = x + 190 * (fbm(x / 170 + 11.3, z / 170 + 2.7, 3) - .5), wz = z + 190 * (fbm(x / 170 - 4.1, z / 170 + 8.9, 3) - .5);   /* v2.9 wavy, natural borders */
   let a = null, da = 1e9, db = 1e9; for (const [k, K] of KL) { const d = Math.hypot(wx - K.x, wz - K.z); if (d < da) { db = da; da = d; a = k } else if (d < db) db = d }
@@ -663,7 +663,7 @@ export function decorLook(x, z, out, peb) { if (peb === 'sand') { if (waterAt(x,
   if (peb === 'sea') { if (waterAt(x, z) !== 'sea') return null; const d = groundH(x, z); return d < -.5 && d > -2.8 ? { y: d } : null }   /* coral grounds */
   if (peb === 'bed') { if (!waterAt(x, z)) return null; const d = groundH(x, z); return d < -.35 && d > -3 ? { y: d - .02 } : null }   /* v3.35 the bed under clear water */
   if (peb === 'pad') { if (waterAt(x, z) !== 'fresh') return null; const d = groundH(x, z); return d > -.75 && d < -.12 ? { y: coreDist(x, z) > 0 ? -.33 : .05 } : null }
-  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z) || inThrA(x, z) || inGlade(x, z, -GTREE.r + GTREE.pond + 1.5) && !inGlade(x, z, -GTREE.r + GTREE.isl - .5)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < 42 || Math.hypot(x - HARBC.x, z - HARBC.z) < 14) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
+  if (waterAt(x, z) || onCloud(x, z) || inTr(x, z) || inThrA(x, z) || inGlade(x, z, -GTREE.r + GTREE.pond + 1.5) && !inGlade(x, z, -GTREE.r + GTREE.isl - .5)) return null; for (const k in CAPS) { const c = CAPS[k]; if (Math.abs(x - c.x) < 32 && Math.abs(z - c.z) < 32 && Math.hypot(x - c.x, z - c.z) < 31) return null } if (Math.hypot(x - LUMC.x, z - LUMC.z) < LUMC.r - 2 || Math.hypot(x - HARBC.x, z - HARBC.z) < 32) return null;   /* v3.30 not on the capitals' paving · v3.41 nor the harbour plaza */
   const y = groundH(x, z); if (y < -.3) return null;
   const sl = Math.abs(groundH(x + .8, z) - groundH(x - .8, z)) + Math.abs(groundH(x, z + .8) - groundH(x, z - .8)); if (sl > .9) return null;
   if (coreDist(x, z) > 0) landCol(x, z, out); else coreCol(x, z, out); const gr = out.g - Math.max(out.r, out.b); if (peb) return gr > -.2 ? { y } : null; if (gr < .03) return null; out.multiplyScalar(1.05); return { y, dry: gr < .07, d: fbm(x / 8 + 3.1, z / 8 - 1.7, 2), f: fbm(x / 5 + 20, z / 5 + 4, 2) } }

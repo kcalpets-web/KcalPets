@@ -4902,6 +4902,7 @@ function lumTick(now) { const q = me(), d = dist(q.x, q.z, LUMC.x, LUMC.z); LUMG
     for (const [x, z] of outRing(LUMC.x, LUMC.z, LUMC.r + 10, held ? D.LUM_MONS.out : LUMCITY.guards.length, 3)) LUMG.mons.push(monSpawn(pick(), x, z, { area: 'wild' }));
     if (held) for (const [x, z] of LUMCITY.guards.slice(0, D.LUM_MONS.in)) { const p = guardSpot({ x, z, r: 99 }, x, z); LUMG.mons.push(monSpawn(pick(), p[0], p[1], { area: 'wild' })) }
     LUMG.next = now + D.LUM_RESPAWN * 1000 }
+  if (LUMCITY.flagMat && LUMCITY.flagMat.userData.free !== !!S.story.cloudGone) { LUMCITY.flagMat.userData.free = !!S.story.cloudGone; LUMCITY.flagMat.color.set(S.story.cloudGone ? '#f0c030' : '#1a1020') }   /* v5.44 black banners while the enemy holds the city · gold once it is free */
   const t = now / 1000; LUMCITY.falls.forEach((f, i) => { f.material.opacity = .62 + Math.sin(t * 9 + i * 1.7) * .1 }) }
 /* v3.30 🏰 the six fallen capitals: built when you come near (one per tick), dropped when far · guarded by the kingdom's monsters until it is restored · then the evil glow turns gold */
 /* ================= v3.60 🌳 the Great Tree of Seasons (Sylvaren) · 🍂 seasons: D.SEASON_DAYS game days each (spring → summer → autumn → winter) ================= */
@@ -5819,6 +5820,7 @@ function c2Ctx(q) { const C2 = HIN.castle, F = C2.F, o = HIN.g.position, lx = q.
   if (R2.chest && near(R2.x, R2.z, 2)) return { k: 'wchest', go: () => { if (cs.chest) { hint('📦 หีบว่างแล้ว', 1200); return } cs.chest = 1; const Rw = D.CASTLE.chest; S.coin += Rw.coin; S.gem = (S.gem || 0) + Rw.gem; addMats({ ore: Rw.ore }, q.x, q.z); sfx('done'); cheer && cheer(1600); toast(`📦 หีบสมบัติของปราสาท!<br>🪙 +${fmt(Rw.coin)} · 💎 +${Rw.gem} · ⛓️ +${Rw.ore}`, 3000); save(); hud() } };
   if (R2.k === 'portal' && near(R2.x, R2.z - R2.d / 2 + 1.6, 1.8)) return { k: 'gate', go: () => { if (S.story.cloudGone) { toast('🗼 แสงจากยอดหอคอยส่องไปทั่วแผ่นดินแล้ว ☀️', 2200); return } hinExit(); dgAsk('tower') } };
   if (R2.k === 'throne') { const sx = R2.x, sz = R2.z - R2.d / 2 + 2.6;
+    if (C2.ck === 'luminia' && !S.story.cloudGone && near(sx, sz, 2.4)) return { k: 'gate', go: () => { hinExit(); dgAsk('tower') } };   /* v5.44 (designer) the storm lord waits in the palace's throne hall */
     if (C2.ck === 'luminia') { if (C2.npc && !st.met && near(sx, sz, 1.8)) return { k: 'talk', go: cKing }; const tx = R2.x + 3.6, tz = R2.z + 2.4;
       if (S.story.cloudGone && st.met && !st.found && near(tx, tz, .9)) return { k: 'search', go: cFind }; if (st.found && near(tx, tz, 1.5)) return { k: 'stairs', go: () => { st.cellar = 1; save(); cRoom('stair', [CASTLEIN_SPOT.stairTop[0], CASTLEIN_SPOT.stairTop[1]]); toast('🪜 ลงสู่ห้องใต้ดิน…', 1400); questCheck(); hud() } } }
     else if ((S.restored || {})[C2.ck] && near(sx, sz, 1.8)) return { k: 'talk', go: () => c2Lord(C2.ck) } }
