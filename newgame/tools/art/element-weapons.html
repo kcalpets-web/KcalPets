@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE element weapons</title>
+<style>body{margin:0;background:#f6efe2;font:14px/1.35 system-ui;color:#3a2a1e;width:1400px;padding:22px;box-sizing:border-box}
+h1{font-size:26px;margin:0 0 4px}.sub{color:#7a6650;margin:0 0 14px}
+table{border-collapse:separate;border-spacing:6px;width:100%}th{font-size:16px;padding:6px;border-radius:10px;color:#fff}
+td{background:#fffaf1;border-radius:12px;text-align:center;padding:4px;box-shadow:0 2px 0 #e0d0b8}td img{width:170px;height:170px;filter:drop-shadow(0 0 6px var(--g,transparent));display:block;margin:auto}
+td.r{background:none;box-shadow:none;font-weight:800;font-size:15px;text-align:right;padding-right:10px;width:120px}.nm{font-size:12px;color:#7a6650;padding-bottom:4px}</style></head><body>
+<h1>🔥⚡🌱💧❄️🪨 อาวุธธาตุ (ภาพตัวอย่าง)</h1><p class="sub">อาวุธเดิมทุกชิ้นใส่ธาตุได้ · สีใบมีด/หัวอาวุธ + ประกายตามธาตุ · ซ้ายสุด = ไม่มีธาตุ</p>
+<div id="out"></div>
+<script type="module">
+import * as THREE from '../../lib/three.module.min.js';
+import { WEAPON_MESH, BOW_MESH } from '../../src/weapons.js';
+import { TOOLMESH, part } from '../../src/clay.js';
+TOOLMESH.knife = (g, t = 0) => { part(g, '#5a3420', '#8a5a30', [0, 0, 0], [.035, .12, .035], [0, 0, 0], { A: 0 }); part(g, ['#8a7a6a', '#b8c0d8', '#d8e0f0', '#a8e8ff'][t] || '#b8c0d8', '#ffffff', [0, .2, 0], [.035, .16, .012], [0, 0, 0], { A: 0 }) };
+TOOLMESH.mallet = (g, t = 0) => { part(g, '#6a4024', '#a8703e', [0, 0, 0], [.04, .3, .04], [0, 0, 0], { A: 0 }); part(g, ['#8a5a30', '#9a9aa8', '#b8c0d8', '#a8e8ff'][t] || '#9a9aa8', '#e8e8f0', [0, .32, 0], [.16, .09, .09], [0, 0, 0], { A: .04 }) };
+
+const EL = [['', 'ไม่มีธาตุ', '#8a7a6a', ''], ['🔥', 'ไฟ', '#ff6a2a', 'เพลิง'], ['⚡', 'สายฟ้า', '#ffd83a', 'อัสนี'], ['🌱', 'พืช', '#5ad85a', 'พฤกษา'], ['💧', 'น้ำ', '#3aa8ff', 'วารี'], ['❄️', 'น้ำแข็ง', '#a8e8ff', 'หิมะ'], ['🪨', 'หิน', '#b08a5a', 'ศิลา']];
+const W = [['knightSword', 'ดาบอัศวิน'], ['northAxe', 'ขวานเหนือ'], ['soldierSpear', 'หอกทหาร'], ['knightBow', 'ธนูอัศวิน', 'bow'], ['rootStaff', 'คทา']];
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(340, 340); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
+const S = new THREE.Scene(); S.add(new THREE.HemisphereLight('#ffffff', '#8a8070', 1.5)); const k = new THREE.DirectionalLight('#ffffff', 2.2); k.position.set(2, 3, 4); S.add(k);
+const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 50); cam.position.set(0, 0, 10); cam.lookAt(0, 0, 0);
+const isHandle = c => { const h = c.getHSL({}); return (h.h > .03 && h.h < .12 && h.l < .42) };   /* brown wood / leather grips stay */
+function tint(g, col) { if (!col) return; const C = new THREE.Color(col); g.traverse(o => { if (!o.isMesh) return; const ms = Array.isArray(o.material) ? o.material : [o.material];
+  o.material = ms.map(m0 => { const m = m0.clone(); if (m.color && !isHandle(m.color)) { m.color.lerp(C, .62); if (m.emissive) { m.emissive = C.clone().multiplyScalar(.22) } } return m }); if (o.material.length === 1) o.material = o.material[0] }) }
+function sparks(g, col, box) { const s = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3()), mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .85 }), wm = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+  for (let i = 0; i < 14; i++) { const t = Math.random(), m = new THREE.Mesh(new THREE.SphereGeometry(Math.max(s.x, s.y) * (.012 + Math.random() * .02), 8, 6), i % 4 ? mat : wm); m.position.set(c.x + (Math.random() - .5) * s.x * 1.1, c.y + (Math.random() - .5) * s.y * 1.05, c.z + .05); g.add(m) }
+}
+const pic = (key, kind, col) => { const g = new THREE.Group(), inner = new THREE.Group(); (kind === 'bow' ? BOW_MESH : WEAPON_MESH)[key](inner); tint(inner, col); g.add(inner); g.rotation.set(0, -.5, kind === 'bow' ? 0 : -.7);
+  S.add(g); g.updateMatrixWorld(true); let b = new THREE.Box3().setFromObject(g); const c = b.getCenter(new THREE.Vector3()); g.position.sub(c); g.updateMatrixWorld(true); b = new THREE.Box3().setFromObject(g);
+  if (col) { const L = new THREE.Group(); S.add(L); sparks(L, col, b) }
+  const s = b.getSize(new THREE.Vector3()), m = Math.max(s.x, s.y, .01) * .62; cam.left = cam.bottom = -m; cam.right = cam.top = m; cam.updateProjectionMatrix(); r.render(S, cam); const u = r.domElement.toDataURL();
+  for (const o of [...S.children]) if (o.isGroup) S.remove(o); return u };
+let h = '<table><tr><th style="background:none"></th>' + EL.map(e => `<th style="background:${e[2]}">${e[0]} ${e[1]}</th>`).join('') + '</tr>';
+for (const [key, nm, kind] of W) { h += `<tr><td class="r">${nm}</td>` + EL.map(e => `<td><img style="--g:${e[0] ? e[2] + 'aa' : 'transparent'}" src="${pic(key, kind, e[0] ? e[2] : null)}"><div class="nm">${e[0] ? e[0] + ' ' + nm + e[3] : nm}</div></td>`).join('') + '</tr>' }
+document.getElementById('out').innerHTML = h + '</table>'; window.__done = 1;
+</script></body></html>
