@@ -77,8 +77,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 12 && (await N(() => Object.values(window.__ng.S.fish).reduce((a, v) => a + v, 0))) < 2; k++) {
       await E(() => { const N = window.__ng; N.S.en = null; N.S.tired = false; N.setTool('rod'); N.look(-4.5, 1); N.castAt(-5.5, 1) });   /* energy topped up (the steps before drain it fast) */
       log('cast', await N(() => JSON.stringify({ F: !!window.__ng.F, en: window.__ng.S.en, tired: window.__ng.S.tired, tool: window.__ng.tool, me: [window.__ng.me.x, window.__ng.me.z] })));
-      for (let i = 0; i < 900; i++) { const f = await E(() => { const F = window.__ng.F; return F ? { ph: F.phase, up: F.fy > F.zy + F.zh * .5 } : null }); if (!f) break;
-        if (f.ph === 'bite') await E(() => window.__ng.hold(true)); if (f.ph === 'wait' && k === 0 && i === 12) await shot('06b-fpv'); if (f.ph === 'reel') { await E(t => window.__ng.hold(t), f.up); if (k === 0 && i % 15 === 0) await shot('07-reel') } await wait(60) } }
+      /* v5.42 test update: v4.88/v5.05/v5.16 fishing = no first-person aim · ❗ bite → hold → the one-button tension game (TG): hold while the needle is low, let go before red — played in the page (fast enough for the .85 s bite window on a slow machine) */
+      if (!await pg.waitForFunction(() => !window.__ng.F || window.__ng.F.phase === 'wait', null, { timeout: 20000, polling: 100 }).then(() => E(() => !!window.__ng.F)).catch(() => false)) continue;
+      if (k === 0) await shot('06b-fpv');
+      const run = E(async () => { const N = window.__ng, t0 = performance.now(), sl = ms => new Promise(r => setTimeout(r, ms)); let rl = 0;
+        while (N.F && performance.now() - t0 < 60000) { const f = N.F; if (f.phase === 'bite') f.hold = true; else if (f.phase === 'reel') { rl = 1; const h = !!N.TG && N.TG.ten < .5; f.hold = h; if (N.TG) N.TG.hold = h } await sl(25) } return { rl, left: !!N.F } });
+      if (k === 0) { await pg.waitForFunction(() => window.__ng.TG || !window.__ng.F, null, { timeout: 30000, polling: 100 }).catch(() => 0); await wait(400); await shot('07-reel') }
+      log('reel', JSON.stringify(await run)); await E(() => { if (window.__ng.F) window.__ng.fishEnd() }) }
     log('fish', JSON.stringify(await N(() => window.__ng.S.fish)));
     await E(() => window.__ng.openHowsif()); await wait(300); await clickAll('#tN');
     /* quest 2: repair the boat */
