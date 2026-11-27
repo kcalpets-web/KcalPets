@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Luminia concept</title><style>body{margin:0;background:#f6efe2;font:15px system-ui;color:#3a2a1e}#w{display:flex;gap:10px;padding:10px}.c{position:relative}.c b{position:absolute;left:12px;top:10px;background:#fffaf1e0;padding:4px 10px;border-radius:10px;font-size:16px}</style></head><body>
+<div id="w"><div class="c"><canvas id="a"></canvas><b>👹 ตอนถูกยึด</b></div><div class="c"><canvas id="b"></canvas><b>✨ หลังปลดปล่อย</b></div></div>
+<script type="module">
+import * as THREE from '../../lib/three.module.min.js';
+const W = 740, H = 560;
+function scene(freed) {
+  const S = new THREE.Scene(); S.background = new THREE.Color(freed ? '#bfe4ff' : '#4a3e5e'); S.fog = new THREE.Fog(freed ? '#d8eeff' : '#3a2e4e', 120, 320);
+  S.add(new THREE.HemisphereLight(freed ? '#ffffff' : '#a090c0', freed ? '#8a7a5a' : '#2a2030', freed ? 1.5 : .9)); const sun = new THREE.DirectionalLight(freed ? '#fff4d8' : '#c8b0ff', freed ? 2.4 : 1.1); sun.position.set(60, 90, 40); S.add(sun);
+  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .85, flatShading: true });
+  const stone = M('#d8d0c0'), stoneD = M('#a8a090'), roof = M(freed ? '#e0b030' : '#6a5a7a'), roofB = M('#3a62b0'), roofR = M('#c0503a'), grass = M('#7ab85a'), pave = M('#e6dcc4'), water = new THREE.MeshStandardMaterial({ color: '#7ad0f0', roughness: .1 }), wood = M('#8a5a34');
+  const add = (geo, m, x, y, z, ry = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.y = ry; S.add(o); return o };
+  const box = (x, y, z, w, h, d, m, ry = 0) => add(new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z, ry);
+  const cyl = (x, y, z, r, h, m, s = 14) => add(new THREE.CylinderGeometry(r, r * 1.05, h, s), m, x, y + h / 2, z);
+  const cone = (x, y, z, r, h, m, s = 14) => add(new THREE.ConeGeometry(r, h, s), m, x, y + h / 2, z);
+  const tower = (x, z, r, h, m = roof) => { cyl(x, 0, z, r, h, stone); cone(x, h, z, r * 1.25, r * 2.2, m) };
+  add(new THREE.CylinderGeometry(78, 84, 6, 64), M('#b8a888'), 0, -3, 0); add(new THREE.CircleGeometry(300, 32), grass, 0, -6, 0).rotation.x = -Math.PI / 2;
+  add(new THREE.CircleGeometry(70, 64), pave, 0, .02, 0).rotation.x = -Math.PI / 2;
+  /* outer wall + towers + 4 gatehouses */ for (let i = 0; i < 32; i++) { const a = i / 32 * 6.283, x = Math.cos(a) * 68, z = Math.sin(a) * 68; if (i % 8 === 0) continue; box(x, 0, z, 13.6, 7, 2.2, stone, -a + Math.PI / 2); if (i % 4 === 2) tower(x, z, 2.6, 11) }
+  for (let k = 0; k < 4; k++) { const a = k / 4 * 6.283, x = Math.cos(a) * 68, z = Math.sin(a) * 68, px = -Math.sin(a), pz = Math.cos(a); for (const s of [-1, 1]) tower(x + px * s * 6, z + pz * s * 6, 3.4, 15); box(x, 9, z, 12, 4, 3, stoneD, -a + Math.PI / 2) }
+  /* inner wall */ for (let i = 0; i < 20; i++) { const a = i / 20 * 6.283, x = Math.cos(a) * 30, z = -30 + Math.sin(a) * 30; if (i === 5) continue; box(x, 0, z, 9.6, 6, 1.8, stone, -a + Math.PI / 2); if (i % 4 === 0) tower(x, z, 2, 9) }
+  /* palace */ box(0, 0, -40, 32, 16, 22, stone); box(0, 16, -40, 22, 10, 14, stone); cone(0, 26, -40, 13, 14, roof, 4).rotation.y = Math.PI / 4;
+  for (const [x, z, h] of [[-16, -51, 30], [16, -51, 30], [-16, -29, 26], [16, -29, 26]]) tower(x, z, 4, h); tower(0, -40, 5, 46); tower(-7, -34, 2.4, 36); tower(7, -34, 2.4, 36);
+  box(0, 0, -27.5, 8, 9, 2, M('#5a4030')); for (let i = 0; i < 6; i++) box(0, 0, -24 + i * 1.4, 12 - i * .3, .5 + (5 - i) * .3, 1.4, stoneD);
+  /* fountain plaza + sword */ cyl(0, 0, 14, 14, .3, M('#ddd2ba'), 40); cyl(0, .3, 14, 5, .9, stoneD, 30); cyl(0, 1.1, 14, 4.4, .1, water, 30); box(0, 1, 14, .4, 5, .4, M('#e8f4ff'));
+  /* cathedral */ box(-44, 0, -8, 12, 14, 20, stone); cone(-44, 14, -8, 9, 8, roofB, 4).rotation.y = Math.PI / 4; tower(-44, 3, 3, 26, roofB);
+  /* barracks */ box(44, 0, -8, 16, 8, 14, stone); tower(50, -14, 2.6, 13, roofR); tower(38, -14, 2.6, 13, roofR);
+  /* garden */ for (let i = 0; i < 9; i++) { const x = -38 + (i % 3) * 8, z = 32 + Math.floor(i / 3) * 6; cyl(x, 0, z, .4, 2, wood, 6); add(new THREE.IcosahedronGeometry(2.4, 0), M(freed ? '#5aa84a' : '#4a6a44'), x, 4, z) }
+  /* market stalls */ for (let i = 0; i < 8; i++) { const x = 30 + (i % 4) * 6, z = 32 + Math.floor(i / 4) * 8; box(x, 0, z, 3, 1, 1.6, wood); box(x, 2.4, z, 3.4, .2, 2.2, M(['#d84a3a', '#3a62b0', '#e8a030', '#f4f0e8'][i % 4])) }
+  /* houses with roofs */ const R2 = [roofB, roofR, M('#d0703a')]; let hi = 0; for (const [x, z] of [[-24, 52], [24, 52], [-50, 20], [50, 22], [-30, 60], [30, 60], [-58, -26], [58, -26], [-34, -58], [34, -58], [-56, 44], [56, 44], [-14, 40], [14, 40], [-60, 4], [60, 4]]) { const ry = Math.atan2(x, z); box(x, 0, z, 6, 5, 5, M('#efe2c8'), ry); cone(x, 5, z, 4.8, 4, R2[hi++ % 3], 4).rotation.y = ry + Math.PI / 4 }
+  /* avenues */ add(new THREE.PlaneGeometry(9, 70), M('#f2e8d2'), 0, .05, 34).rotation.x = -Math.PI / 2; const ew = add(new THREE.PlaneGeometry(140, 6), M('#f2e8d2'), 0, .05, 14); ew.rotation.x = -Math.PI / 2;
+  /* banners: black while occupied · gold when freed */ for (const [x, z, h] of [[-16, -51, 31], [16, -51, 31], [0, -40, 47], [-44, 3, 27]]) { box(x, h, z, .2, 5, .2, wood); add(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshStandardMaterial({ color: freed ? '#f0c030' : '#1a1020', side: THREE.DoubleSide, roughness: .9 }), x + 1.4, h + 4, z) }
+  if (!freed) { /* dark cloud + monsters */ for (let i = 0; i < 22; i++) add(new THREE.IcosahedronGeometry(14 + Math.random() * 10, 1), new THREE.MeshStandardMaterial({ color: '#2a1e3a', roughness: 1, transparent: true, opacity: .78 }), (Math.random() - .5) * 70, 72 + Math.random() * 12, -40 + (Math.random() - .5) * 50);
+    for (let i = 0; i < 18; i++) { const a = Math.random() * 6.28, r = 12 + Math.random() * 50; add(new THREE.SphereGeometry(1.1, 10, 8), M('#6a2a8a'), Math.cos(a) * r, 1.1, Math.sin(a) * r) } }
+  else { for (let i = 0; i < 30; i++) { const a = Math.random() * 6.28, r = 10 + Math.random() * 54; add(new THREE.SphereGeometry(.6, 8, 6), M(['#ff8ac0', '#ffe27a', '#ffffff'][i % 3]), Math.cos(a) * r, .6, Math.sin(a) * r) } }
+  return S }
+for (const [id, freed] of [['a', false], ['b', true]]) { const r = new THREE.WebGLRenderer({ canvas: document.getElementById(id), antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+  const cam = new THREE.PerspectiveCamera(42, W / H, 1, 900); cam.position.set(70, 95, 150); cam.lookAt(0, 8, -6); r.render(scene(freed), cam) }
+window.__done = 1;
+</script></body></html>
