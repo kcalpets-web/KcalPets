@@ -230,6 +230,46 @@ MONS.goblin = function (g, chief = 0) {
   }
 };
 MONS.goblinChief = g => MONS.goblin(g, 1);
+/* v5.48 (designer) armed monsters for the lands that had none · the same rig as the goblin (feet · armR holds the land's weapon) */
+/* 🐟 navalee: a fish-man — teal scales, a fish head with round side eyes, a fin crest, gills, webbed feet, a seaweed belt */
+MONS.fishman = function (g) {
+  const sk = ['#2a7a8a', '#6ad0c8'], bel = ['#a8d8c0', '#e8fff0'], fin = ['#1a5a8a', '#5ab0e8'];
+  for (const s of [-1, 1]) { role(part(g, sk[0], sk[1], [s * .13, .2, 0], [.09, .2, .09]), s < 0 ? 'footL' : 'footR'); part(g, fin[0], fin[1], [s * .13, .04, .07], [.14, .04, .17]) }   // legs · webbed feet
+  part(g, sk[0], sk[1], [0, .6, 0], [.27, .32, .24]); part(g, bel[0], bel[1], [0, .58, .14], [.18, .25, .12], [0, 0, 0], { A: 0 });   // body · pale belly
+  part(g, '#2a5a2a', '#5a9a4a', [0, .4, .02], [.3, .08, .27], [0, 0, 0], { A: .12 }); for (let i = 0; i < 5; i++) part(g, '#2a5a2a', '#5a9a4a', [-.2 + i * .1, .3, .2], [.04, .12, .02], [0, 0, (i - 2) * .12], { A: 0 });   // seaweed belt
+  for (const s of [-1, 1]) role(part(g, sk[0], sk[1], [s * .31, .62, .05], [.08, .21, .08], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR');
+  part(g, sk[0], sk[1], [0, 1.08, .04], [.3, .3, .38]); part(g, bel[0], bel[1], [0, .98, .3], [.2, .1, .12], [0, 0, 0], { A: 0 });   // fish head (long) · pale jaw
+  part(g, '#1a3a4a', '#2a5a6a', [0, 1.0, .41], [.14, .03, .02], [0, 0, 0], { A: 0 });   // mouth
+  for (const s of [-1, 1]) { const e = eyesAt(g, s * .27, 1.14, .14); for (let i = 0; i < 3; i++) part(g, '#1a5a6a', '#3a8a9a', [s * .29, .98 - i * .05, -.02], [.02, .015, .1], [0, 0, 0], { A: 0 }) }   // big side eyes · gills
+  for (let i = 0; i < 4; i++) cone(g, fin[0], fin[1], [0, 1.38 - i * .02, .16 - i * .12], [.03, .16 - i * .02, .08], [-.3, 0, 0], .9);   // fin crest
+  cone(g, fin[0], fin[1], [0, .7, -.26], [.03, .18, .1], [-1.2, 0, 0], .9);   // back fin
+};
+/* ❄️ frosthelm: a snow trooper — pale blue skin, a horned ice helmet, a white fur cape and collar, frost-blue boots */
+MONS.snowTrooper = function (g) {
+  const sk = ['#7a9ac8', '#c8e0ff'], fur = ['#c8d0d8', '#ffffff'], ice = ['#5aa8e8', '#d8f4ff'];
+  for (const s of [-1, 1]) { role(part(g, sk[0], sk[1], [s * .13, .2, 0], [.09, .2, .09]), s < 0 ? 'footL' : 'footR'); part(g, ice[0], ice[1], [s * .13, .07, .03], [.12, .1, .15]) }   // legs · boots
+  part(g, '#3a4a6a', '#6a7aa0', [0, .58, 0], [.28, .3, .24]); part(g, fur[0], fur[1], [0, .82, 0], [.34, .1, .28], [0, 0, 0], { A: .1 });   // tunic · fur collar
+  part(g, fur[0], fur[1], [0, .58, -.24], [.3, .4, .05], [.1, 0, 0], { A: .15 });   // fur cape
+  for (const s of [-1, 1]) { role(part(g, sk[0], sk[1], [s * .32, .6, .05], [.08, .21, .08], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR'); part(g, fur[0], fur[1], [s * .3, .8, 0], [.12, .08, .12], [0, 0, 0], { A: .1 }) }   // arms · fur pauldrons
+  part(g, sk[0], sk[1], [0, 1.08, 0], [.32, .3, .29]); eyes(g, 1.08, .26, .11, .055);
+  part(g, '#2a3a5a', '#5a6a8a', [0, .99, .28], [.12, .02, .02], [0, 0, 0], { A: 0 }); for (const s of [-1, 1]) part(g, fur[0], fur[1], [s * .06, .95, .27], [.05, .04, .03], [0, 0, 0], { A: 0 });   // frown · frosty moustache
+  part(g, ice[0], ice[1], [0, 1.3, 0], [.36, .13, .33], [0, 0, 0], { A: .1 }); for (const s of [-1, 1]) cone(g, ice[0], ice[1], [s * .27, 1.45, 0], [.05, .22, .05], [0, 0, -s * .45], .9);   // ice helmet · horns
+  cone(g, ice[0], ice[1], [0, 1.48, .04], [.05, .16, .05], [0, 0, 0], .9);
+};
+/* 🌋 valkara: a lava imp — black basalt skin cracked with glowing orange, small horns, a flame tuft, a pointed tail */
+MONS.lavaImp = function (g) {
+  const sk = ['#2a2224', '#5a4a48'], hot = { mat: new THREE.MeshStandardMaterial({ color: '#ff7a1a', emissive: '#ff4a00', emissiveIntensity: 1.1, roughness: .5 }) };
+  for (const s of [-1, 1]) { role(part(g, sk[0], sk[1], [s * .13, .2, 0], [.09, .2, .09]), s < 0 ? 'footL' : 'footR'); part(g, sk[0], sk[1], [s * .13, .05, .05], [.11, .06, .14]) }
+  part(g, sk[0], sk[1], [0, .58, 0], [.27, .3, .23]); for (let i = 0; i < 4; i++) part(g, '#ff7a1a', '#ffc060', [-.12 + i * .08, .5 + (i % 2) * .14, .22], [.02, .1, .01], [0, 0, (i - 1.5) * .5], Object.assign({ A: 0 }, hot));   // glowing cracks
+  for (const s of [-1, 1]) role(part(g, sk[0], sk[1], [s * .31, .6, .05], [.08, .21, .08], [0, 0, s * .45]), s < 0 ? 'armL' : 'armR');
+  part(g, sk[0], sk[1], [0, 1.06, 0], [.33, .3, .3]); for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.06, 12, 10), hot.mat); e.position.set(s * .12, 1.09, .27); e.scale.set(1, .7, .5); g.add(e) }   // glowing eyes
+  part(g, '#ff7a1a', '#ffc060', [0, .98, .29], [.14, .03, .02], [0, 0, 0], Object.assign({ A: 0 }, hot));   // a glowing grin
+  for (const s of [-1, 1]) cone(g, '#3a3030', '#6a5a58', [s * .2, 1.34, 0], [.05, .16, .05], [0, 0, -s * .5], .9);   // horns
+  for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(.06 - i * .01, .2, 8), hot.mat); f.position.set((i - 1) * .07, 1.42, -.02); g.add(f) }   // flame tuft
+  part(g, sk[0], sk[1], [0, .45, -.3], [.04, .04, .22], [-.6, 0, 0]); cone(g, '#ff7a1a', '#ffc060', [0, .62, -.48], [.06, .12, .03], [-1.2, 0, 0], .9);   // tail
+};
+const eyesAt = (g, x, y, z) => { const e = new THREE.Mesh(new THREE.SphereGeometry(.075, 16, 12), MAT_EYE); e.position.set(x, y, z); e.scale.set(.55, 1.1, 1); g.add(e); const h = new THREE.Mesh(new THREE.SphereGeometry(.026, 8, 6), MAT_W); h.position.set(x + Math.sign(x) * .035, y + .03, z + .03); g.add(h); return e };
+
 /* ---- v1.2 wild animals (four legs: front legs use the arm roles, back legs the foot roles, so the same walk cycle works) ---- */
 function quad(g, k) {                                    // k: body [lo, hi], size, leg colour, head offset
   const L = k.leg || k.body[0];

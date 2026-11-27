@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>KEALEE armed monsters</title><style>body{margin:0}</style></head><body>
+<script type="module">
+/* v5.48 preview (designer): armed monsters for the lands that had none — 🐟 fish-man (navalee 💧) · ❄️ snow trooper (frosthelm ❄️) · 🌋 lava imp (valkara 🔥) — each with its land's weapon wearing the land's element · the goblin for size */
+import { THREE, HUMANS, MONS } from '../../src/clay.js';
+import { WEAPON_MESH } from '../../src/weapons.js';
+const W = 1400, H = 640, r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1.5); r.setSize(W, H); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true;
+const S = new THREE.Scene(); S.background = new THREE.Color('#e8eef2'); S.add(new THREE.HemisphereLight('#ffffff', '#b8b0a0', 1.2)); const sun = new THREE.DirectionalLight('#fff4e0', 2); sun.position.set(-4, 8, 6); sun.castShadow = true; S.add(sun);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), new THREE.MeshStandardMaterial({ color: '#d8d0c0' })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; S.add(fl);
+const tint = (g, col) => g.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); if (o.material.color) o.material.color.lerp(new THREE.Color(col), .45); if ('emissive' in o.material) { o.material.emissive = new THREE.Color(col); o.material.emissiveIntensity = .35 } } });
+const mon = (fn, x, wpn, col, ry = 0) => { const g = new THREE.Group(); fn(g); let arm = null; g.traverse(o => { if (!arm && o.userData.role === 'armR') arm = o });
+  if (arm && WEAPON_MESH[wpn]) { const w = new THREE.Group(); WEAPON_MESH[wpn](w); tint(w, col); w.rotation.set(.35, 0, -.3); arm.updateMatrixWorld(true); const p = new THREE.Vector3(); arm.getWorldPosition(p); w.position.set(p.x + .1, p.y - .3, p.z + .16); w.scale.setScalar(1.5); g.add(w) }
+  g.position.set(x, 0, 0); g.rotation.y = ry; g.scale.setScalar(1.15); g.traverse(o => { if (o.isMesh) o.castShadow = true }); S.add(g) };
+const hero = new THREE.Group(); HUMANS.kealee(hero); hero.position.set(-4.6, 0, .4); hero.rotation.y = .5; hero.scale.setScalar(.82); S.add(hero);
+mon(MONS.goblin, -2.6, null, '#ffffff', .2);
+mon(MONS.fishman, -.4, 'woodSpear', '#3aa0ff', -.1);
+mon(MONS.snowTrooper, 1.9, 'woodAxe', '#9ad8ff', -.2);
+mon(MONS.lavaImp, 4.2, 'stoneClub', '#ff6a20', -.35);
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 100); cam.position.set(0, 2.2, 11.5); cam.lookAt(0, .95, 0); r.render(S, cam); window.done = 1;
+</script></body></html>
