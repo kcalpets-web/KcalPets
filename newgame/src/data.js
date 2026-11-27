@@ -520,6 +520,9 @@ export const STARTER_PET = { rar: 'R', el: '🌱' };          // the lost pet th
 export const CURE_GIFT = { antidote: 2, mpS: 2 };                  // potions Sberh gives after the shop is repaired
 export const REGSHOP = { mul: 5, shop: { wear: 'tailor', item: 'smith', recipe: 'market' } };   // v5.46 (designer) 👑 each kingdom's own pieces (the old quest rewards) on sale at the harbour once its boss is beaten · price = old coin reward × mul
 /* v5.48 (designer) story order: navalee → sylvaren → valkara → asrah → frosthelm → deadgar → luminia · each slot's stats follow the order (Lv 15→30 · exp 500→1000 · 🪙 1800–2600 → 3800–5400) · v5.47 bosses by the story order (D.MON) · ❤️ 2500→6000 step 500 · ⚔️/🛡️ 70/35 · 77/42 · 84/49 · 91/56 · 98/63 · 105/70 · 112/77 · 119/84 (the designer's 100/50…170/120 −30%) */
+/* v5.49 (designer · docs/plan-mainquest.md) 📜 the main quest is taken and handed in at the harbour guild: first a choice (🟥 SSS the dark cloud now · ⚓ restore the harbour) · then the kingdoms in story order */
+export const MQ = { order: ['navalee', 'sylvaren', 'valkara', 'asrah', 'frosthelm', 'deadgar', 'luminia'], hbShops: ['food', 'tools', 'smith', 'market'],
+  rew: { hb: { coin: 1000, gem: 10 }, sss: { coin: 3000, gem: 50 }, k: [[1500, 20], [2000, 25], [2500, 30], [3000, 35], [3500, 40], [4000, 45], [6000, 100]] } };
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'บรอม', cost: { wood: 8, stone: 4, coin: 400 } },
