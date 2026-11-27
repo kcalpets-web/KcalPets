@@ -1185,7 +1185,7 @@ export const KRIG_ON = true, KRIG_SIT = 14, KRIG_SITY = .3, KRIG_CHAIRY = .02, S
 //   // v3.49 🦴 the player moves through the standard KRIG clips (false = the old motion everywhere)
 
 /* v3.88 ⚡ the eel: 10 fish (a system quest) → its sea shrine rises · beat it → ⚡ สายฟ้าฟาด (every enemy within r m: hit + stun) */
-export const EEL = { fish: 10, cd: 90000, r: 10, stun: 1.5, mul: 2.4, min: 40, hearts: 8,
+export const EEL = { fish: 10, cd: 90000, r: 10, stun: 1.5, mul: 2.4, min: 40, hearts: 10,
   atk: { zap: { r: 2.2, wind: 1.2, n: [1, 2, 3] }, nova: { r: 4.6, wind: 1.4 }, dash: { r: 2.4, wind: 1.1 } }, gap: [0, 3000, 2500, 1900] };
 
 export const STORE = 60;   // v3.90 🗃️ storage chest slots (a kind stacks like the bag)
