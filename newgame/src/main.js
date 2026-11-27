@@ -1654,7 +1654,7 @@ function frame(now) {
         if (!ok(m.x + ax * .7, m.z + az * .7)) { const s2 = (M.side = M.side || (Math.random() < .5 ? 1 : -1)); tx = m.x - az * 5 * s2; tz = m.z + ax * 5 * s2 }
         stepTo(M.A, tx, tz, M.T.run, dt, ok); M.home = [m.x, m.z]; M.t = M.home.slice() }
       else { M.alert = 0; if ((M.wait -= dt) <= 0) { const d = stepTo(M.A, M.t[0], M.t[1], .7, dt, ok); if (d < .1) { M.wait = 1.5 + Math.random() * 4; M.t = [M.home[0] + (Math.random() - .5) * 6, M.home[1] + (Math.random() - .5) * 6] } } }
-    } else { const sk = CROUCH ? D.SNEAK.sight : 1, sight = (isNight() ? D.SIGHT.night : D.SIGHT.day) * sk, temper = (D.TEMPER[M.kind] || 2.5) * sk, was = M.alert || 0;      // awareness: idle · ❗ seen · ❗ angry · ❓ lost
+    } else { const sk = CROUCH ? D.SNEAK.sight : 1, sight = (isNight() ? D.SIGHT.night : D.SIGHT.day) * sk, temper = D.AGGRO_R * sk,   /* v5.49 (designer) all monsters charge within 6 m (was D.TEMPER per kind) */ was = M.alert || 0;      // awareness: idle · ❗ seen · ❗ angry · ❓ lost
       if (M.aggro && pd > sight + D.LOSE && !M.farm) { M.aggro = false; M.alert = 3; M.lostT = now + 1600; M.t = M.home.slice() }
       else if (M.aggro) M.alert = 2; else if (M.kind === 'soldier' ? pd < D.OUTLAW.sight * sk && (!disguised() || M.provoked) : S.has.sword && pd < temper) { M.aggro = true; M.alert = 2; if (M.kind === 'soldier' && !M.yelled) { M.yelled = 1; floater('❗ นั่นไง คนร้าย!', 'tool', m.x, 2.2, m.z) } } else if (pd < sight) M.alert = 1; else if (!(M.alert === 3 && now < M.lostT)) M.alert = 0;
       if (M.alert !== was && M.alert) { M.markT = now; if (M.alert === 2) sfx('tap') } if (M.alert === 1 && !tgt) M.A.yawT = Math.atan2(me().x - m.x, me().z - m.z) }
@@ -2786,9 +2786,10 @@ const hostile = M => !M.T.animal || (M.T.charge && M.aggro);
 const lockable = M => (!HIN.on || !!M.ind) && (hostile(M) || (M.T.animal && M !== HORSE && !M.T.boss));   /* v3.97 horses too */   /* v3.28 A locks animals too (hunting) */
 function lockTick(now) {
   const q = me(), dm = M => dist(q.x, q.z, M.A.root.position.x, M.A.root.position.z);
-  if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > (ALOCK && gRange() && !gFarm() ? D.LOCK_OFF_R : D.LOCK_OFF) || !(hostile(LOCK) || (ALOCK && lockable(LOCK))) || !(LOCK.aggro || LOCK.hit || ALOCK || guard))) LOCK = null;
+  if (LOCK && (!mons.includes(LOCK) || dm(LOCK) > (ALOCK && gRange() && !gFarm() ? D.LOCK_OFF_R : D.LOCK_OFF) || !lockable(LOCK) || !(LOCK.aggro || LOCK.hit || ALOCK || guard || (LOCK.T.animal && DRAWN)))) LOCK = null;
   if (!LOCK && !RIDE && S.has.sword) { let bd = D.LOCK_ON; for (const M of mons) if (hostile(M) && (M.aggro || M.hit) && M.born + 600 < now) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }
-  if (guard && !LOCK && !RIDE) { let bd = D.LOCK_ON; for (const M of mons) if (hostile(M)) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }   /* v3.19 holding B picks the nearest foe even before it attacks */
+  if (!LOCK && !RIDE && DRAWN) { let bd = D.LOCK_ON; for (const M of mons) if (M.T.animal && lockable(M) && M.born + 600 < now) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }   /* v5.49 (designer) the lock takes animals too (weapon out, no foe near) */
+  if (guard && !LOCK && !RIDE) { let bd = D.LOCK_ON; for (const M of mons) if (lockable(M)) { const d = dm(M); if (d < bd) { bd = d; LOCK = M } } }   /* v3.19 holding B picks the nearest foe even before it attacks */
   if (ALOCK && (!(DRAWN || (BOWUP && gRange() && !gFarm())) || !LOCK || !mons.includes(LOCK))) ALOCK = false;   /* put away = unlocked · v5.39 the bow / staff in hand keeps it */
   if ((guard || ALOCK) && LOCK && !RIDE && !GLIDE && !PL.swim && !DROWN && !EAT && !(AIM && !AIM.thr)) {   /* v5.39 aiming: the camera decides */ const m = LOCK.A.root.position; PL.yawT = Math.atan2(m.x - q.x, m.z - q.z);
     lockMark.visible = !CUT; lockMark.position.set(m.x, m.y + (MSCALE[LOCK.kind] || .85) * 2 + .35 + Math.sin(now / 160) * .08, m.z); lockMark.rotation.y = now / 300 } else lockMark.visible = false;
@@ -7385,7 +7386,7 @@ function eelBack() { loading('🌊 กลับสู่ทะเล', '💡 ' +
 function boltSkill() { if (!S.has.bolt) { hint('⚡ ยังไม่มีสกิลนี้ · ปราบปลาไหลไฟฟ้าที่ทะเลนาวาลีก่อน (เควสหลัก)', 1800); return } const t = Date.now(); if ((PSK.eel || 0) > t) { hint(`⏳ ⚡ สายฟ้าฟาดพักอยู่ ${Math.ceil((PSK.eel - t) / 1000)} วิ`, 1000); return }
   PSK.eel = t + D.EEL.cd; const q = me(), now = performance.now(), dmg = Math.max(D.EEL.min, Math.round((pStats().atk || 10) * D.EEL.mul)); let n = 0;
   VF.ring(q.x, q.y + .05, q.z, '#fff27a', D.EEL.r, .8); VF.burst(q.x, q.y + 1.5, q.z, '#fff6a0', 26, 5); sfx('thunder'); shakeT = .45; $('stormTint').classList.add('flash'); setTimeout(() => $('stormTint').classList.remove('flash'), 160);
-  for (const m of [...mons]) { if (m.dead || m.T.horse || m.T.dummy || m === HORSE || !(hostile(m) || m.aggro)) continue; const p = m.A.root.position; if (dist(p.x, p.z, q.x, q.z) > D.EEL.r) continue; n++;
+  for (const m of [...mons]) { if (m.dead || m.T.horse || m.T.dummy || m === HORSE || !(hostile(m) || m.aggro || m.T.animal)) continue; const p = m.A.root.position; if (dist(p.x, p.z, q.x, q.z) > D.EEL.r) continue; n++;   /* v5.49 (designer) the bolt hits animals too */
     VF.beam(new THREE.Vector3(p.x, p.y + 14, p.z), new THREE.Vector3(p.x, p.y + .2, p.z), '#fff27a', .35, 1.6); VF.ring(p.x, p.y + .05, p.z, '#fff27a', 1.4, .4); if (!m.T.golem) m.stunT = now + D.EEL.stun * 1000; floater('⚡ มึน!', 'crit', p.x, 2.4, p.z); hurtMon(m, dmg, 'dmg', '⚡') }
   hint(n ? `⚡ สายฟ้าฟาดโดน ${n} ตัว!` : '⚡ สายฟ้าฟาด! (ไม่มีศัตรูในระยะ)', 1200); hud() }
 

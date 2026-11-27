@@ -368,6 +368,7 @@ export const WALK_SP = 3.6, RUN_SP = 6.4, SWIM_SP = 2, CLIMB_SP = 1.3, CLIMB_EN 
 export const ZONE_MONS = { meadow: ['slime', 'grassSprite', 'rabbit', 'chicken', 'rabbit', 'branchImp'], hills: ['rockGolem', 'branchImp', 'deer', 'rabbit', 'boar', 'slime'] };   // wanderers in the wild zones
 /* monster awareness: ❗ yellow = seen you (stays put unless you hit it) · ❗ red = too close, attacks · ❓ = lost you */
 export const SIGHT = { day: 6.5, night: 8.5 }, LOSE = 3;                   // +LOSE beyond sight = gives up
+export const AGGRO_R = 6;   // v5.49 (designer) every monster on the map spots you and charges within this many metres (sneaking: × SNEAK.sight)
 export const TEMPER = { slime: 1.8, grassSprite: 2.6, branchImp: 3, rockGolem: 2.4, slimeKing: 3.2, goblin: 4, goblinChief: 5 };   // red ❗ range per kindin · sleeping/resting = full
 export const FISH_EN = { B: 15, R: 25, E: 40, L: 60 };                    // extra ⚡ (yellow, over the max) from eating a fish · herbal tea and some dishes too
 export const EN_BONUS_MAX = 100;
