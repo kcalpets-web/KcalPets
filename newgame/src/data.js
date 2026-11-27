@@ -44,7 +44,7 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { stFire: ['🔥', 'หินเพลิง', 120], stBolt: ['⚡', 'หินอัสนี', 120], stLeaf: ['🌱', 'หินพฤกษา', 120], stWater: ['💧', 'หินวารี', 120], stIce: ['❄️', 'หินหิมะ', 120], stRock: ['🪨', 'หินศิลา', 120], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
@@ -455,6 +455,18 @@ export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
 /* v5.38 (designer) 🪄 staffs: tap Y = a level-1 shot · hold Y = charge 1 → 5 (a level every lvT s) · ⚡ per level · damage × · ball size · 🌿 root: slows monsters (mul of their speed) for s seconds (bosses half) */
 export const STAFF = { lvT: .45, max: 5, en: [3, 5, 8, 11, 15], dmg: [1, 1.35, 1.8, 2.3, 3], size: [.16, .2, .25, .31, .38], speed: 16, range: 22,
   kinds: { root: { col: '#9a6aff', glow: '#9aff7a', mul: .35, s: [1, 1.6, 2.2, 2.8, 3.5], ico: '🌿', name: 'รากพันขา' } } };
+/* v5.40 (designer) 🔥⚡🌱💧❄️🪨 element weapons: any weapon can carry one element (it.el)
+   effect on a hit: 🔥 burn (k × the hit every second for s) · ⚡ chain (to n foes within r, k × the hit) · 🌱 root (speed × mul for s) · 💧 push back (m) · ❄️ chill (speed × mul for s · n chills in a row = frozen s) · 🪨 stun (s)
+   melee procs at `melee` chance · arrows / staffs / thrown always · weak: hitting the element it beats × weak · same element × same
+   monsters take their kingdom's element (bosses too) · drops: `drop` chance a weapon comes with an element (its kingdom's, else any) · bosses always
+   stones: each kingdom's monsters drop its stone (`stoneP`) · the smith infuses: `infuse.n` stones + coins by tier · book: every weapon × element you have owned · rewards at counts */
+export const ELEM = { list: ['🔥', '⚡', '🌱', '💧', '❄️', '🪨'], melee: .25, weak: 1.5, same: .75, drop: .25, stoneP: .12,
+  E: { '🔥': { n: 'ไฟ', suf: 'เพลิง', col: '#ff6a2a', stone: 'stFire', burn: { k: .15, s: 3 } }, '⚡': { n: 'สายฟ้า', suf: 'อัสนี', col: '#ffd83a', stone: 'stBolt', chain: { r: 5, k: .5, n: 2 } },
+    '🌱': { n: 'พืช', suf: 'พฤกษา', col: '#5ad85a', stone: 'stLeaf', root: { mul: .35, s: 2 } }, '💧': { n: 'น้ำ', suf: 'วารี', col: '#3aa8ff', stone: 'stWater', push: 2.6 },
+    '❄️': { n: 'น้ำแข็ง', suf: 'หิมะ', col: '#a8e8ff', stone: 'stIce', chill: { mul: .5, s: 2.5, n: 3, freeze: 1.5 } }, '🪨': { n: 'หิน', suf: 'ศิลา', col: '#b08a5a', stone: 'stRock', stun: .9 } },
+  beats: { '🔥': ['🌱', '❄️'], '💧': ['🔥'], '⚡': ['💧'], '🪨': ['⚡'], '🌱': ['🪨', '💧'], '❄️': ['🌱'] },   // attacker → the elements it hits ×weak
+  kingdom: { navalee: '💧', sylvaren: '🌱', frosthelm: '❄️', asrah: '🪨', deadgar: '⚡', valkara: '🔥' },
+  infuse: { n: 3, coin: [400, 900, 1800, 3500, 6000] }, book: [[5, { gem: 10 }], [15, { gem: 25 }], [30, { gem: 50 }], [60, { gem: 100 }], [120, { gem: 250 }]] };
 export const ARROWX = { fire: { icon: '🔥', name: 'ลูกธนูไฟ', col: '#ff6a1a', mul: 1.6 }, ice: { icon: '🧊', name: 'ลูกธนูน้ำแข็ง', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { icon: '⚡', name: 'ลูกธนูสายฟ้า', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
 export const ARROW_PICK = { r: 1.4, life: 90 };   // stuck arrows can be picked up (walk over them) for this many seconds
 export const FISH3P = { rod: .55 };   // v5.05 🎣 the rod held in the third-person view (world size ≈ a sword)

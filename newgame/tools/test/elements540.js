@@ -1,0 +1,32 @@
+/* v5.40 (designer) 🔥⚡🌱💧❄️🪨 element weapons: the name (ดาบอัศวินเพลิง) · weak element ×1.5 (fire → ice) · each element's effect · a dropped element weapon keeps its element + enters the book · the smith infuses (3 stones + coins) · the book tab
+   NODE_PATH=$(npm root -g) node newgame/tools/test/elements540.js outDir   (~3 min) */
+const { chromium } = require('playwright'); const { spawn } = require('child_process'); const path = require('path'), fs = require('fs');
+const ROOT = path.resolve(__dirname, '../../..'), PORT = 8962, OUT = process.argv[2] || '/tmp/ng_el540', wait = ms => new Promise(r => setTimeout(r, ms)); fs.mkdirSync(OUT, { recursive: true });
+(async () => { const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' }); await wait(900);
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [], log = (...a) => console.log(...a);
+  try { const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.setDefaultTimeout(90000); pg.on('pageerror', e => errs.push('PE ' + e.stack.slice(0, 400)));
+    await pg.addInitScript(() => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', 1); localStorage.clear(); localStorage.setItem('ng_gfx', 'eco'); localStorage.setItem('ng_nozap', '1'); localStorage.setItem('ng_cam', 'tp');
+      const P = (id, kind, lv) => ({ id, kind, name: kind, lv, rar: 'R', el: '🔥', exp: 0, hp: null });
+      localStorage.setItem('ng_save_v3', JSON.stringify({ v: 3, spiritV: 1, titleSeen: 1, profile: { name: 't', guest: true }, story: { intro: 1, built: 1, slept: 1, howsif: 1, spiritTip: 1, freed: 1 }, avatar: {}, has: { sword: 1, glider: 1, bolt: 1 }, gear2: 1, itemV: 2, wearV: 3, nextItem: 9, bag: [{ id: 5, t: 'knightSword', r: 'B', el: '🔥' }], eq: { sword: 5 }, mats: { stIce: 5 }, coin: 50000, time: 640, quest: 99,
+        pets: [P('p1', 'shiba', 6), P('p2', 'hawk', 6), P('p3', 'bear', 6), P('p4', 'boar', 6), P('p5', 'whale', 8)], team: ['p1', 'p2', 'p3', 'p4', 'p5'] })) });
+    await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
+    const E = (f, a) => pg.evaluate(f, a), clean = () => E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
+    const press = async (sel, ms) => { const bx = await pg.locator(sel).first().boundingBox(); await pg.mouse.move(bx.x + bx.width / 2, bx.y + bx.height / 2); await pg.mouse.down(); await wait(ms); await pg.mouse.up(); await wait(300) };
+    await clean(); await E(() => { const N = window.__ng; N.placeMe(300, 300); N.S.en = null; N.S.tired = false }); await wait(2500); await clean();
+    { const n = await E(() => window.__ng.itName(window.__ng.S.bag[0])); log('weapon', n); if (n !== '🔥 ดาบอัศวินเพลิง') errs.push('the name should read 🔥 ดาบอัศวินเพลิง') }
+    const r = await E(async () => { const N = window.__ng, sl = (el) => { const m = N.monSpawn('slime', N.me.x + Math.sin(N.PL.yaw) * 1.6, N.me.z + Math.cos(N.PL.yaw) * 1.6, { area: 'wild' }); m.hp = 2000; m.el = el; return m };
+      const out = {}; for (const el of ['❄️', null, '💧']) { const m = sl(el); await new Promise(r => setTimeout(r, 900)); const h0 = m.hp; N.toolHit({ kind: 'mon', m }); await new Promise(r => setTimeout(r, 300)); out[el || 'none'] = { dmg: h0 - m.hp, mul: N.elMul('🔥', m) }; N.monGone ? N.monGone(m) : (m.hp = 0) ; await new Promise(r => setTimeout(r, 800)) } return out });
+    log('fire sword vs', JSON.stringify(r)); if (r['❄️'].mul !== 1.5 || !(r['❄️'].dmg > r.none.dmg)) errs.push('🔥 on an ❄️ monster should hit ×1.5');
+    const pr = await E(async () => { const N = window.__ng, out = {}; for (const el of N.EL.list) { const m = N.monSpawn('slime', N.me.x + 3, N.me.z + 3, { area: 'wild' }); m.hp = 2000; await new Promise(r => setTimeout(r, 600)); const h0 = m.hp; N.elProc(m, el, 40); await new Promise(r => setTimeout(r, 2300)); out[el] = { lost: h0 - m.hp, root: (m.rootT || 0) > performance.now(), stun: (m.stunT || 0) > performance.now() - 2000, burn: !!m.burn, chill: m.chillN || 0 } } return out });
+    log('procs', JSON.stringify(pr)); if (!pr['🔥'].burn || !(pr['🔥'].lost > 0)) errs.push('🔥 should burn'); if (!(pr['⚡'] && pr['❄️'].chill >= 1)) errs.push('❄️ should chill');
+    const dr = await E(async () => { const N = window.__ng; N.dropItem({ t: 'soldierSpear', r: 'R', el: '⚡' }, N.me.x + .5, N.me.z); await new Promise(r => setTimeout(r, 500)); const d = N.drops[N.drops.length - 1]; N.pickDrop(d); await new Promise(r => setTimeout(r, 300)); const it = N.S.bag[N.S.bag.length - 1]; return { name: N.itName(it), el: it.el, book: Object.keys(N.S.elBook || {}) } });
+    log('drop', JSON.stringify(dr)); if (dr.el !== '⚡' || !dr.book.includes('soldierSpear|⚡')) errs.push('a dropped ⚡ spear should keep its element + enter the book');
+    await E(() => window.__ng.openShopKind('smith')); await wait(1500); await pg.screenshot({ path: OUT + '/smith.png' });
+    await pg.locator('.ov button:has-text("ใส่ธาตุ")').first().click(); await wait(900); await pg.screenshot({ path: OUT + '/infuse1.png' });
+    const items = await E(() => [...document.querySelectorAll('.ov [data-sbi], .ov .sbgrid > *')].length); log('items', items);
+    await E(() => { const c = [...document.querySelectorAll('.ov *')].find(x => x.children.length < 6 && /ดาบอัศวินเพลิง/.test(x.textContent) && x.onclick); c && c.click() }); await wait(700);
+    await E(() => { const b = document.querySelector('[data-elin="❄️"]'); b && b.click() }); await wait(800); { const a = await E(() => [window.__ng.itName(window.__ng.S.bag[0]), window.__ng.S.mats.stIce]); log('after infuse', JSON.stringify(a)); if (a[0] !== '❄️ ดาบอัศวินหิมะ' || a[1] !== 2) errs.push('the smith should infuse ❄️ for 3 ice stones') } await pg.screenshot({ path: OUT + '/infuse2.png' });
+    await pg.locator('.ov button:has-text("สมุดธาตุ")').first().click(); await wait(900); await pg.screenshot({ path: OUT + '/book.png' });
+    const tabs = await E(() => [...document.querySelectorAll('.ov [data-sbt], .ov .sbtab, .ov button')].map(b => b.textContent.trim()).filter(t => /ธาตุ/.test(t)).slice(0, 6)); log('tabs', JSON.stringify(tabs));
+  } catch (e) { errs.push('X ' + e.stack) } finally { await b.close(); srv.kill() }
+  if (errs.length) { console.log('ERRORS'); errs.forEach(e => console.log(e)); process.exit(1) } console.log('PASS') })();
