@@ -3614,7 +3614,7 @@ let torchWas = false;
 function torchUpTick() { const on = torchOn(); if (on && !torchWas) TORCHUP = true; torchWas = on;   /* picking a lit torch = it goes up at once (B lowers it · hold A raises it again) */ if (!TORCHUP) return; if (!on) { TORCHUP = false; return } const hand = PL.body.getObjectByName('handR'), g = hand && hand.children.find(o => o.name === 'gear' && o.userData.q0); if (g) { g.quaternion.copy(g.userData.q0); g.rotateX(D.TORCH.upRot[0]); g.rotateZ(D.TORCH.upRot[1]) } }
 function windStart() { const w = weaponOf(); if (!w || w.br) { hint('✋ ไม่มีอะไรให้ปา', 1100); return } if (D.ITEMS[w.t].tool) { hint(`🧰 ${D.ITEMS[w.t].icon} ${D.ITEMS[w.t].name} เป็นเครื่องมือฟาร์ม ปาไม่ได้`, 1400); return }
   if (AIM || PL.swim || RIDE || GLIDE || F || BM) return; walkT = null; work = null; stopAuto(); if (!DRAWN) { DRAWN = true; setTool('sword') }
-  WIND = { ch: performance.now(), thr: 1, wind: 1, tgt: windTgt() }; sfx('tap'); gearView(); hint('🎯 ปล่อย A = ปา · ลากไปที่ B = ยกเลิก', 1500) }
+  WIND = { ch: performance.now(), thr: 1, wind: 1, tgt: windTgt() }; sfx('tap'); gearView(); hint('🎯 ปล่อย Y = ปา · ลากไปที่ B = ยกเลิก', 1500) }
 function windTgt() { if (LOCK && mons.includes(LOCK) && !LOCK.dead) return LOCK; const q = me(); let best = null, bd = D.AIMLOCK.range;
   for (const M of mons) { if (!lockable(M) || M.dead || !M.A.root.visible) continue; const p = M.A.root.position, d = dist(q.x, q.z, p.x, p.z); if (d < bd) { bd = d; best = M } } return best }
 function windTick() { const a = WIND; if (!a) return; if (PL.swim || RIDE || GLIDE || !weaponOf()) { windEnd(false); return }
