@@ -451,7 +451,7 @@ export const FISH = {
 export const FISH_BY_R = { B: ['minnow', 'tilapia'], R: ['mackerel', 'seabass'], E: ['tuna'], L: ['goldeel'] };
 export const FRESH_BY_R = { B: ['carp', 'catfish'], R: ['snakehead', 'gourami'], E: ['giantcat'], L: ['goldcarp'] };
 export const FISH_PLAYER_EXP = { B: 2, R: 5, E: 12, L: 30 };
-/* v3.1 special arrows (from treasure chests) · fire = extra burn damage · ice = frozen a while · shock = jumps to monsters nearby · bomb = blast (not reusable) */
+/* v5.40 (designer) the element sits on the ARROW, not the bow: 🔥 ⚡ 🌱 💧 ❄️ 🪨 arrows (chests · the smith makes 5 from 1 element stone) · v3.1 special arrows (from treasure chests) · fire = extra burn damage · ice = frozen a while · shock = jumps to monsters nearby · bomb = blast (not reusable) */
 /* v5.38 (designer) 🪄 staffs: tap Y = a level-1 shot · hold Y = charge 1 → 5 (a level every lvT s) · ⚡ per level · damage × · ball size · 🌿 root: slows monsters (mul of their speed) for s seconds (bosses half) */
 export const STAFF = { lvT: .45, max: 5, en: [3, 5, 8, 11, 15], dmg: [1, 1.35, 1.8, 2.3, 3], size: [.16, .2, .25, .31, .38], speed: 16, range: 22,
   kinds: { root: { col: '#9a6aff', glow: '#9aff7a', mul: .35, s: [1, 1.6, 2.2, 2.8, 3.5], ico: '🌿', name: 'รากพันขา' } } };
@@ -467,7 +467,7 @@ export const ELEM = { list: ['🔥', '⚡', '🌱', '💧', '❄️', '🪨'], m
   beats: { '🔥': ['🌱', '❄️'], '💧': ['🔥'], '⚡': ['💧'], '🪨': ['⚡'], '🌱': ['🪨', '💧'], '❄️': ['🌱'] },   // attacker → the elements it hits ×weak
   kingdom: { navalee: '💧', sylvaren: '🌱', frosthelm: '❄️', asrah: '🪨', deadgar: '⚡', valkara: '🔥' },
   infuse: { n: 3, coin: [400, 900, 1800, 3500, 6000] }, book: [[5, { gem: 10 }], [15, { gem: 25 }], [30, { gem: 50 }], [60, { gem: 100 }], [120, { gem: 250 }]] };
-export const ARROWX = { fire: { icon: '🔥', name: 'ลูกธนูไฟ', col: '#ff6a1a', mul: 1.6 }, ice: { icon: '🧊', name: 'ลูกธนูน้ำแข็ง', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { icon: '⚡', name: 'ลูกธนูสายฟ้า', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
+export const ARROWX = { fire: { el: '🔥', icon: '🔥', name: 'ลูกธนูเพลิง', col: '#ff6a1a', mul: 1.2 }, ice: { el: '❄️', icon: '🧊', name: 'ลูกธนูหิมะ', col: '#9ae0ff', mul: 1, freeze: 2.6 }, shock: { el: '⚡', icon: '⚡', name: 'ลูกธนูอัสนี', col: '#fff27a', mul: 1.1, chain: [5, .6, 3] }, leaf: { el: '🌱', icon: '🌱', name: 'ลูกธนูพฤกษา', col: '#5ad85a', mul: 1 }, water: { el: '💧', icon: '💧', name: 'ลูกธนูวารี', col: '#3aa8ff', mul: 1 }, rock: { el: '🪨', icon: '🪨', name: 'ลูกธนูศิลา', col: '#b08a5a', mul: 1.1 }, bomb: { icon: '💣', name: 'ลูกธนูระเบิด', col: '#ff4a3a', mul: 1.3, blast: 3.4 } };
 export const ARROW_PICK = { r: 1.4, life: 90 };   // stuck arrows can be picked up (walk over them) for this many seconds
 export const FISH3P = { rod: .55 };   // v5.05 🎣 the rod held in the third-person view (world size ≈ a sword)
 export const TENS = { dist: { B: 5, R: 7, E: 9, L: 12 }, mad: { B: .75, R: 1, E: 1.25, L: 1.5 }, reel: 1.3, up: .34, upPull: .22, down: .8, back: .35, surgeGap: [1.4, 3.2], surgeT: .7, surgeK: 2.3, red: .78, snap: 1, escape: 5 };   // v5.16 🎣🪢 the one-button tension game: metres to land · hold raises the needle (more when it bolts) · let go drops it · red ≥ red · 1 = snap · drifts back `back` m/s while slack
@@ -1003,6 +1003,9 @@ export const STRUG = { zone: .3, up: 2.4, grav: 2.0, fill: .26, drain: .2, start
 export const TORCH = { burn: 180, warm: 1, camp: [1, 3], light: 2.6, night: 7, range: 9, upArm: [-1.6, -1.8], upRot: [2.4, 0], upK: 1.4 };   // v3.68 up*: the torch held up (hold A · B lowers it) · upK = brighter
 export const CRAFT = [
   { k: 'arrows5', icon: '🏹', name: 'ลูกธนู ×5', need: { wood: 1, feather: 1, flint: 1 }, give: { arrows: 5 } },   /* v3.98 flint arrowheads */
+  { k: 'arwFire', icon: '🔥', name: 'ลูกธนูเพลิง ×5', need: { wood: 1, feather: 1, stFire: 1 }, give: { arrowsX: ['fire', 5] } }, { k: 'arwIce', icon: '🧊', name: 'ลูกธนูหิมะ ×5', need: { wood: 1, feather: 1, stIce: 1 }, give: { arrowsX: ['ice', 5] } },   /* v5.40 element arrows */
+  { k: 'arwBolt', icon: '⚡', name: 'ลูกธนูอัสนี ×5', need: { wood: 1, feather: 1, stBolt: 1 }, give: { arrowsX: ['shock', 5] } }, { k: 'arwLeaf', icon: '🌱', name: 'ลูกธนูพฤกษา ×5', need: { wood: 1, feather: 1, stLeaf: 1 }, give: { arrowsX: ['leaf', 5] } },
+  { k: 'arwWater', icon: '💧', name: 'ลูกธนูวารี ×5', need: { wood: 1, feather: 1, stWater: 1 }, give: { arrowsX: ['water', 5] } }, { k: 'arwRock', icon: '🪨', name: 'ลูกธนูศิลา ×5', need: { wood: 1, feather: 1, stRock: 1 }, give: { arrowsX: ['rock', 5] } },
   { k: 'arrows20', icon: '🏹', name: 'ลูกธนู ×20', need: { wood: 4, feather: 3, flint: 3 }, give: { arrows: 20 } },
   { k: 'torch2', icon: '🔥', name: 'คบเพลิง ×2', need: { wood: 2, grass: 3, flint: 1 }, give: { mats: { torch: 2 } } },   /* v3.98 flint lights it */   /* v3.12.1 */
   { k: 'lamp', icon: '🏮', name: 'ตะเกียงน้ำมัน (ให้แสงแม้ฝนตก · ไม่อุ่น)', need: { copper: 2, wood: 2, ore: 1 }, give: { has: 'lamp' } },   /* v3.82 a farm light */
