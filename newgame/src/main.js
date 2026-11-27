@@ -3870,7 +3870,7 @@ function ctxTick(now, dt, mv) { whaleAuto(now);
     else if (nearGL()) { const L = nearGL(); CTX = { k: 'loot', at: L.g.position, h: 1, go: () => pickGL(L) } }   /* v3.54 */
     else if (catchFor && mons.includes(catchFor) && !(t && t.m && !catchFor.T.animal)) { const M = catchFor; CTX = { k: 'catch', at: M.A.root.position, go: () => startCatch(M) } }
     else if (!RIDE && !HORSE && !PL.swim && (hz = nearHorse())) { const H = hz; CTX = { k: 'horse', at: H.A.root.position, h: 1.6, go: () => mountHorse(H) } }
-    else if (!RIDE && !HORSE && !PL.swim && !GLIDE && (hz = nearRidePet())) { const P = hz; CTX = { k: 'petride', at: P.e.A.root.position, h: 1.2, go: () => petSkillKind(P.p.kind) } }   /* v5.33 (designer) walk up to your dog / cat + ✋ = ride (not in the X wheel) */
+    else if (!RIDE && !HORSE && !PL.swim && !GLIDE && !(t && (t.o || t.m || (t.k && t.k.kind !== 'pet'))) && (hz = nearRidePet())) {   /* v5.35 a tree / person / monster you face comes first (the dog walks beside you) */ const P = hz; CTX = { k: 'petride', at: P.e.A.root.position, h: 1.2, go: () => petSkillKind(P.p.kind) } }   /* v5.33 (designer) walk up to your dog / cat + ✋ = ride (not in the X wheel) */
     else if (t && t.k && t.k.kind === 'pet' && !RIDE && !HORSE && !PL.swim && nearMainPet() && MAINP() && t.k.id === MAINP().id) { const E2 = nearMainPet(); CTX = { k: 'pet', at: E2.A.root.position, h: 1.3, go: () => mountPet(E2.p) } }   /* v3.83 the main pet is the nearest thing: A = ride */
     else if (t && t.k) { const k = t.k.kind, ic = TALK.has(k) ? (k === 'knpc' && carryN() ? 'gift' : 'talk') : CTX_ICO[k] ? k : 'use'; CTX = { k: ic, at: t.p ? t.p.position : null, h: 1.2, go: null } }
     else if (t && t.o) { const o = t.o, T = D.CLEAR[o.t];
