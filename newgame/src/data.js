@@ -832,6 +832,8 @@ export const VKQ = { scales: 5, drop: [1, 2], lizards: 2, lizR: [14, 24], gift: 
 /* v5.57 ❄️ the frosthelm chapter (docs/plan-mainquest.md): 🧶 Inga at the refugee camp knits a 🧥 warm suit from reindeer fur (🦌 reindeer in frosthelm) → 🔥 the fire crystal melts the ice seal on the castle door → the castle → 🕯️ Sael
    fur: how many Inga wants · drop: fur per reindeer (only while she wants it) · deer: how many wander up near you in frosthelm while you hunt · deerR: m from you · melt: ms the seal takes to melt · seal: the seal's look (local to the capital: z of its front, size) */
 export const FHQ = { fur: 5, drop: [1, 2], deer: 2, deerR: [14, 24], melt: 3600, seal: { z: -7.4, w: 6.6, h: 10.6, d: 1.3 }, suit: ['h_frostfur', 'b_frostfur', 'l_frostfur'] };
+export const DKQ = { potMs: 5 * 60e3, potGive: 3, brewN: 2, brewCost: 120, warn: 30e3, suit: ['h_dksuit', 'b_dksuit', 'l_dksuit'],   // v5.58 💀 the deadgar chapter: 🧪 Morwen's breathing potion (5 min of air · 3 free · she brews 2 more for 🪙 120 · warn 30 s before it runs out) · 🦺 the suit
+  parts: { navalee: ['🐚', 'ท่อหายใจเปลือกหอย'], sylvaren: ['🍃', 'ใบไม้กรองอากาศ'], valkara: ['🥽', 'กระจกหน้ากากทนไฟ'], asrah: ['🧣', 'ผ้าคลุมกันฝุ่น'], frosthelm: ['🧶', 'ขนสัตว์บุชุด'] } };   // one part from each kingdom's leader (the kingdoms already freed) → 🪡 the tailor
 /* v5.54 💠 local stones (the old hidden gem spots, designer): one kind per kingdom · spots per kingdom (the first = the old gem spot) · n: [min, max] a pick · respawn ms · ring: m from the kingdom's centre
    mkt: the 🧺 market pays × the MATS price (the usual sale pays × SELL_RATE) · enh: 🔨 +success for one stone (when the step can fail) · ✨ smith infusion: counts as that kingdom's element stone (ELEM.kingdom · luminia has none) */
 export const LSTN = { k: { navalee: 'lsAqua', sylvaren: 'lsAmber', valkara: 'lsRuby', asrah: 'lsOpal', frosthelm: 'lsSapph', deadgar: 'lsDiam', luminia: 'lsTopaz' },
@@ -983,6 +985,9 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   h_frostfur: { slot: 'head', icon: '🧶', name: 'หมวกขนเรนเดียร์', warm: 1, cool: 0, hatK: 'beanie', hatCol: '#b07a4a', src: 'quest', k: 'frosthelm' },   // v5.57 🧥 Inga's warm suit (reindeer fur · the frosthelm chapter)
   b_frostfur: { slot: 'body', icon: '🧥', name: 'โค้ทขนเรนเดียร์', warm: 1, cool: 0, col: '#8a5a36', look: 'wolfcoat', src: 'quest', k: 'frosthelm' },
   l_frostfur: { slot: 'legs', icon: '🥾', name: 'กางเกงบุขนเรนเดียร์', warm: 1, cool: 0, legs: 'boots', legCol: '#5a3e2a', shoe: '#e8e0d4', src: 'quest', k: 'frosthelm' },
+  h_dksuit: { slot: 'head', icon: '🫁', name: 'หน้ากากกันหมอกพิษ', warm: 0, cool: 0, air: 1, hatK: 'crowhood', hatCol: '#6a7a6a', src: 'quest', k: 'deadgar' },   // v5.58 🦺 the protective suit (5 parts · the deadgar chapter)
+  b_dksuit: { slot: 'body', icon: '🦺', name: 'ชุดกันหมอกพิษ', warm: 0, cool: 0, air: 1, col: '#c8a85a', look: 'filtercoat', noLegs: 1, src: 'quest', k: 'deadgar' },
+  l_dksuit: { slot: 'legs', icon: '🥾', name: 'กางเกงกันหมอกพิษ', warm: 0, cool: 0, air: 1, legs: 'wrap', legCol: '#6a6448', shoe: '#3a3028', src: 'quest', k: 'deadgar' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
 export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูมิเนีย', parts: ['h_soldier', 'b_soldier', 'l_soldier'], glow: '#8aa0ff', bonus: '🎭 ปลอมตัว: ทหารไม่สงสัย ไม่โจมตี (จนกว่าเจ้าจะโจมตีก่อน)' }, diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
@@ -991,6 +996,7 @@ export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูม�
   lavasmith: { name: 'เซ็ตช่างหลอมลาวา', parts: ['h_forgehood', 'b_apron', 'l_minepants'], glow: '#ff9a4a', bonus: '🔥 ไม่ติดไหม้ · ลาวาไม่ลด ❤️' },   // v4.34
   desert: { name: 'เซ็ตผ้าคลุมทะเลทราย', parts: ['h_turban', 'b_linen', 'l_baggy'], glow: '#ffe08a', bonus: '☀️ ร้อนแค่ไหนก็ไม่ช้า ไม่เหนื่อยเพิ่ม' },   // v4.33
   sunproof: { name: 'ชุดกันแดดซาร่า', parts: ['h_sunproof', 'b_sunproof', 'l_sunproof'], glow: '#ffe08a', bonus: '☀️ แดดแรงแค่ไหนก็ไม่ลด ❤️ · ไม่ช้า ไม่เหนื่อยเพิ่ม · โลหะไม่ร้อนมือ' },   // v5.56
+  dksuit: { name: 'ชุดกันหมอกพิษ', parts: ['h_dksuit', 'b_dksuit', 'l_dksuit'], glow: '#b8f0c8', bonus: '🫁 หายใจในหมอกพิษเดดการ์ได้ตลอด · มลพิษไม่ลด ❤️' },   // v5.58
   frostfur: { name: 'ชุดกันหนาวอินกา', parts: ['h_frostfur', 'b_frostfur', 'l_frostfur'], glow: '#ffe6c0', bonus: '❄️ หนาวแค่ไหนก็ไม่ลด ❤️ · ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' },   // v5.57
   fireproof: { name: 'ชุดกันไฟซาลา', parts: ['h_fireproof', 'b_fireproof', 'l_fireproof'], glow: '#ffb04a', bonus: '🔥 ร้อนแค่ไหนก็ไม่ลด ❤️ · ไม่ติดไหม้ · โลหะไม่ร้อนมือ' },   // v5.55
   snowwolf: { name: 'เซ็ตหมาป่าหิมะ', parts: ['h_wolfhood', 'b_wolfcoat', 'l_snowboots'], glow: '#bfe8ff', bonus: '❄️ หนาวแค่ไหนก็ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' } };   // v4.32   // v4.30   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
