@@ -31,6 +31,8 @@ function fromObj(o) {
   S = Object.assign(fresh(), o);
   const F = fresh();   /* a null / wrong-type field (a hand-edited or half-written save) → the default, never a crash */
   for (const k in F) { const d = F[k]; if (d && typeof d === 'object') { const v = S[k]; if (v == null || typeof v !== 'object' || Array.isArray(v) !== Array.isArray(d)) S[k] = d } }
+  for (const k in F) if (typeof F[k] === 'number' && (typeof S[k] !== 'number' || !isFinite(S[k]))) S[k] = F[k];   /* v5.61 a null / NaN / text number → the default (QA: a broken dayN crashed the boot) */
+  if (S.dayN < 0) S.dayN = 0; if (S.time < 0 || S.time >= 1440) S.time = ((S.time % 1440) + 1440) % 1440;
   if (!S.journal.recipes) S.journal = Object.assign(fresh().journal, S.journal);
   const lost = S.bag.filter(it => !it || !ITEMS[it.t]); if (lost.length) { S.lostItems = (S.lostItems || []).concat(lost); S.bag = S.bag.filter(it => it && ITEMS[it.t]) }   /* gear removed by an update: kept aside, not deleted */
   for (const sl in S.eq) if (S.eq[sl] != null && !S.bag.some(x => x.id === S.eq[sl])) S.eq[sl] = null;
