@@ -99,6 +99,7 @@ export const MON = {
   frostGolem: { base: 'rockGolem', tint: '#9ad0f0', name: '🧊 อสูรน้ำแข็ง', lv: 10, hp: 165, atk: 18, def: 10, exp: 80, coin: [73, 117], mat: { stone: 4, ore: 1 }, loot: ['crystalBlade', 'stoneArmor', 'knightBow'], tier: 'normal' },
   magmaGolem: { base: 'rockGolem', tint: '#e0502a', name: '🔥 อสูรแม็กม่า', lv: 8, hp: 130, atk: 14, def: 7, exp: 60, coin: [55, 90], mat: { stone: 4, ore: 2 }, loot: ['dragonBlade', 'golemCrusher'], tier: 'normal' },
   fishman:    { ingr: ['pondfish', .5], name: '🐟 มนุษย์ปลา', lv: 6, hp: 80, atk: 11, def: 3, exp: 40, coin: [36, 70], mat: { grass: 2 }, loot: ['harpoon', 'woodSpear', 'hunterBow'], tier: 'normal', legs: 1 },   // v5.48 (designer) navalee's armed monster
+  fishChief:  { base: 'fishman', tint: '#2a5a9a', scale: 1.3, ingr: ['pondfish', 1], name: '🐟 หัวหน้ามนุษย์ปลา', lv: 10, hp: 420, atk: 17, def: 6, exp: 160, coin: [180, 300], mat: { grass: 4 }, loot: ['harpoon', 'woodSpear'], tier: 'normal', legs: 1 },   // v5.53 (plan-mainquest) a bigger fish-man guarding navalee's floodgate · drops ⚙️ for certain (main.js nvChief)
   snowTrooper:{ ingr: ['meat', .4], name: '❄️ ทหารหิมะ', lv: 9, hp: 130, atk: 16, def: 8, exp: 68, coin: [60, 100], mat: { stone: 2, ore: 1 }, loot: ['woodAxe', 'stoneClub', 'knightBow'], tier: 'normal', legs: 1 },   // v5.48 frosthelm's
   lavaImp:    { name: '🌋 ภูตลาวา', lv: 7, hp: 95, atk: 13, def: 5, exp: 50, coin: [45, 82], mat: { stone: 3, ore: 1 }, loot: ['mallet1', 'stoneClub', 'golemCrusher'], tier: 'normal', legs: 1 },   // v5.48 valkara's
   ghoul:      { base: 'goblin', tint: '#8a6aa8', ingr: ['meat', .3], name: '🧟 ผีดิบ', lv: 11, hp: 145, atk: 18, def: 7, exp: 88, coin: [80, 130], mat: {}, loot: ['kingSword', 'crystalBow'], tier: 'normal' },
@@ -524,6 +525,12 @@ export const REGSHOP = { mul: 5, shop: { wear: 'tailor', item: 'smith', recipe: 
 /* v5.49 (designer · docs/plan-mainquest.md) 📜 the main quest is taken and handed in at the harbour guild: first a choice (🟥 SSS the dark cloud now · ⚓ restore the harbour) · then the kingdoms in story order */
 export const MQ = { order: ['navalee', 'sylvaren', 'valkara', 'asrah', 'frosthelm', 'deadgar', 'luminia'], hbShops: ['food', 'tools', 'smith', 'market'],
   rew: { hb: { coin: 1000, gem: 10 }, sss: { coin: 3000, gem: 50 }, k: [[1500, 20], [2000, 25], [2500, 30], [3000, 35], [3500, 40], [4000, 45], [6000, 100]] } };
+/* v5.53 🌊 the navalee chapter (docs/plan-mainquest.md): Nina tails you from the refugee camp → the shadow scene → escort her (3 waves) → the lakeside cave → 3 floodgate gears → drain → the eel
+   reveal: m from the camp before the shadow scene · hp/dps/near: Nina's ❤️, what a wave monster close to her (m) takes each second · at: where the 3 waves wait (share of the road left) · waves: who comes in each
+   def: the eel's 🛡️ × this once the water is drained · zap: a metal weapon hitting the eel shocks you back (× the eel's ⚔️ · once per cd ms) · chiefR: m from the floodgate where the fish-man chief shows up */
+export const NVQ = { reveal: 65, hp: 100, dps: 9, near: 2.4, at: [.25, .55, .85], trig: 18, gap: 4000,
+  waves: [['marshSprite', 'slime', 'fishman'], ['slime', 'fishman', 'marshSprite', 'grassSprite', 'fishman'], ['fishman', 'fishman', 'marshSprite', 'slime', 'grassSprite', 'fishman', 'marshSprite']],
+  gears: 3, chests: 2, chiefR: 45, def: .5, zap: .35, zapCd: 1500 };
 export const SHOPS = [
   { k: 'potion', name: 'ร้านยา', icon: '🧪', owner: 'Sberh', cost: { wood: 6, stone: 4, coin: 300 } },
   { k: 'food', name: 'ร้านอาหารน้อง', icon: '🍖', owner: 'บรอม', cost: { wood: 8, stone: 4, coin: 400 } },
