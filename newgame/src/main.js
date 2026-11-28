@@ -38,7 +38,7 @@ import { fallTex, fallDeco, mistTick } from './falls.js';
 import { lampGroup } from './world.js';
 import { CASTLEIN } from './castlein.js';
 import { buildFloor, LAYOUT, THEMES } from './castle2.js';
-import { unlock, mood, sfx, toggle as toggleSound, soundOn, note as fluteNote, step as sfxStep, bar as sfxBar, barPlaying, battle as sfxBattle, battlePlaying } from './audio.js';
+import { unlock, mood, sfx, toggle as toggleSound, soundOn, note as fluteNote, noteOn as fluteOn, step as sfxStep, bar as sfxBar, barPlaying, battle as sfxBattle, battlePlaying } from './audio.js';
 
 try { const sn = localStorage.getItem(D.SAVE_KEY + '_dg'); if (sn) { localStorage.setItem(D.SAVE_KEY, sn); localStorage.removeItem(D.SAVE_KEY + '_dg'); sessionStorage.setItem('ng_dgmsg', 'left') } } catch (e) { }   /* v4.09 nothing in the dungeon is saved: closed mid-way = back to before the door */
 load();
@@ -4756,14 +4756,17 @@ function rumors() { const q = me(), L = [], far = (x, z) => `ไปทาง${di
 /* ================= v3.64 🎵 the flute: an overlay with the 7 notes (◀▲▶▼ X Y A) and B = put away · the songs you know light up as you play · at the bar = tips ================= */
 var FLUTE = null;   /* var: gearView / padTick may ask before this line runs */
 function fluteOpen() { if (!S.has.flute || FLUTE || CUT) return; aimEnd(false); walkT = null; work = null; joy.on = false; FLUTE = { seq: [], t0: performance.now() }; document.body.classList.add('fluting'); fluteUI(); sfx('tap'); if (PL) { PL.gearK = null; gearView() } }
-function fluteClose() { if (!FLUTE) return; FLUTE = null; document.body.classList.remove('fluting'); const el = $('fluteUI'); if (el) el.remove(); sfx('tap'); if (PL) { PL.gearK = null; gearView() } }
+function fluteClose() { if (!FLUTE) return; fluteAllUp(); FLUTE = null; document.body.classList.remove('fluting'); const el = $('fluteUI'); if (el) el.remove(); sfx('tap'); if (PL) { PL.gearK = null; gearView() } }
 function fluteUI() { let el = $('fluteUI'); if (!el) { el = document.createElement('div'); el.id = 'fluteUI'; document.body.appendChild(el) } const known = S.songs || {};
   el.innerHTML = `<div class="flhd"><b>🎵 ขลุ่ยไม้</b><small>${nearBarOpen() ? '🍹 อยู่ในบาร์ · เล่นจบเพลง = ได้ทิป' : 'ลองเป่าเพลงด้านล่าง'}</small></div><div class="flsongs">${D.SONGS.map(sg => `<div class="${known[sg.k] ? 'kn' : ''}" data-sg="${sg.k}"><b>${sg.icon} ${sg.name}</b><span>${sg.notes.map((n, i) => `<i data-si="${i}">${D.FLUTE.glyph[n]}</i>`).join('')}</span></div>`).join('')}</div>
     <div class="flkeys">${D.FLUTE.glyph.map((g, i) => `<button data-fn="${i}" class="fk${i}"><b>${g}</b><small>${D.FLUTE.names[i]}</small></button>`).join('')}<button data-fx="1" class="fkB"><b>B</b><small>เก็บ</small></button></div>`;
-  el.querySelectorAll('[data-fn]').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); flutePlay(+b.dataset.fn) }));
+  el.querySelectorAll('[data-fn]').forEach(b => { const up = e => { if (e) e.stopPropagation(); fluteUp(+b.dataset.fn) }; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId) } catch (er) { } flutePlay(+b.dataset.fn) }); for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, up) });   /* v5.60 held = the note keeps sounding · release = it stops */
   el.querySelector('[data-fx]').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fluteClose() }) }
 const nearBarOpen = () => { const sh = (TW.shops || [])[D.SHOPS.findIndex(s2 => s2.k === 'bar')]; return !!sh && barOpen() && dist(me().x, me().z, sh.x, sh.z) < D.FLUTE.barR };
-function flutePlay(i) { if (!FLUTE) return; unlock(); fluteNote(i); bump('notes'); const q = me(); floater(['♪', '♫', '♩'][i % 3], 'item', q.x + (Math.random() - .5) * .6, 1.9, q.z); FLUTE.seq.push(i); if (FLUTE.seq.length > 12) FLUTE.seq.shift();
+const FLHOLD = {};   /* v5.60 note index → stop() of the note being held */
+function fluteUp(i) { const f = FLHOLD[i]; if (f) { delete FLHOLD[i]; f() } }
+function fluteAllUp() { for (const k in FLHOLD) fluteUp(k) }
+function flutePlay(i) { if (!FLUTE) return; unlock(); fluteUp(i); FLHOLD[i] = fluteOn(i); bump('notes'); const q = me(); floater(['♪', '♫', '♩'][i % 3], 'item', q.x + (Math.random() - .5) * .6, 1.9, q.z); FLUTE.seq.push(i); if (FLUTE.seq.length > 12) FLUTE.seq.shift();
   const el = $('fluteUI'); if (el) { const b = el.querySelector(`[data-fn="${i}"]`); if (b) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit') } }
   for (const sg of D.SONGS) { const n = sg.notes.length, tail = FLUTE.seq.slice(-n); let m = 0; for (let k = n; k > 0; k--) { const a = FLUTE.seq.slice(-k); if (a.every((v, j) => v === sg.notes[j])) { m = k; break } }   /* how far into this song the last notes are */
     if (el) el.querySelectorAll(`[data-sg="${sg.k}"] [data-si]`).forEach((x, j) => x.classList.toggle('on', j < m));
@@ -5321,7 +5324,7 @@ function padTick(dt) {
   if (!!gp !== padOn) { padOn = !!gp; document.body.classList.toggle('gamepad', padOn); if (padOn) hint('🎮 ต่อจอยแล้ว · ปุ่มบนจอซ่อนไว้', 1600); else joy.on = false }
   if (!gp) return; const dz = v => Math.abs(v) < .18 ? 0 : (v - Math.sign(v) * .18) / .82, ax = dz(gp.axes[0] || 0), ay = dz(gp.axes[1] || 0), rx = dz(gp.axes[2] || 0), ry = dz(gp.axes[3] || 0), B = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
   const ov = !!document.querySelector('.ov');
-  if (FLUTE) { const M2 = [[14, 0], [12, 1], [15, 2], [13, 3], [PADM.X, 4], [PADM.Y, 5], [PADM.A, 6]]; for (const [bi, n] of M2) { const p = B(bi); if (p && !padPrev['F' + bi]) flutePlay(n); padPrev['F' + bi] = p } { const p = B(PADM.B); if (p && !padPrev.FB) fluteClose(); padPrev.FB = p } joy.on = false; return }   /* v3.64 🎵 the pad plays the flute */
+  if (FLUTE) { const M2 = [[14, 0], [12, 1], [15, 2], [13, 3], [PADM.X, 4], [PADM.Y, 5], [PADM.A, 6]]; for (const [bi, n] of M2) { const p = B(bi); if (p && !padPrev['F' + bi]) flutePlay(n); if (!p && padPrev['F' + bi]) fluteUp(n); padPrev['F' + bi] = p } { const p = B(PADM.B); if (p && !padPrev.FB) fluteClose(); padPrev.FB = p } joy.on = false; return }   /* v3.64 🎵 the pad plays the flute */
   if (PADLEARN) { for (let i = 0; i < gp.buttons.length; i++) { const p = B(i); if (p && !padPrev['L' + i]) { PADM[PADLEARN.act] = i; padSave(); const cb = PADLEARN.cb; PADLEARN = null; sfx('coin'); padPrev['L' + i] = p; cb && cb(); return } padPrev['L' + i] = p } return }   /* v3.12.8 learning a button */
   if (SG) { SG.hold = B(PADM.A); return }   /* v3.12.4 the struggle bar: hold A */
   if (mapNavOn()) { mapStick(ax, ay); const a = B(PADM.A); if (a && !padPrev.mA) { const g = document.getElementById('wpGo'); if (g) g.click() } padPrev.mA = a }   /* v3.12.1 map: stick hops · A warps */

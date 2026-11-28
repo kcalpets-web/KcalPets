@@ -74,6 +74,13 @@ export function note(i, len = .55) { if (!ctx || !on || ctx.state !== 'running')
   o.type = 'sine'; o.frequency.value = f; v.frequency.value = 5.2; vg.gain.value = f * .006; v.connect(vg); vg.connect(o.frequency); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .05); g.gain.setTargetAtTime(.15, t + .08, .1); g.gain.setTargetAtTime(0, t + len, .09);
   o.connect(g); g.connect(master); o.start(t); v.start(t); o.stop(t + len + .5); v.stop(t + len + .5);
   const n = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain(); n.buffer = noiseBuf; nf.type = 'bandpass'; nf.frequency.value = f * 2; nf.Q.value = 4; ng.gain.setValueAtTime(.05, t); ng.gain.setTargetAtTime(0, t + .06, .05); n.connect(nf); nf.connect(ng); ng.connect(master); n.start(t); n.stop(t + .3) } catch (e) { } }
+/* v5.60 🎵 a held flute note: sounds while the key is held · returns stop() (soft release) · safety stop after 8 s */
+export function noteOn(i) { if (!ctx || !on || ctx.state !== 'running') return () => { }; try { const t = ctx.currentTime, f = NOTE_HZ[i] || 523.25, o = ctx.createOscillator(), v = ctx.createOscillator(), vg = ctx.createGain(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = f; v.frequency.value = 5.2; vg.gain.value = 0; vg.gain.setTargetAtTime(f * .006, t + .25, .3); v.connect(vg); vg.connect(o.frequency); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .05); g.gain.setTargetAtTime(.15, t + .08, .1);
+  o.connect(g); g.connect(master); o.start(t); v.start(t);
+  const n = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain(); n.buffer = noiseBuf; nf.type = 'bandpass'; nf.frequency.value = f * 2; nf.Q.value = 4; ng.gain.setValueAtTime(.05, t); ng.gain.setTargetAtTime(.008, t + .06, .08); n.loop = true; n.connect(nf); nf.connect(ng); ng.connect(master); n.start(t);
+  let done = false; const stop = () => { if (done) return; done = true; try { const t2 = ctx.currentTime; for (const gg of [g, ng]) { gg.gain.cancelScheduledValues(t2); gg.gain.setValueAtTime(gg.gain.value, t2); gg.gain.setTargetAtTime(0, t2, .07) } for (const x of [o, v, n]) x.stop(t2 + .5) } catch (e) { } };
+  setTimeout(stop, 8000); return stop } catch (e) { return () => { } } }
 /* v4.99 👣 footsteps by ground: a short filtered-noise scuff (+ a low thud) · quiet · kind: grass road sand snow wood water */
 const STEP = {
   grass: t => { noise('bandpass', 1900 + Math.random() * 500, .09, .05, t, .8, 900) },
