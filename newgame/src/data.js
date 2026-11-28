@@ -584,7 +584,7 @@ export const SMITH = [{ t: 'stoneKnife', r: 'B', price: 750 }, { t: 'axe1', r: '
 /* story quests: flag = S.story[flag] · stat/goal = S.stat · check(S) = custom · go = where the card takes you */
 export const QUESTS = [
   { id: 's0a', icon: '🪵', text: 'หาไม้ 10 และหิน 5 เพื่อสร้างที่พัก', check: S => (S.mats.wood || 0) >= 10 && (S.mats.stone || 0) >= 5, go: 'gather' },
-  { id: 's0b', icon: '🏠', text: 'สร้างกระท่อมหลังแรก (บนพื้นเพาะปลูก)', flag: 'built', go: 'house' },
+  { id: 's0b', icon: '🏠', text: 'ซ่อมกระท่อมหลังแรก (บนฟาร์ม)', flag: 'built', go: 'house' },
   { id: 's0c', icon: '😴', text: 'แตะกระท่อมแล้วนอนพักให้ถึงเช้า', flag: 'slept', go: 'house' },
   { id: 's1a', icon: '⛵', text: 'มีเสียงครางจากซากเรือริมหาด… เคลียร์ซากเรือ', flag: 'howsif', go: 'wreck' },
   { id: 's1b', icon: '🎣', text: `ตกปลา ${2} ตัวไปให้ลุงฮาวซิฟ`, flag: 'fishGiven', go: 'howsif' },
