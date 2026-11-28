@@ -112,6 +112,6 @@ export function buildLumCity(cx, cz, H, ry = 0, opt = {}) {
       else sols.push(Object.assign({ x: P.x, z: P.z, r: Math.max(pr.radiusTop, pr.radiusBottom) * Math.max(SC.x, SC.z) }, t === 'CylinderGeometry' ? { top: P.y + h / 2, abs: 1, flat: 1 } : {})) }) }   /* v3.59 a tower: a flat top */
   { const zF = FZ + 7.65, zB = FZ + .65, [x, z] = W(0, (zF + zB) / 2); sols.push({ x, z, hw: 7, hd: (zF - zB) / 2, ry, top: 3, ramp: 1 }) }   /* v5.44 the grand stair = a ramp (load on it = stand on it) */
   const [dx, dz] = W(0, FZ + 1.6), guards = [[-10, 10], [12, 8], [-20, 24], [20, 26], [0, 30], [-30, 6], [30, 4], [0, -12], [-8, -22], [8, -22], [-44, 0], [44, 0], [-30, 40], [30, 40]].map(([x, z]) => W(x, z));
-  return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, flags, flagMat: MG.flag, center: W(0, 0) };
+  return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, flags, flagMat: MG.flag, center: W(0, 0), W, palace: { z0: PZ - PD / 2, z1: FZ, hw: PW / 2 } };   /* v5.59 W + the palace box (local) for the siege */
   return { G, sols, door: { x: dx, z: dz }, rose, falls, guards, center: W(0, 0) };
 }

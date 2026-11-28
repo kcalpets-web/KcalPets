@@ -30,6 +30,7 @@
 | 🧍 ตัวละครหลายชั้น · 👒 หมวก (v3.9) | vinyl.js `vinylLayered` `VOPT` `VHATS` `hatPiece` `vinylLayers` `LY` `tubeO` · data `WEAR h_*` (slot hat) · main `wornLook` (hat) · `npcLook` (hat) · ภาพตัวอย่าง tools/art/layers.html · ถัดไป v3.10: ทรงผมเพิ่ม · หน้าหลายอารมณ์ · ชุดเพิ่ม (ตามภาพแนวทางที่ผู้ออกแบบส่ง) |
 | 🎒 ช่องกระเป๋า (v3.12) | `D.BAG` · `bagUsed` `bagCap` `bagFits` `bagFullHint` `stackN` `STK` `itemCat` `dropMat` · `INV_TABS` · `openCraft(cat)` `craftCat` · ทดสอบ bag.js |
 | 🗺️🪧🔥 แผนที่/ป้าย/คบเพลิง (v3.12.1) | แผนที่: `openMap` (คลาส `mapfs` · `.wzoom`) `MAPNAV` `mapSel` `mapStick` `mapHop` (จอยบนจอ + จอยเกม · A = `#wpGo`) · `WARPS()` ไม่มีของที่สร้าง · ป้าย: `SIGNS` `signView` `readSign` `kingdomTip` `dir8` · คบเพลิง: `D.TORCH` `D.HAND.torch` `MATS.torch` `torchOn` `torchLight` `torchTick` `TORCHL` `torchLightTick` `torchPost` `TOOLMESH.torch` · ทดสอบ `tools/test/map.js` |
+| ☁️ บทสุดท้าย (v5.59) | `src/ghall.js` (`GH` `buildGHall`) · world.js `GHALL` · main.js `dgEnter` `finIntro` `finTick` `finCam` `finSpawn` `finEnd` `finSkip` `finTurns` `bakeBoss` `dgTick` `dgDown` · ล้อมเมือง `lsgOn` `lsgTick` `lsgFloor` `LSG` · ตัวติดตาม `lumThroneRow` · data.js `D.FINAL` · ทดสอบ `tools/test/finale559.js` |
 | ฝึกปุ่ม (การ์ด) | `TUT` `tutTick` `tutEv` |
 | เควสอาณาจักร | `src/quests.js` `KQ` · `main.js` `kqTick` `talkNpc` |
 | hook ทดสอบ | `window.__ng = {…}` ท้าย `main.js` |

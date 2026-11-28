@@ -418,7 +418,8 @@ export const zoneOf = (x, z = 0) => BALD_ON ? (coreDist(x, z) <= 0 ? 'farm' : Ma
 export const roadZ = x => x < 9 ? 2.3 : x < 35 ? 2.3 + (RIVER.bz - 2.3) * smw(9, 22, x) - RIVER.bz * smw(22, 34, x) : x < 57 ? 0 : x < 79 ? -1 * Math.sin(Math.min(1, (x - 57) / 4) * 1.57) * (1 - smw(75, 79, x)) : 0;
 export const GATE = { exit: false, east: false };                                   // story locks: the island gate (boat repaired) · the town's east gate (back from Uncle Howsif)
 export const CLOUD = { x: 2600, z: 0, r: 34 };                                   // v1.7 the storm island (its own map, past the eastern sea)
-const onCloud = (x, z) => Math.abs(x - CLOUD.x) < 60 && Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r;
+export const GHALL = { on: false, hw: 19, hd: 25, pad: 1.2 };   // v5.59 the grand throne hall stands on the storm spot while the final fight is on (main.js dgEnter): its walls replace the island's shore
+const onCloud = (x, z) => GHALL.on ? Math.abs(x - CLOUD.x) < GHALL.hw - GHALL.pad && Math.abs(z - CLOUD.z) < GHALL.hd - GHALL.pad : Math.abs(x - CLOUD.x) < 60 && Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r;
 /* v3.2 🎓 the training ground: a square of grass far out at sea (own little map) · a pond · a ledge to climb and glide from */
 export const TRAIN = { x: -420, z: 0, hw: 15, pond: [-428, 7, 4, 3], ledge: [-409, 8, 3.4, 3.4, 4] };
 const inTr = (x, z) => Math.abs(x - TRAIN.x) < 70 && Math.abs(z - TRAIN.z) < 70;
@@ -435,7 +436,7 @@ export function trainH(x, z) { const T = TRAIN, dx = Math.abs(x - T.x), dz = Mat
   const [lx, lz, lw, ld, lh] = T.ledge, e = Math.max(Math.abs(x - lx) - lw, Math.abs(z - lz) - ld); if (e < .6) return e < 0 ? lh : lh * (1 - e / .6) + .15 * (e / .6);
   return .15 }
 export function groundH(x, z) {
-  if (onCloud(x, z)) return .6;
+  if (onCloud(x, z) || GHALL.on && Math.abs(x - CLOUD.x) < GHALL.hw + 2 && Math.abs(z - CLOUD.z) < GHALL.hd + 2) return .6;
   if (inTr(x, z)) return trainH(x, z);
   if (inEelA(x, z)) return eelIn(x, z) ? .15 : -3;
   if (inThrA(x, z)) return thrIn(x, z) ? .15 : -3;
@@ -467,7 +468,7 @@ export function walkWorld(x, z) {
   if (inTr(x, z)) { const h = trainH(x, z); return h < -1.5 ? false : h < -.45 ? 'water' : 'land' }
   if (inEelA(x, z)) return eelIn(x, z) ? 'land' : false;
   if (inThrA(x, z)) return thrIn(x, z) ? 'land' : false;
-  if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
+  if (Math.abs(x - CLOUD.x) < 80) return onCloud(x, z) ? 'land' : GHALL.on ? false : Math.hypot(x - CLOUD.x, z - CLOUD.z) < CLOUD.r + 30 ? 'water' : false;
   if (coreDist(x, z) > 0) { if (x < WORLD.x0 || x > WORLD.x1 || z < WORLD.z0 || z > WORLD.z1) return false; if (gladePond(x, z)) return false; if (gtStone(x, z)) return 'land'; const h = wildH(x, z); return h < -.45 ? (h > -9 ? 'water' : false) : 'land' }
   if (BALD.on) return coreH(x, z) < -.08 ? 'water' : 'land';   /* v3.50 */
   if (x < 7.4) { if (x < shore(z) + .25) return 'water'; return 'land' }                                       // v1.4.1: no invisible walls around the island

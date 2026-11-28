@@ -29,6 +29,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await shot('03-island');
     await E(() => { window.__hpkeep = setInterval(() => { const N = window.__ng; if (N.S.hp != null && N.S.hp < 120) N.S.hp = null }, 200) });   /* the test checks the fight's flow, not survival */
     await E(() => { const N = window.__ng; N.placeMe(2600 - 8, 0); N.S.en = null }); await wait(3500); await closeAll();
+    for (let t = 0; t < 60 && !(await N(() => window.__ng.BOSS && !window.__ng.FINCS)); t++) await wait(300);   /* v5.59 the dark cloud first comes down from the hall's ceiling (a short scene) */
     const bs = await N(() => { const B = window.__ng.BOSS; return B ? { hp: B.hp, def: B.T.def } : null }); log('boss', JSON.stringify(bs)); if (!bs) errs.push('the storm lord did not appear');
     await wait(3500); await shot('04-boss'); await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, Math.round(B.T.hp * .45), 'dmg') }); await wait(6000); await shot('05-phase2');
     log('hp after hits', await N(() => window.__ng.S.hp)); await E(() => { const B = window.__ng.BOSS; if (B) window.__ng.hurtMon(B, Math.round(B.T.hp * .3), 'dmg') }); await wait(5000); await shot('06-phase3');

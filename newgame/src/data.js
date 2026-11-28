@@ -431,6 +431,13 @@ export const PET_SPECIAL_CD = 25000;
 /* v3.16 pets stay home: the team are skill icons under the hearts (tap = the skill · cooldown) · 🦅 lifts you up then the glider · 🐋 a ride over water */
 export const SKILL_LV = 5;
 // v4.09 🏰 the dungeon under the dark cloud: the 6 kingdom bosses you have not beaten (random order) → the dark cloud → its true form (the serpent) → the ending · nothing inside is saved
+/* v5.59 ☁️ the final chapter (designer · docs/plan-mainquest.md): the grand throne hall · the opening scene · six bosses at once · the siege of Luminia
+   hp / atk: the six kingdom bosses in the hall (× their own stats: all six at once is a lot) · maxAct: at most this many of them wind up an attack at the same time (the rest wait their turn)
+   eelR: the eel's ring around its pool · walk: the hero's slow walk up the carpet (m/s) · cs: the opening scene (ms): lead before the first boss · per boss · rise · the 'start!' card · desc: the dark cloud comes down
+   siege: while the chapter is on (or SSS) and the cloud holds the city · camps ring the city (r = from the plateau's centre) with perCamp monsters · palace = monsters round the palace ward (r [min, max] m from the palace)
+          rooms = monsters in the palace rooms (per room [min, max]) · resp = seconds before a beaten group comes back */
+export const FINAL = { hp: .62, atk: .72, maxAct: 2, eelR: 8.5, walk: 1.1, cs: { lead: 2400, per: 2500, rise: 1500, go: 1800, desc: 3200 },
+  siege: { camps: 5, campR: 84, perCamp: 4, palace: 14, palaceR: [10, 30], rooms: [['kit', 'dine', 'arm', 'gard', 'throne', 'chap'], ['lib', 'bed', 'gal', 'bal', 'gold']], per: [1, 2], resp: 180, near: 120 } };
 export const DUNGEON = { gap: 3.5, r: 14, snake: { strike: [3, 1.1], rain: [5, 2.2, 1.4], sweep: [7.5, 1.4], cd: [2600, 1900] } };   // gap: seconds between bosses · r: the eel's ring · strike [r, wind s] · rain [n, r, wind] · sweep [r, wind] · cd [phase 1, 2] ms
 // v4.08 🐾 main quest: catch the skill pets and raise each to Lv 5 · [kind, 'c' catch | 'l' Lv 5, reward] · 'ride' = your dog / cat
 export const PETQ = [['bear', 'c', { coin: 300 }], ['bear', 'l', { gem: 3 }], ['whale', 'c', { coin: 300 }], ['whale', 'l', { gem: 3 }], ['hawk', 'c', { coin: 300 }], ['hawk', 'l', { gem: 3 }], ['boar', 'c', { coin: 300 }], ['boar', 'l', { gem: 3 }], ['ride', 'l', { gem: 5 }]];   // v4.06 a pet's skill works only once that pet reaches Lv 5 (raise it to earn it)
