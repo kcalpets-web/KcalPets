@@ -44,7 +44,7 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { salaScale: ['🦎', 'เกล็ดซาลาแมนเดอร์', 30], camelHair: ['🐪', 'ขนอูฐ', 30], stFire: ['🔥', 'หินเพลิง', 120], stBolt: ['⚡', 'หินอัสนี', 120], stLeaf: ['🌱', 'หินพฤกษา', 120], stWater: ['💧', 'หินวารี', 120], stIce: ['❄️', 'หินหิมะ', 120], stRock: ['🪨', 'หินศิลา', 120], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { reindeerFur: ['🦌', 'ขนเรนเดียร์', 30], salaScale: ['🦎', 'เกล็ดซาลาแมนเดอร์', 30], camelHair: ['🐪', 'ขนอูฐ', 30], stFire: ['🔥', 'หินเพลิง', 120], stBolt: ['⚡', 'หินอัสนี', 120], stLeaf: ['🌱', 'หินพฤกษา', 120], stWater: ['💧', 'หินวารี', 120], stIce: ['❄️', 'หินหิมะ', 120], stRock: ['🪨', 'หินศิลา', 120], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
@@ -829,6 +829,9 @@ export const CAMEL = { sp: 6.8, gallop: 10.5, off: .8, seat: 1.18, call: 45, kee
    camels: wild camels that wander up near you while you still need one (at camR m) · gift: ms the sun suit's sparkle takes */
 export const ASQ = { hair: 5, catchHair: 2, drop: [1, 2], brushCd: 4000, camels: 2, camR: [14, 24], suit: ['h_sunproof', 'b_sunproof', 'l_sunproof'] };
 export const VKQ = { scales: 5, drop: [1, 2], lizards: 2, lizR: [14, 24], gift: 2600, suit: ['h_fireproof', 'b_fireproof', 'l_fireproof'] };
+/* v5.57 ❄️ the frosthelm chapter (docs/plan-mainquest.md): 🧶 Inga at the refugee camp knits a 🧥 warm suit from reindeer fur (🦌 reindeer in frosthelm) → 🔥 the fire crystal melts the ice seal on the castle door → the castle → 🕯️ Sael
+   fur: how many Inga wants · drop: fur per reindeer (only while she wants it) · deer: how many wander up near you in frosthelm while you hunt · deerR: m from you · melt: ms the seal takes to melt · seal: the seal's look (local to the capital: z of its front, size) */
+export const FHQ = { fur: 5, drop: [1, 2], deer: 2, deerR: [14, 24], melt: 3600, seal: { z: -7.4, w: 6.6, h: 10.6, d: 1.3 }, suit: ['h_frostfur', 'b_frostfur', 'l_frostfur'] };
 /* v5.54 💠 local stones (the old hidden gem spots, designer): one kind per kingdom · spots per kingdom (the first = the old gem spot) · n: [min, max] a pick · respawn ms · ring: m from the kingdom's centre
    mkt: the 🧺 market pays × the MATS price (the usual sale pays × SELL_RATE) · enh: 🔨 +success for one stone (when the step can fail) · ✨ smith infusion: counts as that kingdom's element stone (ELEM.kingdom · luminia has none) */
 export const LSTN = { k: { navalee: 'lsAqua', sylvaren: 'lsAmber', valkara: 'lsRuby', asrah: 'lsOpal', frosthelm: 'lsSapph', deadgar: 'lsDiam', luminia: 'lsTopaz' },
@@ -977,6 +980,9 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   h_sunproof: { slot: 'head', icon: '☀️', name: 'ผ้าโพกกันแดด', warm: 0, cool: 1, hatK: 'turban', hatCol: '#fff6e0', src: 'quest', k: 'asrah' },   // v5.56 ☀️ Zara's sun suit (camel hair · the asrah chapter)
   b_sunproof: { slot: 'body', icon: '☀️', name: 'เสื้อคลุมกันแดด', warm: 0, cool: 1, col: '#fbf3e0', look: 'linen', noLegs: 1, src: 'quest', k: 'asrah' },
   l_sunproof: { slot: 'legs', icon: '☀️', name: 'กางเกงกันแดด', warm: 0, cool: 1, legs: 'baggy', legCol: '#e8d4a8', shoe: '#9a6a3a', src: 'quest', k: 'asrah' },
+  h_frostfur: { slot: 'head', icon: '🧶', name: 'หมวกขนเรนเดียร์', warm: 1, cool: 0, hatK: 'beanie', hatCol: '#b07a4a', src: 'quest', k: 'frosthelm' },   // v5.57 🧥 Inga's warm suit (reindeer fur · the frosthelm chapter)
+  b_frostfur: { slot: 'body', icon: '🧥', name: 'โค้ทขนเรนเดียร์', warm: 1, cool: 0, col: '#8a5a36', look: 'wolfcoat', src: 'quest', k: 'frosthelm' },
+  l_frostfur: { slot: 'legs', icon: '🥾', name: 'กางเกงบุขนเรนเดียร์', warm: 1, cool: 0, legs: 'boots', legCol: '#5a3e2a', shoe: '#e8e0d4', src: 'quest', k: 'frosthelm' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
 export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูมิเนีย', parts: ['h_soldier', 'b_soldier', 'l_soldier'], glow: '#8aa0ff', bonus: '🎭 ปลอมตัว: ทหารไม่สงสัย ไม่โจมตี (จนกว่าเจ้าจะโจมตีก่อน)' }, diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
@@ -985,6 +991,7 @@ export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูม�
   lavasmith: { name: 'เซ็ตช่างหลอมลาวา', parts: ['h_forgehood', 'b_apron', 'l_minepants'], glow: '#ff9a4a', bonus: '🔥 ไม่ติดไหม้ · ลาวาไม่ลด ❤️' },   // v4.34
   desert: { name: 'เซ็ตผ้าคลุมทะเลทราย', parts: ['h_turban', 'b_linen', 'l_baggy'], glow: '#ffe08a', bonus: '☀️ ร้อนแค่ไหนก็ไม่ช้า ไม่เหนื่อยเพิ่ม' },   // v4.33
   sunproof: { name: 'ชุดกันแดดซาร่า', parts: ['h_sunproof', 'b_sunproof', 'l_sunproof'], glow: '#ffe08a', bonus: '☀️ แดดแรงแค่ไหนก็ไม่ลด ❤️ · ไม่ช้า ไม่เหนื่อยเพิ่ม · โลหะไม่ร้อนมือ' },   // v5.56
+  frostfur: { name: 'ชุดกันหนาวอินกา', parts: ['h_frostfur', 'b_frostfur', 'l_frostfur'], glow: '#ffe6c0', bonus: '❄️ หนาวแค่ไหนก็ไม่ลด ❤️ · ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' },   // v5.57
   fireproof: { name: 'ชุดกันไฟซาลา', parts: ['h_fireproof', 'b_fireproof', 'l_fireproof'], glow: '#ffb04a', bonus: '🔥 ร้อนแค่ไหนก็ไม่ลด ❤️ · ไม่ติดไหม้ · โลหะไม่ร้อนมือ' },   // v5.55
   snowwolf: { name: 'เซ็ตหมาป่าหิมะ', parts: ['h_wolfhood', 'b_wolfcoat', 'l_snowboots'], glow: '#bfe8ff', bonus: '❄️ หนาวแค่ไหนก็ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' } };   // v4.32   // v4.30   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
