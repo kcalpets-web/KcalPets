@@ -505,6 +505,16 @@ export const BUILDS = {
     part(g, '#3a2214', '#6a4028', [0, .65, 1.32], [.38, .62, .05], [0, 0, 0], { A: 0 }); part(g, '#c7891c', '#ffe27a', [.22, .65, 1.38], [.04, .04, .03], [0, 0, 0], { A: 0 });
     cone(g, '#8a2a1a', '#d0503a', [0, 2.55, 0], [2.2, .95, 2.2], [0, 0, 0], .95); part(g, '#6a6460', '#b0a8a0', [.8, 2.9, -.6], [.18, .4, .18], [0, 0, 0], { A: .08 });
     part(g, '#ffd870', '#fff6c0', [-.8, 1.05, 1.36], [.25, .2, .02], [0, 0, 0], { A: 0 }) },
+  /* v5.61 (designer) the broken hut already standing on the farm at the start · repair it = the first home (BUILDS.cabin) */
+  ruinCabin(g) { const OLD = ['#4a3020', '#7a5236'], OLDL = ['#5a3a24', '#8a6440'];
+    for (let i = 0; i < 6; i++) { const y = .18 + i * .3; if (i < 4) log(g, [0, y, -1.3], 2.8, [0, 0, Math.PI / 2], .15, OLD); else if (i === 4) log(g, [-.5, y, -1.3], 1.7, [0, 0, Math.PI / 2 + .06], .15, OLD);
+      if (i < 5) log(g, [-1.3, y, 0], 2.8, [Math.PI / 2, 0, 0], .15, OLD); if (i < 2) log(g, [1.3, y, 0], 2.8, [Math.PI / 2, 0, 0], .15, OLD); else if (i < 3) log(g, [1.3, y, -.6], 1.5, [Math.PI / 2, 0, 0], .15, OLD);
+      if (i < 3) for (const x of [-.85, .85]) if (!(x > 0 && i === 2)) log(g, [x, y, 1.3], 1.1, [0, 0, Math.PI / 2], .15, OLD) }
+    log(g, [1.75, .16, .7], 2.6, [Math.PI / 2, .5, 0], .15, OLD); log(g, [2.05, .16, -.3], 2.4, [Math.PI / 2, .25, 0], .15, OLD); log(g, [1.6, .44, .2], 2.3, [Math.PI / 2 - .25, .7, 0], .15, OLD); log(g, [.6, .16, 2.05], 2.5, [0, .3, Math.PI / 2], .15, OLD);
+    part(g, '#3a2214', '#5a3a24', [-.25, .45, 1.6], [.38, .62, .05], [-1.1, .3, .15], { A: 0 });   /* the door, fallen */
+    cone(g, '#5a2016', '#8a3a28', [-.35, 1.85, -.25], [2.1, .9, 2.1], [.32, 0, -.42], .95);   /* the roof, caved in on one side */
+    for (const [x, z, r] of [[1.2, 1.4, .3], [-1.9, .6, -.6], [.2, -1.9, 1.1], [2.3, .9, .4]]) part(g, ...OLDL, [x, .05, z], [.5, .04, .1], [0, r, 0], { A: 0 });   /* loose planks */
+    for (const [x, z] of [[-1.6, 1.6], [1.7, -1.5], [0, 1.9], [-1.7, -1.6], [2.2, .2]]) for (let k = 0; k < 3; k++) cone(g, '#3a7a2a', '#7ac850', [x + (k - 1) * .12, .2, z + (k % 2) * .1], [.07, .4 + k * .08, .07], [(k - 1) * .25, 0, (k - 1) * .3], .9) },
   tower(g) { for (const x of [-.8, .8]) for (const z of [-.8, .8]) log(g, [x * .85, 2, z * .85], 4.1, [z * .05, 0, -x * .05], .1); part(g, ...WOODL, [0, 4, 0], [1.05, .08, 1.05], [0, 0, 0], { A: 0 });
     for (const a of [0, 1.57, 3.14, 4.71]) log(g, [Math.sin(a) * .95, 4.3, Math.cos(a) * .95], 1.9, [0, a, Math.PI / 2], .04, WOODL); for (let i = 0; i < 9; i++) log(g, [0, .3 + i * .42, .95], .5, [0, 0, Math.PI / 2], .03, WOODL);
     for (const x of [-.18, .18]) log(g, [x, 1.95, .95], 3.9, [0, 0, 0], .035); cone(g, '#8a2a1a', '#d0503a', [0, 5.25, 0], [1.3, .7, 1.3], [0, 0, 0], .95); for (const x of [-.8, .8]) for (const z of [-.8, .8]) log(g, [x, 4.55, z], 1.1, [0, 0, 0], .05) },
