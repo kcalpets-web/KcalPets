@@ -44,7 +44,7 @@ export const hitsFor = (size, tier, base) => Math.max(1, Math.ceil((base || HITS
 export const MON_CHANCE = .05;                 // per cleared object (Pen Suk: 4%)
 export const FIRST_MON_AT = 5;                 // tutorial: the 5th cleared object always wakes a monster if none has appeared yet
 
-export const MATS = { stFire: ['🔥', 'หินเพลิง', 120], stBolt: ['⚡', 'หินอัสนี', 120], stLeaf: ['🌱', 'หินพฤกษา', 120], stWater: ['💧', 'หินวารี', 120], stIce: ['❄️', 'หินหิมะ', 120], stRock: ['🪨', 'หินศิลา', 120], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
+export const MATS = { salaScale: ['🦎', 'เกล็ดซาลาแมนเดอร์', 30], stFire: ['🔥', 'หินเพลิง', 120], stBolt: ['⚡', 'หินอัสนี', 120], stLeaf: ['🌱', 'หินพฤกษา', 120], stWater: ['💧', 'หินวารี', 120], stIce: ['❄️', 'หินหิมะ', 120], stRock: ['🪨', 'หินศิลา', 120], flint: ['🪨', 'หินเหล็กไฟ', 20], hide: ['🟫', 'หนังสัตว์', 40], feather: ['🪶', 'ขนนก', 15], grass: ['🌿', 'หญ้า', 5], wool: ['🧶', 'ขนแกะ', 50], wood: ['🪵', 'ไม้', 10], stone: ['🪨', 'หิน', 10], ore: ['⛓️', 'แร่เหล็ก', 60],
   /* v3.0 ores by terrain (veins you can see on rocks) + golem materials */
   copper: ['🟠', 'แร่ทองแดง', 40], silver: ['⚪', 'แร่เงิน', 90], goldOre: ['🟡', 'แร่ทองคำ', 140], coal: ['⚫', 'ถ่านหิน', 50], gemstone: ['💠', 'อัญมณีดิบ', 260],
   diamond: ['💎', 'เศษเพชรโกเลม', 500], lavaCoal: ['🔥', 'ถ่านลาวาโกเลม', 300], emerald: ['💚', 'ทับทิมเขียว', 320], goldBar: ['🏅', 'ทองคำโกเลม', 350], aquamarine: ['🔷', 'อความารีน', 320], crystal: ['🔹', 'คริสตัลน้ำแข็ง', 320], bone: ['🦴', 'กระดูกโกเลม', 200], golemCore: ['🔮', 'แกนโกเลม', 800], scrap: ['🔩', 'เศษเหล็ก', 20], torch: ['🔥', 'คบเพลิง', 12] };   // v3.12.1 a torch is a small thing in the bag (up to 999 a slot)   // v3.8 scrap = a failed forging
@@ -816,6 +816,9 @@ export const GEMQ = { home: { amber: 'sylvaren', opal: 'asrah', topaz: 'luminia'
 /* v5.54 🌿 the sylvaren chapter (docs/plan-mainquest.md): storm the castle → free 🧙 Silvie → she hands over all 7 offerings → the altars round the tree of seasons → the blessing (a passive skill)
    gift: ms the 7 stones circle Silvie before they fly to you */
 export const SVQ = { gift: 2600 };
+/* v5.55 🌋 the valkara chapter (docs/plan-mainquest.md): Sala at the refugee camp sews a 🧯 fire-proof suit from salamander scales (🦎 fire lizards in valkara) → the castle → 🔥 Ignis gives the fire crystal
+   scales: how many Sala wants · drop: scales per fire lizard (only while she wants them) · lizards: how many wander up near you in valkara while you hunt · lizR: m from you · gift: ms the crystal floats before it flies to you */
+export const VKQ = { scales: 5, drop: [1, 2], lizards: 2, lizR: [14, 24], gift: 2600, suit: ['h_fireproof', 'b_fireproof', 'l_fireproof'] };
 /* v5.54 💠 local stones (the old hidden gem spots, designer): one kind per kingdom · spots per kingdom (the first = the old gem spot) · n: [min, max] a pick · respawn ms · ring: m from the kingdom's centre
    mkt: the 🧺 market pays × the MATS price (the usual sale pays × SELL_RATE) · enh: 🔨 +success for one stone (when the step can fail) · ✨ smith infusion: counts as that kingdom's element stone (ELEM.kingdom · luminia has none) */
 export const LSTN = { k: { navalee: 'lsAqua', sylvaren: 'lsAmber', valkara: 'lsRuby', asrah: 'lsOpal', frosthelm: 'lsSapph', deadgar: 'lsDiam', luminia: 'lsTopaz' },
@@ -957,6 +960,9 @@ Object.assign(WEAR, { s_tank: { slot: 'body', icon: '🎽', name: 'เสื้�
   h_crowhood: { slot: 'head', icon: '🐦‍⬛', name: 'หน้ากากจะงอยกา', warm: 0, cool: 0, air: 1, hatK: 'crowhood', src: 'quest', k: 'deadgar' },   // v4.35 💀 the deadgar mist hunter set
   b_filtercoat: { slot: 'body', icon: '🧥', name: 'โค้ทกรองควัน', warm: 0, cool: 0, air: 1, col: '#2a4a4a', look: 'filtercoat', src: 'quest', k: 'deadgar' },
   l_wrap: { slot: 'legs', icon: '👖', name: 'กางเกงพันผ้า', warm: 0, cool: 0, air: 1, legs: 'wrap', legCol: '#3a3a42', shoe: '#2a2228', src: 'quest', k: 'deadgar' },
+  h_fireproof: { slot: 'head', icon: '🧯', name: 'ฮู้ดกันไฟ', warm: 0, cool: 1, hatK: 'forgehood', hatCol: '#d8d0c0', src: 'quest', k: 'valkara' },   // v5.55 🧯 Sala's fire-proof suit (salamander scales · the valkara chapter)
+  b_fireproof: { slot: 'body', icon: '🧯', name: 'เสื้อคลุมกันไฟ', warm: 0, cool: 1, col: '#d0c8b8', look: 'filtercoat', noLegs: 1, src: 'quest', k: 'valkara' },
+  l_fireproof: { slot: 'legs', icon: '🧯', name: 'กางเกงกันไฟ', warm: 0, cool: 1, legs: 'mine', legCol: '#b8b0a0', shoe: '#5a3a22', src: 'quest', k: 'valkara' },
   s_skirt: { slot: 'legs', icon: '👗', name: 'กระโปรง', warm: 0, cool: 0, legs: 'skirt', legCol: '#4a6aa8' } });
 /* v3.91 one piece = one ability: an outfit with two splits them (the top keeps the first, its trousers get the second) · a single-ability top's trousers share it */
 export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูมิเนีย', parts: ['h_soldier', 'b_soldier', 'l_soldier'], glow: '#8aa0ff', bonus: '🎭 ปลอมตัว: ทหารไม่สงสัย ไม่โจมตี (จนกว่าเจ้าจะโจมตีก่อน)' }, diver: { name: 'เซ็ตนักดำน้ำนาวาลี', parts: ['h_divemask', 'b_swimsuit', 'l_diver'], swim: 1.25, tire: .5, glow: '#7ad8ff', bonus: '🏊 ว่ายเร็วขึ้น · เหนื่อยช้าลงครึ่งหนึ่ง' },
@@ -964,6 +970,7 @@ export const WEAR_SETS = { soldier: { name: 'เซ็ตทหารลูม�
   misthunter: { name: 'เซ็ตนักล่าหมอก', parts: ['h_crowhood', 'b_filtercoat', 'l_wrap'], glow: '#8af0c0', bonus: '☠️ พิษทุกชนิดไม่ลด ❤️ (มลพิษ · พิษมอนสเตอร์ · อาหารเสีย)' },   // v4.35
   lavasmith: { name: 'เซ็ตช่างหลอมลาวา', parts: ['h_forgehood', 'b_apron', 'l_minepants'], glow: '#ff9a4a', bonus: '🔥 ไม่ติดไหม้ · ลาวาไม่ลด ❤️' },   // v4.34
   desert: { name: 'เซ็ตผ้าคลุมทะเลทราย', parts: ['h_turban', 'b_linen', 'l_baggy'], glow: '#ffe08a', bonus: '☀️ ร้อนแค่ไหนก็ไม่ช้า ไม่เหนื่อยเพิ่ม' },   // v4.33
+  fireproof: { name: 'ชุดกันไฟซาลา', parts: ['h_fireproof', 'b_fireproof', 'l_fireproof'], glow: '#ffb04a', bonus: '🔥 ร้อนแค่ไหนก็ไม่ลด ❤️ · ไม่ติดไหม้ · โลหะไม่ร้อนมือ' },   // v5.55
   snowwolf: { name: 'เซ็ตหมาป่าหิมะ', parts: ['h_wolfhood', 'b_wolfcoat', 'l_snowboots'], glow: '#bfe8ff', bonus: '❄️ หนาวแค่ไหนก็ไม่ติด 🥶 ไม่ช้า ไม่ตัวสั่น' } };   // v4.32   // v4.30   // v4.25 all three worn: swim ×1.25 faster · tire half as fast in the water
 export const AB_KEYS = ['def', 'warm', 'cool', 'zap', 'swim', 'air', 'sneak', 'poison'];
 const SPLIT = { o_sailor: ['swim', 'cool'], o_mage: ['warm', 'cool'], o_kimono: ['def', 'cool'], o_cape: ['warm', 'cool'], a_knight: ['def', 'warm'], k_navalee: ['swim', 'cool'], k_sylvaren: ['def', 'warm'], k_valkara: ['def', 'cool'], k_deadgar: ['air', 'warm'] };
