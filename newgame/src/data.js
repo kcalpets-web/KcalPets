@@ -813,6 +813,15 @@ export const DTREE = { reach: 18, leash: 30, slap: { r: 3, side: 2.6, wind: 1.1 
 export const GIANT = { sp: 2.2, reach: 3.4, leash: 40, slam: { r: 2.8, d: 3.2, wind: 1.2 }, breath: { n: 3, r: 1.7, step: 2.2, wind: 1.3 }, ring: { r: 6.5, wind: 1.5 }, cd: [2700, 1900] };   // v4.11 ❄️ walk speed · reach · leash from home · slam (radius · in front · warning s) · breath (circles in a line) · phase-2 spike ring · ms between attacks
 export const WORM = { r: 3.2, under: [3.2, 2.4, 1.8], warn: 1.1, up: [4, 3.4, 3], speed: [4.2, 5.4, 6.6], spit: { n: 5, r: 1.6, t: 1.2 }, hitR: 2.6 };   // v4.03 🪱 burst radius · seconds under the sand per phase · warning · seconds up (open to hits) · mound speed · phase 3 spit (balls · radius · flight s)
 export const GEMQ = { home: { amber: 'sylvaren', opal: 'asrah', topaz: 'luminia', ruby: 'valkara', sapphire: 'frosthelm', diamond: 'deadgar', aquamarine: 'navalee' }, ring: 18, reviveCd: 360000 };   // v4.00 💎 one offering hidden in each kingdom · the altars ring the tree of seasons · the blessing: back to full ❤️ at 0 (cool-down 6 min)
+/* v5.54 🌿 the sylvaren chapter (docs/plan-mainquest.md): storm the castle → free 🧙 Silvie → she hands over all 7 offerings → the altars round the tree of seasons → the blessing (a passive skill)
+   gift: ms the 7 stones circle Silvie before they fly to you */
+export const SVQ = { gift: 2600 };
+/* v5.54 💠 local stones (the old hidden gem spots, designer): one kind per kingdom · spots per kingdom (the first = the old gem spot) · n: [min, max] a pick · respawn ms · ring: m from the kingdom's centre
+   mkt: the 🧺 market pays × the MATS price (the usual sale pays × SELL_RATE) · enh: 🔨 +success for one stone (when the step can fail) · ✨ smith infusion: counts as that kingdom's element stone (ELEM.kingdom · luminia has none) */
+export const LSTN = { k: { navalee: 'lsAqua', sylvaren: 'lsAmber', valkara: 'lsRuby', asrah: 'lsOpal', frosthelm: 'lsSapph', deadgar: 'lsDiam', luminia: 'lsTopaz' },
+  spots: 3, n: [1, 2], respawn: 1200000, ring: [40, 75], near: 70, mkt: .75, enh: .1 };
+Object.assign(MATS, { lsAqua: ['🔷', 'หินอความารีนทะเลสาบ', 400], lsAmber: ['🟢', 'หินอำพันป่า', 400], lsRuby: ['🔴', 'หินทับทิมลาวา', 400], lsOpal: ['🟤', 'หินโอปอลทราย', 400],
+  lsSapph: ['🔵', 'หินไพลินหิมะ', 400], lsDiam: ['🟣', 'หินเพชรเงา', 400], lsTopaz: ['🟡', 'หินบุษราคัมแสง', 400] });
 export const BEAR = { angry: 6, buff: 100, ms: 60000, cd: 240000 };   // v3.99 🐻 charges inside 6 m · its skill: ⚔️🛡️ +100 for 1 min · cool-down 4 min
 export const K_ANIMALS = { p: .55, navalee: ['crab', 'seal', 'crab'], sylvaren: ['squirrel', 'deer', 'boar'], valkara: ['goat', 'fireLizard'], asrah: ['camel', 'fox', 'fox'], frosthelm: ['penguin', 'reindeer', 'penguin'], deadgar: ['bat', 'crow', 'crow'] };   // v5.48 (designer) a land's own animals (p = how often one is picked over the common ones)
 export const ANIMAL_SPAWN = { night: ['deer', 'boar', 'boar', 'bear'], low: ['rabbit', 'chicken', 'rabbit', 'deer', 'horse'], woods: ['deer', 'boar', 'rabbit', 'boar', 'bear'], water: ['duck', 'duck', 'rabbit'] };

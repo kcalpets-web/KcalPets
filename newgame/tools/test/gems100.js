@@ -10,8 +10,8 @@ const ROOT = '/home/user/KcalPets', PORT = 8857, OUT = process.argv[2] || '/tmp/
     await pg.goto(`http://127.0.0.1:${PORT}/newgame/index.html`); await pg.waitForFunction(() => window.__ng, null, { timeout: 60000 }); await wait(2500);
     const E = (f, a) => pg.evaluate(f, a); await E(() => document.querySelectorAll('.ov').forEach(o => o.remove()));
     // the ruby's glint in valkara
-    const g1 = await E(async () => { const N = window.__ng, [x, z] = N.gemSpot('ruby'); N.placeMe(x + 2, z); await new Promise(r => setTimeout(r, 4000)); const seen = !!N.GLINT.ruby; N.takeGem('ruby'); return { at: [Math.round(x), Math.round(z)], seen, have: !!N.S.gems.ruby, gone: !N.GLINT.ruby } });
-    log('ruby', JSON.stringify(g1)); if (!g1.seen) errs.push('the hidden gem should glint near its spot'); if (!g1.have || !g1.gone) errs.push('A should pick the gem up');
+    const g1 = await E(async () => { const N = window.__ng, [x, z] = N.gemSpot('ruby'); N.placeMe(x + 2, z); await new Promise(r => setTimeout(r, 4000)); const seen = !!N.LCV.valkara0; N.takeGem('ruby'); return { at: [Math.round(x), Math.round(z)], seen, have: !!N.S.gems.ruby, gone: !N.GLINT.ruby } });   /* v5.54 the old gem spot grows a 💠 local stone now · takeGem still gives the gem */
+    log('ruby', JSON.stringify(g1)); if (!g1.seen) errs.push('v5.54 a local stone should sit on the old gem spot'); if (!g1.have || !g1.gone) errs.push('A should pick the gem up');
     // to the tree: the altars
     const a1 = await E(async () => { const N = window.__ng; N.placeMe(N.GTREE.x + 24, N.GTREE.z + 3); N.PL.yaw = N.PL.yawT = -Math.PI / 2; await new Promise(r => setTimeout(r, 6000)); return Object.keys(N.ALT.items).length });
     const wet = await E(() => { const N = window.__ng; return Object.values(N.ALT.items).filter(it => N.waterAt ? N.waterAt(it.g.position.x, it.g.position.z) : false).length }); log('altars in water', wet); if (wet) errs.push('no altar should stand in the pond');
