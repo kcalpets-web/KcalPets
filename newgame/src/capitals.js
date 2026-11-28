@@ -13,7 +13,7 @@ import { stoneTex, worldUV } from './masonry.js';
 
 const LOOK = {
   navalee:   { stone: '#b9c3c9', dark: '#7d8b97', pave: '#a2acb2', roof: '#3d6ea8', glow: '#5ac8ff', moss: '#5f8a5e' },
-  asrah:     { stone: '#c9a274', dark: '#5c3c30', pave: '#d6b88a', roof: '#8a2a22', glow: '#ff4a26', moss: '#9a7a4a' },
+  asrah:     { stone: '#c9a274', dark: '#5c3c30', pave: '#a39a8c', roof: '#8a2a22', glow: '#ff4a26', moss: '#9a7a4a' },
   sylvaren:  { stone: '#8c907c', dark: '#5a5e4c', pave: '#7c7c6a', roof: '#4c5a3c', glow: '#4cff9a', moss: '#4f7a34' },
   frosthelm: { stone: '#cfe0f0', dark: '#7d9cc2', pave: '#dde8f4', roof: '#9fd4ff', glow: '#4aa8ff', moss: '#eaf4ff' },
   valkara:   { stone: '#5e4e4c', dark: '#2e2628', pave: '#4a3e3c', roof: '#3a2c2c', glow: '#ff6a1a', moss: '#4a3a34' },
@@ -47,7 +47,10 @@ export function buildCapital(k, cx, cz, H, ry = 0) {
     for (let b = 0; b < 3; b++) { const bb = R() * 6.28; add(new THREE.CylinderGeometry(.03, .07, 1.4 * k2, 5), M.bark, px + Math.cos(bb) * .4, py - .3, pz + Math.sin(bb) * .4, Math.cos(bb) * .9, 0, Math.sin(bb) * .9).userData.nosol = 1 } };
 
   /* ---- the plaza ---- */
-  cyl(0, -.05, 0, 27, 27, .12, M.pave, 28).userData.nosol = 1;
+  if (k === 'asrah') {   /* v5.56 (designer) 🏜️ asrah's capital is paved with stone: the sand worms can't reach you inside the walls · laid grey flags out to the ring wall + a stone road out through the gate */
+    Object.assign(M.pave, { map: stoneTex('#8a8276', '#b8b0a2', { mortar: '#5a544a', seed: 41 }), color: new THREE.Color('#ffffff') }); M.pave.needsUpdate = true;
+    for (const o of [cyl(0, -.05, 0, 31, 31, .12, M.pave, 36), box(0, -.05, 34.5, 6, .12, 9, M.pave)]) { worldUV(o.geometry, .16); o.userData.nosol = 1 } }
+  else cyl(0, -.05, 0, 27, 27, .12, M.pave, 28).userData.nosol = 1;
   /* v5.45 a laid paving pattern (was moss and loose dark slabs) */ add(new THREE.RingGeometry(8.6, 9.4, 40), M.dark, 0, .03, 4, -Math.PI / 2).userData.nosol = 1; for (let i = 0; i < 4; i++) box(0, .02, 4, i % 2 ? 1 : 16, .04, i % 2 ? 16 : 1, M.dark, i * Math.PI / 4).userData.nosol = 1;
   /* ---- the keep: a raised base · a tall hall · 4 towers (one broken) · a glowing doorway ---- */
   const KZ = -14, KW = 16, KD = 12, KH = 13;
